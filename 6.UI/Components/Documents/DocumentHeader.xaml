@@ -5,10 +5,10 @@
              xmlns:display="clr-namespace:PrimeERP.UI.Components.Display"
              xmlns:actionsctl="clr-namespace:PrimeERP.UI.Components.Actions"
              x:Name="root">
-    <Border Background="{DynamicResource PanelBrush}"
-            BorderBrush="{DynamicResource OutlineBrush}"
+    <Border Background="{DynamicResource SurfaceDefault}"
+            BorderBrush="{DynamicResource OutlineDefault}"
             BorderThickness="1"
-            CornerRadius="{StaticResource RadiusLg}"
+            CornerRadius="{DynamicResource P.Radius.Lg}"
             Padding="18,16">
         <Grid>
             <Grid.RowDefinitions>
@@ -30,9 +30,9 @@
 
                 <!-- رقم المستند: للقراءة فقط + زر توليد -->
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="رقم المستند" FontSize="{StaticResource FontSizeXs}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               Foreground="{DynamicResource SubTextBrush}" Margin="2,0,0,6"/>
+                    <TextBlock Text="رقم المستند" FontSize="{DynamicResource P.Font.Size.200}"
+                               FontFamily="{DynamicResource P.Font.Family.Primary}"
+                               Foreground="{DynamicResource TextSecondary}" Margin="2,0,0,6"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>

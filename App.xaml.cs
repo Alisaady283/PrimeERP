@@ -3,6 +3,7 @@ using System.Data;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.App.Bootstrap;
+using PrimeERP.Platform.Design;
 using PrimeERP.UI.Services;
 
 namespace PrimeERP.App;

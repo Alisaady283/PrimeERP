@@ -1,4 +1,5 @@
 using PrimeERP.Platform.Permissions;
+using PrimeERP.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -62,7 +63,7 @@ namespace PrimeERP.UI.Components.Shell
             var c = (AppSidebar)d;
             c._rootItems.Clear();
             foreach (var item in c.ItemsSource ?? Enumerable.Empty<NavItem>())
-                c._rootItems.Add(new NavItemViewModel(item));
+                c._rootItems.Add(new NavItemViewModel(item, UIServices.Permissions));
 
             c.RecomputeVisibility();
             c.RefreshActiveState();

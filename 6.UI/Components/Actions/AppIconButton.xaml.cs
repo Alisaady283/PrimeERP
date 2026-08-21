@@ -45,9 +45,9 @@ namespace PrimeERP.UI.Components.Actions
 
             var (bg, fg) = Variant switch
             {
-                "danger" => (Brushes.Transparent, (Brush)FindResource("CriticalBrush")),
-                "brand"  => (Brushes.Transparent, (Brush)FindResource("BrandBrush")),
-                _        => (Brushes.Transparent, (Brush)FindResource("SubTextBrush"))
+                "danger" => (Brushes.Transparent, (Brush)FindResource("Danger")),
+                "brand"  => (Brushes.Transparent, (Brush)FindResource("BrandDefault")),
+                _        => (Brushes.Transparent, (Brush)FindResource("TextSecondary"))
             };
 
             btn.Background = bg;

@@ -107,10 +107,14 @@
     <SolidColorBrush x:Key="FocusRing"       Color="{DynamicResource P.Color.Brand.600}"/>
     <sys:Double x:Key="FocusRingWidth">2</sys:Double>
 
-    <!-- ===== الظلال (الوضع الفاتح فقط — في الداكن تُستبدل بحدود مضيئة، انظر Semantic.Dark.xaml) ===== -->
-    <DropShadowEffect x:Key="ShadowSm" BlurRadius="4"  ShadowDepth="1" Opacity="0.04" Color="{DynamicResource P.Color.Neutral.900}" Direction="270"/>
-    <DropShadowEffect x:Key="ShadowMd" BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="{DynamicResource P.Color.Neutral.900}" Direction="270"/>
-    <DropShadowEffect x:Key="ShadowLg" BlurRadius="24" ShadowDepth="4" Opacity="0.10" Color="{DynamicResource P.Color.Neutral.900}" Direction="270"/>
-    <DropShadowEffect x:Key="ShadowXl" BlurRadius="40" ShadowDepth="8" Opacity="0.14" Color="{DynamicResource P.Color.Neutral.900}" Direction="270"/>
+    <!-- ===== الظلال — تشير الآن لقيم Blur/Depth/Opacity الخام من Primitives.Elevation.xaml (L1) بدل أرقام
+         حرفية مكررة، فتتبدّل مع حزمة الهوية (Corporate ظلاله أقوى، راجع ⚠️ توقف 4 في ARCHITECTURE.md) ===== -->
+    <DropShadowEffect x:Key="ShadowSm" BlurRadius="{DynamicResource P.Shadow.Sm.Blur}" ShadowDepth="{DynamicResource P.Shadow.Sm.Depth}" Opacity="{DynamicResource P.Shadow.Sm.Opacity}" Color="{DynamicResource P.Color.Neutral.900}" Direction="270"/>
+    <DropShadowEffect x:Key="ShadowMd" BlurRadius="{DynamicResource P.Shadow.Md.Blur}" ShadowDepth="{DynamicResource P.Shadow.Md.Depth}" Opacity="{DynamicResource P.Shadow.Md.Opacity}" Color="{DynamicResource P.Color.Neutral.900}" Direction="270"/>
+    <DropShadowEffect x:Key="ShadowLg" BlurRadius="{DynamicResource P.Shadow.Lg.Blur}" ShadowDepth="{DynamicResource P.Shadow.Lg.Depth}" Opacity="{DynamicResource P.Shadow.Lg.Opacity}" Color="{DynamicResource P.Color.Neutral.900}" Direction="270"/>
+    <DropShadowEffect x:Key="ShadowXl" BlurRadius="{DynamicResource P.Shadow.Xl.Blur}" ShadowDepth="{DynamicResource P.Shadow.Xl.Depth}" Opacity="{DynamicResource P.Shadow.Xl.Opacity}" Color="{DynamicResource P.Color.Neutral.900}" Direction="270"/>
+
+    <!-- ===== الحاجب خلف الطبقات المنبثقة (Overlay/LoadingOverlay) — أسود شبه شفاف، لا يتبع الهوية ===== -->
+    <SolidColorBrush x:Key="Scrim" Color="{DynamicResource P.Color.Black}" Opacity="0.35"/>
 
 </ResourceDictionary>

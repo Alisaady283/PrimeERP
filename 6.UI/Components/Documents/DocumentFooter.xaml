@@ -7,10 +7,10 @@
         <docs:FooterVariantToBrushConverter x:Key="VariantBrush"/>
     </UserControl.Resources>
 
-    <Border Background="{DynamicResource PanelBrush}"
-            BorderBrush="{DynamicResource OutlineBrush}"
+    <Border Background="{DynamicResource SurfaceDefault}"
+            BorderBrush="{DynamicResource OutlineDefault}"
             BorderThickness="1"
-            CornerRadius="{StaticResource RadiusLg}"
+            CornerRadius="{DynamicResource P.Radius.Lg}"
             Padding="18,14">
         <Grid>
             <Grid.ColumnDefinitions>
@@ -23,11 +23,11 @@
 
             <!-- ===== رسالة الحالة (متوازن/غير متوازن أو أي رسالة أخرى) ===== -->
             <Border Grid.Column="0" x:Name="statusWrap" VerticalAlignment="Center"
-                    Padding="10,6" CornerRadius="{StaticResource RadiusSm}" Visibility="Collapsed">
+                    Padding="10,6" CornerRadius="{DynamicResource P.Radius.Sm}" Visibility="Collapsed">
                 <TextBlock x:Name="statusText"
-                           FontSize="{StaticResource FontSizeSm}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           FontWeight="{StaticResource FontWeightSemibold}"/>
+                           FontSize="{DynamicResource P.Font.Size.300}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           FontWeight="{DynamicResource P.Font.Weight.SemiBold}"/>
             </Border>
 
             <!-- ===== الإجماليات — صف أفقي، الأخير (IsLarge) أكبر وبولد ===== -->
@@ -41,21 +41,21 @@
                     <DataTemplate>
                         <StackPanel Margin="18,0,0,0" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Label}" HorizontalAlignment="Center"
-                                       FontSize="{StaticResource FontSizeXs}"
-                                       FontFamily="{StaticResource AppFontFamily}"
-                                       Foreground="{DynamicResource FaintTextBrush}" Margin="0,0,0,4"/>
+                                       FontSize="{DynamicResource P.Font.Size.200}"
+                                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                                       Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4"/>
                             <TextBlock Text="{Binding Value, StringFormat={}{0:N2}}" HorizontalAlignment="Center"
-                                       FontFamily="{StaticResource AppFontFamily}"
+                                       FontFamily="{DynamicResource P.Font.Family.Primary}"
                                        Foreground="{Binding Variant, Converter={StaticResource VariantBrush}}">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="FontSize" Value="{StaticResource FontSizeSm}"/>
+                                        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsBold}" Value="True">
-                                                <Setter Property="FontWeight" Value="{StaticResource FontWeightSemibold}"/>
+                                                <Setter Property="FontWeight" Value="{DynamicResource P.Font.Weight.SemiBold}"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding IsLarge}" Value="True">
-                                                <Setter Property="FontSize" Value="{StaticResource FontSizeLg}"/>
+                                                <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.600}"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>

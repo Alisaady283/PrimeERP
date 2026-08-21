@@ -1,0 +1,39 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!--
+        L1 — حزمة الهوية "Default". يستبدل Typography.xaml السابق بمفردات P.Font.*/P.Line.* الموحّدة بين
+        الحزم. المقياس (Size.100-900) ثابت بين كل الحزم عمداً — التمايز بين الهويات هنا هو العائلة (Family)
+        فقط، لا المقياس (راجع تعليق Corporate: لماذا المقياس لا يتغيّر).
+    -->
+
+    <!-- ===== العائلات ===== -->
+    <FontFamily x:Key="P.Font.Family.Primary">Segoe UI, Tahoma, Arial</FontFamily>
+    <FontFamily x:Key="P.Font.Family.Mono">Consolas, Courier New</FontFamily>
+    <FontFamily x:Key="P.Font.Family.Display">Segoe UI Semilight, Segoe UI, Tahoma</FontFamily>
+
+    <!-- ===== الأحجام — نمط نسبة 1.25 تقريباً ===== -->
+    <sys:Double x:Key="P.Font.Size.100">10</sys:Double>
+    <sys:Double x:Key="P.Font.Size.200">11</sys:Double>
+    <sys:Double x:Key="P.Font.Size.300">12</sys:Double>
+    <sys:Double x:Key="P.Font.Size.400">13</sys:Double>
+    <sys:Double x:Key="P.Font.Size.500">14</sys:Double>
+    <sys:Double x:Key="P.Font.Size.600">16</sys:Double>
+    <sys:Double x:Key="P.Font.Size.700">18</sys:Double>
+    <sys:Double x:Key="P.Font.Size.800">22</sys:Double>
+    <sys:Double x:Key="P.Font.Size.900">28</sys:Double>
+
+    <!-- ===== الأوزان ===== -->
+    <FontWeight x:Key="P.Font.Weight.Normal">Normal</FontWeight>
+    <FontWeight x:Key="P.Font.Weight.Medium">Medium</FontWeight>
+    <FontWeight x:Key="P.Font.Weight.SemiBold">SemiBold</FontWeight>
+    <FontWeight x:Key="P.Font.Weight.Bold">Bold</FontWeight>
+
+    <!-- ===== ارتفاع السطر ===== -->
+    <sys:Double x:Key="P.Line.Tight">1.2</sys:Double>
+    <sys:Double x:Key="P.Line.Normal">1.45</sys:Double>
+    <sys:Double x:Key="P.Line.Relaxed">1.6</sys:Double>
+
+</ResourceDictionary>

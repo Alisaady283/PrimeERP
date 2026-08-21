@@ -133,8 +133,9 @@ PrimeERP/
 | `4.Application/Services/Parties/ISupplierService.cs` (+ عدم تسجيله في `App/Bootstrap/DependencyInjection.cs`) | عقد جزئي بُني ليطابق `ICustomerService` توقيعاً فقط، بلا تنفيذ (`SupplierService`) | **R6** — يُحذف ويُعاد بناؤه كاملاً مع `PartyServiceBase`، ثم يُسجَّل في `AddApplication()` |
 | `6.UI/DevTools/{ControlsGalleryPage,MockPickerDataSources}` | أداة تطوير دائمة، لا تُستهلَك من مسار حي | **R9** — تُستثنى من بناء Release (لا حذف، استبعاد) |
 | `App/MainWindow.xaml(.cs)` | يعرض Gallery بدل شاشة حقيقية | **R9** — يُستبدل محتواه بـ `AppShell` |
-| 32 ملف XAML يستهلك `StaticResource` لأبعاد بنيوية (Height/Radius/FontSize/FontFamily/FontWeight/Space/Icon) بدل `DynamicResource` | `Typography.xaml`/`Metrics.xaml` لم تُدمَجا بعد في سلسلة L1→L2→L3→L4؛ تحويلها الآن بلا الطبقتين L3/L4 عمل جزئي بلا فائدة مُثبَتة | **R4** — يُبنى L3 (Components/Tokens) + L4 (Styles) كاملاً، ثم تتحوَّل الـ32 دفعة واحدة |
+| ~~32 ملف XAML يستهلك `StaticResource` لأبعاد بنيوية بدل `DynamicResource`~~ | ~~`Typography.xaml`/`Metrics.xaml` لم تُدمَجا بعد في سلسلة L1→L2→L3→L4~~ | ✅ **محلول في R4** — L1→L4 كاملة، صفر مفتاح P./S./C. عبر StaticResource خارج الاستثناءات البنيوية الموثَّقة |
 | `BackupService.cs` يستدعي `DbHelper` مباشرة (لا Repository) | أوامر `BACKUP`/`RESTORE VERIFYONLY` إدارية على مستوى محرّك القاعدة، لا CRUD كيان — لا يوجد Repository مكافئ منطقياً لها | **لا بند حذف** — استثناء دائم موثَّق، ليس ديناً يُسدَّد |
+| `UIServices` (بوابة الوصول الوحيدة لـ code-behind بلا حقن) | بوابة عودة محتملة لنمط `ServiceLocator` لو تُرك استهلاكها يتّسع | **يتقلَّص تدريجياً في R8** كلما تحوَّلت الصفحات لـ Composition (Definitions/Renderers)؛ عند اكتمال R8: مراجعة ما تبقّى وحذف ما أمكن. `check.sh` يفرض الحد الآن: صفر استهلاك خارج `6.UI/**/*.xaml.cs` أو `App/**/*.xaml.cs` |
 
 ### التحقق النهائي لـ R2
 
@@ -175,6 +176,105 @@ PrimeERP/
 ### التحقق النهائي لـ R3
 
 `dotnet build` (المشروعين، بعد إصلاح سباق XAML المعروف بإعادة محاولة واحدة) → **0 تحذير جديد، 0 خطأ**. `Tools/ArchitectureCheck/check.sh` → **صفر FAIL، 3 WARN** (نفس الثلاثة المُرقَّمة أعلاه؛ تعليق `ISupplierService` في `DependencyInjection.cs` رُقِّم `// TEMPORARY — يُحذف في R6` ليطابق القاعدة الدائمة الثانية). `dotnet test -m:1` → **134/134 ناجح، صفر تعديل على منطق أي اختبار** (تحويل بنية الوصول للخدمات فقط، لا تغيير في السيناريوهات المُختبَرة).
+
+---
+
+## R4 — طبقة التصميم كاملة (L1 → L4)
+
+### السلسلة
+
+```
+L1  5.Design/Identity/{Default,Corporate}/Primitives.{Color,Type,Space,Shape,Motion,Elevation}.xaml
+L2  5.Design/Semantic/{Semantic.Light,Semantic.Dark,Semantic.Type}.xaml
+L3  5.Design/Components/Tokens.{Button,Input,Dialog,Grid,Nav,Card,Badge,Toolbar,Pagination,Tree,Toast,Document}.xaml
+L4  5.Design/Styles/{Implicit,ScrollBars,Style.Button,Style.Input,Style.Dialog}.xaml
+```
+
+كل حزمة هوية تختلف فعلياً في الأبعاد الخمسة (إثبات لا شكلي): Brand بنفسجي بدل أزرق، Calibri/Georgia بدل
+Segoe UI (+مقياس خط أكبر بنقطة واحدة عبر كل الدرجات)، مسافات ×1.25، زوايا أحدّ (تقريباً النصف)، ظلال أقوى
+(Opacity/Blur أعلى وضوحاً).
+
+### ⚠️ توقف 4 — قيد WPF: لا يمكن استعارة قيمة نوع-قيمة (double/Thickness/CornerRadius) تحت اسم L2/L3 جديد
+
+`DynamicResourceExtension` يحتاج `DependencyProperty` حقيقياً على `DependencyObject` ليتعلَّق به — `SolidColorBrush.Color`
+أو `DropShadowEffect.BlurRadius` صالحان (الكائن المضيف `Freezable`/`DependencyObject`)، لكن لا يوجد "كائن مضيف"
+لقيمة `double`/`Thickness`/`CornerRadius` خام يمكن إعادة تصديرها تحت مفتاح جديد مع بقاء التبديل الحي. **الأثر**:
+L2 Semantic.Space/Shape/Motion لا تُبنى كملفات مستقلة (كانت ستكون فارغة من أي مورد حقيقي)؛ الألوان/الظلال/
+الطباعة (مغلَّفة في Brush/Effect/Style) تمر عبر L2 كالمخطَّط بالضبط. المسافة/الشكل: L3/L4 تشير لـ L1
+(`P.Space.*`/`P.Radius.*`) **مباشرة**، بتعليق موثِّق عند كل استخدام — استثناء صحيح معمارياً لا انحراف عنه،
+مفروض بقيد WPF نفسه لا كسلاً. `C.Button.Height.*`/`C.Input.Height`/إلخ (أبعاد مكوّن مستقلة لا تقابل خطوة
+واحدة في `P.Space.*`) قيم L3 أصيلة، ثابتة بين الهويات عمداً (ليست من الأبعاد الخمسة المُختبَرة).
+
+### ⚠️ توقف 5 — الاكتشاف الحاسم: `ResourceDictionary` تُجمِّد موارد متداخلة عند أول تحميل
+
+هذا ما فشلت به الآلية الأصلية للتبديل (الموروثة من R1/توقف 3) فعلياً عند اختبار الأبعاد الخمسة كاملة — لم تكن
+مشكلة في الاختبار بل في التصميم نفسه:
+
+1. **التاريخ**: ثلاث محاولات مُختبَرة تجريبياً — (أ) تعديل قاموس متداخل داخل Theme.xaml مباشرة، (ب) استبدال
+   `Application.Resources` بالكامل بشجرة جاهزة مسبقاً دفعة واحدة، (ج) — الآلية المُستخدَمة منذ R1: تعيين
+   `Application.Resources` لقاموس **مصدره Theme.xaml** جديد أولاً، ثم إزالة/إدراج ملفات الهوية الستة كخطوة
+   لاحقة منفصلة. الثلاثة كانت تُحدِّث `Border.Background`/`Padding`/`CornerRadius` (خصائص مباشرة على
+   `FrameworkElement`) بشكل صحيح — لكن (ج) فشلت لأي مورد **متداخل**: `DropShadowEffect` باسم `ShadowMd`
+   (`BlurRadius="{DynamicResource P.Shadow.Md.Blur}"`) ظل عالقاً على قيمة الهوية القديمة للأبد، مهما استُدعي
+   `InvalidateProperty`/`ClearValue`/`SetResourceReference` لاحقاً على العنصر أو حتى على الكائن نفسه.
+2. **السبب الجذري (مُثبَت بتشخيص مباشر)**: `Application.Current.TryFindResource("ShadowMd")` **طازجاً بلا أي
+   علاقة بعنصر حيّ** أعاد Blur الهوية القديمة أيضاً — أي أن العطل ليس في مسار إبطال خاصية عنصر، بل في
+   `ResourceDictionary` نفسها: أول مرة يُطلَب فيها مورد مُركَّب (هنا `ShadowMd`، الذي يعيش في `Semantic.Light.xaml`
+   ويُدمَج **بعد** ملفات الهوية) تُقيَّم إشارته المتداخلة (`P.Shadow.Md.Blur`) نسبةً لحالة الشجرة **في تلك
+   اللحظة بالضبط**، ثم تُجمَّد النتيجة داخل الكائن ضمن تلك النسخة من `ResourceDictionary` — لا تُعاد تقييمها
+   لاحقاً مهما تغيّر ما تشير إليه. بما أن `Theme.xaml` (وبالتالي `Semantic.Light.xaml`) كان يُحمَّل **قبل**
+   إزالة/إدراج ملفات الهوية الفعلية (الترتيب ج)، ولو للحظة واحدة فقط، تتجمَّد `ShadowMd` على الهوية **القديمة**
+   للأبد — بخلاف خاصية محلية مباشرة على `FrameworkElement` حيّ (`Border.Background`)، التي **تُعاد** تقييمها
+   بصورة صحيحة عند أي تغيّر لاحق في سلسلة الموارد بفضل اشتراكها الحيّ في شجرة العرض.
+3. **الحل**: عكس ترتيب البناء — الهوية **أولاً**، ثم `Theme.xaml`، لا العكس أبداً. `Theme.xaml` نفسه عُدِّل
+   ليخلو من أي مرجع لملفات الهوية (لم يعد صالحاً للدمج المباشر وحده). `IIdentityService.Apply` يبني الشجرة
+   يدوياً: قاموس فارغ جديد حيّ ← الستة ملفات `Identity/{key}/Primitives.*.xaml` ← `Theme.xaml` (بلا هوية
+   مُضمَّنة) ← القواميس المحفوظة (نصوص اللغة، تراكب الوضع الداكن). بهذا الترتيب، لحظة تحميل `Semantic.Light.xaml`
+   لأول مرة، الهوية الصحيحة **موجودة بالفعل** في السلسلة — فتُقيَّم `ShadowMd` (وأي مورد متداخل مشابه) بشكل
+   صحيح من أول مرة، بلا نافذة "هوية خاطئة" ولو للحظة.
+4. **⚠️ فخ مصاحب اكتُشف أثناء الإصلاح**: القواميس "المحفوظة" (preserved، أي ما ليس Theme.xaml) يجب أن
+   تستبعد ملفات الهوية القديمة أيضاً صراحة، لا `Theme.xaml` فقط — وإلا تُعاد إضافتها هي نفسها في نهاية القائمة
+   (أعلى أولوية في `MergedDictionaries`، آخر تعريف يفوز) فتطغى على الحزمة الجديدة بالكامل بصمت.
+
+**الدرس العام**: أي مورد WPF **مُركَّب** (Effect، وبالقياس أي `Freezable` آخر غير Brush) يشير بدوره لمورد آخر
+عبر `DynamicResource` **يجب أن يُحمَّل لأول مرة بعد** استقرار كل ما يعتمد عليه، لا قبله ولو مؤقتاً — خلافاً
+لخاصية محلية مباشرة على عنصر حيّ في شجرة العرض، التي تتسامح مع الترتيب لأنها تُعاد تقييمها دوماً بصورة صحيحة.
+
+### الاختبار الحاسم
+
+`IdentityServiceTests.Apply_LiveSwap_ChangesAllFiveDimensionsOnAnAlreadyRenderedElement` — عنصر `Border`
+واحد (+ `TextBlock` ابن بنمط `Style` حقيقي) يُنشأ **مرة واحدة**، يُعرض في نافذة فعلية، تُقرأ قيمه الخمس
+(`Background`/`Padding`/`CornerRadius`/`Effect`/`FontFamily`+`FontSize`) قبل `Apply("Corporate")` وبعده — بلا
+إعادة إنشاء العنصر وبلا تعديل ملف قطعة واحد. + `SemanticDark_RedefinesEveryKeyInSemanticLight` (تكافؤ فاتح/داكن
+مفتاحاً بمفتاح، فحص نصي) + `ComponentAndStyleLayers_ContainNoLiteralHexColors` (صفر Hex حرفي خارج L1، فحص نصي
+عبر L2/L3/L4 كاملة).
+
+### فحص `check.sh` المُضاف
+
+`StaticResource` لمفتاح يبدأ بـ `P.`/`S.` = FAIL دائماً بلا استثناء. لمفتاح `C.*` = FAIL إلا للقائمة المسموحة
+صراحة (`C.Nav.Icon.ColumnWidth`، `C.Grid.RowHeader.Width` — ثوابت بنيوية موثَّقة في Tokens نفسها). استهلاك
+`UIServices.` خارج `6.UI/**/*.xaml.cs` أو `App/**/*.xaml.cs` = FAIL (القيد المُلزَم من تأكيد المستخدم قبل R4)
+— كشف خرقين حقيقيين فعلاً عند أول تشغيل: `NavItemViewModel`/`PermissionAwareViewModel` كانا يستهلكانها من
+داخل ViewModel لا code-behind؛ أُصلحا بحقن `IPermissionService` عبر المُنشئ من المستدعي الأول (`AppSidebar.xaml.cs`)
+بدل الوصول المباشر.
+
+### اكتشاف جانبي جسيم: مكوّنات كاملة كانت تشير لموارد ميتة أصلاً
+
+فحص شامل (كل `x:Key` مُعرَّف مقابل كل `StaticResource`/`DynamicResource`/`FindResource` مُستخدَم، XAML وC# معاً)
+كشف أن **~24 ملفاً** (كل مكوّنات `Display`/`Documents`/`Feedback`/`Shell`/`Layout`/`Pickers` تقريباً، عدا
+Button/Input/Dialog المُهاجَرة سابقاً) تستهلك 27 مفتاحاً غير موجود إطلاقاً في أي قاموس حالي (`PanelBrush`،
+`OutlineBrush`، `BodyTextBrush`، `FontWeightSemibold`، `OkBrush`، ...) — بقايا تسمية قديمة (`Colors.xaml` قبل
+`Semantic.Light/Dark.xaml`) لم تُهاجَر قط عند ذلك التحوُّل السابق. **الأثر الفعلي**: كل هذه المكوّنات كانت
+ستُطلق `XamlParseException` (مورد غير موجود) في أول لحظة تُعرَض فيها فعلياً — لم يظهر هذا في `dotnet build`
+(لا يتحقَّق من مراجع Application-level وقت الترجمة) ولا في الاختبارات (لا اختبار حالي يُصيِّر هذه المكوّنات).
+أُصلحت جميعها إلى مفاتيح L2/L3 حقيقية (جدول تحويل كامل، أُطبِّق عبر `sed` منهجي ثم تحقُّق نصي صفري النتيجة).
+
+### التحقق النهائي لـ R4
+
+`dotnet build` (المشروعين) → **0 تحذير جديد، 0 خطأ**. `Tools/ArchitectureCheck/check.sh` → **صفر FAIL، 2 WARN**
+(كلاهما دين تقني سابق غير متعلِّق بـ R4). `dotnet test -m:1` → **136/136 ناجح** (134 سابقة + اختباران جديدان:
+الحاسم + تكافؤ Light/Dark؛ اختبار "صفر Hex حرفي" الثالث ضمن نفس ملف الاختبار). صفر مفتاح ميت متبقٍّ (تحقُّق
+شامل XAML+C# قبل الإغلاق).
 
 ---
 

@@ -80,8 +80,8 @@ namespace PrimeERP.UI.Components.Pickers
 
             _txtCount = new TextBlock
             {
-                FontSize = (double)FindResource("FontSizeXs"),
-                FontFamily = (FontFamily)FindResource("FontFamilyPrimary"),
+                FontSize = (double)FindResource("P.Font.Size.200"),
+                FontFamily = (FontFamily)FindResource("P.Font.Family.Primary"),
                 Foreground = (Brush)FindResource("TextMuted"),
                 Margin = new Thickness(2, 8, 0, 0)
             };

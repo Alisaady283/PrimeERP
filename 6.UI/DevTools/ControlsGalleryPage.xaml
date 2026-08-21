@@ -12,24 +12,24 @@
 
     <UserControl.Resources>
         <Style x:Key="SectionCard" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource PanelBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource OutlineBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="{StaticResource RadiusLg}"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource P.Radius.Lg}"/>
             <Setter Property="Padding" Value="20"/>
             <Setter Property="Margin" Value="0,0,0,20"/>
         </Style>
         <Style x:Key="SectionTitle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="{StaticResource FontSizeMd}"/>
-            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemibold}"/>
-            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
-            <Setter Property="Foreground" Value="{DynamicResource BodyTextBrush}"/>
+            <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.500}"/>
+            <Setter Property="FontWeight" Value="{DynamicResource P.Font.Weight.SemiBold}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="Margin" Value="0,0,0,16"/>
         </Style>
         <Style x:Key="SwatchLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="{StaticResource FontSizeXs}"/>
-            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
-            <Setter Property="Foreground" Value="{DynamicResource FaintTextBrush}"/>
+            <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.200}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
             <Setter Property="Margin" Value="2,0,0,6"/>
         </Style>
         <Style x:Key="SwatchBox" TargetType="StackPanel">
@@ -38,7 +38,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Background="{DynamicResource CanvasBrush}">
+    <Grid Background="{DynamicResource SurfaceCanvas}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -46,8 +46,8 @@
 
         <!-- ===== Header ===== -->
         <Border Grid.Row="0"
-                Background="{DynamicResource PanelBrush}"
-                BorderBrush="{DynamicResource OutlineBrush}"
+                Background="{DynamicResource SurfaceDefault}"
+                BorderBrush="{DynamicResource OutlineDefault}"
                 BorderThickness="0,0,0,1"
                 Padding="24,16">
             <Grid>
@@ -58,14 +58,14 @@
 
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="{DynamicResource Str.Gallery.Title}"
-                               FontSize="{StaticResource FontSizeLg}"
-                               FontWeight="{StaticResource FontWeightBold}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               Foreground="{DynamicResource BodyTextBrush}"/>
+                               FontSize="{DynamicResource P.Font.Size.600}"
+                               FontWeight="{DynamicResource P.Font.Weight.Bold}"
+                               FontFamily="{DynamicResource P.Font.Family.Primary}"
+                               Foreground="{DynamicResource TextPrimary}"/>
                     <TextBlock Text="{DynamicResource Str.Gallery.Subtitle}"
-                               FontSize="{StaticResource FontSizeXs}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               Foreground="{DynamicResource FaintTextBrush}"
+                               FontSize="{DynamicResource P.Font.Size.200}"
+                               FontFamily="{DynamicResource P.Font.Family.Primary}"
+                               Foreground="{DynamicResource TextMuted}"
                                Margin="0,4,0,0"/>
                 </StackPanel>
 
@@ -73,15 +73,15 @@
                     <Button x:Name="btnToggleTheme" Content="Light / Dark"
                             Click="btnToggleTheme_Click"
                             Padding="12,6" Margin="0,0,8,0" Cursor="Hand"
-                            Background="{DynamicResource PanelBrush}"
-                            Foreground="{DynamicResource BodyTextBrush}"
-                            BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"/>
+                            Background="{DynamicResource SurfaceDefault}"
+                            Foreground="{DynamicResource TextPrimary}"
+                            BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>
                     <Button x:Name="btnToggleLanguage" Content="AR / EN"
                             Click="btnToggleLanguage_Click"
                             Padding="12,6" Cursor="Hand"
-                            Background="{DynamicResource PanelBrush}"
-                            Foreground="{DynamicResource BodyTextBrush}"
-                            BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"/>
+                            Background="{DynamicResource SurfaceDefault}"
+                            Foreground="{DynamicResource TextPrimary}"
+                            BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -91,7 +91,7 @@
             <StackPanel>
 
                 <!-- ===== محاكي الصلاحيات ===== -->
-                <Border Style="{StaticResource SectionCard}" BorderBrush="{DynamicResource BrandBrush}">
+                <Border Style="{StaticResource SectionCard}" BorderBrush="{DynamicResource BrandDefault}">
                     <StackPanel>
                         <TextBlock Text="محاكي الصلاحيات" Style="{StaticResource SectionTitle}"/>
                         <TextBlock Text="عطّل DevMode ثم فعّل/عطّل صلاحيات محددة لمراجعة PermissionButton وActionToolbar وColumnPermissions بصرياً قبل ربط تسجيل الدخول"
@@ -102,8 +102,8 @@
                                                  OnLabel="مفعّل — كل شيء مسموح" OffLabel="معطّل — حسب القائمة أدناه"
                                                  Margin="0,0,0,16"/>
 
-                        <Border BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
-                                CornerRadius="{StaticResource RadiusMd}" MaxHeight="240" Padding="14">
+                        <Border BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"
+                                CornerRadius="{DynamicResource P.Radius.Md}" MaxHeight="240" Padding="14">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <WrapPanel x:Name="permissionsWrap"/>
                             </ScrollViewer>
@@ -113,10 +113,10 @@
 
                 <!-- ===== Batch 1: Inputs ===== -->
                 <TextBlock Text="الدفعة 1 — Inputs"
-                           FontSize="{StaticResource FontSizeXl}"
-                           FontWeight="{StaticResource FontWeightBold}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           Foreground="{DynamicResource BodyTextBrush}"
+                           FontSize="{DynamicResource P.Font.Size.700}"
+                           FontWeight="{DynamicResource P.Font.Weight.Bold}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           Foreground="{DynamicResource TextPrimary}"
                            Margin="0,0,0,16"/>
 
                 <!-- AppTextBox -->
@@ -313,10 +313,10 @@
 
                 <!-- ===== Batch 2: Display + Layout ===== -->
                 <TextBlock Text="الدفعة 2 — Display + Layout"
-                           FontSize="{StaticResource FontSizeXl}"
-                           FontWeight="{StaticResource FontWeightBold}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           Foreground="{DynamicResource BodyTextBrush}"
+                           FontSize="{DynamicResource P.Font.Size.700}"
+                           FontWeight="{DynamicResource P.Font.Weight.Bold}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           Foreground="{DynamicResource TextPrimary}"
                            Margin="0,8,0,16"/>
 
                 <!-- AppDataGrid -->
@@ -376,8 +376,8 @@
                         <display:AppCard Title="بيانات الشحن" Icon="{StaticResource IconBuilding}" IsCollapsible="True">
                             <display:AppCard.Body>
                                 <TextBlock Text="محتوى الكارت القابل للطي — اضغط العنوان لتجربة الطي."
-                                           FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSm}"
-                                           Foreground="{DynamicResource SubTextBrush}"/>
+                                           FontFamily="{DynamicResource P.Font.Family.Primary}" FontSize="{DynamicResource P.Font.Size.300}"
+                                           Foreground="{DynamicResource TextSecondary}"/>
                             </display:AppCard.Body>
                         </display:AppCard>
                     </StackPanel>
@@ -414,8 +414,8 @@
                             </Grid.ColumnDefinitions>
 
                             <Border Grid.Column="0" Height="200" Margin="0,0,10,0"
-                                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
-                                    CornerRadius="{StaticResource RadiusMd}">
+                                    BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"
+                                    CornerRadius="{DynamicResource P.Radius.Md}">
                                 <display:AppEmptyState x:Name="emptyStateDemo"
                                                         Icon="{StaticResource IconFolder}"
                                                         Title="لا توجد نتائج"
@@ -424,8 +424,8 @@
                             </Border>
 
                             <Grid Grid.Column="1" Height="200" Margin="10,0,0,0">
-                                <Border BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
-                                        CornerRadius="{StaticResource RadiusMd}" Background="{DynamicResource PanelBrush}"/>
+                                <Border BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"
+                                        CornerRadius="{DynamicResource P.Radius.Md}" Background="{DynamicResource SurfaceDefault}"/>
                                 <display:AppLoadingOverlay x:Name="loadingOverlayDemo" Message="جارٍ التحميل..." IsBusy="True"/>
                                 <Button Content="تبديل" VerticalAlignment="Bottom" HorizontalAlignment="Center"
                                         Margin="0,0,0,10" Padding="12,6" Click="btnToggleLoadingOverlay_Click"/>
@@ -465,10 +465,10 @@
 
                 <!-- ===== Batch 3: Actions + Feedback ===== -->
                 <TextBlock Text="الدفعة 3 — Actions + Feedback"
-                           FontSize="{StaticResource FontSizeXl}"
-                           FontWeight="{StaticResource FontWeightBold}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           Foreground="{DynamicResource BodyTextBrush}"
+                           FontSize="{DynamicResource P.Font.Size.700}"
+                           FontWeight="{DynamicResource P.Font.Weight.Bold}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           Foreground="{DynamicResource TextPrimary}"
                            Margin="0,8,0,16"/>
 
                 <!-- ActionToolbar -->
@@ -536,10 +536,10 @@
 
                 <!-- ===== الدفعة 4 — Business Controls (الخطوة 3: الـ Pickers الخمسة) ===== -->
                 <TextBlock Text="الدفعة 4 — Business Controls"
-                           FontSize="{StaticResource FontSizeXl}"
-                           FontWeight="{StaticResource FontWeightBold}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           Foreground="{DynamicResource BodyTextBrush}"
+                           FontSize="{DynamicResource P.Font.Size.700}"
+                           FontWeight="{DynamicResource P.Font.Weight.Bold}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           Foreground="{DynamicResource TextPrimary}"
                            Margin="0,8,0,16"/>
 
                 <Border Style="{StaticResource SectionCard}">
@@ -603,10 +603,10 @@
 
                 <!-- ===== الدفعة 5 — Shell Controls (نهاية المرحلة D) ===== -->
                 <TextBlock Text="الدفعة 5 — Shell Controls"
-                           FontSize="{StaticResource FontSizeXl}"
-                           FontWeight="{StaticResource FontWeightBold}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           Foreground="{DynamicResource BodyTextBrush}"
+                           FontSize="{DynamicResource P.Font.Size.700}"
+                           FontWeight="{DynamicResource P.Font.Weight.Bold}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           Foreground="{DynamicResource TextPrimary}"
                            Margin="0,8,0,16"/>
 
                 <Border Style="{StaticResource SectionCard}" Padding="0">
@@ -614,8 +614,8 @@
                         <TextBlock Text="AppShell (AppSidebar + AppTopBar)" Style="{StaticResource SectionTitle}" Margin="20,20,20,0"/>
                         <TextBlock Text="اختبر: زر الطي في الشريط العلوي، تبديل الوضع الليلي من قائمة المستخدم، وإخفاء عناصر بلا صلاحية عبر محاكي الصلاحيات أعلى الصفحة."
                                    Style="{StaticResource SwatchLabel}" TextWrapping="Wrap" Margin="22,4,20,14"/>
-                        <Border Height="640" Margin="20,0,20,20" BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
-                                CornerRadius="{StaticResource RadiusMd}" ClipToBounds="True">
+                        <Border Height="640" Margin="20,0,20,20" BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"
+                                CornerRadius="{DynamicResource P.Radius.Md}" ClipToBounds="True">
                             <shell:AppShell x:Name="shellDemo" NavigationRequested="shellDemo_NavigationRequested"/>
                         </Border>
                     </StackPanel>

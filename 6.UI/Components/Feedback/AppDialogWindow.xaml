@@ -5,7 +5,7 @@
         ResizeMode="NoResize"
         FlowDirection="RightToLeft"
         SizeToContent="Height"
-        Width="{StaticResource DialogWidthSm}"
+        Width="{DynamicResource C.Dialog.Width.Sm}"
         PreviewKeyDown="AppDialogWindow_PreviewKeyDown">
     <Grid>
         <Grid.RowDefinitions>

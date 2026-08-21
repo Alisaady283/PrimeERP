@@ -50,12 +50,12 @@ namespace PrimeERP.UI.Components.Documents
 
             var (bg, fg) = StatusVariant switch
             {
-                "success" => ((Brush)FindResource("OkTintBrush"),       (Brush)FindResource("OkBrush")),
-                "danger"  => ((Brush)FindResource("CriticalTintBrush"), (Brush)FindResource("CriticalBrush")),
-                "warning" => ((Brush)FindResource("CautionTintBrush"),  (Brush)FindResource("CautionBrush")),
-                "info"    => ((Brush)FindResource("InfoTintBrush"),     (Brush)FindResource("InfoBrush")),
-                "brand"   => ((Brush)FindResource("BrandTintBrush"),    (Brush)FindResource("BrandBrush")),
-                _         => ((Brush)FindResource("MutedBgBrush"),      (Brush)FindResource("SubTextBrush"))
+                "success" => ((Brush)FindResource("SuccessSoft"),       (Brush)FindResource("Success")),
+                "danger"  => ((Brush)FindResource("DangerSoft"), (Brush)FindResource("Danger")),
+                "warning" => ((Brush)FindResource("WarningSoft"),  (Brush)FindResource("Warning")),
+                "info"    => ((Brush)FindResource("InfoSoft"),     (Brush)FindResource("Info")),
+                "brand"   => ((Brush)FindResource("BrandSoft"),    (Brush)FindResource("BrandDefault")),
+                _         => ((Brush)FindResource("SurfaceSunken"),      (Brush)FindResource("TextSecondary"))
             };
 
             statusWrap.Background = bg;

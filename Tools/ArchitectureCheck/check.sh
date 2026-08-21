@@ -150,6 +150,20 @@ if [ -n "$n" ]; then
   echo "$n" | sed 's/^/       /'
 else pass; fi
 
+# UIServices (بوابة الوصول الوحيدة المسموحة للـ code-behind الذي لا يقبل حقن اعتمادية — راجع تعليق الملف نفسه
+# وقرار المستخدم الصريح: "يُستهلك من code-behind فقط، صفر استهلاك من Service/VM") — أي استدعاء خارج
+# 6.UI/**/*.xaml.cs أو App/**/*.xaml.cs = خرق. الدين التقني نفسه (حجم الاستهلاك) يتقلّص في R8، راجع الجدول.
+n=$(grep -rl "UIServices\." --include="*.cs" 1.Platform 2.Data 3.Domain 4.Application 7.Composition 8.Modules 2>/dev/null)
+if [ -n "$n" ]; then
+  fail "UIServices مُستهلَكة خارج 6.UI/App كلياً (يجب ألا تُستخدم خارج طبقة العرض أصلاً):"
+  echo "$n" | sed 's/^/       /'
+else pass; fi
+n=$(grep -rl "UIServices\." --include="*.cs" 6.UI App 2>/dev/null | grep -vE "\.xaml\.cs$")
+if [ -n "$n" ]; then
+  fail "UIServices مُستهلَكة من ملف .cs ليس code-behind لـ .xaml (يجب أن يكون الاستهلاك من code-behind فقط):"
+  echo "$n" | sed 's/^/       /'
+else pass; fi
+
 # ViewModel فيه Brush/Color (منطق عرض بصري يجب أن يكون في القطعة لا الـ ViewModel)
 n=$(grep -rlE "\bBrush\b|\bColor\b|SolidColorBrush" 6.UI/ViewModels --include="*.cs" 2>/dev/null)
 if [ -n "$n" ]; then
@@ -175,11 +189,20 @@ if [ -n "$n" ]; then
   echo "$n" | sed 's/^/       /'
 else pass; fi
 
-# StaticResource لأبعاد بنيوية (Height/Radius/FontSize/FontFamily/FontWeight/Space/Icon) — دين تقني مسجَّل، الحل الكامل في R4
-n=$(grep -rlE "StaticResource (Height|Radius|FontSize|FontFamily|FontWeight|Space[0-9]|Icon[A-Za-z0-9]*)" --include="*.xaml" 5.Design 6.UI 2>/dev/null | wc -l)
-if [ "$n" -gt 0 ]; then
-  warn "$n ملفاً يستهلك StaticResource لأبعاد بنيوية (Height/Radius/FontSize...) — مسجَّل في الدين التقني، الحل الكامل (L3/L4 + DynamicResource) في R4"
-fi
+# StaticResource لمفتاح P.* أو S.* — ممنوع دائماً بلا استثناء (كل قيم L1/L2 تتبدّل مع الهوية، راجع R4 § 5)
+n=$(grep -rlE "StaticResource (P|S)\.[A-Za-z]" --include="*.xaml" 5.Design 6.UI 2>/dev/null)
+if [ -n "$n" ]; then
+  fail "StaticResource لمفتاح P./S. (يجب DynamicResource — يتبدّل مع حزمة الهوية):"
+  echo "$n" | sed 's/^/       /'
+else pass; fi
+
+# StaticResource لمفتاح C.* — ممنوع إلا للثوابت البنيوية الموثَّقة صراحة (عرض عمود، لا قيمة تصميم)
+C_STATIC_ALLOWLIST="C.Nav.Icon.ColumnWidth|C.Grid.RowHeader.Width"
+n=$(grep -rnE "StaticResource C\.[A-Za-z]" --include="*.xaml" 5.Design 6.UI 2>/dev/null | grep -vE "$C_STATIC_ALLOWLIST")
+if [ -n "$n" ]; then
+  fail "StaticResource لمفتاح C.* خارج القائمة المسموحة (ثوابت بنيوية فقط):"
+  echo "$n" | sed 's/^/       /'
+else pass; fi
 
 # ============================================================
 section "4 — التكرار"

@@ -42,12 +42,12 @@ namespace PrimeERP.UI.Components.Display
             var c = (AppBadge)d;
             var (bg, fg) = ((string)e.NewValue) switch
             {
-                "success" => ((Brush)c.FindResource("OkTintBrush"),       (Brush)c.FindResource("OkBrush")),
-                "danger"  => ((Brush)c.FindResource("CriticalTintBrush"), (Brush)c.FindResource("CriticalBrush")),
-                "warning" => ((Brush)c.FindResource("CautionTintBrush"),  (Brush)c.FindResource("CautionBrush")),
-                "info"    => ((Brush)c.FindResource("InfoTintBrush"),     (Brush)c.FindResource("InfoBrush")),
-                "brand"   => ((Brush)c.FindResource("BrandTintBrush"),    (Brush)c.FindResource("BrandBrush")),
-                _         => ((Brush)c.FindResource("MutedBgBrush"),      (Brush)c.FindResource("SubTextBrush"))
+                "success" => ((Brush)c.FindResource("SuccessSoft"),       (Brush)c.FindResource("Success")),
+                "danger"  => ((Brush)c.FindResource("DangerSoft"), (Brush)c.FindResource("Danger")),
+                "warning" => ((Brush)c.FindResource("WarningSoft"),  (Brush)c.FindResource("Warning")),
+                "info"    => ((Brush)c.FindResource("InfoSoft"),     (Brush)c.FindResource("Info")),
+                "brand"   => ((Brush)c.FindResource("BrandSoft"),    (Brush)c.FindResource("BrandDefault")),
+                _         => ((Brush)c.FindResource("SurfaceSunken"),      (Brush)c.FindResource("TextSecondary"))
             };
 
             c.border.Background  = bg;

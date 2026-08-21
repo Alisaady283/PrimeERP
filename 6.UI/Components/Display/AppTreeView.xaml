@@ -6,18 +6,18 @@
     <UserControl.Resources>
         <HierarchicalDataTemplate DataType="{x:Type tree:TreeNodeViewModel}" ItemsSource="{Binding VisibleChildren}">
             <TextBlock Text="{Binding DisplayText}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       FontSize="{StaticResource FontSizeSm}">
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       FontSize="{DynamicResource P.Font.Size.300}">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{DynamicResource BodyTextBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsMatch}" Value="True">
                                 <Setter Property="FontWeight" Value="Bold"/>
-                                <Setter Property="Foreground" Value="{DynamicResource BrandBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource BrandDefault}"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsSelectable}" Value="False">
-                                <Setter Property="Foreground" Value="{DynamicResource FaintTextBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -26,8 +26,8 @@
         </HierarchicalDataTemplate>
     </UserControl.Resources>
 
-    <Border BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
-            CornerRadius="{StaticResource RadiusMd}" Background="{DynamicResource PanelBrush}">
+    <Border BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"
+            CornerRadius="{DynamicResource P.Radius.Md}" Background="{DynamicResource SurfaceDefault}">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <TreeView x:Name="tree"
                       BorderThickness="0"
@@ -39,7 +39,7 @@
                         <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                         <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
                         <Setter Property="Padding" Value="4,4"/>
-                        <Setter Property="Foreground" Value="{DynamicResource BodyTextBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsSelectable}" Value="False">
                                 <Setter Property="Cursor" Value="Arrow"/>

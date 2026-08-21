@@ -29,8 +29,8 @@ namespace PrimeERP.UI.Components.Feedback
             {
                 Text = message,
                 TextWrapping = TextWrapping.Wrap,
-                FontSize = (double)FindResource("FontSizeSm"),
-                FontFamily = (FontFamily)FindResource("FontFamilyPrimary"),
+                FontSize = (double)FindResource("P.Font.Size.300"),
+                FontFamily = (FontFamily)FindResource("P.Font.Family.Primary"),
                 Foreground = (Brush)FindResource("TextPrimary")
             };
 

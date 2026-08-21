@@ -91,12 +91,12 @@ namespace PrimeERP.UI.Components.Display
                     Width = 32, Height = 32,
                     Margin = new Thickness(2, 0, 2, 0),
                     FontSize = 12,
-                    FontFamily = (FontFamily)FindResource("AppFontFamily"),
+                    FontFamily = (FontFamily)FindResource("P.Font.Family.Primary"),
                     Cursor = System.Windows.Input.Cursors.Hand,
                     BorderThickness = new Thickness(1),
-                    BorderBrush = active ? (Brush)FindResource("BrandBrush") : (Brush)FindResource("OutlineBrush"),
-                    Background = active ? (Brush)FindResource("BrandBrush") : (Brush)FindResource("PanelBrush"),
-                    Foreground = active ? (Brush)FindResource("OnBrandTextBrush") : (Brush)FindResource("BodyTextBrush"),
+                    BorderBrush = active ? (Brush)FindResource("BrandDefault") : (Brush)FindResource("OutlineDefault"),
+                    Background = active ? (Brush)FindResource("BrandDefault") : (Brush)FindResource("SurfaceDefault"),
+                    Foreground = active ? (Brush)FindResource("TextOnBrand") : (Brush)FindResource("TextPrimary"),
                     FontWeight = active ? FontWeights.Bold : FontWeights.Normal
                 };
                 btn.Click += (s, e) => GoTo(page);
@@ -115,12 +115,12 @@ namespace PrimeERP.UI.Components.Display
                 Width = 32, Height = 32,
                 Margin = new Thickness(2, 0, 2, 0),
                 FontSize = 13,
-                FontFamily = (FontFamily)FindResource("AppFontFamily"),
+                FontFamily = (FontFamily)FindResource("P.Font.Family.Primary"),
                 Cursor = System.Windows.Input.Cursors.Hand,
-                Background = (Brush)FindResource("PanelBrush"),
-                Foreground = disabled ? (Brush)FindResource("FaintTextBrush") : (Brush)FindResource("BodyTextBrush"),
+                Background = (Brush)FindResource("SurfaceDefault"),
+                Foreground = disabled ? (Brush)FindResource("TextMuted") : (Brush)FindResource("TextPrimary"),
                 BorderThickness = new Thickness(1),
-                BorderBrush = (Brush)FindResource("OutlineBrush"),
+                BorderBrush = (Brush)FindResource("OutlineDefault"),
                 IsEnabled = !disabled,
                 Opacity = disabled ? 0.5 : 1.0
             };

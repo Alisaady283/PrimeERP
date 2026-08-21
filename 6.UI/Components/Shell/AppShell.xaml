@@ -22,7 +22,7 @@
 
             <shell:AppTopBar Grid.Row="0" x:Name="topBar" SidebarToggled="topBar_SidebarToggled"/>
 
-            <ContentControl Grid.Row="1" x:Name="pageHost" Background="{DynamicResource CanvasBrush}"/>
+            <ContentControl Grid.Row="1" x:Name="pageHost" Background="{DynamicResource SurfaceCanvas}"/>
         </Grid>
     </Grid>
 </UserControl>

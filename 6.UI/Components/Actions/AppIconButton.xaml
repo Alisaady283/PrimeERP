@@ -8,12 +8,12 @@
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="{StaticResource RadiusMd}">
+                        CornerRadius="{DynamicResource P.Radius.Md}">
                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <ControlTemplate.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter TargetName="chrome" Property="Background" Value="{DynamicResource MutedBgBrush}"/>
+                        <Setter TargetName="chrome" Property="Background" Value="{DynamicResource SurfaceSunken}"/>
                     </Trigger>
                     <Trigger Property="IsEnabled" Value="False">
                         <Setter TargetName="chrome" Property="Opacity" Value="0.4"/>

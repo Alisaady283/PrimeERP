@@ -16,7 +16,7 @@
             <Setter Property="Focusable" Value="True"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource RowSelectedBrush}"/>
+                    <Setter Property="Background" Value="{DynamicResource TableRowSelected}"/>
                 </Trigger>
                 <DataTrigger Value="True">
                     <DataTrigger.Binding>
@@ -25,7 +25,7 @@
                             <Binding RelativeSource="{RelativeSource Self}" Path="Column.SortMemberPath"/>
                         </MultiBinding>
                     </DataTrigger.Binding>
-                    <Setter Property="BorderBrush" Value="{DynamicResource CriticalBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
                     <Setter Property="BorderThickness" Value="1.5"/>
                     <Setter Property="ToolTip">
                         <Setter.Value>
@@ -43,9 +43,9 @@
         <DataTemplate x:Key="CellView_RowNumber">
             <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=Header}"
                        HorizontalAlignment="Center" VerticalAlignment="Center"
-                       FontSize="{StaticResource FontSizeXs}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource FaintTextBrush}"/>
+                       FontSize="{DynamicResource P.Font.Size.200}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextMuted}"/>
         </DataTemplate>
 
         <!-- ===== نص عادي (يُستخدم أيضاً لأعمدة الـ Picker في هذا الجزء) =====
@@ -55,9 +55,9 @@
         <DataTemplate x:Key="CellView_Text">
             <TextBlock VerticalAlignment="Center" Margin="10,0" TextTrimming="CharacterEllipsis"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
-                       FontSize="{StaticResource FontSizeSm}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource BodyTextBrush}">
+                       FontSize="{DynamicResource P.Font.Size.300}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextPrimary}">
                 <TextBlock.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}">
                         <Binding Path="Self"/>
@@ -70,9 +70,9 @@
         <DataTemplate x:Key="CellEdit_Text">
             <TextBox VerticalAlignment="Center" Margin="3" Padding="6,4"
                      TextAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment, Converter={StaticResource HAlignToTextAlign}}"
-                     BorderThickness="1" BorderBrush="{DynamicResource OutlineFocusBrush}"
-                     Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource BodyTextBrush}"
-                     FontSize="{StaticResource FontSizeSm}" FontFamily="{StaticResource AppFontFamily}"
+                     BorderThickness="1" BorderBrush="{DynamicResource OutlineFocus}"
+                     Background="{DynamicResource C.Input.Bg}" Foreground="{DynamicResource TextPrimary}"
+                     FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                      LostFocus="TextCell_LostFocus">
                 <TextBox.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}" Mode="OneWay">
@@ -87,9 +87,9 @@
         <DataTemplate x:Key="CellView_Picker">
             <TextBlock VerticalAlignment="Center" Margin="10,0" TextTrimming="CharacterEllipsis"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
-                       FontSize="{StaticResource FontSizeSm}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource BodyTextBrush}">
+                       FontSize="{DynamicResource P.Font.Size.300}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextPrimary}">
                 <TextBlock.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}">
                         <Binding Path="Self"/>
@@ -108,9 +108,9 @@
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0" VerticalAlignment="Center" Margin="3,3,0,3" Padding="6,4"
                          TextAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment, Converter={StaticResource HAlignToTextAlign}}"
-                         BorderThickness="1" BorderBrush="{DynamicResource OutlineFocusBrush}"
-                         Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource BodyTextBrush}"
-                         FontSize="{StaticResource FontSizeSm}" FontFamily="{StaticResource AppFontFamily}"
+                         BorderThickness="1" BorderBrush="{DynamicResource OutlineFocus}"
+                         Background="{DynamicResource C.Input.Bg}" Foreground="{DynamicResource TextPrimary}"
+                         FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                          LostFocus="TextCell_LostFocus">
                     <TextBox.Text>
                         <MultiBinding Converter="{StaticResource CellValueConverter}" Mode="OneWay">
@@ -121,9 +121,9 @@
                 </TextBox>
                 <Button Grid.Column="1" Content="…" Width="24" Margin="2,3,3,3" Padding="0"
                         Cursor="Hand" Click="PickerButton_Click"
-                        Background="{DynamicResource PanelBrush}"
-                        Foreground="{DynamicResource SubTextBrush}"
-                        BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"/>
+                        Background="{DynamicResource SurfaceDefault}"
+                        Foreground="{DynamicResource TextSecondary}"
+                        BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>
             </Grid>
         </DataTemplate>
 
@@ -131,9 +131,9 @@
         <DataTemplate x:Key="CellView_Integer">
             <TextBlock VerticalAlignment="Center" Margin="10,0"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
-                       FontSize="{StaticResource FontSizeSm}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource BodyTextBrush}">
+                       FontSize="{DynamicResource P.Font.Size.300}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextPrimary}">
                 <TextBlock.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}" StringFormat="{}{0:N0}">
                         <Binding Path="Self"/>
@@ -146,9 +146,9 @@
         <DataTemplate x:Key="CellEdit_Integer">
             <TextBox VerticalAlignment="Center" Margin="3" Padding="6,4"
                      TextAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment, Converter={StaticResource HAlignToTextAlign}}"
-                     BorderThickness="1" BorderBrush="{DynamicResource OutlineFocusBrush}"
-                     Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource BodyTextBrush}"
-                     FontSize="{StaticResource FontSizeSm}" FontFamily="{StaticResource AppFontFamily}"
+                     BorderThickness="1" BorderBrush="{DynamicResource OutlineFocus}"
+                     Background="{DynamicResource C.Input.Bg}" Foreground="{DynamicResource TextPrimary}"
+                     FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                      LostFocus="TextCell_LostFocus">
                 <TextBox.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}" Mode="OneWay">
@@ -163,9 +163,9 @@
         <DataTemplate x:Key="CellView_Decimal">
             <TextBlock VerticalAlignment="Center" Margin="10,0"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
-                       FontSize="{StaticResource FontSizeSm}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource BodyTextBrush}">
+                       FontSize="{DynamicResource P.Font.Size.300}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextPrimary}">
                 <TextBlock.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}" StringFormat="{}{0:N2}">
                         <Binding Path="Self"/>
@@ -178,9 +178,9 @@
         <DataTemplate x:Key="CellEdit_Decimal">
             <TextBox VerticalAlignment="Center" Margin="3" Padding="6,4"
                      TextAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment, Converter={StaticResource HAlignToTextAlign}}"
-                     BorderThickness="1" BorderBrush="{DynamicResource OutlineFocusBrush}"
-                     Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource BodyTextBrush}"
-                     FontSize="{StaticResource FontSizeSm}" FontFamily="{StaticResource AppFontFamily}"
+                     BorderThickness="1" BorderBrush="{DynamicResource OutlineFocus}"
+                     Background="{DynamicResource C.Input.Bg}" Foreground="{DynamicResource TextPrimary}"
+                     FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                      LostFocus="TextCell_LostFocus">
                 <TextBox.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}" Mode="OneWay">
@@ -195,9 +195,9 @@
         <DataTemplate x:Key="CellView_Money">
             <TextBlock VerticalAlignment="Center" Margin="10,0"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
-                       FontSize="{StaticResource FontSizeSm}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource BodyTextBrush}">
+                       FontSize="{DynamicResource P.Font.Size.300}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextPrimary}">
                 <TextBlock.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}" StringFormat="{}{0:N2}">
                         <Binding Path="Self"/>
@@ -210,9 +210,9 @@
         <DataTemplate x:Key="CellEdit_Money">
             <TextBox VerticalAlignment="Center" Margin="3" Padding="6,4"
                      TextAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment, Converter={StaticResource HAlignToTextAlign}}"
-                     BorderThickness="1" BorderBrush="{DynamicResource OutlineFocusBrush}"
-                     Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource BodyTextBrush}"
-                     FontSize="{StaticResource FontSizeSm}" FontFamily="{StaticResource AppFontFamily}"
+                     BorderThickness="1" BorderBrush="{DynamicResource OutlineFocus}"
+                     Background="{DynamicResource C.Input.Bg}" Foreground="{DynamicResource TextPrimary}"
+                     FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                      LostFocus="TextCell_LostFocus">
                 <TextBox.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}" Mode="OneWay">
@@ -227,9 +227,9 @@
         <DataTemplate x:Key="CellView_Percent">
             <TextBlock VerticalAlignment="Center" Margin="10,0"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
-                       FontSize="{StaticResource FontSizeSm}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource BodyTextBrush}">
+                       FontSize="{DynamicResource P.Font.Size.300}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextPrimary}">
                 <TextBlock.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}" StringFormat="{}{0:0.##}%">
                         <Binding Path="Self"/>
@@ -242,9 +242,9 @@
         <DataTemplate x:Key="CellEdit_Percent">
             <TextBox VerticalAlignment="Center" Margin="3" Padding="6,4"
                      TextAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment, Converter={StaticResource HAlignToTextAlign}}"
-                     BorderThickness="1" BorderBrush="{DynamicResource OutlineFocusBrush}"
-                     Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource BodyTextBrush}"
-                     FontSize="{StaticResource FontSizeSm}" FontFamily="{StaticResource AppFontFamily}"
+                     BorderThickness="1" BorderBrush="{DynamicResource OutlineFocus}"
+                     Background="{DynamicResource C.Input.Bg}" Foreground="{DynamicResource TextPrimary}"
+                     FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                      LostFocus="TextCell_LostFocus">
                 <TextBox.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}" Mode="OneWay">
@@ -259,9 +259,9 @@
         <DataTemplate x:Key="CellView_Combo">
             <TextBlock VerticalAlignment="Center" Margin="10,0" TextTrimming="CharacterEllipsis"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
-                       FontSize="{StaticResource FontSizeSm}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource BodyTextBrush}">
+                       FontSize="{DynamicResource P.Font.Size.300}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextPrimary}">
                 <TextBlock.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}">
                         <Binding Path="Self"/>
@@ -273,7 +273,7 @@
 
         <DataTemplate x:Key="CellEdit_Combo">
             <ComboBox IsEditable="True" VerticalAlignment="Center" Margin="3"
-                      FontSize="{StaticResource FontSizeSm}" FontFamily="{StaticResource AppFontFamily}"
+                      FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                       LostFocus="TextCell_LostFocus">
                 <ComboBox.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}" Mode="OneWay">
@@ -301,10 +301,10 @@
         <DataTemplate x:Key="CellView_Computed">
             <TextBlock VerticalAlignment="Center" Margin="10,0"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
-                       FontSize="{StaticResource FontSizeSm}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       FontWeight="{StaticResource FontWeightSemibold}"
-                       Foreground="{DynamicResource SubTextBrush}">
+                       FontSize="{DynamicResource P.Font.Size.300}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
+                       Foreground="{DynamicResource TextSecondary}">
                 <TextBlock.Text>
                     <MultiBinding Converter="{StaticResource CellValueConverter}" StringFormat="{}{0:N2}">
                         <Binding Path="Self"/>
@@ -323,8 +323,8 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
-                CornerRadius="{StaticResource RadiusMd}" ClipToBounds="True">
+        <Border Grid.Row="0" BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"
+                CornerRadius="{DynamicResource P.Radius.Md}" ClipToBounds="True">
             <DataGrid x:Name="grid"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -339,13 +339,13 @@
                       RowHeight="38"
                       RowHeaderWidth="14"
                       BorderThickness="0"
-                      Background="{DynamicResource PanelBrush}"
-                      RowBackground="{DynamicResource PanelBrush}"
-                      AlternatingRowBackground="{DynamicResource CanvasBrush}"
-                      HorizontalGridLinesBrush="{DynamicResource OutlineBrush}"
-                      FontSize="{StaticResource FontSizeSm}"
-                      FontFamily="{StaticResource AppFontFamily}"
-                      Foreground="{DynamicResource BodyTextBrush}"
+                      Background="{DynamicResource SurfaceDefault}"
+                      RowBackground="{DynamicResource SurfaceDefault}"
+                      AlternatingRowBackground="{DynamicResource SurfaceCanvas}"
+                      HorizontalGridLinesBrush="{DynamicResource OutlineDefault}"
+                      FontSize="{DynamicResource P.Font.Size.300}"
+                      FontFamily="{DynamicResource P.Font.Family.Primary}"
+                      Foreground="{DynamicResource TextPrimary}"
                       LoadingRow="Grid_LoadingRow"
                       PreviewKeyDown="Grid_PreviewKeyDown"
                       PreviewMouseLeftButtonDown="Grid_PreviewMouseLeftButtonDown"
@@ -353,14 +353,14 @@
                       PreparingCellForEdit="Grid_PreparingCellForEdit">
                 <DataGrid.ColumnHeaderStyle>
                     <Style TargetType="DataGridColumnHeader">
-                        <Setter Property="Background" Value="{DynamicResource CanvasBrush}"/>
-                        <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
-                        <Setter Property="FontWeight" Value="{StaticResource FontWeightSemibold}"/>
-                        <Setter Property="FontSize" Value="{StaticResource FontSizeXs}"/>
+                        <Setter Property="Background" Value="{DynamicResource SurfaceCanvas}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+                        <Setter Property="FontWeight" Value="{DynamicResource P.Font.Weight.SemiBold}"/>
+                        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.200}"/>
                         <Setter Property="Height" Value="36"/>
                         <Setter Property="Padding" Value="10,0"/>
                         <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                        <Setter Property="BorderBrush" Value="{DynamicResource OutlineBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
                         <!-- عناوين الأعمدة: وسط دائماً بلا استثناء (قاعدة موحدة لكل جداول النظام) -->
                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
                     </Style>
@@ -368,9 +368,9 @@
                 <!-- شريط رفيع غير مُرقّم — مجرّد مقبض نقر لتحديد الصف كاملاً (عمود "#" أصلاً يعرض الرقم) -->
                 <DataGrid.RowHeaderStyle>
                     <Style TargetType="DataGridRowHeader">
-                        <Setter Property="Background" Value="{DynamicResource CanvasBrush}"/>
+                        <Setter Property="Background" Value="{DynamicResource SurfaceCanvas}"/>
                         <Setter Property="BorderThickness" Value="0,0,1,0"/>
-                        <Setter Property="BorderBrush" Value="{DynamicResource OutlineBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
                         <Setter Property="Cursor" Value="Arrow"/>
                         <Setter Property="Content" Value=""/>
                     </Style>
@@ -379,10 +379,10 @@
                     <Style TargetType="DataGridRow">
                         <Style.Triggers>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource RowSelectedBrush}"/>
+                                <Setter Property="Background" Value="{DynamicResource TableRowSelected}"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource RowHoverBrush}"/>
+                                <Setter Property="Background" Value="{DynamicResource TableRowHover}"/>
                             </Trigger>
                         </Style.Triggers>
                     </Style>
@@ -393,7 +393,7 @@
         <!-- ===== صف الإجماليات — Grid منفصل بنفس عروض الأعمدة، يتزامن أفقياً مع الجدول الأساسي ===== -->
         <Border Grid.Row="1" x:Name="footerWrap"
                 Visibility="Collapsed"
-                BorderBrush="{DynamicResource OutlineBrush}"
+                BorderBrush="{DynamicResource OutlineDefault}"
                 BorderThickness="1,0,1,1">
             <DataGrid x:Name="footerGrid"
                       HeadersVisibility="None"
@@ -406,35 +406,35 @@
                       BorderThickness="0"
                       RowHeaderWidth="0"
                       RowHeight="34"
-                      Background="{DynamicResource CanvasBrush}"
-                      FontSize="{StaticResource FontSizeSm}"
-                      FontFamily="{StaticResource AppFontFamily}"
-                      FontWeight="{StaticResource FontWeightSemibold}"
-                      Foreground="{DynamicResource BodyTextBrush}"/>
+                      Background="{DynamicResource SurfaceCanvas}"
+                      FontSize="{DynamicResource P.Font.Size.300}"
+                      FontFamily="{DynamicResource P.Font.Family.Primary}"
+                      FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
+                      Foreground="{DynamicResource TextPrimary}"/>
         </Border>
 
         <!-- ===== شريط أزرار السطور ===== -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
             <Button Content="+ إضافة سطر" Click="btnAddRow_Click" Padding="10,5" Margin="0,0,6,0" Cursor="Hand"
-                    FontSize="{StaticResource FontSizeXs}" FontFamily="{StaticResource AppFontFamily}"
-                    Background="{DynamicResource PanelBrush}" Foreground="{DynamicResource BodyTextBrush}"
-                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"/>
+                    FontSize="{DynamicResource P.Font.Size.200}" FontFamily="{DynamicResource P.Font.Family.Primary}"
+                    Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
+                    BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>
             <Button Content="حذف السطر" Click="btnDeleteRow_Click" Padding="10,5" Margin="0,0,6,0" Cursor="Hand"
-                    FontSize="{StaticResource FontSizeXs}" FontFamily="{StaticResource AppFontFamily}"
-                    Background="{DynamicResource PanelBrush}" Foreground="{DynamicResource BodyTextBrush}"
-                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"/>
+                    FontSize="{DynamicResource P.Font.Size.200}" FontFamily="{DynamicResource P.Font.Family.Primary}"
+                    Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
+                    BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>
             <Button Content="حذف الكل" Click="btnDeleteAllRows_Click" Padding="10,5" Margin="0,0,6,0" Cursor="Hand"
-                    FontSize="{StaticResource FontSizeXs}" FontFamily="{StaticResource AppFontFamily}"
-                    Background="{DynamicResource PanelBrush}" Foreground="{DynamicResource CriticalBrush}"
-                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"/>
+                    FontSize="{DynamicResource P.Font.Size.200}" FontFamily="{DynamicResource P.Font.Family.Primary}"
+                    Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource Danger}"
+                    BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>
             <Button Content="نسخ" Click="btnCopyRows_Click" Padding="10,5" Margin="0,0,6,0" Cursor="Hand"
-                    FontSize="{StaticResource FontSizeXs}" FontFamily="{StaticResource AppFontFamily}"
-                    Background="{DynamicResource PanelBrush}" Foreground="{DynamicResource BodyTextBrush}"
-                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"/>
+                    FontSize="{DynamicResource P.Font.Size.200}" FontFamily="{DynamicResource P.Font.Family.Primary}"
+                    Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
+                    BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>
             <Button Content="لصق" Click="btnPasteRows_Click" Padding="10,5" Cursor="Hand"
-                    FontSize="{StaticResource FontSizeXs}" FontFamily="{StaticResource AppFontFamily}"
-                    Background="{DynamicResource PanelBrush}" Foreground="{DynamicResource BodyTextBrush}"
-                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"/>
+                    FontSize="{DynamicResource P.Font.Size.200}" FontFamily="{DynamicResource P.Font.Family.Primary}"
+                    Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
+                    BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>
         </StackPanel>
     </Grid>
 </UserControl>

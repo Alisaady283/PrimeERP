@@ -171,18 +171,18 @@ namespace PrimeERP.UI.Components.Pickers
             {
                 txtError.Text = ErrorText;
                 txtError.Visibility = Visibility.Visible;
-                border.BorderBrush = (Brush)FindResource("CriticalBrush");
+                border.BorderBrush = (Brush)FindResource("Danger");
             }
             else if (_notFound)
             {
                 txtError.Text = "غير موجود";
                 txtError.Visibility = Visibility.Visible;
-                border.BorderBrush = (Brush)FindResource("CautionBrush");
+                border.BorderBrush = (Brush)FindResource("Warning");
             }
             else
             {
                 txtError.Visibility = Visibility.Collapsed;
-                border.BorderBrush = (Brush)FindResource("OutlineBrush");
+                border.BorderBrush = (Brush)FindResource("OutlineDefault");
             }
         }
 
@@ -201,7 +201,7 @@ namespace PrimeERP.UI.Components.Pickers
 
         private void txt_GotFocus(object sender, RoutedEventArgs e)
         {
-            border.BorderBrush = (Brush)FindResource("OutlineFocusBrush");
+            border.BorderBrush = (Brush)FindResource("OutlineFocus");
             border.BorderThickness = new Thickness(2);
         }
 

@@ -295,7 +295,7 @@ namespace PrimeERP.UI.Components.Display
             pathFactory.SetValue(Path.StretchProperty, Stretch.Uniform);
             pathFactory.SetValue(Path.WidthProperty, 13.0);
             pathFactory.SetValue(Path.HeightProperty, 13.0);
-            pathFactory.SetValue(Path.StrokeProperty, FindResource("SubTextBrush"));
+            pathFactory.SetValue(Path.StrokeProperty, FindResource("TextSecondary"));
             pathFactory.SetValue(Path.StrokeThicknessProperty, 1.8);
             btnFactory.AppendChild(pathFactory);
 

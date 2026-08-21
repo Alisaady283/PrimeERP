@@ -91,8 +91,8 @@ namespace PrimeERP.UI.Components.Display
             var isUp = trend.Value >= 0;
             c.txtTrend.Text = $"{(isUp ? "▲" : "▼")} {Math.Abs(trend.Value):N1}%";
 
-            var bg = isUp ? (Brush)c.FindResource("OkTintBrush") : (Brush)c.FindResource("CriticalTintBrush");
-            var fg = isUp ? (Brush)c.FindResource("OkBrush")     : (Brush)c.FindResource("CriticalBrush");
+            var bg = isUp ? (Brush)c.FindResource("SuccessSoft") : (Brush)c.FindResource("DangerSoft");
+            var fg = isUp ? (Brush)c.FindResource("Success")     : (Brush)c.FindResource("Danger");
             c.trendBadge.Background = bg;
             c.txtTrend.Foreground = fg;
         }
@@ -101,11 +101,11 @@ namespace PrimeERP.UI.Components.Display
         {
             var (bg, fg) = Color switch
             {
-                "success" => ((Brush)FindResource("OkTintBrush"),       (Brush)FindResource("OkBrush")),
-                "danger"  => ((Brush)FindResource("CriticalTintBrush"), (Brush)FindResource("CriticalBrush")),
-                "warning" => ((Brush)FindResource("CautionTintBrush"),  (Brush)FindResource("CautionBrush")),
-                "info"    => ((Brush)FindResource("InfoTintBrush"),     (Brush)FindResource("InfoBrush")),
-                _         => ((Brush)FindResource("BrandTintBrush"),    (Brush)FindResource("BrandBrush"))
+                "success" => ((Brush)FindResource("SuccessSoft"),       (Brush)FindResource("Success")),
+                "danger"  => ((Brush)FindResource("DangerSoft"), (Brush)FindResource("Danger")),
+                "warning" => ((Brush)FindResource("WarningSoft"),  (Brush)FindResource("Warning")),
+                "info"    => ((Brush)FindResource("InfoSoft"),     (Brush)FindResource("Info")),
+                _         => ((Brush)FindResource("BrandSoft"),    (Brush)FindResource("BrandDefault"))
             };
 
             iconWrap.Background = bg;

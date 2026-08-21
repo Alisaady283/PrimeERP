@@ -1,0 +1,16 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- L3 — رموز مكوّن الحوار. لون الهيدر نفسه ليس هنا — يُحسب وقت التشغيل عبر VariantToBrushConverter من StatusVariant. -->
+
+    <SolidColorBrush x:Key="C.Dialog.Footer.Bg"     Color="{DynamicResource SurfaceDefault}"/>
+    <SolidColorBrush x:Key="C.Dialog.Footer.Border" Color="{DynamicResource OutlineDefault}"/>
+
+    <sys:Double x:Key="C.Dialog.Width.Sm">420</sys:Double>
+    <sys:Double x:Key="C.Dialog.Width.Md">560</sys:Double>
+    <sys:Double x:Key="C.Dialog.Width.Lg">760</sys:Double>
+    <sys:Double x:Key="C.Dialog.Width.Xl">1000</sys:Double>
+
+</ResourceDictionary>

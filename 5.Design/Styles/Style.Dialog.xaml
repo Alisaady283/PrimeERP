@@ -2,8 +2,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- كل البصري لـ AppDialogWindow (والحوارات المشتقة منه: AppConfirmDialog/AppMessageDialog/AppProgressDialog) هنا.
-         لون الهيدر نفسه ليس هنا — يُحسب وقت التشغيل عبر VariantToBrushConverter من StatusVariant الذي تضبطه القطعة. -->
+    <!-- L4 — كل البصري لـ AppDialogWindow (والحوارات المشتقة). راجع تعليق Style.Button.xaml لقاعدة L1 المباشرة للأبعاد. -->
 
     <Style x:Key="DialogHeaderStyle" TargetType="Border">
         <Setter Property="Padding" Value="20,16"/>
@@ -15,8 +14,6 @@
         <Setter Property="Margin" Value="0,0,12,0"/>
     </Style>
 
-    <!-- خلفية دائرية شبه شفافة خلف أيقونة الهيدر — بيضاء بشفافية عبر Opacity على عنصر مستقل، لا لون بألفا مُدمج،
-         حتى لا يتأثر Path الأيقونة (شقيق لا ابن) بنفس الشفافية. -->
     <Style x:Key="DialogHeaderIconBackdropStyle" TargetType="Border">
         <Setter Property="CornerRadius" Value="17"/>
         <Setter Property="Background" Value="{DynamicResource TextOnBrand}"/>
@@ -37,13 +34,13 @@
     </Style>
 
     <Style x:Key="DialogHeaderTitleStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="{StaticResource FontSizeMd}"/>
-        <Setter Property="FontWeight" Value="{StaticResource FontWeightBold}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.500}"/>
+        <Setter Property="FontWeight" Value="{DynamicResource P.Font.Weight.Bold}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
     </Style>
 
     <Style x:Key="DialogHeaderSubtitleStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="{StaticResource FontSizeXs}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.200}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
         <Setter Property="Opacity" Value="0.85"/>
         <Setter Property="Margin" Value="0,2,0,0"/>
@@ -72,8 +69,8 @@
     </Style>
 
     <Style x:Key="DialogFooterStyle" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
+        <Setter Property="Background" Value="{DynamicResource C.Dialog.Footer.Bg}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource C.Dialog.Footer.Border}"/>
         <Setter Property="BorderThickness" Value="0,1,0,0"/>
         <Setter Property="Padding" Value="20,14"/>
     </Style>

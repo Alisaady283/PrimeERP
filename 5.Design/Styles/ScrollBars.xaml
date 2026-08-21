@@ -26,13 +26,13 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Thumb">
-                    <Border x:Name="thumbBorder" Background="{DynamicResource OutlineStrongBrush}" CornerRadius="4" Margin="2"/>
+                    <Border x:Name="thumbBorder" Background="{DynamicResource OutlineStrong}" CornerRadius="4" Margin="2"/>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="thumbBorder" Property="Background" Value="{DynamicResource FaintTextBrush}"/>
+                            <Setter TargetName="thumbBorder" Property="Background" Value="{DynamicResource TextMuted}"/>
                         </Trigger>
                         <Trigger Property="IsDragging" Value="True">
-                            <Setter TargetName="thumbBorder" Property="Background" Value="{DynamicResource BrandBrush}"/>
+                            <Setter TargetName="thumbBorder" Property="Background" Value="{DynamicResource BrandDefault}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -46,10 +46,10 @@ namespace PrimeERP.UI.Components.Feedback
             var c = (AppToast)d;
             var (accentBrush, iconBg, iconFg, iconKey) = ((string)e.NewValue) switch
             {
-                "success" => ((Brush)c.FindResource("OkBrush"),       (Brush)c.FindResource("OkTintBrush"),       (Brush)c.FindResource("OkBrush"),       "IconCheck"),
-                "error"   => ((Brush)c.FindResource("CriticalBrush"), (Brush)c.FindResource("CriticalTintBrush"), (Brush)c.FindResource("CriticalBrush"), "IconX"),
-                "warning" => ((Brush)c.FindResource("CautionBrush"),  (Brush)c.FindResource("CautionTintBrush"),  (Brush)c.FindResource("CautionBrush"),  "IconWarning"),
-                _         => ((Brush)c.FindResource("InfoBrush"),     (Brush)c.FindResource("InfoTintBrush"),     (Brush)c.FindResource("InfoBrush"),     "IconInfo")
+                "success" => ((Brush)c.FindResource("Success"),       (Brush)c.FindResource("SuccessSoft"),       (Brush)c.FindResource("Success"),       "IconCheck"),
+                "error"   => ((Brush)c.FindResource("Danger"), (Brush)c.FindResource("DangerSoft"), (Brush)c.FindResource("Danger"), "IconX"),
+                "warning" => ((Brush)c.FindResource("Warning"),  (Brush)c.FindResource("WarningSoft"),  (Brush)c.FindResource("Warning"),  "IconWarning"),
+                _         => ((Brush)c.FindResource("Info"),     (Brush)c.FindResource("InfoSoft"),     (Brush)c.FindResource("Info"),     "IconInfo")
             };
 
             c.accent.Fill = accentBrush;

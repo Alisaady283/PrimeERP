@@ -1,4 +1,3 @@
-using PrimeERP.UI.Services;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -10,9 +9,14 @@ namespace PrimeERP.UI.Components.Shell
     /// <summary>
     /// غلاف حالة عرض حول NavItem (IsVisible/IsExpanded/IsActive) — يُبنى مرة عند ItemsSource ويُعاد حساب
     /// IsVisible منه فقط عند AppSession.PermissionsChanged، بلا إعادة بناء الشجرة كاملة.
+    /// IPermissionService يُمرَّر بارامتر بناء من المستدعي الأول (AppSidebar.xaml.cs، code-behind يملك
+    /// UIServices) — لا UIServices هنا مباشرة، لأن NavItemViewModel نفسها ViewModel لا code-behind
+    /// (راجع القيد الملزم في ARCHITECTURE.md § UIServices: صفر استهلاك من Service/VM).
     /// </summary>
     public class NavItemViewModel : BaseViewModel
     {
+        private readonly IPermissionService _permissions;
+
         public NavItem Model { get; }
 
         public string Key           => Model.Key;
@@ -33,11 +37,12 @@ namespace PrimeERP.UI.Components.Shell
         private bool _isActive;
         public bool IsActive { get => _isActive; set => SetProperty(ref _isActive, value); }
 
-        public NavItemViewModel(NavItem model)
+        public NavItemViewModel(NavItem model, IPermissionService permissions)
         {
             Model = model;
+            _permissions = permissions;
             foreach (var child in model.Children ?? Enumerable.Empty<NavItem>())
-                Children.Add(new NavItemViewModel(child));
+                Children.Add(new NavItemViewModel(child, permissions));
         }
 
         /// <summary>يبحث عن هذا المفتاح في نفسه أو أي عنصر تحته (بحث عميق).</summary>
@@ -62,7 +67,7 @@ namespace PrimeERP.UI.Components.Shell
             foreach (var child in Children)
                 anyChildVisible |= child.RecomputeVisibility();
 
-            var selfAllowed = string.IsNullOrEmpty(Model.PermissionKey) || UIServices.Permissions.Can(Model.PermissionKey);
+            var selfAllowed = string.IsNullOrEmpty(Model.PermissionKey) || _permissions.Can(Model.PermissionKey);
 
             IsVisible = HasChildren ? selfAllowed && anyChildVisible : selfAllowed;
             return IsVisible;

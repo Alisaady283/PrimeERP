@@ -1,0 +1,30 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!--
+        L1 — الظلال، حزمة "Default". قيم Blur/Depth/Opacity الخام فقط — Semantic.Light.xaml يجمّعها في
+        DropShadowEffect فعلي (مع P.Color.Neutral.900 للّون)، لأن اللون بحد ذاته دلالي (يتبدّل فاتح/داكن)
+        بينما شكل الظل (قوته/انتشاره) خاصية هوية بحتة. Semantic.Dark.xaml يُبقي Opacity=0 حرفياً بصرف النظر
+        عن هذه القيم (قرار متعمَّد: الظلال معطَّلة في الوضع الداكن كله، راجع تعليقها) — Blur/Depth هناك
+        تُستهلك من هنا أيضاً لعدم تكرار الرقم رغم عدم ظهوره بصرياً.
+    -->
+
+    <sys:Double x:Key="P.Shadow.Sm.Blur">4</sys:Double>
+    <sys:Double x:Key="P.Shadow.Sm.Depth">1</sys:Double>
+    <sys:Double x:Key="P.Shadow.Sm.Opacity">0.04</sys:Double>
+
+    <sys:Double x:Key="P.Shadow.Md.Blur">12</sys:Double>
+    <sys:Double x:Key="P.Shadow.Md.Depth">2</sys:Double>
+    <sys:Double x:Key="P.Shadow.Md.Opacity">0.06</sys:Double>
+
+    <sys:Double x:Key="P.Shadow.Lg.Blur">24</sys:Double>
+    <sys:Double x:Key="P.Shadow.Lg.Depth">4</sys:Double>
+    <sys:Double x:Key="P.Shadow.Lg.Opacity">0.10</sys:Double>
+
+    <sys:Double x:Key="P.Shadow.Xl.Blur">40</sys:Double>
+    <sys:Double x:Key="P.Shadow.Xl.Depth">8</sys:Double>
+    <sys:Double x:Key="P.Shadow.Xl.Opacity">0.14</sys:Double>
+
+</ResourceDictionary>

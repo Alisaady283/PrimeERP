@@ -6,6 +6,7 @@ using PrimeERP.Application.Services.Backup;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.Services.Print;
 using PrimeERP.Domain.Contracts;
+using PrimeERP.Platform.Design;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Services;

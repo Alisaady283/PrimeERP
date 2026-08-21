@@ -5,28 +5,28 @@
 
         <StackPanel x:Name="pnlLabel" Orientation="Horizontal" Margin="0,0,0,4" Visibility="Collapsed">
             <TextBlock x:Name="txtLabel"
-                       FontSize="{StaticResource FontSizeXs}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource SubTextBrush}"/>
+                       FontSize="{DynamicResource P.Font.Size.200}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextSecondary}"/>
             <TextBlock x:Name="txtRequired" Text=" *"
-                       FontSize="{StaticResource FontSizeXs}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource CriticalBrush}"
+                       FontSize="{DynamicResource P.Font.Size.200}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource Danger}"
                        Visibility="Collapsed"/>
         </StackPanel>
 
         <Border x:Name="border"
-                Background="{DynamicResource FieldBrush}"
-                BorderBrush="{DynamicResource OutlineBrush}"
+                Background="{DynamicResource C.Input.Bg}"
+                BorderBrush="{DynamicResource OutlineDefault}"
                 BorderThickness="1"
-                CornerRadius="{StaticResource RadiusMd}"
-                Height="{StaticResource HeightMd}">
+                CornerRadius="{DynamicResource P.Radius.Md}"
+                Height="{DynamicResource C.Input.Height}">
             <DatePicker x:Name="picker"
                         BorderThickness="0"
                         Background="Transparent"
-                        FontSize="{StaticResource FontSizeSm}"
-                        FontFamily="{StaticResource AppFontFamily}"
-                        Foreground="{DynamicResource BodyTextBrush}"
+                        FontSize="{DynamicResource P.Font.Size.300}"
+                        FontFamily="{DynamicResource P.Font.Family.Primary}"
+                        Foreground="{DynamicResource TextPrimary}"
                         VerticalContentAlignment="Center"
                         SelectedDateFormat="Short"
                         SelectedDateChanged="picker_SelectedDateChanged"
@@ -35,9 +35,9 @@
         </Border>
 
         <TextBlock x:Name="txtError"
-                   FontSize="{StaticResource FontSizeXs}"
-                   FontFamily="{StaticResource AppFontFamily}"
-                   Foreground="{DynamicResource CriticalBrush}"
+                   FontSize="{DynamicResource P.Font.Size.200}"
+                   FontFamily="{DynamicResource P.Font.Family.Primary}"
+                   Foreground="{DynamicResource Danger}"
                    Margin="2,4,0,0"
                    TextWrapping="Wrap"
                    Visibility="Collapsed"/>

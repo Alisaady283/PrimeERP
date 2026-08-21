@@ -1,0 +1,51 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!--
+        L3 — رموز مكوّن الزر. الألوان تشير لـ L2 Semantic حصراً (BrandDefault/Success/...) لا L1 مباشرة —
+        هذا ما يجعلها تستجيب لتبديل فاتح/داكن تلقائياً (Semantic.Dark.xaml يعيد تعريف نفس هذه المفاتيح بقيم
+        أغمق/أفتح مناسبة)؛ الإشارة المباشرة لـ P.Color.* هنا كانت ستُجمِّد الزر على قيمة الوضع الفاتح دائماً.
+        الأبعاد (Height/PaddingX/FontSize/IconSize/IconGap): راجع تعليق Style.Button.xaml لقاعدة L1 المباشرة
+        الموثَّقة (⚠️ توقف 4 في ARCHITECTURE.md).
+    -->
+
+    <!-- ===== الألوان — بحسب الشكل (Variant)، كلها إعادة تسمية لمفاتيح L2 موجودة أصلاً ===== -->
+    <SolidColorBrush x:Key="C.Button.Primary.Bg"       Color="{DynamicResource BrandDefault}"/>
+    <SolidColorBrush x:Key="C.Button.Primary.Fg"       Color="{DynamicResource TextOnBrand}"/>
+    <SolidColorBrush x:Key="C.Button.Primary.Border"   Color="{DynamicResource BrandDefault}"/>
+    <SolidColorBrush x:Key="C.Button.Primary.Hover.Bg" Color="{DynamicResource BrandHover}"/>
+
+    <SolidColorBrush x:Key="C.Button.Secondary.Bg"     Color="{DynamicResource SurfaceDefault}"/>
+    <SolidColorBrush x:Key="C.Button.Secondary.Fg"     Color="{DynamicResource TextPrimary}"/>
+    <SolidColorBrush x:Key="C.Button.Secondary.Border" Color="{DynamicResource OutlineDefault}"/>
+
+    <SolidColorBrush x:Key="C.Button.Success.Bg"     Color="{DynamicResource Success}"/>
+    <SolidColorBrush x:Key="C.Button.Success.Fg"     Color="{DynamicResource TextOnBrand}"/>
+    <SolidColorBrush x:Key="C.Button.Success.Border" Color="{DynamicResource Success}"/>
+
+    <SolidColorBrush x:Key="C.Button.Warning.Bg"     Color="{DynamicResource Warning}"/>
+    <SolidColorBrush x:Key="C.Button.Warning.Fg"     Color="{DynamicResource TextOnBrand}"/>
+    <SolidColorBrush x:Key="C.Button.Warning.Border" Color="{DynamicResource Warning}"/>
+
+    <SolidColorBrush x:Key="C.Button.Danger.Bg"     Color="{DynamicResource Danger}"/>
+    <SolidColorBrush x:Key="C.Button.Danger.Fg"     Color="{DynamicResource TextOnBrand}"/>
+    <SolidColorBrush x:Key="C.Button.Danger.Border" Color="{DynamicResource Danger}"/>
+
+    <SolidColorBrush x:Key="C.Button.Ghost.Fg"     Color="{DynamicResource BrandDefault}"/>
+    <SolidColorBrush x:Key="C.Button.Ghost.Border" Color="{DynamicResource OutlineDefault}"/>
+
+    <sys:Double x:Key="C.Button.Pressed.Opacity">0.85</sys:Double>
+    <sys:Double x:Key="C.Button.Disabled.Opacity">0.5</sys:Double>
+
+    <!-- ===== الأبعاد — مستقلة، ثابتة بين الهويات ===== -->
+    <sys:Double x:Key="C.Button.Height.Sm">32</sys:Double>
+    <sys:Double x:Key="C.Button.Height.Md">36</sys:Double>
+    <sys:Double x:Key="C.Button.Height.Lg">40</sys:Double>
+
+    <sys:Double x:Key="C.Button.IconSize.Sm">14</sys:Double>
+    <sys:Double x:Key="C.Button.IconSize.Md">16</sys:Double>
+    <sys:Double x:Key="C.Button.IconSize.Lg">18</sys:Double>
+
+</ResourceDictionary>

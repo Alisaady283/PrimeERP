@@ -1,0 +1,32 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!--
+        L1 — مقياس المسافات (مضاعفات 4)، حزمة "Default". قيم مطابقة تماماً لسلّم Metrics.xaml السابق (Space0-16)
+        بأسماء P.Space.* الموحّدة. Corporate يعيد تعريف كل مفتاح هنا بقيمة أوسع 25% (راجع تعليق Corporate) —
+        هذا وحده كافٍ لتوسيع كل حشو/تباعد في التطبيق دون تعديل قطعة واحدة، لأن L2 (Semantic.Space.xaml) وL3
+        (Tokens.*.xaml) يشيران لهذه المفاتيح عبر DynamicResource حصراً.
+    -->
+
+    <sys:Double x:Key="P.Space.0">0</sys:Double>
+    <sys:Double x:Key="P.Space.1">4</sys:Double>
+    <sys:Double x:Key="P.Space.2">8</sys:Double>
+    <sys:Double x:Key="P.Space.3">12</sys:Double>
+    <sys:Double x:Key="P.Space.4">16</sys:Double>
+    <sys:Double x:Key="P.Space.5">20</sys:Double>
+    <sys:Double x:Key="P.Space.6">24</sys:Double>
+    <sys:Double x:Key="P.Space.8">32</sys:Double>
+    <sys:Double x:Key="P.Space.10">40</sys:Double>
+    <sys:Double x:Key="P.Space.12">48</sys:Double>
+    <sys:Double x:Key="P.Space.16">64</sys:Double>
+
+    <!--
+        Thickness موازية للحشو/الهوامش المُوحَّدة — قيد WPF: DependencyProperty من نوع Thickness (Padding/Margin)
+        يرفض قيمة double مباشرة عبر SetValue/SetResourceReference (لا تحويل ضمني)، فلا يمكن استعارة P.Space.N
+        كما هو لخاصية Padding حيّة؛ هذه قيم مستقلة حقيقية (لا اسم مستعار) بنفس رقم التصميم — راجع ⚠️ توقف 4.
+    -->
+    <Thickness x:Key="P.Space.4.Uniform">16</Thickness>
+
+</ResourceDictionary>

@@ -41,9 +41,9 @@ namespace PrimeERP.UI.Components.Display
                 {
                     Text = items[i],
                     VerticalAlignment = VerticalAlignment.Center,
-                    FontSize = (double)FindResource("FontSizeXs"),
-                    FontFamily = (FontFamily)FindResource("AppFontFamily"),
-                    Foreground = isLast ? (Brush)FindResource("BodyTextBrush") : (Brush)FindResource("FaintTextBrush"),
+                    FontSize = (double)FindResource("P.Font.Size.200"),
+                    FontFamily = (FontFamily)FindResource("P.Font.Family.Primary"),
+                    Foreground = isLast ? (Brush)FindResource("TextPrimary") : (Brush)FindResource("TextMuted"),
                     FontWeight = isLast ? FontWeights.SemiBold : FontWeights.Normal
                 };
 
@@ -62,7 +62,7 @@ namespace PrimeERP.UI.Components.Display
                         Data = (Geometry)FindResource("IconChevronLeft"),
                         Width = 9, Height = 9,
                         Stretch = Stretch.Uniform,
-                        Stroke = (Brush)FindResource("FaintTextBrush"),
+                        Stroke = (Brush)FindResource("TextMuted"),
                         StrokeThickness = 2,
                         Margin = new Thickness(8, 0, 8, 0),
                         VerticalAlignment = VerticalAlignment.Center

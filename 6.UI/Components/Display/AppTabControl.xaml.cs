@@ -51,9 +51,9 @@ namespace PrimeERP.UI.Components.Display
                     Padding = new Thickness(4, 10, 4, 10),
                     Margin = new Thickness(0, 0, 24, 0),
                     Cursor = System.Windows.Input.Cursors.Hand,
-                    FontSize = (double)FindResource("FontSizeSm"),
-                    FontFamily = (FontFamily)FindResource("AppFontFamily"),
-                    Foreground = (Brush)FindResource("FaintTextBrush")
+                    FontSize = (double)FindResource("P.Font.Size.300"),
+                    FontFamily = (FontFamily)FindResource("P.Font.Family.Primary"),
+                    Foreground = (Brush)FindResource("TextMuted")
                 };
 
                 btn.Template = BuildFlatTemplate();
@@ -92,8 +92,8 @@ namespace PrimeERP.UI.Components.Display
             for (int i = 0; i < _headerButtons.Count; i++)
             {
                 var active = i == index;
-                _headerButtons[i].BorderBrush = active ? (Brush)FindResource("BrandBrush") : Brushes.Transparent;
-                _headerButtons[i].Foreground = active ? (Brush)FindResource("BrandBrush") : (Brush)FindResource("FaintTextBrush");
+                _headerButtons[i].BorderBrush = active ? (Brush)FindResource("BrandDefault") : Brushes.Transparent;
+                _headerButtons[i].Foreground = active ? (Brush)FindResource("BrandDefault") : (Brush)FindResource("TextMuted");
                 _headerButtons[i].FontWeight = active ? FontWeights.SemiBold : FontWeights.Normal;
             }
 

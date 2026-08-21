@@ -9,22 +9,22 @@
 
         <StackPanel x:Name="pnlLabel" Orientation="Horizontal" Margin="0,0,0,4" Visibility="Collapsed">
             <TextBlock x:Name="txtLabel"
-                       FontSize="{StaticResource FontSizeXs}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource SubTextBrush}"/>
+                       FontSize="{DynamicResource P.Font.Size.200}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextSecondary}"/>
             <TextBlock x:Name="txtRequired" Text=" *"
-                       FontSize="{StaticResource FontSizeXs}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource CriticalBrush}"
+                       FontSize="{DynamicResource P.Font.Size.200}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource Danger}"
                        Visibility="Collapsed"/>
         </StackPanel>
 
         <Border x:Name="border"
-                Background="{DynamicResource FieldBrush}"
-                BorderBrush="{DynamicResource OutlineBrush}"
+                Background="{DynamicResource C.Input.Bg}"
+                BorderBrush="{DynamicResource OutlineDefault}"
                 BorderThickness="1"
-                CornerRadius="{StaticResource RadiusMd}"
-                Height="{StaticResource HeightMd}">
+                CornerRadius="{DynamicResource P.Radius.Md}"
+                Height="{DynamicResource C.Input.Height}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -35,9 +35,9 @@
                 <TextBox x:Name="txt" Grid.Column="0"
                          BorderThickness="0"
                          Background="Transparent"
-                         FontSize="{StaticResource FontSizeSm}"
-                         FontFamily="{StaticResource AppFontFamily}"
-                         Foreground="{DynamicResource BodyTextBrush}"
+                         FontSize="{DynamicResource P.Font.Size.300}"
+                         FontFamily="{DynamicResource P.Font.Family.Primary}"
+                         Foreground="{DynamicResource TextPrimary}"
                          VerticalContentAlignment="Center"
                          Padding="10,0"
                          TextChanged="txt_TextChanged"
@@ -51,7 +51,7 @@
                         Visibility="Collapsed"
                         Click="btnClear_Click">
                     <Path Data="{StaticResource IconClose}" Stretch="Uniform"
-                          Width="10" Height="10" Stroke="{DynamicResource FaintTextBrush}" StrokeThickness="2"/>
+                          Width="10" Height="10" Stroke="{DynamicResource TextMuted}" StrokeThickness="2"/>
                 </Button>
 
                 <Button x:Name="btnSearch" Grid.Column="2"
@@ -60,7 +60,7 @@
                         ToolTip="بحث كامل (F4)"
                         Click="btnSearch_Click">
                     <Path Data="{StaticResource IconSearch}" Stretch="Uniform"
-                          Width="13" Height="13" Stroke="{DynamicResource FaintTextBrush}" StrokeThickness="2"/>
+                          Width="13" Height="13" Stroke="{DynamicResource TextMuted}" StrokeThickness="2"/>
                 </Button>
             </Grid>
         </Border>
@@ -71,10 +71,10 @@
                Width="{Binding ElementName=border, Path=ActualWidth}"
                StaysOpen="False"
                AllowsTransparency="True">
-            <Border Background="{DynamicResource ElevatedBrush}"
-                    BorderBrush="{DynamicResource OutlineBrush}"
+            <Border Background="{DynamicResource SurfaceRaised}"
+                    BorderBrush="{DynamicResource OutlineDefault}"
                     BorderThickness="1"
-                    CornerRadius="{StaticResource RadiusMd}"
+                    CornerRadius="{DynamicResource P.Radius.Md}"
                     MaxHeight="240"
                     Margin="0,4,0,0"
                     Effect="{DynamicResource ShadowMd}">
@@ -82,21 +82,21 @@
                     <ListBox x:Name="lst"
                              BorderThickness="0"
                              Background="Transparent"
-                             FontSize="{StaticResource FontSizeSm}"
-                             FontFamily="{StaticResource AppFontFamily}"
+                             FontSize="{DynamicResource P.Font.Size.300}"
+                             FontFamily="{DynamicResource P.Font.Family.Primary}"
                              MouseUp="lst_MouseUp"
                              KeyDown="lst_KeyDown">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Margin="10,6">
                                     <TextBlock Text="{Binding DisplayText}"
-                                               FontFamily="{StaticResource AppFontFamily}"
-                                               FontSize="{StaticResource FontSizeSm}"
-                                               Foreground="{DynamicResource BodyTextBrush}"/>
+                                               FontFamily="{DynamicResource P.Font.Family.Primary}"
+                                               FontSize="{DynamicResource P.Font.Size.300}"
+                                               Foreground="{DynamicResource TextPrimary}"/>
                                     <TextBlock Text="{Binding ExtraInfo}"
-                                               FontFamily="{StaticResource AppFontFamily}"
-                                               FontSize="{StaticResource FontSizeXs}"
-                                               Foreground="{DynamicResource FaintTextBrush}"
+                                               FontFamily="{DynamicResource P.Font.Family.Primary}"
+                                               FontSize="{DynamicResource P.Font.Size.200}"
+                                               Foreground="{DynamicResource TextMuted}"
                                                Visibility="{Binding ExtraInfo, Converter={StaticResource StringToVisibility}}"/>
                                 </StackPanel>
                             </DataTemplate>
@@ -107,9 +107,9 @@
         </Popup>
 
         <TextBlock x:Name="txtError"
-                   FontSize="{StaticResource FontSizeXs}"
-                   FontFamily="{StaticResource AppFontFamily}"
-                   Foreground="{DynamicResource CriticalBrush}"
+                   FontSize="{DynamicResource P.Font.Size.200}"
+                   FontFamily="{DynamicResource P.Font.Family.Primary}"
+                   Foreground="{DynamicResource Danger}"
                    Margin="2,4,0,0"
                    TextWrapping="Wrap"
                    Visibility="Collapsed"/>

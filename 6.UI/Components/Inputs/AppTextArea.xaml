@@ -11,35 +11,35 @@
 
             <StackPanel x:Name="pnlLabel" Grid.Column="0" Orientation="Horizontal" Visibility="Collapsed">
                 <TextBlock x:Name="txtLabel"
-                           FontSize="{StaticResource FontSizeXs}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           Foreground="{DynamicResource SubTextBrush}"/>
+                           FontSize="{DynamicResource P.Font.Size.200}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           Foreground="{DynamicResource TextSecondary}"/>
                 <TextBlock x:Name="txtRequired" Text=" *"
-                           FontSize="{StaticResource FontSizeXs}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           Foreground="{DynamicResource CriticalBrush}"
+                           FontSize="{DynamicResource P.Font.Size.200}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           Foreground="{DynamicResource Danger}"
                            Visibility="Collapsed"/>
             </StackPanel>
 
             <TextBlock x:Name="txtCounter" Grid.Column="1"
-                       FontSize="{StaticResource FontSizeXs}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource FaintTextBrush}"
+                       FontSize="{DynamicResource P.Font.Size.200}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextMuted}"
                        Visibility="Collapsed"/>
         </Grid>
 
         <Border x:Name="border"
-                Background="{DynamicResource FieldBrush}"
-                BorderBrush="{DynamicResource OutlineBrush}"
+                Background="{DynamicResource C.Input.Bg}"
+                BorderBrush="{DynamicResource OutlineDefault}"
                 BorderThickness="1"
-                CornerRadius="{StaticResource RadiusMd}">
+                CornerRadius="{DynamicResource P.Radius.Md}">
             <Grid>
                 <TextBox x:Name="txt"
                          BorderThickness="0"
                          Background="Transparent"
-                         FontSize="{StaticResource FontSizeSm}"
-                         FontFamily="{StaticResource AppFontFamily}"
-                         Foreground="{DynamicResource BodyTextBrush}"
+                         FontSize="{DynamicResource P.Font.Size.300}"
+                         FontFamily="{DynamicResource P.Font.Family.Primary}"
+                         Foreground="{DynamicResource TextPrimary}"
                          Padding="10,8"
                          AcceptsReturn="True"
                          TextWrapping="Wrap"
@@ -51,16 +51,16 @@
                            IsHitTestVisible="False"
                            VerticalAlignment="Top"
                            Margin="10,8"
-                           FontSize="{StaticResource FontSizeSm}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           Foreground="{DynamicResource FaintTextBrush}"/>
+                           FontSize="{DynamicResource P.Font.Size.300}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           Foreground="{DynamicResource TextMuted}"/>
             </Grid>
         </Border>
 
         <TextBlock x:Name="txtError"
-                   FontSize="{StaticResource FontSizeXs}"
-                   FontFamily="{StaticResource AppFontFamily}"
-                   Foreground="{DynamicResource CriticalBrush}"
+                   FontSize="{DynamicResource P.Font.Size.200}"
+                   FontFamily="{DynamicResource P.Font.Family.Primary}"
+                   Foreground="{DynamicResource Danger}"
                    Margin="2,4,0,0"
                    TextWrapping="Wrap"
                    Visibility="Collapsed"/>

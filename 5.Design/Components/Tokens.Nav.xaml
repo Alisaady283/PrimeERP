@@ -1,0 +1,33 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- L3 — رموز الشريط الجانبي (AppSidebar) والشريط العلوي (AppTopBar). الألوان تشير لـ L2 Semantic حصراً. -->
+
+    <SolidColorBrush x:Key="C.Nav.Surface"        Color="{DynamicResource NavSurface}"/>
+    <SolidColorBrush x:Key="C.Nav.Item.Fg"        Color="{DynamicResource NavText}"/>
+    <SolidColorBrush x:Key="C.Nav.Item.Icon.Fg"   Color="{DynamicResource NavIcon}"/>
+    <SolidColorBrush x:Key="C.Nav.Item.Hover.Bg"      Color="{DynamicResource NavHover}"/>
+    <SolidColorBrush x:Key="C.Nav.Item.Selected.Bg"   Color="{DynamicResource NavHover}"/>
+    <SolidColorBrush x:Key="C.Nav.Item.Selected.Fg"   Color="{DynamicResource NavTextSelected}"/>
+    <SolidColorBrush x:Key="C.Nav.Item.Bar.Fg"        Color="{DynamicResource NavSelectedBar}"/>
+    <SolidColorBrush x:Key="C.Nav.Divider"        Color="{DynamicResource NavHover}"/>
+    <SolidColorBrush x:Key="C.Nav.Badge.Bg"       Color="{DynamicResource BrandDefault}"/>
+    <SolidColorBrush x:Key="C.Nav.Badge.Fg"       Color="{DynamicResource TextOnBrand}"/>
+
+    <SolidColorBrush x:Key="C.TopBar.Bg"       Color="{DynamicResource TopBarSurface}"/>
+    <SolidColorBrush x:Key="C.TopBar.Border"   Color="{DynamicResource TopBarBorder}"/>
+    <SolidColorBrush x:Key="C.TopBar.Fg"       Color="{DynamicResource TopBarText}"/>
+    <SolidColorBrush x:Key="C.TopBar.Icon.Fg"       Color="{DynamicResource TopBarIcon}"/>
+    <SolidColorBrush x:Key="C.TopBar.Icon.Hover.Fg" Color="{DynamicResource TopBarIconHover}"/>
+
+    <!-- ===== الأبعاد — مستقلة، ثابتة بين الهويات ===== -->
+    <sys:Double x:Key="C.Nav.Width">240</sys:Double>
+    <sys:Double x:Key="C.Nav.CollapsedWidth">64</sys:Double>
+    <sys:Double x:Key="C.Nav.Item.Height">42</sys:Double>
+    <!-- عرض عمود الأيقونة — ثابت بنيوي (يحافظ على محاذاة عمودية بين صفوف بأيقونات مختلفة العرض)، لا يتبدّل بالهوية. -->
+    <sys:Double x:Key="C.Nav.Icon.ColumnWidth">24</sys:Double>
+    <sys:Double x:Key="C.Nav.SelectedBar.Width">3</sys:Double>
+
+</ResourceDictionary>

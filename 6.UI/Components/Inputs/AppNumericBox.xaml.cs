@@ -111,7 +111,7 @@ namespace PrimeERP.UI.Components.Inputs
             var hasError = !string.IsNullOrEmpty(c.ErrorText);
             c.txtError.Text = c.ErrorText;
             c.txtError.Visibility = hasError ? Visibility.Visible : Visibility.Collapsed;
-            c.border.BorderBrush = hasError ? (Brush)c.FindResource("CriticalBrush") : (Brush)c.FindResource("OutlineBrush");
+            c.border.BorderBrush = hasError ? (Brush)c.FindResource("Danger") : (Brush)c.FindResource("OutlineDefault");
         }
 
         private string FormatValue(decimal value)
@@ -122,8 +122,8 @@ namespace PrimeERP.UI.Components.Inputs
 
         private void ApplyEnabledVisual()
         {
-            border.Background  = IsEnabled ? (Brush)FindResource("FieldBrush")   : (Brush)FindResource("MutedBgBrush");
-            border.BorderBrush = IsEnabled ? (Brush)FindResource("OutlineBrush") : (Brush)FindResource("MutedBorderBrush");
+            border.Background  = IsEnabled ? (Brush)FindResource("C.Input.Bg")   : (Brush)FindResource("SurfaceSunken");
+            border.BorderBrush = IsEnabled ? (Brush)FindResource("OutlineDefault") : (Brush)FindResource("OutlineSubtle");
         }
 
         private void txt_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -138,7 +138,7 @@ namespace PrimeERP.UI.Components.Inputs
         {
             _isFocused = true;
             txt.Text = Value == 0 ? "" : Value.ToString($"F{Decimals}", CultureInfo.InvariantCulture);
-            border.BorderBrush = (Brush)FindResource("OutlineFocusBrush");
+            border.BorderBrush = (Brush)FindResource("OutlineFocus");
             border.BorderThickness = new Thickness(2);
         }
 
@@ -148,7 +148,7 @@ namespace PrimeERP.UI.Components.Inputs
             Commit();
 
             var hasError = !string.IsNullOrEmpty(ErrorText);
-            border.BorderBrush = hasError ? (Brush)FindResource("CriticalBrush") : (Brush)FindResource("OutlineBrush");
+            border.BorderBrush = hasError ? (Brush)FindResource("Danger") : (Brush)FindResource("OutlineDefault");
             border.BorderThickness = new Thickness(1);
         }
 

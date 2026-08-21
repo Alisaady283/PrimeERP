@@ -103,11 +103,14 @@
     <SolidColorBrush x:Key="FocusRing"       Color="{DynamicResource P.Color.Brand.400}"/>
     <sys:Double x:Key="FocusRingWidth">2</sys:Double>
 
-    <!-- ===== الظلال — معطَّلة فعلياً في الداكن (العمق يُعبَّر عنه بالإضاءة لا الظل)؛
-         القطع تستخدم OutlineDefault على الأسطح المرتفعة بدلاً من الاعتماد على هذه الظلال. ===== -->
-    <DropShadowEffect x:Key="ShadowSm" BlurRadius="4"  ShadowDepth="1" Opacity="0" Color="{DynamicResource P.Color.Black}" Direction="270"/>
-    <DropShadowEffect x:Key="ShadowMd" BlurRadius="12" ShadowDepth="2" Opacity="0" Color="{DynamicResource P.Color.Black}" Direction="270"/>
-    <DropShadowEffect x:Key="ShadowLg" BlurRadius="24" ShadowDepth="4" Opacity="0" Color="{DynamicResource P.Color.Black}" Direction="270"/>
-    <DropShadowEffect x:Key="ShadowXl" BlurRadius="40" ShadowDepth="8" Opacity="0" Color="{DynamicResource P.Color.Black}" Direction="270"/>
+    <!-- ===== الظلال — معطَّلة فعلياً في الداكن (العمق يُعبَّر عنه بالإضاءة لا الظل)؛ Opacity=0 حرفياً هنا
+         قرار متعمَّد لا إغفال — راجع القاعدة أعلاه. Blur/Depth تبقى من L1 (P.Shadow.*) رغم عدم ظهورها بصرياً،
+         فقط لتفادي تكرار الرقم بلا داعٍ؛ القطع تستخدم OutlineDefault على الأسطح المرتفعة بدلاً من الظل. ===== -->
+    <DropShadowEffect x:Key="ShadowSm" BlurRadius="{DynamicResource P.Shadow.Sm.Blur}" ShadowDepth="{DynamicResource P.Shadow.Sm.Depth}" Opacity="0" Color="{DynamicResource P.Color.Black}" Direction="270"/>
+    <DropShadowEffect x:Key="ShadowMd" BlurRadius="{DynamicResource P.Shadow.Md.Blur}" ShadowDepth="{DynamicResource P.Shadow.Md.Depth}" Opacity="0" Color="{DynamicResource P.Color.Black}" Direction="270"/>
+    <DropShadowEffect x:Key="ShadowLg" BlurRadius="{DynamicResource P.Shadow.Lg.Blur}" ShadowDepth="{DynamicResource P.Shadow.Lg.Depth}" Opacity="0" Color="{DynamicResource P.Color.Black}" Direction="270"/>
+    <DropShadowEffect x:Key="ShadowXl" BlurRadius="{DynamicResource P.Shadow.Xl.Blur}" ShadowDepth="{DynamicResource P.Shadow.Xl.Depth}" Opacity="0" Color="{DynamicResource P.Color.Black}" Direction="270"/>
+
+    <SolidColorBrush x:Key="Scrim" Color="{DynamicResource P.Color.Black}" Opacity="0.55"/>
 
 </ResourceDictionary>

@@ -2,8 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:inputs="clr-namespace:PrimeERP.UI.Components.Inputs">
-    <Border Background="{DynamicResource CanvasBrush}"
-            BorderBrush="{DynamicResource OutlineBrush}"
+    <Border Background="{DynamicResource SurfaceCanvas}"
+            BorderBrush="{DynamicResource OutlineDefault}"
             BorderThickness="0,0,0,1"
             Padding="24,12">
         <Grid>
@@ -19,37 +19,37 @@
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                 <Border x:Name="countBadge"
-                        Background="{DynamicResource BrandTintBrush}"
-                        BorderBrush="{DynamicResource BrandBrush}"
+                        Background="{DynamicResource BrandSoft}"
+                        BorderBrush="{DynamicResource BrandDefault}"
                         BorderThickness="1"
-                        CornerRadius="{StaticResource RadiusSm}"
+                        CornerRadius="{DynamicResource P.Radius.Sm}"
                         Padding="10,5"
                         Margin="0,0,10,0"
                         Visibility="Collapsed">
                     <TextBlock x:Name="txtCount"
-                               FontSize="{StaticResource FontSizeXs}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               Foreground="{DynamicResource BrandBrush}"/>
+                               FontSize="{DynamicResource P.Font.Size.200}"
+                               FontFamily="{DynamicResource P.Font.Family.Primary}"
+                               Foreground="{DynamicResource BrandDefault}"/>
                 </Border>
 
                 <Button x:Name="btnClear" Cursor="Hand" Padding="10,6" Click="btnClear_Click"
                         Background="Transparent" BorderThickness="1"
-                        BorderBrush="{DynamicResource OutlineBrush}">
+                        BorderBrush="{DynamicResource OutlineDefault}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="{StaticResource RadiusMd}"
+                                    CornerRadius="{DynamicResource P.Radius.Md}"
                                     Padding="{TemplateBinding Padding}">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </ControlTemplate>
                     </Button.Template>
                     <TextBlock Text="{DynamicResource Str.ClearFilter}"
-                               FontSize="{StaticResource FontSizeXs}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               Foreground="{DynamicResource SubTextBrush}"/>
+                               FontSize="{DynamicResource P.Font.Size.200}"
+                               FontFamily="{DynamicResource P.Font.Family.Primary}"
+                               Foreground="{DynamicResource TextSecondary}"/>
                 </Button>
             </StackPanel>
         </Grid>

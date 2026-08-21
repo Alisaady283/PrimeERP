@@ -1,23 +1,23 @@
 <UserControl x:Class="PrimeERP.UI.Components.Display.AppLoadingOverlay"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Border x:Name="root" Background="{DynamicResource ScrimBrush}" Visibility="Collapsed">
+    <Border x:Name="root" Background="{DynamicResource Scrim}" Visibility="Collapsed">
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
             <Border Width="32" Height="32" HorizontalAlignment="Center">
                 <Border.RenderTransform>
                     <RotateTransform x:Name="spinnerTransform" CenterX="16" CenterY="16"/>
                 </Border.RenderTransform>
                 <Path Data="M16,2 A14,14 0 1 1 2,16"
-                      Stroke="{DynamicResource BrandBrush}"
+                      Stroke="{DynamicResource BrandDefault}"
                       StrokeThickness="3"
                       StrokeStartLineCap="Round"
                       Stretch="Uniform"/>
             </Border>
             <TextBlock x:Name="txtMessage"
                        Margin="0,10,0,0"
-                       FontSize="{StaticResource FontSizeXs}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource BodyTextBrush}"
+                       FontSize="{DynamicResource P.Font.Size.200}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextPrimary}"
                        HorizontalAlignment="Center"/>
         </StackPanel>
     </Border>

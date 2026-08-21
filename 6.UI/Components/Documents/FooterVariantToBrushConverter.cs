@@ -12,12 +12,12 @@ namespace PrimeERP.UI.Components.Documents
         {
             var key = (value as string) switch
             {
-                "success" => "OkBrush",
-                "danger"  => "CriticalBrush",
-                "warning" => "CautionBrush",
-                "info"    => "InfoBrush",
-                "brand"   => "BrandBrush",
-                _         => "BodyTextBrush"
+                "success" => "Success",
+                "danger"  => "Danger",
+                "warning" => "Warning",
+                "info"    => "Info",
+                "brand"   => "BrandDefault",
+                _         => "TextPrimary"
             };
             return System.Windows.Application.Current.TryFindResource(key);
         }

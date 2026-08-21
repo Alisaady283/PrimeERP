@@ -5,28 +5,28 @@
 
         <Border Width="56" Height="56"
                 CornerRadius="28"
-                Background="{DynamicResource MutedBgBrush}"
+                Background="{DynamicResource SurfaceSunken}"
                 HorizontalAlignment="Center"
                 Margin="0,0,0,16">
             <Path x:Name="icon"
                   Stretch="Uniform" Width="26" Height="26"
-                  Stroke="{DynamicResource FaintTextBrush}"
+                  Stroke="{DynamicResource TextMuted}"
                   StrokeThickness="1.8"
                   StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
         </Border>
 
         <TextBlock x:Name="txtTitle"
-                   FontSize="{StaticResource FontSizeSm}"
-                   FontWeight="{StaticResource FontWeightSemibold}"
-                   FontFamily="{StaticResource AppFontFamily}"
-                   Foreground="{DynamicResource BodyTextBrush}"
+                   FontSize="{DynamicResource P.Font.Size.300}"
+                   FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
+                   FontFamily="{DynamicResource P.Font.Family.Primary}"
+                   Foreground="{DynamicResource TextPrimary}"
                    HorizontalAlignment="Center"
                    TextAlignment="Center"/>
 
         <TextBlock x:Name="txtMessage"
-                   FontSize="{StaticResource FontSizeXs}"
-                   FontFamily="{StaticResource AppFontFamily}"
-                   Foreground="{DynamicResource FaintTextBrush}"
+                   FontSize="{DynamicResource P.Font.Size.200}"
+                   FontFamily="{DynamicResource P.Font.Family.Primary}"
+                   Foreground="{DynamicResource TextMuted}"
                    HorizontalAlignment="Center"
                    TextAlignment="Center"
                    TextWrapping="Wrap"
@@ -36,24 +36,24 @@
                 Margin="0,16,0,0"
                 Padding="16,8"
                 Cursor="Hand"
-                Background="{DynamicResource BrandBrush}"
-                Foreground="{DynamicResource OnBrandTextBrush}"
+                Background="{DynamicResource BrandDefault}"
+                Foreground="{DynamicResource TextOnBrand}"
                 BorderThickness="0"
                 Visibility="Collapsed"
                 Click="btnAction_Click">
             <Button.Template>
                 <ControlTemplate TargetType="Button">
                     <Border Background="{TemplateBinding Background}"
-                            CornerRadius="{StaticResource RadiusMd}"
+                            CornerRadius="{DynamicResource P.Radius.Md}"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                 </ControlTemplate>
             </Button.Template>
             <TextBlock x:Name="txtAction"
-                       FontSize="{StaticResource FontSizeXs}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource OnBrandTextBrush}"/>
+                       FontSize="{DynamicResource P.Font.Size.200}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextOnBrand}"/>
         </Button>
     </StackPanel>
 </UserControl>

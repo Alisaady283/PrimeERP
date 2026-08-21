@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:shell="clr-namespace:PrimeERP.UI.Components.Shell"
              xmlns:conv="clr-namespace:PrimeERP.UI.Converters"
-             Foreground="{DynamicResource NavTextBrush}">
+             Foreground="{DynamicResource NavText}">
     <UserControl.Resources>
         <shell:IconKeyToGeometryConverter x:Key="IconConv"/>
         <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
@@ -25,7 +25,7 @@
 
                 <!-- فاصل -->
                 <Border Visibility="{Binding IsSeparator, Converter={StaticResource BoolVis}}"
-                        Height="1" Margin="16,8" Background="{DynamicResource NavHoverBrush}"/>
+                        Height="1" Margin="16,8" Background="{DynamicResource NavHover}"/>
 
                 <!-- الصف نفسه -->
                 <Border Visibility="{Binding IsSeparator, Converter={StaticResource BoolVis}, ConverterParameter=inverse}"
@@ -43,26 +43,26 @@
                             <ColumnDefinition Width="10"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border Grid.Column="0" x:Name="activeBar" Background="{DynamicResource NavActiveBrush}" Visibility="Collapsed"/>
+                        <Border Grid.Column="0" x:Name="activeBar" Background="{DynamicResource NavSelectedBar}" Visibility="Collapsed"/>
 
                         <Path Grid.Column="2" Data="{Binding IconKey, Converter={StaticResource IconConv}}"
                               Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"
-                              Stroke="{DynamicResource NavTextBrush}" StrokeThickness="1.7"/>
+                              Stroke="{DynamicResource NavText}" StrokeThickness="1.7"/>
 
                         <TextBlock Grid.Column="3" x:Name="txt" Text="{Binding Text}" VerticalAlignment="Center" Margin="10,0,0,0"
-                                   FontSize="{StaticResource FontSizeSm}" FontFamily="{StaticResource AppFontFamily}"
-                                   Foreground="{DynamicResource NavTextBrush}" TextTrimming="CharacterEllipsis"
+                                   FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
+                                   Foreground="{DynamicResource NavText}" TextTrimming="CharacterEllipsis"
                                    Visibility="{Binding IsCollapsed, RelativeSource={RelativeSource AncestorType=shell:AppSidebar}, Converter={StaticResource BoolVis}, ConverterParameter=inverse}"/>
 
-                        <Border Grid.Column="4" x:Name="badgeWrap" Background="{DynamicResource BrandBrush}" CornerRadius="8"
+                        <Border Grid.Column="4" x:Name="badgeWrap" Background="{DynamicResource BrandDefault}" CornerRadius="8"
                                 Padding="6,1" Margin="6,0" VerticalAlignment="Center"
                                 Visibility="{Binding Badge, Converter={StaticResource StringVis}}">
-                            <TextBlock Text="{Binding Badge}" FontSize="{StaticResource FontSizeXs}" Foreground="White"/>
+                            <TextBlock Text="{Binding Badge}" FontSize="{DynamicResource P.Font.Size.200}" Foreground="White"/>
                         </Border>
 
                         <Path Grid.Column="5" x:Name="chevron" Visibility="Collapsed" VerticalAlignment="Center"
                               Data="{StaticResource IconChevronDown}" Width="11" Height="11" Stretch="Uniform"
-                              Stroke="{DynamicResource NavTextMutedBrush}" StrokeThickness="2">
+                              Stroke="{DynamicResource NavIcon}" StrokeThickness="2">
                             <Path.RenderTransform>
                                 <RotateTransform x:Name="chevronRotate" Angle="0" CenterX="5.5" CenterY="5.5"/>
                             </Path.RenderTransform>
@@ -92,11 +92,11 @@
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsActive}" Value="True">
                     <Setter TargetName="activeBar" Property="Visibility" Value="Visible"/>
-                    <Setter TargetName="rowBorder" Property="Background" Value="{DynamicResource NavHoverBrush}"/>
+                    <Setter TargetName="rowBorder" Property="Background" Value="{DynamicResource NavHover}"/>
                     <Setter TargetName="txt" Property="Foreground" Value="White"/>
                 </DataTrigger>
                 <Trigger SourceName="rowBorder" Property="IsMouseOver" Value="True">
-                    <Setter TargetName="rowBorder" Property="Background" Value="{DynamicResource NavHoverBrush}"/>
+                    <Setter TargetName="rowBorder" Property="Background" Value="{DynamicResource NavHover}"/>
                 </Trigger>
                 <DataTrigger Binding="{Binding IsExpanded}" Value="True">
                     <DataTrigger.EnterActions>
@@ -120,7 +120,7 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <Border x:Name="root" Width="240" HorizontalAlignment="Left" Background="{DynamicResource NavBgBrush}" ClipToBounds="True">
+    <Border x:Name="root" Width="240" HorizontalAlignment="Left" Background="{DynamicResource NavSurface}" ClipToBounds="True">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -134,7 +134,7 @@
                 <ItemsControl x:Name="itemsHost" Margin="8,4"/>
             </ScrollViewer>
 
-            <Border Grid.Row="2" BorderBrush="{DynamicResource NavHoverBrush}" BorderThickness="0,1,0,0">
+            <Border Grid.Row="2" BorderBrush="{DynamicResource NavHover}" BorderThickness="0,1,0,0">
                 <ContentPresenter x:Name="footerPresenter" Margin="16,12"/>
             </Border>
         </Grid>

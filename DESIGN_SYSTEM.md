@@ -22,7 +22,7 @@
 
 | الطبقة | الأساس |
 |---|---|
-| التصميم (الرموز البصرية) | `Resources/Design/Identity` (L1) → `Semantic` (L2) → `Components` (L3، لاحقاً) → `Styles` (L4، لاحقاً) |
+| التصميم (الرموز البصرية) | `5.Design/Identity` (L1) → `Semantic` (L2) → `Components/Tokens.*` (L3) → `Styles/Style.*` (L4) — كاملة منذ R4 |
 | القطع (Views/Controls) | نمط الأنماط في `Resources/Themes/Components/*.xaml` |
 | البيانات (Repository) | *(لم يُبنَ بعد)* |
 | المنطق (Service) | *(لم يُبنَ بعد)* |
@@ -76,16 +76,15 @@
 | `Resources/Print/` | ❌ لا — ثابتة دائماً | ❌ لا، يحمّلها `PrintService` بنفسه وقت البناء | المستندات المطبوعة (`FlowDocument`) |
 | `Resources/Export/` | ❌ لا — ثابتة دائماً | ❌ لا — ثوابت C# صرفة (`ExportTheme.cs`)، لا XAML | ملفات Excel/CSV/PDF المُصدَّرة |
 
-**Resources/Design/ (منذ البند 1 من التصحيح المعماري)**: سلسلة مراجع أربع طبقات — `Identity/{Pack}/Primitives.
-Color.xaml` (L1، قيم حرفية، بالدور لا بالصبغة: `P.Color.Brand.*` لا `P.Color.Blue.*`) → `Semantic/Semantic.
-Light.xaml`/`Semantic.Dark.xaml` (L2، نفس أسماء المفاتيح المستهلَكة في القطع — `BrandDefault`، `TextPrimary`...
-— بلا تغيير اسم واحد؛ القيمة `DynamicResource` لمفتاح L1). `IIdentityService`/`IdentityService`
-(`Services/Design/`) يبدّل حزمة الهوية (L1) وقت التشغيل. **آلية التبديل مُثبتة تجريبياً لا افتراضاً** — راجع
-تعليق التوثيق أعلى `IdentityService.Apply` و`IdentityServiceTests`: التعديل الجزئي لقاموس متداخل، أو حتى
-استبدال `Application.Resources` بالكامل دفعة واحدة بشجرة جاهزة مسبقاً، **لا يُحدِّثان** فرش الألوان المُخزَّنة
-سلفاً على عناصر حيّة؛ الترتيب الوحيد الذي يعمل: تعيين `Application.Resources` لقاموس جديد أولاً (فيصبح حياً)،
-ثم تعديل `MergedDictionaries` الخاصة به كخطوة منفصلة لاحقة. طبقتا Components (L3)/Styles (L4) لم تُبنيا بعد —
-القطع الحالية لا تزال تستهلك مفاتيح L2 مباشرة (نفس النمط قبل هذا البند)؛ يُستكملان في بند لاحق (ترحيل القطع).
+**5.Design/ (سلسلة كاملة منذ R4)**: أربع طبقات — `Identity/{Pack}/Primitives.{Color,Type,Space,Shape,Motion,
+Elevation}.xaml` (L1، قيم حرفية، بالدور لا بالصبغة: `P.Color.Brand.*` لا `P.Color.Blue.*`) → `Semantic/
+Semantic.Light.xaml`/`Semantic.Dark.xaml`/`Semantic.Type.xaml` (L2) → `Components/Tokens.*.xaml` (L3) →
+`Styles/Style.*.xaml` (L4). `IIdentityService` (`1.Platform/Design/`) / `IdentityService` (`6.UI/Services/`)
+يبدّل حزمة الهوية (L1) بأكملها وقت التشغيل — الأبعاد الخمسة (لون/خط/مسافة/شكل/ظل) معاً. **آلية التبديل مُثبتة
+تجريبياً لا افتراضاً، وتغيَّرت جذرياً في R4** — راجع ARCHITECTURE.md § R4 ⚠️ توقف 5 للتفصيل الكامل: `ResourceDictionary`
+تُجمِّد أي مورد مُركَّب متداخل (مثال `DropShadowEffect`) على أول قيمة يراها للأبد إن حُمِّل قبل استقرار الهوية
+الصحيحة — الحل: الهوية أولاً في بناء الشجرة، ثم `Theme.xaml`، لا العكس أبداً. `Theme.xaml` نفسه لم يعد يتضمّن
+أي ملف هوية — `IIdentityService.Apply`/`Initialize` هو المسؤول الوحيد عن بناء الشجرة الكاملة بالترتيب الصحيح.
 
 **لماذا الطباعة منطقة منفصلة عن الشاشة (لا `DynamicResource` من Themes إطلاقاً)**: لو قرأ قالب الطباعة ألوانه من
 `Resources/Design/Semantic/Semantic.Light.xaml` مباشرة، فسيطبع المستخدم ورقة بخلفية سوداء ونص أبيض بمجرد تفعيل

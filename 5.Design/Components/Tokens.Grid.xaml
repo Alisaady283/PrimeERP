@@ -1,0 +1,35 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- L3 — رموز مكوّن الجدول (AppDataGrid). الألوان تشير لـ L2 Semantic حصراً. -->
+
+    <SolidColorBrush x:Key="C.Grid.Header.Bg"     Color="{DynamicResource SurfaceCanvas}"/>
+    <SolidColorBrush x:Key="C.Grid.Header.Fg"     Color="{DynamicResource TextSecondary}"/>
+    <SolidColorBrush x:Key="C.Grid.Header.Border" Color="{DynamicResource OutlineDefault}"/>
+
+    <SolidColorBrush x:Key="C.Grid.Row.Bg"      Color="{DynamicResource SurfaceDefault}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.AltBg"   Color="{DynamicResource SurfaceCanvas}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.Hover"   Color="{DynamicResource TableRowHover}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.Selected.Bg" Color="{DynamicResource TableRowSelected}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.Selected.Fg" Color="{DynamicResource TableRowSelectedText}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.Danger.Bg"   Color="{DynamicResource DangerSoft}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.Warning.Bg"  Color="{DynamicResource WarningSoft}"/>
+
+    <SolidColorBrush x:Key="C.Grid.Border"      Color="{DynamicResource OutlineDefault}"/>
+    <SolidColorBrush x:Key="C.Grid.Cell.Fg"     Color="{DynamicResource TextPrimary}"/>
+
+    <SolidColorBrush x:Key="C.Grid.Footer.Bg"     Color="{DynamicResource SurfaceCanvas}"/>
+    <SolidColorBrush x:Key="C.Grid.Footer.Fg"     Color="{DynamicResource TextPrimary}"/>
+    <SolidColorBrush x:Key="C.Grid.Footer.Border" Color="{DynamicResource OutlineDefault}"/>
+
+    <SolidColorBrush x:Key="C.Grid.Empty.Fg" Color="{DynamicResource TextMuted}"/>
+    <sys:Double      x:Key="C.Grid.Empty.IconSize">40</sys:Double>
+
+    <sys:Double x:Key="C.Grid.Header.Height">40</sys:Double>
+    <sys:Double x:Key="C.Grid.Row.Height">40</sys:Double>
+    <sys:Double x:Key="C.Grid.Footer.Height">36</sys:Double>
+    <sys:Double x:Key="C.Grid.RowHeader.Width">40</sys:Double>
+
+</ResourceDictionary>

@@ -1,0 +1,10 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- L3 — رموز الشارة (AppBadge). الألوان الفعلية بحسب StatusVariant تُحسب وقت التشغيل عبر VariantToBrushConverter (راجع DESIGN_SYSTEM.md) — هنا الأبعاد فقط. -->
+
+    <sys:Double x:Key="C.Badge.IconSize">11</sys:Double>
+
+</ResourceDictionary>

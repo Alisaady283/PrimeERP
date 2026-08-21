@@ -3,31 +3,43 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
-        جذر دمج الموارد — بديل Resources/Themes/Theme.xaml السابق. ترتيب الدمج مُلزم:
-        Identity (P.Color.*) → Semantic (الألوان الدلالية، فاتح) → Typography/Metrics (لم تُنقل بعد — البند 1
-        يعالج سلسلة الألوان فقط، راجع تعليق التوقف 1 أدناه) → Icons → Implicit → ScrollBars → Components/*.
-
-        حزمة الهوية المدموجة هنا (Identity/Default) هي حزمة الإقلاع الافتراضية فقط — IdentityService يستبدل
-        قاموس P.Color.* عند التشغيل الفعلي (Apply) بحزمة أخرى (مثال Corporate) دون إعادة تحميل أي ملف آخر في
-        هذه القائمة، لأن Semantic.Light/Dark.xaml تشير لمفاتيح P.Color.* عبر DynamicResource لا StaticResource.
-
-        ⚠️ نطاق البند 1 (مسجَّل بصراحة، راجع تقرير توقف 1): Typography.xaml وMetrics.xaml بقيتا في مكانهما
-        الأصلي (Resources/Themes) بلا تغيير — لا حزمة هوية بديلة تغيّرهما بعد، وأغلب استهلاكهما في القطع
-        عبر StaticResource (لا يعاد حله وقت التشغيل)، فبناء طبقة Semantic/Primitives كاملة لهما الآن كان
-        سينتج بنية بلا مستهلك حقيقي يمكن إثباته. يُستكملان في البند 5 حين تُعاد كتابة طبقة الأنماط (Styles)
-        لتستهلك رموز مكوّنات (Components/Tokens.*) عبر DynamicResource فعلياً.
+        جذر دمج الموارد — بلا ملفات L1/Identity هنا عمداً (⚠️ توقف 5، ARCHITECTURE.md). Theme.xaml هذا لا يُدمج
+        وحده أبداً — IIdentityService.Apply/Initialize هو المسؤول الوحيد عن بنائه: يُدرج الستة ملفات
+        Identity/{key}/Primitives.*.xaml أولاً في قاموس فارغ جديد، ثم يدمج Theme.xaml هذا فوقها كخطوة تالية.
+        السبب: ResourceDictionary تُخزِّن (تُجمِّد) كل مورد مُركَّب أول مرة يُطلَب (مثال: DropShadowEffect
+        "ShadowMd" الذي تشير خاصية BlurRadius فيه لـ P.Shadow.Md.Blur عبر DynamicResource متداخل) — لا تُعيد
+        تقييمه لاحقاً حتى لو تغيّر المفتاح الذي يشير إليه، بخلاف قيمة محلية مباشرة على FrameworkElement (تُعاد
+        دائماً). فلو حُمِّل Theme.xaml (وبالتالي Semantic.Light.xaml) قبل تثبيت الهوية الصحيحة ولو للحظة، تتجمّد
+        "ShadowMd" على قيمة الهوية الخاطئة إلى الأبد — لا يُصلحها أي InvalidateProperty/SetResourceReference
+        لاحق، مهما كانت الهوية النهائية. الترتيب الصحيح الوحيد: الهوية أولاً، ثم Theme.xaml — لا العكس أبداً.
     -->
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="Identity/Default/Primitives.Color.xaml"/>
+        <!-- ===== L2 — Semantic (فاتح) ===== -->
         <ResourceDictionary Source="Semantic/Semantic.Light.xaml"/>
-        <ResourceDictionary Source="Identity/Default/Typography.xaml"/>
-        <ResourceDictionary Source="Identity/Default/Metrics.xaml"/>
+        <ResourceDictionary Source="Semantic/Semantic.Type.xaml"/>
+
+        <!-- ===== L3 — Components ===== -->
+        <ResourceDictionary Source="Components/Tokens.Button.xaml"/>
+        <ResourceDictionary Source="Components/Tokens.Input.xaml"/>
+        <ResourceDictionary Source="Components/Tokens.Dialog.xaml"/>
+        <ResourceDictionary Source="Components/Tokens.Grid.xaml"/>
+        <ResourceDictionary Source="Components/Tokens.Nav.xaml"/>
+        <ResourceDictionary Source="Components/Tokens.Card.xaml"/>
+        <ResourceDictionary Source="Components/Tokens.Badge.xaml"/>
+        <ResourceDictionary Source="Components/Tokens.Toolbar.xaml"/>
+        <ResourceDictionary Source="Components/Tokens.Pagination.xaml"/>
+        <ResourceDictionary Source="Components/Tokens.Tree.xaml"/>
+        <ResourceDictionary Source="Components/Tokens.Toast.xaml"/>
+        <ResourceDictionary Source="Components/Tokens.Document.xaml"/>
+
         <ResourceDictionary Source="Icons/Icons.xaml"/>
         <ResourceDictionary Source="Styles/Implicit.xaml"/>
         <ResourceDictionary Source="Styles/ScrollBars.xaml"/>
-        <ResourceDictionary Source="Styles/Inputs.xaml"/>
-        <ResourceDictionary Source="Styles/Buttons.xaml"/>
-        <ResourceDictionary Source="Styles/Dialogs.xaml"/>
+
+        <!-- ===== L4 — Styles ===== -->
+        <ResourceDictionary Source="Styles/Style.Input.xaml"/>
+        <ResourceDictionary Source="Styles/Style.Button.xaml"/>
+        <ResourceDictionary Source="Styles/Style.Dialog.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
 </ResourceDictionary>

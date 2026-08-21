@@ -15,14 +15,14 @@
     <Style TargetType="Window">
         <Setter Property="Background" Value="{DynamicResource SurfaceCanvas}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
     </Style>
 
     <Style TargetType="UserControl">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
     </Style>
 
     <!-- ===== TextBlock ===== -->
@@ -33,8 +33,8 @@
         بداخلها — وهذا بالضبط ما كان يُخفي نصوص الـ Sidebar والأزرار. الخط/الحجم فقط هنا؛ اللون يُورَّث دائماً.
     -->
     <Style TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
     </Style>
 
     <!-- ===== TextBox ===== -->
@@ -47,14 +47,14 @@
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="10,7"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="border" Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{DynamicResource RadiusMd}">
+                            CornerRadius="{DynamicResource P.Radius.Md}">
                         <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -80,8 +80,8 @@
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="10,7"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
@@ -92,7 +92,7 @@
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Border x:Name="toggleBorder" Background="{DynamicResource SurfaceDefault}"
                                             BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"
-                                            CornerRadius="{DynamicResource RadiusMd}">
+                                            CornerRadius="{DynamicResource P.Radius.Md}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -121,7 +121,7 @@
                                AllowsTransparency="True" PopupAnimation="Fade"
                                Width="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
                             <Border Background="{DynamicResource SurfaceDefault}" BorderBrush="{DynamicResource OutlineDefault}"
-                                    BorderThickness="1" CornerRadius="{DynamicResource RadiusMd}" Margin="0,4,0,0"
+                                    BorderThickness="1" CornerRadius="{DynamicResource P.Radius.Md}" Margin="0,4,0,0"
                                     Effect="{DynamicResource ShadowMd}" MaxHeight="260">
                                 <ScrollViewer>
                                     <ItemsPresenter/>
@@ -138,8 +138,8 @@
 
     <!-- Foreground عمداً غائب — نص التسمية يورث من الحاوية؛ لون صندوق الصح/الحدود ثابت لأنه هوية الصندوق نفسه لا نص. -->
     <Style TargetType="CheckBox">
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
@@ -170,8 +170,8 @@
 
     <!-- Foreground عمداً غائب — نفس منطق CheckBox أعلاه. -->
     <Style TargetType="RadioButton">
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
@@ -204,14 +204,14 @@
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="14,8"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource RadiusMd}">
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource P.Radius.Md}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -238,16 +238,16 @@
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="8,6"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
     </Style>
 
     <Style TargetType="Calendar">
         <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
     </Style>
 
     <!-- ===== ToolTip ===== -->
@@ -255,14 +255,14 @@
     <Style TargetType="ToolTip">
         <Setter Property="Background" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="Foreground" Value="{DynamicResource SurfaceDefault}"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeXs}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.200}"/>
         <Setter Property="Padding" Value="8,5"/>
         <Setter Property="HasDropShadow" Value="False"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToolTip">
-                    <Border Background="{TemplateBinding Background}" CornerRadius="{DynamicResource RadiusSm}"
+                    <Border Background="{TemplateBinding Background}" CornerRadius="{DynamicResource P.Radius.Sm}"
                             Padding="{TemplateBinding Padding}" Effect="{DynamicResource ShadowSm}">
                         <ContentPresenter/>
                     </Border>
@@ -277,13 +277,13 @@
         <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ContextMenu">
                     <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource RadiusMd}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource P.Radius.Md}"
                             Padding="4" Effect="{DynamicResource ShadowMd}">
                         <StackPanel IsItemsHost="True"/>
                     </Border>
@@ -294,13 +294,13 @@
 
     <!-- Foreground عمداً غائب — يورث من ContextMenu (يضمن خلفية فاتحة بثبات عبر نمطه الخاص). -->
     <Style TargetType="MenuItem">
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Padding" Value="10,7"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
-                    <Border x:Name="itemBorder" Background="Transparent" CornerRadius="{DynamicResource RadiusSm}">
+                    <Border x:Name="itemBorder" Background="Transparent" CornerRadius="{DynamicResource P.Radius.Sm}">
                         <ContentPresenter ContentSource="Header" Margin="{TemplateBinding Padding}"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -348,8 +348,8 @@
     <Style TargetType="GroupBox">
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Padding" Value="12"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -359,10 +359,10 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Text="{TemplateBinding Header}" FontWeight="{DynamicResource FontWeightSemiBold}"
-                                   Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FontSizeXs}" Margin="2,0,0,8"/>
+                        <TextBlock Grid.Row="0" Text="{TemplateBinding Header}" FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
+                                   Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource P.Font.Size.200}" Margin="2,0,0,8"/>
                         <Border Grid.Row="1" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{DynamicResource RadiusMd}" Background="{DynamicResource SurfaceDefault}">
+                                CornerRadius="{DynamicResource P.Radius.Md}" Background="{DynamicResource SurfaceDefault}">
                             <ContentPresenter Margin="{TemplateBinding Padding}"/>
                         </Border>
                     </Grid>
@@ -375,8 +375,8 @@
 
     <!-- Foreground عمداً غائب — عنوان ومحتوى Expander يورثان من الحاوية. -->
     <Style TargetType="Expander">
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Expander">
@@ -390,7 +390,7 @@
                                       Content="{TemplateBinding Header}">
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
-                                    <Border Background="{DynamicResource SurfaceCanvas}" CornerRadius="{DynamicResource RadiusMd}" Padding="10,8">
+                                    <Border Background="{DynamicResource SurfaceCanvas}" CornerRadius="{DynamicResource P.Radius.Md}" Padding="10,8">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -429,14 +429,14 @@
     <Style TargetType="TabControl">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
     </Style>
 
     <Style TargetType="TabItem">
         <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Padding" Value="14,10"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -463,8 +463,8 @@
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Padding" Value="4"/>
     </Style>
 
@@ -474,7 +474,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
-                    <Border x:Name="itemBorder" Background="Transparent" CornerRadius="{DynamicResource RadiusSm}" Padding="{TemplateBinding Padding}">
+                    <Border x:Name="itemBorder" Background="Transparent" CornerRadius="{DynamicResource P.Radius.Sm}" Padding="{TemplateBinding Padding}">
                         <ContentPresenter/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -501,8 +501,8 @@
         <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-        <Setter Property="FontFamily" Value="{DynamicResource FontFamilyPrimary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="RowHeight" Value="38"/>
         <Setter Property="HeadersVisibility" Value="Column"/>
         <Setter Property="CanUserAddRows" Value="False"/>

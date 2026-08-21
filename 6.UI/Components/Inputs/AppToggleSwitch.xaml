@@ -4,9 +4,9 @@
     <StackPanel>
 
         <TextBlock x:Name="txtLabel"
-                   FontSize="{StaticResource FontSizeXs}"
-                   FontFamily="{StaticResource AppFontFamily}"
-                   Foreground="{DynamicResource SubTextBrush}"
+                   FontSize="{DynamicResource P.Font.Size.200}"
+                   FontFamily="{DynamicResource P.Font.Family.Primary}"
+                   Foreground="{DynamicResource TextSecondary}"
                    Margin="0,0,0,4"
                    Visibility="Collapsed"/>
 
@@ -14,7 +14,7 @@
                     Background="Transparent"
                     MouseLeftButtonUp="Root_MouseLeftButtonUp">
             <Border x:Name="track" Width="42" Height="24" CornerRadius="12"
-                    Background="{DynamicResource OutlineStrongBrush}">
+                    Background="{DynamicResource OutlineStrong}">
                 <Border x:Name="thumb" Width="18" Height="18" CornerRadius="9"
                         Background="White" HorizontalAlignment="Left" Margin="3,0,0,0">
                     <Border.RenderTransform>
@@ -29,9 +29,9 @@
             <TextBlock x:Name="txtStatus"
                        Margin="8,0,0,0"
                        VerticalAlignment="Center"
-                       FontSize="{StaticResource FontSizeSm}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       Foreground="{DynamicResource BodyTextBrush}"/>
+                       FontSize="{DynamicResource P.Font.Size.300}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextPrimary}"/>
         </StackPanel>
     </StackPanel>
 </UserControl>

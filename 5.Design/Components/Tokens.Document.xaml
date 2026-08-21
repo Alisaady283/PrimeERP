@@ -1,0 +1,15 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- L3 — رموز قطع المستند (DocumentHeader/Footer/LinesGrid). الألوان تشير لـ L2 Semantic حصراً. -->
+
+    <SolidColorBrush x:Key="C.Document.Bg"     Color="{DynamicResource SurfaceDefault}"/>
+    <SolidColorBrush x:Key="C.Document.Border" Color="{DynamicResource OutlineDefault}"/>
+    <SolidColorBrush x:Key="C.Document.Label.Fg" Color="{DynamicResource TextSecondary}"/>
+    <SolidColorBrush x:Key="C.Document.Muted.Fg" Color="{DynamicResource TextMuted}"/>
+
+    <!-- خلفية خلايا الإدخال داخل شبكة السطور (كمية/سعر/خصم) — نفس دور C.Input.Bg بالضبط. -->
+    <SolidColorBrush x:Key="C.Document.Field.Bg" Color="{DynamicResource SurfaceDefault}"/>
+
+</ResourceDictionary>

@@ -52,7 +52,7 @@ namespace PrimeERP.UI.Components.Inputs
             };
             c.thumbTransform.BeginAnimation(TranslateTransform.XProperty, anim);
 
-            c.track.Background = isChecked ? (Brush)c.FindResource("BrandBrush") : (Brush)c.FindResource("OutlineStrongBrush");
+            c.track.Background = isChecked ? (Brush)c.FindResource("BrandDefault") : (Brush)c.FindResource("OutlineStrong");
             c.UpdateStatusText();
         }
 

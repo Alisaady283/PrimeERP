@@ -4,7 +4,7 @@
 
     <!--
         كل الأيقونات هندسية (Path Geometry) على شبكة 24x24 — بلا أي emoji.
-        تُستخدم كـ <Path Data="{StaticResource IconX}" Stroke="{DynamicResource BodyTextBrush}"
+        تُستخدم كـ <Path Data="{StaticResource IconX}" Stroke="{DynamicResource TextPrimary}"
                         StrokeThickness="1.8" StrokeLineJoin="Round" StrokeStartLineCap="Round"
                         StrokeEndLineCap="Round" Stretch="Uniform" Width="18" Height="18"/>
     -->

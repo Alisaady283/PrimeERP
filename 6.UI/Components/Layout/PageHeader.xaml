@@ -1,8 +1,8 @@
 <UserControl x:Class="PrimeERP.UI.Components.Layout.PageHeader"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Border Background="{DynamicResource PanelBrush}"
-            BorderBrush="{DynamicResource OutlineBrush}"
+    <Border Background="{DynamicResource SurfaceDefault}"
+            BorderBrush="{DynamicResource OutlineDefault}"
             BorderThickness="0,0,0,1"
             Padding="24,16">
         <Grid>
@@ -14,28 +14,28 @@
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                 <Border x:Name="iconWrap"
                         Width="40" Height="40"
-                        CornerRadius="{StaticResource RadiusMd}"
-                        Background="{DynamicResource BrandTintBrush}"
+                        CornerRadius="{DynamicResource P.Radius.Md}"
+                        Background="{DynamicResource BrandSoft}"
                         Margin="0,0,12,0"
                         Visibility="Collapsed">
                     <Path x:Name="icon"
                           Stretch="Uniform" Width="18" Height="18"
                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                          Stroke="{DynamicResource BrandBrush}"
+                          Stroke="{DynamicResource BrandDefault}"
                           StrokeThickness="1.8"
                           StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                 </Border>
 
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock x:Name="txtTitle"
-                               FontSize="{StaticResource FontSizeLg}"
-                               FontWeight="{StaticResource FontWeightBold}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               Foreground="{DynamicResource BodyTextBrush}"/>
+                               FontSize="{DynamicResource P.Font.Size.600}"
+                               FontWeight="{DynamicResource P.Font.Weight.Bold}"
+                               FontFamily="{DynamicResource P.Font.Family.Primary}"
+                               Foreground="{DynamicResource TextPrimary}"/>
                     <TextBlock x:Name="txtSubtitle"
-                               FontSize="{StaticResource FontSizeXs}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               Foreground="{DynamicResource FaintTextBrush}"
+                               FontSize="{DynamicResource P.Font.Size.200}"
+                               FontFamily="{DynamicResource P.Font.Family.Primary}"
+                               Foreground="{DynamicResource TextMuted}"
                                Margin="0,2,0,0"
                                Visibility="Collapsed"/>
                 </StackPanel>
