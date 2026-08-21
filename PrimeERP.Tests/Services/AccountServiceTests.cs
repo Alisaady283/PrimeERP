@@ -1,16 +1,22 @@
 using System;
 using System.Data.Common;
-using PrimeERP.Core;
-using PrimeERP.Core.Common;
-using PrimeERP.Database;
-using PrimeERP.Models;
-using PrimeERP.Services;
-using PrimeERP.Services.Accounting;
-using PrimeERP.Services.Accounting.DTOs;
-using PrimeERP.Services.Parties;
-using PrimeERP.Services.Parties.DTOs;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.Domain.Enums;
+using PrimeERP.Domain.Results;
+using PrimeERP.Data.Repositories;
+using PrimeERP.Platform.Settings;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.Domain.Entities;
+using PrimeERP.Platform.Localization;
+using PrimeERP.UI.Services;
+using PrimeERP.Application;
+using PrimeERP.Application.Services;
+using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.DTOs.Accounting;
+using PrimeERP.Application.Services.Parties;
+using PrimeERP.Application.DTOs.Parties;
 using Xunit;
-using Db = PrimeERP.Core.Database.DbHelper;
+using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Tests.Services
 {

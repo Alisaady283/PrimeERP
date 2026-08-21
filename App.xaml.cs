@@ -1,20 +1,22 @@
 ﻿using System.Configuration;
 using System.Data;
 using System.Windows;
-using PrimeERP.Services;
-using PrimeERP.Services.Accounting;
-using PrimeERP.Services.Backup;
-using PrimeERP.Services.Design;
-using PrimeERP.Services.Parties;
-using PrimeERP.Services.Print;
-using PrimeERP.Services.Settings;
+using PrimeERP.Platform.Localization;
+using PrimeERP.UI.Services;
+using PrimeERP.Application;
+using PrimeERP.Application.Services;
+using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Services.Backup;
+using PrimeERP.Application.Services.Parties;
+using PrimeERP.Application.Services.Print;
+using PrimeERP.Platform.Settings;
 
-namespace PrimeERP;
+namespace PrimeERP.App;
 
 /// <summary>
 /// Interaction logic for App.xaml
 /// </summary>
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     protected override void OnStartup(StartupEventArgs e)
     {

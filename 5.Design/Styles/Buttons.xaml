@@ -1,0 +1,133 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:actions="clr-namespace:PrimeERP.UI.Components.Actions">
+
+    <!--
+        كل البصري لـ AppButton وActionToolbar هنا. AppButton نفسها بنية فقط (Button يحمل Style من هنا
+        + StackPanel لأيقونة/نص). الشكل (Variant/Size/IsDangerous) عبر DataTrigger مربوطة بخصائص AppButton
+        المنطقية — القطعة لا تحسب ألواناً ولا أبعاداً في C# إطلاقاً.
+    -->
+
+    <Style x:Key="AppButtonStyle" TargetType="Button">
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="{DynamicResource BrandDefault}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BrandDefault}"/>
+        <Setter Property="Height" Value="{StaticResource HeightMd}"/>
+        <Setter Property="Padding" Value="16,0,16,0"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{StaticResource FontFamilyPrimary}"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="chrome"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource RadiusMd}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="chrome" Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="chrome" Property="Opacity" Value="0.85"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
+        <Style.Triggers>
+            <!-- ===== Size ===== -->
+            <DataTrigger Binding="{Binding Size, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="sm">
+                <Setter Property="Height" Value="{StaticResource HeightSm}"/>
+                <Setter Property="Padding" Value="12,0,12,0"/>
+                <Setter Property="FontSize" Value="{StaticResource FontSizeXs}"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Size, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="lg">
+                <Setter Property="Height" Value="{StaticResource HeightLg}"/>
+                <Setter Property="Padding" Value="24,0,24,0"/>
+                <Setter Property="FontSize" Value="{StaticResource FontSizeMd}"/>
+            </DataTrigger>
+
+            <!-- ===== Variant ===== -->
+            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="secondary">
+                <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="success">
+                <Setter Property="Background" Value="{DynamicResource Success}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Success}"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="warning">
+                <Setter Property="Background" Value="{DynamicResource Warning}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Warning}"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="ghost">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{DynamicResource BrandDefault}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="danger">
+                <Setter Property="Background" Value="{DynamicResource Danger}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
+            </DataTrigger>
+
+            <!-- ===== IsDangerous يفرض شكل danger بصرف النظر عن Variant — آخر شرط عمداً ليطغى ===== -->
+            <DataTrigger Binding="{Binding IsDangerous, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Danger}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
+                <Setter Property="BorderThickness" Value="0"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- الأيقونة الداخلية: حجمها من IconSize (تحدّدها AppButtonStyle حسب Size)، لونها من Foreground الزر نفسه. -->
+    <Style x:Key="AppButtonIconStyle" TargetType="Path">
+        <Setter Property="Margin" Value="0,0,8,0"/>
+        <Setter Property="StrokeThickness" Value="2"/>
+        <Setter Property="StrokeStartLineCap" Value="Round"/>
+        <Setter Property="StrokeEndLineCap" Value="Round"/>
+        <Setter Property="StrokeLineJoin" Value="Round"/>
+        <Setter Property="Width" Value="{Binding IconSize, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}"/>
+        <Setter Property="Height" Value="{Binding IconSize, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}"/>
+        <Setter Property="Stroke" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+    </Style>
+
+    <!-- تحدّد الحجم فعلياً حسب Size (تُقرأ IconSize من AppButton نفسها عبر Trigger مطابق في AppButtonStyle، لكن بما أن
+         IconSize خاصية على AppButton لا على Button، نضبطها هنا مباشرة على مستوى AppButton نفسها. -->
+    <Style TargetType="{x:Type actions:AppButton}">
+        <Setter Property="IconSize" Value="{StaticResource IconSm}"/>
+        <Style.Triggers>
+            <Trigger Property="Size" Value="sm">
+                <Setter Property="IconSize" Value="{StaticResource IconXs}"/>
+            </Trigger>
+            <Trigger Property="Size" Value="lg">
+                <Setter Property="IconSize" Value="{StaticResource IconMd}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ===== ActionToolbar (فاصل + تباعد بين الأزرار المُولَّدة برمجياً) ===== -->
+
+    <Style x:Key="ActionToolbarSeparatorStyle" TargetType="Border">
+        <Setter Property="Width" Value="1"/>
+        <Setter Property="Margin" Value="6,6,6,6"/>
+        <Setter Property="Background" Value="{DynamicResource OutlineDefault}"/>
+    </Style>
+
+    <Thickness x:Key="ActionToolbarItemSpacing">0,0,6,0</Thickness>
+
+</ResourceDictionary>

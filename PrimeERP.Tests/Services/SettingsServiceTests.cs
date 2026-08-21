@@ -1,4 +1,4 @@
-using PrimeERP.Services.Settings;
+using PrimeERP.Platform.Settings;
 using Xunit;
 
 namespace PrimeERP.Tests.Services

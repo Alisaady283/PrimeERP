@@ -1,14 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PrimeERP.Core;
-using PrimeERP.Core.Common;
-using PrimeERP.Database;
-using PrimeERP.Services;
-using PrimeERP.Services.Accounting;
-using PrimeERP.Services.Accounting.DTOs;
-using PrimeERP.Services.Print;
-using PrimeERP.Services.Print.Templates;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.Domain.Enums;
+using PrimeERP.Domain.Results;
+using PrimeERP.Data.Repositories;
+using PrimeERP.Platform.Settings;
+using PrimeERP.Platform.Localization;
+using PrimeERP.UI.Services;
+using PrimeERP.Application;
+using PrimeERP.Application.Services;
+using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.DTOs.Accounting;
+using PrimeERP.Application.Services.Print;
+using PrimeERP.Application.Services.Print.Templates;
 using Xunit;
 
 namespace PrimeERP.Tests.Services

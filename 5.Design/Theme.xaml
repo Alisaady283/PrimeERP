@@ -1,0 +1,33 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        جذر دمج الموارد — بديل Resources/Themes/Theme.xaml السابق. ترتيب الدمج مُلزم:
+        Identity (P.Color.*) → Semantic (الألوان الدلالية، فاتح) → Typography/Metrics (لم تُنقل بعد — البند 1
+        يعالج سلسلة الألوان فقط، راجع تعليق التوقف 1 أدناه) → Icons → Implicit → ScrollBars → Components/*.
+
+        حزمة الهوية المدموجة هنا (Identity/Default) هي حزمة الإقلاع الافتراضية فقط — IdentityService يستبدل
+        قاموس P.Color.* عند التشغيل الفعلي (Apply) بحزمة أخرى (مثال Corporate) دون إعادة تحميل أي ملف آخر في
+        هذه القائمة، لأن Semantic.Light/Dark.xaml تشير لمفاتيح P.Color.* عبر DynamicResource لا StaticResource.
+
+        ⚠️ نطاق البند 1 (مسجَّل بصراحة، راجع تقرير توقف 1): Typography.xaml وMetrics.xaml بقيتا في مكانهما
+        الأصلي (Resources/Themes) بلا تغيير — لا حزمة هوية بديلة تغيّرهما بعد، وأغلب استهلاكهما في القطع
+        عبر StaticResource (لا يعاد حله وقت التشغيل)، فبناء طبقة Semantic/Primitives كاملة لهما الآن كان
+        سينتج بنية بلا مستهلك حقيقي يمكن إثباته. يُستكملان في البند 5 حين تُعاد كتابة طبقة الأنماط (Styles)
+        لتستهلك رموز مكوّنات (Components/Tokens.*) عبر DynamicResource فعلياً.
+    -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Identity/Default/Primitives.Color.xaml"/>
+        <ResourceDictionary Source="Semantic/Semantic.Light.xaml"/>
+        <ResourceDictionary Source="Identity/Default/Typography.xaml"/>
+        <ResourceDictionary Source="Identity/Default/Metrics.xaml"/>
+        <ResourceDictionary Source="Icons/Icons.xaml"/>
+        <ResourceDictionary Source="Styles/Implicit.xaml"/>
+        <ResourceDictionary Source="Styles/ScrollBars.xaml"/>
+        <ResourceDictionary Source="Styles/Inputs.xaml"/>
+        <ResourceDictionary Source="Styles/Buttons.xaml"/>
+        <ResourceDictionary Source="Styles/Dialogs.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+</ResourceDictionary>

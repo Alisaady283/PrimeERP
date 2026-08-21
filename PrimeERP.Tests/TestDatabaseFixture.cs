@@ -1,8 +1,10 @@
 using System;
 using System.IO;
-using PrimeERP.Core.Database;
-using PrimeERP.Database;
-using PrimeERP.Services.Settings;
+using PrimeERP.Data.Core;
+using PrimeERP.Data.Schema;
+using PrimeERP.Data.Repositories;
+using PrimeERP.Platform.Settings;
+using PrimeERP.Platform.Permissions;
 
 namespace PrimeERP.Tests
 {

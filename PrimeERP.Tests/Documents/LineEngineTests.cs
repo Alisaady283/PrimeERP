@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using PrimeERP.Views.Controls.Documents;
+using PrimeERP.UI.Components.Documents;
 using Xunit;
 
 namespace PrimeERP.Tests.Documents

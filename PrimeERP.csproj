@@ -5,9 +5,8 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <!-- صفحات/حوارات/ViewModels قديمة ستُعاد كتابتها من القطع في المرحلة H — مستثناة من البناء حتى ذلك الحين.
-         PrimeERP.Tests مشروع منفصل بملف .csproj خاص به — يُستثنى من جلب هذا المشروع الضمني أيضاً. -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);_Legacy/**;PrimeERP.Tests/**</DefaultItemExcludes>
+    <!-- PrimeERP.Tests مشروع منفصل بملف .csproj خاص به — يُستثنى من جلب هذا المشروع الضمني. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);PrimeERP.Tests/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,5 +24,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
 
 </Project>

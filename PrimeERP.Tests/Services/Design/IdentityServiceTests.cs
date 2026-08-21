@@ -2,7 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using PrimeERP.Services.Design;
+using PrimeERP.UI.Services;
 using Xunit;
 
 namespace PrimeERP.Tests.Services.Design
@@ -32,7 +32,7 @@ namespace PrimeERP.Tests.Services.Design
         {
             StaThreadHelper.Run(() =>
             {
-                if (Application.Current == null) new Application();
+                if (System.Windows.Application.Current == null) new System.Windows.Application();
 
                 // يطابق بنية App.xaml الحقيقية بالضبط: قاموس علوي فارغ (بلا Source خاص به) يدمج Theme.xaml
                 // كعنصر ضمن قائمته — لا قاموس بـ Source=Theme.xaml مباشرة كـ Resources نفسها. الفرق جوهري:
@@ -42,9 +42,9 @@ namespace PrimeERP.Tests.Services.Design
                 var root = new ResourceDictionary();
                 root.MergedDictionaries.Add(new ResourceDictionary
                 {
-                    Source = new Uri($"pack://application:,,,/{asmName};component/Resources/Design/Theme.xaml", UriKind.Absolute)
+                    Source = new Uri($"pack://application:,,,/{asmName};component/5.Design/Theme.xaml", UriKind.Absolute)
                 });
-                Application.Current.Resources = root;
+                System.Windows.Application.Current.Resources = root;
 
                 var border = new Border();
                 border.SetResourceReference(Border.BackgroundProperty, "BrandDefault");
@@ -62,7 +62,7 @@ namespace PrimeERP.Tests.Services.Design
 
                     // إعادة تقييم مرجع المورد على عنصر حيّ تُنفَّذ عبر Dispatcher لا فوراً بشكل متزامن — تفريغ
                     // الطابور قبل القراءة، وإلا القيمة المقروءة قد تكون سابقة للتبديل (اعتماد على توقيت الجدولة).
-                    Application.Current.Dispatcher.Invoke(new Action(() => { }), System.Windows.Threading.DispatcherPriority.Background);
+                    System.Windows.Application.Current.Dispatcher.Invoke(new Action(() => { }), System.Windows.Threading.DispatcherPriority.Background);
 
                     var corporateColor = ((SolidColorBrush)border.Background).Color;
                     Assert.Equal(Hex("#7C3AED"), corporateColor); // Brand.600 من Identity/Corporate — نفس العنصر، بلا إعادة إنشائه

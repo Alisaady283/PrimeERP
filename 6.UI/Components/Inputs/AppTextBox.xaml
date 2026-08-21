@@ -1,0 +1,33 @@
+<UserControl x:Class="PrimeERP.UI.Components.Inputs.AppTextBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+
+        <StackPanel x:Name="pnlLabel" Orientation="Horizontal" Visibility="Collapsed" Style="{StaticResource FieldLabelRowStyle}">
+            <TextBlock x:Name="txtLabel" Style="{StaticResource FieldLabelTextStyle}"/>
+            <TextBlock x:Name="txtRequired" Text=" *" Style="{StaticResource FieldRequiredMarkStyle}" Visibility="Collapsed"/>
+        </StackPanel>
+
+        <Border x:Name="border" Style="{StaticResource AppTextBox_FieldBorder}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Path x:Name="prefixIcon" Grid.Column="0" Style="{StaticResource FieldPrefixIconStyle}" Visibility="Collapsed"/>
+
+                <Grid Grid.Column="1">
+                    <TextBox x:Name="txt" Style="{StaticResource FieldInnerTextBoxStyle}"
+                             TextChanged="txt_TextChanged"/>
+                    <TextBlock x:Name="placeholder" IsHitTestVisible="False" Style="{StaticResource FieldPlaceholderStyle}"/>
+                </Grid>
+
+                <Path x:Name="suffixIcon" Grid.Column="2" Style="{StaticResource FieldSuffixIconStyle}" Visibility="Collapsed"/>
+            </Grid>
+        </Border>
+
+        <TextBlock x:Name="txtError" Style="{StaticResource FieldErrorTextStyle}" Visibility="Collapsed"/>
+    </StackPanel>
+</UserControl>

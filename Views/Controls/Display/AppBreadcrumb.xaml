@@ -1,5 +1,0 @@
-<UserControl x:Class="PrimeERP.Views.Controls.Display.AppBreadcrumb"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <StackPanel x:Name="pnlItems" Orientation="Horizontal"/>
-</UserControl>

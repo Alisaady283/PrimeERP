@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using PrimeERP.Models;
-using PrimeERP.Services.Print;
+using PrimeERP.Domain.Entities;
+using PrimeERP.Application.Services.Print;
 using Xunit;
 
 namespace PrimeERP.Tests.Services
