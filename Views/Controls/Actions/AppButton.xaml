@@ -1,0 +1,14 @@
+<UserControl x:Class="PrimeERP.Views.Controls.Actions.AppButton"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Button x:Name="btn" Cursor="Hand" Style="{StaticResource AppButtonStyle}" Click="btn_Click">
+        <StackPanel Orientation="Horizontal">
+            <Path x:Name="icon"
+                  Stretch="Uniform"
+                  VerticalAlignment="Center"
+                  Style="{StaticResource AppButtonIconStyle}"
+                  Visibility="Collapsed"/>
+            <TextBlock x:Name="txt" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
+</UserControl>

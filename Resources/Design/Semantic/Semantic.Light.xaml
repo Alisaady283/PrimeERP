@@ -1,0 +1,116 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!--
+        L2 — رموز دلالية (Semantic)، الوضع الفاتح. بديل Resources/Themes/Colors.xaml السابق — نفس المفاتيح
+        بالضبط (BrandDefault, TextPrimary...) بلا تغيير اسم واحد، لأن كل قطعة/نمط في المشروع (Views/Controls،
+        Resources/Themes/Components/*, Implicit.xaml) يستهلك هذه الأسماء مباشرة عبر DynamicResource — تغيير
+        الأسماء هنا كان سيتطلب تعديل عشرات ملفات القطع، وهذا خارج نطاق البند 1 (يقع ضمن ترحيل القطع، البند 5).
+        الفرق الجوهري عن الملف القديم: القيمة هنا DynamicResource لمفتاح P.Color.* من حزمة الهوية الحالية
+        (Identity/Default أو Identity/Corporate)، لا Hex حرفي مكرر — هذا هو إصلاح الانحراف رقم 2 (راجع
+        DESIGN_SYSTEM.md § نظام الرموز). Semantic.Dark.xaml يعيد تعريف كل مفتاح هنا بالضبط بلا استثناء —
+        أي نقص هناك = لون فاتح يظهر خطأً وسط الوضع الداكن.
+    -->
+
+    <!-- ===== الأسطح (Surfaces) — 5 مستويات ===== -->
+    <SolidColorBrush x:Key="SurfaceCanvas"     Color="{DynamicResource P.Color.Neutral.100}"/>
+    <SolidColorBrush x:Key="SurfaceBackground" Color="{DynamicResource P.Color.Neutral.50}"/>
+    <SolidColorBrush x:Key="SurfaceDefault"    Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="SurfaceRaised"     Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="SurfaceOverlay"    Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="SurfaceSunken"     Color="{DynamicResource P.Color.Neutral.100}"/>
+
+    <!-- ===== الحدود (Outlines) — 3 قوى + تركيز ===== -->
+    <SolidColorBrush x:Key="OutlineSubtle"  Color="{DynamicResource P.Color.Neutral.100}"/>
+    <SolidColorBrush x:Key="OutlineDefault" Color="{DynamicResource P.Color.Neutral.200}"/>
+    <SolidColorBrush x:Key="OutlineStrong"  Color="{DynamicResource P.Color.Neutral.300}"/>
+    <SolidColorBrush x:Key="OutlineFocus"   Color="{DynamicResource P.Color.Brand.600}"/>
+
+    <!-- ===== النصوص (Text) — 5 مستويات + رابط ===== -->
+    <SolidColorBrush x:Key="TextPrimary"   Color="{DynamicResource P.Color.Neutral.900}"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="{DynamicResource P.Color.Neutral.600}"/>
+    <SolidColorBrush x:Key="TextTertiary"  Color="{DynamicResource P.Color.Neutral.500}"/>
+    <SolidColorBrush x:Key="TextMuted"     Color="{DynamicResource P.Color.Neutral.400}"/>
+    <SolidColorBrush x:Key="TextOnBrand"   Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="TextLink"      Color="{DynamicResource P.Color.Brand.600}"/>
+
+    <!-- ===== العلامة (Brand) ===== -->
+    <SolidColorBrush x:Key="BrandDefault"    Color="{DynamicResource P.Color.Brand.600}"/>
+    <SolidColorBrush x:Key="BrandHover"      Color="{DynamicResource P.Color.Brand.700}"/>
+    <SolidColorBrush x:Key="BrandActive"     Color="{DynamicResource P.Color.Brand.800}"/>
+    <SolidColorBrush x:Key="BrandSoft"       Color="{DynamicResource P.Color.Brand.50}"/>
+    <SolidColorBrush x:Key="BrandSoftBorder" Color="{DynamicResource P.Color.Brand.200}"/>
+    <SolidColorBrush x:Key="BrandSoftText"   Color="{DynamicResource P.Color.Brand.700}"/>
+
+    <!-- ===== الحالات الدلالية (Semantic) ===== -->
+    <SolidColorBrush x:Key="Success"         Color="{DynamicResource P.Color.Success.600}"/>
+    <SolidColorBrush x:Key="SuccessHover"    Color="{DynamicResource P.Color.Success.700}"/>
+    <SolidColorBrush x:Key="SuccessSoft"     Color="{DynamicResource P.Color.Success.50}"/>
+    <SolidColorBrush x:Key="SuccessSoftText" Color="{DynamicResource P.Color.Success.700}"/>
+
+    <SolidColorBrush x:Key="Danger"         Color="{DynamicResource P.Color.Danger.600}"/>
+    <SolidColorBrush x:Key="DangerHover"    Color="{DynamicResource P.Color.Danger.700}"/>
+    <SolidColorBrush x:Key="DangerSoft"     Color="{DynamicResource P.Color.Danger.50}"/>
+    <SolidColorBrush x:Key="DangerSoftText" Color="{DynamicResource P.Color.Danger.700}"/>
+
+    <SolidColorBrush x:Key="Warning"         Color="{DynamicResource P.Color.Warning.600}"/>
+    <SolidColorBrush x:Key="WarningHover"    Color="{DynamicResource P.Color.Warning.700}"/>
+    <SolidColorBrush x:Key="WarningSoft"     Color="{DynamicResource P.Color.Warning.50}"/>
+    <SolidColorBrush x:Key="WarningSoftText" Color="{DynamicResource P.Color.Warning.700}"/>
+
+    <SolidColorBrush x:Key="Info"         Color="{DynamicResource P.Color.Info.600}"/>
+    <SolidColorBrush x:Key="InfoHover"    Color="{DynamicResource P.Color.Info.700}"/>
+    <SolidColorBrush x:Key="InfoSoft"     Color="{DynamicResource P.Color.Info.50}"/>
+    <SolidColorBrush x:Key="InfoSoftText" Color="{DynamicResource P.Color.Info.700}"/>
+
+    <!-- ===== التنقل (Navigation) ===== -->
+    <SolidColorBrush x:Key="NavSurface"       Color="{DynamicResource P.Color.Nav.900}"/>
+    <SolidColorBrush x:Key="NavSurfaceRaised" Color="{DynamicResource P.Color.Nav.700}"/>
+    <SolidColorBrush x:Key="NavText"          Color="{DynamicResource P.Color.Neutral.400}"/>
+    <SolidColorBrush x:Key="NavTextHover"     Color="{DynamicResource P.Color.Neutral.100}"/>
+    <SolidColorBrush x:Key="NavTextSelected"  Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="NavIcon"          Color="{DynamicResource P.Color.Neutral.500}"/>
+    <SolidColorBrush x:Key="NavIconHover"     Color="{DynamicResource P.Color.Neutral.300}"/>
+    <SolidColorBrush x:Key="NavIconSelected"  Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="NavHover"         Color="{DynamicResource P.Color.Nav.700}"/>
+    <SolidColorBrush x:Key="NavSelected"      Color="{DynamicResource P.Color.Brand.600}"/>
+    <SolidColorBrush x:Key="NavSelectedBar"   Color="{DynamicResource P.Color.Brand.400}"/>
+    <SolidColorBrush x:Key="NavSectionLabel"  Color="{DynamicResource P.Color.Neutral.600}"/>
+    <SolidColorBrush x:Key="NavDivider"       Color="{DynamicResource P.Color.Nav.700}"/>
+
+    <!-- ===== الشريط العلوي (TopBar) ===== -->
+    <SolidColorBrush x:Key="TopBarSurface"   Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="TopBarBorder"    Color="{DynamicResource P.Color.Neutral.200}"/>
+    <SolidColorBrush x:Key="TopBarText"      Color="{DynamicResource P.Color.Neutral.900}"/>
+    <SolidColorBrush x:Key="TopBarIcon"      Color="{DynamicResource P.Color.Neutral.600}"/>
+    <SolidColorBrush x:Key="TopBarIconHover" Color="{DynamicResource P.Color.Brand.600}"/>
+
+    <!-- ===== الجداول (Table) ===== -->
+    <SolidColorBrush x:Key="TableHeaderBg"        Color="{DynamicResource P.Color.Brand.600}"/>
+    <SolidColorBrush x:Key="TableHeaderText"      Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="TableHeaderBorder"    Color="{DynamicResource P.Color.Brand.700}"/>
+    <SolidColorBrush x:Key="TableRowBg"           Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="TableRowAltBg"        Color="{DynamicResource P.Color.Neutral.50}"/>
+    <SolidColorBrush x:Key="TableRowHover"        Color="{DynamicResource P.Color.Brand.50}"/>
+    <SolidColorBrush x:Key="TableRowSelected"     Color="{DynamicResource P.Color.Brand.100}"/>
+    <SolidColorBrush x:Key="TableRowSelectedText" Color="{DynamicResource P.Color.Neutral.900}"/>
+    <SolidColorBrush x:Key="TableBorder"          Color="{DynamicResource P.Color.Neutral.100}"/>
+    <SolidColorBrush x:Key="TableFooterBg"        Color="{DynamicResource P.Color.Neutral.100}"/>
+
+    <!-- ===== حالات التفاعل (Interaction) ===== -->
+    <SolidColorBrush x:Key="StateHoverOverlay"   Color="{DynamicResource P.Color.Neutral.900}" Opacity="0.04"/>
+    <SolidColorBrush x:Key="StatePressedOverlay" Color="{DynamicResource P.Color.Neutral.900}" Opacity="0.08"/>
+    <sys:Double x:Key="StateDisabledOpacity">0.45</sys:Double>
+    <SolidColorBrush x:Key="StateSelectedBg" Color="{DynamicResource P.Color.Brand.100}"/>
+    <SolidColorBrush x:Key="FocusRing"       Color="{DynamicResource P.Color.Brand.600}"/>
+    <sys:Double x:Key="FocusRingWidth">2</sys:Double>
+
+    <!-- ===== الظلال (الوضع الفاتح فقط — في الداكن تُستبدل بحدود مضيئة، انظر Semantic.Dark.xaml) ===== -->
+    <DropShadowEffect x:Key="ShadowSm" BlurRadius="4"  ShadowDepth="1" Opacity="0.04" Color="{DynamicResource P.Color.Neutral.900}" Direction="270"/>
+    <DropShadowEffect x:Key="ShadowMd" BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="{DynamicResource P.Color.Neutral.900}" Direction="270"/>
+    <DropShadowEffect x:Key="ShadowLg" BlurRadius="24" ShadowDepth="4" Opacity="0.10" Color="{DynamicResource P.Color.Neutral.900}" Direction="270"/>
+    <DropShadowEffect x:Key="ShadowXl" BlurRadius="40" ShadowDepth="8" Opacity="0.14" Color="{DynamicResource P.Color.Neutral.900}" Direction="270"/>
+
+</ResourceDictionary>

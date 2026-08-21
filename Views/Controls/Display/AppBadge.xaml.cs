@@ -1,0 +1,60 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+
+namespace PrimeERP.Views.Controls.Display
+{
+    public partial class AppBadge : UserControl
+    {
+        public static readonly DependencyProperty TextProperty =
+            DependencyProperty.Register(nameof(Text), typeof(string), typeof(AppBadge),
+                new PropertyMetadata("", OnTextChanged));
+
+        public static readonly DependencyProperty VariantProperty =
+            DependencyProperty.Register(nameof(Variant), typeof(string), typeof(AppBadge),
+                new PropertyMetadata("neutral", OnVariantChanged));
+
+        public static readonly DependencyProperty IconProperty =
+            DependencyProperty.Register(nameof(Icon), typeof(Geometry), typeof(AppBadge),
+                new PropertyMetadata(null, OnIconChanged));
+
+        public string   Text    { get => (string)GetValue(TextProperty);    set => SetValue(TextProperty, value); }
+        public string   Variant { get => (string)GetValue(VariantProperty); set => SetValue(VariantProperty, value); }
+        public Geometry Icon    { get => (Geometry)GetValue(IconProperty);  set => SetValue(IconProperty, value); }
+
+        public AppBadge()
+        {
+            InitializeComponent();
+        }
+
+        private static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+            ((AppBadge)d).txt.Text = (string)e.NewValue;
+
+        private static void OnIconChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var c = (AppBadge)d;
+            c.icon.Data = (Geometry)e.NewValue;
+            c.icon.Visibility = e.NewValue != null ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private static void OnVariantChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var c = (AppBadge)d;
+            var (bg, fg) = ((string)e.NewValue) switch
+            {
+                "success" => ((Brush)c.FindResource("OkTintBrush"),       (Brush)c.FindResource("OkBrush")),
+                "danger"  => ((Brush)c.FindResource("CriticalTintBrush"), (Brush)c.FindResource("CriticalBrush")),
+                "warning" => ((Brush)c.FindResource("CautionTintBrush"),  (Brush)c.FindResource("CautionBrush")),
+                "info"    => ((Brush)c.FindResource("InfoTintBrush"),     (Brush)c.FindResource("InfoBrush")),
+                "brand"   => ((Brush)c.FindResource("BrandTintBrush"),    (Brush)c.FindResource("BrandBrush")),
+                _         => ((Brush)c.FindResource("MutedBgBrush"),      (Brush)c.FindResource("SubTextBrush"))
+            };
+
+            c.border.Background  = bg;
+            c.border.BorderBrush = fg;
+            c.txt.Foreground     = fg;
+            c.icon.Stroke        = fg;
+            c.icon.StrokeThickness = 2;
+        }
+    }
+}

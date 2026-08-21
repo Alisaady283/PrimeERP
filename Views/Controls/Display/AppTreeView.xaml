@@ -1,0 +1,53 @@
+<UserControl x:Class="PrimeERP.Views.Controls.Display.AppTreeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tree="clr-namespace:PrimeERP.Views.Controls.Tree">
+
+    <UserControl.Resources>
+        <HierarchicalDataTemplate DataType="{x:Type tree:TreeNodeViewModel}" ItemsSource="{Binding VisibleChildren}">
+            <TextBlock Text="{Binding DisplayText}"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="{StaticResource FontSizeSm}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{DynamicResource BodyTextBrush}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMatch}" Value="True">
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="Foreground" Value="{DynamicResource BrandBrush}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSelectable}" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource FaintTextBrush}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </HierarchicalDataTemplate>
+    </UserControl.Resources>
+
+    <Border BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+            CornerRadius="{StaticResource RadiusMd}" Background="{DynamicResource PanelBrush}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <TreeView x:Name="tree"
+                      BorderThickness="0"
+                      Background="Transparent"
+                      Padding="8"
+                      SelectedItemChanged="tree_SelectedItemChanged">
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="TreeViewItem">
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                        <Setter Property="Padding" Value="4,4"/>
+                        <Setter Property="Foreground" Value="{DynamicResource BodyTextBrush}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsSelectable}" Value="False">
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TreeView.ItemContainerStyle>
+            </TreeView>
+        </ScrollViewer>
+    </Border>
+</UserControl>

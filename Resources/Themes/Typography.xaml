@@ -1,0 +1,39 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <FontFamily x:Key="FontFamilyPrimary">Segoe UI, Tahoma, Arial</FontFamily>
+    <FontFamily x:Key="FontFamilyMono">Consolas, Courier New</FontFamily>
+    <FontFamily x:Key="FontFamilyArabic">Segoe UI, Tahoma</FontFamily>
+
+    <!-- ===== الأحجام — نمط نسبة 1.25 ===== -->
+    <sys:Double x:Key="FontSize2xs">10</sys:Double>
+    <sys:Double x:Key="FontSizeXs">11</sys:Double>
+    <sys:Double x:Key="FontSizeSm">12</sys:Double>
+    <sys:Double x:Key="FontSizeBase">13</sys:Double>
+    <sys:Double x:Key="FontSizeMd">14</sys:Double>
+    <sys:Double x:Key="FontSizeLg">16</sys:Double>
+    <sys:Double x:Key="FontSizeXl">18</sys:Double>
+    <sys:Double x:Key="FontSize2xl">22</sys:Double>
+    <sys:Double x:Key="FontSize3xl">28</sys:Double>
+
+    <!-- ===== الأوزان ===== -->
+    <FontWeight x:Key="FontWeightNormal">Normal</FontWeight>
+    <FontWeight x:Key="FontWeightMedium">Medium</FontWeight>
+    <FontWeight x:Key="FontWeightSemiBold">SemiBold</FontWeight>
+    <FontWeight x:Key="FontWeightBold">Bold</FontWeight>
+
+    <!-- ===== ارتفاع السطر ===== -->
+    <sys:Double x:Key="LineHeightTight">1.2</sys:Double>
+    <sys:Double x:Key="LineHeightNormal">1.45</sys:Double>
+    <sys:Double x:Key="LineHeightRelaxed">1.6</sys:Double>
+
+    <!--
+        قواعد إلزامية (للمرجعية — التطبيق الفعلي في Themes/Components/*.xaml لاحقاً):
+        - الأرقام والمبالغ: FontFamilyMono + FontWeightSemiBold (اصطفاف عمودي في الجداول)
+        - العناوين: FontWeightSemiBold لا Bold (Bold ثقيل بصرياً في العربية)
+        - FontSize2xs للشارات فقط، لا لأي نص آخر
+    -->
+
+</ResourceDictionary>

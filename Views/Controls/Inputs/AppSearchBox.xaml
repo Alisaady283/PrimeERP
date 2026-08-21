@@ -1,0 +1,27 @@
+<UserControl x:Class="PrimeERP.Views.Controls.Inputs.AppSearchBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border x:Name="border" Style="{StaticResource AppSearchBox_FieldBorder}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Path Grid.Column="0" Data="{StaticResource IconSearch}" Style="{StaticResource SearchFieldIconStyle}"/>
+
+            <Grid Grid.Column="1">
+                <TextBox x:Name="txt" Style="{StaticResource SearchFieldInnerTextBoxStyle}"
+                         TextChanged="txt_TextChanged"/>
+                <TextBlock x:Name="placeholder" IsHitTestVisible="False" Style="{StaticResource SearchFieldPlaceholderStyle}"/>
+            </Grid>
+
+            <Button x:Name="btnClear" Grid.Column="2" Style="{StaticResource FieldClearButtonStyle}"
+                    Visibility="Collapsed"
+                    Click="btnClear_Click">
+                <Path Data="{StaticResource IconClose}" Style="{StaticResource FieldClearIconStyle}"/>
+            </Button>
+        </Grid>
+    </Border>
+</UserControl>

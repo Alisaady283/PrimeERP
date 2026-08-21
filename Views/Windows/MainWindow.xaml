@@ -1,0 +1,16 @@
+<Window x:Class="PrimeERP.Views.Windows.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PrimeERP"
+        WindowState="Maximized"
+        MinWidth="1024"
+        MinHeight="600"
+        FlowDirection="RightToLeft">
+
+    <!--
+        مؤقت أثناء مرحلة الترحيل (المرحلة E، الجزء أ.3) — المحتوى الدائم Views/Dev/ControlsGalleryPage
+        بدل الصفحات القديمة المنقولة إلى _Legacy/. يُستبدل هذا كله بـ AppShell وحدها في المرحلة H
+        (القاعدة المعمارية: لا منطق ولا عنصر مرئي أصلي في Window — تجميع قطع فقط).
+    -->
+    <ContentControl x:Name="pageContainer"/>
+</Window>

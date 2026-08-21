@@ -1,0 +1,246 @@
+using System;
+using System.Data.Common;
+using PrimeERP.Core;
+using PrimeERP.Core.Common;
+using PrimeERP.Database;
+using PrimeERP.Models;
+using PrimeERP.Services;
+using PrimeERP.Services.Accounting;
+using PrimeERP.Services.Accounting.DTOs;
+using PrimeERP.Services.Parties;
+using PrimeERP.Services.Parties.DTOs;
+using Xunit;
+using Db = PrimeERP.Core.Database.DbHelper;
+
+namespace PrimeERP.Tests.Services
+{
+    /// <summary>
+    /// قاعدة بيانات خاصة معزولة لكل اختبار (لا [Collection("Database")] المشتركة) عمداً — اختبارات هذه الفئة
+    /// تفترض شجرة حسابات "نظيفة" (مثال: أول ابن لـ 1220 كوده 1220001 بالضبط)، وهذا يتطلب عدم تسرّب حسابات
+    /// من اختبار سابق. xUnit يُنشئ نسخة جديدة من فئة الاختبار قبل كل [Fact]، فبناء TestDatabaseFixture هنا
+    /// (لا عبر ICollectionFixture مشتركة) يعطي كل اختبار قاعدة بيانات مستقلة تلقائياً.
+    /// </summary>
+    public class AccountServiceTests : IDisposable
+    {
+        private readonly TestDatabaseFixture _db = new();
+        private readonly AccountService _service = new();
+
+        public AccountServiceTests()
+        {
+            AppSession.DevMode = true;
+
+            // AutoLinkEnabled=true افتراضياً الآن يفشل صراحةً لو ICustomerService/ISupplierService غير مسجَّلة
+            // (بدل السكوت القديم) — أي اختبار ينشئ حساباً تحت جذر العملاء/الموردين يحتاج خدمة مسجَّلة، حتى لو
+            // لم يكن يفحص الربط نفسه. تسجيل افتراضي بلا تأثير هنا؛ الاختبارات التي تفحص الربط تُسجِّل نسختها
+            // الخاصة لاحقاً (تُنسخ فوق هذا التسجيل الافتراضي، ServiceLocator آخر Register يفوز).
+            ServiceLocator.Register<ICustomerService>(new FakeCustomerService());
+            ServiceLocator.Register<ISupplierService>(new FakeSupplierService());
+        }
+
+        public void Dispose() => _db.Dispose();
+
+        private static int CustomersRootId() => AccountRepository.GetByCode("1220").Id;
+
+        private static int SeedPostedEntry(string date, params (string Code, decimal Debit, decimal Credit)[] lines)
+        {
+            var id = Db.RunTransaction((conn, tx) =>
+            {
+                var entry = new JournalEntry { EntryNo = $"TEST-{Guid.NewGuid():N}", EntryDate = date, Description = "test", Source = "test" };
+                var newId = JournalRepository.InsertHeader(conn, tx, entry);
+                int lineNo = 1;
+                foreach (var l in lines)
+                    JournalRepository.InsertLine(conn, tx, newId, lineNo++, new JournalLine { AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit });
+                return newId;
+            });
+            JournalRepository.SetPosted(id, true);
+            return id;
+        }
+
+        private class FakeCustomerService : ICustomerService
+        {
+            public (string Code, string Name)? LastCreatedFor;
+            public string? LastDeletedAccountCode;
+            public (string Code, string Name)? LastNameSync;
+
+            public Result<CustomerDto> CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
+            {
+                LastCreatedFor = (accountCode, name);
+                return Result.Ok(new CustomerDto { Id = 999, Code = "C-TEST", AccountCode = accountCode, Name = name });
+            }
+
+            public Result DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode)
+            {
+                LastDeletedAccountCode = accountCode;
+                return Result.Ok();
+            }
+
+            public Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
+            {
+                LastNameSync = (accountCode, name);
+                return Result.Ok();
+            }
+
+            // بقية ICustomerService غير مستخدَمة من AccountServiceTests — Fake مصغّر بقصد نفس الاختبارات فقط.
+            public Result<PagedResult<CustomerDto>> GetPaged(int page, int pageSize, CustomerFilter filter = null) => throw new NotImplementedException();
+            public Result<CustomerDto> GetById(int id) => throw new NotImplementedException();
+            public Result<CustomerDto> GetByCode(string code) => throw new NotImplementedException();
+            public Result<System.Collections.Generic.List<CustomerDto>> Search(string term, int maxResults = 50) => throw new NotImplementedException();
+            public Result<System.Collections.Generic.List<AccountStatementLine>> GetStatement(int id, DateTime from, DateTime to) => throw new NotImplementedException();
+            public Result<CustomerDto> Create(CreateCustomerDto dto) => throw new NotImplementedException();
+            public Result<CustomerDto> Create(DbConnection conn, DbTransaction tx, CreateCustomerDto dto) => throw new NotImplementedException();
+            public Result Update(UpdateCustomerDto dto) => throw new NotImplementedException();
+            public Result Delete(int id) => throw new NotImplementedException();
+            public Result RecalculateBalance(int id) => throw new NotImplementedException();
+            public Result RecalculateAllBalances() => throw new NotImplementedException();
+            public Result<CreditCheckResult> CheckCreditLimit(int id, decimal additional) => throw new NotImplementedException();
+        }
+
+        private class FakeSupplierService : ISupplierService
+        {
+            public Result<int> CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name) => Result.Ok(1);
+            public Result DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode) => Result.Ok();
+            public Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name) => Result.Ok();
+        }
+
+        [Fact]
+        public void Create_GeneratesCorrectCode_AndLevelFromParent()
+        {
+            var result = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل اختباري 1", IsLeaf = true });
+
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.Equal("1220001", result.Value.Code);
+            Assert.Equal(4, result.Value.Level);
+        }
+
+        [Fact]
+        public void Create_UnderLeafAccount_Fails()
+        {
+            var leaf = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل leaf", IsLeaf = true });
+            Assert.True(leaf.IsSuccess);
+
+            var result = _service.Create(new CreateAccountDto { ParentId = leaf.Value.Id, Name = "ابن تحت leaf", IsLeaf = true });
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ErrorCode.ValidationFailed, result.ErrorCode);
+        }
+
+        [Fact]
+        public void Create_UnderCustomersRoot_CreatesLinkedCustomer()
+        {
+            var fake = new FakeCustomerService();
+            ServiceLocator.Register<ICustomerService>(fake);
+
+            var result = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل مرتبط", IsLeaf = true });
+
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.NotNull(fake.LastCreatedFor);
+            Assert.Equal(result.Value.Code, fake.LastCreatedFor.Value.Code);
+        }
+
+        [Fact]
+        public void Update_SetIsLeafTrue_WithChildren_Fails()
+        {
+            var parent = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "أب له ابن", IsLeaf = false });
+            Assert.True(parent.IsSuccess, parent.ErrorMessage);
+
+            var child = _service.Create(new CreateAccountDto { ParentId = parent.Value.Id, Name = "ابن", IsLeaf = true });
+            Assert.True(child.IsSuccess, child.ErrorMessage);
+
+            var result = _service.Update(new UpdateAccountDto { Id = parent.Value.Id, Name = parent.Value.Name, IsLeaf = true });
+
+            Assert.False(result.IsSuccess);
+        }
+
+        [Fact]
+        public void Delete_AccountWithChildren_Fails()
+        {
+            var parent = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "أب سيُحذف", IsLeaf = false });
+            Assert.True(parent.IsSuccess);
+            var child = _service.Create(new CreateAccountDto { ParentId = parent.Value.Id, Name = "ابنه", IsLeaf = true });
+            Assert.True(child.IsSuccess);
+
+            var result = _service.Delete(parent.Value.Id);
+
+            Assert.False(result.IsSuccess);
+        }
+
+        [Fact]
+        public void Delete_AccountWithTransactions_Fails()
+        {
+            var account = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "له قيد", IsLeaf = true });
+            Assert.True(account.IsSuccess);
+
+            SeedPostedEntry("2026-01-01", (account.Value.Code, 100m, 0m), ("1240", 0m, 100m));
+
+            var result = _service.Delete(account.Value.Id);
+
+            Assert.False(result.IsSuccess);
+        }
+
+        [Fact]
+        public void Delete_RemovesLinkedCustomer()
+        {
+            var fake = new FakeCustomerService();
+            ServiceLocator.Register<ICustomerService>(fake);
+
+            var account = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل سيُحذف", IsLeaf = true });
+            Assert.True(account.IsSuccess);
+
+            var result = _service.Delete(account.Value.Id);
+
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.Equal(account.Value.Code, fake.LastDeletedAccountCode);
+        }
+
+        [Fact]
+        public void RecalculateBalance_ComputesFromPostedEntries()
+        {
+            var account = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "حساب رصيد", IsLeaf = true });
+            Assert.True(account.IsSuccess);
+
+            SeedPostedEntry("2026-01-01", (account.Value.Code, 300m, 0m), ("1240", 0m, 300m));
+            SeedPostedEntry("2026-01-05", (account.Value.Code, 0m, 50m), ("1240", 50m, 0m));
+
+            var result = _service.RecalculateBalance(account.Value.Code);
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+
+            var updated = AccountRepository.GetByCode(account.Value.Code);
+            Assert.Equal(250m, updated.Balance);
+        }
+
+        [Fact]
+        public void GetStatement_ComputesRunningBalanceCorrectly()
+        {
+            var account = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "حساب كشف", IsLeaf = true });
+            Assert.True(account.IsSuccess);
+
+            SeedPostedEntry("2026-01-01", (account.Value.Code, 200m, 0m), ("1240", 0m, 200m));
+            SeedPostedEntry("2026-01-10", (account.Value.Code, 0m, 80m), ("1240", 80m, 0m));
+
+            var result = _service.GetStatement(account.Value.Code, new DateTime(2026, 1, 1), new DateTime(2026, 1, 31));
+
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.Equal(3, result.Value.Count); // افتتاحي + سطران
+            Assert.Equal(0m, result.Value[0].RunningBalance);
+            Assert.Equal(200m, result.Value[1].RunningBalance);
+            Assert.Equal(120m, result.Value[2].RunningBalance);
+        }
+
+        [Fact]
+        public void Create_WithoutPermission_ReturnsFail()
+        {
+            AppSession.DevMode = false;
+            try
+            {
+                var result = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "بلا صلاحية", IsLeaf = true });
+
+                Assert.False(result.IsSuccess);
+                Assert.Equal(ErrorCode.Unauthorized, result.ErrorCode);
+            }
+            finally
+            {
+                AppSession.DevMode = true;
+            }
+        }
+    }
+}

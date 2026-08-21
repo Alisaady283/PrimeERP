@@ -1,0 +1,7 @@
+bin/
+obj/
+PrimeERP.Tests/bin/
+PrimeERP.Tests/obj/
+*.user
+*_wpftmp.csproj
+.vs/

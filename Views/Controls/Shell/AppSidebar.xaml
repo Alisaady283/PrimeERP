@@ -1,0 +1,142 @@
+<UserControl x:Class="PrimeERP.Views.Controls.Shell.AppSidebar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:PrimeERP.Views.Controls.Shell"
+             xmlns:conv="clr-namespace:PrimeERP.Converters"
+             Foreground="{DynamicResource NavTextBrush}">
+    <UserControl.Resources>
+        <shell:IconKeyToGeometryConverter x:Key="IconConv"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        <conv:StringToVisibilityConverter x:Key="StringVis"/>
+
+        <!-- ===== قالب متكرر ضمنياً (بلا x:Key) — يُستخدم لكل مستوى في الشجرة تلقائياً عبر Children ===== -->
+        <DataTemplate DataType="{x:Type shell:NavItemViewModel}">
+            <StackPanel>
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsVisible}" Value="False">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+
+                <!-- فاصل -->
+                <Border Visibility="{Binding IsSeparator, Converter={StaticResource BoolVis}}"
+                        Height="1" Margin="16,8" Background="{DynamicResource NavHoverBrush}"/>
+
+                <!-- الصف نفسه -->
+                <Border Visibility="{Binding IsSeparator, Converter={StaticResource BoolVis}, ConverterParameter=inverse}"
+                        x:Name="rowBorder" Cursor="Hand" Background="Transparent"
+                        ToolTip="{Binding Text}"
+                        MouseLeftButtonUp="NavRow_MouseLeftButtonUp">
+                    <Grid Height="42">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3"/>
+                            <ColumnDefinition Width="15"/>
+                            <ColumnDefinition Width="22"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="10"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" x:Name="activeBar" Background="{DynamicResource NavActiveBrush}" Visibility="Collapsed"/>
+
+                        <Path Grid.Column="2" Data="{Binding IconKey, Converter={StaticResource IconConv}}"
+                              Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"
+                              Stroke="{DynamicResource NavTextBrush}" StrokeThickness="1.7"/>
+
+                        <TextBlock Grid.Column="3" x:Name="txt" Text="{Binding Text}" VerticalAlignment="Center" Margin="10,0,0,0"
+                                   FontSize="{StaticResource FontSizeSm}" FontFamily="{StaticResource AppFontFamily}"
+                                   Foreground="{DynamicResource NavTextBrush}" TextTrimming="CharacterEllipsis"
+                                   Visibility="{Binding IsCollapsed, RelativeSource={RelativeSource AncestorType=shell:AppSidebar}, Converter={StaticResource BoolVis}, ConverterParameter=inverse}"/>
+
+                        <Border Grid.Column="4" x:Name="badgeWrap" Background="{DynamicResource BrandBrush}" CornerRadius="8"
+                                Padding="6,1" Margin="6,0" VerticalAlignment="Center"
+                                Visibility="{Binding Badge, Converter={StaticResource StringVis}}">
+                            <TextBlock Text="{Binding Badge}" FontSize="{StaticResource FontSizeXs}" Foreground="White"/>
+                        </Border>
+
+                        <Path Grid.Column="5" x:Name="chevron" Visibility="Collapsed" VerticalAlignment="Center"
+                              Data="{StaticResource IconChevronDown}" Width="11" Height="11" Stretch="Uniform"
+                              Stroke="{DynamicResource NavTextMutedBrush}" StrokeThickness="2">
+                            <Path.RenderTransform>
+                                <RotateTransform x:Name="chevronRotate" Angle="0" CenterX="5.5" CenterY="5.5"/>
+                            </Path.RenderTransform>
+                        </Path>
+                    </Grid>
+                </Border>
+
+                <!-- الأبناء — يُطويان بالكامل في الوضع المطوي (لا قوائم فرعية منبثقة في هذا الجزء) -->
+                <Border x:Name="childrenClip" ClipToBounds="True" MaxHeight="0" Margin="18,0,0,0">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsCollapsed, RelativeSource={RelativeSource AncestorType=shell:AppSidebar}}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <ItemsControl ItemsSource="{Binding Children}"/>
+                </Border>
+            </StackPanel>
+
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding HasChildren}" Value="True">
+                    <Setter TargetName="chevron" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                    <Setter TargetName="activeBar" Property="Visibility" Value="Visible"/>
+                    <Setter TargetName="rowBorder" Property="Background" Value="{DynamicResource NavHoverBrush}"/>
+                    <Setter TargetName="txt" Property="Foreground" Value="White"/>
+                </DataTrigger>
+                <Trigger SourceName="rowBorder" Property="IsMouseOver" Value="True">
+                    <Setter TargetName="rowBorder" Property="Background" Value="{DynamicResource NavHoverBrush}"/>
+                </Trigger>
+                <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="childrenClip" Storyboard.TargetProperty="MaxHeight" To="800" Duration="0:0:0.2"/>
+                                <DoubleAnimation Storyboard.TargetName="chevronRotate" Storyboard.TargetProperty="Angle" To="180" Duration="0:0:0.2"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="childrenClip" Storyboard.TargetProperty="MaxHeight" To="0" Duration="0:0:0.2"/>
+                                <DoubleAnimation Storyboard.TargetName="chevronRotate" Storyboard.TargetProperty="Angle" To="0" Duration="0:0:0.2"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Border x:Name="root" Width="240" HorizontalAlignment="Left" Background="{DynamicResource NavBgBrush}" ClipToBounds="True">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <ContentPresenter Grid.Row="0" x:Name="logoPresenter" Margin="16,18"/>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl x:Name="itemsHost" Margin="8,4"/>
+            </ScrollViewer>
+
+            <Border Grid.Row="2" BorderBrush="{DynamicResource NavHoverBrush}" BorderThickness="0,1,0,0">
+                <ContentPresenter x:Name="footerPresenter" Margin="16,12"/>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

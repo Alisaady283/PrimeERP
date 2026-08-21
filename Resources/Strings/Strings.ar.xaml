@@ -1,0 +1,135 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <sys:String x:Key="Str.AppName">PrimeERP</sys:String>
+
+    <sys:String x:Key="Str.Save">حفظ</sys:String>
+    <sys:String x:Key="Str.Cancel">إلغاء</sys:String>
+    <sys:String x:Key="Str.Delete">حذف</sys:String>
+    <sys:String x:Key="Str.Edit">تعديل</sys:String>
+    <sys:String x:Key="Str.Add">إضافة</sys:String>
+    <sys:String x:Key="Str.Search">بحث</sys:String>
+    <sys:String x:Key="Str.Filter">تصفية</sys:String>
+    <sys:String x:Key="Str.Export">تصدير</sys:String>
+    <sys:String x:Key="Str.Print">طباعة</sys:String>
+    <sys:String x:Key="Str.Refresh">تحديث</sys:String>
+    <sys:String x:Key="Str.Close">إغلاق</sys:String>
+    <sys:String x:Key="Str.Confirm">تأكيد</sys:String>
+    <sys:String x:Key="Str.Yes">نعم</sys:String>
+    <sys:String x:Key="Str.No">لا</sys:String>
+
+    <sys:String x:Key="Str.Loading">جارٍ التحميل...</sys:String>
+    <sys:String x:Key="Str.Required">هذا الحقل مطلوب</sys:String>
+    <sys:String x:Key="Str.NoData">لا توجد بيانات لعرضها</sys:String>
+    <sys:String x:Key="Str.SelectPlaceholder">اختر...</sys:String>
+    <sys:String x:Key="Str.SearchPlaceholder">بحث...</sys:String>
+    <sys:String x:Key="Str.RowsPerPage">عدد الصفوف</sys:String>
+    <sys:String x:Key="Str.Of">من</sys:String>
+    <sys:String x:Key="Str.Total">الإجمالي</sys:String>
+    <sys:String x:Key="Str.ClearFilter">مسح الفلتر</sys:String>
+    <sys:String x:Key="Str.TryAgain">إعادة المحاولة</sys:String>
+
+    <sys:String x:Key="Str.Success">تمت العملية بنجاح</sys:String>
+    <sys:String x:Key="Str.Error">حدث خطأ</sys:String>
+    <sys:String x:Key="Str.Warning">تنبيه</sys:String>
+    <sys:String x:Key="Str.Info">معلومة</sys:String>
+
+    <sys:String x:Key="Str.PermissionDenied">ليست لديك الصلاحية اللازمة لهذه العملية</sys:String>
+    <sys:String x:Key="Str.Settings.PermissionDenied">ليست لديك صلاحية تعديل الإعدادات</sys:String>
+    <sys:String x:Key="Str.Settings.SystemPermissionDenied">هذا إعداد نظامي — يتطلب صلاحية خاصة لتعديله</sys:String>
+
+    <sys:String x:Key="Str.Accounts.CustomerLinkUnavailable">خدمة العملاء غير متاحة — تعذّر الربط التلقائي</sys:String>
+    <sys:String x:Key="Str.Accounts.SupplierLinkUnavailable">خدمة الموردين غير متاحة — تعذّر الربط التلقائي</sys:String>
+
+    <sys:String x:Key="Str.Backup.PermissionDenied">ليست لديك صلاحية النسخ الاحتياطي</sys:String>
+    <sys:String x:Key="Str.Backup.RestorePermissionDenied">ليست لديك صلاحية استعادة نسخة احتياطية</sys:String>
+    <sys:String x:Key="Str.Backup.FileNotFound">ملف النسخة الاحتياطية غير موجود</sys:String>
+    <sys:String x:Key="Str.Backup.FileEmpty">ملف النسخة الاحتياطية فارغ أو تالف</sys:String>
+    <sys:String x:Key="Str.Backup.IntegrityCheckFailed">فحص سلامة قاعدة البيانات فشل</sys:String>
+    <sys:String x:Key="Str.Backup.NotAPrimeErpDatabase">هذا الملف ليس نسخة احتياطية صالحة لقاعدة بيانات PrimeERP</sys:String>
+    <sys:String x:Key="Str.Backup.CorruptFile">ملف النسخة الاحتياطية تالف أو غير قابل للقراءة</sys:String>
+    <sys:String x:Key="Str.Backup.CreateFailed">فشل إنشاء النسخة الاحتياطية</sys:String>
+    <sys:String x:Key="Str.Backup.SafetyBackupFailed">فشل إنشاء نسخة الأمان قبل الاستعادة — أُلغيت العملية</sys:String>
+    <sys:String x:Key="Str.Backup.RestoreFailed">فشلت عملية الاستعادة</sys:String>
+    <sys:String x:Key="Str.Backup.DeleteFailed">فشل حذف النسخة الاحتياطية</sys:String>
+    <sys:String x:Key="Str.Backup.RetentionFailed">فشل تطبيق سياسة الاحتفاظ بالنسخ القديمة</sys:String>
+
+    <sys:String x:Key="Str.Fiscal.YearCreated">تم إنشاء السنة المالية بنجاح</sys:String>
+    <sys:String x:Key="Str.Fiscal.PeriodClosed">تم إقفال الفترة المالية بنجاح</sys:String>
+    <sys:String x:Key="Str.Fiscal.PeriodReopened">تم إعادة فتح الفترة المالية بنجاح</sys:String>
+    <sys:String x:Key="Str.Fiscal.YearClosed">تم إقفال السنة المالية بنجاح</sys:String>
+    <sys:String x:Key="Str.Fiscal.YearReopened">تم إعادة فتح السنة المالية بنجاح</sys:String>
+    <sys:String x:Key="Str.Fiscal.HasUnpostedEntries">لا يمكن إقفال الفترة — يوجد قيود غير مرحّلة ضمنها</sys:String>
+    <sys:String x:Key="Str.Fiscal.PreviousPeriodOpen">لا يمكن إقفال هذه الفترة قبل إقفال الفترات السابقة لها في نفس السنة</sys:String>
+    <sys:String x:Key="Str.Fiscal.NextPeriodClosed">لا يمكن إعادة فتح هذه الفترة والفترات التالية لها مقفلة</sys:String>
+    <sys:String x:Key="Str.Fiscal.YearIsClosed">السنة المالية مقفلة</sys:String>
+    <sys:String x:Key="Str.Fiscal.OverlappingYear">تتقاطع هذه السنة المالية مع سنة مالية موجودة بالفعل</sys:String>
+    <sys:String x:Key="Str.Fiscal.InvalidPeriodsCount">عدد الفترات يجب أن يكون 1 أو 4 أو 6 أو 12</sys:String>
+    <sys:String x:Key="Str.Fiscal.RetainedEarningsNotConfigured">حساب الأرباح المحتجزة غير مُعرَّف في الإعدادات — لا يمكن إقفال السنة المالية</sys:String>
+    <sys:String x:Key="Str.Fiscal.PeriodClosedCannotPost">لا يمكن ترحيل قيد بتاريخ يقع ضمن فترة مالية مقفلة</sys:String>
+    <sys:String x:Key="Str.Fiscal.Status.Open">مفتوحة</sys:String>
+    <sys:String x:Key="Str.Fiscal.Status.Closed">مقفلة</sys:String>
+    <sys:String x:Key="Str.Fiscal.Status.Current">السنة الحالية</sys:String>
+
+    <sys:String x:Key="Str.Journal.Created">تم إنشاء القيد بنجاح</sys:String>
+    <sys:String x:Key="Str.Journal.Updated">تم تعديل القيد بنجاح</sys:String>
+    <sys:String x:Key="Str.Journal.Deleted">تم حذف القيد بنجاح</sys:String>
+    <sys:String x:Key="Str.Journal.Posted">تم ترحيل القيد بنجاح</sys:String>
+    <sys:String x:Key="Str.Journal.Unposted">تم إلغاء ترحيل القيد بنجاح</sys:String>
+    <sys:String x:Key="Str.Journal.NotBalanced">القيد غير متوازن</sys:String>
+    <sys:String x:Key="Str.Journal.MinimumLines">القيد يحتاج سطرين على الأقل</sys:String>
+    <sys:String x:Key="Str.Journal.ZeroEntry">لا يمكن حفظ قيد بقيمة صفر</sys:String>
+    <sys:String x:Key="Str.Journal.AccountNotFound">الحساب غير موجود</sys:String>
+    <sys:String x:Key="Str.Journal.AccountNotLeaf">الحساب لا يقبل قيوداً مباشرة</sys:String>
+    <sys:String x:Key="Str.Journal.AccountInactive">الحساب غير نشط</sys:String>
+    <sys:String x:Key="Str.Journal.DuplicateAccount">هذا الحساب مكرر في أكثر من سطر بالقيد</sys:String>
+    <sys:String x:Key="Str.Journal.BothDebitAndCredit">لا يمكن إدخال مدين ودائن في نفس السطر</sys:String>
+    <sys:String x:Key="Str.Journal.PostedCannotEdit">القيد مرحّل — لا يمكن تعديله</sys:String>
+    <sys:String x:Key="Str.Journal.PostedCannotDelete">القيد مرحّل — لا يمكن حذفه</sys:String>
+    <sys:String x:Key="Str.Journal.NotPostedCannotUnpost">القيد غير مرحّل أصلاً</sys:String>
+    <sys:String x:Key="Str.Journal.ClosingEntryCannotUnpost">هذا قيد إقفال سنة — إلغاء ترحيله عبر إعادة فتح السنة المالية فقط</sys:String>
+    <sys:String x:Key="Str.Journal.PeriodClosed">الفترة المالية لهذا التاريخ مقفلة</sys:String>
+    <sys:String x:Key="Str.Journal.BatchPartialFailure">بعض القيود المختارة لا يمكن ترحيلها — لم يُرحَّل أي قيد</sys:String>
+    <sys:String x:Key="Str.Journal.TrialBalanceMismatch">خلل في البيانات — ميزان المراجعة غير متوازن</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Manual">يدوي</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Sales">مبيعات</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Purchase">مشتريات</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Payroll">رواتب</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Inventory">مخزون</sys:String>
+    <sys:String x:Key="Str.Journal.Source.YearClosing">إقفال سنوي</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Opening">افتتاحي</sys:String>
+    <sys:String x:Key="Str.Journal.Status.Draft">مسودة</sys:String>
+    <sys:String x:Key="Str.Journal.Status.Posted">مرحّل</sys:String>
+    <sys:String x:Key="Str.Journal.Status.Unbalanced">غير متوازن</sys:String>
+
+    <sys:String x:Key="Str.Customer.Created">تم إنشاء العميل بنجاح</sys:String>
+    <sys:String x:Key="Str.Customer.Updated">تم تعديل العميل بنجاح</sys:String>
+    <sys:String x:Key="Str.Customer.Deleted">تم حذف العميل بنجاح</sys:String>
+    <sys:String x:Key="Str.Customer.NotFound">العميل غير موجود</sys:String>
+    <sys:String x:Key="Str.Customer.CodeExists">كود العميل مستخدم من قبل</sys:String>
+    <sys:String x:Key="Str.Customer.DuplicateName">يوجد عميل آخر بنفس الاسم</sys:String>
+    <sys:String x:Key="Str.Customer.DuplicatePhone">يوجد عميل آخر بنفس رقم الهاتف</sys:String>
+    <sys:String x:Key="Str.Customer.HasTransactions">لا يمكن حذف عميل له قيود مسجَّلة على حسابه</sys:String>
+    <sys:String x:Key="Str.Customer.HasInvoices">لا يمكن حذف عميل له فواتير</sys:String>
+    <sys:String x:Key="Str.Customer.AccountNotConfigured">حساب العملاء غير مضبوط في الإعدادات</sys:String>
+    <sys:String x:Key="Str.Customer.AccountParentNotFound">الحساب الأب للعملاء غير موجود</sys:String>
+    <sys:String x:Key="Str.Customer.AccountParentIsLeaf">حساب العملاء الأب يقبل قيوداً مباشرة (Leaf) — لا يمكن إضافة عميل تحته</sys:String>
+    <sys:String x:Key="Str.Customer.CreditLimitExceeded">تجاوز الحد الائتماني بمبلغ</sys:String>
+    <sys:String x:Key="Str.Customer.Status.Active">نشط</sys:String>
+    <sys:String x:Key="Str.Customer.Status.Inactive">غير نشط</sys:String>
+    <sys:String x:Key="Str.Customer.Status.OverLimit">متجاوز الحد</sys:String>
+
+    <sys:String x:Key="Str.Identity.Default">افتراضي</sys:String>
+    <sys:String x:Key="Str.Identity.Corporate">مؤسسي</sys:String>
+    <sys:String x:Key="Str.Identity.NotFound">حزمة هوية غير معروفة</sys:String>
+
+    <sys:String x:Key="Str.Gallery.Title">معرض القطع</sys:String>
+    <sys:String x:Key="Str.Gallery.Subtitle">مرجع بصري لكل قطع الواجهة وحالاتها — لا يظهر في نسخة الإنتاج</sys:String>
+    <sys:String x:Key="Str.State.Normal">عادي</sys:String>
+    <sys:String x:Key="Str.State.Disabled">معطّل</sys:String>
+    <sys:String x:Key="Str.State.Error">خطأ</sys:String>
+    <sys:String x:Key="Str.State.ReadOnly">للقراءة فقط</sys:String>
+
+</ResourceDictionary>

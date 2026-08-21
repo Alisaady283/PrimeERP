@@ -1,0 +1,135 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <sys:String x:Key="Str.AppName">PrimeERP</sys:String>
+
+    <sys:String x:Key="Str.Save">Save</sys:String>
+    <sys:String x:Key="Str.Cancel">Cancel</sys:String>
+    <sys:String x:Key="Str.Delete">Delete</sys:String>
+    <sys:String x:Key="Str.Edit">Edit</sys:String>
+    <sys:String x:Key="Str.Add">Add</sys:String>
+    <sys:String x:Key="Str.Search">Search</sys:String>
+    <sys:String x:Key="Str.Filter">Filter</sys:String>
+    <sys:String x:Key="Str.Export">Export</sys:String>
+    <sys:String x:Key="Str.Print">Print</sys:String>
+    <sys:String x:Key="Str.Refresh">Refresh</sys:String>
+    <sys:String x:Key="Str.Close">Close</sys:String>
+    <sys:String x:Key="Str.Confirm">Confirm</sys:String>
+    <sys:String x:Key="Str.Yes">Yes</sys:String>
+    <sys:String x:Key="Str.No">No</sys:String>
+
+    <sys:String x:Key="Str.Loading">Loading...</sys:String>
+    <sys:String x:Key="Str.Required">This field is required</sys:String>
+    <sys:String x:Key="Str.NoData">No data to display</sys:String>
+    <sys:String x:Key="Str.SelectPlaceholder">Select...</sys:String>
+    <sys:String x:Key="Str.SearchPlaceholder">Search...</sys:String>
+    <sys:String x:Key="Str.RowsPerPage">Rows per page</sys:String>
+    <sys:String x:Key="Str.Of">of</sys:String>
+    <sys:String x:Key="Str.Total">Total</sys:String>
+    <sys:String x:Key="Str.ClearFilter">Clear filter</sys:String>
+    <sys:String x:Key="Str.TryAgain">Try again</sys:String>
+
+    <sys:String x:Key="Str.Success">Operation completed successfully</sys:String>
+    <sys:String x:Key="Str.Error">An error occurred</sys:String>
+    <sys:String x:Key="Str.Warning">Warning</sys:String>
+    <sys:String x:Key="Str.Info">Info</sys:String>
+
+    <sys:String x:Key="Str.PermissionDenied">You do not have the required permission for this operation</sys:String>
+    <sys:String x:Key="Str.Settings.PermissionDenied">You do not have permission to edit settings</sys:String>
+    <sys:String x:Key="Str.Settings.SystemPermissionDenied">This is a system setting — it requires a special permission to edit</sys:String>
+
+    <sys:String x:Key="Str.Accounts.CustomerLinkUnavailable">Customer service unavailable — automatic linking failed</sys:String>
+    <sys:String x:Key="Str.Accounts.SupplierLinkUnavailable">Supplier service unavailable — automatic linking failed</sys:String>
+
+    <sys:String x:Key="Str.Backup.PermissionDenied">You do not have permission to create backups</sys:String>
+    <sys:String x:Key="Str.Backup.RestorePermissionDenied">You do not have permission to restore a backup</sys:String>
+    <sys:String x:Key="Str.Backup.FileNotFound">Backup file not found</sys:String>
+    <sys:String x:Key="Str.Backup.FileEmpty">Backup file is empty or corrupt</sys:String>
+    <sys:String x:Key="Str.Backup.IntegrityCheckFailed">Database integrity check failed</sys:String>
+    <sys:String x:Key="Str.Backup.NotAPrimeErpDatabase">This file is not a valid PrimeERP database backup</sys:String>
+    <sys:String x:Key="Str.Backup.CorruptFile">Backup file is corrupt or unreadable</sys:String>
+    <sys:String x:Key="Str.Backup.CreateFailed">Failed to create backup</sys:String>
+    <sys:String x:Key="Str.Backup.SafetyBackupFailed">Failed to create the safety backup before restore — operation cancelled</sys:String>
+    <sys:String x:Key="Str.Backup.RestoreFailed">Restore operation failed</sys:String>
+    <sys:String x:Key="Str.Backup.DeleteFailed">Failed to delete backup</sys:String>
+    <sys:String x:Key="Str.Backup.RetentionFailed">Failed to apply the old-backups retention policy</sys:String>
+
+    <sys:String x:Key="Str.Fiscal.YearCreated">Fiscal year created successfully</sys:String>
+    <sys:String x:Key="Str.Fiscal.PeriodClosed">Fiscal period closed successfully</sys:String>
+    <sys:String x:Key="Str.Fiscal.PeriodReopened">Fiscal period reopened successfully</sys:String>
+    <sys:String x:Key="Str.Fiscal.YearClosed">Fiscal year closed successfully</sys:String>
+    <sys:String x:Key="Str.Fiscal.YearReopened">Fiscal year reopened successfully</sys:String>
+    <sys:String x:Key="Str.Fiscal.HasUnpostedEntries">Cannot close the period — it contains unposted entries</sys:String>
+    <sys:String x:Key="Str.Fiscal.PreviousPeriodOpen">Cannot close this period before closing the earlier periods in the same year</sys:String>
+    <sys:String x:Key="Str.Fiscal.NextPeriodClosed">Cannot reopen this period while later periods are closed</sys:String>
+    <sys:String x:Key="Str.Fiscal.YearIsClosed">The fiscal year is closed</sys:String>
+    <sys:String x:Key="Str.Fiscal.OverlappingYear">This fiscal year overlaps an existing fiscal year</sys:String>
+    <sys:String x:Key="Str.Fiscal.InvalidPeriodsCount">Number of periods must be 1, 4, 6, or 12</sys:String>
+    <sys:String x:Key="Str.Fiscal.RetainedEarningsNotConfigured">The retained earnings account is not configured in settings — cannot close the fiscal year</sys:String>
+    <sys:String x:Key="Str.Fiscal.PeriodClosedCannotPost">Cannot post an entry dated within a closed fiscal period</sys:String>
+    <sys:String x:Key="Str.Fiscal.Status.Open">Open</sys:String>
+    <sys:String x:Key="Str.Fiscal.Status.Closed">Closed</sys:String>
+    <sys:String x:Key="Str.Fiscal.Status.Current">Current year</sys:String>
+
+    <sys:String x:Key="Str.Journal.Created">Journal entry created successfully</sys:String>
+    <sys:String x:Key="Str.Journal.Updated">Journal entry updated successfully</sys:String>
+    <sys:String x:Key="Str.Journal.Deleted">Journal entry deleted successfully</sys:String>
+    <sys:String x:Key="Str.Journal.Posted">Journal entry posted successfully</sys:String>
+    <sys:String x:Key="Str.Journal.Unposted">Journal entry unposted successfully</sys:String>
+    <sys:String x:Key="Str.Journal.NotBalanced">The entry is not balanced</sys:String>
+    <sys:String x:Key="Str.Journal.MinimumLines">The entry needs at least two lines</sys:String>
+    <sys:String x:Key="Str.Journal.ZeroEntry">Cannot save a zero-value entry</sys:String>
+    <sys:String x:Key="Str.Journal.AccountNotFound">Account not found</sys:String>
+    <sys:String x:Key="Str.Journal.AccountNotLeaf">The account does not accept direct entries</sys:String>
+    <sys:String x:Key="Str.Journal.AccountInactive">The account is inactive</sys:String>
+    <sys:String x:Key="Str.Journal.DuplicateAccount">This account appears on more than one line in the entry</sys:String>
+    <sys:String x:Key="Str.Journal.BothDebitAndCredit">Cannot enter both debit and credit on the same line</sys:String>
+    <sys:String x:Key="Str.Journal.PostedCannotEdit">The entry is posted — it cannot be edited</sys:String>
+    <sys:String x:Key="Str.Journal.PostedCannotDelete">The entry is posted — it cannot be deleted</sys:String>
+    <sys:String x:Key="Str.Journal.NotPostedCannotUnpost">The entry is not posted</sys:String>
+    <sys:String x:Key="Str.Journal.ClosingEntryCannotUnpost">This is a year-closing entry — unpost it only by reopening the fiscal year</sys:String>
+    <sys:String x:Key="Str.Journal.PeriodClosed">The fiscal period for this date is closed</sys:String>
+    <sys:String x:Key="Str.Journal.BatchPartialFailure">Some of the selected entries cannot be posted — nothing was posted</sys:String>
+    <sys:String x:Key="Str.Journal.TrialBalanceMismatch">Data inconsistency — the trial balance does not balance</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Manual">Manual</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Sales">Sales</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Purchase">Purchase</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Payroll">Payroll</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Inventory">Inventory</sys:String>
+    <sys:String x:Key="Str.Journal.Source.YearClosing">Year closing</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Opening">Opening</sys:String>
+    <sys:String x:Key="Str.Journal.Status.Draft">Draft</sys:String>
+    <sys:String x:Key="Str.Journal.Status.Posted">Posted</sys:String>
+    <sys:String x:Key="Str.Journal.Status.Unbalanced">Unbalanced</sys:String>
+
+    <sys:String x:Key="Str.Customer.Created">Customer created successfully</sys:String>
+    <sys:String x:Key="Str.Customer.Updated">Customer updated successfully</sys:String>
+    <sys:String x:Key="Str.Customer.Deleted">Customer deleted successfully</sys:String>
+    <sys:String x:Key="Str.Customer.NotFound">Customer not found</sys:String>
+    <sys:String x:Key="Str.Customer.CodeExists">Customer code already in use</sys:String>
+    <sys:String x:Key="Str.Customer.DuplicateName">Another customer already has this name</sys:String>
+    <sys:String x:Key="Str.Customer.DuplicatePhone">Another customer already has this phone number</sys:String>
+    <sys:String x:Key="Str.Customer.HasTransactions">Cannot delete a customer with entries posted to its account</sys:String>
+    <sys:String x:Key="Str.Customer.HasInvoices">Cannot delete a customer with invoices</sys:String>
+    <sys:String x:Key="Str.Customer.AccountNotConfigured">The customers account is not configured in settings</sys:String>
+    <sys:String x:Key="Str.Customer.AccountParentNotFound">The customers parent account was not found</sys:String>
+    <sys:String x:Key="Str.Customer.AccountParentIsLeaf">The customers parent account accepts direct entries (leaf) — cannot add a customer under it</sys:String>
+    <sys:String x:Key="Str.Customer.CreditLimitExceeded">Credit limit exceeded by</sys:String>
+    <sys:String x:Key="Str.Customer.Status.Active">Active</sys:String>
+    <sys:String x:Key="Str.Customer.Status.Inactive">Inactive</sys:String>
+    <sys:String x:Key="Str.Customer.Status.OverLimit">Over limit</sys:String>
+
+    <sys:String x:Key="Str.Identity.Default">Default</sys:String>
+    <sys:String x:Key="Str.Identity.Corporate">Corporate</sys:String>
+    <sys:String x:Key="Str.Identity.NotFound">Unknown identity pack</sys:String>
+
+    <sys:String x:Key="Str.Gallery.Title">Controls Gallery</sys:String>
+    <sys:String x:Key="Str.Gallery.Subtitle">Visual reference for every control and its states — not shown in production</sys:String>
+    <sys:String x:Key="Str.State.Normal">Normal</sys:String>
+    <sys:String x:Key="Str.State.Disabled">Disabled</sys:String>
+    <sys:String x:Key="Str.State.Error">Error</sys:String>
+    <sys:String x:Key="Str.State.ReadOnly">Read-only</sys:String>
+
+</ResourceDictionary>
