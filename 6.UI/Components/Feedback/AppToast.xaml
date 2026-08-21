@@ -6,7 +6,7 @@
             CornerRadius="{StaticResource RadiusMd}"
             Width="320"
             ClipToBounds="True"
-            Effect="{StaticResource ShadowMd}">
+            Effect="{DynamicResource ShadowMd}">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="4"/>

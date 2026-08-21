@@ -77,7 +77,7 @@
                     CornerRadius="{StaticResource RadiusMd}"
                     MaxHeight="240"
                     Margin="0,4,0,0"
-                    Effect="{StaticResource ShadowMd}">
+                    Effect="{DynamicResource ShadowMd}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ListBox x:Name="lst"
                              BorderThickness="0"

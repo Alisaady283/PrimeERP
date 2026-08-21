@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Permissions;
 

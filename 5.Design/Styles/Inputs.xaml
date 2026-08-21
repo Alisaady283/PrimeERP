@@ -182,7 +182,7 @@
         <Setter Property="CornerRadius" Value="{StaticResource RadiusMd}"/>
         <Setter Property="MaxHeight" Value="240"/>
         <Setter Property="Margin" Value="0,4,0,0"/>
-        <Setter Property="Effect" Value="{StaticResource ShadowMd}"/>
+        <Setter Property="Effect" Value="{DynamicResource ShadowMd}"/>
     </Style>
 
     <Style x:Key="ComboPopupListBoxStyle" TargetType="ListBox">

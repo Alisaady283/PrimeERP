@@ -6,7 +6,6 @@ using System.Linq;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
-using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
 using Auditor = PrimeERP.Platform.Audit.AuditLogger;
 using AuditAction = PrimeERP.Domain.Enums.AuditAction;

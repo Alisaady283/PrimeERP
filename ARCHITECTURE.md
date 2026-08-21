@@ -1,10 +1,10 @@
 # ARCHITECTURE.md — PrimeERP
 
-هذا الملف يوثّق البنية المعمارية الثمانية-الطبقات لِـ PrimeERP بعد R1 (إعادة الهيكلة). يُستكمل مع كل بند لاحق (R2–R10).
+هذا الملف يوثّق البنية المعمارية الثمانية-الطبقات لِـ PrimeERP بعد R1+R2 (إعادة الهيكلة + فرض الحدود). يُستكمل مع كل بند لاحق (R3–R10).
 
 ---
 
-## القاعدة الدائمة — تُفحص قبل إنشاء أي ملف جديد
+## القاعدة الدائمة الأولى — تُفحص قبل إنشاء أي ملف جديد
 
 1. **أي طبقة ينتمي إليها هذا الملف؟** — راجع "قواعد الانتماء" أدناه قبل اختيار المكان.
 2. **يوجد أساس مشترك له بالفعل؟** → رِثه، لا تُعد بناءه.
@@ -13,6 +13,20 @@
 5. **يمكن وصفه بتكوين (بيانات) بدل كود؟** → افعل ذلك (ينطبق بشكل رئيسي على 7.Composition/8.Modules).
 
 عند مواجهة كود خاطئ أثناء العمل: **احذف وابنِ سليماً — لا ترصّ كوداً فوق بنية معطوبة.**
+
+## القاعدة الدائمة الثانية — الحذف الفوري، لا استثناء
+
+**أي بناء مؤقت يُحذف فوراً عند اكتشافه — حتى لو كان قابلاً للنقل أو التعديل. لا يُنقل، لا يُعدّل، لا يُبنى عليه.**
+
+السبب المُثبت في هذا المشروع تحديداً: `ServiceLocator` أخفى الاعتماديات فتأخّر كشف الدائرية؛ عقود جزئية (`ISupplierService`) بُنيت عليها خدمات كاملة قبل اكتمالها؛ `_Legacy/` سبَّب تضارب أسماء namespace ظلّ كامناً حتى R1؛ نسختا `DbHelper` القديمتان تعايشتا حتى ظهر deadlock حقيقي؛ `IJournalService` عقد جزئي بُني عليه `FiscalPeriodService` كاملة في F.2.2 قبل اكتمال العقد.
+
+**القاعدة**: عند مواجهة أي مؤقت — احذف، ثم ابنِ البديل الصحيح كاملاً، ثم اربط. **لا تربط شيئاً بعقد ناقص.**
+
+**الاستثناء الوحيد**: إن كان حذفه الآن يكسر البناء وبديله مجدوَل في بند لاحق صريح — يُحذف في ذلك البند إلزامياً، ويُسجَّل الآن بتعليق:
+```
+// TEMPORARY — يُحذف في R{n}. لا تبنِ عليه.
+```
+كل حالة استثناء حالية مُرقَّمة ومُسجَّلة في § "الدين التقني" أدناه — لا يوجد مؤقت غير مُرقَّم في الكود بعد R2 (يفحصه `Tools/ArchitectureCheck/check.sh`).
 
 ---
 
@@ -45,7 +59,7 @@ PrimeERP/
 | **1.Platform** | بنية تحتية عابرة: صلاحيات (تعريف + تخزين)، تدقيق (Audit)، لغة، إعدادات (تخزين + قراءة/كتابة) | منطق أعمال محاسبي، أي مرجع لـ 4.Application/5.Design/6.UI/7.Composition/8.Modules |
 | **2.Data** | مزوّدو قواعد بيانات، أدوات SQL خام (DbHelper/SchemaBuilder)، المستودعات (Repository) | أي قرار/حساب/تحقق أعمال، استدعاء Service أو Repository آخر عبر منطق (لا مجرد نوع) |
 | **3.Domain** | كيانات بيانات صرفة (Entities)، تعدادات، قواعد محاسبية نقية (دوال حسابية بلا حالة)، أنواع Result/PagedResult/StatusVariant، عقود التحقق (IValidator/ValidationResult/ValidatorBase) | أي استدعاء DB، أي مرجع لأي طبقة أخرى إطلاقاً — الطبقة الوحيدة "نقية" فعلياً بلا استثناء واحد بعد R1 |
-| **4.Application** | خدمات الأعمال (Service)، DTOs، مدقّقو الإدخال (Validators)، لاحقاً: Pipeline/Steps/Operations/ServiceBase | أي مرجع لـ 5.Design/6.UI/7.Composition/8.Modules — **مخالفة معروفة حالياً**: `PrintService` (Print) يستدعي `ExportService` (6.UI) — راجع "مخالفات معروفة" أدناه |
+| **4.Application** | خدمات الأعمال (Service)، DTOs، مدقّقو الإدخال (Validators)، عقود مشتركة قابلة لإعادة الاستخدام تصعد لـ 3.Domain/Contracts لو احتاجتها طبقة أخرى (مثال `IPrintable`)، لاحقاً: Pipeline/Steps/Operations/ServiceBase | أي مرجع لـ 5.Design/6.UI/7.Composition/8.Modules |
 | **5.Design** | XAML فقط — رموز بصرية (Identity→Semantic→Styles)، لا كود C# وراء أي منطق (ExportTheme.cs ثوابت صرفة مسموحة استثناءً موثَّقاً مسبقاً) | أي كود C# منطقي، أي مرجع خارج نفسه |
 | **6.UI** | قطع الواجهة (UserControl/Window)، محوّلات (Converters)، خدمات UI-orchestration (Dialog/Toast/Navigation/Export/Identity/Theme)، ViewModel أسس عامة | استدعاء Repository مباشرة، منطق أعمال محاسبي |
 | **7.Composition** | تعريفات صفحات/حوارات كبيانات (Definitions)، مُصيِّرات تجمّع القطع (Renderers)، سجلّ الموديولات | أي منطق أعمال، أي XAML مخصص لصفحة واحدة |
@@ -54,27 +68,29 @@ PrimeERP/
 
 ---
 
-## جدول الاعتماد الفعلي (بعد R1 — بحث حقيقي، لا افتراض)
+## مصفوفة الاعتماد المسموح (طبقة × طبقة)
 
-| من | يعتمد على (namespaces مستوردة فعلياً) |
-|---|---|
-| 1.Platform | 2.Data (DbHelper مباشرة — راجع "قيد Platform" أدناه)، 3.Domain (Enums/Results) |
-| 2.Data | 1.Platform.Settings (Seeders تقرأ SettingKeys)، 3.Domain |
-| 3.Domain | لا شيء — نقية 100% |
-| 4.Application | 1.Platform، 2.Data، 3.Domain، 6.UI (**مخالفة واحدة معروفة**، PrintService→ExportService) |
-| 5.Design | لا شيء (XAML صرف) |
-| 6.UI | 1.Platform (AppSession/Localization)، 3.Domain (StatusVariant/Enums)، 5.Design (ضمنياً عبر DynamicResource) |
-| 7.Composition | (فارغة بعد) |
-| 8.Modules | (فارغة بعد) |
-| App/ | 1.Platform، 4.Application (كل الخدمات، عبر ServiceLocator)، 6.UI.DevTools (مؤقت — ControlsGalleryPage) |
+`✅` مسموح ومُستهلَك فعلياً · `➖` مسموح، فارغ بعد · `⛔` ممنوع (يفحصه `Tools/ArchitectureCheck/check.sh` تلقائياً)
+
+| من \ إلى | 1.Platform | 2.Data | 3.Domain | 4.Application | 5.Design | 6.UI | 7.Composition | 8.Modules |
+|---|---|---|---|---|---|---|---|---|
+| **1.Platform** | — | ✅ (Core/Schema فقط) | ✅ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ |
+| **2.Data** | ✅ (Settings) | — | ✅ | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ |
+| **3.Domain** | ⛔ | ⛔ | — | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ |
+| **4.Application** | ✅ | ✅ | ✅ | — | ⛔ | ⛔ | ⛔ | ⛔ |
+| **5.Design** | ⛔ | ⛔ | ⛔ | ⛔ | — | ⛔ | ⛔ | ⛔ |
+| **6.UI** | ✅ | ⛔ | ✅ | ➖ | ✅ | — | ⛔ | ⛔ |
+| **7.Composition** | ✅ | ⛔ | ✅ | ✅ | ✅ | ✅ | — | ⛔ |
+| **8.Modules** | ✅ | ⛔ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| **App/** | ✅ | ⛔ | ➖ | ✅ | ➖ | ✅ (DevTools، مؤقت) | ➖ | ➖ |
 
 ### ⚠️ قيد Platform — انحراف موثَّق عن "لا يعتمد على شيء"
 
-`1.Platform/Settings/*`, `1.Platform/Permissions/PermissionDb.cs`, `1.Platform/Audit/AuditLogger.cs` تستدعي `PrimeERP.Data.Core.DbHelper` مباشرة (اتصال SQL خام، لا عبر `2.Data/Repositories`). هذا **مقصود لا سهو**: هو بالضبط ما يقطع الدائرية `Database↔Services.Settings` التي رصدها التقرير المعماري — `SettingsService` الآن يملك مستودعه الخاص (`SettingRepository`) داخل نفس طبقته، فلا يحتاج طبقة 2.Data للـ Settings إطلاقاً، بينما 2.Data (Seeders) يستدعي `1.Platform.Settings` (اتجاه واحد فقط، سليم). الاعتماد الحقيقي المتبقي هو `1.Platform → 2.Data.Core` (أدوات SQL خام لا مستودعات) — وهذا اعتماد على "أداة" لا "طبقة أعمال"، يُعامل كبنية تحتية مشتركة (نفس منطق أن `3.Domain` وحدها الطبقة الخالية تماماً؛ `1.Platform` تُعامَل عملياً كـ"طبقة صفر ونصف" فوق أدوات DB الخام فقط، تحت كل شيء آخر).
+`1.Platform/{Settings,Permissions,Audit}/*` تستدعي `PrimeERP.Data.Core.DbHelper` **و**`PrimeERP.Data.Schema.SchemaBuilder` مباشرة (اتصال SQL خام + تعريف جداولها الخاصة، لا عبر `2.Data/Repositories`). هذا **مقصود لا سهو**: هو بالضبط ما يقطع الدائرية `Database↔Services.Settings` الأصلية — `SettingsService`/`PermissionService`/`AuditLogger` تملك مستودعاتها الخاصة (`SettingRepository`/`PermissionDb`) داخل نفس طبقتها، فلا تحتاج طبقة `2.Data.Repositories` إطلاقاً، بينما `2.Data` (Seeders) يستدعي `1.Platform.Settings` (اتجاه واحد فقط، سليم — يتحقق منه `check.sh` كاستثناء موثَّق لا دائرية حقيقية). الاعتماد الحقيقي المتبقي `1.Platform → 2.Data.Core/Schema` هو اعتماد على "أداة" لا "طبقة أعمال".
 
-### ⚠️ مخالفة معروفة تنتظر R2
+### ✅ مخالفة R1 المعروفة — أُصلحت في R2
 
-`4.Application/Services/Print/PrintService.cs` يستدعي `PrimeERP.UI.Services.ExportService.Instance.ExportPrintableToPdf(...)` — Application(4) يعتمد على UI(6)، عكس اتجاه الاعتماد المسموح. **لم يُصلَح في R1** (نقل فقط، صفر تغيير منطق) — مسجَّل هنا صراحة لِـ R2 (فحص الحدود) ليلتقطه ويُقرَّر حله (نقل ExportService لـ 4.Application، أو فصل توليد PDF عن التصدير العام).
+`PrintService` (4.Application) كان يستدعي `ExportService.Instance` (6.UI) مباشرة — اعتماد Application→UI معكوس. **الحل المُنفَّذ**: عقد `IDocumentExporter` جديد في `3.Domain/Contracts/` (+ نقل `IPrintable`/`PrintSection`/`PrintColumn`/`PrintTotal` معه من 4.Application لنفس المكان — عقد مشترك حقيقي بين الطبقتين، لا ينتمي لإحداهما حصراً). `ExportService` ينفّذ `IDocumentExporter` الآن بجانب `IExportService`. `PrintService.ExportToPdf` يستدعي `ServiceLocator.Get<IDocumentExporter>()` (**مؤقت** — الحقن الحقيقي عبر DI في R3، `IDocumentExporter` نفسه دائم). صفر اعتماد Application→UI متبقٍّ (تحقَّق `check.sh`).
 
 ---
 
@@ -85,8 +101,44 @@ PrimeERP/
 - **`Resources/Icons.xaml`، `Resources/Strings.xaml`** (الجذريتان الفارغتان) — محذوفتان؛ النسختان الحقيقيتان (`Icons/Icons.xaml`, `Strings/Strings.ar|en.xaml`) انتقلتا لـ `5.Design/`.
 - **`Views/Windows/LoginWindow.xaml(.cs)`** — محذوفة (Grid فارغ، صفر منطق) — تُبنى حقيقية في R9.
 - **8 ViewModels فارغة** (`CustomersViewModel`...) و**14 صفحة/حوار فارغة** (`Views/Pages/*`, `Views/Dialogs/*`) — محذوفة (كلاسات/شاشات فارغة تماماً، صفر مستهلك) — تُبنى عبر 7.Composition/8.Modules في R7–R9.
-- **`ISupplierService.cs`** — **لم يُحذف رغم تصنيفه "يُحذف ويُبنى من جديد"**: لا يزال `AccountService.ResolveAutoLink` و`AccountServiceTests` يعتمدان عليه فعلياً؛ حذفه الآن يكسر البناء والاختبارات معاً (يخالف "R1: نقل فقط، صفر تغيير منطق"). **نُقل كما هو** إلى `4.Application/Services/Parties/`؛ إعادة بنائه الفعلية ضمن R6 مع `PartyServiceBase` كما ورد صراحة هناك.
-- **`ServiceLocator.cs`** — نُقل كما هو إلى `4.Application/` (لم يُحذف — لا يزال العمود الوحيد لربط الخدمات المتقاطعة). يُستبدل بـ DI حقيقي في R3.
+- **`ISupplierService.cs`** — **لم يُحذف رغم تصنيفه "يُحذف ويُبنى من جديد"**: لا يزال `AccountService.ResolveAutoLink` و`AccountServiceTests` يعتمدان عليه فعلياً؛ حذفه الآن يكسر البناء والاختبارات معاً (يخالف "R1: نقل فقط، صفر تغيير منطق"). **نُقل كما هو** إلى `4.Application/Services/Parties/`، ووُسم بتعليق `// TEMPORARY — يُحذف ويُعاد بناؤه كاملاً في R6` (R2)؛ إعادة بنائه الفعلية ضمن R6 مع `PartyServiceBase` كما ورد صراحة هناك.
+- **`ServiceLocator.cs`** — نُقل كما هو إلى `4.Application/` (لم يُحذف — لا يزال العمود الوحيد لربط الخدمات المتقاطعة)، ووُسم بتعليق `// TEMPORARY — يُحذف نهائياً في R3` (R2). يُستبدل بـ DI حقيقي في R3.
+- **`2.Data/Repositories/{FiscalYearSeeder,NumberSequenceSeeder}.cs`** — نُقلا إلى `2.Data/Seeders/` جديد (R2): كانا يخالفان "Repository لا يستدعي Repository آخر" (كلاهما يقرأ من أكثر من مستودع لتهيئة بيانات أولية) — عزلهما في فئة منفصلة (Bootstrap/Seeding، لا CRUD كيان واحد) يحل التصنيف الخاطئ بلا تغيير منطق.
+
+---
+
+## R2 — فرض الحدود
+
+### الأداة
+
+`Tools/ArchitectureCheck/check.sh` — سكربت Bash (لا مشروع C# منفصل، لسرعة البناء والتكرار مع الأداة المستخدمة طوال الجلسة). يُشغَّل: `bash Tools/ArchitectureCheck/check.sh` من أي مكان. يفحص: حدود الطبقات (اعتماد لأعلى/تخطي طبقتين/دائرية)، حدود المسؤولية (Repository من طبقة عرض، DbHelper من Service، Validator يكتب DB، Entity فيها دالة، ViewModel فيه Brush)، حدود التصميم (Hex حرفي خارج 5.Design، StaticResource للون، StaticResource لأبعاد بنيوية)، التكرار (أسماء كلاسات، مفاتيح موارد مكررة، Light بلا مقابل Dark)، والمؤقت (TEMPORARY بلا رقم بند، TODO بلا رقم). يخرج بكود غير صفري عند أي `FAIL` — `WARN` (دين تقني مسجَّل) لا يوقف البناء.
+
+**تحقق ذاتي أثناء البناء**: النسخة الأولى من الأداة أنتجت 14 نتيجة إيجابية كاذبة (مقارنة إشارات ذاتية داخل نفس الطبقة كأنها اعتماد خارجي، خلط `grep -h` مع فلترة مسار بعده فيُبطلها، استثناء `Data.Schema` المنسي من قيد Platform) — صُحِّحت جميعها بمراجعة كل نتيجة يدوياً قبل قبولها، لا بإسكاتها.
+
+### الخروق الحقيقية المكتشفة وما فُعل بكل واحد
+
+| الخرق | أين | الحل |
+|---|---|---|
+| Application(4)→UI(6) | `PrintService`→`ExportService` | عقد `IDocumentExporter` في 3.Domain (تفصيل أعلاه) |
+| Repository يستدعي Repository | `FiscalYearSeeder`/`NumberSequenceSeeder` | نُقلا إلى `2.Data/Seeders/` (فئة منفصلة عن CRUD) |
+| `using` متبقٍّ من التوسيع الآمن في R1 (Domain→Platform) | `Employee.cs`, `Product.cs`, `PurchaseInvoice.cs`, `SalesInvoice.cs`, `StockMovement.cs`, `Supplier.cs` (كلها 3.Domain/Entities) | حُذفت أسطر `using PrimeERP.Platform.Permissions;` غير المُستهلَكة فعلياً (توسيع R1 الآمن لِـ `using PrimeERP.Core;` أضاف مرجعين احتياطاً، أحدهما غير مُستخدَم هنا) |
+| `using` متبقٍّ مشابه (Platform→Data.Repositories) | `PermissionService.cs`, `SettingsService.cs` | حُذف `using PrimeERP.Data.Repositories;` غير المُستهلَك — كل من `PermissionDb`/`SettingRepository` أصبح في نفس طبقة المستهلِك أصلاً (وصول ضمني بلا `using`) |
+| `StaticResource` للون بدل `DynamicResource` | `AppDropdownButton.xaml`, `AppToast.xaml`, `PickerBaseControl.xaml`, `5.Design/Styles/Inputs.xaml` — الأربعة `Effect="{...Resource ShadowMd}"` | حُوِّلت لـ `DynamicResource` — كانت لن تتحدّث عند تبديل الوضع الداكن (الظلال معطَّلة بالداكن، `Opacity=0`) |
+
+### الدين التقني (مؤقتات مُرقَّمة، لا استثناء بلا رقم)
+
+| العنصر | لماذا مؤقت | بند الحذف/الحل |
+|---|---|---|
+| `4.Application/ServiceLocator.cs` | حل مؤقت لربط الخدمات قبل DI حقيقي | **R3** — يُحذف نهائياً |
+| `4.Application/Services/Parties/ISupplierService.cs` | عقد جزئي بُني ليطابق `ICustomerService` توقيعاً فقط، بلا تنفيذ (`SupplierService`) | **R6** — يُحذف ويُعاد بناؤه كاملاً مع `PartyServiceBase` |
+| `6.UI/DevTools/{ControlsGalleryPage,MockPickerDataSources}` | أداة تطوير دائمة، لا تُستهلَك من مسار حي | **R9** — تُستثنى من بناء Release (لا حذف، استبعاد) |
+| `App/MainWindow.xaml(.cs)` | يعرض Gallery بدل شاشة حقيقية | **R9** — يُستبدل محتواه بـ `AppShell` |
+| 32 ملف XAML يستهلك `StaticResource` لأبعاد بنيوية (Height/Radius/FontSize/FontFamily/FontWeight/Space/Icon) بدل `DynamicResource` | `Typography.xaml`/`Metrics.xaml` لم تُدمَجا بعد في سلسلة L1→L2→L3→L4؛ تحويلها الآن بلا الطبقتين L3/L4 عمل جزئي بلا فائدة مُثبَتة | **R4** — يُبنى L3 (Components/Tokens) + L4 (Styles) كاملاً، ثم تتحوَّل الـ32 دفعة واحدة |
+| `BackupService.cs` يستدعي `DbHelper` مباشرة (لا Repository) | أوامر `BACKUP`/`RESTORE VERIFYONLY` إدارية على مستوى محرّك القاعدة، لا CRUD كيان — لا يوجد Repository مكافئ منطقياً لها | **لا بند حذف** — استثناء دائم موثَّق، ليس ديناً يُسدَّد |
+
+### التحقق النهائي لـ R2
+
+`Tools/ArchitectureCheck/check.sh` → **صفر FAIL، 3 WARN (كلها دين تقني مُرقَّم أعلاه)**. `dotnet build` (المشروعين) → 0 خطأ. `dotnet test -m:1 --no-build` → **134/134 ناجح، صفر تعديل على أي اختبار**.
 
 ---
 
