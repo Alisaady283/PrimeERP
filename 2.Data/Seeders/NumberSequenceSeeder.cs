@@ -1,6 +1,7 @@
+using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
 
-namespace PrimeERP.Data.Repositories
+namespace PrimeERP.Data.Seeders
 {
     /// <summary>
     /// يزرع تسلسلات الأرقام ذات بادئة مُعدَّة مسبقاً من الإعدادات (لا EnsureRow التلقائية التي كانت ستجعل

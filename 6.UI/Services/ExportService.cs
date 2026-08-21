@@ -1,3 +1,4 @@
+using PrimeERP.Domain.Contracts;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,7 +11,6 @@ using ClosedXML.Excel;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Design.Surfaces;
-using PrimeERP.Application.Services.Print;
 using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Components.Display;
 using QuestPDF.Fluent;
@@ -20,7 +20,7 @@ using QuestPDF.Infrastructure;
 namespace PrimeERP.UI.Services
 {
     /// <summary>يصدّر بيانات AppDataGrid فعلياً — يحترم ColumnPermissions فلا يصدّر أي عمود محجوب عن المستخدم الحالي.</summary>
-    public class ExportService : IExportService
+    public class ExportService : IExportService, IDocumentExporter
     {
         public static readonly ExportService Instance = new();
 

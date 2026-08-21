@@ -1,3 +1,4 @@
+using PrimeERP.Domain.Contracts;
 using System.Windows.Documents;
 using PrimeERP.Domain.Results;
 

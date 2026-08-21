@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using System.Data;
 using System.Windows;
+using PrimeERP.Domain.Contracts;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Services;
 using PrimeERP.Application;
@@ -34,6 +35,7 @@ public partial class App : System.Windows.Application
         ServiceLocator.Register<IDialogService>(DialogService.Instance);
         ServiceLocator.Register<IToastService>(ToastService.Instance);
         ServiceLocator.Register<IExportService>(ExportService.Instance);
+        ServiceLocator.Register<IDocumentExporter>(ExportService.Instance);
         ServiceLocator.Register<IIdentityService>(IdentityService.Instance);
 
         IdentityService.Instance.Initialize();

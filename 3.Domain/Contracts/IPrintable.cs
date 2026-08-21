@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using PrimeERP.Domain.Results;
 
-namespace PrimeERP.Application.Services.Print
+namespace PrimeERP.Domain.Contracts
 {
     public enum PrintOrientation { Portrait, Landscape }
 

@@ -1,3 +1,4 @@
+using PrimeERP.Data.Repositories;
 using System;
 using PrimeERP.Domain.Rules;
 using PrimeERP.Domain.Contracts;
@@ -5,7 +6,7 @@ using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Settings;
 using Db = PrimeERP.Data.Core.DbHelper;
 
-namespace PrimeERP.Data.Repositories
+namespace PrimeERP.Data.Seeders
 {
     /// <summary>
     /// يزرع السنة المالية الحالية تلقائياً عند أول تشغيل (12 فترة شهرية) — Repository مباشرة لا عبر

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Application
 {
+    // TEMPORARY — يُحذف نهائياً في R3 (Microsoft.Extensions.DependencyInjection). لا تبنِ عليه.
     /// <summary>
     /// موقع خدمات مؤقت حتى يُبنى حاوي DI كامل — App.xaml.cs يسجّل كل خدمة مرة واحدة عند الإقلاع،
     /// وأي ViewModel/قطعة تطلبها عبر Get&lt;T&gt; بدل الإشارة مباشرة لكلاس التنفيذ.

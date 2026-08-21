@@ -1,4 +1,4 @@
-using PrimeERP.UI.Services;
+using PrimeERP.Domain.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -106,9 +106,13 @@ namespace PrimeERP.Application.Services.Print
             return Result.Ok();
         }
 
-        /// <summary>يبني ملف PDF عبر ExportService (QuestPDF) — لا يكرّر منطق بناء PDF هنا.</summary>
+        /// <summary>
+        /// يبني ملف PDF عبر IDocumentExporter (تنفيذه الفعلي ExportService في 6.UI، يُسجَّل في App.xaml.cs) —
+        /// لا يعتمد PrintService على UI مباشرة (كان اعتماداً معكوساً Application→UI، أُصلح في R2 عبر هذا العقد
+        /// في 3.Domain/Contracts؛ الحقن الحقيقي عبر DI بدل ServiceLocator يقع في R3).
+        /// </summary>
         public Result ExportToPdf(IPrintable document, string path) =>
-            ExportService.Instance.ExportPrintableToPdf(document, path);
+            ServiceLocator.Get<IDocumentExporter>().ExportPrintableToPdf(document, path);
 
         // ===== بناء المحتوى =====
 

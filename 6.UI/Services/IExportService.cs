@@ -1,7 +1,7 @@
+using PrimeERP.Domain.Contracts;
 using System.Collections;
 using System.Collections.Generic;
 using PrimeERP.Domain.Results;
-using PrimeERP.Application.Services.Print;
 using PrimeERP.UI.Components.Display;
 
 namespace PrimeERP.UI.Services

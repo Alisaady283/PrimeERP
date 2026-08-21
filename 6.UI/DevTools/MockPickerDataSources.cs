@@ -9,6 +9,7 @@ using PrimeERP.UI.Components.Pickers;
 
 namespace PrimeERP.UI.DevTools
 {
+    // TEMPORARY — تُستثنى من بناء Release في R9 مع ControlsGalleryPage. لا تُستهلك من مسار حي.
     /// <summary>مصادر بيانات وهمية لكل Picker — تُستخدم في الـ Gallery فقط لإثبات أن PickerBase&lt;T&gt; لا يستدعي DB إطلاقاً.</summary>
     public static class MockPickerDataSources
     {
