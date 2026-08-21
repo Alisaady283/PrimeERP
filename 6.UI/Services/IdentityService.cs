@@ -23,11 +23,11 @@ namespace PrimeERP.UI.Services
     /// </summary>
     public class IdentityService : IIdentityService
     {
-        public static readonly IdentityService Instance = new();
-
-        private readonly ISettingsService _settings = SettingsService.Instance;
+        private readonly ISettingsService _settings;
         private const string ColorDictSuffix = "Primitives.Color.xaml";
         private const string ThemeDictSuffix = "Theme.xaml";
+
+        public IdentityService(ISettingsService settings) => _settings = settings;
 
         // القيم Str.* هنا مفاتيح ترجمة (تُحلّ في Available فقط، وقت الاستخدام) لا نصاً نهائياً — الحزمة الثابتة تحمل المفاتيح فقط.
         private static readonly List<(string Key, string NameArKey, string NameEn)> Packs = new()

@@ -1,20 +1,18 @@
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
-using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Services;
-using PrimeERP.Application;
 using PrimeERP.Application.Services;
 using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.DTOs.Parties;
-using PrimeERP.Platform.Settings;
 using Xunit;
 using Db = PrimeERP.Data.Core.DbHelper;
 
@@ -24,16 +22,22 @@ namespace PrimeERP.Tests.Services
     public class CustomerServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
-        private readonly CustomerService _service = new();
-        private readonly AccountService _accounts = new();
+        private readonly ICustomerService _service;
+        private readonly IAccountService _accounts;
+        private readonly ISettingsService _settings;
+        private readonly INumberSequenceService _numbers;
 
         public CustomerServiceTests()
         {
             AppSession.DevMode = true;
 
-            // AccountService.Create/Update/Delete (المسار العادي، لا (conn,tx)) تحلّان ICustomerService عبر
-            // ServiceLocator.TryGet عند الإنشاء/التعديل/الحذف تحت جذر العملاء — لازمة لاختبارات "حساب→عميل".
-            ServiceLocator.Register<ICustomerService>(_service);
+            // AccountService.Create/Update/Delete تحلّان ICustomerService عبر IServiceProvider (حاوية DI —
+            // R3) عند الإنشاء/التعديل/الحذف تحت جذر العملاء. بما أن _service وAccountService الداخلية يُحلّان
+            // من نفس _db.Services، الحاوية تربطهما تلقائياً — لا تسجيل يدوي لازم بعد.
+            _service = _db.Services.GetRequiredService<ICustomerService>();
+            _accounts = _db.Services.GetRequiredService<IAccountService>();
+            _settings = _db.Services.GetRequiredService<ISettingsService>();
+            _numbers = _db.Services.GetRequiredService<INumberSequenceService>();
         }
 
         public void Dispose() => _db.Dispose();
@@ -168,7 +172,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Create_WithoutCustomersAccountConfigured_Fails()
         {
-            SettingsService.Instance.Set(SettingKeys.Accounts.Customers, "");
+            _settings.Set(SettingKeys.Accounts.Customers, "");
 
             var result = _service.Create(BasicDto());
 
@@ -193,7 +197,7 @@ namespace PrimeERP.Tests.Services
             var leafAccount = _accounts.Create(new CreateAccountDto { ParentId = AccountRepository.GetByCode("1210").Id, Name = "حساب ورقي", IsLeaf = true });
             Assert.True(leafAccount.IsSuccess, leafAccount.ErrorMessage);
 
-            SettingsService.Instance.Set(SettingKeys.Accounts.Customers, leafAccount.Value.Code);
+            _settings.Set(SettingKeys.Accounts.Customers, leafAccount.Value.Code);
 
             var result = _service.Create(BasicDto());
 
@@ -209,7 +213,7 @@ namespace PrimeERP.Tests.Services
             // NumberSequenceService.Next("Customer") تالياً (Peek لا يستهلك الرقم) — الحساب يُنشأ بنجاح داخل
             // المعاملة، ثم يفشل CustomerRepository.Insert بخرق قيد تفرّد Code، فيتراجع كل شيء (بما فيه الحساب
             // الذي أُنشئ للتو في نفس المعاملة) — rollback فعلي بفشل حقيقي، لا فشل تحقق مسبق.
-            var nextCode = NumberSequenceService.Instance.Peek("Customer");
+            var nextCode = _numbers.Peek("Customer");
             CustomerRepository.Insert(new Customer { Code = nextCode, Name = "عميل موجود مسبقاً", IsActive = true });
 
             var accountsBefore = AccountRepository.GetChildren("1220").Count;

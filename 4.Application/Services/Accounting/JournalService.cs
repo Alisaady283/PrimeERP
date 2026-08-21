@@ -31,13 +31,21 @@ namespace PrimeERP.Application.Services.Accounting
     /// </summary>
     public class JournalService : IJournalService
     {
-        public static readonly JournalService Instance = new();
+        private readonly IPermissionService _permissions;
+        private readonly ISettingsService _settings;
+        private readonly IAccountService _accounts;
+        private readonly IFiscalPeriodService _fiscalPeriods;
+        private readonly INumberSequenceService _numbers;
 
-        private readonly IPermissionService _permissions = PermissionService.Instance;
-        private readonly ISettingsService _settings = SettingsService.Instance;
-        private readonly IAccountService _accounts = AccountService.Instance;
-        private readonly IFiscalPeriodService _fiscalPeriods = FiscalPeriodService.Instance;
-        private readonly INumberSequenceService _numbers = NumberSequenceService.Instance;
+        public JournalService(IPermissionService permissions, ISettingsService settings, IAccountService accounts,
+            IFiscalPeriodService fiscalPeriods, INumberSequenceService numbers)
+        {
+            _permissions = permissions;
+            _settings = settings;
+            _accounts = accounts;
+            _fiscalPeriods = fiscalPeriods;
+            _numbers = numbers;
+        }
 
         private static string Denied => LocalizationService.Get("Str.PermissionDenied");
         private static string CurrentUser => AppSession.Username ?? "Admin";

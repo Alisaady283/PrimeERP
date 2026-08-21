@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Application.Services.Print;
 using Xunit;
@@ -8,7 +9,9 @@ namespace PrimeERP.Tests.Services
     [Collection("Database")]
     public class PrintServiceTests
     {
-        public PrintServiceTests(TestDatabaseFixture _) { }
+        private readonly IPrintService _service;
+
+        public PrintServiceTests(TestDatabaseFixture db) => _service = db.Services.GetRequiredService<IPrintService>();
 
         private static JournalEntry SampleEntry() => new()
         {
@@ -33,9 +36,8 @@ namespace PrimeERP.Tests.Services
             StaThreadHelper.Run(() =>
             {
                 var printable = PrintTemplates.JournalEntryPrint(SampleEntry());
-                var service = new PrintService();
 
-                var result = service.Build(printable);
+                var result = _service.Build(printable);
 
                 Assert.True(result.IsSuccess, result.ErrorMessage);
                 Assert.NotNull(result.Value);

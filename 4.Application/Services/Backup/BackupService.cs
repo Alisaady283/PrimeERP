@@ -25,11 +25,15 @@ namespace PrimeERP.Application.Services.Backup
     /// </summary>
     public class BackupService : IBackupService
     {
-        public static readonly BackupService Instance = new();
-
-        private readonly IPermissionService _permissions = PermissionService.Instance;
-        private readonly ISettingsService _settings = SettingsService.Instance;
+        private readonly IPermissionService _permissions;
+        private readonly ISettingsService _settings;
         private Timer _autoTimer;
+
+        public BackupService(IPermissionService permissions, ISettingsService settings)
+        {
+            _permissions = permissions;
+            _settings = settings;
+        }
 
         public event Action<BackupInfo> BackupCompleted;
         public event Action<string> BackupFailed;

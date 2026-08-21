@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — PrimeERP
 
-هذا الملف يوثّق البنية المعمارية الثمانية-الطبقات لِـ PrimeERP بعد R1+R2 (إعادة الهيكلة + فرض الحدود). يُستكمل مع كل بند لاحق (R3–R10).
+هذا الملف يوثّق البنية المعمارية الثمانية-الطبقات لِـ PrimeERP بعد R1+R2+R3 (إعادة الهيكلة + فرض الحدود + الحقن الحقيقي للاعتماديات). يُستكمل مع كل بند لاحق (R4–R10).
 
 ---
 
@@ -26,7 +26,7 @@
 ```
 // TEMPORARY — يُحذف في R{n}. لا تبنِ عليه.
 ```
-كل حالة استثناء حالية مُرقَّمة ومُسجَّلة في § "الدين التقني" أدناه — لا يوجد مؤقت غير مُرقَّم في الكود بعد R2 (يفحصه `Tools/ArchitectureCheck/check.sh`).
+كل حالة استثناء حالية مُرقَّمة ومُسجَّلة في § "الدين التقني" أدناه — لا يوجد مؤقت غير مُرقَّم في الكود بعد R3 (يفحصه `Tools/ArchitectureCheck/check.sh`).
 
 ---
 
@@ -36,14 +36,14 @@
 PrimeERP/
 ├── App.xaml, App.xaml.cs        ⚠️ استثناء إلزامي — راجع "استثناء App.xaml" أدناه
 ├── 1.Platform/      Diagnostics/ Security/ Permissions/ Audit/ Localization/ Settings/
-├── 2.Data/          Providers/ Core/ Schema/ Query/ Repositories/
+├── 2.Data/          Providers/ Core/ Schema/ Query/ Repositories/ Seeders/
 ├── 3.Domain/        Entities/ Enums/ Rules/ Results/ Contracts/
-├── 4.Application/   ServiceLocator.cs, Pipeline/{Steps,Operations}/ Services/ Validation/ DTOs/
+├── 4.Application/   Pipeline/{Steps,Operations}/ Services/ Validation/ DTOs/    (ServiceLocator.cs محذوف نهائياً — R3)
 ├── 5.Design/        Identity/{Default,Corporate}/ Semantic/ Styles/ Icons/ Strings/ Surfaces/ Theme.xaml
-├── 6.UI/            Components/ Converters/ Behaviors/ Services/ ViewModels/ DevTools/
+├── 6.UI/            Components/ Converters/ Behaviors/ Services/ (+ UIServices.cs) ViewModels/ DevTools/
 ├── 7.Composition/   Definitions/ Renderers/ Registry/          (فارغة بعد — R8)
 ├── 8.Modules/       Accounting/ Parties/ Inventory/ Sales/ Purchases/ HR/ Reports/ System/  (فارغة بعد — R9)
-└── App/             MainWindow.xaml(.cs)                        (Bootstrap/Shell تُستكمل — R9)
+└── App/             Bootstrap/DependencyInjection.cs (R3)، MainWindow.xaml(.cs)  (Shell الحقيقي — R9)
 ```
 
 ### ⚠️ استثناء App.xaml — قيد أدوات لا قرار معماري
@@ -90,7 +90,7 @@ PrimeERP/
 
 ### ✅ مخالفة R1 المعروفة — أُصلحت في R2
 
-`PrintService` (4.Application) كان يستدعي `ExportService.Instance` (6.UI) مباشرة — اعتماد Application→UI معكوس. **الحل المُنفَّذ**: عقد `IDocumentExporter` جديد في `3.Domain/Contracts/` (+ نقل `IPrintable`/`PrintSection`/`PrintColumn`/`PrintTotal` معه من 4.Application لنفس المكان — عقد مشترك حقيقي بين الطبقتين، لا ينتمي لإحداهما حصراً). `ExportService` ينفّذ `IDocumentExporter` الآن بجانب `IExportService`. `PrintService.ExportToPdf` يستدعي `ServiceLocator.Get<IDocumentExporter>()` (**مؤقت** — الحقن الحقيقي عبر DI في R3، `IDocumentExporter` نفسه دائم). صفر اعتماد Application→UI متبقٍّ (تحقَّق `check.sh`).
+`PrintService` (4.Application) كان يستدعي `ExportService.Instance` (6.UI) مباشرة — اعتماد Application→UI معكوس. **الحل المُنفَّذ**: عقد `IDocumentExporter` جديد في `3.Domain/Contracts/` (+ نقل `IPrintable`/`PrintSection`/`PrintColumn`/`PrintTotal` معه من 4.Application لنفس المكان — عقد مشترك حقيقي بين الطبقتين، لا ينتمي لإحداهما حصراً). `ExportService` ينفّذ `IDocumentExporter` الآن بجانب `IExportService`. `PrintService.ExportToPdf` يستقبل `IDocumentExporter` عبر حقن حقيقي في المُنشئ منذ R3 (`services.AddSingleton<IDocumentExporter>(sp => sp.GetRequiredService<ExportService>());` في `AddUI()`) — لا مؤقت متبقٍّ هنا. صفر اعتماد Application→UI متبقٍّ (تحقَّق `check.sh`).
 
 ---
 
@@ -102,7 +102,7 @@ PrimeERP/
 - **`Views/Windows/LoginWindow.xaml(.cs)`** — محذوفة (Grid فارغ، صفر منطق) — تُبنى حقيقية في R9.
 - **8 ViewModels فارغة** (`CustomersViewModel`...) و**14 صفحة/حوار فارغة** (`Views/Pages/*`, `Views/Dialogs/*`) — محذوفة (كلاسات/شاشات فارغة تماماً، صفر مستهلك) — تُبنى عبر 7.Composition/8.Modules في R7–R9.
 - **`ISupplierService.cs`** — **لم يُحذف رغم تصنيفه "يُحذف ويُبنى من جديد"**: لا يزال `AccountService.ResolveAutoLink` و`AccountServiceTests` يعتمدان عليه فعلياً؛ حذفه الآن يكسر البناء والاختبارات معاً (يخالف "R1: نقل فقط، صفر تغيير منطق"). **نُقل كما هو** إلى `4.Application/Services/Parties/`، ووُسم بتعليق `// TEMPORARY — يُحذف ويُعاد بناؤه كاملاً في R6` (R2)؛ إعادة بنائه الفعلية ضمن R6 مع `PartyServiceBase` كما ورد صراحة هناك.
-- **`ServiceLocator.cs`** — نُقل كما هو إلى `4.Application/` (لم يُحذف — لا يزال العمود الوحيد لربط الخدمات المتقاطعة)، ووُسم بتعليق `// TEMPORARY — يُحذف نهائياً في R3` (R2). يُستبدل بـ DI حقيقي في R3.
+- **`ServiceLocator.cs`** — نُقل كما هو إلى `4.Application/` مؤقتاً في R2 (`// TEMPORARY — يُحذف نهائياً في R3`)، ثم **حُذف نهائياً في R3** (`git rm`) — استُبدل بحقن حقيقي عبر `Microsoft.Extensions.DependencyInjection` (تفصيل كامل في § "R3" أدناه).
 - **`2.Data/Repositories/{FiscalYearSeeder,NumberSequenceSeeder}.cs`** — نُقلا إلى `2.Data/Seeders/` جديد (R2): كانا يخالفان "Repository لا يستدعي Repository آخر" (كلاهما يقرأ من أكثر من مستودع لتهيئة بيانات أولية) — عزلهما في فئة منفصلة (Bootstrap/Seeding، لا CRUD كيان واحد) يحل التصنيف الخاطئ بلا تغيير منطق.
 
 ---
@@ -129,8 +129,8 @@ PrimeERP/
 
 | العنصر | لماذا مؤقت | بند الحذف/الحل |
 |---|---|---|
-| `4.Application/ServiceLocator.cs` | حل مؤقت لربط الخدمات قبل DI حقيقي | **R3** — يُحذف نهائياً |
-| `4.Application/Services/Parties/ISupplierService.cs` | عقد جزئي بُني ليطابق `ICustomerService` توقيعاً فقط، بلا تنفيذ (`SupplierService`) | **R6** — يُحذف ويُعاد بناؤه كاملاً مع `PartyServiceBase` |
+| ~~`4.Application/ServiceLocator.cs`~~ | ~~حل مؤقت لربط الخدمات قبل DI حقيقي~~ | ✅ **محلول في R3** — حُذف نهائياً، استُبدل بـ DI حقيقي |
+| `4.Application/Services/Parties/ISupplierService.cs` (+ عدم تسجيله في `App/Bootstrap/DependencyInjection.cs`) | عقد جزئي بُني ليطابق `ICustomerService` توقيعاً فقط، بلا تنفيذ (`SupplierService`) | **R6** — يُحذف ويُعاد بناؤه كاملاً مع `PartyServiceBase`، ثم يُسجَّل في `AddApplication()` |
 | `6.UI/DevTools/{ControlsGalleryPage,MockPickerDataSources}` | أداة تطوير دائمة، لا تُستهلَك من مسار حي | **R9** — تُستثنى من بناء Release (لا حذف، استبعاد) |
 | `App/MainWindow.xaml(.cs)` | يعرض Gallery بدل شاشة حقيقية | **R9** — يُستبدل محتواه بـ `AppShell` |
 | 32 ملف XAML يستهلك `StaticResource` لأبعاد بنيوية (Height/Radius/FontSize/FontFamily/FontWeight/Space/Icon) بدل `DynamicResource` | `Typography.xaml`/`Metrics.xaml` لم تُدمَجا بعد في سلسلة L1→L2→L3→L4؛ تحويلها الآن بلا الطبقتين L3/L4 عمل جزئي بلا فائدة مُثبَتة | **R4** — يُبنى L3 (Components/Tokens) + L4 (Styles) كاملاً، ثم تتحوَّل الـ32 دفعة واحدة |
@@ -139,6 +139,42 @@ PrimeERP/
 ### التحقق النهائي لـ R2
 
 `Tools/ArchitectureCheck/check.sh` → **صفر FAIL، 3 WARN (كلها دين تقني مُرقَّم أعلاه)**. `dotnet build` (المشروعين) → 0 خطأ. `dotnet test -m:1 --no-build` → **134/134 ناجح، صفر تعديل على أي اختبار**.
+
+---
+
+## R3 — الحقن الحقيقي للاعتماديات (DI)
+
+### الحاوية
+
+`Microsoft.Extensions.DependencyInjection` 10.0.11 (كلا المشروعين). `App/Bootstrap/DependencyInjection.cs` يعرّف 5 دوال توسيع على `IServiceCollection` بترتيب الطبقات: `AddPlatform()` (Permissions/Settings)، `AddData()` (فارغة بعد — لا حالة قابلة للحقن حتى `RepositoryBase` في R5)، `AddApplication()` (كل خدمات 4.Application + `Lazy<IJournalService>`)، `AddUI()` (خدمات 6.UI + تسجيل `ExportService` تحت ثلاثة أنواع: نفسه، `IExportService`، `IDocumentExporter`)، `AddModules()` (فارغة بعد — R9). `App.xaml.cs.OnStartup` يبنيها بالترتيب، يُخرج `IServiceProvider` عبر `App.Services` (static، للقراءة فقط من الخارج)، ويستدعي `UIServices.Initialize(Services)`.
+
+كل خدمة تحوَّلت من `public static readonly XService Instance = new();` + اعتماديات كحقول ذات مُهيِّئ، إلى حقن حقيقي عبر المُنشئ — **بلا استثناء واحد** بين الخدمات الـ14 الحقيقية. `.Instance` لم يعد له وجود في أي خدمة أعمال.
+
+### لماذا `UIServices` ليس `ServiceLocator` معاداً بشكل آخر
+
+`6.UI/Services/UIServices.cs` كلاس static ضيّق مقصود (`Provider`, `Initialize`, خاصية `Permissions` مختصرة) — **الفرق الجوهري عن `ServiceLocator` المحذوف**:
+
+- **مَن يستهلكه**: حصراً كود-خلف View/Control التي يُنشئها WPF عبر مُنشئ بلا بارامترات (XAML) — لا توجد وسيلة لحقن مُنشئ هناك أصلاً. لا خدمة أعمال واحدة (4.Application) تستدعيه أو تعرفه.
+- **`ServiceLocator` القديم** كان يُستهلَك **من داخل خدمات الأعمال نفسها** (Service يحل اعتمادية Service آخر عبر Locator بدل المُنشئ) — هذا بالضبط ما أخفى الدائرية الحقيقية `JournalService↔FiscalPeriodService` حتى R3 (موثَّق في القاعدة الدائمة الثانية أعلاه).
+- **النطاق**: خاصية واحدة موثَّقة (`Permissions`) لا `TryGet<T>` عام يفتح الباب لأي نوع.
+
+الخلاصة: `UIServices` حدٌّ موثَّق عند نقطة اضطرار تقنية حقيقية (قيد إنشاء WPF)، لا بديل مقنَّع لحقن المُنشئ.
+
+### كسر الدائرية الحقيقية `FiscalPeriodService ↔ JournalService`
+
+دائرية حقيقية ثنائية الاتجاه (لا وهمية): `JournalService.BuildDto` يحتاج `IFiscalPeriodService.GetPeriodFor(entryDate)` مباشرة عند بناء كل DTO؛ `FiscalPeriodService.CloseYear/ClosePeriod/ReopenYear` يحتاج `IJournalService` — لكن فقط **وقت التنفيذ الفعلي لهذه العمليات**، لا وقت الإنشاء. الحل: `FiscalPeriodService` يستقبل `Lazy<IJournalService>` في مُنشئه (يُسجَّل في `AddApplication()` عبر `services.AddSingleton(sp => new Lazy<IJournalService>(() => sp.GetRequiredService<IJournalService>()));`) — لا يُبنى `IJournalService` فعلياً إلا عند أول `.Value`. `JournalService` يستقبل `IFiscalPeriodService` مباشرة بلا `Lazy` (لا حاجة، لا دائرية من هذا الاتجاه وقت الإنشاء).
+
+### `AccountService` والحل الاختياري لخدمات الأطراف
+
+`ResolveAutoLink` يحتاج `ICustomerService`/`ISupplierService` **اختيارياً فقط** (قد تكون `ISupplierService` غير مسجَّلة إطلاقاً — لا تنفيذ لها بعد). استبدل `ServiceLocator.TryGet<T>(out var x)` بحقن `IServiceProvider _services` في المُنشئ + `(ICustomerService)_services.GetService(typeof(ICustomerService))` (يرجع `null` بأمان لو غير مسجَّلة — نفس دلالة `TryGet` تماماً، بأداة قياسية بدل أداة مؤقتة).
+
+### حاوية الاختبارات
+
+`TestDatabaseFixture` يبني حاوية DI خاصة به بنفس دوال التسجيل الإنتاجية فعلياً (`Services { get; }` في المُنشئ) + `static BuildServices(Action<IServiceCollection> configureOverrides = null)` تُستخدم من أي فئة اختبار تحتاج Fake/Mock (آخر تسجيل يفوز في `Microsoft.Extensions.DependencyInjection`). فائدة جانبية: كل `TestDatabaseFixture` جديد = حاوية جديدة كلياً = `SettingsService` بذاكرة فارغة دائماً — ألغى تماماً حِيلة `SettingsService.Instance.Reload()` القديمة لمنع تسرّب الإعداد بين الاختبارات (لم تعد ذات معنى أصلاً بعد حذف `.Instance`).
+
+### التحقق النهائي لـ R3
+
+`dotnet build` (المشروعين، بعد إصلاح سباق XAML المعروف بإعادة محاولة واحدة) → **0 تحذير جديد، 0 خطأ**. `Tools/ArchitectureCheck/check.sh` → **صفر FAIL، 3 WARN** (نفس الثلاثة المُرقَّمة أعلاه؛ تعليق `ISupplierService` في `DependencyInjection.cs` رُقِّم `// TEMPORARY — يُحذف في R6` ليطابق القاعدة الدائمة الثانية). `dotnet test -m:1` → **134/134 ناجح، صفر تعديل على منطق أي اختبار** (تحويل بنية الوصول للخدمات فقط، لا تغيير في السيناريوهات المُختبَرة).
 
 ---
 

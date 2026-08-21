@@ -1,3 +1,4 @@
+using PrimeERP.UI.Services;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -175,7 +176,7 @@ namespace PrimeERP.UI.Components.Display
 
             _visibleColumns = (ColumnsSource ?? Enumerable.Empty<GridColumn>())
                 .Where(c => c.IsVisible)
-                .Where(c => string.IsNullOrEmpty(c.PermissionKey) || PermissionService.Instance.Can(c.PermissionKey))
+                .Where(c => string.IsNullOrEmpty(c.PermissionKey) || UIServices.Permissions.Can(c.PermissionKey))
                 .ToList();
 
             if (ShowRowNumbers)

@@ -1,3 +1,4 @@
+using PrimeERP.UI.Services;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -87,7 +88,7 @@ namespace PrimeERP.UI.Components.Actions
 
         private void ApplyPermissionVisibility()
         {
-            Visibility = string.IsNullOrEmpty(PermissionKey) || PermissionService.Instance.Can(PermissionKey)
+            Visibility = string.IsNullOrEmpty(PermissionKey) || UIServices.Permissions.Can(PermissionKey)
                 ? Visibility.Visible : Visibility.Collapsed;
         }
 

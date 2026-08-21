@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
@@ -7,7 +8,6 @@ using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Services;
-using PrimeERP.Application;
 using PrimeERP.Application.Services;
 using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
@@ -20,15 +20,18 @@ namespace PrimeERP.Tests.Services
     public class JournalServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
-        private readonly JournalService _service = new();
-        private readonly AccountService _accounts = new();
+        private readonly IJournalService _service;
+        private readonly IAccountService _accounts;
+        private readonly ISettingsService _settings;
 
         public JournalServiceTests()
         {
             AppSession.DevMode = true;
-            // FiscalPeriodService.ClosePeriod/CloseYear يحلّان IJournalService عبر ServiceLocator (Lazy) —
-            // مطلوب لأي اختبار هنا يستخدم FiscalPeriodService (فترة مقفلة، قيد إقفال سنة).
-            ServiceLocator.Register<IJournalService>(_service);
+            // FiscalPeriodService.ClosePeriod/CloseYear تحلّ IJournalService عبر Lazy<IJournalService> المُسجَّلة
+            // في _db.Services (AddApplication) — لا تسجيل يدوي لازم بعد R3.
+            _service = _db.Services.GetRequiredService<IJournalService>();
+            _accounts = _db.Services.GetRequiredService<IAccountService>();
+            _settings = _db.Services.GetRequiredService<ISettingsService>();
         }
 
         public void Dispose() => _db.Dispose();
@@ -140,7 +143,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Create_DuplicateAccount_Succeeds_WhenSettingEnabled()
         {
-            SettingsService.Instance.Set(SettingKeys.Financial.AllowDuplicateAccountInEntry, true);
+            _settings.Set(SettingKeys.Financial.AllowDuplicateAccountInEntry, true);
             var (cash, _) = CreateCashAndRevenue();
 
             var result = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 50m, 0m), (cash, 0m, 50m)));
@@ -152,7 +155,7 @@ namespace PrimeERP.Tests.Services
         public void Create_InClosedPeriod_Fails()
         {
             var (cash, revenue) = CreateCashAndRevenue();
-            var fiscal = new FiscalPeriodService();
+            var fiscal = _db.Services.GetRequiredService<IFiscalPeriodService>();
             var year = fiscal.CreateYear(new DateTime(2026, 1, 1), 1);
             fiscal.ClosePeriod(year.Value.Periods.Single().Id);
 
@@ -291,7 +294,7 @@ namespace PrimeERP.Tests.Services
             var (cash, revenue) = CreateCashAndRevenue();
             var created = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 500m, 0m), (revenue, 0m, 500m)));
 
-            var fiscal = new FiscalPeriodService();
+            var fiscal = _db.Services.GetRequiredService<IFiscalPeriodService>();
             var year = fiscal.CreateYear(new DateTime(2026, 1, 1), 1);
 
             // ClosePeriod العادية ترفض الإقفال لوجود القيد أعلاه غير مرحّل (بتصميم النظام: لا يمكن أصلاً أن
@@ -321,11 +324,11 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Unpost_ClosingEntry_Fails()
         {
-            SettingsService.Instance.Set(SettingKeys.Accounts.RetainedEarnings, "3200");
+            _settings.Set(SettingKeys.Accounts.RetainedEarnings, "3200");
             var cash = CreateLeaf(AssetRootId(), "نقدية للإقفال");
             var revenue = CreateLeaf(RevenueRootId(), "إيراد للإقفال");
 
-            var fiscal = new FiscalPeriodService();
+            var fiscal = _db.Services.GetRequiredService<IFiscalPeriodService>();
             var year = fiscal.CreateYear(new DateTime(2026, 1, 1), 1);
 
             var entry = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 300m, 0m), (revenue, 0m, 300m)));

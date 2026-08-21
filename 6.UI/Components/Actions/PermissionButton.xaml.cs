@@ -1,3 +1,4 @@
+using PrimeERP.UI.Services;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -56,7 +57,7 @@ namespace PrimeERP.UI.Components.Actions
 
         private void ApplyPermissionState()
         {
-            var allowed = string.IsNullOrEmpty(PermissionKey) || PermissionService.Instance.Can(PermissionKey);
+            var allowed = string.IsNullOrEmpty(PermissionKey) || UIServices.Permissions.Can(PermissionKey);
 
             if (HideIfDenied)
             {

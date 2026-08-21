@@ -1,3 +1,4 @@
+using PrimeERP.UI.Services;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -61,7 +62,7 @@ namespace PrimeERP.UI.Components.Shell
             foreach (var child in Children)
                 anyChildVisible |= child.RecomputeVisibility();
 
-            var selfAllowed = string.IsNullOrEmpty(Model.PermissionKey) || PermissionService.Instance.Can(Model.PermissionKey);
+            var selfAllowed = string.IsNullOrEmpty(Model.PermissionKey) || UIServices.Permissions.Can(Model.PermissionKey);
 
             IsVisible = HasChildren ? selfAllowed && anyChildVisible : selfAllowed;
             return IsVisible;

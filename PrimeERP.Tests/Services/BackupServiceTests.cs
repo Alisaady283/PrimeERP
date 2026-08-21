@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.Services.Backup;
 using Xunit;
 
@@ -9,10 +10,10 @@ namespace PrimeERP.Tests.Services
     [Collection("Database")]
     public class BackupServiceTests : IDisposable
     {
-        private readonly BackupService _service = new();
+        private readonly IBackupService _service;
         private readonly string _folder = Path.Combine(Path.GetTempPath(), $"PrimeERP.Tests.Backups.{Guid.NewGuid():N}");
 
-        public BackupServiceTests(TestDatabaseFixture _) { }
+        public BackupServiceTests(TestDatabaseFixture db) => _service = db.Services.GetRequiredService<IBackupService>();
 
         public void Dispose()
         {

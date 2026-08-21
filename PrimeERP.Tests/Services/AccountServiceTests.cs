@@ -1,11 +1,11 @@
 using System;
 using System.Data.Common;
+using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
-using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Services;
@@ -29,7 +29,7 @@ namespace PrimeERP.Tests.Services
     public class AccountServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
-        private readonly AccountService _service = new();
+        private readonly IAccountService _service;
 
         public AccountServiceTests()
         {
@@ -37,10 +37,14 @@ namespace PrimeERP.Tests.Services
 
             // AutoLinkEnabled=true افتراضياً الآن يفشل صراحةً لو ICustomerService/ISupplierService غير مسجَّلة
             // (بدل السكوت القديم) — أي اختبار ينشئ حساباً تحت جذر العملاء/الموردين يحتاج خدمة مسجَّلة، حتى لو
-            // لم يكن يفحص الربط نفسه. تسجيل افتراضي بلا تأثير هنا؛ الاختبارات التي تفحص الربط تُسجِّل نسختها
-            // الخاصة لاحقاً (تُنسخ فوق هذا التسجيل الافتراضي، ServiceLocator آخر Register يفوز).
-            ServiceLocator.Register<ICustomerService>(new FakeCustomerService());
-            ServiceLocator.Register<ISupplierService>(new FakeSupplierService());
+            // لم يكن يفحص الربط نفسه. تسجيل افتراضي بلا تأثير هنا؛ الاختبارات التي تفحص الربط الفعلي (134/187)
+            // تبني حاويتها الخاصة محلياً بالـ Fake الذي تريد فحصه (آخر تسجيل لنفس النوع هو الفائز في DI).
+            var services = TestDatabaseFixture.BuildServices(s =>
+            {
+                s.AddSingleton<ICustomerService>(new FakeCustomerService());
+                s.AddSingleton<ISupplierService>(new FakeSupplierService());
+            });
+            _service = services.GetRequiredService<IAccountService>();
         }
 
         public void Dispose() => _db.Dispose();
@@ -134,9 +138,10 @@ namespace PrimeERP.Tests.Services
         public void Create_UnderCustomersRoot_CreatesLinkedCustomer()
         {
             var fake = new FakeCustomerService();
-            ServiceLocator.Register<ICustomerService>(fake);
+            var services = TestDatabaseFixture.BuildServices(s => s.AddSingleton<ICustomerService>(fake));
+            var service = services.GetRequiredService<IAccountService>();
 
-            var result = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل مرتبط", IsLeaf = true });
+            var result = service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل مرتبط", IsLeaf = true });
 
             Assert.True(result.IsSuccess, result.ErrorMessage);
             Assert.NotNull(fake.LastCreatedFor);
@@ -187,12 +192,13 @@ namespace PrimeERP.Tests.Services
         public void Delete_RemovesLinkedCustomer()
         {
             var fake = new FakeCustomerService();
-            ServiceLocator.Register<ICustomerService>(fake);
+            var services = TestDatabaseFixture.BuildServices(s => s.AddSingleton<ICustomerService>(fake));
+            var service = services.GetRequiredService<IAccountService>();
 
-            var account = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل سيُحذف", IsLeaf = true });
+            var account = service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل سيُحذف", IsLeaf = true });
             Assert.True(account.IsSuccess);
 
-            var result = _service.Delete(account.Value.Id);
+            var result = service.Delete(account.Value.Id);
 
             Assert.True(result.IsSuccess, result.ErrorMessage);
             Assert.Equal(account.Value.Code, fake.LastDeletedAccountCode);

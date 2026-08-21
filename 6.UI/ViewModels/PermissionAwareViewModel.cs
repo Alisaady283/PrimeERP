@@ -4,13 +4,16 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using PrimeERP.Platform.Permissions;
+using PrimeERP.UI.Services;
 
 namespace PrimeERP.UI.ViewModels.Base
 {
     /// <summary>قاعدة لأي ViewModel يحتاج التحقق من الصلاحيات قبل تنفيذ أوامره أو إظهار أعمدة معيّنة.</summary>
     public abstract class PermissionAwareViewModel : BaseViewModel
     {
-        protected static readonly IPermissionService Permissions = PermissionService.Instance;
+        // خاصية لا حقل static readonly عمداً — تُقرأ عند كل استخدام لا عند تحميل الكلاس، لتفادي قراءة
+        // UIServices.Provider قبل تهيئته في App.xaml.cs.OnStartup (ترتيب تحميل static غير مضمون).
+        protected static IPermissionService Permissions => UIServices.Permissions;
 
         protected bool Can(string key) => Permissions.Can(key);
 

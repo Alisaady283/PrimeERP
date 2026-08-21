@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.UI.Services;
 using Xunit;
 
@@ -24,6 +25,9 @@ namespace PrimeERP.Tests.Services.Design
     {
         // Apply يستدعي ISettingsService.Set (يحفظ الاختيار) — يحتاج جدول AppSettings حقيقياً، لا مجرد Application حية.
         private readonly TestDatabaseFixture _db = new();
+        private readonly IIdentityService _service;
+
+        public IdentityServiceTests() => _service = _db.Services.GetRequiredService<IIdentityService>();
 
         public void Dispose() => _db.Dispose();
 
@@ -57,7 +61,7 @@ namespace PrimeERP.Tests.Services.Design
                     var defaultColor = ((SolidColorBrush)border.Background).Color;
                     Assert.Equal(Hex("#2563EB"), defaultColor); // Brand.600 من Identity/Default
 
-                    var applied = IdentityService.Instance.Apply("Corporate");
+                    var applied = _service.Apply("Corporate");
                     Assert.True(applied.IsSuccess);
 
                     // إعادة تقييم مرجع المورد على عنصر حيّ تُنفَّذ عبر Dispatcher لا فوراً بشكل متزامن — تفريغ
@@ -69,7 +73,7 @@ namespace PrimeERP.Tests.Services.Design
                 }
                 finally
                 {
-                    IdentityService.Instance.Apply("Default"); // يعيد الحالة الافتراضية — لا يترك أثراً لاختبارات لاحقة تُنشئ Application خاصتها
+                    _service.Apply("Default"); // يعيد الحالة الافتراضية — لا يترك أثراً لاختبارات لاحقة تُنشئ Application خاصتها
                     window.Close();
                 }
             });
@@ -78,14 +82,14 @@ namespace PrimeERP.Tests.Services.Design
         [Fact]
         public void Apply_UnknownIdentityKey_Fails()
         {
-            var result = IdentityService.Instance.Apply("NoSuchPack");
+            var result = _service.Apply("NoSuchPack");
             Assert.False(result.IsSuccess);
         }
 
         [Fact]
         public void Available_ListsDefaultAndCorporate()
         {
-            var packs = IdentityService.Instance.Available();
+            var packs = _service.Available();
             Assert.Contains(packs, p => p.Key == "Default");
             Assert.Contains(packs, p => p.Key == "Corporate");
         }

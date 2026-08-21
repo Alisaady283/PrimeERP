@@ -19,11 +19,11 @@ namespace PrimeERP.Platform.Settings
     /// </summary>
     public class SettingsService : ISettingsService
     {
-        public static readonly SettingsService Instance = new();
-
-        private readonly IPermissionService _permissions = PermissionService.Instance;
+        private readonly IPermissionService _permissions;
         private readonly object _lock = new();
         private Dictionary<string, string> _cache;
+
+        public SettingsService(IPermissionService permissions) => _permissions = permissions;
 
         public event Action<string> SettingChanged;
 

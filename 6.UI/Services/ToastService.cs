@@ -7,8 +7,6 @@ namespace PrimeERP.UI.Services
     /// <summary>يعرض إشعارات Toast فوق أي نافذة نشطة عبر نافذة مضيفة شفافة مستقلة — لا يعتمد على نافذة تطبيق محددة.</summary>
     public class ToastService : IToastService
     {
-        public static readonly ToastService Instance = new();
-
         private const int MaxVisible = 4;
 
         private ToastHostWindow _host;

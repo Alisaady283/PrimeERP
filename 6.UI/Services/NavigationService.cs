@@ -12,16 +12,17 @@ namespace PrimeERP.UI.Services
     /// </summary>
     public class NavigationService : INavigationService
     {
-        public static readonly NavigationService Instance = new();
-
+        private readonly IPermissionService _permissions;
         private readonly Dictionary<string, Func<UserControl>> _pages = new();
+
+        public NavigationService(IPermissionService permissions) => _permissions = permissions;
 
         public UserControl CurrentPage { get; private set; }
         public event EventHandler CurrentPageChanged;
 
         public void RegisterPage(string key, Func<UserControl> factory) => _pages[key] = factory;
 
-        public bool CanNavigateTo(string key) => PermissionService.Instance.Can($"{key}.View");
+        public bool CanNavigateTo(string key) => _permissions.Can($"{key}.View");
 
         public void NavigateTo(string key)
         {

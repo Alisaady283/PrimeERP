@@ -7,8 +7,6 @@ namespace PrimeERP.Platform.Permissions
 {
     public class PermissionService : IPermissionService
     {
-        public static readonly PermissionService Instance = new();
-
         public bool Can(string key)
         {
             if (AppSession.DevMode) return true;

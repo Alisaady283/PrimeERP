@@ -1,20 +1,18 @@
 using System;
 using System.Data.Common;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
-using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Services;
-using PrimeERP.Application;
 using PrimeERP.Application.Services;
 using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Platform.Settings;
 using Xunit;
 using Db = PrimeERP.Data.Core.DbHelper;
 
@@ -27,13 +25,17 @@ namespace PrimeERP.Tests.Services
     public class FiscalPeriodServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
-        private readonly FiscalPeriodService _service = new();
-        private readonly AccountService _accounts = new();
+        private readonly IFiscalPeriodService _service;
+        private readonly IAccountService _accounts;
+        private readonly ISettingsService _settings;
 
         public FiscalPeriodServiceTests()
         {
             AppSession.DevMode = true;
-            ServiceLocator.Register<IJournalService>(new JournalService());
+            // IJournalService الحقيقية مسجَّلة بالفعل في _db.Services (AddApplication) — لا تسجيل يدوي لازم.
+            _service = _db.Services.GetRequiredService<IFiscalPeriodService>();
+            _accounts = _db.Services.GetRequiredService<IAccountService>();
+            _settings = _db.Services.GetRequiredService<ISettingsService>();
         }
 
         public void Dispose() => _db.Dispose();
@@ -145,14 +147,14 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void IsOpen_NoDefinedPeriod_RequireFiscalPeriodTrue_ReturnsClosed()
         {
-            SettingsService.Instance.Set(SettingKeys.Financial.RequireFiscalPeriod, true);
+            _settings.Set(SettingKeys.Financial.RequireFiscalPeriod, true);
             try
             {
                 Assert.False(_service.IsOpen(DateTime.Today));
             }
             finally
             {
-                SettingsService.Instance.Set(SettingKeys.Financial.RequireFiscalPeriod, false);
+                _settings.Set(SettingKeys.Financial.RequireFiscalPeriod, false);
             }
         }
 
@@ -239,7 +241,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void CloseYear_BuildsBalancedClosingEntry_NetProfitEqualsRevenueMinusExpense()
         {
-            SettingsService.Instance.Set(SettingKeys.Accounts.RetainedEarnings, "3200");
+            _settings.Set(SettingKeys.Accounts.RetainedEarnings, "3200");
 
             var year = _service.CreateYear(new DateTime(2026, 1, 1), 1);
             Assert.True(year.IsSuccess);
@@ -282,7 +284,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void ReopenYear_UnpostsAndDeletesClosingEntry_ReopensYear()
         {
-            SettingsService.Instance.Set(SettingKeys.Accounts.RetainedEarnings, "3200");
+            _settings.Set(SettingKeys.Accounts.RetainedEarnings, "3200");
 
             var year = _service.CreateYear(new DateTime(2026, 1, 1), 1);
             var revenueAccount = _accounts.Create(new CreateAccountDto { ParentId = RevenueRootId(), Name = "إيراد 2", IsLeaf = true });
@@ -383,7 +385,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void ReopenYear_WithoutPermission_Fails()
         {
-            SettingsService.Instance.Set(SettingKeys.Accounts.RetainedEarnings, "3200");
+            _settings.Set(SettingKeys.Accounts.RetainedEarnings, "3200");
             var year = _service.CreateYear(new DateTime(2026, 1, 1), 1);
             _service.ClosePeriod(year.Value.Periods.Single().Id);
             _service.CloseYear(year.Value.Id);

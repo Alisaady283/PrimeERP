@@ -13,8 +13,6 @@ namespace PrimeERP.UI.Services
     /// </summary>
     public class DialogService : IDialogService
     {
-        public static readonly DialogService Instance = new();
-
         public Task<bool> ConfirmAsync(string title, string message, string confirmText = null, bool isDangerous = false)
         {
             var dlg = new AppConfirmDialog(title, message,

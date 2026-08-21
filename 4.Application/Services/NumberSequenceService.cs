@@ -15,8 +15,6 @@ namespace PrimeERP.Application.Services
     /// </summary>
     public class NumberSequenceService : INumberSequenceService
     {
-        public static readonly NumberSequenceService Instance = new();
-
         public string Peek(string key)
         {
             NumberSequenceRepository.EnsureRow(key);

@@ -27,12 +27,18 @@ namespace PrimeERP.Application.Services.Parties
     /// </summary>
     public class CustomerService : ICustomerService
     {
-        public static readonly CustomerService Instance = new();
+        private readonly IPermissionService _permissions;
+        private readonly ISettingsService _settings;
+        private readonly IAccountService _accounts;
+        private readonly INumberSequenceService _numbers;
 
-        private readonly IPermissionService _permissions = PermissionService.Instance;
-        private readonly ISettingsService _settings = SettingsService.Instance;
-        private readonly IAccountService _accounts = AccountService.Instance;
-        private readonly INumberSequenceService _numbers = NumberSequenceService.Instance;
+        public CustomerService(IPermissionService permissions, ISettingsService settings, IAccountService accounts, INumberSequenceService numbers)
+        {
+            _permissions = permissions;
+            _settings = settings;
+            _accounts = accounts;
+            _numbers = numbers;
+        }
 
         private static string Denied => LocalizationService.Get("Str.PermissionDenied");
         private static string CurrentUser => AppSession.Username ?? "Admin";

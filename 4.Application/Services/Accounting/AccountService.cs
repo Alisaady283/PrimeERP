@@ -24,10 +24,18 @@ namespace PrimeERP.Application.Services.Accounting
     /// </summary>
     public class AccountService : IAccountService
     {
-        public static readonly AccountService Instance = new();
+        private readonly IPermissionService _permissions;
+        private readonly ISettingsService _settings;
 
-        private readonly IPermissionService _permissions = PermissionService.Instance;
-        private readonly ISettingsService _settings = SettingsService.Instance;
+        /// <summary>لحلّ ICustomerService/ISupplierService اختيارياً (قد لا تكونا مسجَّلتين — ISupplierService لم يُبنَ تنفيذها بعد) — بديل ServiceLocator.TryGet عبر IServiceProvider.GetService (يرجع null لا استثناء لو غير مسجَّلة).</summary>
+        private readonly IServiceProvider _services;
+
+        public AccountService(IPermissionService permissions, ISettingsService settings, IServiceProvider services)
+        {
+            _permissions = permissions;
+            _settings = settings;
+            _services = services;
+        }
 
         private static string Denied => LocalizationService.Get("Str.PermissionDenied");
 
@@ -483,9 +491,9 @@ namespace PrimeERP.Application.Services.Accounting
 
         /// <summary>
         /// يحدّد هل حساب (تحت parentOrAccountCode) مرتبط تلقائياً بعميل/مورد، ويحلّ الخدمة المطلوبة عبر
-        /// ServiceLocator.TryGet — Fail صريح لو AutoLinkEnabled=true والخدمة غير مسجَّلة (لا سكوت، راجع تعليق
-        /// "✅ تصحيح: ServiceLocator.TryGet" في MIGRATION_INVENTORY.md). skipAutoLink=true يتخطّى كل هذا
-        /// فوراً (يُستخدم من Create فقط، عبر CreateAccountDto.SkipAutoLink — Update/Delete يمرّران false دائماً).
+        /// IServiceProvider.GetService — Fail صريح لو AutoLinkEnabled=true والخدمة غير مسجَّلة (ترجع null، لا
+        /// سكوت). skipAutoLink=true يتخطّى كل هذا فوراً (يُستخدم من Create فقط، عبر CreateAccountDto.SkipAutoLink
+        /// — Update/Delete يمرّران false دائماً).
         /// </summary>
         private Result<AutoLinkResolution> ResolveAutoLink(bool skipAutoLink, string parentOrAccountCode)
         {
@@ -502,11 +510,19 @@ namespace PrimeERP.Application.Services.Accounting
 
             if (autoLinkEnabled)
             {
-                if (isUnderCustomers && !ServiceLocator.TryGet(out resolution.CustomerService))
-                    return Result.Fail<AutoLinkResolution>(LocalizationService.Get("Str.Accounts.CustomerLinkUnavailable"), ErrorCode.Unexpected);
+                if (isUnderCustomers)
+                {
+                    resolution.CustomerService = (ICustomerService)_services.GetService(typeof(ICustomerService));
+                    if (resolution.CustomerService == null)
+                        return Result.Fail<AutoLinkResolution>(LocalizationService.Get("Str.Accounts.CustomerLinkUnavailable"), ErrorCode.Unexpected);
+                }
 
-                if (isUnderSuppliers && !ServiceLocator.TryGet(out resolution.SupplierService))
-                    return Result.Fail<AutoLinkResolution>(LocalizationService.Get("Str.Accounts.SupplierLinkUnavailable"), ErrorCode.Unexpected);
+                if (isUnderSuppliers)
+                {
+                    resolution.SupplierService = (ISupplierService)_services.GetService(typeof(ISupplierService));
+                    if (resolution.SupplierService == null)
+                        return Result.Fail<AutoLinkResolution>(LocalizationService.Get("Str.Accounts.SupplierLinkUnavailable"), ErrorCode.Unexpected);
+                }
             }
 
             return Result.Ok(resolution);

@@ -1,3 +1,4 @@
+using PrimeERP.UI.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -51,7 +52,7 @@ namespace PrimeERP.UI.Components.Actions
         {
             _actions = (ButtonsSource ?? Enumerable.Empty<ToolbarAction>())
                 .Where(a => a.Separator || (a.IsVisible &&
-                       (string.IsNullOrEmpty(a.PermissionKey) || PermissionService.Instance.Can(a.PermissionKey))))
+                       (string.IsNullOrEmpty(a.PermissionKey) || UIServices.Permissions.Can(a.PermissionKey))))
                 .ToList();
 
             mainPanel.Children.Clear();

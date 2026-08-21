@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Settings;
 using Xunit;
 
@@ -6,9 +7,9 @@ namespace PrimeERP.Tests.Services
     [Collection("Database")]
     public class SettingsServiceTests
     {
-        private readonly SettingsService _service = new();
+        private readonly ISettingsService _service;
 
-        public SettingsServiceTests(TestDatabaseFixture _) { }
+        public SettingsServiceTests(TestDatabaseFixture db) => _service = db.Services.GetRequiredService<ISettingsService>();
 
         [Fact]
         public void Get_ReturnsDefault_WhenKeyMissing()

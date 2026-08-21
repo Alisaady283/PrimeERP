@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -57,6 +58,12 @@ namespace PrimeERP.UI.DevTools
         private List<DemoAccountRow> _demoRows;
         private List<GridColumn> _demoColumns;
         private readonly INumberSequenceService _numberSequenceService = new DemoNumberSequenceService();
+
+        // مُحلَّلة من UIServices لا Instance مباشرة (محذوفة — راجع R3) — تُخزَّن هنا مرة واحدة بدل تكرار
+        // GetRequiredService في كل معالج حدث أسفله.
+        private readonly IDialogService _dialogService = UIServices.Provider.GetRequiredService<IDialogService>();
+        private readonly IToastService _toastService = UIServices.Provider.GetRequiredService<IToastService>();
+        private readonly IExportService _exportService = UIServices.Provider.GetRequiredService<IExportService>();
 
         public ControlsGalleryPage()
         {
@@ -148,8 +155,8 @@ namespace PrimeERP.UI.DevTools
             gridDemo.ShowRowActions = true;
             gridDemo.EmptyMessage = "لا توجد حسابات مطابقة";
             gridDemo.ExportRequested += GridDemo_ExportRequested;
-            gridDemo.RowEditRequested += (s, item) => ToastService.Instance.Info($"تعديل: {((DemoAccountRow)item).Name}");
-            gridDemo.RowDeleteRequested += (s, item) => ToastService.Instance.Warning($"حذف: {((DemoAccountRow)item).Name}");
+            gridDemo.RowEditRequested += (s, item) => _toastService.Info($"تعديل: {((DemoAccountRow)item).Name}");
+            gridDemo.RowDeleteRequested += (s, item) => _toastService.Warning($"حذف: {((DemoAccountRow)item).Name}");
 
             gridEmpty.ColumnsSource = _demoColumns;
             gridEmpty.ItemsSource = new List<DemoAccountRow>();
@@ -188,53 +195,53 @@ namespace PrimeERP.UI.DevTools
 
             // AppEmptyState demo action
             emptyStateDemo.ActionCommand = new RelayCommand(
-                () => ToastService.Instance.Info("سيتم فتح نموذج الإضافة هنا"));
+                () => _toastService.Info("سيتم فتح نموذج الإضافة هنا"));
 
             // ===== Batch 3 demo data =====
             var toolbarActions = new List<ToolbarAction>
             {
-                ToolbarAction.New(new RelayCommand(() => ToastService.Instance.Success("تم الضغط على: جديد"))),
-                ToolbarAction.Edit(new RelayCommand(() => ToastService.Instance.Info("تم الضغط على: تعديل"))),
-                ToolbarAction.Delete(new RelayCommand(() => ToastService.Instance.Warning("تم الضغط على: حذف"))),
+                ToolbarAction.New(new RelayCommand(() => _toastService.Success("تم الضغط على: جديد"))),
+                ToolbarAction.Edit(new RelayCommand(() => _toastService.Info("تم الضغط على: تعديل"))),
+                ToolbarAction.Delete(new RelayCommand(() => _toastService.Warning("تم الضغط على: حذف"))),
                 ToolbarAction.SeparatorItem(),
-                ToolbarAction.Print(new RelayCommand(() => ToastService.Instance.Info("تم الضغط على: طباعة"))),
-                ToolbarAction.Export(new RelayCommand(() => ToastService.Instance.Info("تم الضغط على: تصدير"))),
-                ToolbarAction.Refresh(new RelayCommand(() => ToastService.Instance.Success("تم التحديث"))),
-                ToolbarAction.Post(new RelayCommand(() => ToastService.Instance.Success("تم الترحيل"))),
+                ToolbarAction.Print(new RelayCommand(() => _toastService.Info("تم الضغط على: طباعة"))),
+                ToolbarAction.Export(new RelayCommand(() => _toastService.Info("تم الضغط على: تصدير"))),
+                ToolbarAction.Refresh(new RelayCommand(() => _toastService.Success("تم التحديث"))),
+                ToolbarAction.Post(new RelayCommand(() => _toastService.Success("تم الترحيل"))),
             };
 
             toolbarWide.ButtonsSource = toolbarActions;
             toolbarNarrow.ButtonsSource = toolbarActions;
 
             dropdownDemo.Items = new List<string> { "تصدير Excel", "تصدير CSV", "تصدير PDF" };
-            dropdownDemo.ItemSelected += (s, item) => ToastService.Instance.Info($"تم اختيار: {item}");
+            dropdownDemo.ItemSelected += (s, item) => _toastService.Info($"تم اختيار: {item}");
 
             // ===== الدفعة 4 / الخطوة 3: الـ Pickers الخمسة (Mock DataSources) =====
             accountPickerDemo.DataSource = MockPickerDataSources.Accounts;
             accountPickerDemo.LeafOnly = true;
             accountPickerDemo.SelectionChanged += (s, acc) =>
-                ToastService.Instance.Info(acc != null ? $"تم اختيار الحساب: {acc.Code} - {acc.Name}" : "تم مسح الاختيار");
+                _toastService.Info(acc != null ? $"تم اختيار الحساب: {acc.Code} - {acc.Name}" : "تم مسح الاختيار");
 
             customerPickerDemo.DataSource = MockPickerDataSources.Customers;
             customerPickerDemo.SelectionChanged += (s, c) =>
-                ToastService.Instance.Info(c != null ? $"تم اختيار العميل: {c.Name}" : "تم مسح الاختيار");
+                _toastService.Info(c != null ? $"تم اختيار العميل: {c.Name}" : "تم مسح الاختيار");
             customerPickerDemo.QuickAddRequested += (s, e) =>
-                ToastService.Instance.Info("سيتم فتح نموذج إضافة عميل سريع هنا (يُبنى في المرحلة H)");
+                _toastService.Info("سيتم فتح نموذج إضافة عميل سريع هنا (يُبنى في المرحلة H)");
 
             supplierPickerDemo.DataSource = MockPickerDataSources.Suppliers;
             supplierPickerDemo.SelectionChanged += (s, sup) =>
-                ToastService.Instance.Info(sup != null ? $"تم اختيار المورد: {sup.Name}" : "تم مسح الاختيار");
+                _toastService.Info(sup != null ? $"تم اختيار المورد: {sup.Name}" : "تم مسح الاختيار");
 
             productPickerDemo.DataSource = MockPickerDataSources.Products;
             productPickerDemo.SelectionChanged += (s, p) =>
-                ToastService.Instance.Info(p != null ? $"تم اختيار الصنف: {p.Name} (الرصيد: {p.CurrentStock:N2})" : "تم مسح الاختيار");
+                _toastService.Info(p != null ? $"تم اختيار الصنف: {p.Name} (الرصيد: {p.CurrentStock:N2})" : "تم مسح الاختيار");
             productPickerDemo.QuickAddRequested += (s, e) =>
-                ToastService.Instance.Info("سيتم فتح نموذج إضافة صنف سريع هنا (يُبنى في المرحلة H)");
+                _toastService.Info("سيتم فتح نموذج إضافة صنف سريع هنا (يُبنى في المرحلة H)");
 
             employeePickerDemo.DataSource = MockPickerDataSources.Employees;
             employeePickerDemo.ActiveOnly = true;
             employeePickerDemo.SelectionChanged += (s, emp) =>
-                ToastService.Instance.Info(emp != null ? $"تم اختيار الموظف: {emp.Name}" : "تم مسح الاختيار");
+                _toastService.Info(emp != null ? $"تم اختيار الموظف: {emp.Name}" : "تم مسح الاختيار");
 
             // ===== الجزء 4.2/4.3: DocumentLinesGrid — الأنماط الأربعة، 8 أسطر افتراضية، Mock DataSources للأنواع الخمسة =====
             void WirePickerSources(DocumentLinesGrid g)
@@ -275,7 +282,7 @@ namespace PrimeERP.UI.DevTools
                 header.DocumentDate = DateTime.Today;
                 header.Status = DocumentStatus.Draft;
                 header.NumberSequenceService = _numberSequenceService;
-                header.DocumentNoRequested += (s, e) => ToastService.Instance.Info("طُلب رقم مستند جديد من الخدمة");
+                header.DocumentNoRequested += (s, e) => _toastService.Info("طُلب رقم مستند جديد من الخدمة");
 
                 void Recompute()
                 {
@@ -326,10 +333,10 @@ namespace PrimeERP.UI.DevTools
             shellDemo.TopBarActionsContent = null;
             shellDemo.ThemeToggled += (s, e) => ThemeService.Toggle();
             shellDemo.LanguageToggled += (s, e) => LocalizationService.Toggle();
-            shellDemo.ProfileClicked += (s, e) => ToastService.Instance.Info("سيتم فتح صفحة الملف الشخصي هنا");
-            shellDemo.PasswordChangeRequested += (s, e) => ToastService.Instance.Info("سيتم فتح نافذة تغيير كلمة المرور هنا");
-            shellDemo.NotificationsClicked += (s, e) => ToastService.Instance.Info("سيتم فتح قائمة الإشعارات هنا");
-            shellDemo.LogoutRequested += (s, e) => ToastService.Instance.Warning("سيتم تسجيل الخروج هنا");
+            shellDemo.ProfileClicked += (s, e) => _toastService.Info("سيتم فتح صفحة الملف الشخصي هنا");
+            shellDemo.PasswordChangeRequested += (s, e) => _toastService.Info("سيتم فتح نافذة تغيير كلمة المرور هنا");
+            shellDemo.NotificationsClicked += (s, e) => _toastService.Info("سيتم فتح قائمة الإشعارات هنا");
+            shellDemo.LogoutRequested += (s, e) => _toastService.Warning("سيتم تسجيل الخروج هنا");
             shellDemo.SelectedKey = "dashboard";
             shellDemo.CurrentPage = BuildShellMockPage("لوحة التحكم");
         }
@@ -435,13 +442,13 @@ namespace PrimeERP.UI.DevTools
                 Directory.CreateDirectory(folder);
                 var path = Path.Combine(folder, $"accounts_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
 
-                ExportService.Instance.ExportToCsv(_demoRows, _demoColumns, path);
+                _exportService.ExportToCsv(_demoRows, _demoColumns, path);
 
-                ToastService.Instance.Success($"تم التصدير إلى: {path}", 6000);
+                _toastService.Success($"تم التصدير إلى: {path}", 6000);
             }
             catch (Exception ex)
             {
-                ToastService.Instance.Error($"فشل التصدير: {ex.Message}");
+                _toastService.Error($"فشل التصدير: {ex.Message}");
             }
         }
 
@@ -460,28 +467,28 @@ namespace PrimeERP.UI.DevTools
             loadingOverlayDemo.IsBusy = !loadingOverlayDemo.IsBusy;
 
         // ===== Batch 3: Toast triggers =====
-        private void btnToastSuccess_Click(object sender, RoutedEventArgs e) => ToastService.Instance.Success("تم الحفظ بنجاح");
-        private void btnToastError_Click(object sender, RoutedEventArgs e) => ToastService.Instance.Error("فشل الاتصال بقاعدة البيانات");
-        private void btnToastWarning_Click(object sender, RoutedEventArgs e) => ToastService.Instance.Warning("الرصيد أقل من الحد الأدنى");
-        private void btnToastInfo_Click(object sender, RoutedEventArgs e) => ToastService.Instance.Info("تم تحديث البيانات");
+        private void btnToastSuccess_Click(object sender, RoutedEventArgs e) => _toastService.Success("تم الحفظ بنجاح");
+        private void btnToastError_Click(object sender, RoutedEventArgs e) => _toastService.Error("فشل الاتصال بقاعدة البيانات");
+        private void btnToastWarning_Click(object sender, RoutedEventArgs e) => _toastService.Warning("الرصيد أقل من الحد الأدنى");
+        private void btnToastInfo_Click(object sender, RoutedEventArgs e) => _toastService.Info("تم تحديث البيانات");
 
         // ===== Batch 3: Dialog triggers =====
         private async void btnConfirmDangerous_Click(object sender, RoutedEventArgs e)
         {
-            var ok = await DialogService.Instance.ConfirmAsync("حذف الحساب", "هل أنت متأكد من حذف هذا الحساب؟ لا يمكن التراجع.",
+            var ok = await _dialogService.ConfirmAsync("حذف الحساب", "هل أنت متأكد من حذف هذا الحساب؟ لا يمكن التراجع.",
                 "حذف", isDangerous: true);
-            ToastService.Instance.Info(ok ? "تم التأكيد" : "تم الإلغاء");
+            _toastService.Info(ok ? "تم التأكيد" : "تم الإلغاء");
         }
 
         private async void btnShowMessage_Click(object sender, RoutedEventArgs e) =>
-            await DialogService.Instance.ShowMessageAsync("نجاح", "تم حفظ البيانات بنجاح.", PrimeERP.Domain.Results.StatusVariant.Success);
+            await _dialogService.ShowMessageAsync("نجاح", "تم حفظ البيانات بنجاح.", PrimeERP.Domain.Results.StatusVariant.Success);
 
         private async void btnShowError_Click(object sender, RoutedEventArgs e) =>
-            await DialogService.Instance.ShowErrorAsync("خطأ", "تعذّر الاتصال بالخادم.", new InvalidOperationException("Connection timeout"));
+            await _dialogService.ShowErrorAsync("خطأ", "تعذّر الاتصال بالخادم.", new InvalidOperationException("Connection timeout"));
 
         private async void btnShowProgress_Click(object sender, RoutedEventArgs e)
         {
-            var handle = DialogService.Instance.ShowProgress("جارٍ التصدير", "يتم تجهيز الملف...", allowCancel: true);
+            var handle = _dialogService.ShowProgress("جارٍ التصدير", "يتم تجهيز الملف...", allowCancel: true);
             handle.CancelRequested += (s, args) => handle.Close();
 
             for (int i = 0; i <= 100; i += 10)
@@ -491,7 +498,7 @@ namespace PrimeERP.UI.DevTools
             }
 
             handle.Close();
-            ToastService.Instance.Success("اكتمل التصدير");
+            _toastService.Success("اكتمل التصدير");
         }
     }
 }

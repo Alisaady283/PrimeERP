@@ -2,6 +2,7 @@ using PrimeERP.Domain.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
@@ -23,13 +24,14 @@ namespace PrimeERP.Tests.Services
     public class PrintTemplatesTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
-        private readonly AccountService _accounts = new();
-        private readonly JournalService _journal = new();
+        private readonly IAccountService _accounts;
+        private readonly IJournalService _journal;
 
         public PrintTemplatesTests()
         {
             AppSession.DevMode = true;
-            ServiceLocator.Register<IJournalService>(_journal);
+            _accounts = _db.Services.GetRequiredService<IAccountService>();
+            _journal = _db.Services.GetRequiredService<IJournalService>();
         }
 
         public void Dispose() => _db.Dispose();
@@ -73,7 +75,7 @@ namespace PrimeERP.Tests.Services
             StaThreadHelper.Run(() =>
             {
                 var printable = AccountStatementPrintTemplate.Build(account, statement, new DateTime(2026, 1, 1), new DateTime(2026, 1, 31));
-                var service = new PrintService();
+                var service = _db.Services.GetRequiredService<IPrintService>();
 
                 var result = service.Build(printable);
 
@@ -115,7 +117,7 @@ namespace PrimeERP.Tests.Services
 
                 Assert.Equal(PrintOrientation.Landscape, printable.Orientation);
 
-                var service = new PrintService();
+                var service = _db.Services.GetRequiredService<IPrintService>();
                 var result = service.Build(printable);
 
                 Assert.True(result.IsSuccess, result.ErrorMessage);

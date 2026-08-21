@@ -19,21 +19,27 @@ using Db = PrimeERP.Data.Core.DbHelper;
 namespace PrimeERP.Application.Services.Accounting
 {
     /// <summary>
-    /// المالك الوحيد لمنطق السنوات/الفترات المالية — Repository تحته CRUD صرف فقط. يعتمد IJournalService
-    /// (عقد جزئي — راجع IJournalService.cs) عبر Lazy&lt;T&gt; يُحلّ عند أول استخدام فعلي لا عند إنشاء هذه
-    /// الخدمة، لحل التبعية الدائرية مع F.2.3: JournalService سيحتاج IFiscalPeriodService.IsOpen لاحقاً،
-    /// وFiscalPeriodService يحتاج IJournalService لإقفال السنة — لو حُلّت الاثنتان في الـ constructor فوراً
-    /// سيفشل تسجيل أيّهما تُسجَّل ثانياً في ServiceLocator. Lazy يؤجّل الحل حتى لحظة الاستدعاء الفعلي
-    /// (ClosePeriod/CloseYear/ReopenYear)، وحينها تكون كل الخدمات مسجَّلة بالفعل من App.xaml.cs.
+    /// المالك الوحيد لمنطق السنوات/الفترات المالية — Repository تحته CRUD صرف فقط. يعتمد IJournalService عبر
+    /// Lazy&lt;T&gt; لا حقناً مباشراً — تبعية دائرية حقيقية بين الخدمتين (JournalService.BuildDto يحتاج
+    /// IFiscalPeriodService.GetPeriodFor مباشرة، وFiscalPeriodService.CloseYear يحتاج IJournalService لإنشاء/
+    /// ترحيل قيد الإقفال) — لا يمكن لحاوية DI بناء الاثنتين بحقن مباشر متبادل، فالجانب الوحيد الذي يستخدم
+    /// IJournalService خارج مسار الإقلاع (ClosePeriod/CloseYear/ReopenYear وقت التشغيل الفعلي لا وقت البناء)
+    /// يأخذ Lazy&lt;IJournalService&gt; (مُسجَّل في DependencyInjection.cs كمصنع خاص به) بدل الحقن المباشر.
     /// </summary>
     public class FiscalPeriodService : IFiscalPeriodService
     {
-        public static readonly FiscalPeriodService Instance = new();
+        private readonly IPermissionService _permissions;
+        private readonly ISettingsService _settings;
+        private readonly IAccountService _accounts;
+        private readonly Lazy<IJournalService> _journal;
 
-        private readonly IPermissionService _permissions = PermissionService.Instance;
-        private readonly ISettingsService _settings = SettingsService.Instance;
-        private readonly IAccountService _accounts = AccountService.Instance;
-        private readonly Lazy<IJournalService> _journal = new(() => ServiceLocator.Get<IJournalService>());
+        public FiscalPeriodService(IPermissionService permissions, ISettingsService settings, IAccountService accounts, Lazy<IJournalService> journal)
+        {
+            _permissions = permissions;
+            _settings = settings;
+            _accounts = accounts;
+            _journal = journal;
+        }
 
         private static string Denied => LocalizationService.Get("Str.PermissionDenied");
         private static string CurrentUser => AppSession.Username ?? "Admin";

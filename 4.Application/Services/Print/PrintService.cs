@@ -20,10 +20,15 @@ namespace PrimeERP.Application.Services.Print
     /// </summary>
     public class PrintService : IPrintService
     {
-        public static readonly PrintService Instance = new();
-
-        private readonly ISettingsService _settings = SettingsService.Instance;
+        private readonly ISettingsService _settings;
+        private readonly IDocumentExporter _exporter;
         private static ResourceDictionary _theme;
+
+        public PrintService(ISettingsService settings, IDocumentExporter exporter)
+        {
+            _settings = settings;
+            _exporter = exporter;
+        }
 
         public IPrintDialogHost DialogHost { get; set; }
 
@@ -109,10 +114,10 @@ namespace PrimeERP.Application.Services.Print
         /// <summary>
         /// يبني ملف PDF عبر IDocumentExporter (تنفيذه الفعلي ExportService في 6.UI، يُسجَّل في App.xaml.cs) —
         /// لا يعتمد PrintService على UI مباشرة (كان اعتماداً معكوساً Application→UI، أُصلح في R2 عبر هذا العقد
-        /// في 3.Domain/Contracts؛ الحقن الحقيقي عبر DI بدل ServiceLocator يقع في R3).
+        /// في 3.Domain/Contracts، والحقن الحقيقي عبر DI في R3 — ExportService المُسجَّلة كـ IDocumentExporter).
         /// </summary>
         public Result ExportToPdf(IPrintable document, string path) =>
-            ServiceLocator.Get<IDocumentExporter>().ExportPrintableToPdf(document, path);
+            _exporter.ExportPrintableToPdf(document, path);
 
         // ===== بناء المحتوى =====
 

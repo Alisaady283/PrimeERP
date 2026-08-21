@@ -22,11 +22,18 @@ namespace PrimeERP.UI.Services
     /// <summary>يصدّر بيانات AppDataGrid فعلياً — يحترم ColumnPermissions فلا يصدّر أي عمود محجوب عن المستخدم الحالي.</summary>
     public class ExportService : IExportService, IDocumentExporter
     {
-        public static readonly ExportService Instance = new();
+        private readonly IPermissionService _permissions;
+        private readonly ISettingsService _settings;
 
         static ExportService()
         {
             QuestPDF.Settings.License = LicenseType.Community;
+        }
+
+        public ExportService(IPermissionService permissions, ISettingsService settings)
+        {
+            _permissions = permissions;
+            _settings = settings;
         }
 
         public void ExportToCsv(IEnumerable data, IEnumerable<GridColumn> columns, string filePath)
@@ -131,7 +138,7 @@ namespace PrimeERP.UI.Services
                         page.Header().Column(col =>
                         {
                             if (document.ShowCompanyHeader)
-                                col.Item().Text(SettingsService.Instance.Get(SettingKeys.Company.Name, "")).FontSize(ExportTheme.TitleFontSize).Bold();
+                                col.Item().Text(_settings.Get(SettingKeys.Company.Name, "")).FontSize(ExportTheme.TitleFontSize).Bold();
 
                             col.Item().AlignCenter().Text(document.DocumentTitle ?? "").FontSize(ExportTheme.HeaderFontSize).Bold();
 
@@ -253,9 +260,9 @@ namespace PrimeERP.UI.Services
             });
         }
 
-        private static List<GridColumn> VisibleColumns(IEnumerable<GridColumn> columns) =>
+        private List<GridColumn> VisibleColumns(IEnumerable<GridColumn> columns) =>
             columns
-                .Where(c => c.IsVisible && (string.IsNullOrEmpty(c.PermissionKey) || PermissionService.Instance.Can(c.PermissionKey)))
+                .Where(c => c.IsVisible && (string.IsNullOrEmpty(c.PermissionKey) || _permissions.Can(c.PermissionKey)))
                 .ToList();
 
         private static string GetValue(object item, GridColumn column)
