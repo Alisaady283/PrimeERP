@@ -26,18 +26,20 @@ namespace PrimeERP.Tests.Services
         private readonly TestDatabaseFixture _db = new();
         private readonly IAccountService _accounts;
         private readonly IJournalService _journal;
+        private readonly IAccountRepository _accountRepo;
 
         public PrintTemplatesTests()
         {
             AppSession.DevMode = true;
             _accounts = _db.Services.GetRequiredService<IAccountService>();
             _journal = _db.Services.GetRequiredService<IJournalService>();
+            _accountRepo = _db.Services.GetRequiredService<IAccountRepository>();
         }
 
         public void Dispose() => _db.Dispose();
 
         private string CreateLeaf(string parentCode, string name) =>
-            _accounts.Create(new CreateAccountDto { ParentId = AccountRepository.GetByCode(parentCode).Id, Name = name, IsLeaf = true }).Value.Code;
+            _accounts.Create(new CreateAccountDto { ParentId = _accountRepo.GetByCode(parentCode).Id, Name = name, IsLeaf = true }).Value.Code;
 
         private void Post(string debitCode, string creditCode, string date, decimal amount)
         {

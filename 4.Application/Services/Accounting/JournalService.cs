@@ -26,7 +26,7 @@ namespace PrimeERP.Application.Services.Accounting
     /// حالياً — تحقق صلاحيته الخاصة بالفعل)، وبلا أي قراءة عبر اتصال منفصل (Db.Query/JournalRepository بلا
     /// (conn,tx) تُعلِّق/deadlock على SQLite من داخل معاملة خارجية مفتوحة على نفس الخيط — خطأ حقيقي اكتُشف
     /// أثناء بناء هذه الخدمة، مُصلَح بإضافة نسخ (conn,tx) لكل قراءة تُستخدم هنا: DbHelper.Query،
-    /// JournalRepository.GetById/GetLines/GetPostedLinesForAccount، NumberSequenceService.Next،
+    /// _journal.GetById/GetLines/GetPostedLinesForAccount، NumberSequenceService.Next،
     /// AccountService.RecalculateBalance — راجع تعليقاتها).
     /// </summary>
     public class JournalService : IJournalService
@@ -36,15 +36,19 @@ namespace PrimeERP.Application.Services.Accounting
         private readonly IAccountService _accounts;
         private readonly IFiscalPeriodService _fiscalPeriods;
         private readonly INumberSequenceService _numbers;
+        private readonly IJournalRepository _journal;
+        private readonly IAccountRepository _accountRepo;
 
         public JournalService(IPermissionService permissions, ISettingsService settings, IAccountService accounts,
-            IFiscalPeriodService fiscalPeriods, INumberSequenceService numbers)
+            IFiscalPeriodService fiscalPeriods, INumberSequenceService numbers, IJournalRepository journal, IAccountRepository accountRepo)
         {
             _permissions = permissions;
             _settings = settings;
             _accounts = accounts;
             _fiscalPeriods = fiscalPeriods;
             _numbers = numbers;
+            _journal = journal;
+            _accountRepo = accountRepo;
         }
 
         private static string Denied => LocalizationService.Get("Str.PermissionDenied");
@@ -59,13 +63,13 @@ namespace PrimeERP.Application.Services.Accounting
 
             filter ??= new JournalFilter();
 
-            var (items, total) = JournalRepository.GetPaged(
+            var (items, total) = _journal.GetPaged(
                 page, pageSize,
                 filter.SearchText, filter.DateFrom, filter.DateTo, filter.Source,
                 filter.IsPosted, filter.AccountCode, filter.MinAmount, filter.MaxAmount,
                 filter.SortBy, filter.SortDescending);
 
-            var lineCounts = JournalRepository.GetLineCounts(items.Select(e => e.Id));
+            var lineCounts = _journal.GetLineCounts(items.Select(e => e.Id));
             var dtos = items.Select(e => ToDto(e, lineCounts.GetValueOrDefault(e.Id))).ToList();
 
             return Result.Ok(new PagedResult<JournalEntryDto> { Items = dtos, TotalCount = total, Page = page, PageSize = pageSize });
@@ -76,11 +80,11 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Journal.View))
                 return Result.Fail<JournalEntryDetailDto>(Denied, ErrorCode.Unauthorized);
 
-            var entry = JournalRepository.GetById(id);
+            var entry = _journal.GetById(id);
             if (entry == null)
                 return Result.Fail<JournalEntryDetailDto>("القيد غير موجود", ErrorCode.NotFound);
 
-            return Result.Ok(ToDetailDto(entry, JournalRepository.GetLines(id)));
+            return Result.Ok(ToDetailDto(entry, _journal.GetLines(id)));
         }
 
         public Result<JournalEntryDto> GetByEntryNo(string entryNo)
@@ -88,11 +92,11 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Journal.View))
                 return Result.Fail<JournalEntryDto>(Denied, ErrorCode.Unauthorized);
 
-            var entry = JournalRepository.GetByEntryNo(entryNo);
+            var entry = _journal.GetByEntryNo(entryNo);
             if (entry == null)
                 return Result.Fail<JournalEntryDto>("القيد غير موجود", ErrorCode.NotFound);
 
-            return Result.Ok(ToDto(entry, JournalRepository.GetLines(entry.Id).Count));
+            return Result.Ok(ToDto(entry, _journal.GetLines(entry.Id).Count));
         }
 
         // ===================== الإنشاء =====================
@@ -151,7 +155,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Journal.Edit))
                 return Result.Fail(Denied, ErrorCode.Unauthorized);
 
-            var existing = JournalRepository.GetById(dto.Id);
+            var existing = _journal.GetById(dto.Id);
             if (existing == null)
                 return Result.Fail("القيد غير موجود", ErrorCode.NotFound);
 
@@ -175,11 +179,11 @@ namespace PrimeERP.Application.Services.Accounting
 
             Db.RunTransaction((conn, tx) =>
             {
-                JournalRepository.DeleteLines(conn, tx, dto.Id);
+                _journal.DeleteLines(dto.Id, conn, tx);
 
                 int lineNo = 1;
                 foreach (var l in dto.Lines)
-                    JournalRepository.InsertLine(conn, tx, dto.Id, lineNo++, new JournalLine
+                    _journal.InsertLine(conn, tx, dto.Id, lineNo++, new JournalLine
                     {
                         AccountCode = l.AccountCode,
                         AccountName = accounts.Value.GetValueOrDefault(l.AccountCode),
@@ -187,8 +191,8 @@ namespace PrimeERP.Application.Services.Accounting
                     });
 
                 // EntryNo لا يتغيّر أبداً — فقط التاريخ/البيان/السطور/الإجماليات.
-                JournalRepository.UpdateEntry(conn, tx, dto.Id, dto.EntryDate.ToString("yyyy-MM-dd"), dto.Description);
-                JournalRepository.UpdateTotals(conn, tx, dto.Id, totalDebit, totalCredit);
+                _journal.UpdateEntry(conn, tx, dto.Id, dto.EntryDate.ToString("yyyy-MM-dd"), dto.Description);
+                _journal.UpdateTotals(conn, tx, dto.Id, totalDebit, totalCredit);
             });
 
             Auditor.Log("JournalEntries", dto.Id, AuditAction.Update, details: $"تعديل قيد {existing.EntryNo}");
@@ -200,7 +204,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Journal.Delete))
                 return Result.Fail(Denied, ErrorCode.Unauthorized);
 
-            var entry = JournalRepository.GetById(id);
+            var entry = _journal.GetById(id);
             if (entry == null)
                 return Result.Fail("القيد غير موجود", ErrorCode.NotFound);
 
@@ -219,8 +223,8 @@ namespace PrimeERP.Application.Services.Accounting
         /// <summary>بمعاملة خارجية — يخدم FiscalPeriodService.ReopenYear (يحذف قيد الإقفال بعد إلغاء ترحيله). بلا تحقق: المستدعي تحقق الحالة بنفسه (year.IsClosed) قبل الوصول لهنا.</summary>
         public Result Delete(DbConnection conn, DbTransaction tx, int id)
         {
-            JournalRepository.DeleteLines(conn, tx, id);
-            JournalRepository.DeleteHeader(conn, tx, id);
+            _journal.DeleteLines(id, conn, tx);
+            _journal.DeleteHeader(id, conn, tx);
             return Result.Ok();
         }
 
@@ -231,7 +235,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Journal.Post))
                 return Result.Fail(Denied, ErrorCode.Unauthorized);
 
-            var entry = JournalRepository.GetById(id);
+            var entry = _journal.GetById(id);
             var (error, code) = ValidatePostable(entry);
             if (error != null) return Result.Fail(error, code);
 
@@ -245,8 +249,8 @@ namespace PrimeERP.Application.Services.Accounting
         /// <summary>بمعاملة خارجية — يخدم FiscalPeriodService.CloseYear (ترحيل قيد الإقفال فور إنشائه). بلا تحقق صلاحية/حالة: المستدعي بنى القيد للتو ويعرف أنه قابل للترحيل.</summary>
         public Result Post(DbConnection conn, DbTransaction tx, int id)
         {
-            var lines = JournalRepository.GetLines(conn, tx, id);
-            JournalRepository.SetPosted(conn, tx, id, DateTime.Now, CurrentUser);
+            var lines = _journal.GetLines(id, conn, tx);
+            _journal.SetPosted(conn, tx, id, DateTime.Now, CurrentUser);
 
             foreach (var code in lines.Select(l => l.AccountCode).Distinct())
                 _accounts.RecalculateBalance(conn, tx, code);
@@ -259,7 +263,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Journal.Unpost))
                 return Result.Fail(Denied, ErrorCode.Unauthorized);
 
-            var entry = JournalRepository.GetById(id);
+            var entry = _journal.GetById(id);
             if (entry == null)
                 return Result.Fail("القيد غير موجود", ErrorCode.NotFound);
 
@@ -282,8 +286,8 @@ namespace PrimeERP.Application.Services.Accounting
         /// <summary>بمعاملة خارجية — يخدم FiscalPeriodService.ReopenYear. بلا تحقق: المستدعي تحقق الحالة (year.IsClosed) بنفسه.</summary>
         public Result Unpost(DbConnection conn, DbTransaction tx, int id)
         {
-            var lines = JournalRepository.GetLines(conn, tx, id);
-            JournalRepository.SetUnposted(conn, tx, id);
+            var lines = _journal.GetLines(id, conn, tx);
+            _journal.SetUnposted(conn, tx, id);
 
             foreach (var code in lines.Select(l => l.AccountCode).Distinct())
                 _accounts.RecalculateBalance(conn, tx, code);
@@ -306,7 +310,7 @@ namespace PrimeERP.Application.Services.Accounting
 
             foreach (var id in ids)
             {
-                var entry = JournalRepository.GetById(id);
+                var entry = _journal.GetById(id);
                 var (error, _) = ValidatePostable(entry);
                 if (error != null) batch.Failures.Add((id, error));
                 else toPost.Add(id);
@@ -341,8 +345,8 @@ namespace PrimeERP.Application.Services.Accounting
 
             // استعلامان مجمَّعان فقط (لا حلقة استعلامات على الحسابات): مرة منذ البداية حتى قبل from يوماً
             // للرصيد الافتتاحي، ومرة بين from وto لحركة الفترة.
-            var openingSums = JournalRepository.GetAccountSums(null, from.AddDays(-1), postedOnly).ToDictionary(x => x.AccountCode);
-            var periodSums  = JournalRepository.GetAccountSums(from, to, postedOnly).ToDictionary(x => x.AccountCode);
+            var openingSums = _journal.GetAccountSums(null, from.AddDays(-1), postedOnly).ToDictionary(x => x.AccountCode);
+            var periodSums  = _journal.GetAccountSums(from, to, postedOnly).ToDictionary(x => x.AccountCode);
 
             var result = new List<TrialBalanceLine>();
             decimal totalClosingDebit = 0, totalClosingCredit = 0;
@@ -390,7 +394,7 @@ namespace PrimeERP.Application.Services.Accounting
         }
 
         public Result<int> CountUnpostedBetween(DateTime from, DateTime to) =>
-            Result.Ok(JournalRepository.CountUnpostedBetween(from, to));
+            Result.Ok(_journal.CountUnpostedBetween(from, to));
 
         // ===================== أدوات داخلية =====================
 
@@ -448,7 +452,7 @@ namespace PrimeERP.Application.Services.Accounting
         /// منفصلاً وتُعلِّق/deadlock هنا)، بلا فحص تكرار حسابات (سطور قيد الإقفال مبنية برمجياً بلا تكرار أصلاً)
         /// وبلا صلاحية (المستدعي تحقق صلاحيته الخاصة).
         /// </summary>
-        private static Result<Dictionary<string, string>> ValidateAccountsForTransaction(DbConnection conn, DbTransaction tx, List<CreateJournalLineDto> lines)
+        private Result<Dictionary<string, string>> ValidateAccountsForTransaction(DbConnection conn, DbTransaction tx, List<CreateJournalLineDto> lines)
         {
             var resolved = new Dictionary<string, string>();
 
@@ -456,7 +460,7 @@ namespace PrimeERP.Application.Services.Accounting
             {
                 if (resolved.ContainsKey(line.AccountCode)) continue;
 
-                var account = AccountRepository.GetByCode(conn, tx, line.AccountCode);
+                var account = _accountRepo.GetByCode(line.AccountCode, conn, tx);
                 if (account == null)
                     return Result.Fail<Dictionary<string, string>>($"{LocalizationService.Get("Str.Journal.AccountNotFound")}: {line.AccountCode}", ErrorCode.ValidationFailed);
 
@@ -483,7 +487,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_fiscalPeriods.IsOpen(ParseDate(entry.EntryDate)))
                 return (LocalizationService.Get("Str.Journal.PeriodClosed"), ErrorCode.ValidationFailed);
 
-            foreach (var line in JournalRepository.GetLines(entry.Id))
+            foreach (var line in _journal.GetLines(entry.Id))
             {
                 var account = _accounts.GetByCode(line.AccountCode);
                 if (!account.IsSuccess) return ($"{LocalizationService.Get("Str.Journal.AccountNotFound")}: {line.AccountCode}", ErrorCode.ValidationFailed);
@@ -494,7 +498,7 @@ namespace PrimeERP.Application.Services.Accounting
             return (null, ErrorCode.None);
         }
 
-        private static int InsertEntryWithLines(DbConnection conn, DbTransaction tx, string entryNo, CreateJournalDto dto, Dictionary<string, string> accountNames)
+        private int InsertEntryWithLines(DbConnection conn, DbTransaction tx, string entryNo, CreateJournalDto dto, Dictionary<string, string> accountNames)
         {
             var entry = new JournalEntry
             {
@@ -504,18 +508,18 @@ namespace PrimeERP.Application.Services.Accounting
                 Source      = NormalizeSource(dto.Source),
                 CreatedBy   = CurrentUser
             };
-            var id = JournalRepository.InsertHeader(conn, tx, entry);
+            var id = _journal.InsertHeader(conn, tx, entry);
 
             int lineNo = 1;
             foreach (var l in dto.Lines)
-                JournalRepository.InsertLine(conn, tx, id, lineNo++, new JournalLine
+                _journal.InsertLine(conn, tx, id, lineNo++, new JournalLine
                 {
                     AccountCode = l.AccountCode,
                     AccountName = accountNames.GetValueOrDefault(l.AccountCode),
                     Debit = l.Debit, Credit = l.Credit, Notes = l.Notes
                 });
 
-            JournalRepository.UpdateTotals(conn, tx, id, dto.Lines.Sum(x => x.Debit), dto.Lines.Sum(x => x.Credit));
+            _journal.UpdateTotals(conn, tx, id, dto.Lines.Sum(x => x.Debit), dto.Lines.Sum(x => x.Credit));
             return id;
         }
 

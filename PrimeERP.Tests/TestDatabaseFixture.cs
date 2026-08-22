@@ -37,22 +37,22 @@ namespace PrimeERP.Tests
                 FilePath = DbPath
             });
 
-            SettingRepository.CreateTable();
-            SettingSeeder.Seed(); // يزرع SettingKeys.Accounts.Customers="1220"/.Suppliers="2110" — مطابقة لأكواد AccountRepository.SeedDefaults نفسها.
-            BackupRepository.CreateTable();
-            AccountRepository.CreateTable();
-            AccountRepository.SeedDefaults();
-            JournalRepository.CreateTable();
-            FiscalPeriodRepository.CreateTable();
-            NumberSequenceRepository.CreateTable();
-            NumberSequenceSeeder.Seed(); // بعد SettingSeeder.Seed() — يقرأ SettingKeys.Documents.CustomerPrefix/SupplierPrefix/ProductPrefix منه.
-            CustomerRepository.CreateTable();
-
-            // ينشئ جدول __Migrations (بلا هجرات فعلية مسجَّلة) — BackupService.Validate يتحقق من وجوده
-            // كعلامة "هذه فعلاً قاعدة بيانات PrimeERP"، تماماً كقاعدة بيانات حقيقية مُهيَّأة بشكل صحيح.
-            MigrationRunner.RunPending();
-
             Services = BuildServices();
+
+            SettingRepository.CreateTable();
+            SettingSeeder.Seed();
+            Services.GetRequiredService<IBackupRepository>().CreateTable();
+            var accounts = Services.GetRequiredService<IAccountRepository>();
+            accounts.CreateTable();
+            accounts.SeedDefaults();
+            Services.GetRequiredService<IJournalRepository>().CreateTable();
+            Services.GetRequiredService<IFiscalPeriodRepository>().CreateTable();
+            var numberSequences = Services.GetRequiredService<INumberSequenceRepository>();
+            numberSequences.CreateTable();
+            NumberSequenceSeeder.Seed(numberSequences);
+            Services.GetRequiredService<ICustomerRepository>().CreateTable();
+
+            MigrationRunner.RunPending();
         }
 
         /// <summary>يبني حاوية DI جديدة بنفس تسجيل الإنتاج — configureOverrides يُستدعى بعده مباشرة، فأي تسجيل فيه (Fake/Mock) يفوز عند الحلّ (آخر تسجيل لنفس النوع هو الفائز في Microsoft.Extensions.DependencyInjection).</summary>

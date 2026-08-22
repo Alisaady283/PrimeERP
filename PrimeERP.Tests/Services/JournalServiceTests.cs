@@ -23,22 +23,26 @@ namespace PrimeERP.Tests.Services
         private readonly IJournalService _service;
         private readonly IAccountService _accounts;
         private readonly ISettingsService _settings;
+        private readonly IAccountRepository _accountRepo;
+        private readonly IJournalRepository _journalRepo;
+        private readonly IFiscalPeriodRepository _fiscalRepo;
 
         public JournalServiceTests()
         {
             AppSession.DevMode = true;
-            // FiscalPeriodService.ClosePeriod/CloseYear تحلّ IJournalService عبر Lazy<IJournalService> المُسجَّلة
-            // في _db.Services (AddApplication) — لا تسجيل يدوي لازم بعد R3.
             _service = _db.Services.GetRequiredService<IJournalService>();
             _accounts = _db.Services.GetRequiredService<IAccountService>();
             _settings = _db.Services.GetRequiredService<ISettingsService>();
+            _accountRepo = _db.Services.GetRequiredService<IAccountRepository>();
+            _journalRepo = _db.Services.GetRequiredService<IJournalRepository>();
+            _fiscalRepo = _db.Services.GetRequiredService<IFiscalPeriodRepository>();
         }
 
         public void Dispose() => _db.Dispose();
 
-        private static int AssetRootId() => AccountRepository.GetByCode("1240").Id;
-        private static int RevenueRootId() => AccountRepository.GetByCode("4100").Id;
-        private static int ExpenseRootId() => AccountRepository.GetByCode("5100").Id;
+        private int AssetRootId() => _accountRepo.GetByCode("1240").Id;
+        private int RevenueRootId() => _accountRepo.GetByCode("4100").Id;
+        private int ExpenseRootId() => _accountRepo.GetByCode("5100").Id;
 
         private string CreateLeaf(int parentId, string name) =>
             _accounts.Create(new CreateAccountDto { ParentId = parentId, Name = name, IsLeaf = true }).Value.Code;
@@ -172,8 +176,8 @@ namespace PrimeERP.Tests.Services
             var result = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 500m, 0m), (revenue, 0m, 500m)));
             Assert.True(result.IsSuccess);
 
-            Assert.Equal(0m, AccountRepository.GetByCode(cash).Balance);
-            Assert.Equal(0m, AccountRepository.GetByCode(revenue).Balance);
+            Assert.Equal(0m, _accountRepo.GetByCode(cash).Balance);
+            Assert.Equal(0m, _accountRepo.GetByCode(revenue).Balance);
         }
 
         [Fact]
@@ -184,7 +188,7 @@ namespace PrimeERP.Tests.Services
             var result = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 500m, 0m), (revenue, 0m, 500m)));
             Assert.True(result.IsSuccess);
 
-            var lines = JournalRepository.GetLines(result.Value.Id);
+            var lines = _journalRepo.GetLines(result.Value.Id);
             Assert.Equal(new[] { 1, 2 }, lines.Select(l => l.LineNo).OrderBy(n => n));
         }
 
@@ -232,7 +236,7 @@ namespace PrimeERP.Tests.Services
             updateDto.Id = created.Value.Id;
             _service.Update(updateDto);
 
-            Assert.Equal(originalNo, JournalRepository.GetById(created.Value.Id).EntryNo);
+            Assert.Equal(originalNo, _journalRepo.GetById(created.Value.Id).EntryNo);
         }
 
         // ===================== الحذف =====================
@@ -246,7 +250,7 @@ namespace PrimeERP.Tests.Services
             var result = _service.Delete(created.Value.Id);
 
             Assert.True(result.IsSuccess, result.ErrorMessage);
-            Assert.Null(JournalRepository.GetById(created.Value.Id));
+            Assert.Null(_journalRepo.GetById(created.Value.Id));
         }
 
         [Fact]
@@ -272,8 +276,8 @@ namespace PrimeERP.Tests.Services
             var result = _service.Post(created.Value.Id);
             Assert.True(result.IsSuccess, result.ErrorMessage);
 
-            Assert.Equal(500m, AccountRepository.GetByCode(cash).Balance);
-            Assert.Equal(-500m, AccountRepository.GetByCode(revenue).Balance);
+            Assert.Equal(500m, _accountRepo.GetByCode(cash).Balance);
+            Assert.Equal(-500m, _accountRepo.GetByCode(revenue).Balance);
         }
 
         [Fact]
@@ -300,7 +304,7 @@ namespace PrimeERP.Tests.Services
             // ClosePeriod العادية ترفض الإقفال لوجود القيد أعلاه غير مرحّل (بتصميم النظام: لا يمكن أصلاً أن
             // توجد فترة مقفلة بها قيد غير مرحّل عبر المسار الطبيعي — Create وClosePeriod كلاهما يمنعان هذا
             // التوليف). نحاكي الحالة الحدّية مباشرة عبر FiscalPeriodRepository لاختبار حارس IsOpen في Post فعلياً.
-            Db.RunTransaction((conn, tx) => FiscalPeriodRepository.SetPeriodClosed(conn, tx, year.Value.Periods.Single().Id, DateTime.Now, "test"));
+            Db.RunTransaction((conn, tx) => _fiscalRepo.SetPeriodClosed(conn, tx, year.Value.Periods.Single().Id, DateTime.Now, "test"));
 
             var result = _service.Post(created.Value.Id);
 
@@ -317,8 +321,8 @@ namespace PrimeERP.Tests.Services
             var result = _service.Unpost(created.Value.Id);
             Assert.True(result.IsSuccess, result.ErrorMessage);
 
-            Assert.Equal(0m, AccountRepository.GetByCode(cash).Balance);
-            Assert.Equal(0m, AccountRepository.GetByCode(revenue).Balance);
+            Assert.Equal(0m, _accountRepo.GetByCode(cash).Balance);
+            Assert.Equal(0m, _accountRepo.GetByCode(revenue).Balance);
         }
 
         [Fact]
@@ -340,7 +344,7 @@ namespace PrimeERP.Tests.Services
             var closeResult = fiscal.CloseYear(year.Value.Id);
             Assert.True(closeResult.IsSuccess, closeResult.ErrorMessage);
 
-            var closingEntryId = FiscalPeriodRepository.GetYearById(year.Value.Id).ClosingEntryId;
+            var closingEntryId = _fiscalRepo.GetYearById(year.Value.Id).ClosingEntryId;
             Assert.NotNull(closingEntryId);
 
             var result = _service.Unpost(closingEntryId.Value);
@@ -360,7 +364,7 @@ namespace PrimeERP.Tests.Services
             // نجعل الثاني غير قابل للترحيل بترحيله يدوياً مسبقاً — هذا الترحيل اليدوي نفسه يُحدِّث رصيد cash
             // إلى 300 شرعياً (عملية منفصلة عن PostBatch)؛ ما نتحقق منه هو أن PostBatch لا يضيف فوقه شيئاً.
             _service.Post(invalid.Value.Id);
-            var cashBalanceBeforeBatch = AccountRepository.GetByCode(cash).Balance;
+            var cashBalanceBeforeBatch = _accountRepo.GetByCode(cash).Balance;
 
             var result = _service.PostBatch(new() { valid.Value.Id, invalid.Value.Id });
 
@@ -369,8 +373,8 @@ namespace PrimeERP.Tests.Services
             Assert.True(result.Value.FailedCount > 0);
 
             // الأول (الصالح) لم يُرحَّل، ورصيده (ورصيد cash عموماً) لم يتغيّر بفعل PostBatch
-            Assert.False(JournalRepository.GetById(valid.Value.Id).IsPosted);
-            Assert.Equal(cashBalanceBeforeBatch, AccountRepository.GetByCode(cash).Balance);
+            Assert.False(_journalRepo.GetById(valid.Value.Id).IsPosted);
+            Assert.Equal(cashBalanceBeforeBatch, _accountRepo.GetByCode(cash).Balance);
         }
 
         // ===================== ميزان المراجعة =====================

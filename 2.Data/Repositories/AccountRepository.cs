@@ -2,23 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
-using PrimeERP.Data.Core;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Data.Schema;
 using PrimeERP.Domain.Entities;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Data.Repositories
 {
     /// <summary>
     /// طبقة وصول بيانات شجرة الحسابات — SQL خام ↔ Models فقط، بلا أي منطق أعمال (مستوى/كود/ربط/رصيد/Audit).
-    /// كل ذلك مسؤولية Services/Accounting/IAccountService (المرحلة F.2) — راجع MIGRATION_INVENTORY.md
-    /// لِما نُقل من هنا وإلى أين. فوق Core/Database/DbHelper + SchemaBuilder (نمط PermissionDb.cs المرجعي).
+    /// كل ذلك مسؤولية IAccountService.
     /// </summary>
-    public static class AccountRepository
+    public class AccountRepository : RepositoryBase<Account>, IAccountRepository
     {
-        public static void CreateTable()
-        {
+        protected override string TableName => "Accounts";
+
+        public void CreateTable() =>
             SchemaBuilder.Table("Accounts")
                 .Id()
                 .Text("Code", 30, required: true, unique: true)
@@ -33,17 +31,13 @@ namespace PrimeERP.Data.Repositories
                 .Audit()
                 .Index("ParentCode")
                 .Create();
-        }
 
-        public static void SeedDefaults()
+        public void SeedDefaults()
         {
             if (GetAll().Count > 0) return;
 
-            // IsLeaf=false افتراضياً لكل حساب — فئة تحتاج حسابات فرعية حقيقية تُنشأ لاحقاً عبر AccountService.Create
-            // (نفس السبب أن 1220/2110 فئتان لا حساب واحد: كل عميل/مورد ابن منفصل). "3200" استثناء: الأرباح
-            // المحتجزة حساب دفتري واحد نهائي في أي شجرة حسابات واقعية (لا يُقسَّم لأبناء) — وهو مستهدَف مباشرةً
-            // بقيد الإقفال السنوي (FiscalPeriodService.CloseYear عبر SettingKeys.Accounts.RetainedEarnings)،
-            // فيجب أن يكون Leaf فعلياً وإلا يرفضه IJournalService.Create (لا يقبل قيوداً على حساب غير Leaf).
+            // IsLeaf=false افتراضياً لكل حساب — فئة تحتاج حسابات فرعية حقيقية تُنشأ لاحقاً عبر AccountService.Create.
+            // "3200" استثناء: الأرباح المحتجزة حساب دفتري واحد نهائي (مستهدَف مباشرة بقيد الإقفال السنوي)، فيجب أن يكون Leaf فعلياً.
             var accounts = new (string Code, string Name, string Parent, int Level, int Type, bool IsLeaf)[]
             {
                 ("1000", "أصول",                  null,   1, 1, false),
@@ -70,12 +64,11 @@ namespace PrimeERP.Data.Repositories
             };
 
             foreach (var a in accounts)
-                Db.Execute(
-                    "INSERT INTO Accounts (Code, Name, ParentCode, Level, IsLeaf, Type) VALUES (@code, @name, @parent, @level, @leaf, @type)",
-                    Db.Params(("@code", a.Code), ("@name", a.Name), ("@parent", a.Parent), ("@level", a.Level), ("@leaf", a.IsLeaf), ("@type", a.Type)));
+                Exec("INSERT INTO Accounts (Code, Name, ParentCode, Level, IsLeaf, Type) VALUES (@code, @name, @parent, @level, @leaf, @type)",
+                    null, null, ("@code", a.Code), ("@name", a.Name), ("@parent", a.Parent), ("@level", a.Level), ("@leaf", a.IsLeaf), ("@type", a.Type));
         }
 
-        private static Account Map(DataRow row) => new()
+        protected override Account Map(DataRow row) => new()
         {
             Id         = Convert.ToInt32(row["Id"]),
             Code       = row["Code"].ToString(),
@@ -91,130 +84,60 @@ namespace PrimeERP.Data.Repositories
             UpdatedAt  = row["UpdatedAt"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(row["UpdatedAt"])
         };
 
-        public static List<Account> GetAll(bool includeInactive = false) =>
-            (includeInactive
-                ? Db.Query("SELECT * FROM Accounts ORDER BY Code")
-                : Db.Query("SELECT * FROM Accounts WHERE IsActive = @a ORDER BY Code", Db.Params(("@a", true))))
-              .AsEnumerable().Select(Map).ToList();
+        public List<Account> GetAll(bool includeInactive = false) =>
+            includeInactive
+                ? Query("SELECT * FROM Accounts ORDER BY Code")
+                : Query("SELECT * FROM Accounts WHERE IsActive = @a ORDER BY Code", null, null, ("@a", true));
 
-        public static Account GetById(int id) =>
-            Db.Query("SELECT * FROM Accounts WHERE Id = @id", Db.Params(("@id", id)))
-              .AsEnumerable().Select(Map).FirstOrDefault();
+        public Account GetByCode(string code, DbConnection conn = null, DbTransaction tx = null) =>
+            QueryOne("SELECT * FROM Accounts WHERE Code = @c", conn, tx, ("@c", code));
 
-        /// <summary>لقراءة حساب من داخل معاملة مستدعٍ آخر مفتوحة بالفعل (AccountService.Create(conn,tx,...) المستدعاة من CustomerService.Create) — نفس سبب GetByCode(conn,tx,...).</summary>
-        public static Account GetById(DbConnection conn, DbTransaction tx, int id) =>
-            Db.Query(conn, tx, "SELECT * FROM Accounts WHERE Id = @id", Db.Params(("@id", id)))
-              .AsEnumerable().Select(Map).FirstOrDefault();
+        public List<Account> GetChildren(string parentCode, DbConnection conn = null, DbTransaction tx = null) =>
+            Query("SELECT * FROM Accounts WHERE ParentCode = @p AND IsActive = @a ORDER BY Code", conn, tx, ("@p", parentCode), ("@a", true));
 
-        public static Account GetByCode(string code) =>
-            Db.Query("SELECT * FROM Accounts WHERE Code = @c", Db.Params(("@c", code)))
-              .AsEnumerable().Select(Map).FirstOrDefault();
+        public List<Account> GetLeaves() =>
+            Query("SELECT * FROM Accounts WHERE IsLeaf = @l AND IsActive = @a ORDER BY Code", null, null, ("@l", true), ("@a", true));
 
-        /// <summary>لقراءة حساب من داخل معاملة مستدعٍ آخر مفتوحة بالفعل (JournalService.Create(conn,tx,...)) — اتصال منفصل هنا يُعلِّق (deadlock) على SQLite؛ راجع تعليق DbHelper.Query(conn,tx,...).</summary>
-        public static Account GetByCode(DbConnection conn, DbTransaction tx, string code) =>
-            Db.Query(conn, tx, "SELECT * FROM Accounts WHERE Code = @c", Db.Params(("@c", code)))
-              .AsEnumerable().Select(Map).FirstOrDefault();
-
-        public static List<Account> GetChildren(string parentCode) =>
-            Db.Query("SELECT * FROM Accounts WHERE ParentCode = @p AND IsActive = @a ORDER BY Code",
-                Db.Params(("@p", parentCode), ("@a", true)))
-              .AsEnumerable().Select(Map).ToList();
-
-        /// <summary>نفس GetChildren أعلاه من داخل معاملة قائمة — يستخدمها توليد الكود (GenerateChildCodeInternal) عند الاستدعاء من AccountService.Create(conn,tx,...).</summary>
-        public static List<Account> GetChildren(DbConnection conn, DbTransaction tx, string parentCode) =>
-            Db.Query(conn, tx, "SELECT * FROM Accounts WHERE ParentCode = @p AND IsActive = @a ORDER BY Code",
-                Db.Params(("@p", parentCode), ("@a", true)))
-              .AsEnumerable().Select(Map).ToList();
-
-        public static List<Account> GetLeaves() =>
-            Db.Query("SELECT * FROM Accounts WHERE IsLeaf = @l AND IsActive = @a ORDER BY Code",
-                Db.Params(("@l", true), ("@a", true)))
-              .AsEnumerable().Select(Map).ToList();
-
-        public static int GetLevel(string code)
+        public int GetLevel(string code)
         {
-            var result = Db.Scalar("SELECT Level FROM Accounts WHERE Code = @c", Db.Params(("@c", code)));
+            var result = Scalar("SELECT Level FROM Accounts WHERE Code = @c", ("@c", code));
             return result != null ? Convert.ToInt32(result) : 1;
         }
 
-        public static int GetTypeOf(string code)
+        public int GetTypeOf(string code)
         {
-            var result = Db.Scalar("SELECT Type FROM Accounts WHERE Code = @c", Db.Params(("@c", code)));
+            var result = Scalar("SELECT Type FROM Accounts WHERE Code = @c", ("@c", code));
             return result != null ? Convert.ToInt32(result) : 1;
         }
 
-        public static bool HasChildren(string code)
-        {
-            var result = Db.Scalar("SELECT COUNT(*) FROM Accounts WHERE ParentCode = @p AND IsActive = @a",
-                Db.Params(("@p", code), ("@a", true)));
-            return Convert.ToInt64(result) > 0;
-        }
+        public bool HasChildren(string code) =>
+            Convert.ToInt64(Scalar("SELECT COUNT(*) FROM Accounts WHERE ParentCode = @p AND IsActive = @a", ("@p", code), ("@a", true))) > 0;
 
         /// <summary>إدراج صف كما هو — الخدمة هي من تحسب Level وتضبط IsLeaf للأب والربط والـ Audit، لا هنا.</summary>
-        public static int Insert(Account a) =>
-            Db.InsertAndGetId(
+        public int Insert(Account a, DbConnection conn = null, DbTransaction tx = null) =>
+            InsertGetId(
                 "INSERT INTO Accounts (Code, Name, ParentCode, Level, IsLeaf, Type) VALUES (@code, @name, @parent, @level, @leaf, @type)",
-                Db.Params(("@code", a.Code), ("@name", a.Name), ("@parent", a.ParentCode), ("@level", a.Level), ("@leaf", a.IsLeaf), ("@type", a.Type)));
-
-        public static int Insert(DbConnection conn, DbTransaction tx, Account a) =>
-            Db.InsertAndGetId(conn, tx,
-                "INSERT INTO Accounts (Code, Name, ParentCode, Level, IsLeaf, Type) VALUES (@code, @name, @parent, @level, @leaf, @type)",
-                Db.Params(("@code", a.Code), ("@name", a.Name), ("@parent", a.ParentCode), ("@level", a.Level), ("@leaf", a.IsLeaf), ("@type", a.Type)));
+                conn, tx, ("@code", a.Code), ("@name", a.Name), ("@parent", a.ParentCode), ("@level", a.Level), ("@leaf", a.IsLeaf), ("@type", a.Type));
 
         /// <summary>تحديث حقول الحساب نفسه فقط — مزامنة العميل/المورد المرتبط والـ Audit مسؤولية الخدمة.</summary>
-        public static void Update(Account a) =>
-            Db.Execute(
-                "UPDATE Accounts SET Name = @name, Notes = @notes, IsLeaf = @leaf, UpdatedAt = @now WHERE Code = @code",
-                Db.Params(("@name", a.Name), ("@notes", a.Notes ?? ""), ("@leaf", a.IsLeaf), ("@now", DateTime.Now), ("@code", a.Code)));
+        public void Update(Account a, DbConnection conn = null, DbTransaction tx = null) =>
+            Exec("UPDATE Accounts SET Name = @name, Notes = @notes, IsLeaf = @leaf, UpdatedAt = @now WHERE Code = @code",
+                conn, tx, ("@name", a.Name), ("@notes", a.Notes ?? ""), ("@leaf", a.IsLeaf), ("@now", DateTime.Now), ("@code", a.Code));
 
-        public static void Update(DbConnection conn, DbTransaction tx, Account a)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE Accounts SET Name = @name, Notes = @notes, IsLeaf = @leaf, UpdatedAt = @now WHERE Code = @code",
-                Db.Params(("@name", a.Name), ("@notes", a.Notes ?? ""), ("@leaf", a.IsLeaf), ("@now", DateTime.Now), ("@code", a.Code)));
-            cmd.ExecuteNonQuery();
-        }
+        /// <summary>تحديث الاسم فقط — تستخدمها AccountService.UpdateName لمزامنة اسم حساب من تعديل الطرف المرتبط (عميل/مورد).</summary>
+        public void UpdateName(DbConnection conn, DbTransaction tx, string code, string name) =>
+            Exec("UPDATE Accounts SET Name = @name, UpdatedAt = @now WHERE Code = @code",
+                conn, tx, ("@name", name), ("@now", DateTime.Now), ("@code", code));
 
-        /// <summary>تحديث الاسم فقط — تستخدمها AccountService.UpdateName لمزامنة اسم حساب من تعديل الطرف المرتبط (عميل/مورد)، لا Update(Account) الكاملة (لا داعٍ لإعادة قراءة/تحقق Leaf/Notes لمجرد تغيير اسم).</summary>
-        public static void UpdateName(DbConnection conn, DbTransaction tx, string code, string name)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE Accounts SET Name = @name, UpdatedAt = @now WHERE Code = @code",
-                Db.Params(("@name", name), ("@now", DateTime.Now), ("@code", code)));
-            cmd.ExecuteNonQuery();
-        }
-
-        public static void SetIsLeaf(string code, bool isLeaf) =>
-            Db.Execute("UPDATE Accounts SET IsLeaf = @f WHERE Code = @c", Db.Params(("@f", isLeaf), ("@c", code)));
-
-        public static void SetIsLeaf(DbConnection conn, DbTransaction tx, string code, bool isLeaf)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE Accounts SET IsLeaf = @f WHERE Code = @c", Db.Params(("@f", isLeaf), ("@c", code)));
-            cmd.ExecuteNonQuery();
-        }
+        public void SetIsLeaf(string code, bool isLeaf, DbConnection conn = null, DbTransaction tx = null) =>
+            Exec("UPDATE Accounts SET IsLeaf = @f WHERE Code = @c", conn, tx, ("@f", isLeaf), ("@c", code));
 
         /// <summary>حذف منطقي (IsActive=false) لصف الحساب فقط — حذف العميل/المورد المرتبط والـ Audit مسؤولية الخدمة.</summary>
-        public static void Delete(string code) =>
-            Db.Execute("UPDATE Accounts SET IsActive = @a WHERE Code = @code", Db.Params(("@a", false), ("@code", code)));
+        public void Delete(string code, DbConnection conn = null, DbTransaction tx = null) =>
+            Exec("UPDATE Accounts SET IsActive = @a WHERE Code = @code", conn, tx, ("@a", false), ("@code", code));
 
-        public static void Delete(DbConnection conn, DbTransaction tx, string code)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE Accounts SET IsActive = @a WHERE Code = @code", Db.Params(("@a", false), ("@code", code)));
-            cmd.ExecuteNonQuery();
-        }
-
-        public static void UpdateBalance(string code, decimal balance) =>
-            Db.Execute("UPDATE Accounts SET Balance = @b, UpdatedAt = @now WHERE Code = @code",
-                Db.Params(("@b", balance), ("@now", DateTime.Now), ("@code", code)));
-
-        public static void UpdateBalance(DbConnection conn, DbTransaction tx, string code, decimal balance)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE Accounts SET Balance = @b, UpdatedAt = @now WHERE Code = @code",
-                Db.Params(("@b", balance), ("@now", DateTime.Now), ("@code", code)));
-            cmd.ExecuteNonQuery();
-        }
+        public void UpdateBalance(string code, decimal balance, DbConnection conn = null, DbTransaction tx = null) =>
+            Exec("UPDATE Accounts SET Balance = @b, UpdatedAt = @now WHERE Code = @code",
+                conn, tx, ("@b", balance), ("@now", DateTime.Now), ("@code", code));
     }
 }

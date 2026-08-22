@@ -1,20 +1,21 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
+using System.Collections.Generic;
 using PrimeERP.Data.Core;
+using PrimeERP.Data.Query;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Data.Schema;
 using PrimeERP.Domain.Entities;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Data.Repositories
 {
-    /// <summary>طبقة وصول بيانات العملاء — SQL خام ↔ Models فقط. بلا تحقق، بلا معاملات ذاتية، بلا حساب رصيد، بلا إنشاء/حذف حساب (كل ذلك مسؤولية Services/Parties/ICustomerService — F.3.1).</summary>
-    public static class CustomerRepository
+    /// <summary>طبقة وصول بيانات العملاء — SQL خام ↔ Models فقط. بلا تحقق، بلا معاملات ذاتية، بلا حساب رصيد، بلا إنشاء/حذف حساب (كل ذلك مسؤولية ICustomerService).</summary>
+    public class CustomerRepository : RepositoryBase<Customer>, ICustomerRepository
     {
-        public static void CreateTable()
-        {
+        protected override string TableName => "Customers";
+
+        public void CreateTable() =>
             SchemaBuilder.Table("Customers")
                 .Id()
                 .Text("Code", 30, required: true, unique: true)
@@ -41,9 +42,8 @@ namespace PrimeERP.Data.Repositories
                 .Concurrency()
                 .Index("AccountCode")
                 .Create();
-        }
 
-        private static Customer Map(DataRow row) => new()
+        protected override Customer Map(DataRow row) => new()
         {
             Id              = Convert.ToInt32(row["Id"]),
             Code            = row["Code"].ToString(),
@@ -77,129 +77,72 @@ namespace PrimeERP.Data.Repositories
 
         // ===== قراءة =====
 
-        public static Customer GetById(int id) =>
-            Db.Query("SELECT * FROM Customers WHERE Id = @id AND IsDeleted = @d", Db.Params(("@id", id), ("@d", false)))
-              .AsEnumerable().Select(Map).FirstOrDefault();
+        public override Customer GetById(int id, DbConnection conn = null, DbTransaction tx = null) =>
+            QueryOne("SELECT * FROM Customers WHERE Id = @id AND IsDeleted = @d", conn, tx, ("@id", id), ("@d", false));
 
-        public static Customer GetByCode(string code) =>
-            Db.Query("SELECT * FROM Customers WHERE Code = @c AND IsDeleted = @d", Db.Params(("@c", code), ("@d", false)))
-              .AsEnumerable().Select(Map).FirstOrDefault();
+        public Customer GetByCode(string code) =>
+            QueryOne("SELECT * FROM Customers WHERE Code = @c AND IsDeleted = @d", null, null, ("@c", code), ("@d", false));
 
-        public static Customer GetByAccountCode(string accountCode) =>
-            Db.Query("SELECT * FROM Customers WHERE AccountCode = @a AND IsDeleted = @d", Db.Params(("@a", accountCode), ("@d", false)))
-              .AsEnumerable().Select(Map).FirstOrDefault();
+        public Customer GetByAccountCode(string accountCode, DbConnection conn = null, DbTransaction tx = null) =>
+            QueryOne("SELECT * FROM Customers WHERE AccountCode = @a AND IsDeleted = @d", conn, tx, ("@a", accountCode), ("@d", false));
 
-        /// <summary>نفس GetByAccountCode أعلاه من داخل معاملة قائمة — تستخدمها CustomerService.DeleteByAccountCode المستدعاة من AccountService.Delete ضمن معاملته.</summary>
-        public static Customer GetByAccountCode(DbConnection conn, DbTransaction tx, string accountCode) =>
-            Db.Query(conn, tx, "SELECT * FROM Customers WHERE AccountCode = @a AND IsDeleted = @d", Db.Params(("@a", accountCode), ("@d", false)))
-              .AsEnumerable().Select(Map).FirstOrDefault();
-
-        public static List<Customer> GetAll(bool activeOnly = true)
+        public List<Customer> GetAll(bool activeOnly = true)
         {
-            var sql = activeOnly
-                ? "SELECT * FROM Customers WHERE IsDeleted = @d AND IsActive = @a ORDER BY Name"
-                : "SELECT * FROM Customers WHERE IsDeleted = @d ORDER BY Name";
-            var parameters = activeOnly ? Db.Params(("@d", false), ("@a", true)) : Db.Params(("@d", false));
-            return Db.Query(sql, parameters).AsEnumerable().Select(Map).ToList();
+            var where = new WhereBuilder().Eq("IsDeleted", false).Eq("IsActive", activeOnly ? true : (bool?)null);
+            return Query($"SELECT * FROM Customers {where.Sql} ORDER BY Name", null, null, where.Parameters);
         }
 
-        public static List<Customer> Search(string term, int maxResults)
+        public List<Customer> Search(string term, int maxResults) =>
+            Query($@"SELECT * FROM Customers WHERE IsDeleted = @d AND IsActive = @a AND (Name LIKE @t OR Code LIKE @t OR Phone LIKE @t)
+                     ORDER BY Name {DbFactory.Current.LimitClause(0, maxResults)}",
+                null, null, ("@d", false), ("@a", true), ("@t", $"%{term}%"));
+
+        public int CountAll(bool activeOnly = true)
         {
-            var sql = $@"SELECT * FROM Customers
-                         WHERE IsDeleted = @d AND IsActive = @a AND (Name LIKE @t OR Code LIKE @t OR Phone LIKE @t)
-                         ORDER BY Name {DbFactory.Current.LimitClause(0, maxResults)}";
-            return Db.Query(sql, Db.Params(("@d", false), ("@a", true), ("@t", $"%{term}%")))
-                .AsEnumerable().Select(Map).ToList();
+            var where = new WhereBuilder().Eq("IsDeleted", false).Eq("IsActive", activeOnly ? true : (bool?)null);
+            return Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM Customers {where.Sql}", where.Parameters));
         }
 
-        public static int CountAll(bool activeOnly = true)
+        public bool ExistsCode(string code, int? excludeId = null) => ExistsBy("Code", code, excludeId);
+        public bool ExistsPhone(string phone, int? excludeId = null) =>
+            !string.IsNullOrWhiteSpace(phone) && ExistsBy("Phone", phone, excludeId);
+        public bool ExistsName(string name, int? excludeId = null) => ExistsBy("Name", name, excludeId);
+
+        private bool ExistsBy(string column, string value, int? excludeId)
         {
-            var sql = activeOnly
-                ? "SELECT COUNT(*) FROM Customers WHERE IsDeleted = @d AND IsActive = @a"
-                : "SELECT COUNT(*) FROM Customers WHERE IsDeleted = @d";
-            var parameters = activeOnly ? Db.Params(("@d", false), ("@a", true)) : Db.Params(("@d", false));
-            return Convert.ToInt32(Db.Scalar(sql, parameters));
+            var where = new WhereBuilder().Eq(column, value).Eq("IsDeleted", false).RawWithParam(p => $"Id != {p}", excludeId);
+            return Convert.ToInt64(Scalar($"SELECT COUNT(*) FROM Customers {where.Sql}", where.Parameters)) > 0;
         }
 
-        public static bool ExistsCode(string code, int? excludeId = null)
-        {
-            var sql = "SELECT COUNT(*) FROM Customers WHERE Code = @c AND IsDeleted = @d";
-            var parameters = new List<(string, object)> { ("@c", code), ("@d", false) };
-            if (excludeId.HasValue) { sql += " AND Id != @ex"; parameters.Add(("@ex", excludeId.Value)); }
-            return Convert.ToInt64(Db.Scalar(sql, Db.Params(parameters.ToArray()))) > 0;
-        }
-
-        public static bool ExistsPhone(string phone, int? excludeId = null)
-        {
-            if (string.IsNullOrWhiteSpace(phone)) return false;
-            var sql = "SELECT COUNT(*) FROM Customers WHERE Phone = @p AND IsDeleted = @d";
-            var parameters = new List<(string, object)> { ("@p", phone), ("@d", false) };
-            if (excludeId.HasValue) { sql += " AND Id != @ex"; parameters.Add(("@ex", excludeId.Value)); }
-            return Convert.ToInt64(Db.Scalar(sql, Db.Params(parameters.ToArray()))) > 0;
-        }
-
-        public static bool ExistsName(string name, int? excludeId = null)
-        {
-            var sql = "SELECT COUNT(*) FROM Customers WHERE Name = @n AND IsDeleted = @d";
-            var parameters = new List<(string, object)> { ("@n", name), ("@d", false) };
-            if (excludeId.HasValue) { sql += " AND Id != @ex"; parameters.Add(("@ex", excludeId.Value)); }
-            return Convert.ToInt64(Db.Scalar(sql, Db.Params(parameters.ToArray()))) > 0;
-        }
-
-        /// <summary>قائمة مُرقَّمة مع الفلاتر — بناء SQL شرطي حسب الفلاتر الممرَّرة (بناء استعلام فقط، لا قرار أعمال). sortColumn يُطابَق بقائمة أعمدة مسموحة صراحة (لا يُدرَج كنص حر في ORDER BY).</summary>
-        public static (List<Customer> Items, int Total) GetPaged(
+        /// <summary>قائمة مُرقَّمة مع الفلاتر — sortColumn يُطابَق بقائمة أعمدة مسموحة صراحة (لا يُدرَج كنص حر في ORDER BY).</summary>
+        public (List<Customer> Items, int Total) GetPaged(
             int page, int pageSize,
             string searchText = null, bool? isActive = null, bool? hasBalance = null, bool? overCreditLimit = null,
             int? categoryId = null, string sortColumn = "Name", bool sortDescending = false)
         {
-            var where = new List<string> { "IsDeleted = @deleted" };
-            var parameters = new List<(string, object)> { ("@deleted", false) };
-
-            if (!string.IsNullOrWhiteSpace(searchText))
-            {
-                where.Add("(Name LIKE @search OR Code LIKE @search OR Phone LIKE @search)");
-                parameters.Add(("@search", $"%{searchText}%"));
-            }
-            if (isActive.HasValue)
-            {
-                where.Add("IsActive = @active");
-                parameters.Add(("@active", isActive.Value));
-            }
-            if (hasBalance.HasValue)
-            {
-                where.Add(hasBalance.Value ? "Balance != 0" : "Balance = 0");
-            }
-            if (overCreditLimit.HasValue)
-            {
-                where.Add(overCreditLimit.Value ? "(CreditLimit > 0 AND Balance > CreditLimit)" : "NOT (CreditLimit > 0 AND Balance > CreditLimit)");
-            }
-            if (categoryId.HasValue)
-            {
-                where.Add("CategoryId = @categoryId");
-                parameters.Add(("@categoryId", categoryId.Value));
-            }
-
-            var whereClause = "WHERE " + string.Join(" AND ", where);
+            var where = new WhereBuilder()
+                .Eq("IsDeleted", false)
+                .LikeAny(searchText, "Name", "Code", "Phone")
+                .Eq("IsActive", isActive)
+                .Raw("Balance != 0", hasBalance == true)
+                .Raw("Balance = 0", hasBalance == false)
+                .Raw("(CreditLimit > 0 AND Balance > CreditLimit)", overCreditLimit == true)
+                .Raw("NOT (CreditLimit > 0 AND Balance > CreditLimit)", overCreditLimit == false)
+                .Eq("CategoryId", categoryId);
 
             var column = sortColumn switch
             {
-                "Code"        => "Code",
-                "Balance"     => "Balance",
-                "CreditLimit" => "CreditLimit",
-                "CreatedAt"   => "CreatedAt",
-                _             => "Name"
+                "Code" => "Code", "Balance" => "Balance", "CreditLimit" => "CreditLimit", "CreatedAt" => "CreatedAt", _ => "Name"
             };
             var direction = sortDescending ? "DESC" : "ASC";
 
-            var total = Convert.ToInt32(Db.Scalar($"SELECT COUNT(*) FROM Customers {whereClause}", Db.Params(parameters.ToArray())));
+            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM Customers {where.Sql}", where.Parameters));
 
-            var pageSql = $@"SELECT * FROM Customers {whereClause}
+            var pageSql = $@"SELECT * FROM Customers {where.Sql}
                               ORDER BY {column} {direction}, Id {direction}
                               {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
 
-            var items = Db.Query(pageSql, Db.Params(parameters.ToArray())).AsEnumerable().Select(Map).ToList();
-
-            return (items, total);
+            return (Query(pageSql, null, null, where.Parameters), total);
         }
 
         // ===== كتابة =====
@@ -212,17 +155,14 @@ namespace PrimeERP.Data.Repositories
                 (@code, @name, @nameEn, @phone, @phone2, @email, @address, @city, @country, @taxNumber, @commercialRegNo,
                  @accountCode, @balance, @creditLimit, @paymentTermDays, @currencyId, @categoryId, @notes, @isActive, @createdBy)";
 
-        private static Dictionary<string, object> InsertParams(Customer c) => Db.Params(
-            ("@code", c.Code), ("@name", c.Name), ("@nameEn", c.NameEn), ("@phone", c.Phone), ("@phone2", c.Phone2),
-            ("@email", c.Email), ("@address", c.Address), ("@city", c.City), ("@country", c.Country),
-            ("@taxNumber", c.TaxNumber), ("@commercialRegNo", c.CommercialRegNo), ("@accountCode", c.AccountCode),
-            ("@balance", c.Balance), ("@creditLimit", c.CreditLimit), ("@paymentTermDays", c.PaymentTermDays),
-            ("@currencyId", c.CurrencyId), ("@categoryId", c.CategoryId), ("@notes", c.Notes ?? ""),
-            ("@isActive", c.IsActive), ("@createdBy", c.CreatedBy));
-
-        public static int Insert(Customer c) => Db.InsertAndGetId(InsertSql, InsertParams(c));
-
-        public static int Insert(DbConnection conn, DbTransaction tx, Customer c) => Db.InsertAndGetId(conn, tx, InsertSql, InsertParams(c));
+        public int Insert(Customer c, DbConnection conn = null, DbTransaction tx = null) =>
+            InsertGetId(InsertSql, conn, tx,
+                ("@code", c.Code), ("@name", c.Name), ("@nameEn", c.NameEn), ("@phone", c.Phone), ("@phone2", c.Phone2),
+                ("@email", c.Email), ("@address", c.Address), ("@city", c.City), ("@country", c.Country),
+                ("@taxNumber", c.TaxNumber), ("@commercialRegNo", c.CommercialRegNo), ("@accountCode", c.AccountCode),
+                ("@balance", c.Balance), ("@creditLimit", c.CreditLimit), ("@paymentTermDays", c.PaymentTermDays),
+                ("@currencyId", c.CurrencyId), ("@categoryId", c.CategoryId), ("@notes", c.Notes ?? ""),
+                ("@isActive", c.IsActive), ("@createdBy", c.CreatedBy));
 
         private const string UpdateSql = @"
             UPDATE Customers SET
@@ -232,54 +172,26 @@ namespace PrimeERP.Data.Repositories
                 CategoryId = @categoryId, Notes = @notes, IsActive = @isActive, UpdatedAt = @now, UpdatedBy = @updatedBy
             WHERE Id = @id";
 
-        private static Dictionary<string, object> UpdateParams(Customer c) => Db.Params(
-            ("@name", c.Name), ("@nameEn", c.NameEn), ("@phone", c.Phone), ("@phone2", c.Phone2), ("@email", c.Email),
-            ("@address", c.Address), ("@city", c.City), ("@country", c.Country), ("@taxNumber", c.TaxNumber),
-            ("@commercialRegNo", c.CommercialRegNo), ("@creditLimit", c.CreditLimit), ("@paymentTermDays", c.PaymentTermDays),
-            ("@currencyId", c.CurrencyId), ("@categoryId", c.CategoryId), ("@notes", c.Notes ?? ""),
-            ("@isActive", c.IsActive), ("@now", DateTime.Now), ("@updatedBy", c.UpdatedBy), ("@id", c.Id));
+        public void Update(Customer c, DbConnection conn = null, DbTransaction tx = null) =>
+            Exec(UpdateSql, conn, tx,
+                ("@name", c.Name), ("@nameEn", c.NameEn), ("@phone", c.Phone), ("@phone2", c.Phone2), ("@email", c.Email),
+                ("@address", c.Address), ("@city", c.City), ("@country", c.Country), ("@taxNumber", c.TaxNumber),
+                ("@commercialRegNo", c.CommercialRegNo), ("@creditLimit", c.CreditLimit), ("@paymentTermDays", c.PaymentTermDays),
+                ("@currencyId", c.CurrencyId), ("@categoryId", c.CategoryId), ("@notes", c.Notes ?? ""),
+                ("@isActive", c.IsActive), ("@now", DateTime.Now), ("@updatedBy", c.UpdatedBy), ("@id", c.Id));
 
-        public static void Update(Customer c) => Db.Execute(UpdateSql, UpdateParams(c));
-
-        public static void Update(DbConnection conn, DbTransaction tx, Customer c)
-        {
-            using var cmd = Db.CreateCommand(conn, tx, UpdateSql, UpdateParams(c));
-            cmd.ExecuteNonQuery();
-        }
-
-        /// <summary>يحدّث اسم العميل فقط عبر AccountCode — تستخدمها CustomerService.UpdateNameFromAccount (المستدعاة من AccountService.Update ضمن معاملته) عندما يتغيّر اسم الحساب المرتبط.</summary>
-        public static void UpdateNameByAccountCode(DbConnection conn, DbTransaction tx, string accountCode, string name)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE Customers SET Name = @name, UpdatedAt = @now WHERE AccountCode = @code",
-                Db.Params(("@name", name), ("@now", DateTime.Now), ("@code", accountCode)));
-            cmd.ExecuteNonQuery();
-        }
+        /// <summary>يحدّث اسم العميل فقط عبر AccountCode — تستخدمها CustomerService.UpdateNameFromAccount عندما يتغيّر اسم الحساب المرتبط.</summary>
+        public void UpdateNameByAccountCode(DbConnection conn, DbTransaction tx, string accountCode, string name) =>
+            Exec("UPDATE Customers SET Name = @name, UpdatedAt = @now WHERE AccountCode = @code",
+                conn, tx, ("@name", name), ("@now", DateTime.Now), ("@code", accountCode));
 
         /// <summary>حذف منطقي (IsDeleted=true).</summary>
-        public static void Delete(int id, string deletedBy) =>
-            Db.Execute(
-                "UPDATE Customers SET IsDeleted = @d, DeletedAt = @now, DeletedBy = @by WHERE Id = @id",
-                Db.Params(("@d", true), ("@now", DateTime.Now), ("@by", deletedBy), ("@id", id)));
+        public void Delete(int id, string deletedBy, DbConnection conn = null, DbTransaction tx = null) =>
+            Exec("UPDATE Customers SET IsDeleted = @d, DeletedAt = @now, DeletedBy = @by WHERE Id = @id",
+                conn, tx, ("@d", true), ("@now", DateTime.Now), ("@by", deletedBy), ("@id", id));
 
-        public static void Delete(DbConnection conn, DbTransaction tx, int id, string deletedBy)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE Customers SET IsDeleted = @d, DeletedAt = @now, DeletedBy = @by WHERE Id = @id",
-                Db.Params(("@d", true), ("@now", DateTime.Now), ("@by", deletedBy), ("@id", id)));
-            cmd.ExecuteNonQuery();
-        }
-
-        public static void SetBalance(int id, decimal balance) =>
-            Db.Execute("UPDATE Customers SET Balance = @b, UpdatedAt = @now WHERE Id = @id",
-                Db.Params(("@b", balance), ("@now", DateTime.Now), ("@id", id)));
-
-        public static void SetBalance(DbConnection conn, DbTransaction tx, int id, decimal balance)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE Customers SET Balance = @b, UpdatedAt = @now WHERE Id = @id",
-                Db.Params(("@b", balance), ("@now", DateTime.Now), ("@id", id)));
-            cmd.ExecuteNonQuery();
-        }
+        public void SetBalance(int id, decimal balance, DbConnection conn = null, DbTransaction tx = null) =>
+            Exec("UPDATE Customers SET Balance = @b, UpdatedAt = @now WHERE Id = @id",
+                conn, tx, ("@b", balance), ("@now", DateTime.Now), ("@id", id));
     }
 }

@@ -49,20 +49,21 @@ namespace PrimeERP.Tests.Services
 
         public void Dispose() => _db.Dispose();
 
-        private static int CustomersRootId() => AccountRepository.GetByCode("1220").Id;
+        private int CustomersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("1220").Id;
 
-        private static int SeedPostedEntry(string date, params (string Code, decimal Debit, decimal Credit)[] lines)
+        private int SeedPostedEntry(string date, params (string Code, decimal Debit, decimal Credit)[] lines)
         {
+            var journal = _db.Services.GetRequiredService<IJournalRepository>();
             var id = Db.RunTransaction((conn, tx) =>
             {
                 var entry = new JournalEntry { EntryNo = $"TEST-{Guid.NewGuid():N}", EntryDate = date, Description = "test", Source = "test" };
-                var newId = JournalRepository.InsertHeader(conn, tx, entry);
+                var newId = journal.InsertHeader(conn, tx, entry);
                 int lineNo = 1;
                 foreach (var l in lines)
-                    JournalRepository.InsertLine(conn, tx, newId, lineNo++, new JournalLine { AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit });
+                    journal.InsertLine(conn, tx, newId, lineNo++, new JournalLine { AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit });
                 return newId;
             });
-            JournalRepository.SetPosted(id, true);
+            journal.SetPosted(id, true);
             return id;
         }
 
@@ -216,7 +217,7 @@ namespace PrimeERP.Tests.Services
             var result = _service.RecalculateBalance(account.Value.Code);
             Assert.True(result.IsSuccess, result.ErrorMessage);
 
-            var updated = AccountRepository.GetByCode(account.Value.Code);
+            var updated = _db.Services.GetRequiredService<IAccountRepository>().GetByCode(account.Value.Code);
             Assert.Equal(250m, updated.Balance);
         }
 

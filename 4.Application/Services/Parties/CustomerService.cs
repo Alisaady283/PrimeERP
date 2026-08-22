@@ -31,13 +31,20 @@ namespace PrimeERP.Application.Services.Parties
         private readonly ISettingsService _settings;
         private readonly IAccountService _accounts;
         private readonly INumberSequenceService _numbers;
+        private readonly ICustomerRepository _customers;
+        private readonly IAccountRepository _accountRepo;
+        private readonly IJournalRepository _journalRepo;
 
-        public CustomerService(IPermissionService permissions, ISettingsService settings, IAccountService accounts, INumberSequenceService numbers)
+        public CustomerService(IPermissionService permissions, ISettingsService settings, IAccountService accounts, INumberSequenceService numbers,
+            ICustomerRepository customers, IAccountRepository accountRepo, IJournalRepository journalRepo)
         {
             _permissions = permissions;
             _settings = settings;
             _accounts = accounts;
             _numbers = numbers;
+            _customers = customers;
+            _accountRepo = accountRepo;
+            _journalRepo = journalRepo;
         }
 
         private static string Denied => LocalizationService.Get("Str.PermissionDenied");
@@ -52,7 +59,7 @@ namespace PrimeERP.Application.Services.Parties
 
             filter ??= new CustomerFilter();
 
-            var (items, total) = CustomerRepository.GetPaged(
+            var (items, total) = _customers.GetPaged(
                 page, pageSize,
                 filter.SearchText, filter.IsActive, filter.HasBalance, filter.OverCreditLimit,
                 filter.CategoryId, filter.SortBy, filter.SortDescending);
@@ -65,7 +72,7 @@ namespace PrimeERP.Application.Services.Parties
             if (!_permissions.Can(PermissionKeys.Customers.View))
                 return Result.Fail<CustomerDto>(Denied, ErrorCode.Unauthorized);
 
-            var customer = CustomerRepository.GetById(id);
+            var customer = _customers.GetById(id);
             if (customer == null)
                 return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
 
@@ -77,7 +84,7 @@ namespace PrimeERP.Application.Services.Parties
             if (!_permissions.Can(PermissionKeys.Customers.View))
                 return Result.Fail<CustomerDto>(Denied, ErrorCode.Unauthorized);
 
-            var customer = CustomerRepository.GetByCode(code);
+            var customer = _customers.GetByCode(code);
             if (customer == null)
                 return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
 
@@ -89,7 +96,7 @@ namespace PrimeERP.Application.Services.Parties
             if (!_permissions.Can(PermissionKeys.Customers.View))
                 return Result.Fail<List<CustomerDto>>(Denied, ErrorCode.Unauthorized);
 
-            return Result.Ok(CustomerRepository.Search(term ?? "", maxResults).Select(ToDto).ToList());
+            return Result.Ok(_customers.Search(term ?? "", maxResults).Select(ToDto).ToList());
         }
 
         public Result<List<AccountStatementLine>> GetStatement(int id, DateTime from, DateTime to)
@@ -97,7 +104,7 @@ namespace PrimeERP.Application.Services.Parties
             if (!_permissions.Can(PermissionKeys.Customers.View))
                 return Result.Fail<List<AccountStatementLine>>(Denied, ErrorCode.Unauthorized);
 
-            var customer = CustomerRepository.GetById(id);
+            var customer = _customers.GetById(id);
             if (customer == null)
                 return Result.Fail<List<AccountStatementLine>>(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
 
@@ -118,7 +125,7 @@ namespace PrimeERP.Application.Services.Parties
             if (string.IsNullOrWhiteSpace(customersAccountCode))
                 return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.AccountNotConfigured"), ErrorCode.Unexpected);
 
-            var parentAccount = AccountRepository.GetByCode(customersAccountCode);
+            var parentAccount = _accountRepo.GetByCode(customersAccountCode);
             if (parentAccount == null)
                 return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.AccountParentNotFound"), ErrorCode.NotFound);
 
@@ -133,9 +140,9 @@ namespace PrimeERP.Application.Services.Parties
                 return Result.Fail<CustomerDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
 
             // تحذيرات لا تمنع — تُسجَّل في تفاصيل Audit فقط، لا Fail.
-            var nameIsDuplicate = _settings.Get(SettingKeys.Financial.WarnOnDuplicateCustomerName, true) && CustomerRepository.ExistsName(customer.Name);
+            var nameIsDuplicate = _settings.Get(SettingKeys.Financial.WarnOnDuplicateCustomerName, true) && _customers.ExistsName(customer.Name);
             var phoneIsDuplicate = _settings.Get(SettingKeys.Financial.WarnOnDuplicatePhone, true)
-                && !string.IsNullOrWhiteSpace(customer.Phone) && CustomerRepository.ExistsPhone(customer.Phone);
+                && !string.IsNullOrWhiteSpace(customer.Phone) && _customers.ExistsPhone(customer.Phone);
 
             int newId;
             try
@@ -156,7 +163,7 @@ namespace PrimeERP.Application.Services.Parties
                     customer.AccountCode = accountResult.Value.Code;
                     customer.CreatedBy = CurrentUser;
 
-                    return CustomerRepository.Insert(conn, tx, customer);
+                    return _customers.Insert(customer, conn, tx);
                 });
             }
             catch (Exception ex)
@@ -190,7 +197,7 @@ namespace PrimeERP.Application.Services.Parties
             // قراءة مباشرة عبر AccountRepository (لا IAccountService.GetByCode — تبني AccountDto كاملاً عبر
             // قراءات إضافية غير آمنة داخل معاملة خارجية؛ راجع تعليق AccountService.Create(conn,tx,...))، نفس
             // نمط JournalService.ValidateAccountsForTransaction من F.2.3.
-            var parentAccount = AccountRepository.GetByCode(conn, tx, customersAccountCode);
+            var parentAccount = _accountRepo.GetByCode(customersAccountCode, conn, tx);
             if (parentAccount == null)
                 return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.AccountParentNotFound"), ErrorCode.NotFound);
 
@@ -214,7 +221,7 @@ namespace PrimeERP.Application.Services.Parties
             customer.AccountCode = accountResult.Value.Code;
             customer.CreatedBy = CurrentUser;
 
-            var newId = CustomerRepository.Insert(conn, tx, customer);
+            var newId = _customers.Insert(customer, conn, tx);
             customer.Id = newId;
 
             return Result.Ok(ToDto(customer));
@@ -238,7 +245,7 @@ namespace PrimeERP.Application.Services.Parties
             if (!validation.IsValid)
                 return Result.Fail<CustomerDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
 
-            var newId = CustomerRepository.Insert(conn, tx, customer);
+            var newId = _customers.Insert(customer, conn, tx);
             customer.Id = newId;
 
             return Result.Ok(ToDto(customer));
@@ -251,7 +258,7 @@ namespace PrimeERP.Application.Services.Parties
             if (!_permissions.Can(PermissionKeys.Customers.Edit))
                 return Result.Fail(Denied, ErrorCode.Unauthorized);
 
-            var customer = CustomerRepository.GetById(dto.Id);
+            var customer = _customers.GetById(dto.Id);
             if (customer == null)
                 return Result.Fail(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
 
@@ -279,7 +286,7 @@ namespace PrimeERP.Application.Services.Parties
 
             Db.RunTransaction((conn, tx) =>
             {
-                CustomerRepository.Update(conn, tx, customer);
+                _customers.Update(customer, conn, tx);
 
                 // مزامنة اسم الحساب لو تغيّر الاسم — اتجاه واحد (عميل→حساب)؛ الاتجاه المعاكس (حساب→عميل) عبر
                 // UpdateNameFromAccount أدناه لا يستدعي هذا مرة أخرى، فلا حلقة ping-pong.
@@ -294,7 +301,7 @@ namespace PrimeERP.Application.Services.Parties
         /// <summary>الاتجاه المعاكس — يستدعيه AccountService.Update عند تعديل اسم الحساب مباشرة. يحدّث اسم العميل فقط بلا مزامنة عكسية (يمنع حلقة ping-pong).</summary>
         public Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
         {
-            CustomerRepository.UpdateNameByAccountCode(conn, tx, accountCode, name);
+            _customers.UpdateNameByAccountCode(conn, tx, accountCode, name);
             return Result.Ok();
         }
 
@@ -305,17 +312,17 @@ namespace PrimeERP.Application.Services.Parties
             if (!_permissions.Can(PermissionKeys.Customers.Delete))
                 return Result.Fail(Denied, ErrorCode.Unauthorized);
 
-            var customer = CustomerRepository.GetById(id);
+            var customer = _customers.GetById(id);
             if (customer == null)
                 return Result.Fail(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
 
             // TODO F.4: تحقق الفواتير (Sales/Purchase) — لا خدمة فواتير مبنية بعد، يُضاف فور بنائها في F.4.
-            if (!string.IsNullOrWhiteSpace(customer.AccountCode) && JournalRepository.HasLinesForAccount(customer.AccountCode))
+            if (!string.IsNullOrWhiteSpace(customer.AccountCode) && _journalRepo.HasLinesForAccount(customer.AccountCode))
                 return Result.Fail(LocalizationService.Get("Str.Customer.HasTransactions"), ErrorCode.ValidationFailed);
 
             Db.RunTransaction((conn, tx) =>
             {
-                CustomerRepository.Delete(conn, tx, id, CurrentUser);
+                _customers.Delete(id, CurrentUser, conn, tx);
                 if (!string.IsNullOrWhiteSpace(customer.AccountCode))
                     _accounts.Delete(conn, tx, customer.AccountCode);
             });
@@ -327,11 +334,11 @@ namespace PrimeERP.Application.Services.Parties
         /// <summary>الاتجاه المعاكس — يستدعيه AccountService.Delete عند حذف الحساب مباشرة. يحذف العميل فقط بلا لمس الحساب (محذوف بالفعل من طرف الاستدعاء). idempotent: لا عميل مرتبط = لا خطأ.</summary>
         public Result DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode)
         {
-            var customer = CustomerRepository.GetByAccountCode(conn, tx, accountCode);
+            var customer = _customers.GetByAccountCode(accountCode, conn, tx);
             if (customer == null)
                 return Result.Ok();
 
-            CustomerRepository.Delete(conn, tx, customer.Id, CurrentUser);
+            _customers.Delete(customer.Id, CurrentUser, conn, tx);
             return Result.Ok();
         }
 
@@ -342,7 +349,7 @@ namespace PrimeERP.Application.Services.Parties
             if (!_permissions.Can(PermissionKeys.Customers.Edit))
                 return Result.Fail(Denied, ErrorCode.Unauthorized);
 
-            var customer = CustomerRepository.GetById(id);
+            var customer = _customers.GetById(id);
             if (customer == null)
                 return Result.Fail(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
 
@@ -353,7 +360,7 @@ namespace PrimeERP.Application.Services.Parties
             if (!balanceResult.IsSuccess)
                 return Result.Fail(balanceResult.ErrorMessage, balanceResult.ErrorCode);
 
-            Db.RunTransaction((conn, tx) => CustomerRepository.SetBalance(conn, tx, id, balanceResult.Value));
+            Db.RunTransaction((conn, tx) => _customers.SetBalance(id, balanceResult.Value, conn, tx));
             return Result.Ok();
         }
 
@@ -362,7 +369,7 @@ namespace PrimeERP.Application.Services.Parties
             if (!_permissions.Can(PermissionKeys.Customers.Edit))
                 return Result.Fail(Denied, ErrorCode.Unauthorized);
 
-            var customers = CustomerRepository.GetAll(activeOnly: false).Where(c => !string.IsNullOrWhiteSpace(c.AccountCode)).ToList();
+            var customers = _customers.GetAll(activeOnly: false).Where(c => !string.IsNullOrWhiteSpace(c.AccountCode)).ToList();
 
             // كل قراءات الرصيد قبل فتح المعاملة (IAccountService.GetBalanceAsOf غير آمنة داخل معاملة خارجية —
             // نفس سبب كل قراءة أخرى في هذه الجلسة، راجع AccountService.RecalculateBalance(conn,tx,...)).
@@ -377,7 +384,7 @@ namespace PrimeERP.Application.Services.Parties
             Db.RunTransaction((conn, tx) =>
             {
                 foreach (var (id, balance) in balances)
-                    CustomerRepository.SetBalance(conn, tx, id, balance);
+                    _customers.SetBalance(id, balance, conn, tx);
             });
 
             return Result.Ok();
@@ -388,7 +395,7 @@ namespace PrimeERP.Application.Services.Parties
             if (!_permissions.Can(PermissionKeys.Customers.View))
                 return Result.Fail<CreditCheckResult>(Denied, ErrorCode.Unauthorized);
 
-            var customer = CustomerRepository.GetById(id);
+            var customer = _customers.GetById(id);
             if (customer == null)
                 return Result.Fail<CreditCheckResult>(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
 
@@ -440,8 +447,8 @@ namespace PrimeERP.Application.Services.Parties
         private CustomerDto ToDto(Customer c)
         {
             var isOverLimit = c.CreditLimit > 0 && c.Balance > c.CreditLimit;
-            var hasTransactions = !string.IsNullOrWhiteSpace(c.AccountCode) && JournalRepository.HasLinesForAccount(c.AccountCode);
-            var accountName = string.IsNullOrWhiteSpace(c.AccountCode) ? null : AccountRepository.GetByCode(c.AccountCode)?.Name;
+            var hasTransactions = !string.IsNullOrWhiteSpace(c.AccountCode) && _journalRepo.HasLinesForAccount(c.AccountCode);
+            var accountName = string.IsNullOrWhiteSpace(c.AccountCode) ? null : _accountRepo.GetByCode(c.AccountCode)?.Name;
 
             var statusKey = !c.IsActive ? "Inactive" : (isOverLimit ? "OverLimit" : "Active");
             var variant = !c.IsActive ? StatusVariant.Neutral : (isOverLimit ? StatusVariant.Danger : StatusVariant.Success);

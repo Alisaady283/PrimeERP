@@ -10,18 +10,18 @@ namespace PrimeERP.Data.Seeders
     /// </summary>
     public static class NumberSequenceSeeder
     {
-        public static void Seed()
+        public static void Seed(INumberSequenceRepository numberSequences)
         {
-            EnsureFromSetting("Customer", SettingKeys.Documents.CustomerPrefix, "C");
-            EnsureFromSetting("Supplier", SettingKeys.Documents.SupplierPrefix, "S");
-            EnsureFromSetting("Product",  SettingKeys.Documents.ProductPrefix,  "P");
+            EnsureFromSetting(numberSequences, "Customer", SettingKeys.Documents.CustomerPrefix, "C");
+            EnsureFromSetting(numberSequences, "Supplier", SettingKeys.Documents.SupplierPrefix, "S");
+            EnsureFromSetting(numberSequences, "Product",  SettingKeys.Documents.ProductPrefix,  "P");
         }
 
-        private static void EnsureFromSetting(string key, string settingKey, string fallbackPrefix)
+        private static void EnsureFromSetting(INumberSequenceRepository numberSequences, string key, string settingKey, string fallbackPrefix)
         {
             var setting = SettingRepository.GetByKey(settingKey);
             var prefix = setting != null && !string.IsNullOrWhiteSpace(setting.Value) ? setting.Value : fallbackPrefix;
-            NumberSequenceRepository.EnsureRow(key, prefix);
+            numberSequences.EnsureRow(key, prefix);
         }
     }
 }

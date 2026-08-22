@@ -2,21 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
-using PrimeERP.Data.Core;
+using PrimeERP.Data.Query;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Data.Schema;
 using PrimeERP.Domain.Entities;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Data.Repositories
 {
     /// <summary>
-    /// طبقة وصول بيانات السنوات/الفترات المالية — SQL خام ↔ Models فقط. بلا تحقق، بلا معاملات تفتحها هذه
-    /// الطبقة، بلا منطق تواريخ (تقسيم فترات/تراكب/إقفال — كل ذلك مسؤولية Services/Accounting/IFiscalPeriodService).
+    /// طبقة وصول بيانات السنوات/الفترات المالية — SQL خام ↔ Models فقط. بلا تحقق، بلا منطق تواريخ (كل ذلك
+    /// مسؤولية IFiscalPeriodService). يدير كيانين (FiscalYear أساسي عبر RepositoryBase، FiscalPeriod ثانوي
+    /// عبر QueryAs) — راجع تعليق RepositoryBase.QueryAs.
     /// </summary>
-    public static class FiscalPeriodRepository
+    public class FiscalPeriodRepository : RepositoryBase<FiscalYear>, IFiscalPeriodRepository
     {
-        public static void CreateTable()
+        protected override string TableName => "FiscalYears";
+
+        public void CreateTable()
         {
             SchemaBuilder.Table("FiscalYears")
                 .Id()
@@ -50,7 +52,7 @@ namespace PrimeERP.Data.Repositories
                 .Create();
         }
 
-        private static FiscalYear MapYear(DataRow row) => new()
+        protected override FiscalYear Map(DataRow row) => new()
         {
             Id             = Convert.ToInt32(row["Id"]),
             Name           = row["Name"].ToString(),
@@ -81,122 +83,77 @@ namespace PrimeERP.Data.Repositories
 
         // ===== سنوات =====
 
-        public static List<FiscalYear> GetAllYears() =>
-            Db.Query("SELECT * FROM FiscalYears WHERE IsDeleted = @d ORDER BY StartDate DESC", Db.Params(("@d", false)))
-              .AsEnumerable().Select(MapYear).ToList();
+        public List<FiscalYear> GetAllYears() =>
+            Query("SELECT * FROM FiscalYears WHERE IsDeleted = @d ORDER BY StartDate DESC", null, null, ("@d", false));
 
-        public static FiscalYear GetYearById(int id) =>
-            Db.Query("SELECT * FROM FiscalYears WHERE Id = @id", Db.Params(("@id", id)))
-              .AsEnumerable().Select(MapYear).FirstOrDefault();
+        public FiscalYear GetYearById(int id) => GetById(id);
 
-        public static FiscalYear GetCurrentYear() =>
-            Db.Query("SELECT * FROM FiscalYears WHERE IsCurrent = @c AND IsDeleted = @d", Db.Params(("@c", true), ("@d", false)))
-              .AsEnumerable().Select(MapYear).FirstOrDefault();
+        public FiscalYear GetCurrentYear() =>
+            QueryOne("SELECT * FROM FiscalYears WHERE IsCurrent = @c AND IsDeleted = @d", null, null, ("@c", true), ("@d", false));
 
-        public static FiscalYear GetYearContaining(string date) =>
-            Db.Query("SELECT * FROM FiscalYears WHERE @date >= StartDate AND @date <= EndDate AND IsDeleted = @d",
-                Db.Params(("@date", date), ("@d", false)))
-              .AsEnumerable().Select(MapYear).FirstOrDefault();
+        public FiscalYear GetYearContaining(string date) =>
+            QueryOne("SELECT * FROM FiscalYears WHERE @date >= StartDate AND @date <= EndDate AND IsDeleted = @d",
+                null, null, ("@date", date), ("@d", false));
 
-        public static bool AnyYearOverlapping(string start, string end, int? excludeId)
+        public bool AnyYearOverlapping(string start, string end, int? excludeId)
         {
-            var sql = "SELECT COUNT(*) FROM FiscalYears WHERE IsDeleted = @d AND StartDate <= @end AND EndDate >= @start";
-            var parameters = new List<(string, object)> { ("@d", false), ("@start", start), ("@end", end) };
-
-            if (excludeId.HasValue)
-            {
-                sql += " AND Id != @excludeId";
-                parameters.Add(("@excludeId", excludeId.Value));
-            }
-
-            return Convert.ToInt64(Db.Scalar(sql, Db.Params(parameters.ToArray()))) > 0;
+            var where = new WhereBuilder()
+                .Eq("IsDeleted", false)
+                .RawWithParam(p => $"StartDate <= {p}", end)
+                .RawWithParam(p => $"EndDate >= {p}", start)
+                .RawWithParam(p => $"Id != {p}", excludeId);
+            return Convert.ToInt64(Scalar($"SELECT COUNT(*) FROM FiscalYears {where.Sql}", where.Parameters)) > 0;
         }
 
-        public static int InsertYear(DbConnection conn, DbTransaction tx, FiscalYear year) =>
-            Db.InsertAndGetId(conn, tx,
-                "INSERT INTO FiscalYears (Name, StartDate, EndDate, IsCurrent) VALUES (@name, @start, @end, @current)",
-                Db.Params(("@name", year.Name), ("@start", year.StartDate), ("@end", year.EndDate), ("@current", year.IsCurrent)));
+        public int InsertYear(DbConnection conn, DbTransaction tx, FiscalYear year) =>
+            InsertGetId("INSERT INTO FiscalYears (Name, StartDate, EndDate, IsCurrent) VALUES (@name, @start, @end, @current)",
+                conn, tx, ("@name", year.Name), ("@start", year.StartDate), ("@end", year.EndDate), ("@current", year.IsCurrent));
 
-        public static void UpdateYear(DbConnection conn, DbTransaction tx, FiscalYear year)
+        public void UpdateYear(DbConnection conn, DbTransaction tx, FiscalYear year) =>
+            Exec("UPDATE FiscalYears SET Name = @name, StartDate = @start, EndDate = @end, UpdatedAt = @now WHERE Id = @id",
+                conn, tx, ("@name", year.Name), ("@start", year.StartDate), ("@end", year.EndDate), ("@now", DateTime.Now), ("@id", year.Id));
+
+        public void SetYearClosed(DbConnection conn, DbTransaction tx, int id, DateTime closedAt, string closedBy, int? closingEntryId) =>
+            Exec("UPDATE FiscalYears SET IsClosed = @c, ClosedAt = @at, ClosedBy = @by, ClosingEntryId = @entry WHERE Id = @id",
+                conn, tx, ("@c", true), ("@at", closedAt), ("@by", closedBy), ("@entry", (object)closingEntryId), ("@id", id));
+
+        public void SetYearReopened(DbConnection conn, DbTransaction tx, int id) =>
+            Exec("UPDATE FiscalYears SET IsClosed = @c, ClosedAt = NULL, ClosedBy = NULL, ClosingEntryId = NULL WHERE Id = @id",
+                conn, tx, ("@c", false), ("@id", id));
+
+        public void SetCurrentYear(DbConnection conn, DbTransaction tx, int id)
         {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE FiscalYears SET Name = @name, StartDate = @start, EndDate = @end, UpdatedAt = @now WHERE Id = @id",
-                Db.Params(("@name", year.Name), ("@start", year.StartDate), ("@end", year.EndDate), ("@now", DateTime.Now), ("@id", year.Id)));
-            cmd.ExecuteNonQuery();
-        }
-
-        public static void SetYearClosed(DbConnection conn, DbTransaction tx, int id, DateTime closedAt, string closedBy, int? closingEntryId)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE FiscalYears SET IsClosed = @c, ClosedAt = @at, ClosedBy = @by, ClosingEntryId = @entry WHERE Id = @id",
-                Db.Params(("@c", true), ("@at", closedAt), ("@by", closedBy), ("@entry", (object)closingEntryId), ("@id", id)));
-            cmd.ExecuteNonQuery();
-        }
-
-        public static void SetYearReopened(DbConnection conn, DbTransaction tx, int id)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE FiscalYears SET IsClosed = @c, ClosedAt = NULL, ClosedBy = NULL, ClosingEntryId = NULL WHERE Id = @id",
-                Db.Params(("@c", false), ("@id", id)));
-            cmd.ExecuteNonQuery();
-        }
-
-        public static void SetCurrentYear(DbConnection conn, DbTransaction tx, int id)
-        {
-            using (var clearCmd = Db.CreateCommand(conn, tx, "UPDATE FiscalYears SET IsCurrent = @f", Db.Params(("@f", false))))
-                clearCmd.ExecuteNonQuery();
-
-            using var setCmd = Db.CreateCommand(conn, tx, "UPDATE FiscalYears SET IsCurrent = @t WHERE Id = @id", Db.Params(("@t", true), ("@id", id)));
-            setCmd.ExecuteNonQuery();
+            Exec("UPDATE FiscalYears SET IsCurrent = @f", conn, tx, ("@f", false));
+            Exec("UPDATE FiscalYears SET IsCurrent = @t WHERE Id = @id", conn, tx, ("@t", true), ("@id", id));
         }
 
         // ===== فترات =====
 
-        public static List<FiscalPeriod> GetPeriods(int yearId) =>
-            Db.Query("SELECT * FROM FiscalPeriods WHERE FiscalYearId = @y ORDER BY PeriodNo", Db.Params(("@y", yearId)))
-              .AsEnumerable().Select(MapPeriod).ToList();
+        public List<FiscalPeriod> GetPeriods(int yearId) =>
+            QueryAs(MapPeriod, "SELECT * FROM FiscalPeriods WHERE FiscalYearId = @y ORDER BY PeriodNo", null, null, ("@y", yearId));
 
-        public static FiscalPeriod GetPeriodById(int id) =>
-            Db.Query("SELECT * FROM FiscalPeriods WHERE Id = @id", Db.Params(("@id", id)))
-              .AsEnumerable().Select(MapPeriod).FirstOrDefault();
+        public FiscalPeriod GetPeriodById(int id) =>
+            QueryOneAs(MapPeriod, "SELECT * FROM FiscalPeriods WHERE Id = @id", null, null, ("@id", id));
 
-        public static FiscalPeriod GetPeriodContaining(string date) =>
-            Db.Query("SELECT * FROM FiscalPeriods WHERE @date >= StartDate AND @date <= EndDate", Db.Params(("@date", date)))
-              .AsEnumerable().Select(MapPeriod).FirstOrDefault();
+        public FiscalPeriod GetPeriodContaining(string date) =>
+            QueryOneAs(MapPeriod, "SELECT * FROM FiscalPeriods WHERE @date >= StartDate AND @date <= EndDate", null, null, ("@date", date));
 
-        public static void InsertPeriod(DbConnection conn, DbTransaction tx, FiscalPeriod period)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                @"INSERT INTO FiscalPeriods (FiscalYearId, PeriodNo, Name, StartDate, EndDate)
-                  VALUES (@year, @no, @name, @start, @end)",
-                Db.Params(
-                    ("@year", period.FiscalYearId), ("@no", period.PeriodNo), ("@name", period.Name),
-                    ("@start", period.StartDate), ("@end", period.EndDate)));
-            cmd.ExecuteNonQuery();
-        }
+        public void InsertPeriod(DbConnection conn, DbTransaction tx, FiscalPeriod period) =>
+            Exec(@"INSERT INTO FiscalPeriods (FiscalYearId, PeriodNo, Name, StartDate, EndDate) VALUES (@year, @no, @name, @start, @end)",
+                conn, tx,
+                ("@year", period.FiscalYearId), ("@no", period.PeriodNo), ("@name", period.Name),
+                ("@start", period.StartDate), ("@end", period.EndDate));
 
-        public static void UpdatePeriod(DbConnection conn, DbTransaction tx, FiscalPeriod period)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE FiscalPeriods SET Name = @name, StartDate = @start, EndDate = @end, UpdatedAt = @now WHERE Id = @id",
-                Db.Params(("@name", period.Name), ("@start", period.StartDate), ("@end", period.EndDate), ("@now", DateTime.Now), ("@id", period.Id)));
-            cmd.ExecuteNonQuery();
-        }
+        public void UpdatePeriod(DbConnection conn, DbTransaction tx, FiscalPeriod period) =>
+            Exec("UPDATE FiscalPeriods SET Name = @name, StartDate = @start, EndDate = @end, UpdatedAt = @now WHERE Id = @id",
+                conn, tx, ("@name", period.Name), ("@start", period.StartDate), ("@end", period.EndDate), ("@now", DateTime.Now), ("@id", period.Id));
 
-        public static void SetPeriodClosed(DbConnection conn, DbTransaction tx, int id, DateTime closedAt, string closedBy)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE FiscalPeriods SET IsClosed = @c, ClosedAt = @at, ClosedBy = @by WHERE Id = @id",
-                Db.Params(("@c", true), ("@at", closedAt), ("@by", closedBy), ("@id", id)));
-            cmd.ExecuteNonQuery();
-        }
+        public void SetPeriodClosed(DbConnection conn, DbTransaction tx, int id, DateTime closedAt, string closedBy) =>
+            Exec("UPDATE FiscalPeriods SET IsClosed = @c, ClosedAt = @at, ClosedBy = @by WHERE Id = @id",
+                conn, tx, ("@c", true), ("@at", closedAt), ("@by", closedBy), ("@id", id));
 
-        public static void SetPeriodReopened(DbConnection conn, DbTransaction tx, int id)
-        {
-            using var cmd = Db.CreateCommand(conn, tx,
-                "UPDATE FiscalPeriods SET IsClosed = @c, ClosedAt = NULL, ClosedBy = NULL WHERE Id = @id",
-                Db.Params(("@c", false), ("@id", id)));
-            cmd.ExecuteNonQuery();
-        }
+        public void SetPeriodReopened(DbConnection conn, DbTransaction tx, int id) =>
+            Exec("UPDATE FiscalPeriods SET IsClosed = @c, ClosedAt = NULL, ClosedBy = NULL WHERE Id = @id",
+                conn, tx, ("@c", false), ("@id", id));
     }
 }

@@ -28,36 +28,41 @@ namespace PrimeERP.Tests.Services
         private readonly IFiscalPeriodService _service;
         private readonly IAccountService _accounts;
         private readonly ISettingsService _settings;
+        private readonly IAccountRepository _accountRepo;
+        private readonly IJournalRepository _journalRepo;
+        private readonly IFiscalPeriodRepository _fiscalRepo;
 
         public FiscalPeriodServiceTests()
         {
             AppSession.DevMode = true;
-            // IJournalService الحقيقية مسجَّلة بالفعل في _db.Services (AddApplication) — لا تسجيل يدوي لازم.
             _service = _db.Services.GetRequiredService<IFiscalPeriodService>();
             _accounts = _db.Services.GetRequiredService<IAccountService>();
             _settings = _db.Services.GetRequiredService<ISettingsService>();
+            _accountRepo = _db.Services.GetRequiredService<IAccountRepository>();
+            _journalRepo = _db.Services.GetRequiredService<IJournalRepository>();
+            _fiscalRepo = _db.Services.GetRequiredService<IFiscalPeriodRepository>();
         }
 
         public void Dispose() => _db.Dispose();
 
-        private static int RevenueRootId() => AccountRepository.GetByCode("4100").Id;
-        private static int ExpenseRootId() => AccountRepository.GetByCode("5100").Id;
+        private int RevenueRootId() => _accountRepo.GetByCode("4100").Id;
+        private int ExpenseRootId() => _accountRepo.GetByCode("5100").Id;
 
-        private static void SeedPostedEntry(string date, params (string Code, decimal Debit, decimal Credit)[] lines) =>
+        private void SeedPostedEntry(string date, params (string Code, decimal Debit, decimal Credit)[] lines) =>
             SeedEntry(date, posted: true, lines);
 
-        private static void SeedEntry(string date, bool posted, params (string Code, decimal Debit, decimal Credit)[] lines)
+        private void SeedEntry(string date, bool posted, params (string Code, decimal Debit, decimal Credit)[] lines)
         {
             var id = Db.RunTransaction((conn, tx) =>
             {
                 var entry = new JournalEntry { EntryNo = $"TEST-{Guid.NewGuid():N}", EntryDate = date, Description = "test", Source = "test" };
-                var newId = JournalRepository.InsertHeader(conn, tx, entry);
+                var newId = _journalRepo.InsertHeader(conn, tx, entry);
                 int lineNo = 1;
                 foreach (var l in lines)
-                    JournalRepository.InsertLine(conn, tx, newId, lineNo++, new JournalLine { AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit });
+                    _journalRepo.InsertLine(conn, tx, newId, lineNo++, new JournalLine { AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit });
                 return newId;
             });
-            if (posted) JournalRepository.SetPosted(id, true);
+            if (posted) _journalRepo.SetPosted(id, true);
         }
 
         // ===================== CreateYear =====================
@@ -129,7 +134,7 @@ namespace PrimeERP.Tests.Services
         {
             var year = _service.CreateYear(new DateTime(2026, 1, 1), 12);
             Assert.True(year.IsSuccess);
-            Db.RunTransaction((conn, tx) => FiscalPeriodRepository.SetYearClosed(conn, tx, year.Value.Id, DateTime.Now, "test", null));
+            Db.RunTransaction((conn, tx) => _fiscalRepo.SetYearClosed(conn, tx, year.Value.Id, DateTime.Now, "test", null));
 
             var result = _service.SetCurrent(year.Value.Id);
 
@@ -172,7 +177,7 @@ namespace PrimeERP.Tests.Services
         public void IsOpen_ClosedYear_ReturnsFalse()
         {
             var year = _service.CreateYear(new DateTime(2026, 1, 1), 12);
-            Db.RunTransaction((conn, tx) => FiscalPeriodRepository.SetYearClosed(conn, tx, year.Value.Id, DateTime.Now, "test", null));
+            Db.RunTransaction((conn, tx) => _fiscalRepo.SetYearClosed(conn, tx, year.Value.Id, DateTime.Now, "test", null));
 
             Assert.False(_service.IsOpen(new DateTime(2026, 3, 1)));
         }
@@ -261,11 +266,11 @@ namespace PrimeERP.Tests.Services
             var closeYear = _service.CloseYear(year.Value.Id);
             Assert.True(closeYear.IsSuccess, closeYear.ErrorMessage);
 
-            var closedYear = FiscalPeriodRepository.GetYearById(year.Value.Id);
+            var closedYear = _fiscalRepo.GetYearById(year.Value.Id);
             Assert.True(closedYear.IsClosed);
             Assert.NotNull(closedYear.ClosingEntryId);
 
-            var lines = JournalRepository.GetLines(closedYear.ClosingEntryId.Value);
+            var lines = _journalRepo.GetLines(closedYear.ClosingEntryId.Value);
             Assert.Equal(lines.Sum(l => l.Debit), lines.Sum(l => l.Credit));
 
             var revenueLine = lines.Single(l => l.AccountCode == revenueAccount.Value.Code);
@@ -297,16 +302,16 @@ namespace PrimeERP.Tests.Services
             var closeResult = _service.CloseYear(year.Value.Id);
             Assert.True(closeResult.IsSuccess, closeResult.ErrorMessage);
 
-            var closingEntryId = FiscalPeriodRepository.GetYearById(year.Value.Id).ClosingEntryId;
+            var closingEntryId = _fiscalRepo.GetYearById(year.Value.Id).ClosingEntryId;
             Assert.NotNull(closingEntryId);
 
             var reopenResult = _service.ReopenYear(year.Value.Id);
             Assert.True(reopenResult.IsSuccess, reopenResult.ErrorMessage);
 
-            var reopenedYear = FiscalPeriodRepository.GetYearById(year.Value.Id);
+            var reopenedYear = _fiscalRepo.GetYearById(year.Value.Id);
             Assert.False(reopenedYear.IsClosed);
             Assert.Null(reopenedYear.ClosingEntryId);
-            Assert.Null(JournalRepository.GetById(closingEntryId.Value));
+            Assert.Null(_journalRepo.GetById(closingEntryId.Value));
         }
 
         // ===================== الصلاحيات =====================

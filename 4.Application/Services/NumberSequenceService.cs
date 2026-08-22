@@ -15,24 +15,28 @@ namespace PrimeERP.Application.Services
     /// </summary>
     public class NumberSequenceService : INumberSequenceService
     {
+        private readonly INumberSequenceRepository _repo;
+
+        public NumberSequenceService(INumberSequenceRepository repo) => _repo = repo;
+
         public string Peek(string key)
         {
-            NumberSequenceRepository.EnsureRow(key);
-            var row = NumberSequenceRepository.GetRow(key);
+            _repo.EnsureRow(key);
+            var row = _repo.GetRow(key);
             return Format(row.Prefix, DateTime.Now.Year, row.NextNumber, row.Padding);
         }
 
         public string Next(string key)
         {
-            NumberSequenceRepository.EnsureRow(key);
+            _repo.EnsureRow(key);
 
             return Db.RunTransaction((conn, tx) =>
             {
-                var row = NumberSequenceRepository.GetRow(conn, tx, key);
+                var row = _repo.GetRow(conn, tx, key);
                 var year = DateTime.Now.Year;
                 var number = row.ResetYearly && row.LastYear != year ? 1 : row.NextNumber;
 
-                NumberSequenceRepository.UpdateNext(conn, tx, key, number + 1, year);
+                _repo.UpdateNext(conn, tx, key, number + 1, year);
 
                 return Format(row.Prefix, year, number, row.Padding);
             });
@@ -40,13 +44,13 @@ namespace PrimeERP.Application.Services
 
         public string Next(DbConnection conn, DbTransaction tx, string key)
         {
-            NumberSequenceRepository.EnsureRow(conn, tx, key);
+            _repo.EnsureRow(conn, tx, key);
 
-            var row = NumberSequenceRepository.GetRow(conn, tx, key);
+            var row = _repo.GetRow(conn, tx, key);
             var year = DateTime.Now.Year;
             var number = row.ResetYearly && row.LastYear != year ? 1 : row.NextNumber;
 
-            NumberSequenceRepository.UpdateNext(conn, tx, key, number + 1, year);
+            _repo.UpdateNext(conn, tx, key, number + 1, year);
 
             return Format(row.Prefix, year, number, row.Padding);
         }

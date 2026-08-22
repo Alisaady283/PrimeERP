@@ -26,14 +26,18 @@ namespace PrimeERP.Application.Services.Accounting
     {
         private readonly IPermissionService _permissions;
         private readonly ISettingsService _settings;
+        private readonly IAccountRepository _accounts;
+        private readonly IJournalRepository _journal;
 
         /// <summary>لحلّ ICustomerService/ISupplierService اختيارياً (قد لا تكونا مسجَّلتين — ISupplierService لم يُبنَ تنفيذها بعد) — بديل ServiceLocator.TryGet عبر IServiceProvider.GetService (يرجع null لا استثناء لو غير مسجَّلة).</summary>
         private readonly IServiceProvider _services;
 
-        public AccountService(IPermissionService permissions, ISettingsService settings, IServiceProvider services)
+        public AccountService(IPermissionService permissions, ISettingsService settings, IAccountRepository accounts, IJournalRepository journal, IServiceProvider services)
         {
             _permissions = permissions;
             _settings = settings;
+            _accounts = accounts;
+            _journal = journal;
             _services = services;
         }
 
@@ -47,7 +51,7 @@ namespace PrimeERP.Application.Services.Accounting
                 return Result.Fail<List<AccountTreeNode>>(Denied, ErrorCode.Unauthorized);
 
             filter ??= new AccountTreeFilter();
-            var all = AccountRepository.GetAll(filter.IncludeInactive);
+            var all = _accounts.GetAll(filter.IncludeInactive);
             var matched = ApplyFlatFilter(all, filter);
 
             var keepCodes = new HashSet<string>(matched.Select(a => a.Code));
@@ -70,7 +74,7 @@ namespace PrimeERP.Application.Services.Accounting
                 return Result.Fail<PagedResult<AccountDto>>(Denied, ErrorCode.Unauthorized);
 
             filter ??= new AccountTreeFilter();
-            var all = AccountRepository.GetAll(filter.IncludeInactive);
+            var all = _accounts.GetAll(filter.IncludeInactive);
             var filtered = ApplyFlatFilter(all, filter);
 
             var items = filtered
@@ -93,7 +97,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Accounts.View))
                 return Result.Fail<List<AccountDto>>(Denied, ErrorCode.Unauthorized);
 
-            var all = AccountRepository.GetAll();
+            var all = _accounts.GetAll();
             var leaves = all.Where(a => a.IsLeaf && (type == null || a.Type == (int)type.Value))
                             .OrderBy(a => a.Code).ToList();
 
@@ -105,11 +109,11 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Accounts.View))
                 return Result.Fail<AccountDto>(Denied, ErrorCode.Unauthorized);
 
-            var account = AccountRepository.GetById(id);
+            var account = _accounts.GetById(id);
             if (account == null)
                 return Result.Fail<AccountDto>("الحساب غير موجود", ErrorCode.NotFound);
 
-            return Result.Ok(ToDto(account, AccountRepository.GetAll(true)));
+            return Result.Ok(ToDto(account, _accounts.GetAll(true)));
         }
 
         public Result<AccountDto> GetByCode(string code)
@@ -117,11 +121,11 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Accounts.View))
                 return Result.Fail<AccountDto>(Denied, ErrorCode.Unauthorized);
 
-            var account = AccountRepository.GetByCode(code);
+            var account = _accounts.GetByCode(code);
             if (account == null)
                 return Result.Fail<AccountDto>("الحساب غير موجود", ErrorCode.NotFound);
 
-            return Result.Ok(ToDto(account, AccountRepository.GetAll(true)));
+            return Result.Ok(ToDto(account, _accounts.GetAll(true)));
         }
 
         public Result<string> GenerateChildCode(int parentId)
@@ -129,7 +133,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Accounts.Create))
                 return Result.Fail<string>(Denied, ErrorCode.Unauthorized);
 
-            var parent = AccountRepository.GetById(parentId);
+            var parent = _accounts.GetById(parentId);
             if (parent == null)
                 return Result.Fail<string>("الحساب الأب غير موجود", ErrorCode.NotFound);
 
@@ -143,7 +147,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Accounts.Create))
                 return Result.Fail<AccountDto>(Denied, ErrorCode.Unauthorized);
 
-            var parent = AccountRepository.GetById(dto.ParentId);
+            var parent = _accounts.GetById(dto.ParentId);
             if (parent == null)
                 return Result.Fail<AccountDto>("الحساب الأب غير موجود", ErrorCode.NotFound);
 
@@ -156,7 +160,7 @@ namespace PrimeERP.Application.Services.Accounting
             var code = GenerateChildCodeInternal(parent.Code);
             var account = BuildNewAccount(dto, parent, code);
 
-            var validation = new AccountValidator(isEdit: false).Validate(account);
+            var validation = new AccountValidator(_accounts, isEdit: false).Validate(account);
             if (!validation.IsValid)
                 return Result.Fail<AccountDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
 
@@ -166,7 +170,7 @@ namespace PrimeERP.Application.Services.Accounting
 
             var newId = Db.RunTransaction((conn, tx) =>
             {
-                var id = AccountRepository.Insert(conn, tx, account);
+                var id = _accounts.Insert(account, conn, tx);
                 account.Id = id;
 
                 if (link.Value.AutoLinkEnabled)
@@ -181,8 +185,8 @@ namespace PrimeERP.Application.Services.Accounting
 
             Auditor.Log("Accounts", newId, AuditAction.Insert, newValue: new { account.Code, account.Name });
 
-            var created = AccountRepository.GetById(newId);
-            return Result.Ok(ToDto(created, AccountRepository.GetAll(true)));
+            var created = _accounts.GetById(newId);
+            return Result.Ok(ToDto(created, _accounts.GetAll(true)));
         }
 
         /// <summary>
@@ -192,12 +196,12 @@ namespace PrimeERP.Application.Services.Accounting
         /// Create). كل قراءة هنا عبر (conn,tx) القائمة صراحة — بما فيها AccountValidator (checkUniqueness:false؛
         /// الكود مولَّد برمجياً بحساب أقصى رقم فرعي حالي + 1، لا يمكن أن يتصادم بحكم طريقة توليده، فإعادة
         /// التحقق عبر استعلام DB منفصل — الذي كان سيحتاج معالجة (conn,tx) خاصة به أصلاً — تكرار غير ضروري).
-        /// يبني AccountDto مباشرة من البيانات المتوفرة بلا إعادة قراءة (ToDto العادية تستدعي JournalRepository.
+        /// يبني AccountDto مباشرة من البيانات المتوفرة بلا إعادة قراءة (ToDto العادية تستدعي _journal.
         /// HasLinesForAccount و_settings.GetSection غير الآمنين هنا — راجع BuildFreshAccountDto).
         /// </summary>
         public Result<AccountDto> Create(DbConnection conn, DbTransaction tx, CreateAccountDto dto)
         {
-            var parent = AccountRepository.GetById(conn, tx, dto.ParentId);
+            var parent = _accounts.GetById(dto.ParentId, conn, tx);
             if (parent == null)
                 return Result.Fail<AccountDto>("الحساب الأب غير موجود", ErrorCode.NotFound);
 
@@ -207,11 +211,11 @@ namespace PrimeERP.Application.Services.Accounting
             var code = GenerateChildCodeInternal(conn, tx, parent.Code);
             var account = BuildNewAccount(dto, parent, code);
 
-            var validation = new AccountValidator(isEdit: false, checkUniqueness: false).Validate(account);
+            var validation = new AccountValidator(_accounts, isEdit: false, checkUniqueness: false).Validate(account);
             if (!validation.IsValid)
                 return Result.Fail<AccountDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
 
-            var id = AccountRepository.Insert(conn, tx, account);
+            var id = _accounts.Insert(account, conn, tx);
             account.Id = id;
 
             // لا منطق ربط هنا إطلاقاً — dto.SkipAutoLink=true دائماً في هذا المسار.
@@ -224,17 +228,17 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Accounts.Edit))
                 return Result.Fail(Denied, ErrorCode.Unauthorized);
 
-            var account = AccountRepository.GetById(dto.Id);
+            var account = _accounts.GetById(dto.Id);
             if (account == null)
                 return Result.Fail("الحساب غير موجود", ErrorCode.NotFound);
 
             if (IsSystemAccount(account.Code) && !_permissions.Can(PermissionKeys.Settings.System))
                 return Result.Fail(LocalizationService.Get("Str.Settings.SystemPermissionDenied"), ErrorCode.Unauthorized);
 
-            if (dto.IsLeaf && !account.IsLeaf && AccountRepository.HasChildren(account.Code))
+            if (dto.IsLeaf && !account.IsLeaf && _accounts.HasChildren(account.Code))
                 return Result.Fail("لا يمكن جعل الحساب فرعياً (Leaf) وله حسابات أبناء", ErrorCode.ValidationFailed);
 
-            if (!dto.IsLeaf && account.IsLeaf && JournalRepository.HasLinesForAccount(account.Code))
+            if (!dto.IsLeaf && account.IsLeaf && _journal.HasLinesForAccount(account.Code))
                 return Result.Fail("لا يمكن تحويل الحساب لأب وله قيود مسجَّلة عليه مباشرة", ErrorCode.ValidationFailed);
 
             var nameChanged = account.Name != dto.Name; // قبل الاستبدال أدناه
@@ -243,7 +247,7 @@ namespace PrimeERP.Application.Services.Accounting
             account.Notes  = dto.Notes;
             account.IsLeaf = dto.IsLeaf;
 
-            var validation = new AccountValidator(isEdit: true).Validate(account);
+            var validation = new AccountValidator(_accounts, isEdit: true).Validate(account);
             if (!validation.IsValid)
                 return Result.Fail(validation.Errors.Values.ToList(), ErrorCode.ValidationFailed);
 
@@ -260,7 +264,7 @@ namespace PrimeERP.Application.Services.Accounting
 
             Db.RunTransaction((conn, tx) =>
             {
-                AccountRepository.Update(conn, tx, account);
+                _accounts.Update(account, conn, tx);
 
                 if (nameChanged && link.Value.AutoLinkEnabled)
                 {
@@ -278,17 +282,17 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Accounts.Delete))
                 return Result.Fail(Denied, ErrorCode.Unauthorized);
 
-            var account = AccountRepository.GetById(id);
+            var account = _accounts.GetById(id);
             if (account == null)
                 return Result.Fail("الحساب غير موجود", ErrorCode.NotFound);
 
             if (IsSystemAccount(account.Code))
                 return Result.Fail("لا يمكن حذف حساب نظامي", ErrorCode.ValidationFailed);
 
-            if (AccountRepository.HasChildren(account.Code))
+            if (_accounts.HasChildren(account.Code))
                 return Result.Fail("لا يمكن حذف حساب له حسابات أبناء", ErrorCode.ValidationFailed);
 
-            if (JournalRepository.HasLinesForAccount(account.Code))
+            if (_journal.HasLinesForAccount(account.Code))
                 return Result.Fail("لا يمكن حذف حساب له قيود مسجَّلة", ErrorCode.ValidationFailed);
 
             var link = ResolveAutoLink(skipAutoLink: false, account.ParentCode);
@@ -297,7 +301,7 @@ namespace PrimeERP.Application.Services.Accounting
 
             Db.RunTransaction((conn, tx) =>
             {
-                AccountRepository.Delete(conn, tx, account.Code);
+                _accounts.Delete(account.Code, conn, tx);
 
                 if (link.Value.AutoLinkEnabled)
                 {
@@ -313,14 +317,14 @@ namespace PrimeERP.Application.Services.Accounting
         /// <summary>بمعاملة خارجية، بالكود مباشرة (لا Id — المستدعي يملكه بالفعل) — يخدم CustomerService/SupplierService.Delete. بلا تحقق قيود/أبناء (تحقّقها المستدعي قبل فتح معاملته) وبلا استدعاء DeleteByAccountCode عكسياً هنا (يمنع حلقة ping-pong — الطرف المرتبط يحذف نفسه هو، لا AccountService ينوب عنه).</summary>
         public Result Delete(DbConnection conn, DbTransaction tx, string accountCode)
         {
-            AccountRepository.Delete(conn, tx, accountCode);
+            _accounts.Delete(accountCode, conn, tx);
             return Result.Ok();
         }
 
         /// <summary>يزامن اسم حساب من تعديل الطرف المرتبط (عميل/مورد) — الاسم فقط، بلا تحقق تحويل Leaf أو صلاحية Settings.System (غير ذي صلة لحساب طرف مرتبط دائماً Leaf وليس نظامياً). يخدم CustomerService/SupplierService.Update ضمن معاملتهما.</summary>
         public Result UpdateName(DbConnection conn, DbTransaction tx, string accountCode, string name)
         {
-            AccountRepository.UpdateName(conn, tx, accountCode, name);
+            _accounts.UpdateName(conn, tx, accountCode, name);
             return Result.Ok();
         }
 
@@ -331,12 +335,12 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Accounts.Edit))
                 return Result.Fail(Denied, ErrorCode.Unauthorized);
 
-            var account = AccountRepository.GetByCode(code);
+            var account = _accounts.GetByCode(code);
             if (account == null)
                 return Result.Fail("الحساب غير موجود", ErrorCode.NotFound);
 
             var balance = ComputeBalance(code);
-            Db.RunTransaction((conn, tx) => AccountRepository.UpdateBalance(conn, tx, code, balance));
+            Db.RunTransaction((conn, tx) => _accounts.UpdateBalance(code, balance, conn, tx));
 
             Auditor.Log("Accounts", account.Id, AuditAction.Update, details: $"إعادة حساب رصيد {code}: {balance:N2}");
             return Result.Ok();
@@ -349,27 +353,27 @@ namespace PrimeERP.Application.Services.Accounting
         /// </summary>
         public Result RecalculateBalance(DbConnection conn, DbTransaction tx, string code)
         {
-            AccountRepository.UpdateBalance(conn, tx, code, ComputeBalance(conn, tx, code));
+            _accounts.UpdateBalance(code, ComputeBalance(conn, tx, code), conn, tx);
             return Result.Ok();
         }
 
-        private static decimal ComputeBalance(string code) =>
-            JournalRepository.GetPostedLinesForAccount(code, null, null).Sum(l => l.Debit - l.Credit);
+        private decimal ComputeBalance(string code) =>
+            _journal.GetPostedLinesForAccount(code, null, null).Sum(l => l.Debit - l.Credit);
 
-        private static decimal ComputeBalance(DbConnection conn, DbTransaction tx, string code) =>
-            JournalRepository.GetPostedLinesForAccount(conn, tx, code, null, null).Sum(l => l.Debit - l.Credit);
+        private decimal ComputeBalance(DbConnection conn, DbTransaction tx, string code) =>
+            _journal.GetPostedLinesForAccount(code, null, null, conn, tx).Sum(l => l.Debit - l.Credit);
 
         public Result RecalculateAllBalances()
         {
             if (!_permissions.Can(PermissionKeys.Accounts.Edit))
                 return Result.Fail(Denied, ErrorCode.Unauthorized);
 
-            var leaves = AccountRepository.GetLeaves();
+            var leaves = _accounts.GetLeaves();
 
             Db.RunTransaction((conn, tx) =>
             {
                 foreach (var account in leaves)
-                    AccountRepository.UpdateBalance(conn, tx, account.Code, ComputeBalance(account.Code));
+                    _accounts.UpdateBalance(account.Code, ComputeBalance(account.Code), conn, tx);
             });
 
             Auditor.Log("Accounts", 0, AuditAction.Update, details: $"إعادة حساب كل الأرصدة ({leaves.Count} حساب)");
@@ -381,11 +385,11 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Accounts.View))
                 return Result.Fail<decimal>(Denied, ErrorCode.Unauthorized);
 
-            var account = AccountRepository.GetByCode(code);
+            var account = _accounts.GetByCode(code);
             if (account == null)
                 return Result.Fail<decimal>("الحساب غير موجود", ErrorCode.NotFound);
 
-            var lines = JournalRepository.GetPostedLinesForAccount(code, null, date);
+            var lines = _journal.GetPostedLinesForAccount(code, null, date);
             return Result.Ok(lines.Sum(l => l.Debit - l.Credit));
         }
 
@@ -394,11 +398,11 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_permissions.Can(PermissionKeys.Accounts.View))
                 return Result.Fail<List<AccountStatementLine>>(Denied, ErrorCode.Unauthorized);
 
-            var account = AccountRepository.GetByCode(code);
+            var account = _accounts.GetByCode(code);
             if (account == null)
                 return Result.Fail<List<AccountStatementLine>>("الحساب غير موجود", ErrorCode.NotFound);
 
-            var openingLines = JournalRepository.GetPostedLinesForAccount(code, null, from.AddDays(-1));
+            var openingLines = _journal.GetPostedLinesForAccount(code, null, from.AddDays(-1));
             var running = openingLines.Sum(l => l.Debit - l.Credit);
 
             var result = new List<AccountStatementLine>
@@ -415,7 +419,7 @@ namespace PrimeERP.Application.Services.Accounting
                 }
             };
 
-            foreach (var line in JournalRepository.GetPostedLinesForAccount(code, from, to))
+            foreach (var line in _journal.GetPostedLinesForAccount(code, from, to))
             {
                 running += line.Debit - line.Credit;
                 result.Add(new AccountStatementLine
@@ -440,7 +444,7 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result<bool> CanAcceptEntries(string code)
         {
-            var account = AccountRepository.GetByCode(code);
+            var account = _accounts.GetByCode(code);
             if (account == null)
                 return Result.Fail<bool>("الحساب غير موجود", ErrorCode.NotFound);
 
@@ -449,16 +453,16 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result<bool> CanHaveChildren(string code)
         {
-            var account = AccountRepository.GetByCode(code);
+            var account = _accounts.GetByCode(code);
             if (account == null)
                 return Result.Fail<bool>("الحساب غير موجود", ErrorCode.NotFound);
 
-            return Result.Ok(!JournalRepository.HasLinesForAccount(code));
+            return Result.Ok(!_journal.HasLinesForAccount(code));
         }
 
         public Result<AccountType> GetTypeOf(string code)
         {
-            var account = AccountRepository.GetByCode(code);
+            var account = _accounts.GetByCode(code);
             if (account == null)
                 return Result.Fail<AccountType>("الحساب غير موجود", ErrorCode.NotFound);
 
@@ -528,12 +532,12 @@ namespace PrimeERP.Application.Services.Accounting
             return Result.Ok(resolution);
         }
 
-        private static string GenerateChildCodeInternal(string parentCode) =>
-            BuildChildCode(parentCode, AccountRepository.GetChildren(parentCode));
+        private string GenerateChildCodeInternal(string parentCode) =>
+            BuildChildCode(parentCode, _accounts.GetChildren(parentCode));
 
         /// <summary>نفس GenerateChildCodeInternal أعلاه من داخل معاملة قائمة — تستخدمها Create(conn,tx,...).</summary>
-        private static string GenerateChildCodeInternal(DbConnection conn, DbTransaction tx, string parentCode) =>
-            BuildChildCode(parentCode, AccountRepository.GetChildren(conn, tx, parentCode));
+        private string GenerateChildCodeInternal(DbConnection conn, DbTransaction tx, string parentCode) =>
+            BuildChildCode(parentCode, _accounts.GetChildren(parentCode, conn, tx));
 
         private static string BuildChildCode(string parentCode, List<Account> children)
         {
@@ -550,7 +554,7 @@ namespace PrimeERP.Application.Services.Accounting
             return parentCode + (max + 1).ToString("D3");
         }
 
-        /// <summary>يبني AccountDto من بيانات لحظة الإنشاء مباشرة، بلا إعادة قراءة من DB — حساب جديد فعلياً لا أبناء/قيود/علم نظامي له بحكم كونه جديداً (لا تنازل، إجابة صحيحة فعلاً لا تقريب). يخدم Create(conn,tx,...) تفادياً لقراءات JournalRepository.HasLinesForAccount/_settings.GetSection غير الآمنتين داخل معاملة خارجية.</summary>
+        /// <summary>يبني AccountDto من بيانات لحظة الإنشاء مباشرة، بلا إعادة قراءة من DB — حساب جديد فعلياً لا أبناء/قيود/علم نظامي له بحكم كونه جديداً (لا تنازل، إجابة صحيحة فعلاً لا تقريب). يخدم Create(conn,tx,...) تفادياً لقراءات _journal.HasLinesForAccount/_settings.GetSection غير الآمنتين داخل معاملة خارجية.</summary>
         private static AccountDto BuildFreshAccountDto(Account a, Account parent) => new()
         {
             Id               = a.Id,
@@ -645,7 +649,7 @@ namespace PrimeERP.Application.Services.Accounting
                 LinkedEntityId   = null,
                 HasChildren      = allAccounts.Any(x => x.ParentCode == a.Code),
                 // استعلام لكل حساب — مقبول لحجم شجرة حسابات نموذجي؛ يُستبدل باستعلام مجمَّع واحد لو كبر العدد كثيراً.
-                HasTransactions  = JournalRepository.HasLinesForAccount(a.Code),
+                HasTransactions  = _journal.HasLinesForAccount(a.Code),
                 IsSystem         = IsSystemAccount(a.Code),
                 StatusVariant    = a.IsActive ? StatusVariant.Success : StatusVariant.Danger
             };

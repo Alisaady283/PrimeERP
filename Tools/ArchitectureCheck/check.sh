@@ -100,6 +100,13 @@ done
 section "2 — حدود المسؤولية"
 # ============================================================
 
+# استدعاء ساكن لمستودع (Repository) في أي مكان — كلها instance class منذ R5، تُحقن عبر المُنشئ.
+n=$(grep -rlE "\b(Account|Customer|Journal|FiscalPeriod|NumberSequence|Backup)Repository\.[A-Za-z]" --include="*.cs" 1.Platform 2.Data 3.Domain 4.Application 5.Design 6.UI 7.Composition 8.Modules App PrimeERP.Tests 2>/dev/null | grep -v "2.Data/Repositories/")
+if [ -n "$n" ]; then
+  fail "استدعاء ساكن لمستودع (يجب حقن الواجهة عبر المُنشئ):"
+  echo "$n" | sed 's/^/       /'
+else pass; fi
+
 # Repository يُستدعى مباشرة من ViewModel/Page/Control (6.UI/7.Composition/8.Modules)
 n=$(grep -rl "using PrimeERP\.Data\.Repositories\b" 6.UI 7.Composition 8.Modules --include="*.cs" 2>/dev/null | wc -l)
 if [ "$n" -gt 0 ]; then

@@ -27,12 +27,14 @@ namespace PrimeERP.Application.Services.Backup
     {
         private readonly IPermissionService _permissions;
         private readonly ISettingsService _settings;
+        private readonly IBackupRepository _repo;
         private Timer _autoTimer;
 
-        public BackupService(IPermissionService permissions, ISettingsService settings)
+        public BackupService(IPermissionService permissions, ISettingsService settings, IBackupRepository repo)
         {
             _permissions = permissions;
             _settings = settings;
+            _repo = repo;
         }
 
         public event Action<BackupInfo> BackupCompleted;
@@ -70,7 +72,7 @@ namespace PrimeERP.Application.Services.Backup
                     IsValid          = true
                 };
 
-                var id = BackupRepository.Insert(record);
+                var id = _repo.Insert(record);
                 Auditor.Log("BackupHistory", id, AuditAction.Insert,
                     newValue: new { record.FileName, record.SizeBytes }, details: $"إنشاء نسخة احتياطية ({type})");
 
@@ -203,7 +205,7 @@ namespace PrimeERP.Application.Services.Backup
         }
 
         public List<BackupInfo> List(string folder = null) =>
-            BackupRepository.GetAll()
+            _repo.GetAll()
                 .Where(r => folder == null || string.Equals(Path.GetDirectoryName(r.FilePath), folder, StringComparison.OrdinalIgnoreCase))
                 .Select(ToInfo)
                 .ToList();
@@ -218,9 +220,9 @@ namespace PrimeERP.Application.Services.Backup
                 if (File.Exists(filePath))
                     File.Delete(filePath);
 
-                var record = BackupRepository.GetAll().FirstOrDefault(r => string.Equals(r.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
+                var record = _repo.GetAll().FirstOrDefault(r => string.Equals(r.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
                 if (record != null)
-                    BackupRepository.Delete(record.Id);
+                    _repo.Delete(record.Id);
 
                 Auditor.Log("BackupHistory", record?.Id ?? 0, AuditAction.Delete, details: Path.GetFileName(filePath));
                 return Result.Ok();
@@ -235,7 +237,7 @@ namespace PrimeERP.Application.Services.Backup
         {
             try
             {
-                var toRemove = BackupRepository.GetAll()
+                var toRemove = _repo.GetAll()
                     .Where(r => string.Equals(Path.GetDirectoryName(r.FilePath), folder, StringComparison.OrdinalIgnoreCase))
                     .OrderByDescending(r => r.CreatedAt)
                     .Skip(Math.Max(0, keepCount));
@@ -244,7 +246,7 @@ namespace PrimeERP.Application.Services.Backup
                 {
                     if (File.Exists(old.FilePath))
                         File.Delete(old.FilePath);
-                    BackupRepository.Delete(old.Id);
+                    _repo.Delete(old.Id);
                 }
 
                 return Result.Ok();

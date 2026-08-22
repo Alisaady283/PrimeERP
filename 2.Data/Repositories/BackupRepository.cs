@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Data.Core;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Data.Schema;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Data.Repositories
 {
@@ -27,10 +26,11 @@ namespace PrimeERP.Data.Repositories
     }
 
     /// <summary>طبقة وصول بيانات سجل النسخ الاحتياطية — SQL خام ↔ BackupHistoryRecord فقط. بلا تحقق ملفات ولا نسخ فعلي ولا حساب retention (كلها في BackupService).</summary>
-    public static class BackupRepository
+    public class BackupRepository : RepositoryBase<BackupHistoryRecord>, IBackupRepository
     {
-        public static void CreateTable()
-        {
+        protected override string TableName => "BackupHistory";
+
+        public void CreateTable() =>
             SchemaBuilder.Table("BackupHistory")
                 .Id()
                 .Text("FileName", 260, required: true)
@@ -44,9 +44,8 @@ namespace PrimeERP.Data.Repositories
                 .Bool("IsValid", defaultValue: true)
                 .Text("ValidationMessage", 500)
                 .Create();
-        }
 
-        private static BackupHistoryRecord Map(DataRow row) => new()
+        protected override BackupHistoryRecord Map(DataRow row) => new()
         {
             Id                = Convert.ToInt32(row["Id"]),
             FileName          = row["FileName"].ToString(),
@@ -61,41 +60,27 @@ namespace PrimeERP.Data.Repositories
             ValidationMessage = row["ValidationMessage"] == DBNull.Value ? null : row["ValidationMessage"].ToString()
         };
 
-        public static List<BackupHistoryRecord> GetAll() =>
-            Db.Query("SELECT * FROM BackupHistory ORDER BY CreatedAt DESC").AsEnumerable().Select(Map).ToList();
+        public override List<BackupHistoryRecord> GetAll(DbConnection conn = null, DbTransaction tx = null) =>
+            Query("SELECT * FROM BackupHistory ORDER BY CreatedAt DESC", conn, tx);
 
-        public static List<BackupHistoryRecord> GetRecent(int count) =>
-            Db.Query($"SELECT * FROM BackupHistory ORDER BY CreatedAt DESC {DbFactory.Current.LimitClause(0, count)}")
-              .AsEnumerable().Select(Map).ToList();
+        public List<BackupHistoryRecord> GetRecent(int count) =>
+            Query($"SELECT * FROM BackupHistory ORDER BY CreatedAt DESC {DbFactory.Current.LimitClause(0, count)}");
 
-        public static BackupHistoryRecord GetById(int id) =>
-            Db.Query("SELECT * FROM BackupHistory WHERE Id = @id", Db.Params(("@id", id)))
-              .AsEnumerable().Select(Map).FirstOrDefault();
+        public int Insert(BackupHistoryRecord record) => Insert(null, null, record);
 
-        public static int Insert(BackupHistoryRecord record) =>
-            Db.InsertAndGetId(
+        public int Insert(DbConnection conn, DbTransaction tx, BackupHistoryRecord record) =>
+            InsertGetId(
                 @"INSERT INTO BackupHistory (FileName, FilePath, SizeBytes, CreatedAt, CreatedBy, Note, BackupType, DatabaseProvider, IsValid, ValidationMessage)
                   VALUES (@fn, @fp, @sz, @ca, @cb, @note, @bt, @dp, @iv, @vm)",
-                Db.Params(
-                    ("@fn", record.FileName), ("@fp", record.FilePath), ("@sz", record.SizeBytes),
-                    ("@ca", record.CreatedAt), ("@cb", record.CreatedBy), ("@note", record.Note ?? ""),
-                    ("@bt", (int)record.BackupType), ("@dp", record.DatabaseProvider),
-                    ("@iv", record.IsValid), ("@vm", record.ValidationMessage)));
+                conn, tx,
+                ("@fn", record.FileName), ("@fp", record.FilePath), ("@sz", record.SizeBytes),
+                ("@ca", record.CreatedAt), ("@cb", record.CreatedBy), ("@note", record.Note ?? ""),
+                ("@bt", (int)record.BackupType), ("@dp", record.DatabaseProvider),
+                ("@iv", record.IsValid), ("@vm", record.ValidationMessage));
 
-        public static int Insert(DbConnection conn, DbTransaction tx, BackupHistoryRecord record) =>
-            Db.InsertAndGetId(conn, tx,
-                @"INSERT INTO BackupHistory (FileName, FilePath, SizeBytes, CreatedAt, CreatedBy, Note, BackupType, DatabaseProvider, IsValid, ValidationMessage)
-                  VALUES (@fn, @fp, @sz, @ca, @cb, @note, @bt, @dp, @iv, @vm)",
-                Db.Params(
-                    ("@fn", record.FileName), ("@fp", record.FilePath), ("@sz", record.SizeBytes),
-                    ("@ca", record.CreatedAt), ("@cb", record.CreatedBy), ("@note", record.Note ?? ""),
-                    ("@bt", (int)record.BackupType), ("@dp", record.DatabaseProvider),
-                    ("@iv", record.IsValid), ("@vm", record.ValidationMessage)));
+        public void Delete(int id) => Exec("DELETE FROM BackupHistory WHERE Id = @id", null, null, ("@id", id));
 
-        public static void Delete(int id) =>
-            Db.Execute("DELETE FROM BackupHistory WHERE Id = @id", Db.Params(("@id", id)));
-
-        public static void DeleteOlderThan(DateTime cutoff) =>
-            Db.Execute("DELETE FROM BackupHistory WHERE CreatedAt < @cutoff", Db.Params(("@cutoff", cutoff)));
+        public void DeleteOlderThan(DateTime cutoff) =>
+            Exec("DELETE FROM BackupHistory WHERE CreatedAt < @cutoff", null, null, ("@cutoff", cutoff));
     }
 }

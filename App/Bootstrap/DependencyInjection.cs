@@ -5,6 +5,7 @@ using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.Services.Backup;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.Services.Print;
+using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Platform.Design;
 using PrimeERP.Platform.Permissions;
@@ -28,9 +29,16 @@ namespace PrimeERP.App.Bootstrap
             return services;
         }
 
-        /// <summary>لا خدمات حقيقية لهذه الطبقة بعد — المستودعات (2.Data/Repositories) كلاسات static صرفة،
-        /// لا حالة قابلة للحقن حتى تُبنى RepositoryBase في R5. موجودة هنا لإكمال شكل الطبقات الخمس المطلوب.</summary>
-        public static IServiceCollection AddData(this IServiceCollection services) => services;
+        public static IServiceCollection AddData(this IServiceCollection services)
+        {
+            services.AddSingleton<IAccountRepository, AccountRepository>();
+            services.AddSingleton<ICustomerRepository, CustomerRepository>();
+            services.AddSingleton<IJournalRepository, JournalRepository>();
+            services.AddSingleton<IFiscalPeriodRepository, FiscalPeriodRepository>();
+            services.AddSingleton<INumberSequenceRepository, NumberSequenceRepository>();
+            services.AddSingleton<IBackupRepository, BackupRepository>();
+            return services;
+        }
 
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
