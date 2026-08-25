@@ -7,23 +7,11 @@ namespace PrimeERP.Platform.Permissions
 {
     public class PermissionService : IPermissionService
     {
-        public bool Can(string key)
-        {
-            if (AppSession.DevMode) return true;
-            return AppSession.Permissions.Contains(key);
-        }
+        public bool Can(string key) => AppSession.DevMode || AppSession.Permissions.Contains(key);
 
-        public bool CanAny(params string[] keys)
-        {
-            if (AppSession.DevMode) return true;
-            return keys.Any(k => AppSession.Permissions.Contains(k));
-        }
+        public bool CanAny(params string[] keys) => AppSession.DevMode || keys.Any(AppSession.Permissions.Contains);
 
-        public bool CanAll(params string[] keys)
-        {
-            if (AppSession.DevMode) return true;
-            return keys.All(k => AppSession.Permissions.Contains(k));
-        }
+        public bool CanAll(params string[] keys) => AppSession.DevMode || keys.All(AppSession.Permissions.Contains);
 
         public void LoadForUser(int userId)
         {
