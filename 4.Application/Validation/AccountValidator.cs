@@ -1,14 +1,12 @@
 using PrimeERP.Domain.Rules;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Data.Repositories;
-using PrimeERP.Platform.Settings;
-using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Application.Validation
 {
-    /// <summary>ينفّذ IValidator&lt;Account&gt; عبر ValidatorBase — فوق AccountRepository الجديد.</summary>
-    public class AccountValidator : ValidatorBase, IValidator<Account>
+    /// <summary>ينفّذ IValidator&lt;Account&gt; عبر RuleSet — فوق AccountRepository.</summary>
+    public class AccountValidator : IValidator<Account>
     {
         private readonly IAccountRepository _repo;
         private readonly bool _isEdit;
@@ -22,21 +20,12 @@ namespace PrimeERP.Application.Validation
             _checkUniqueness = checkUniqueness;
         }
 
-        public ValidationResult Validate(Account account)
-        {
-            var result = new ValidationResult();
-
-            Required(result, "Name", account.Name, "اسم الحساب");
-            MaxLength(result, "Name", account.Name, 150, "اسم الحساب");
-            AccountingRules.AccountCodeFormat(result, "Code", account.Code);
-
-            if (!_isEdit && _checkUniqueness)
-            {
-                var exists = _repo.GetByCode(account.Code) != null;
-                Unique(result, "Code", exists, "كود الحساب");
-            }
-
-            return result;
-        }
+        public ValidationResult Validate(Account account) =>
+            Rules.For<Account>()
+                .Required(x => x.Name, "اسم الحساب")
+                .MaxLength(x => x.Name, 150, "اسم الحساب")
+                .Custom((a, r) => AccountingRules.AccountCodeFormat(r, "Code", a.Code))
+                .Unique(x => x.Code, a => !_isEdit && _checkUniqueness && _repo.GetByCode(a.Code) != null, "كود الحساب")
+                .Validate(account);
     }
 }

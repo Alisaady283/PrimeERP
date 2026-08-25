@@ -1,22 +1,19 @@
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Rules;
 
 namespace PrimeERP.Application.Validation
 {
-    public class CustomerValidator : ValidatorBase, IValidator<Customer>
+    public class CustomerValidator : IValidator<Customer>
     {
-        public ValidationResult Validate(Customer customer)
-        {
-            var result = new ValidationResult();
-
-            Required(result, "Code", customer.Code, "كود العميل");
-            Required(result, "Name", customer.Name, "اسم العميل");
-            MaxLength(result, "Name", customer.Name, 150, "اسم العميل");
-            Phone(result, "Phone", customer.Phone, "رقم الهاتف");
-            Email(result, "Email", customer.Email, "البريد الإلكتروني");
-            Positive(result, "CreditLimit", customer.CreditLimit, "الحد الائتماني");
-
-            return result;
-        }
+        public ValidationResult Validate(Customer customer) =>
+            Rules.For<Customer>()
+                .Required(x => x.Code, "كود العميل")
+                .Required(x => x.Name, "اسم العميل")
+                .MaxLength(x => x.Name, 150, "اسم العميل")
+                .Phone(x => x.Phone, "رقم الهاتف")
+                .Email(x => x.Email, "البريد الإلكتروني")
+                .Positive(x => x.CreditLimit, "الحد الائتماني")
+                .Validate(customer);
     }
 }
