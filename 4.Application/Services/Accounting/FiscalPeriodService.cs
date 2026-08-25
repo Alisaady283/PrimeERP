@@ -26,29 +26,29 @@ namespace PrimeERP.Application.Services.Accounting
     /// ترحيل قيد الإقفال) — لا يمكن لحاوية DI بناء الاثنتين بحقن مباشر متبادل، فالجانب الوحيد الذي يستخدم
     /// IJournalService خارج مسار الإقلاع (ClosePeriod/CloseYear/ReopenYear وقت التشغيل الفعلي لا وقت البناء)
     /// يأخذ Lazy&lt;IJournalService&gt; (مُسجَّل في DependencyInjection.cs كمصنع خاص به) بدل الحقن المباشر.
+    ///
+    /// كل صلاحيات هذه الخدمة عبر PermissionKeys.Settings.* (لا "Fiscal" منفصلة في PermissionKeys.cs) —
+    /// PermissionPrefix="Settings" يطابق ذلك حرفياً. Audit.Log يستهدف جدولين مختلفين (FiscalYears/FiscalPeriods)
+    /// حسب العملية، فيُمرَّر اسم الجدول صريحاً في كل استدعاء بدل الاعتماد على EntityName الموروثة.
     /// </summary>
-    public class FiscalPeriodService : IFiscalPeriodService
+    public class FiscalPeriodService : ServiceBase, IFiscalPeriodService
     {
-        private readonly IPermissionService _permissions;
-        private readonly ISettingsService _settings;
+        protected override string PermissionPrefix => "Settings";
+        protected override string StringPrefix => "Str.Fiscal";
+        protected override string EntityName => "FiscalYears";
+
         private readonly IAccountService _accounts;
         private readonly IFiscalPeriodRepository _fiscalPeriods;
         private readonly Lazy<IJournalService> _journal;
-        private readonly IAuditLogger _audit;
 
-        public FiscalPeriodService(IPermissionService permissions, ISettingsService settings, IAccountService accounts,
-            IFiscalPeriodRepository fiscalPeriods, Lazy<IJournalService> journal, IAuditLogger audit)
+        public FiscalPeriodService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
+            IAuditLogger audit, IAccountService accounts, IFiscalPeriodRepository fiscalPeriods, Lazy<IJournalService> journal)
+            : base(permissions, settings, localization, audit)
         {
-            _permissions = permissions;
-            _settings = settings;
             _accounts = accounts;
             _fiscalPeriods = fiscalPeriods;
             _journal = journal;
-            _audit = audit;
         }
-
-        private static string Denied => LocalizationService.Get("Str.PermissionDenied");
-        private static string CurrentUser => AppSession.Username ?? "Admin";
 
         // ===================== القراءة =====================
         // بلا تحقق صلاحية عمداً — استعلامات تُستدعى بكثرة من خدمات أخرى (JournalService.IsOpen عند كل قيد)،
@@ -81,7 +81,7 @@ namespace PrimeERP.Application.Services.Accounting
         {
             var period = _fiscalPeriods.GetPeriodContaining(date.ToString("yyyy-MM-dd"));
             if (period == null)
-                return !_settings.Get(SettingKeys.Financial.RequireFiscalPeriod, false);
+                return !Setting(SettingKeys.Financial.RequireFiscalPeriod, false);
 
             if (period.IsClosed)
                 return false;
@@ -112,21 +112,20 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result<FiscalYearDto> CreateYear(DateTime start, int periodsCount = 12, string name = null)
         {
-            if (!_permissions.Can(PermissionKeys.Settings.Edit))
-                return Result.Fail<FiscalYearDto>(Denied, ErrorCode.Unauthorized);
+            if (!Can("Edit")) return FailDenied<FiscalYearDto>();
 
             if (periodsCount != 1 && periodsCount != 4 && periodsCount != 6 && periodsCount != 12)
-                return Result.Fail<FiscalYearDto>(LocalizationService.Get("Str.Fiscal.InvalidPeriodsCount"), ErrorCode.ValidationFailed);
+                return Result.Fail<FiscalYearDto>(Msg("InvalidPeriodsCount"), ErrorCode.ValidationFailed);
 
             start = start.Date;
             var end = FiscalPeriodCalculator.EndOfYear(start);
 
             if (_fiscalPeriods.AnyYearOverlapping(start.ToString("yyyy-MM-dd"), end.ToString("yyyy-MM-dd"), null))
-                return Result.Fail<FiscalYearDto>(LocalizationService.Get("Str.Fiscal.OverlappingYear"), ErrorCode.Conflict);
+                return Result.Fail<FiscalYearDto>(Msg("OverlappingYear"), ErrorCode.Conflict);
 
             // عدم تطابق شهر البداية مع SettingKeys.Financial.FiscalYearStartMonth تحذير لا يمنع — يُسجَّل في
             // تفاصيل Audit فقط، السنة تُنشأ بالتاريخ المطلوب فعلياً بلا حجب.
-            var configuredStartMonth = _settings.Get(SettingKeys.Financial.FiscalYearStartMonth, 1);
+            var configuredStartMonth = Setting(SettingKeys.Financial.FiscalYearStartMonth, 1);
             var monthMismatch = start.Month != configuredStartMonth;
 
             name ??= FiscalPeriodCalculator.DefaultYearName(start, end);
@@ -160,7 +159,7 @@ namespace PrimeERP.Application.Services.Accounting
             var details = monthMismatch
                 ? $"إنشاء سنة مالية {name} — تنبيه: شهر البداية ({start.Month}) لا يطابق الإعداد ({configuredStartMonth})"
                 : $"إنشاء سنة مالية {name}";
-            _audit.Log("FiscalYears", yearId, AuditAction.Insert, details: details);
+            Audit.Log("FiscalYears", yearId, AuditAction.Insert, details: details);
 
             var created = _fiscalPeriods.GetYearById(yearId);
             return Result.Ok(ToYearDto(created, includePeriods: true));
@@ -168,26 +167,24 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result SetCurrent(int yearId)
         {
-            if (!_permissions.Can(PermissionKeys.Settings.Edit))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
+            if (!Can("Edit")) return FailDenied();
 
             var year = _fiscalPeriods.GetYearById(yearId);
             if (year == null)
                 return Result.Fail("السنة المالية غير موجودة", ErrorCode.NotFound);
 
             if (year.IsClosed)
-                return Result.Fail(LocalizationService.Get("Str.Fiscal.YearIsClosed"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("YearIsClosed"), ErrorCode.ValidationFailed);
 
             Db.RunTransaction((conn, tx) => _fiscalPeriods.SetCurrentYear(conn, tx, yearId));
 
-            _audit.Log("FiscalYears", yearId, AuditAction.Update, details: $"تعيين {year.Name} كسنة حالية");
+            Audit.Log("FiscalYears", yearId, AuditAction.Update, details: $"تعيين {year.Name} كسنة حالية");
             return Result.Ok();
         }
 
         public Result ClosePeriod(int periodId)
         {
-            if (!_permissions.Can(PermissionKeys.Settings.ClosePeriod))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
+            if (!Can("ClosePeriod")) return FailDenied();
 
             var period = _fiscalPeriods.GetPeriodById(periodId);
             if (period == null)
@@ -199,24 +196,23 @@ namespace PrimeERP.Application.Services.Accounting
             var earlierOpen = _fiscalPeriods.GetPeriods(period.FiscalYearId)
                 .Any(p => p.PeriodNo < period.PeriodNo && !p.IsClosed);
             if (earlierOpen)
-                return Result.Fail(LocalizationService.Get("Str.Fiscal.PreviousPeriodOpen"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("PreviousPeriodOpen"), ErrorCode.ValidationFailed);
 
             var unposted = _journal.Value.CountUnpostedBetween(ParseDate(period.StartDate), ParseDate(period.EndDate));
             if (!unposted.IsSuccess)
                 return Result.Fail(unposted.ErrorMessage, unposted.ErrorCode);
             if (unposted.Value > 0)
-                return Result.Fail(LocalizationService.Get("Str.Fiscal.HasUnpostedEntries"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("HasUnpostedEntries"), ErrorCode.ValidationFailed);
 
             Db.RunTransaction((conn, tx) => _fiscalPeriods.SetPeriodClosed(conn, tx, periodId, DateTime.Now, CurrentUser));
 
-            _audit.Log("FiscalPeriods", periodId, AuditAction.Update, details: $"إقفال الفترة {period.Name}");
+            Audit.Log("FiscalPeriods", periodId, AuditAction.Update, details: $"إقفال الفترة {period.Name}");
             return Result.Ok();
         }
 
         public Result ReopenPeriod(int periodId)
         {
-            if (!_permissions.Can(PermissionKeys.Settings.ReopenPeriod))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
+            if (!Can("ReopenPeriod")) return FailDenied();
 
             var period = _fiscalPeriods.GetPeriodById(periodId);
             if (period == null)
@@ -227,38 +223,37 @@ namespace PrimeERP.Application.Services.Accounting
 
             var year = _fiscalPeriods.GetYearById(period.FiscalYearId);
             if (year != null && year.IsClosed)
-                return Result.Fail(LocalizationService.Get("Str.Fiscal.YearIsClosed"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("YearIsClosed"), ErrorCode.ValidationFailed);
 
             var laterClosed = _fiscalPeriods.GetPeriods(period.FiscalYearId)
                 .Any(p => p.PeriodNo > period.PeriodNo && p.IsClosed);
             if (laterClosed)
-                return Result.Fail(LocalizationService.Get("Str.Fiscal.NextPeriodClosed"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("NextPeriodClosed"), ErrorCode.ValidationFailed);
 
             Db.RunTransaction((conn, tx) => _fiscalPeriods.SetPeriodReopened(conn, tx, periodId));
 
-            _audit.Log("FiscalPeriods", periodId, AuditAction.Update, details: $"إعادة فتح الفترة {period.Name}");
+            Audit.Log("FiscalPeriods", periodId, AuditAction.Update, details: $"إعادة فتح الفترة {period.Name}");
             return Result.Ok();
         }
 
         public Result CloseYear(int yearId)
         {
-            if (!_permissions.Can(PermissionKeys.Settings.CloseYear))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
+            if (!Can("CloseYear")) return FailDenied();
 
             var year = _fiscalPeriods.GetYearById(yearId);
             if (year == null)
                 return Result.Fail("السنة المالية غير موجودة", ErrorCode.NotFound);
 
             if (year.IsClosed)
-                return Result.Fail(LocalizationService.Get("Str.Fiscal.YearIsClosed"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("YearIsClosed"), ErrorCode.ValidationFailed);
 
             var periods = _fiscalPeriods.GetPeriods(yearId);
             if (periods.Count == 0 || periods.Any(p => !p.IsClosed))
                 return Result.Fail("يجب إقفال كل الفترات المالية لهذه السنة أولاً", ErrorCode.ValidationFailed);
 
-            var retainedCode = _settings.Get(SettingKeys.Accounts.RetainedEarnings, "");
+            var retainedCode = Setting(SettingKeys.Accounts.RetainedEarnings, "");
             if (string.IsNullOrWhiteSpace(retainedCode))
-                return Result.Fail(LocalizationService.Get("Str.Fiscal.RetainedEarningsNotConfigured"), ErrorCode.Unexpected);
+                return Result.Fail(Msg("RetainedEarningsNotConfigured"), ErrorCode.Unexpected);
 
             var revenueLeaves = _accounts.GetLeaves(AccountType.Revenue);
             if (!revenueLeaves.IsSuccess) return Result.Fail(revenueLeaves.ErrorMessage, revenueLeaves.ErrorCode);
@@ -316,14 +311,13 @@ namespace PrimeERP.Application.Services.Accounting
                 return Result.Fail(ex.Message);
             }
 
-            _audit.Log("FiscalYears", yearId, AuditAction.Update, details: $"إقفال السنة المالية {year.Name} — صافي الربح: {netProfit:N2}، قيد الإقفال: {closingEntryId}");
+            Audit.Log("FiscalYears", yearId, AuditAction.Update, details: $"إقفال السنة المالية {year.Name} — صافي الربح: {netProfit:N2}، قيد الإقفال: {closingEntryId}");
             return Result.Ok();
         }
 
         public Result ReopenYear(int yearId)
         {
-            if (!_permissions.Can(PermissionKeys.Settings.ReopenYear))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
+            if (!Can("ReopenYear")) return FailDenied();
 
             var year = _fiscalPeriods.GetYearById(yearId);
             if (year == null)
@@ -353,7 +347,7 @@ namespace PrimeERP.Application.Services.Accounting
                 return Result.Fail(ex.Message);
             }
 
-            _audit.Log("FiscalYears", yearId, AuditAction.Update, details: $"إعادة فتح السنة المالية {year.Name} — حذف قيد الإقفال {year.ClosingEntryId}");
+            Audit.Log("FiscalYears", yearId, AuditAction.Update, details: $"إعادة فتح السنة المالية {year.Name} — حذف قيد الإقفال {year.ClosingEntryId}");
             return Result.Ok();
         }
 
