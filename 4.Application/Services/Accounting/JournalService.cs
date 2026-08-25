@@ -30,40 +30,35 @@ namespace PrimeERP.Application.Services.Accounting
     /// _journal.GetById/GetLines/GetPostedLinesForAccount، NumberSequenceService.Next،
     /// AccountService.RecalculateBalance — راجع تعليقاتها).
     /// </summary>
-    public class JournalService : IJournalService
+    public class JournalService : ServiceBase, IJournalService
     {
-        private readonly IPermissionService _permissions;
-        private readonly ISettingsService _settings;
+        protected override string PermissionPrefix => "Journal";
+        protected override string StringPrefix => "Str.Journal";
+        protected override string EntityName => "JournalEntries";
+
         private readonly IAccountService _accounts;
         private readonly IFiscalPeriodService _fiscalPeriods;
         private readonly INumberSequenceService _numbers;
         private readonly IJournalRepository _journal;
         private readonly IAccountRepository _accountRepo;
-        private readonly IAuditLogger _audit;
 
-        public JournalService(IPermissionService permissions, ISettingsService settings, IAccountService accounts,
-            IFiscalPeriodService fiscalPeriods, INumberSequenceService numbers, IJournalRepository journal, IAccountRepository accountRepo,
-            IAuditLogger audit)
+        public JournalService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
+            IAccountService accounts, IFiscalPeriodService fiscalPeriods, INumberSequenceService numbers,
+            IJournalRepository journal, IAccountRepository accountRepo)
+            : base(permissions, settings, localization, audit)
         {
-            _permissions = permissions;
-            _settings = settings;
             _accounts = accounts;
             _fiscalPeriods = fiscalPeriods;
             _numbers = numbers;
             _journal = journal;
             _accountRepo = accountRepo;
-            _audit = audit;
         }
-
-        private static string Denied => LocalizationService.Get("Str.PermissionDenied");
-        private static string CurrentUser => AppSession.Username ?? "Admin";
 
         // ===================== القراءة =====================
 
         public Result<PagedResult<JournalEntryDto>> GetPaged(int page, int pageSize, JournalFilter filter = null)
         {
-            if (!_permissions.Can(PermissionKeys.Journal.View))
-                return Result.Fail<PagedResult<JournalEntryDto>>(Denied, ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<PagedResult<JournalEntryDto>>();
 
             filter ??= new JournalFilter();
 
@@ -81,8 +76,7 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result<JournalEntryDetailDto> GetById(int id)
         {
-            if (!_permissions.Can(PermissionKeys.Journal.View))
-                return Result.Fail<JournalEntryDetailDto>(Denied, ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<JournalEntryDetailDto>();
 
             var entry = _journal.GetById(id);
             if (entry == null)
@@ -93,8 +87,7 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result<JournalEntryDto> GetByEntryNo(string entryNo)
         {
-            if (!_permissions.Can(PermissionKeys.Journal.View))
-                return Result.Fail<JournalEntryDto>(Denied, ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<JournalEntryDto>();
 
             var entry = _journal.GetByEntryNo(entryNo);
             if (entry == null)
@@ -107,8 +100,7 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result<JournalEntryDto> Create(CreateJournalDto dto)
         {
-            if (!_permissions.Can(PermissionKeys.Journal.Create))
-                return Result.Fail<JournalEntryDto>(Denied, ErrorCode.Unauthorized);
+            if (!Can("Create")) return FailDenied<JournalEntryDto>();
 
             var shape = ValidateShape(dto);
             if (!shape.IsSuccess) return Result.Fail<JournalEntryDto>(shape.ErrorMessage, shape.ErrorCode);
@@ -117,14 +109,14 @@ namespace PrimeERP.Application.Services.Accounting
             if (!accounts.IsSuccess) return Result.Fail<JournalEntryDto>(accounts.ErrorMessage, accounts.ErrorCode);
 
             if (!_fiscalPeriods.IsOpen(dto.EntryDate))
-                return Result.Fail<JournalEntryDto>(LocalizationService.Get("Str.Journal.PeriodClosed"), ErrorCode.ValidationFailed);
+                return Result.Fail<JournalEntryDto>(Msg("PeriodClosed"), ErrorCode.ValidationFailed);
 
-            var prefix = _settings.Get(SettingKeys.Documents.JournalPrefix, "JE");
+            var prefix = Setting(SettingKeys.Documents.JournalPrefix, "JE");
             var entryNo = _numbers.Next(prefix);
 
             var newId = Db.RunTransaction((conn, tx) => InsertEntryWithLines(conn, tx, entryNo, dto, accounts.Value));
 
-            _audit.Log("JournalEntries", newId, AuditAction.Insert, details: $"إنشاء قيد {entryNo} — {dto.Lines.Count} سطر");
+            Audit.Log(EntityName, newId, AuditAction.Insert, details: $"إنشاء قيد {entryNo} — {dto.Lines.Count} سطر");
 
             return Result.Ok(BuildDto(newId, entryNo, dto));
         }
@@ -145,7 +137,7 @@ namespace PrimeERP.Application.Services.Accounting
             var accounts = ValidateAccountsForTransaction(conn, tx, dto.Lines);
             if (!accounts.IsSuccess) return Result.Fail<JournalEntryDto>(accounts.ErrorMessage, accounts.ErrorCode);
 
-            var prefix = _settings.Get(SettingKeys.Documents.JournalPrefix, "JE");
+            var prefix = Setting(SettingKeys.Documents.JournalPrefix, "JE");
             var entryNo = _numbers.Next(conn, tx, prefix);
 
             var newId = InsertEntryWithLines(conn, tx, entryNo, dto, accounts.Value);
@@ -156,15 +148,14 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result Update(CreateJournalDto dto)
         {
-            if (!_permissions.Can(PermissionKeys.Journal.Edit))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
+            if (!Can("Edit")) return FailDenied();
 
             var existing = _journal.GetById(dto.Id);
             if (existing == null)
                 return Result.Fail("القيد غير موجود", ErrorCode.NotFound);
 
             if (existing.IsPosted)
-                return Result.Fail(LocalizationService.Get("Str.Journal.PostedCannotEdit"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("PostedCannotEdit"), ErrorCode.ValidationFailed);
 
             var shape = ValidateShape(dto);
             if (!shape.IsSuccess) return shape;
@@ -174,9 +165,9 @@ namespace PrimeERP.Application.Services.Accounting
 
             // الفترة مفتوحة للتاريخ القديم والجديد معاً — نقل قيد من/إلى فترة مقفلة ممنوع بنفس القدر.
             if (!_fiscalPeriods.IsOpen(ParseDate(existing.EntryDate)))
-                return Result.Fail(LocalizationService.Get("Str.Journal.PeriodClosed"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("PeriodClosed"), ErrorCode.ValidationFailed);
             if (!_fiscalPeriods.IsOpen(dto.EntryDate))
-                return Result.Fail(LocalizationService.Get("Str.Journal.PeriodClosed"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("PeriodClosed"), ErrorCode.ValidationFailed);
 
             var totalDebit = dto.Lines.Sum(l => l.Debit);
             var totalCredit = dto.Lines.Sum(l => l.Credit);
@@ -199,28 +190,27 @@ namespace PrimeERP.Application.Services.Accounting
                 _journal.UpdateTotals(conn, tx, dto.Id, totalDebit, totalCredit);
             });
 
-            _audit.Log("JournalEntries", dto.Id, AuditAction.Update, details: $"تعديل قيد {existing.EntryNo}");
+            Audit.Log(EntityName, dto.Id, AuditAction.Update, details: $"تعديل قيد {existing.EntryNo}");
             return Result.Ok();
         }
 
         public Result Delete(int id)
         {
-            if (!_permissions.Can(PermissionKeys.Journal.Delete))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
+            if (!Can("Delete")) return FailDenied();
 
             var entry = _journal.GetById(id);
             if (entry == null)
                 return Result.Fail("القيد غير موجود", ErrorCode.NotFound);
 
             if (entry.IsPosted)
-                return Result.Fail(LocalizationService.Get("Str.Journal.PostedCannotDelete"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("PostedCannotDelete"), ErrorCode.ValidationFailed);
 
             if (!_fiscalPeriods.IsOpen(ParseDate(entry.EntryDate)))
-                return Result.Fail(LocalizationService.Get("Str.Journal.PeriodClosed"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("PeriodClosed"), ErrorCode.ValidationFailed);
 
             Db.RunTransaction((conn, tx) => Delete(conn, tx, id));
 
-            _audit.Log("JournalEntries", id, AuditAction.Delete, details: $"حذف قيد {entry.EntryNo}");
+            Audit.Log(EntityName, id, AuditAction.Delete, details: $"حذف قيد {entry.EntryNo}");
             return Result.Ok();
         }
 
@@ -236,8 +226,7 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result Post(int id)
         {
-            if (!_permissions.Can(PermissionKeys.Journal.Post))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
+            if (!Can("Post")) return FailDenied();
 
             var entry = _journal.GetById(id);
             var (error, code) = ValidatePostable(entry);
@@ -246,7 +235,7 @@ namespace PrimeERP.Application.Services.Accounting
             var result = Db.RunTransaction((conn, tx) => Post(conn, tx, id));
             if (!result.IsSuccess) return result;
 
-            _audit.Log("JournalEntries", id, AuditAction.Update, details: $"ترحيل قيد {entry.EntryNo}");
+            Audit.Log(EntityName, id, AuditAction.Update, details: $"ترحيل قيد {entry.EntryNo}");
             return Result.Ok();
         }
 
@@ -264,26 +253,25 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result Unpost(int id)
         {
-            if (!_permissions.Can(PermissionKeys.Journal.Unpost))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
+            if (!Can("Unpost")) return FailDenied();
 
             var entry = _journal.GetById(id);
             if (entry == null)
                 return Result.Fail("القيد غير موجود", ErrorCode.NotFound);
 
             if (!entry.IsPosted)
-                return Result.Fail(LocalizationService.Get("Str.Journal.NotPostedCannotUnpost"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("NotPostedCannotUnpost"), ErrorCode.ValidationFailed);
 
             if (entry.Source == ClosingEntrySource)
-                return Result.Fail(LocalizationService.Get("Str.Journal.ClosingEntryCannotUnpost"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("ClosingEntryCannotUnpost"), ErrorCode.ValidationFailed);
 
             if (!_fiscalPeriods.IsOpen(ParseDate(entry.EntryDate)))
-                return Result.Fail(LocalizationService.Get("Str.Journal.PeriodClosed"), ErrorCode.ValidationFailed);
+                return Result.Fail(Msg("PeriodClosed"), ErrorCode.ValidationFailed);
 
             var result = Db.RunTransaction((conn, tx) => Unpost(conn, tx, id));
             if (!result.IsSuccess) return result;
 
-            _audit.Log("JournalEntries", id, AuditAction.Update, details: $"إلغاء ترحيل قيد {entry.EntryNo}");
+            Audit.Log(EntityName, id, AuditAction.Update, details: $"إلغاء ترحيل قيد {entry.EntryNo}");
             return Result.Ok();
         }
 
@@ -306,8 +294,7 @@ namespace PrimeERP.Application.Services.Accounting
         /// </summary>
         public Result<JournalBatchResult> PostBatch(List<int> ids)
         {
-            if (!_permissions.Can(PermissionKeys.Journal.Post))
-                return Result.Fail<JournalBatchResult>(Denied, ErrorCode.Unauthorized);
+            if (!Can("Post")) return FailDenied<JournalBatchResult>();
 
             var batch = new JournalBatchResult();
             var toPost = new List<int>();
@@ -331,7 +318,7 @@ namespace PrimeERP.Application.Services.Accounting
             });
 
             batch.SuccessCount = toPost.Count;
-            _audit.Log("JournalEntries", 0, AuditAction.Update, details: $"ترحيل دفعي: {batch.SuccessCount} قيد");
+            Audit.Log(EntityName, 0, AuditAction.Update, details: $"ترحيل دفعي: {batch.SuccessCount} قيد");
 
             return Result.Ok(batch);
         }
@@ -340,8 +327,7 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result<List<TrialBalanceLine>> GetTrialBalance(DateTime from, DateTime to, bool includeZero = false, bool postedOnly = true)
         {
-            if (!_permissions.Can(PermissionKeys.Journal.View))
-                return Result.Fail<List<TrialBalanceLine>>(Denied, ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<List<TrialBalanceLine>>();
 
             var leaves = _accounts.GetLeaves();
             if (!leaves.IsSuccess)
@@ -392,7 +378,7 @@ namespace PrimeERP.Application.Services.Accounting
 
             if (totalClosingDebit != totalClosingCredit)
                 return Result.Fail<List<TrialBalanceLine>>(
-                    $"{LocalizationService.Get("Str.Journal.TrialBalanceMismatch")} ({totalClosingDebit - totalClosingCredit:N2})", ErrorCode.Unexpected);
+                    $"{Msg("TrialBalanceMismatch")} ({totalClosingDebit - totalClosingCredit:N2})", ErrorCode.Unexpected);
 
             return Result.Ok(result);
         }
@@ -428,23 +414,23 @@ namespace PrimeERP.Application.Services.Accounting
 
                 var account = _accounts.GetByCode(line.AccountCode);
                 if (!account.IsSuccess)
-                    return Result.Fail<Dictionary<string, string>>($"{LocalizationService.Get("Str.Journal.AccountNotFound")}: {line.AccountCode}", ErrorCode.ValidationFailed);
+                    return Result.Fail<Dictionary<string, string>>($"{Msg("AccountNotFound")}: {line.AccountCode}", ErrorCode.ValidationFailed);
 
                 if (!account.Value.IsLeaf)
-                    return Result.Fail<Dictionary<string, string>>($"{LocalizationService.Get("Str.Journal.AccountNotLeaf")}: {line.AccountCode}", ErrorCode.ValidationFailed);
+                    return Result.Fail<Dictionary<string, string>>($"{Msg("AccountNotLeaf")}: {line.AccountCode}", ErrorCode.ValidationFailed);
 
                 if (!account.Value.IsActive)
-                    return Result.Fail<Dictionary<string, string>>($"{LocalizationService.Get("Str.Journal.AccountInactive")}: {line.AccountCode}", ErrorCode.ValidationFailed);
+                    return Result.Fail<Dictionary<string, string>>($"{Msg("AccountInactive")}: {line.AccountCode}", ErrorCode.ValidationFailed);
 
                 resolved[line.AccountCode] = account.Value.Name;
             }
 
-            var allowDuplicates = _settings.Get(SettingKeys.Financial.AllowDuplicateAccountInEntry, false);
+            var allowDuplicates = Setting(SettingKeys.Financial.AllowDuplicateAccountInEntry, false);
             if (!allowDuplicates)
             {
                 var duplicate = lines.GroupBy(l => l.AccountCode).FirstOrDefault(g => g.Count() > 1);
                 if (duplicate != null)
-                    return Result.Fail<Dictionary<string, string>>($"{LocalizationService.Get("Str.Journal.DuplicateAccount")}: {duplicate.Key}", ErrorCode.ValidationFailed);
+                    return Result.Fail<Dictionary<string, string>>($"{Msg("DuplicateAccount")}: {duplicate.Key}", ErrorCode.ValidationFailed);
             }
 
             return Result.Ok(resolved);
@@ -466,13 +452,13 @@ namespace PrimeERP.Application.Services.Accounting
 
                 var account = _accountRepo.GetByCode(line.AccountCode, conn, tx);
                 if (account == null)
-                    return Result.Fail<Dictionary<string, string>>($"{LocalizationService.Get("Str.Journal.AccountNotFound")}: {line.AccountCode}", ErrorCode.ValidationFailed);
+                    return Result.Fail<Dictionary<string, string>>($"{Msg("AccountNotFound")}: {line.AccountCode}", ErrorCode.ValidationFailed);
 
                 if (!account.IsLeaf)
-                    return Result.Fail<Dictionary<string, string>>($"{LocalizationService.Get("Str.Journal.AccountNotLeaf")}: {line.AccountCode}", ErrorCode.ValidationFailed);
+                    return Result.Fail<Dictionary<string, string>>($"{Msg("AccountNotLeaf")}: {line.AccountCode}", ErrorCode.ValidationFailed);
 
                 if (!account.IsActive)
-                    return Result.Fail<Dictionary<string, string>>($"{LocalizationService.Get("Str.Journal.AccountInactive")}: {line.AccountCode}", ErrorCode.ValidationFailed);
+                    return Result.Fail<Dictionary<string, string>>($"{Msg("AccountInactive")}: {line.AccountCode}", ErrorCode.ValidationFailed);
 
                 resolved[line.AccountCode] = account.Name;
             }
@@ -486,17 +472,17 @@ namespace PrimeERP.Application.Services.Accounting
             if (entry.IsPosted) return ("القيد مرحّل بالفعل", ErrorCode.ValidationFailed);
 
             if (entry.TotalDebit != entry.TotalCredit)
-                return ($"{LocalizationService.Get("Str.Journal.NotBalanced")} ({entry.TotalDebit - entry.TotalCredit:N2})", ErrorCode.ValidationFailed);
+                return ($"{Msg("NotBalanced")} ({entry.TotalDebit - entry.TotalCredit:N2})", ErrorCode.ValidationFailed);
 
             if (!_fiscalPeriods.IsOpen(ParseDate(entry.EntryDate)))
-                return (LocalizationService.Get("Str.Journal.PeriodClosed"), ErrorCode.ValidationFailed);
+                return (Msg("PeriodClosed"), ErrorCode.ValidationFailed);
 
             foreach (var line in _journal.GetLines(entry.Id))
             {
                 var account = _accounts.GetByCode(line.AccountCode);
-                if (!account.IsSuccess) return ($"{LocalizationService.Get("Str.Journal.AccountNotFound")}: {line.AccountCode}", ErrorCode.ValidationFailed);
-                if (!account.Value.IsLeaf) return ($"{LocalizationService.Get("Str.Journal.AccountNotLeaf")}: {line.AccountCode}", ErrorCode.ValidationFailed);
-                if (!account.Value.IsActive) return ($"{LocalizationService.Get("Str.Journal.AccountInactive")}: {line.AccountCode}", ErrorCode.ValidationFailed);
+                if (!account.IsSuccess) return ($"{Msg("AccountNotFound")}: {line.AccountCode}", ErrorCode.ValidationFailed);
+                if (!account.Value.IsLeaf) return ($"{Msg("AccountNotLeaf")}: {line.AccountCode}", ErrorCode.ValidationFailed);
+                if (!account.Value.IsActive) return ($"{Msg("AccountInactive")}: {line.AccountCode}", ErrorCode.ValidationFailed);
             }
 
             return (null, ErrorCode.None);
@@ -551,7 +537,7 @@ namespace PrimeERP.Application.Services.Accounting
                 SourceText = SourceText(source),
                 IsPosted = false,
                 StatusVariant = StatusVariant.Warning,
-                StatusText = LocalizationService.Get("Str.Journal.Status.Draft"),
+                StatusText = Msg("Status.Draft"),
                 PostedAt = null,
                 PostedBy = null,
                 CreatedAt = DateTime.Now,
@@ -560,7 +546,7 @@ namespace PrimeERP.Application.Services.Accounting
                 FiscalPeriodName = null,
                 CanEdit = true,
                 CanDelete = true,
-                CanPost = _permissions.Can(PermissionKeys.Journal.Post),
+                CanPost = Can("Post"),
                 CanUnpost = false
             };
         }
@@ -585,17 +571,17 @@ namespace PrimeERP.Application.Services.Accounting
                 SourceText = SourceText(e.Source),
                 IsPosted = e.IsPosted,
                 StatusVariant = variant,
-                StatusText = LocalizationService.Get($"Str.Journal.Status.{statusKey}"),
+                StatusText = Msg($"Status.{statusKey}"),
                 PostedAt = e.PostedAt,
                 PostedBy = e.PostedBy,
                 CreatedAt = e.CreatedAt,
                 CreatedBy = e.CreatedBy,
                 LinesCount = linesCount,
                 FiscalPeriodName = _fiscalPeriods.GetPeriodFor(entryDate) is { IsSuccess: true } periodResult ? periodResult.Value.Name : null,
-                CanEdit   = _permissions.Can(PermissionKeys.Journal.Edit)   && !e.IsPosted,
-                CanDelete = _permissions.Can(PermissionKeys.Journal.Delete) && !e.IsPosted,
-                CanPost   = _permissions.Can(PermissionKeys.Journal.Post)   && !e.IsPosted && isBalanced,
-                CanUnpost = _permissions.Can(PermissionKeys.Journal.Unpost) && e.IsPosted && !isClosingEntry
+                CanEdit   = Can("Edit")   && !e.IsPosted,
+                CanDelete = Can("Delete") && !e.IsPosted,
+                CanPost   = Can("Post")   && !e.IsPosted && isBalanced,
+                CanUnpost = Can("Unpost") && e.IsPosted && !isClosingEntry
             };
         }
 
@@ -634,7 +620,7 @@ namespace PrimeERP.Application.Services.Accounting
 
         private static string NormalizeSource(string source) => string.IsNullOrWhiteSpace(source) ? "Manual" : source;
 
-        private static string SourceText(string source) => LocalizationService.Get($"Str.Journal.Source.{NormalizeSource(source)}");
+        private string SourceText(string source) => Msg($"Source.{NormalizeSource(source)}");
 
         private static DateTime ParseDate(string date) => DateTime.ParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
