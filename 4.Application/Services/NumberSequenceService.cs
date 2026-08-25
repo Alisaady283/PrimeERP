@@ -29,23 +29,17 @@ namespace PrimeERP.Application.Services
         public string Next(string key)
         {
             _repo.EnsureRow(key);
-
-            return Db.RunTransaction((conn, tx) =>
-            {
-                var row = _repo.GetRow(conn, tx, key);
-                var year = DateTime.Now.Year;
-                var number = row.ResetYearly && row.LastYear != year ? 1 : row.NextNumber;
-
-                _repo.UpdateNext(conn, tx, key, number + 1, year);
-
-                return Format(row.Prefix, year, number, row.Padding);
-            });
+            return Db.RunTransaction((conn, tx) => NextCore(conn, tx, key));
         }
 
         public string Next(DbConnection conn, DbTransaction tx, string key)
         {
             _repo.EnsureRow(conn, tx, key);
+            return NextCore(conn, tx, key);
+        }
 
+        private string NextCore(DbConnection conn, DbTransaction tx, string key)
+        {
             var row = _repo.GetRow(conn, tx, key);
             var year = DateTime.Now.Year;
             var number = row.ResetYearly && row.LastYear != year ? 1 : row.NextNumber;

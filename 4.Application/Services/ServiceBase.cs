@@ -48,9 +48,13 @@ namespace PrimeERP.Application.Services
         protected Result<T> Require<T>(string action) =>
             Can(action) ? Result.Ok<T>(default) : Result.Fail<T>(Msg("PermissionDenied"), ErrorCode.Unauthorized);
 
-        protected Result Fail(string key, params object[] args) => Result.Fail(Msg(key, args));
+        protected Result Fail(string key, ErrorCode code, params object[] args) => Result.Fail(Msg(key, args), code);
 
-        protected Result<T> Fail<T>(string key, params object[] args) => Result.Fail<T>(Msg(key, args));
+        protected Result Fail(string key, params object[] args) => Result.Fail(Msg(key, args), ErrorCode.Unexpected);
+
+        protected Result<T> Fail<T>(string key, ErrorCode code, params object[] args) => Result.Fail<T>(Msg(key, args), code);
+
+        protected Result<T> Fail<T>(string key, params object[] args) => Result.Fail<T>(Msg(key, args), ErrorCode.Unexpected);
 
         protected Result Ok(string key = null) => Result.Ok();
 

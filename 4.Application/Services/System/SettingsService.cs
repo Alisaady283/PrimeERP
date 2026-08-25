@@ -61,8 +61,8 @@ namespace PrimeERP.Application.Services
 
         private Result CheckWriteAllowed(SettingRecord existing)
         {
-            if (!Can("Edit")) return Fail("PermissionDenied");
-            if (existing != null && existing.IsSystem && !Can("System")) return Fail("SystemPermissionDenied");
+            if (!Can("Edit")) return Fail("PermissionDenied", ErrorCode.Unauthorized);
+            if (existing != null && existing.IsSystem && !Can("System")) return Fail("SystemPermissionDenied", ErrorCode.Unauthorized);
             return null;
         }
     }

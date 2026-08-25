@@ -49,8 +49,8 @@ namespace PrimeERP.Application.Services.Parties
             if (string.IsNullOrWhiteSpace(code)) return Fail<Account>("AccountNotConfigured");
 
             var parent = conn != null ? _accountRepo.GetByCode(code, conn, tx) : _accountRepo.GetByCode(code);
-            if (parent == null) return Fail<Account>("AccountParentNotFound");
-            if (parent.IsLeaf) return Fail<Account>("AccountParentIsLeaf");
+            if (parent == null) return Fail<Account>("AccountParentNotFound", ErrorCode.NotFound);
+            if (parent.IsLeaf) return Fail<Account>("AccountParentIsLeaf", ErrorCode.ValidationFailed);
 
             return Ok(parent);
         }
@@ -101,10 +101,10 @@ namespace PrimeERP.Application.Services.Parties
 
         public virtual Result RecalculateBalance(int id)
         {
-            if (!Can("Edit")) return Fail("PermissionDenied");
+            if (!Can("Edit")) return Fail("PermissionDenied", ErrorCode.Unauthorized);
 
             var entity = FindById(id);
-            if (entity == null) return Fail("NotFound");
+            if (entity == null) return Fail("NotFound", ErrorCode.NotFound);
 
             var accountCode = AccountCodeOf(entity);
             if (string.IsNullOrWhiteSpace(accountCode)) return Fail("AccountNotConfigured");
@@ -118,10 +118,10 @@ namespace PrimeERP.Application.Services.Parties
 
         public virtual Result<List<AccountStatementLine>> GetStatement(int id, DateTime from, DateTime to)
         {
-            if (!Can("View")) return Fail<List<AccountStatementLine>>("PermissionDenied");
+            if (!Can("View")) return Fail<List<AccountStatementLine>>("PermissionDenied", ErrorCode.Unauthorized);
 
             var entity = FindById(id);
-            if (entity == null) return Fail<List<AccountStatementLine>>("NotFound");
+            if (entity == null) return Fail<List<AccountStatementLine>>("NotFound", ErrorCode.NotFound);
 
             var accountCode = AccountCodeOf(entity);
             if (string.IsNullOrWhiteSpace(accountCode)) return Fail<List<AccountStatementLine>>("AccountNotConfigured");
