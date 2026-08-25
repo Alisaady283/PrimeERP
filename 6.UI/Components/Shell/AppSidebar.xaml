@@ -36,7 +36,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="3"/>
                             <ColumnDefinition Width="15"/>
-                            <ColumnDefinition Width="22"/>
+                            <ColumnDefinition Width="24"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -57,7 +57,7 @@
                         <Border Grid.Column="4" x:Name="badgeWrap" Background="{DynamicResource BrandDefault}" CornerRadius="8"
                                 Padding="6,1" Margin="6,0" VerticalAlignment="Center"
                                 Visibility="{Binding Badge, Converter={StaticResource StringVis}}">
-                            <TextBlock Text="{Binding Badge}" FontSize="{DynamicResource P.Font.Size.200}" Foreground="White"/>
+                            <TextBlock Text="{Binding Badge}" FontSize="{DynamicResource P.Font.Size.200}" Foreground="{DynamicResource TextOnBrand}"/>
                         </Border>
 
                         <Path Grid.Column="5" x:Name="chevron" Visibility="Collapsed" VerticalAlignment="Center"
@@ -93,7 +93,7 @@
                 <DataTrigger Binding="{Binding IsActive}" Value="True">
                     <Setter TargetName="activeBar" Property="Visibility" Value="Visible"/>
                     <Setter TargetName="rowBorder" Property="Background" Value="{DynamicResource NavHover}"/>
-                    <Setter TargetName="txt" Property="Foreground" Value="White"/>
+                    <Setter TargetName="txt" Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
                 </DataTrigger>
                 <Trigger SourceName="rowBorder" Property="IsMouseOver" Value="True">
                     <Setter TargetName="rowBorder" Property="Background" Value="{DynamicResource NavHover}"/>
@@ -131,7 +131,7 @@
             <ContentPresenter Grid.Row="0" x:Name="logoPresenter" Margin="16,18"/>
 
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <ItemsControl x:Name="itemsHost" Margin="8,4"/>
+                <ItemsControl x:Name="itemsHost" Margin="0,4"/>
             </ScrollViewer>
 
             <Border Grid.Row="2" BorderBrush="{DynamicResource NavHover}" BorderThickness="0,1,0,0">
