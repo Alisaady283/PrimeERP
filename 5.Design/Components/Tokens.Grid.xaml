@@ -5,26 +5,26 @@
 
     <!-- L3 — رموز مكوّن الجدول (AppDataGrid). الألوان تشير لـ L2 Semantic حصراً. -->
 
-    <SolidColorBrush x:Key="C.Grid.Header.Bg"     Color="{DynamicResource SurfaceCanvas}"/>
-    <SolidColorBrush x:Key="C.Grid.Header.Fg"     Color="{DynamicResource TextSecondary}"/>
-    <SolidColorBrush x:Key="C.Grid.Header.Border" Color="{DynamicResource OutlineDefault}"/>
+    <SolidColorBrush x:Key="C.Grid.Header.Bg"     Color="{DynamicResource SurfaceCanvas.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Header.Fg"     Color="{DynamicResource TextSecondary.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Header.Border" Color="{DynamicResource OutlineDefault.Color}"/>
 
-    <SolidColorBrush x:Key="C.Grid.Row.Bg"      Color="{DynamicResource SurfaceDefault}"/>
-    <SolidColorBrush x:Key="C.Grid.Row.AltBg"   Color="{DynamicResource SurfaceCanvas}"/>
-    <SolidColorBrush x:Key="C.Grid.Row.Hover"   Color="{DynamicResource TableRowHover}"/>
-    <SolidColorBrush x:Key="C.Grid.Row.Selected.Bg" Color="{DynamicResource TableRowSelected}"/>
-    <SolidColorBrush x:Key="C.Grid.Row.Selected.Fg" Color="{DynamicResource TableRowSelectedText}"/>
-    <SolidColorBrush x:Key="C.Grid.Row.Danger.Bg"   Color="{DynamicResource DangerSoft}"/>
-    <SolidColorBrush x:Key="C.Grid.Row.Warning.Bg"  Color="{DynamicResource WarningSoft}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.Bg"      Color="{DynamicResource SurfaceDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.AltBg"   Color="{DynamicResource SurfaceCanvas.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.Hover"   Color="{DynamicResource TableRowHover.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.Selected.Bg" Color="{DynamicResource TableRowSelected.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.Selected.Fg" Color="{DynamicResource TableRowSelectedText.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.Danger.Bg"   Color="{DynamicResource DangerSoft.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.Warning.Bg"  Color="{DynamicResource WarningSoft.Color}"/>
 
-    <SolidColorBrush x:Key="C.Grid.Border"      Color="{DynamicResource OutlineDefault}"/>
-    <SolidColorBrush x:Key="C.Grid.Cell.Fg"     Color="{DynamicResource TextPrimary}"/>
+    <SolidColorBrush x:Key="C.Grid.Border"      Color="{DynamicResource OutlineDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Cell.Fg"     Color="{DynamicResource TextPrimary.Color}"/>
 
-    <SolidColorBrush x:Key="C.Grid.Footer.Bg"     Color="{DynamicResource SurfaceCanvas}"/>
-    <SolidColorBrush x:Key="C.Grid.Footer.Fg"     Color="{DynamicResource TextPrimary}"/>
-    <SolidColorBrush x:Key="C.Grid.Footer.Border" Color="{DynamicResource OutlineDefault}"/>
+    <SolidColorBrush x:Key="C.Grid.Footer.Bg"     Color="{DynamicResource SurfaceCanvas.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Footer.Fg"     Color="{DynamicResource TextPrimary.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Footer.Border" Color="{DynamicResource OutlineDefault.Color}"/>
 
-    <SolidColorBrush x:Key="C.Grid.Empty.Fg" Color="{DynamicResource TextMuted}"/>
+    <SolidColorBrush x:Key="C.Grid.Empty.Fg" Color="{DynamicResource TextMuted.Color}"/>
     <sys:Double      x:Key="C.Grid.Empty.IconSize">40</sys:Double>
 
     <sys:Double x:Key="C.Grid.Header.Height">40</sys:Double>

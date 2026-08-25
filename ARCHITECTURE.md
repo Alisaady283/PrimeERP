@@ -428,6 +428,76 @@ FiscalPeriod/Backup) تخفيضها متواضع لأن أغلب سطورها م
 
 ---
 
+## قبل R7 — أول تشغيل فعلي للتطبيق كشف عن ثغرتين تأسيسيتين
+
+R1–R6 كلها تحقّقت عبر `dotnet build`/`dotnet test` — لا أحد شغّل `PrimeERP.exe` فعلياً طوال المشروع حتى بداية R7.
+أول تشغيل حقيقي فشل فوراً، بثغرتين منفصلتين تماماً، كلتاهما لم يكشفها البناء ولا الاختبارات.
+
+### ⚠️ توقف 6 — L3 (Components) يخلط Color بـ Brush في كل ملف تقريباً
+
+**العرض**: `System.InvalidOperationException: '#00FFFFFF' is not a valid value for property 'Color'` عند أول
+`Border`/عنصر يستهلك أي مفتاح `C.*`. لاحقاً (بعد إصلاح جزئي): `ResourceReferenceKeyNotFoundException` لمفاتيح
+دلالية عادية.
+
+**السبب الجذري**: كل ملفات `5.Design/Components/Tokens.*.xaml` (94 موضعاً عبر 11 ملفاً) تكتب
+`<SolidColorBrush x:Key="C.X" Color="{DynamicResource BrandDefault}"/>` — لكن `BrandDefault` (وأمثاله الـ31)
+**Brush لا Color**. `DynamicResourceExtension` يحتاج DependencyProperty حقيقياً على DependencyObject
+ليتعلَّق به (نفس قيد ⚠️ توقف 4) — `SolidColorBrush.Color` مضيف صالح، لكن فقط لو المصدر Color بالفعل؛ WPF لا
+يحوِّل Brush→Color تلقائياً، فيفشل وقت التشغيل حصراً (لا بناء، لا اختبار يُصيِّر هذه الملفات فعلياً).
+
+**محاولتان فاشلتان قبل الحل**، للتوثيق (كلتاهما بُنيتا بنجاح، فشلتا وقت التشغيل فقط — الدرس: نجاح `dotnet build`
+لا يعني صحة XAML وقت التشغيل):
+1. `<Color x:Key="X.Color">{DynamicResource Y}</Color>` — محتوى عنصر `Color` لا يُفسَّر كـ Markup Extension،
+   يُمرَّر كنص حرفي لـ `ColorConverter` فيفشل.
+2. `Color="{Binding Color, Source={DynamicResource Y}}"` — WPF يرفض صراحة: *"A 'DynamicResourceExtension' can
+   only be set on a DependencyProperty of a DependencyObject"* — `Binding.Source` ليست كذلك.
+
+**الحل**: استخراج Color برمجياً من كل Brush دلالي بعد استقرار الشجرة، لا عبر XAML إطلاقاً —
+`IdentityService.RefreshDerivedColors()` تقرأ كل Brush من الـ31 عبر `TryFindResource`، وتحقن
+`app.Resources["{Name}.Color"] = brush.Color` (قيمة Color خام مباشرة، بلا أي DynamicResource متداخل، فلا خطر
+تجميد). كل الـ94 موضعاً في L3 تحوَّلت لتشير لـ`{DynamicResource X.Color}` بدل `{DynamicResource X}`.
+
+**تبعية بنيوية اكتُشفت أثناء الحل**: `Theme.xaml` كان يدمج L2 (Semantic) وL3 (Components) في خطوة واحدة —
+`RefreshDerivedColors()` تحتاج L2 مستقرة *قبل* أول تحميل لـ L3 (نفس درس ⚠️ توقف 5 بالضبط: أي شيء مُركَّب
+يعتمد عليه شيء آخر يجب أن يستقر أولاً). **الحل**: فصل `Theme.xaml` إلى `Theme.Semantic.xaml` (L2 فقط) +
+`Theme.xaml` (L3+L4). `IIdentityService.Apply` الآن: هوية → `Theme.Semantic.xaml` → `RefreshDerivedColors()` →
+`Theme.xaml` → القواميس المحفوظة. نفس الاستثناء المطلوب لملفات الهوية طُبِّق أيضاً على `Theme.Semantic.xaml`
+في فلتر "المحفوظة" (وإلا تكرَّر نفس فخ ⚠️ توقف 5 الفرعي).
+
+**⚠️ قيد متبقٍّ موثَّق لا مُصلَح**: `ApplyMode` (تبديل فاتح/داكن التفاعلي، لا عبر إعادة تشغيل) يستدعي
+`ThemeService.Apply` الذي يُضيف/يُزيل `Semantic.Dark.xaml` **تراكمياً** على الشجرة الحيّة، لا إعادة بناء كاملة
+مثل `Apply` (تبديل الهوية). أي Brush في L3 **يكون قد تجمَّد بالفعل** (عُرض عنصر حيّ يستهلكه) وقت تبديل تفاعلي
+لن يتّبع اللون الجديد فوراً — نفس آلية التجميد في توقف 5، تنطبق هنا أيضاً على أي عنصر مُركَّب لم يُعَد بناؤه من
+الصفر. غير حرج للإقلاع (تبديل الوضع المحفوظ يحدث في `Initialize()` قبل أي عرض)، لكنه قيد حقيقي على التبديل
+التفاعلي بعد الإقلاع يستحق معالجة مستقلة لاحقاً (على الأرجح: توحيد `ApplyMode` مع `Apply` لإعادة بناء كاملة
+بدل الإضافة/الحذف التراكمي).
+
+### ⚠️ توقف 7 — التطبيق الفعلي لم يكن يُنشئ مخطَّط قاعدة البيانات إطلاقاً
+
+**السبب**: `App.xaml.cs.OnStartup` يبني حاوية DI ويستدعي `IIdentityService.Initialize()` مباشرة — بلا أي
+استدعاء لإنشاء الجداول أو تشغيل الزارعين (Seeders) أو `MigrationRunner.RunPending()`. **فقط**
+`TestDatabaseFixture` (بيئة الاختبار) كانت تفعل ذلك — تسلسل حقيقي منذ R3، لم يُستدعَ قط من التطبيق الحقيقي.
+النتيجة: `IIdentityService.Initialize()` (وأي قراءة إعداد أخرى) تفشل بصمت بـ
+`SqliteException: no such table: AppSettings` — يبتلعها try/catch الموثَّق عمداً في `Initialize()` (مصمَّم
+لالتقاط "قاعدة غير جاهزة بعد"، لكنه كان يلتقط فعلياً "قاعدة لم تُبنَ إطلاقاً"). هذا ما أخفى غياب L2 عن
+`Application.Resources` الأساسية (توقف 6) — لولا هذا، كانت `Danger` وأمثالها ستُوجَد دائماً عبر Theme.xaml
+القديم غير المُقسَّم؛ لكن الثغرتين حقيقيتان مستقلتان، لا إحداهما سبب الأخرى.
+
+**الحل**: `DependencyInjection.EnsureDatabaseReady(IServiceProvider)` — دالة توسيع جديدة، نفس تسلسل
+`TestDatabaseFixture` حرفياً (CreateTable لكل مستودع + الزارعون + `MigrationRunner.RunPending()`)، بأمان
+الاستدعاء المتكرر (CREATE TABLE IF NOT EXISTS، والزارعون تتحقق داخلياً من عدم التكرار). تُستدعى من
+`App.xaml.cs.OnStartup` فوراً بعد بناء الحاوية، قبل `IIdentityService.Initialize()`.
+
+### التحقق
+
+`dotnet build` → 0 خطأ. `dotnet test` → **148/148 ناجح، صفر تعديل**. `check.sh` → **صفر FAIL** (فحص جديد أُضيف:
+`Color="{DynamicResource X}"` حيث X ليس `<Color x:Key>` حقيقياً ولا ينتهي بـ`.Color` = FAIL — تحقَّق فعلياً
+بإدخال الخرق الأصلي مؤقتاً والتأكد أن الفحص يلتقطه). **تشغيل فعلي حقيقي** لـ`PrimeERP.exe` (لا محاكاة) — لقطة
+شاشة للنافذة الفعلية تُظهر `ControlsGalleryPage` كاملة الأنماط (شارات، مفاتيح تبديل، حدود، ألوان) بلا أي خرق
+أو رسالة خطأ.
+
+---
+
 ## اكتشاف فني إضافي أثناء R1 (يستحق التسجيل)
 
 **تسمية الطبقة "Application" تتصادم مع `System.Windows.Application`**: أي ملف تحت شجرة `PrimeERP.*` يستخدم `Application.Current`/`: Application` بلا تأهيل كامل يتعرّض لخطر أن يحلّه المترجم كإشارة لمساحة الاسم `PrimeERP.Application` (طبقة 4) بدل نوع WPF — C# يبحث في مساحات الاسم المحيطة صعوداً قبل استشارة `using`. **الحل المُطبَّق**: كل إشارة WPF لـ `Application` في الكود مؤهَّلة بالكامل الآن (`System.Windows.Application`) — 11 ملفاً. أي ملف جديد يستخدم `Application.Current` مستقبلاً **يجب** أن يكتبها مؤهَّلة بالكامل لنفس السبب.

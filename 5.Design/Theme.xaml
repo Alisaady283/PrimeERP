@@ -14,9 +14,7 @@
         لاحق، مهما كانت الهوية النهائية. الترتيب الصحيح الوحيد: الهوية أولاً، ثم Theme.xaml — لا العكس أبداً.
     -->
     <ResourceDictionary.MergedDictionaries>
-        <!-- ===== L2 — Semantic (فاتح) ===== -->
-        <ResourceDictionary Source="Semantic/Semantic.Light.xaml"/>
-        <ResourceDictionary Source="Semantic/Semantic.Type.xaml"/>
+        <!-- ===== L2 — Semantic منقولة إلى Theme.Semantic.xaml (⚠️ توقف 6) — تُدمَج قبل هذا الملف عبر IdentityService.Apply، لا هنا. ===== -->
 
         <!-- ===== L3 — Components ===== -->
         <ResourceDictionary Source="Components/Tokens.Button.xaml"/>

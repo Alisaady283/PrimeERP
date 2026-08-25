@@ -28,6 +28,7 @@ public partial class App : System.Windows.Application
             .AddModules();
 
         Services = services.BuildServiceProvider();
+        Services.EnsureDatabaseReady();
         UIServices.Initialize(Services);
 
         Services.GetRequiredService<IIdentityService>().Initialize();

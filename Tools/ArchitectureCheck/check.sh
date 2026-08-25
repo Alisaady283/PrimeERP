@@ -220,6 +220,27 @@ if [ -n "$n" ]; then
   echo "$n" | sed 's/^/       /'
 else pass; fi
 
+# Color="{DynamicResource X}" حيث X ليس Color حقيقياً — خطأ نوع (Brush لا Color) يُبنى بلا خطأ لكن يتعطّل وقت
+# التشغيل فقط (⚠️ توقف 6، ARCHITECTURE.md). المفاتيح الصحيحة: معرَّفة <Color x:Key="X"> صراحة، أو تنتهي بـ
+# ".Color" (تُشتق برمجياً في IdentityService.RefreshDerivedColors — لا XAML يعرّفها).
+COLOR_DEFS=$(grep -rhoE '<Color x:Key="[^"]+"' --include="*.xaml" 5.Design 2>/dev/null | sed 's/<Color x:Key="//;s/"$//' | sort -u)
+n=""
+for f in $(grep -rlE 'Color="\{DynamicResource [^}]+\}"' --include="*.xaml" 5.Design 6.UI 2>/dev/null); do
+  refs=$(grep -oE 'Color="\{DynamicResource [^}]+\}"' "$f" | sed -E 's/Color="\{DynamicResource ([^}]+)\}"/\1/' | sort -u)
+  for ref in $refs; do
+    case "$ref" in
+      *.Color) continue ;;
+    esac
+    if ! echo "$COLOR_DEFS" | grep -qxF "$ref"; then
+      n="$n$f: Color=\"{DynamicResource $ref}\" — $ref ليس Color حقيقياً\n"
+    fi
+  done
+done
+if [ -n "$n" ]; then
+  fail "Color= يشير لمفتاح غير Color حقيقي (Brush لا يتحوّل تلقائياً — راجع توقف 6):"
+  echo -e "$n" | sed 's/^/       /'
+else pass; fi
+
 # ============================================================
 section "4 — التكرار"
 # ============================================================

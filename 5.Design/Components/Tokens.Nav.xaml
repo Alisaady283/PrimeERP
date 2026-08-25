@@ -5,22 +5,22 @@
 
     <!-- L3 — رموز الشريط الجانبي (AppSidebar) والشريط العلوي (AppTopBar). الألوان تشير لـ L2 Semantic حصراً. -->
 
-    <SolidColorBrush x:Key="C.Nav.Surface"        Color="{DynamicResource NavSurface}"/>
-    <SolidColorBrush x:Key="C.Nav.Item.Fg"        Color="{DynamicResource NavText}"/>
-    <SolidColorBrush x:Key="C.Nav.Item.Icon.Fg"   Color="{DynamicResource NavIcon}"/>
-    <SolidColorBrush x:Key="C.Nav.Item.Hover.Bg"      Color="{DynamicResource NavHover}"/>
-    <SolidColorBrush x:Key="C.Nav.Item.Selected.Bg"   Color="{DynamicResource NavHover}"/>
-    <SolidColorBrush x:Key="C.Nav.Item.Selected.Fg"   Color="{DynamicResource NavTextSelected}"/>
-    <SolidColorBrush x:Key="C.Nav.Item.Bar.Fg"        Color="{DynamicResource NavSelectedBar}"/>
-    <SolidColorBrush x:Key="C.Nav.Divider"        Color="{DynamicResource NavHover}"/>
-    <SolidColorBrush x:Key="C.Nav.Badge.Bg"       Color="{DynamicResource BrandDefault}"/>
-    <SolidColorBrush x:Key="C.Nav.Badge.Fg"       Color="{DynamicResource TextOnBrand}"/>
+    <SolidColorBrush x:Key="C.Nav.Surface"        Color="{DynamicResource NavSurface.Color}"/>
+    <SolidColorBrush x:Key="C.Nav.Item.Fg"        Color="{DynamicResource NavText.Color}"/>
+    <SolidColorBrush x:Key="C.Nav.Item.Icon.Fg"   Color="{DynamicResource NavIcon.Color}"/>
+    <SolidColorBrush x:Key="C.Nav.Item.Hover.Bg"      Color="{DynamicResource NavHover.Color}"/>
+    <SolidColorBrush x:Key="C.Nav.Item.Selected.Bg"   Color="{DynamicResource NavHover.Color}"/>
+    <SolidColorBrush x:Key="C.Nav.Item.Selected.Fg"   Color="{DynamicResource NavTextSelected.Color}"/>
+    <SolidColorBrush x:Key="C.Nav.Item.Bar.Fg"        Color="{DynamicResource NavSelectedBar.Color}"/>
+    <SolidColorBrush x:Key="C.Nav.Divider"        Color="{DynamicResource NavHover.Color}"/>
+    <SolidColorBrush x:Key="C.Nav.Badge.Bg"       Color="{DynamicResource BrandDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Nav.Badge.Fg"       Color="{DynamicResource TextOnBrand.Color}"/>
 
-    <SolidColorBrush x:Key="C.TopBar.Bg"       Color="{DynamicResource TopBarSurface}"/>
-    <SolidColorBrush x:Key="C.TopBar.Border"   Color="{DynamicResource TopBarBorder}"/>
-    <SolidColorBrush x:Key="C.TopBar.Fg"       Color="{DynamicResource TopBarText}"/>
-    <SolidColorBrush x:Key="C.TopBar.Icon.Fg"       Color="{DynamicResource TopBarIcon}"/>
-    <SolidColorBrush x:Key="C.TopBar.Icon.Hover.Fg" Color="{DynamicResource TopBarIconHover}"/>
+    <SolidColorBrush x:Key="C.TopBar.Bg"       Color="{DynamicResource TopBarSurface.Color}"/>
+    <SolidColorBrush x:Key="C.TopBar.Border"   Color="{DynamicResource TopBarBorder.Color}"/>
+    <SolidColorBrush x:Key="C.TopBar.Fg"       Color="{DynamicResource TopBarText.Color}"/>
+    <SolidColorBrush x:Key="C.TopBar.Icon.Fg"       Color="{DynamicResource TopBarIcon.Color}"/>
+    <SolidColorBrush x:Key="C.TopBar.Icon.Hover.Fg" Color="{DynamicResource TopBarIconHover.Color}"/>
 
     <!-- ===== الأبعاد — مستقلة، ثابتة بين الهويات ===== -->
     <sys:Double x:Key="C.Nav.Width">240</sys:Double>

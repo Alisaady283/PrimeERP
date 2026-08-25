@@ -5,25 +5,25 @@
 
     <!-- L3 — رموز مكوّن الحقول. الألوان تشير لـ L2 Semantic حصراً (راجع تعليق Tokens.Button.xaml — لماذا لا L1 مباشرة). -->
 
-    <SolidColorBrush x:Key="C.Input.Bg"          Color="{DynamicResource SurfaceDefault}"/>
-    <SolidColorBrush x:Key="C.Input.Fg"          Color="{DynamicResource TextPrimary}"/>
-    <SolidColorBrush x:Key="C.Input.Border"      Color="{DynamicResource OutlineDefault}"/>
-    <SolidColorBrush x:Key="C.Input.Placeholder" Color="{DynamicResource TextMuted}"/>
+    <SolidColorBrush x:Key="C.Input.Bg"          Color="{DynamicResource SurfaceDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Input.Fg"          Color="{DynamicResource TextPrimary.Color}"/>
+    <SolidColorBrush x:Key="C.Input.Border"      Color="{DynamicResource OutlineDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Input.Placeholder" Color="{DynamicResource TextMuted.Color}"/>
 
-    <SolidColorBrush x:Key="C.Input.Focus.Border" Color="{DynamicResource OutlineFocus}"/>
+    <SolidColorBrush x:Key="C.Input.Focus.Border" Color="{DynamicResource OutlineFocus.Color}"/>
     <sys:Double      x:Key="C.Input.Focus.BorderWidth">2</sys:Double>
 
-    <SolidColorBrush x:Key="C.Input.Error.Border" Color="{DynamicResource Danger}"/>
-    <SolidColorBrush x:Key="C.Input.Error.Text"   Color="{DynamicResource Danger}"/>
+    <SolidColorBrush x:Key="C.Input.Error.Border" Color="{DynamicResource Danger.Color}"/>
+    <SolidColorBrush x:Key="C.Input.Error.Text"   Color="{DynamicResource Danger.Color}"/>
 
-    <SolidColorBrush x:Key="C.Input.ReadOnly.Bg" Color="{DynamicResource SurfaceSunken}"/>
+    <SolidColorBrush x:Key="C.Input.ReadOnly.Bg" Color="{DynamicResource SurfaceSunken.Color}"/>
     <sys:Double      x:Key="C.Input.Disabled.Opacity">0.5</sys:Double>
 
-    <SolidColorBrush x:Key="C.Input.Label.Fg" Color="{DynamicResource TextSecondary}"/>
+    <SolidColorBrush x:Key="C.Input.Label.Fg" Color="{DynamicResource TextSecondary.Color}"/>
     <sys:Double      x:Key="C.Input.Label.Gap">4</sys:Double>
 
-    <SolidColorBrush x:Key="C.Input.Required.Fg" Color="{DynamicResource Danger}"/>
-    <SolidColorBrush x:Key="C.Input.Hint.Fg"     Color="{DynamicResource TextMuted}"/>
+    <SolidColorBrush x:Key="C.Input.Required.Fg" Color="{DynamicResource Danger.Color}"/>
+    <SolidColorBrush x:Key="C.Input.Hint.Fg"     Color="{DynamicResource TextMuted.Color}"/>
 
     <!-- ===== الأبعاد — مستقلة، ثابتة بين الهويات ===== -->
     <sys:Double x:Key="C.Input.Height">36</sys:Double>

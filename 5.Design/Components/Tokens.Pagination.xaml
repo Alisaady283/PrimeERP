@@ -5,7 +5,7 @@
 
     <!-- L3 — رموز شريط الصفحات (AppPagination). -->
 
-    <SolidColorBrush x:Key="C.Pagination.Info.Fg" Color="{DynamicResource TextMuted}"/>
+    <SolidColorBrush x:Key="C.Pagination.Info.Fg" Color="{DynamicResource TextMuted.Color}"/>
     <sys:Double      x:Key="C.Pagination.Height">44</sys:Double>
 
 </ResourceDictionary>

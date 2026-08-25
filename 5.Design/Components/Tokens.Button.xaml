@@ -12,29 +12,29 @@
     -->
 
     <!-- ===== الألوان — بحسب الشكل (Variant)، كلها إعادة تسمية لمفاتيح L2 موجودة أصلاً ===== -->
-    <SolidColorBrush x:Key="C.Button.Primary.Bg"       Color="{DynamicResource BrandDefault}"/>
-    <SolidColorBrush x:Key="C.Button.Primary.Fg"       Color="{DynamicResource TextOnBrand}"/>
-    <SolidColorBrush x:Key="C.Button.Primary.Border"   Color="{DynamicResource BrandDefault}"/>
-    <SolidColorBrush x:Key="C.Button.Primary.Hover.Bg" Color="{DynamicResource BrandHover}"/>
+    <SolidColorBrush x:Key="C.Button.Primary.Bg"       Color="{DynamicResource BrandDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Button.Primary.Fg"       Color="{DynamicResource TextOnBrand.Color}"/>
+    <SolidColorBrush x:Key="C.Button.Primary.Border"   Color="{DynamicResource BrandDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Button.Primary.Hover.Bg" Color="{DynamicResource BrandHover.Color}"/>
 
-    <SolidColorBrush x:Key="C.Button.Secondary.Bg"     Color="{DynamicResource SurfaceDefault}"/>
-    <SolidColorBrush x:Key="C.Button.Secondary.Fg"     Color="{DynamicResource TextPrimary}"/>
-    <SolidColorBrush x:Key="C.Button.Secondary.Border" Color="{DynamicResource OutlineDefault}"/>
+    <SolidColorBrush x:Key="C.Button.Secondary.Bg"     Color="{DynamicResource SurfaceDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Button.Secondary.Fg"     Color="{DynamicResource TextPrimary.Color}"/>
+    <SolidColorBrush x:Key="C.Button.Secondary.Border" Color="{DynamicResource OutlineDefault.Color}"/>
 
-    <SolidColorBrush x:Key="C.Button.Success.Bg"     Color="{DynamicResource Success}"/>
-    <SolidColorBrush x:Key="C.Button.Success.Fg"     Color="{DynamicResource TextOnBrand}"/>
-    <SolidColorBrush x:Key="C.Button.Success.Border" Color="{DynamicResource Success}"/>
+    <SolidColorBrush x:Key="C.Button.Success.Bg"     Color="{DynamicResource Success.Color}"/>
+    <SolidColorBrush x:Key="C.Button.Success.Fg"     Color="{DynamicResource TextOnBrand.Color}"/>
+    <SolidColorBrush x:Key="C.Button.Success.Border" Color="{DynamicResource Success.Color}"/>
 
-    <SolidColorBrush x:Key="C.Button.Warning.Bg"     Color="{DynamicResource Warning}"/>
-    <SolidColorBrush x:Key="C.Button.Warning.Fg"     Color="{DynamicResource TextOnBrand}"/>
-    <SolidColorBrush x:Key="C.Button.Warning.Border" Color="{DynamicResource Warning}"/>
+    <SolidColorBrush x:Key="C.Button.Warning.Bg"     Color="{DynamicResource Warning.Color}"/>
+    <SolidColorBrush x:Key="C.Button.Warning.Fg"     Color="{DynamicResource TextOnBrand.Color}"/>
+    <SolidColorBrush x:Key="C.Button.Warning.Border" Color="{DynamicResource Warning.Color}"/>
 
-    <SolidColorBrush x:Key="C.Button.Danger.Bg"     Color="{DynamicResource Danger}"/>
-    <SolidColorBrush x:Key="C.Button.Danger.Fg"     Color="{DynamicResource TextOnBrand}"/>
-    <SolidColorBrush x:Key="C.Button.Danger.Border" Color="{DynamicResource Danger}"/>
+    <SolidColorBrush x:Key="C.Button.Danger.Bg"     Color="{DynamicResource Danger.Color}"/>
+    <SolidColorBrush x:Key="C.Button.Danger.Fg"     Color="{DynamicResource TextOnBrand.Color}"/>
+    <SolidColorBrush x:Key="C.Button.Danger.Border" Color="{DynamicResource Danger.Color}"/>
 
-    <SolidColorBrush x:Key="C.Button.Ghost.Fg"     Color="{DynamicResource BrandDefault}"/>
-    <SolidColorBrush x:Key="C.Button.Ghost.Border" Color="{DynamicResource OutlineDefault}"/>
+    <SolidColorBrush x:Key="C.Button.Ghost.Fg"     Color="{DynamicResource BrandDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Button.Ghost.Border" Color="{DynamicResource OutlineDefault.Color}"/>
 
     <sys:Double x:Key="C.Button.Pressed.Opacity">0.85</sys:Double>
     <sys:Double x:Key="C.Button.Disabled.Opacity">0.5</sys:Double>

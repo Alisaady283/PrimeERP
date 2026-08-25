@@ -4,12 +4,12 @@
 
     <!-- L3 — رموز قطع المستند (DocumentHeader/Footer/LinesGrid). الألوان تشير لـ L2 Semantic حصراً. -->
 
-    <SolidColorBrush x:Key="C.Document.Bg"     Color="{DynamicResource SurfaceDefault}"/>
-    <SolidColorBrush x:Key="C.Document.Border" Color="{DynamicResource OutlineDefault}"/>
-    <SolidColorBrush x:Key="C.Document.Label.Fg" Color="{DynamicResource TextSecondary}"/>
-    <SolidColorBrush x:Key="C.Document.Muted.Fg" Color="{DynamicResource TextMuted}"/>
+    <SolidColorBrush x:Key="C.Document.Bg"     Color="{DynamicResource SurfaceDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Document.Border" Color="{DynamicResource OutlineDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Document.Label.Fg" Color="{DynamicResource TextSecondary.Color}"/>
+    <SolidColorBrush x:Key="C.Document.Muted.Fg" Color="{DynamicResource TextMuted.Color}"/>
 
     <!-- خلفية خلايا الإدخال داخل شبكة السطور (كمية/سعر/خصم) — نفس دور C.Input.Bg بالضبط. -->
-    <SolidColorBrush x:Key="C.Document.Field.Bg" Color="{DynamicResource SurfaceDefault}"/>
+    <SolidColorBrush x:Key="C.Document.Field.Bg" Color="{DynamicResource SurfaceDefault.Color}"/>
 
 </ResourceDictionary>

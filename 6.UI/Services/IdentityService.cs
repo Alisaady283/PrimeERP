@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Media;
 using Microsoft.Win32;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Design;
@@ -32,6 +33,7 @@ namespace PrimeERP.UI.Services
     {
         private readonly ISettingsService _settings;
         private const string ThemeDictSuffix = "Theme.xaml";
+        private const string ThemeSemanticDictSuffix = "Theme.Semantic.xaml";
 
         private static readonly string[] PrimitiveFiles =
         {
@@ -42,6 +44,39 @@ namespace PrimeERP.UI.Services
             "Primitives.Motion.xaml",
             "Primitives.Elevation.xaml"
         };
+
+        /// <summary>
+        /// ⚠️ توقف 6 — راجع ARCHITECTURE.md: WPF لا يسمح بإعادة تصدير Color حيّة من مفتاح Brush عبر
+        /// DynamicResource (يحتاج DependencyProperty على DependencyObject يستضيفه، و`SolidColorBrush.Color`
+        /// نفسها تحتاج مصدراً Color بالفعل — Brush لا يُحوَّل تلقائياً). 5.Design/Components/Tokens.*.xaml (L3)
+        /// يحتاج Color خام لعدة أسماء L2 (BrandDefault, SurfaceDefault...) المُعرَّفة هناك كـ Brush فقط. الحل
+        /// الوحيد العامل فعلياً: استخراج Color من كل Brush برمجياً هنا بعد اكتمال بناء الشجرة (هوية + وضع)،
+        /// وحقنها كقيمة Color خام مباشرة تحت مفتاح "{Name}.Color" — لا DynamicResource متداخل، فلا مشكلة تجميد
+        /// (توقف 5) ولا خطأ نوع. يُعاد استدعاؤها من Apply وApplyMode معاً — أي تغيير هوية أو وضع يُحدِّثها فوراً.
+        /// </summary>
+        private static readonly string[] DerivedColorNames =
+        {
+            "BrandDefault", "BrandHover", "BrandSoft", "Danger", "DangerSoft",
+            "NavHover", "NavIcon", "NavSelectedBar", "NavSurface", "NavText",
+            "NavTextSelected", "OutlineDefault", "OutlineFocus", "Success",
+            "SurfaceCanvas", "SurfaceDefault", "SurfaceRaised", "SurfaceSunken",
+            "TableRowHover", "TableRowSelected", "TableRowSelectedText",
+            "TextMuted", "TextOnBrand", "TextPrimary", "TextSecondary",
+            "TopBarBorder", "TopBarIcon", "TopBarIconHover", "TopBarSurface",
+            "TopBarText", "Warning", "WarningSoft"
+        };
+
+        private static void RefreshDerivedColors()
+        {
+            var app = System.Windows.Application.Current;
+            if (app == null) return;
+
+            foreach (var name in DerivedColorNames)
+            {
+                if (app.TryFindResource(name) is SolidColorBrush brush)
+                    app.Resources[$"{name}.Color"] = brush.Color;
+            }
+        }
 
         public IdentityService(ISettingsService settings) => _settings = settings;
 
@@ -82,6 +117,7 @@ namespace PrimeERP.UI.Services
                 var preserved = app.Resources.MergedDictionaries
                     .Where(d => d.Source == null ||
                                 (!d.Source.OriginalString.EndsWith(ThemeDictSuffix) &&
+                                 !d.Source.OriginalString.EndsWith(ThemeSemanticDictSuffix) &&
                                  !PrimitiveFiles.Any(f => d.Source.OriginalString.EndsWith(f))))
                     .ToList();
 
@@ -99,6 +135,12 @@ namespace PrimeERP.UI.Services
                     });
                 }
 
+                // L2 وحدها أولاً (⚠️ توقف 6) — RefreshDerivedColors تحتاج Brush الدلالية مستقرة قبل L3، وL3 جزء
+                // من Theme.xaml التالي مباشرة؛ لو دُمج L2+L3 معاً هنا (كما كان قبل توقف 6) قد يُقيَّم مورد L3
+                // المُركَّب (SolidColorBrush.Color) قبل استقرار مفاتيح ".Color" فيتجمَّد على قيمة ناقصة/خاطئة.
+                dicts.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/{asmName};component/5.Design/Theme.Semantic.xaml", UriKind.Absolute) });
+                RefreshDerivedColors();
+
                 dicts.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/{asmName};component/5.Design/Theme.xaml", UriKind.Absolute) });
 
                 foreach (var old in preserved)
@@ -115,6 +157,7 @@ namespace PrimeERP.UI.Services
         {
             var resolved = mode == ThemeMode.Auto ? ResolveSystemMode() : mode == ThemeMode.Dark ? AppThemeMode.Dark : AppThemeMode.Light;
             ThemeService.Apply(resolved);
+            RefreshDerivedColors();
 
             CurrentMode = mode;
             _settings.Set(SettingKeys.UI.Theme, mode.ToString());

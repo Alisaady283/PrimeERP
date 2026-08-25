@@ -1,0 +1,16 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        L2 وحدها — مفصولة عن Theme.xaml عمداً (⚠️ توقف 6، ARCHITECTURE.md). IIdentityService.Apply يدمج هذا
+        الملف، ثم يستخرج Color خام من كل Brush دلالي يحتاجه L3 (RefreshDerivedColors)، ثم يدمج Theme.xaml
+        (L3+L4) — نفس مبدأ توقف 5 بالضبط: أي شيء L3 يعتمد عليه (هنا المفاتيح ".Color" المُشتقة) يجب أن يستقر
+        قبل أول تحميل لـ L3، لا بعده ولو للحظة.
+    -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Semantic/Semantic.Light.xaml"/>
+        <ResourceDictionary Source="Semantic/Semantic.Type.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+</ResourceDictionary>

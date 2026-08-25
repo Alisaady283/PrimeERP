@@ -5,8 +5,8 @@
 
     <!-- L3 — رموز مكوّن الحوار. لون الهيدر نفسه ليس هنا — يُحسب وقت التشغيل عبر VariantToBrushConverter من StatusVariant. -->
 
-    <SolidColorBrush x:Key="C.Dialog.Footer.Bg"     Color="{DynamicResource SurfaceDefault}"/>
-    <SolidColorBrush x:Key="C.Dialog.Footer.Border" Color="{DynamicResource OutlineDefault}"/>
+    <SolidColorBrush x:Key="C.Dialog.Footer.Bg"     Color="{DynamicResource SurfaceDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Dialog.Footer.Border" Color="{DynamicResource OutlineDefault.Color}"/>
 
     <sys:Double x:Key="C.Dialog.Width.Sm">420</sys:Double>
     <sys:Double x:Key="C.Dialog.Width.Md">560</sys:Double>

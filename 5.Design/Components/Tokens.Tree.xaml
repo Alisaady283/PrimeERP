@@ -4,10 +4,10 @@
 
     <!-- L3 — رموز الشجرة (AppTreeView). الألوان تشير لـ L2 Semantic حصراً. -->
 
-    <SolidColorBrush x:Key="C.Tree.Bg"          Color="{DynamicResource SurfaceDefault}"/>
-    <SolidColorBrush x:Key="C.Tree.Border"      Color="{DynamicResource OutlineDefault}"/>
-    <SolidColorBrush x:Key="C.Tree.Item.Fg"     Color="{DynamicResource TextPrimary}"/>
-    <SolidColorBrush x:Key="C.Tree.Item.Disabled.Fg" Color="{DynamicResource TextMuted}"/>
-    <SolidColorBrush x:Key="C.Tree.Item.Match.Fg"    Color="{DynamicResource BrandDefault}"/>
+    <SolidColorBrush x:Key="C.Tree.Bg"          Color="{DynamicResource SurfaceDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Tree.Border"      Color="{DynamicResource OutlineDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Tree.Item.Fg"     Color="{DynamicResource TextPrimary.Color}"/>
+    <SolidColorBrush x:Key="C.Tree.Item.Disabled.Fg" Color="{DynamicResource TextMuted.Color}"/>
+    <SolidColorBrush x:Key="C.Tree.Item.Match.Fg"    Color="{DynamicResource BrandDefault.Color}"/>
 
 </ResourceDictionary>

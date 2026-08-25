@@ -4,8 +4,8 @@
 
     <!-- L3 — رموز الإشعار المنبثق (AppToast). لون الشريط الجانبي/الأيقونة بحسب StatusVariant يُحسب وقت التشغيل (كود خلفي) — هنا الأسطح الثابتة فقط. -->
 
-    <SolidColorBrush x:Key="C.Toast.Bg" Color="{DynamicResource SurfaceRaised}"/>
-    <SolidColorBrush x:Key="C.Toast.Message.Fg" Color="{DynamicResource TextPrimary}"/>
-    <SolidColorBrush x:Key="C.Toast.Close.Fg"   Color="{DynamicResource TextMuted}"/>
+    <SolidColorBrush x:Key="C.Toast.Bg" Color="{DynamicResource SurfaceRaised.Color}"/>
+    <SolidColorBrush x:Key="C.Toast.Message.Fg" Color="{DynamicResource TextPrimary.Color}"/>
+    <SolidColorBrush x:Key="C.Toast.Close.Fg"   Color="{DynamicResource TextMuted.Color}"/>
 
 </ResourceDictionary>
