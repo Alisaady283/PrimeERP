@@ -10,7 +10,7 @@ namespace PrimeERP.Data.Repositories
         Customer GetById(int id, DbConnection conn = null, DbTransaction tx = null);
         Customer GetByCode(string code);
         new Customer GetByAccountCode(string accountCode, DbConnection conn = null, DbTransaction tx = null);
-        List<Customer> GetAll(bool activeOnly = true);
+        new List<Customer> GetAll(bool activeOnly = true);
         List<Customer> Search(string term, int maxResults);
         int CountAll(bool activeOnly = true);
         bool ExistsCode(string code, int? excludeId = null);

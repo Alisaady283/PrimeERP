@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Data.Common;
 
 namespace PrimeERP.Data.Repositories
@@ -6,6 +7,7 @@ namespace PrimeERP.Data.Repositories
     public interface IPartyRepository<TEntity>
     {
         TEntity GetByAccountCode(string accountCode, DbConnection conn = null, DbTransaction tx = null);
+        List<TEntity> GetAll(bool activeOnly = true);
         int Insert(TEntity entity, DbConnection conn = null, DbTransaction tx = null);
         void UpdateNameByAccountCode(DbConnection conn, DbTransaction tx, string accountCode, string name);
         void Delete(int id, string deletedBy, DbConnection conn = null, DbTransaction tx = null);

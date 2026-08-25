@@ -38,6 +38,8 @@ namespace PrimeERP.Application.Services.Parties
         protected override IPartyRepository<Customer> Repository => _customers;
         protected override IValidator<Customer> Validator => new CustomerValidator();
         protected override string AccountCodeOf(Customer entity) => entity.AccountCode;
+        protected override decimal CreditLimitOf(Customer entity) => entity.CreditLimit;
+        protected override decimal BalanceOf(Customer entity) => entity.Balance;
 
         protected override Customer BuildFromAccount(string code, string name, string accountCode) => new()
         {
@@ -257,64 +259,7 @@ namespace PrimeERP.Application.Services.Parties
 
         // ===================== الأرصدة والائتمان =====================
 
-        // RecalculateBalance جاهزة من PartyServiceBase.
-
-        public Result RecalculateAllBalances()
-        {
-            if (!Can("Edit")) return FailDenied();
-
-            var customers = _customers.GetAll(activeOnly: false).Where(c => !string.IsNullOrWhiteSpace(c.AccountCode)).ToList();
-
-            // كل قراءات الرصيد قبل فتح المعاملة (IAccountService.GetBalanceAsOf غير آمنة داخل معاملة خارجية —
-            // نفس سبب كل قراءة أخرى في هذه الجلسة، راجع AccountService.RecalculateBalance(conn,tx,...)).
-            var balances = new List<(int Id, decimal Balance)>();
-            foreach (var c in customers)
-            {
-                var balanceResult = Accounts.GetBalanceAsOf(c.AccountCode, DateTime.Today);
-                if (balanceResult.IsSuccess)
-                    balances.Add((c.Id, balanceResult.Value));
-            }
-
-            Db.RunTransaction((conn, tx) =>
-            {
-                foreach (var (id, balance) in balances)
-                    _customers.SetBalance(id, balance, conn, tx);
-            });
-
-            return Result.Ok();
-        }
-
-        public Result<CreditCheckResult> CheckCreditLimit(int id, decimal additional)
-        {
-            if (!Can("View")) return FailDenied<CreditCheckResult>();
-
-            var customer = _customers.GetById(id);
-            if (customer == null)
-                return Fail<CreditCheckResult>("NotFound", ErrorCode.NotFound);
-
-            if (customer.CreditLimit <= 0)
-                return Result.Ok(new CreditCheckResult
-                {
-                    IsAllowed = true, CurrentBalance = customer.Balance, CreditLimit = 0,
-                    AvailableCredit = decimal.MaxValue, ExceededBy = 0m // 0 = لا حد؛ AvailableCredit بلا سقف فعلي
-                });
-
-            var projectedBalance = customer.Balance + additional;
-            var exceededBy = projectedBalance > customer.CreditLimit ? projectedBalance - customer.CreditLimit : 0m;
-
-            var result = new CreditCheckResult
-            {
-                IsAllowed       = exceededBy == 0m,
-                CurrentBalance  = customer.Balance,
-                CreditLimit     = customer.CreditLimit,
-                AvailableCredit = customer.CreditLimit - customer.Balance,
-                ExceededBy      = exceededBy
-            };
-
-            return exceededBy > 0m
-                ? Result.Fail<CreditCheckResult>($"{Msg("CreditLimitExceeded")}: {exceededBy:N2}", ErrorCode.ValidationFailed)
-                : Result.Ok(result);
-        }
+        // RecalculateBalance/RecalculateAllBalances/CheckCreditLimit جاهزة من PartyServiceBase — منطق مطابق حرفياً لِما كان هنا، انتقل ليُستدعى لا يتكرر.
 
         // ===================== أدوات داخلية =====================
 

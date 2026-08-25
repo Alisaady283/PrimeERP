@@ -31,6 +31,8 @@ namespace PrimeERP.Application.Services.Parties
         protected override IPartyRepository<Supplier> Repository => _suppliers;
         protected override IValidator<Supplier> Validator => new SupplierValidator();
         protected override string AccountCodeOf(Supplier entity) => entity.AccountCode;
+        protected override decimal CreditLimitOf(Supplier entity) => entity.CreditLimit;
+        protected override decimal BalanceOf(Supplier entity) => entity.Balance;
 
         protected override Supplier BuildFromAccount(string code, string name, string accountCode) => new()
         {
@@ -187,58 +189,7 @@ namespace PrimeERP.Application.Services.Parties
             return Result.Ok();
         }
 
-        public Result RecalculateAllBalances()
-        {
-            if (!Can("Edit")) return FailDenied();
-
-            var suppliers = _suppliers.GetAll(activeOnly: false).Where(s => !string.IsNullOrWhiteSpace(s.AccountCode)).ToList();
-
-            var balances = new List<(int Id, decimal Balance)>();
-            foreach (var s in suppliers)
-            {
-                var balanceResult = Accounts.GetBalanceAsOf(s.AccountCode, DateTime.Today);
-                if (balanceResult.IsSuccess) balances.Add((s.Id, balanceResult.Value));
-            }
-
-            Db.RunTransaction((conn, tx) =>
-            {
-                foreach (var (id, balance) in balances)
-                    _suppliers.SetBalance(id, balance, conn, tx);
-            });
-
-            return Result.Ok();
-        }
-
-        public Result<CreditCheckResult> CheckCreditLimit(int id, decimal additional)
-        {
-            if (!Can("View")) return FailDenied<CreditCheckResult>();
-
-            var supplier = _suppliers.GetById(id);
-            if (supplier == null) return Fail<CreditCheckResult>("NotFound", ErrorCode.NotFound);
-
-            if (supplier.CreditLimit <= 0)
-                return Result.Ok(new CreditCheckResult
-                {
-                    IsAllowed = true, CurrentBalance = supplier.Balance, CreditLimit = 0,
-                    AvailableCredit = decimal.MaxValue, ExceededBy = 0m // 0 = لا حد؛ AvailableCredit بلا سقف فعلي
-                });
-
-            var projectedBalance = supplier.Balance + additional;
-            var exceededBy = projectedBalance > supplier.CreditLimit ? projectedBalance - supplier.CreditLimit : 0m;
-
-            var result = new CreditCheckResult
-            {
-                IsAllowed       = exceededBy == 0m,
-                CurrentBalance  = supplier.Balance,
-                CreditLimit     = supplier.CreditLimit,
-                AvailableCredit = supplier.CreditLimit - supplier.Balance,
-                ExceededBy      = exceededBy
-            };
-
-            return exceededBy > 0m
-                ? Result.Fail<CreditCheckResult>($"{Msg("CreditLimitExceeded")}: {exceededBy:N2}", ErrorCode.ValidationFailed)
-                : Result.Ok(result);
-        }
+        // RecalculateBalance/RecalculateAllBalances/CheckCreditLimit جاهزة من PartyServiceBase.
 
         private static Supplier BuildNewSupplier(CreateSupplierDto dto, string code) => new()
         {

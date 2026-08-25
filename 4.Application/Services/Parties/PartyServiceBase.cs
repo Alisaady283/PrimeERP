@@ -2,7 +2,9 @@ using System;
 using PrimeERP.Application.Services;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 using PrimeERP.Application.DTOs.Accounting;
+using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Contracts;
@@ -28,6 +30,8 @@ namespace PrimeERP.Application.Services.Parties
         protected abstract IPartyRepository<TEntity> Repository { get; }
         protected abstract IValidator<TEntity> Validator { get; }
         protected abstract string AccountCodeOf(TEntity entity);
+        protected abstract decimal CreditLimitOf(TEntity entity);
+        protected abstract decimal BalanceOf(TEntity entity);
         protected abstract TEntity BuildFromAccount(string code, string name, string accountCode);
 
         protected readonly IAccountService Accounts;
@@ -127,6 +131,65 @@ namespace PrimeERP.Application.Services.Parties
             if (string.IsNullOrWhiteSpace(accountCode)) return Fail<List<AccountStatementLine>>("AccountNotConfigured");
 
             return Accounts.GetStatement(accountCode, from, to);
+        }
+
+        /// <summary>مطابقة حرفياً بين CustomerService/SupplierService الأصليتين — لا فرق في المنطق بينهما، فانتقلت هنا بدل التكرار.</summary>
+        public virtual Result RecalculateAllBalances()
+        {
+            if (!Can("Edit")) return FailDenied();
+
+            var entities = Repository.GetAll(activeOnly: false).Where(e => !string.IsNullOrWhiteSpace(AccountCodeOf(e))).ToList();
+
+            // كل قراءات الرصيد قبل فتح المعاملة (IAccountService.GetBalanceAsOf غير آمنة داخل معاملة خارجية).
+            var balances = new List<(int Id, decimal Balance)>();
+            foreach (var e in entities)
+            {
+                var balanceResult = Accounts.GetBalanceAsOf(AccountCodeOf(e), DateTime.Today);
+                if (balanceResult.IsSuccess) balances.Add((e.Id, balanceResult.Value));
+            }
+
+            Db.RunTransaction((conn, tx) =>
+            {
+                foreach (var (id, balance) in balances)
+                    Repository.SetBalance(id, balance, conn, tx);
+            });
+
+            return Result.Ok();
+        }
+
+        /// <summary>مطابقة حرفياً بين الأصليتين — CreditLimit&lt;=0 يعني بلا حد.</summary>
+        public virtual Result<CreditCheckResult> CheckCreditLimit(int id, decimal additional)
+        {
+            if (!Can("View")) return FailDenied<CreditCheckResult>();
+
+            var entity = FindById(id);
+            if (entity == null) return Fail<CreditCheckResult>("NotFound", ErrorCode.NotFound);
+
+            var creditLimit = CreditLimitOf(entity);
+            var balance = BalanceOf(entity);
+
+            if (creditLimit <= 0)
+                return Result.Ok(new CreditCheckResult
+                {
+                    IsAllowed = true, CurrentBalance = balance, CreditLimit = 0,
+                    AvailableCredit = decimal.MaxValue, ExceededBy = 0m // 0 = لا حد؛ AvailableCredit بلا سقف فعلي
+                });
+
+            var projectedBalance = balance + additional;
+            var exceededBy = projectedBalance > creditLimit ? projectedBalance - creditLimit : 0m;
+
+            var result = new CreditCheckResult
+            {
+                IsAllowed       = exceededBy == 0m,
+                CurrentBalance  = balance,
+                CreditLimit     = creditLimit,
+                AvailableCredit = creditLimit - balance,
+                ExceededBy      = exceededBy
+            };
+
+            return exceededBy > 0m
+                ? Result.Fail<CreditCheckResult>($"{Msg("CreditLimitExceeded")}: {exceededBy:N2}", ErrorCode.ValidationFailed)
+                : Result.Ok(result);
         }
 
         protected (StatusVariant Variant, string StatusKey) ComputeStatus(bool isActive, bool isOverLimit) =>
