@@ -368,6 +368,64 @@ Permissions، إلخ)**: أي شيء في `1.Platform` يحتاج `ServiceBase` 
 `.System` كمقطع أخير) — أي مقطع مساحة اسم جديد يطابق اسم مساحة اسم من BCL/WPF (`System`, `Application`, `Data`,
 `Windows`...) يجب تفاديه أو تأهيله بالكامل في كل استخدام.
 
+### خطأ حقيقي وُجد ومُصلِح في ServiceBase قبل أن ينتشر
+
+`ServiceBase.Fail`/`Fail<T>` كانت تتجاهل ErrorCode المُمرَّر من المستدعي وترجع `ErrorCode.Unexpected` دائماً
+(الدالة الأصلية كانت `Fail(key, params object[] args) => Result.Fail(Msg(key, args))` — بلا مُعامل code إطلاقاً).
+`SettingsService` و`CrudServiceBase` (كلاهما مُلتزَم بالفعل) كانا يستخدمانها بافتراض أن ErrorCode.Unauthorized/
+NotFound سيُحفظ — لم يكن. اكتُشف قبل لمس AccountService (التي 3 من اختباراتها تتحقق من `ErrorCode.Unauthorized`
+صراحة) — لو أُهمِل هذا لفشلت اختبارات AccountServiceTests/CustomerServiceTests/JournalServiceTests/
+FiscalPeriodServiceTests بصمت لاحقاً. أُصلح بإضافة تحميل زائد `Fail(key, code, args)` صريح، وأُعيد فحص/تصحيح كل
+استدعاء سابق لـ`Fail`.
+
+**اكتشاف ثانٍ مرتبط**: أربع خدمات (Account/Journal/FiscalPeriod/Customer) تستخدم مفتاح رسالة "رفض الصلاحية" عاماً
+مشتركاً `"Str.PermissionDenied"` (لا مفتاحاً خاصاً بكل وحدة كـ`"Str.Settings.PermissionDenied"`) — نمطان
+مختلفان موجودان فعلياً في الكود القديم معاً. أُضيفت `FailDenied()`/`FailDenied<T>()` لـServiceBase خصيصاً لهذا
+النمط المشترك، منفصلة عن `Fail("PermissionDenied")` العادية (تبني `"{StringPrefix}.PermissionDenied"`).
+
+### جدول التخفيض (قبل/بعد) لكل خدمة
+
+| الخدمة | قبل | بعد | ملاحظة |
+|---|---|---|---|
+| SettingsService (+ SettingsProvider الجديدة) | 155 | 69 + 88 = 157¹ | فُصلت لمزوّد/خدمة — 69 سطر خدمة فعلية = 55.5% تخفيض عن الأصل المدمَج |
+| NumberSequenceService | 61 | 55 | مزوّد تقني بالفعل — لا صلاحية/audit لإزالتها؛ الوحيد المُبسَّط تكرار Next×2 |
+| BackupService | 303 | 294 | منطق I/O وتحقق فريد غالباً — لا تكرار عابر للخدمات لإزالته |
+| PermissionService | 52 | 40 | مزوّد تقني بالفعل — لا ServiceBase (يفحص هو نفسه الصلاحية، تبسيط DevMode فقط) |
+| AccountService | 686 | 669 | منطق أعمال (شجرة، ربط تلقائي) هو الغالب، لا Boilerplate |
+| JournalService | 641 | 627 | نفس السبب — تسع خطوات تحقق الترحيل منطق فريد لا يتكرر |
+| FiscalPeriodService | 415 | 409 | صلاحيات عبر وحدة Settings لا وحدة خاصة؛ Audit جدولين مختلفين |
+| CustomerService | 486 | 378 | 22% تخفيض — GetById/GetPaged/Search/GetStatement/CreateFromAccount/DeleteByAccountCode/UpdateNameFromAccount/RecalculateBalance انتقلت لـCrudServiceBase/PartyServiceBase |
+| SupplierService (جديدة) | — | 302 | بناء جديد كامل فوق PartyServiceBase — نفس القطع المشتركة مع Customer |
+
+¹ SettingsProvider تُستهلك أيضاً من ServiceBase.Setting&lt;T&gt; والـPipeline (SettingStep) — ليست خاصة بـSettingsService وحدها، فمقارنتها المباشرة بالسطر-إلى-سطر مضلِّلة؛ الرقم الحاسم للبوابة هو 69 سطر خدمة التطبيق.
+
+**ملاحظة صادقة**: التخفيضات الكبيرة (Settings 55.5%، Customer 22%) حصلت حيث كان الـBoilerplate (فحص صلاحية +
+رسالة + ErrorCode، أو استعلامات CRUD عامة) فعلاً الجزء الأكبر من الملف. الخدمات الأخرى (Account/Journal/
+FiscalPeriod/Backup) تخفيضها متواضع لأن أغلب سطورها منطق أعمال حقيقي غير مكرَّر — عزله محسِّن (صلاحية/تدقيق/
+رسائل موحَّدة عبر ServiceBase الآن) لكنه لا يُقلِّص العدد الكلي كثيراً. `SupplierService` (302 سطر) و`CustomerService`
+(378 سطر) يتجاوزان هدفي R6 الرقميين (&lt;100 و&lt;150 على الترتيب) — السبب نفسه: `Create` بمعاملتها الذرية
+(exception-based rollback)، `Update` بنسخ الحقول، و`CheckCreditLimit` بحسابها — منطق حقيقي غير قابل للاختزال
+بأمان عبر قالب Pipeline عام بلا مخاطرة حقيقية على صحة السلوك.
+
+### منطق محاسبي نُقل حرفياً (سطراً بسطر) — للمراجعة المستقبلية
+
+- **AccountService**: توليد كود الابن (أقصى رقم فرعي حالي + 1)، مستوى الحساب من الأب لا من طول الكود، منع إضافة
+  ابن تحت حساب Leaf، `IsLeaf` الأب لا تتغيّر تلقائياً، `ResolveAutoLink` عبر `IServiceProvider.GetService` مع
+  Fail صريح لو الخدمة غير مسجَّلة، `RecalculateBalance` بإعادة حساب كامل من القيود المرحّلة دائماً (لا تراكمي)،
+  `GetStatement` برصيد جارٍ.
+- **JournalService**: تسلسل تحقق الترحيل التسعة (`ValidatePostable`) بنفس الترتيب، الأرصدة تُحدَّث فقط عند
+  الترحيل، منع سطر بمدين ودائن معاً، منع تعديل/حذف قيد مرحّل، منع Unpost لقيد إقفال سنوي (`ClosingEntrySource`)،
+  `PostBatch` معاملة واحدة كل-أو-لا-شيء، ميزان المراجعة بالجانب الطبيعي الصحيح لكل نوع حساب، `GetAccountSums`
+  عبر استعلام `GROUP BY` مجمَّع واحد لا حلقة.
+- **FiscalPeriodService**: تقسيم الفترات لمدى تواريخ متصلة، قاعدة `IsOpen` ("لا فترة معرَّفة = مفتوحة" مع تجاوز
+  `RequireFiscalPeriod`)، منع إقفال فترة قبل إقفال سابقتها، قيد إقفال سنوي متوازن (عكس أرصدة الإيرادات/المصروفات
+  + الفرق لحساب الأرباح المحتجزة)، `Lazy<IJournalService>` لكسر الدائرية مع JournalService.
+- **CustomerService/SupplierService (PartyServiceBase)**: `SkipAutoLink` إلزامي عند الربط التلقائي (يمنع حلقة
+  لا نهائية)، `CreateFromAccount`/`DeleteByAccountCode`/`UpdateNameFromAccount` اتجاه معاكس بلا حلقة ping-pong،
+  مزامنة الاسم اتجاه واحد فقط، `CheckCreditLimit` حيث 0 = بلا حد، الرصيد دائماً من الحساب المرتبط (لا حساب مزدوج).
+- **كل الخدمات الثمانية**: كل توقيع `(conn,tx)` ونمط "القراءة الآمنة" (تفادي deadlock داخل معاملة خارجية عبر
+  تمرير نفس الاتصال، لا فتح اتصال جديد) محفوظ حرفياً بلا استثناء.
+
 ---
 
 ## اكتشاف فني إضافي أثناء R1 (يستحق التسجيل)
