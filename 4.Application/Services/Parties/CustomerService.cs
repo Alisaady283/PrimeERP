@@ -9,6 +9,7 @@ using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Application.Validation;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Domain.Contracts;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Application.Services.Accounting;
@@ -26,125 +27,86 @@ namespace PrimeERP.Application.Services.Parties
     /// إلزامي في كل استدعاء IAccountService.Create من هنا — يقطع الحلقة اللانهائية مع AccountService.Create
     /// (الذي يستدعي CreateFromAccount أدناه عند الربط التلقائي) — راجع MIGRATION_INVENTORY.md.
     /// </summary>
-    public class CustomerService : ICustomerService
+    public class CustomerService : PartyServiceBase<Customer, CustomerDto, CustomerFilter>, ICustomerService
     {
-        private readonly IPermissionService _permissions;
-        private readonly ISettingsService _settings;
-        private readonly IAccountService _accounts;
-        private readonly INumberSequenceService _numbers;
-        private readonly ICustomerRepository _customers;
-        private readonly IAccountRepository _accountRepo;
-        private readonly IJournalRepository _journalRepo;
-        private readonly IAuditLogger _audit;
+        protected override string PermissionPrefix => "Customers";
+        protected override string StringPrefix => "Str.Customer";
+        protected override string EntityName => "Customers";
 
-        public CustomerService(IPermissionService permissions, ISettingsService settings, IAccountService accounts, INumberSequenceService numbers,
-            ICustomerRepository customers, IAccountRepository accountRepo, IJournalRepository journalRepo, IAuditLogger audit)
+        protected override string AccountSettingKey => SettingKeys.Accounts.Customers;
+        protected override string SequenceKey => "Customer";
+        protected override IPartyRepository<Customer> Repository => _customers;
+        protected override IValidator<Customer> Validator => new CustomerValidator();
+        protected override string AccountCodeOf(Customer entity) => entity.AccountCode;
+
+        protected override Customer BuildFromAccount(string code, string name, string accountCode) => new()
         {
-            _permissions = permissions;
-            _settings = settings;
-            _accounts = accounts;
-            _numbers = numbers;
+            Code        = code,
+            Name        = name,
+            AccountCode = accountCode,
+            IsActive    = true,
+            CreatedBy   = CurrentUser
+        };
+
+        private readonly ICustomerRepository _customers;
+        private readonly IJournalRepository _journalRepo;
+        private readonly IAccountRepository _accountRepo;
+
+        public CustomerService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
+            IAccountService accounts, INumberSequenceService numbers, ICustomerRepository customers, IAccountRepository accountRepo, IJournalRepository journalRepo)
+            : base(permissions, settings, localization, audit, accounts, numbers, accountRepo)
+        {
             _customers = customers;
             _accountRepo = accountRepo;
             _journalRepo = journalRepo;
-            _audit = audit;
         }
-
-        private static string Denied => LocalizationService.Get("Str.PermissionDenied");
-        private static string CurrentUser => AppSession.Username ?? "Admin";
 
         // ===================== القراءة =====================
+        // GetById/GetPaged/Search جاهزة من CrudServiceBase عبر FindById/FindPaged/FindSearch أدناه.
 
-        public Result<PagedResult<CustomerDto>> GetPaged(int page, int pageSize, CustomerFilter filter = null)
+        protected override Customer FindById(int id) => _customers.GetById(id);
+
+        protected override (List<Customer> Items, int Total) FindPaged(int page, int pageSize, CustomerFilter filter)
         {
-            if (!_permissions.Can(PermissionKeys.Customers.View))
-                return Result.Fail<PagedResult<CustomerDto>>(Denied, ErrorCode.Unauthorized);
-
             filter ??= new CustomerFilter();
-
-            var (items, total) = _customers.GetPaged(
-                page, pageSize,
-                filter.SearchText, filter.IsActive, filter.HasBalance, filter.OverCreditLimit,
-                filter.CategoryId, filter.SortBy, filter.SortDescending);
-
-            return Result.Ok(new PagedResult<CustomerDto> { Items = items.Select(ToDto).ToList(), TotalCount = total, Page = page, PageSize = pageSize });
+            return _customers.GetPaged(page, pageSize, filter.SearchText, filter.IsActive, filter.HasBalance,
+                filter.OverCreditLimit, filter.CategoryId, filter.SortBy, filter.SortDescending);
         }
 
-        public Result<CustomerDto> GetById(int id)
-        {
-            if (!_permissions.Can(PermissionKeys.Customers.View))
-                return Result.Fail<CustomerDto>(Denied, ErrorCode.Unauthorized);
-
-            var customer = _customers.GetById(id);
-            if (customer == null)
-                return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
-
-            return Result.Ok(ToDto(customer));
-        }
+        protected override List<Customer> FindSearch(string term, int maxResults) => _customers.Search(term, maxResults);
 
         public Result<CustomerDto> GetByCode(string code)
         {
-            if (!_permissions.Can(PermissionKeys.Customers.View))
-                return Result.Fail<CustomerDto>(Denied, ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<CustomerDto>();
 
             var customer = _customers.GetByCode(code);
             if (customer == null)
-                return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
+                return Fail<CustomerDto>("NotFound", ErrorCode.NotFound);
 
-            return Result.Ok(ToDto(customer));
+            return Ok(ToDto(customer));
         }
 
-        public Result<List<CustomerDto>> Search(string term, int maxResults = 50)
-        {
-            if (!_permissions.Can(PermissionKeys.Customers.View))
-                return Result.Fail<List<CustomerDto>>(Denied, ErrorCode.Unauthorized);
-
-            return Result.Ok(_customers.Search(term ?? "", maxResults).Select(ToDto).ToList());
-        }
-
-        public Result<List<AccountStatementLine>> GetStatement(int id, DateTime from, DateTime to)
-        {
-            if (!_permissions.Can(PermissionKeys.Customers.View))
-                return Result.Fail<List<AccountStatementLine>>(Denied, ErrorCode.Unauthorized);
-
-            var customer = _customers.GetById(id);
-            if (customer == null)
-                return Result.Fail<List<AccountStatementLine>>(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
-
-            if (string.IsNullOrWhiteSpace(customer.AccountCode))
-                return Result.Fail<List<AccountStatementLine>>(LocalizationService.Get("Str.Customer.AccountNotConfigured"), ErrorCode.Unexpected);
-
-            return _accounts.GetStatement(customer.AccountCode, from, to);
-        }
+        // GetStatement جاهزة من PartyServiceBase.
 
         // ===================== الإنشاء =====================
 
         public Result<CustomerDto> Create(CreateCustomerDto dto)
         {
-            if (!_permissions.Can(PermissionKeys.Customers.Create))
-                return Result.Fail<CustomerDto>(Denied, ErrorCode.Unauthorized);
+            if (!Can("Create")) return FailDenied<CustomerDto>();
 
-            var customersAccountCode = _settings.Get(SettingKeys.Accounts.Customers, "");
-            if (string.IsNullOrWhiteSpace(customersAccountCode))
-                return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.AccountNotConfigured"), ErrorCode.Unexpected);
+            var parent = GetParentAccount();
+            if (!parent.IsSuccess) return Result.Fail<CustomerDto>(parent.ErrorMessage, parent.ErrorCode);
 
-            var parentAccount = _accountRepo.GetByCode(customersAccountCode);
-            if (parentAccount == null)
-                return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.AccountParentNotFound"), ErrorCode.NotFound);
-
-            if (parentAccount.IsLeaf)
-                return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.AccountParentIsLeaf"), ErrorCode.ValidationFailed);
-
-            var code = _numbers.Next("Customer");
+            var code = Numbers.Next(SequenceKey);
             var customer = BuildNewCustomer(dto, code);
 
-            var validation = new CustomerValidator().Validate(customer);
+            var validation = Validator.Validate(customer);
             if (!validation.IsValid)
                 return Result.Fail<CustomerDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
 
             // تحذيرات لا تمنع — تُسجَّل في تفاصيل Audit فقط، لا Fail.
-            var nameIsDuplicate = _settings.Get(SettingKeys.Financial.WarnOnDuplicateCustomerName, true) && _customers.ExistsName(customer.Name);
-            var phoneIsDuplicate = _settings.Get(SettingKeys.Financial.WarnOnDuplicatePhone, true)
+            var nameIsDuplicate = Setting(SettingKeys.Financial.WarnOnDuplicateCustomerName, true) && _customers.ExistsName(customer.Name);
+            var phoneIsDuplicate = Setting(SettingKeys.Financial.WarnOnDuplicatePhone, true)
                 && !string.IsNullOrWhiteSpace(customer.Phone) && _customers.ExistsPhone(customer.Phone);
 
             int newId;
@@ -152,9 +114,9 @@ namespace PrimeERP.Application.Services.Parties
             {
                 newId = Db.RunTransaction((conn, tx) =>
                 {
-                    var accountResult = _accounts.Create(conn, tx, new CreateAccountDto
+                    var accountResult = Accounts.Create(conn, tx, new CreateAccountDto
                     {
-                        ParentId = parentAccount.Id,
+                        ParentId = parent.Value.Id,
                         Name = customer.Name,
                         IsLeaf = true,
                         SkipAutoLink = true // ⚠️ إلزامي — يمنع AccountService.Create من استدعاء CreateFromAccount ثانية (حلقة لا نهائية)
@@ -183,7 +145,7 @@ namespace PrimeERP.Application.Services.Parties
                 phoneIsDuplicate ? "تحذير: رقم هاتف مكرر." : null
             }.Where(w => w != null));
 
-            _audit.Log("Customers", newId, AuditAction.Insert, newValue: new { customer.Code, customer.Name },
+            Audit.Log(EntityName, newId, AuditAction.Insert, newValue: new { customer.Code, customer.Name },
                 details: string.IsNullOrEmpty(warnings) ? null : warnings);
 
             customer.Id = newId;
@@ -193,35 +155,21 @@ namespace PrimeERP.Application.Services.Parties
         /// <summary>بمعاملة خارجية — يخدم مستندات F.4 (فاتورة تنشئ عميلاً جديداً ضمن معاملتها). بلا تحقق صلاحية (المستدعي تحقق صلاحيته الخاصة).</summary>
         public Result<CustomerDto> Create(DbConnection conn, DbTransaction tx, CreateCustomerDto dto)
         {
-            var customersAccountCode = _settings.Get(SettingKeys.Accounts.Customers, "");
-            if (string.IsNullOrWhiteSpace(customersAccountCode))
-                return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.AccountNotConfigured"), ErrorCode.Unexpected);
+            var parent = GetParentAccount(conn, tx);
+            if (!parent.IsSuccess) return Result.Fail<CustomerDto>(parent.ErrorMessage, parent.ErrorCode);
 
-            // قراءة مباشرة عبر AccountRepository (لا IAccountService.GetByCode — تبني AccountDto كاملاً عبر
-            // قراءات إضافية غير آمنة داخل معاملة خارجية؛ راجع تعليق AccountService.Create(conn,tx,...))، نفس
-            // نمط JournalService.ValidateAccountsForTransaction من F.2.3.
-            var parentAccount = _accountRepo.GetByCode(customersAccountCode, conn, tx);
-            if (parentAccount == null)
-                return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.AccountParentNotFound"), ErrorCode.NotFound);
-
-            if (parentAccount.IsLeaf)
-                return Result.Fail<CustomerDto>(LocalizationService.Get("Str.Customer.AccountParentIsLeaf"), ErrorCode.ValidationFailed);
-
-            var code = _numbers.Next(conn, tx, "Customer");
+            var code = Numbers.Next(conn, tx, SequenceKey);
             var customer = BuildNewCustomer(dto, code);
 
-            var validation = new CustomerValidator().Validate(customer);
+            var validation = Validator.Validate(customer);
             if (!validation.IsValid)
                 return Result.Fail<CustomerDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
 
-            var accountResult = _accounts.Create(conn, tx, new CreateAccountDto
-            {
-                ParentId = parentAccount.Id, Name = customer.Name, IsLeaf = true, SkipAutoLink = true
-            });
-            if (!accountResult.IsSuccess)
-                return Result.Fail<CustomerDto>(accountResult.ErrorMessage, accountResult.ErrorCode);
+            var link = CreateLinkedAccount(conn, tx, parent.Value.Id, customer.Name);
+            if (!link.IsSuccess)
+                return Result.Fail<CustomerDto>(link.ErrorMessage, link.ErrorCode);
 
-            customer.AccountCode = accountResult.Value.Code;
+            customer.AccountCode = link.Value;
             customer.CreatedBy = CurrentUser;
 
             var newId = _customers.Insert(customer, conn, tx);
@@ -230,40 +178,17 @@ namespace PrimeERP.Application.Services.Parties
             return Result.Ok(ToDto(customer));
         }
 
-        /// <summary>الاتجاه المعاكس — يستدعيه AccountService.Create عند الربط التلقائي (حساب أُنشئ بالفعل تحت SettingKeys.Accounts.Customers). لا ينشئ حساباً، ينشئ العميل فقط بـ AccountCode المُمرَّر. بلا Audit مستقل (AccountService.Create سجّلت العملية بالفعل).</summary>
-        public Result<CustomerDto> CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
-        {
-            var code = _numbers.Next(conn, tx, "Customer");
-
-            var customer = new Customer
-            {
-                Code        = code,
-                Name        = name,
-                AccountCode = accountCode,
-                IsActive    = true,
-                CreatedBy   = CurrentUser
-            };
-
-            var validation = new CustomerValidator().Validate(customer);
-            if (!validation.IsValid)
-                return Result.Fail<CustomerDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
-
-            var newId = _customers.Insert(customer, conn, tx);
-            customer.Id = newId;
-
-            return Result.Ok(ToDto(customer));
-        }
+        // CreateFromAccount جاهزة من PartyServiceBase.
 
         // ===================== التعديل =====================
 
         public Result Update(UpdateCustomerDto dto)
         {
-            if (!_permissions.Can(PermissionKeys.Customers.Edit))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
+            if (!Can("Edit")) return FailDenied();
 
             var customer = _customers.GetById(dto.Id);
             if (customer == null)
-                return Result.Fail(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
+                return Fail("NotFound", ErrorCode.NotFound);
 
             var nameChanged = customer.Name != dto.Name; // قبل الاستبدال أدناه
 
@@ -283,7 +208,7 @@ namespace PrimeERP.Application.Services.Parties
             customer.IsActive        = dto.IsActive;
             customer.UpdatedBy       = CurrentUser;
 
-            var validation = new CustomerValidator().Validate(customer);
+            var validation = Validator.Validate(customer);
             if (!validation.IsValid)
                 return Result.Fail(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
 
@@ -294,83 +219,49 @@ namespace PrimeERP.Application.Services.Parties
                 // مزامنة اسم الحساب لو تغيّر الاسم — اتجاه واحد (عميل→حساب)؛ الاتجاه المعاكس (حساب→عميل) عبر
                 // UpdateNameFromAccount أدناه لا يستدعي هذا مرة أخرى، فلا حلقة ping-pong.
                 if (nameChanged && !string.IsNullOrWhiteSpace(customer.AccountCode))
-                    _accounts.UpdateName(conn, tx, customer.AccountCode, customer.Name);
+                    Accounts.UpdateName(conn, tx, customer.AccountCode, customer.Name);
             });
 
-            _audit.Log("Customers", customer.Id, AuditAction.Update, newValue: new { customer.Name });
+            Audit.Log(EntityName, customer.Id, AuditAction.Update, newValue: new { customer.Name });
             return Result.Ok();
         }
 
-        /// <summary>الاتجاه المعاكس — يستدعيه AccountService.Update عند تعديل اسم الحساب مباشرة. يحدّث اسم العميل فقط بلا مزامنة عكسية (يمنع حلقة ping-pong).</summary>
-        public Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
-        {
-            _customers.UpdateNameByAccountCode(conn, tx, accountCode, name);
-            return Result.Ok();
-        }
+        // UpdateNameFromAccount جاهزة من PartyServiceBase.
 
         // ===================== الحذف =====================
 
         public Result Delete(int id)
         {
-            if (!_permissions.Can(PermissionKeys.Customers.Delete))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
+            if (!Can("Delete")) return FailDenied();
 
             var customer = _customers.GetById(id);
             if (customer == null)
-                return Result.Fail(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
+                return Fail("NotFound", ErrorCode.NotFound);
 
             // TODO F.4: تحقق الفواتير (Sales/Purchase) — لا خدمة فواتير مبنية بعد، يُضاف فور بنائها في F.4.
             if (!string.IsNullOrWhiteSpace(customer.AccountCode) && _journalRepo.HasLinesForAccount(customer.AccountCode))
-                return Result.Fail(LocalizationService.Get("Str.Customer.HasTransactions"), ErrorCode.ValidationFailed);
+                return Fail("HasTransactions", ErrorCode.ValidationFailed);
 
             Db.RunTransaction((conn, tx) =>
             {
                 _customers.Delete(id, CurrentUser, conn, tx);
                 if (!string.IsNullOrWhiteSpace(customer.AccountCode))
-                    _accounts.Delete(conn, tx, customer.AccountCode);
+                    Accounts.Delete(conn, tx, customer.AccountCode);
             });
 
-            _audit.Log("Customers", id, AuditAction.Delete, details: customer.Code);
+            Audit.Log(EntityName, id, AuditAction.Delete, details: customer.Code);
             return Result.Ok();
         }
 
-        /// <summary>الاتجاه المعاكس — يستدعيه AccountService.Delete عند حذف الحساب مباشرة. يحذف العميل فقط بلا لمس الحساب (محذوف بالفعل من طرف الاستدعاء). idempotent: لا عميل مرتبط = لا خطأ.</summary>
-        public Result DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode)
-        {
-            var customer = _customers.GetByAccountCode(accountCode, conn, tx);
-            if (customer == null)
-                return Result.Ok();
-
-            _customers.Delete(customer.Id, CurrentUser, conn, tx);
-            return Result.Ok();
-        }
+        // DeleteByAccountCode جاهزة من PartyServiceBase.
 
         // ===================== الأرصدة والائتمان =====================
 
-        public Result RecalculateBalance(int id)
-        {
-            if (!_permissions.Can(PermissionKeys.Customers.Edit))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
-
-            var customer = _customers.GetById(id);
-            if (customer == null)
-                return Result.Fail(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
-
-            if (string.IsNullOrWhiteSpace(customer.AccountCode))
-                return Result.Fail(LocalizationService.Get("Str.Customer.AccountNotConfigured"), ErrorCode.Unexpected);
-
-            var balanceResult = _accounts.GetBalanceAsOf(customer.AccountCode, DateTime.Today);
-            if (!balanceResult.IsSuccess)
-                return Result.Fail(balanceResult.ErrorMessage, balanceResult.ErrorCode);
-
-            Db.RunTransaction((conn, tx) => _customers.SetBalance(id, balanceResult.Value, conn, tx));
-            return Result.Ok();
-        }
+        // RecalculateBalance جاهزة من PartyServiceBase.
 
         public Result RecalculateAllBalances()
         {
-            if (!_permissions.Can(PermissionKeys.Customers.Edit))
-                return Result.Fail(Denied, ErrorCode.Unauthorized);
+            if (!Can("Edit")) return FailDenied();
 
             var customers = _customers.GetAll(activeOnly: false).Where(c => !string.IsNullOrWhiteSpace(c.AccountCode)).ToList();
 
@@ -379,7 +270,7 @@ namespace PrimeERP.Application.Services.Parties
             var balances = new List<(int Id, decimal Balance)>();
             foreach (var c in customers)
             {
-                var balanceResult = _accounts.GetBalanceAsOf(c.AccountCode, DateTime.Today);
+                var balanceResult = Accounts.GetBalanceAsOf(c.AccountCode, DateTime.Today);
                 if (balanceResult.IsSuccess)
                     balances.Add((c.Id, balanceResult.Value));
             }
@@ -395,12 +286,11 @@ namespace PrimeERP.Application.Services.Parties
 
         public Result<CreditCheckResult> CheckCreditLimit(int id, decimal additional)
         {
-            if (!_permissions.Can(PermissionKeys.Customers.View))
-                return Result.Fail<CreditCheckResult>(Denied, ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<CreditCheckResult>();
 
             var customer = _customers.GetById(id);
             if (customer == null)
-                return Result.Fail<CreditCheckResult>(LocalizationService.Get("Str.Customer.NotFound"), ErrorCode.NotFound);
+                return Fail<CreditCheckResult>("NotFound", ErrorCode.NotFound);
 
             if (customer.CreditLimit <= 0)
                 return Result.Ok(new CreditCheckResult
@@ -422,7 +312,7 @@ namespace PrimeERP.Application.Services.Parties
             };
 
             return exceededBy > 0m
-                ? Result.Fail<CreditCheckResult>($"{LocalizationService.Get("Str.Customer.CreditLimitExceeded")}: {exceededBy:N2}", ErrorCode.ValidationFailed)
+                ? Result.Fail<CreditCheckResult>($"{Msg("CreditLimitExceeded")}: {exceededBy:N2}", ErrorCode.ValidationFailed)
                 : Result.Ok(result);
         }
 
@@ -447,14 +337,13 @@ namespace PrimeERP.Application.Services.Parties
             IsActive        = true
         };
 
-        private CustomerDto ToDto(Customer c)
+        protected override CustomerDto ToDto(Customer c)
         {
             var isOverLimit = c.CreditLimit > 0 && c.Balance > c.CreditLimit;
             var hasTransactions = !string.IsNullOrWhiteSpace(c.AccountCode) && _journalRepo.HasLinesForAccount(c.AccountCode);
             var accountName = string.IsNullOrWhiteSpace(c.AccountCode) ? null : _accountRepo.GetByCode(c.AccountCode)?.Name;
 
-            var statusKey = !c.IsActive ? "Inactive" : (isOverLimit ? "OverLimit" : "Active");
-            var variant = !c.IsActive ? StatusVariant.Neutral : (isOverLimit ? StatusVariant.Danger : StatusVariant.Success);
+            var (variant, statusKey) = ComputeStatus(c.IsActive, isOverLimit);
 
             return new CustomerDto
             {
@@ -479,9 +368,9 @@ namespace PrimeERP.Application.Services.Parties
                 IsActive          = c.IsActive,
                 Notes             = c.Notes,
                 StatusVariant     = variant,
-                StatusText        = LocalizationService.Get($"Str.Customer.Status.{statusKey}"),
-                CanEdit           = _permissions.Can(PermissionKeys.Customers.Edit),
-                CanDelete         = _permissions.Can(PermissionKeys.Customers.Delete) && !hasTransactions,
+                StatusText        = Msg($"Status.{statusKey}"),
+                CanEdit           = Can("Edit"),
+                CanDelete         = CanDeleteWith(hasTransactions),
                 HasTransactions   = hasTransactions
             };
         }

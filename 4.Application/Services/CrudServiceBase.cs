@@ -26,7 +26,7 @@ namespace PrimeERP.Application.Services
 
         public virtual Result<TDto> GetById(int id)
         {
-            if (!Can("View")) return Fail<TDto>("PermissionDenied", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<TDto>();
 
             var entity = FindById(id);
             if (entity == null) return Fail<TDto>("NotFound", ErrorCode.NotFound);
@@ -36,7 +36,7 @@ namespace PrimeERP.Application.Services
 
         public virtual Result<PagedResult<TDto>> GetPaged(int page, int pageSize, TFilter filter)
         {
-            if (!Can("View")) return Fail<PagedResult<TDto>>("PermissionDenied", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<PagedResult<TDto>>();
 
             var (items, total) = FindPaged(page, pageSize, filter);
             return Ok(new PagedResult<TDto> { Items = items.Select(ToDto).ToList(), TotalCount = total, Page = page, PageSize = pageSize });
@@ -44,7 +44,7 @@ namespace PrimeERP.Application.Services
 
         public virtual Result<List<TDto>> Search(string term, int maxResults = 50)
         {
-            if (!Can("View")) return Fail<List<TDto>>("PermissionDenied", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<List<TDto>>();
 
             return Ok(FindSearch(term ?? "", maxResults).Select(ToDto).ToList());
         }

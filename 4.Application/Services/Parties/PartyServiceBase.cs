@@ -101,7 +101,7 @@ namespace PrimeERP.Application.Services.Parties
 
         public virtual Result RecalculateBalance(int id)
         {
-            if (!Can("Edit")) return Fail("PermissionDenied", ErrorCode.Unauthorized);
+            if (!Can("Edit")) return FailDenied();
 
             var entity = FindById(id);
             if (entity == null) return Fail("NotFound", ErrorCode.NotFound);
@@ -118,7 +118,7 @@ namespace PrimeERP.Application.Services.Parties
 
         public virtual Result<List<AccountStatementLine>> GetStatement(int id, DateTime from, DateTime to)
         {
-            if (!Can("View")) return Fail<List<AccountStatementLine>>("PermissionDenied", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<List<AccountStatementLine>>();
 
             var entity = FindById(id);
             if (entity == null) return Fail<List<AccountStatementLine>>("NotFound", ErrorCode.NotFound);
