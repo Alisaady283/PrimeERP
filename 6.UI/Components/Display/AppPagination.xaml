@@ -23,7 +23,7 @@
         <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
             <TextBlock Text="{DynamicResource Str.RowsPerPage}"
                        VerticalAlignment="Center"
-                       Margin="0,0,8,0"
+                       Margin="{DynamicResource P.Space.2.Right}"
                        FontSize="{DynamicResource P.Font.Size.200}"
                        FontFamily="{DynamicResource P.Font.Family.Primary}"
                        Foreground="{DynamicResource TextMuted}"/>

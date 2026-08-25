@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel>
 
-        <StackPanel x:Name="pnlLabel" Orientation="Horizontal" Margin="0,0,0,4" Visibility="Collapsed">
+        <StackPanel x:Name="pnlLabel" Orientation="Horizontal" Margin="{DynamicResource P.Space.1.Bottom}" Visibility="Collapsed">
             <TextBlock x:Name="txtLabel"
                        FontSize="{DynamicResource P.Font.Size.200}"
                        FontFamily="{DynamicResource P.Font.Family.Primary}"
@@ -44,7 +44,7 @@
 
                 <TextBlock x:Name="txtSuffix" Grid.Column="1"
                            VerticalAlignment="Center"
-                           Margin="0,0,8,0"
+                           Margin="{DynamicResource P.Space.2.Right}"
                            FontSize="{DynamicResource P.Font.Size.300}"
                            FontFamily="{DynamicResource P.Font.Family.Primary}"
                            Foreground="{DynamicResource TextMuted}"

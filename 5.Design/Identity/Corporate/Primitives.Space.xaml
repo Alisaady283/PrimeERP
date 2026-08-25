@@ -19,4 +19,21 @@
 
     <Thickness x:Key="P.Space.4.Uniform">20</Thickness>
 
+    <!-- نفس مجموعة Default (×1.25) — راجع التعليق هناك. -->
+    <Thickness x:Key="P.Space.1.Top">0,5,0,0</Thickness>
+    <Thickness x:Key="P.Space.1.Bottom">0,0,0,5</Thickness>
+    <Thickness x:Key="P.Space.1.Right">0,0,5,0</Thickness>
+    <Thickness x:Key="P.Space.2.Left">10,0,0,0</Thickness>
+    <Thickness x:Key="P.Space.2.Top">0,10,0,0</Thickness>
+    <Thickness x:Key="P.Space.2.Bottom">0,0,0,10</Thickness>
+    <Thickness x:Key="P.Space.2.Right">0,0,10,0</Thickness>
+    <Thickness x:Key="P.Space.2.Uniform">10</Thickness>
+    <Thickness x:Key="P.Space.3.Uniform">15</Thickness>
+    <Thickness x:Key="P.Space.3.Right">0,0,15,0</Thickness>
+    <Thickness x:Key="P.Space.4.Top">0,20,0,0</Thickness>
+    <Thickness x:Key="P.Space.4.Bottom">0,0,0,20</Thickness>
+    <Thickness x:Key="P.Space.4.Horizontal">20,0</Thickness>
+
+    <GridLength x:Key="P.Space.4.Column">20</GridLength>
+
 </ResourceDictionary>

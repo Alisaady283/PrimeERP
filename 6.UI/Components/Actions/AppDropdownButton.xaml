@@ -23,7 +23,7 @@
                            FontSize="{DynamicResource P.Font.Size.300}"
                            FontFamily="{DynamicResource P.Font.Family.Primary}"
                            Foreground="{DynamicResource TextPrimary}"
-                           Margin="0,0,8,0"/>
+                           Margin="{DynamicResource P.Space.2.Right}"/>
                 <Path Data="{StaticResource IconChevronDown}"
                       Width="10" Height="10" Stretch="Uniform"
                       Stroke="{DynamicResource TextMuted}" StrokeThickness="2"
@@ -41,7 +41,7 @@
                     BorderThickness="1"
                     CornerRadius="{DynamicResource P.Radius.Md}"
                     MinWidth="160"
-                    Margin="0,4,0,0"
+                    Margin="{DynamicResource P.Space.1.Top}"
                     Effect="{DynamicResource ShadowMd}">
                 <ListBox x:Name="lst"
                          BorderThickness="0"

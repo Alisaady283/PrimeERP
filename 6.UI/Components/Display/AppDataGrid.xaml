@@ -14,7 +14,7 @@
         <StackPanel Grid.Row="0" x:Name="toolbar"
                     Orientation="Horizontal"
                     HorizontalAlignment="Left"
-                    Margin="0,0,0,8"
+                    Margin="{DynamicResource P.Space.2.Bottom}"
                     Visibility="Collapsed">
             <Button x:Name="btnExport" Cursor="Hand" Padding="12,6" Click="btnExport_Click"
                     Background="{DynamicResource SurfaceDefault}"

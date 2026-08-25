@@ -24,7 +24,7 @@
                            FontWeight="{DynamicResource P.Font.Weight.Bold}"
                            FontFamily="{DynamicResource P.Font.Family.Primary}"
                            Foreground="{DynamicResource TextPrimary}"
-                           Margin="0,4,0,0"/>
+                           Margin="{DynamicResource P.Space.1.Top}"/>
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                     <TextBlock x:Name="txtSubtitle"
                                VerticalAlignment="Center"
@@ -35,7 +35,7 @@
                     <Border x:Name="trendBadge"
                             CornerRadius="{DynamicResource P.Radius.Sm}"
                             Padding="6,2"
-                            Margin="8,0,0,0"
+                            Margin="{DynamicResource P.Space.2.Left}"
                             Visibility="Collapsed">
                         <TextBlock x:Name="txtTrend"
                                    FontSize="{DynamicResource P.Font.Size.200}"

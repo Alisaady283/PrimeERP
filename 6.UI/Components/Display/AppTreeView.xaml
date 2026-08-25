@@ -32,7 +32,7 @@
             <TreeView x:Name="tree"
                       BorderThickness="0"
                       Background="Transparent"
-                      Padding="8"
+                      Padding="{DynamicResource P.Space.2.Uniform}"
                       SelectedItemChanged="tree_SelectedItemChanged">
                 <TreeView.ItemContainerStyle>
                     <Style TargetType="TreeViewItem">

@@ -15,7 +15,7 @@
 
             <inputs:AppSearchBox x:Name="search" Grid.Column="0" Width="280"/>
 
-            <ContentPresenter x:Name="filtersPresenter" Grid.Column="1" Margin="16,0" VerticalAlignment="Center"/>
+            <ContentPresenter x:Name="filtersPresenter" Grid.Column="1" Margin="{DynamicResource P.Space.4.Horizontal}" VerticalAlignment="Center"/>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                 <Border x:Name="countBadge"

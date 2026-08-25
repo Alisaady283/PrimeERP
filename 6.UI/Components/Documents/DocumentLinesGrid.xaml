@@ -414,7 +414,7 @@
         </Border>
 
         <!-- ===== شريط أزرار السطور ===== -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="{DynamicResource P.Space.2.Top}">
             <Button Content="+ إضافة سطر" Click="btnAddRow_Click" Padding="10,5" Margin="0,0,6,0" Cursor="Hand"
                     FontSize="{DynamicResource P.Font.Size.200}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                     Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"

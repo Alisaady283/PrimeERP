@@ -29,4 +29,30 @@
     -->
     <Thickness x:Key="P.Space.4.Uniform">16</Thickness>
 
+    <!--
+        Thickness أحادية الجهة/موحّدة إضافية — أُضيفت في R7 (ترحيل L4) لتغطية أشكال Margin/Padding المتكررة فعلياً
+        عبر 6.UI/Components بقيم تطابق سلّم P.Space حرفياً. القيم المركّبة (رقمان مختلفان في نفس Thickness، مثال
+        "16,8") تبقى حرفية عمداً — ليست "قطعة" بمعنى عقد موحّد، بل شكل خاص بمكانه (راجع مبدأ استخراج القطعة).
+    -->
+    <Thickness x:Key="P.Space.1.Top">0,4,0,0</Thickness>
+    <Thickness x:Key="P.Space.1.Bottom">0,0,0,4</Thickness>
+    <Thickness x:Key="P.Space.1.Right">0,0,4,0</Thickness>
+    <Thickness x:Key="P.Space.2.Left">8,0,0,0</Thickness>
+    <Thickness x:Key="P.Space.2.Top">0,8,0,0</Thickness>
+    <Thickness x:Key="P.Space.2.Bottom">0,0,0,8</Thickness>
+    <Thickness x:Key="P.Space.2.Right">0,0,8,0</Thickness>
+    <Thickness x:Key="P.Space.2.Uniform">8</Thickness>
+    <Thickness x:Key="P.Space.3.Uniform">12</Thickness>
+    <Thickness x:Key="P.Space.3.Right">0,0,12,0</Thickness>
+    <Thickness x:Key="P.Space.4.Top">0,16,0,0</Thickness>
+    <Thickness x:Key="P.Space.4.Bottom">0,0,0,16</Thickness>
+    <Thickness x:Key="P.Space.4.Horizontal">16,0</Thickness>
+
+    <!--
+        ColumnDefinition.Width من نوع GridLength لا Double — DynamicResource يُسنِد الكائن المُحلَّل مباشرة عبر
+        SetValue بلا محوِّل نوع (بخلاف تحليل XAML النصي العادي)، فيفشل InvalidCastException وقت التشغيل فقط
+        (نفس درس ⚠️ توقف 4/6 بالضبط، مطبَّق هنا على GridLength).
+    -->
+    <GridLength x:Key="P.Space.4.Column">16</GridLength>
+
 </ResourceDictionary>

@@ -7,7 +7,7 @@
                    FontSize="{DynamicResource P.Font.Size.200}"
                    FontFamily="{DynamicResource P.Font.Family.Primary}"
                    Foreground="{DynamicResource TextSecondary}"
-                   Margin="0,0,0,4"
+                   Margin="{DynamicResource P.Space.1.Bottom}"
                    Visibility="Collapsed"/>
 
         <StackPanel x:Name="root" Orientation="Horizontal" Cursor="Hand"
@@ -27,7 +27,7 @@
             </Border>
 
             <TextBlock x:Name="txtStatus"
-                       Margin="8,0,0,0"
+                       Margin="{DynamicResource P.Space.2.Left}"
                        VerticalAlignment="Center"
                        FontSize="{DynamicResource P.Font.Size.300}"
                        FontFamily="{DynamicResource P.Font.Family.Primary}"

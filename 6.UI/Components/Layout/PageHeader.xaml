@@ -16,7 +16,7 @@
                         Width="40" Height="40"
                         CornerRadius="{DynamicResource P.Radius.Md}"
                         Background="{DynamicResource BrandSoft}"
-                        Margin="0,0,12,0"
+                        Margin="{DynamicResource P.Space.3.Right}"
                         Visibility="Collapsed">
                     <Path x:Name="icon"
                           Stretch="Uniform" Width="18" Height="18"

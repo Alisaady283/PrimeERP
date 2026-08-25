@@ -7,6 +7,6 @@
                 BorderThickness="0,0,0,1">
             <StackPanel x:Name="pnlTabs" Orientation="Horizontal"/>
         </Border>
-        <ContentPresenter x:Name="contentHost" Margin="0,16,0,0"/>
+        <ContentPresenter x:Name="contentHost" Margin="{DynamicResource P.Space.4.Top}"/>
     </DockPanel>
 </UserControl>

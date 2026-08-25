@@ -7,7 +7,7 @@
                 CornerRadius="28"
                 Background="{DynamicResource SurfaceSunken}"
                 HorizontalAlignment="Center"
-                Margin="0,0,0,16">
+                Margin="{DynamicResource P.Space.4.Bottom}">
             <Path x:Name="icon"
                   Stretch="Uniform" Width="26" Height="26"
                   Stroke="{DynamicResource TextMuted}"
@@ -30,10 +30,10 @@
                    HorizontalAlignment="Center"
                    TextAlignment="Center"
                    TextWrapping="Wrap"
-                   Margin="0,4,0,0"/>
+                   Margin="{DynamicResource P.Space.1.Top}"/>
 
         <Button x:Name="btnAction"
-                Margin="0,16,0,0"
+                Margin="{DynamicResource P.Space.4.Top}"
                 Padding="16,8"
                 Cursor="Hand"
                 Background="{DynamicResource BrandDefault}"

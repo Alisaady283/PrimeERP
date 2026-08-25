@@ -17,7 +17,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="{DynamicResource P.Space.4.Column}"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
@@ -43,7 +43,7 @@
                             <TextBlock Text="{Binding Label}" HorizontalAlignment="Center"
                                        FontSize="{DynamicResource P.Font.Size.200}"
                                        FontFamily="{DynamicResource P.Font.Family.Primary}"
-                                       Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4"/>
+                                       Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource P.Space.1.Bottom}"/>
                             <TextBlock Text="{Binding Value, StringFormat={}{0:N2}}" HorizontalAlignment="Center"
                                        FontFamily="{DynamicResource P.Font.Family.Primary}"
                                        Foreground="{Binding Variant, Converter={StaticResource VariantBrush}}">
