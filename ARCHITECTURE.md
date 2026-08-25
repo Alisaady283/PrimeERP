@@ -302,6 +302,74 @@ GetAll` كان يبني WHERE عبر WhereBuilder بلا تمرير بارامت
 
 ---
 
+## R6 — Pipeline/Steps/Operations + ServiceBase/CrudServiceBase/PartyServiceBase + إعادة بناء الخدمات
+
+### البنية التحتية
+
+`4.Application/Pipeline/`: `PipelineContext` (Conn/Tx/Input/Output/Items/Log)، `IStep`، `Steps/` (Permission
+/Validation/Transaction/Audit/Sequence/Setting/Func)، `Pipeline<TOut>` (مؤلِّف مسطّح: `.Permission().Validate()
+.Rule().InTransaction(tx => tx.Before().Save().After()).Audit().Execute(input)`)، و`Operations/WriteOperation
+<TDto>` (لعمليات Create/Update/Delete/Post/Unpost: صلاحية+تحقق تُلحَقان فوراً، Rule تُلحَق مباشرة قبل المعاملة،
+Before/After تُخزَّن وتُنسَج داخل معاملة واحدة عند `.Run()` — هذا الترتيب المؤجَّل هو ما يجعل شكل الاستدعاء
+النهائي `CreateOp(dto).Rule(x).Before(y).After(z).Run()` ينتج تسلسلاً صحيحاً رغم أن الاستدعاء نفسه مسطّح).
+`TransactionStep` يعيد استخدام معاملة خارجية مفتوحة بدل فتح اتصال جديد لو `ctx.Conn != null` (نفس قيد تفادي
+الـ deadlock الموثَّق في `DbHelper.Query`). اختُبرت البنية بكيان وهمي (`TestEntity`, 11 اختباراً) قبل أي استخدام
+حقيقي، إلزامياً حسب أمر R6.
+
+`ServiceBase` (`4.Application/Services/`): `Require/Can/Fail/Ok/Msg/Setting<T>/Check<T>/Tx` — تمتص فحص الصلاحية
+(`Can(action)` يبني `"{PermissionPrefix}.{action}"`)، الرسالة المترجمة (`Msg(key)` يبني `"{StringPrefix}.{key}"`)،
+والمعاملة المخصّصة (`Tx`: body يرجع `Result.Fail` بدل رمي استثناء، فالتراجع يحدث عبر استثناء تحكّم داخلي `Tran
+sactionAbortedException` بلا كسر تدفّق الاستثناءات العادي). `CrudServiceBase<TEntity,TDto,TFilter>` يعمّم القراءة
+فقط (GetById/GetPaged/Search) — الإنشاء/التعديل/الحذف بقيا خارج القالب العام عمداً: منطق الأعمال الفعلي (ربط
+حساب، تحذيرات تكرار، فحص حد ائتماني) مختلف بدرجة تجعل قالباً واحداً يُخفي المنطق بدل أن يلخّصه، فتُبنى مباشرة في
+كل خدمة مستخدمةً دوال `ServiceBase` الجاهزة. `PartyServiceBase<TEntity,TDto,TFilter> : CrudServiceBase` يحمل
+المنطق المشترك الحقيقي بين العملاء والموردين: ربط حساب فرعي (`GetParentAccount`/`CreateLinkedAccount`)،
+الاتجاه المعاكس (`CreateFromAccount`/`DeleteByAccountCode`/`UpdateNameFromAccount` يستدعيها `AccountService`)،
+`RecalculateBalance`/`GetStatement` من `IAccountService` دائماً (لا حساب مزدوج).
+
+`AuditLogger` تحوَّل من `static` إلى `IAuditLogger` (كل مستدعيه الستة كانوا فعلاً داخل نطاق R6). `Localization
+Service` بقي `static` كما هو (7 مستهلكين في 6.UI لتبديل لغة الواجهة الحيّة لا معنى لحقنهم) وأُضيف `ILocalization
+Service`/`LocalizationAdapter` كجسر قابل للحقن لطبقة الخدمات فقط.
+
+### مزوّد (Provider) مقابل خدمة (Service) — قاعدة معمارية عامة اكتُشفت عبر SettingsService
+
+**المشكلة الأولى**: `SettingsService` (كانت في `1.Platform/Settings/`) لا يمكن أن ترث `ServiceBase` لأن
+`ServiceBase` يحقن `ISettingsService` — وهي نفسها. مُيّز هذا أول الأمر خطأً كـ"استثناء معماري موثَّق" (يمرّر
+`null` في المُنشئ)، فحقّق تخفيضاً 155→123 سطراً (~21%) فقط — دون شرط الـ50% الذي حدَّده R6.
+
+**التشخيص الصحيح** (صحّحه المستخدم صراحة): السبب لم يكن اعتماداً ذاتياً دائرياً بل **موضع خاطئ**. `1.Platform`
+لا يجوز أن يحوي "خدمة" بمعنى `ServiceBase` (صلاحية+audit+رسائل+معاملة أعمال) — الطبقات الدنيا تحوي **مزوّدات**
+(عمليات تقنية بحتة بلا أيٍّ من ذلك) فقط. القيد ليس خارجياً (منصة/WPF/.NET) بل ناتج عن وضع الملف في الطبقة
+الخطأ — فيُصلَح بالفصل، لا بالتوثيق كاستثناء.
+
+**الفصل المُنفَّذ**:
+- `1.Platform/Settings/ISettingsProvider.cs` + `SettingsProvider.cs` — قراءة/كتابة خام + Cache فقط، بلا صلاحية
+  ولا audit ولا رسائل، يعتمد على `SettingRepository` مباشرة. تستهلكه الطبقات الدنيا (`ServiceBase.Setting<T>`
+  نفسها تقرأ منه الآن) و`SettingStep` في الـ Pipeline (قراءة تقنية بحتة، لا تحتاج بوابة صلاحية).
+- `4.Application/Services/System/ISettingsService.cs` + `SettingsService.cs` (مساحة الاسم `PrimeERP.Application.
+  Services` وليس `...Services.System` — راجع اكتشاف تصادم الأسماء أدناه) — يرث `ServiceBase` الآن فعلياً، يحقن
+  `ISettingsProvider` (لا نفسه)، يضيف الصلاحية والتدقيق فوق القراءة/الكتابة الخام. `SetMany` تُفوَّض كاملة إلى
+  `ISettingsProvider.SetManyRaw` (المعاملة نفسها عملية تقنية بحتة، لا قرار أعمال).
+- `check.sh`: فحص جديد — أي استدعاء لـ`ISettingsService` من `1.Platform`/`2.Data` = FAIL.
+
+**النتيجة**: `SettingsService.cs` (Application) = 69 سطراً مقابل 155 الأصلية = **55.5% تخفيض**، يحقق الشرط.
+147/147 اختباراً ناجح بلا أي تعديل. **القاعدة العامة المستخلصة (تُطبَّق على أي حالة مشابهة لاحقاً — Audit،
+Permissions، إلخ)**: أي شيء في `1.Platform` يحتاج `ServiceBase` فهو في الموضع الخطأ ويُقسَّم لا يُستثنى. معيار
+التفرقة بين استثناء موثَّق وقيد يُصلَح: هل السبب خارجي (منصة/.NET/WPF لا حل له)؟ استثناء موثَّق. هل السبب داخلي
+(تصميمنا نحن — موضع ملف، توزيع مسؤولية، اعتمادية)؟ يُصلَح معمارياً دائماً، لا يُوثَّق كاستثناء.
+
+### اكتشاف تصادم أسماء إضافي (نفس فئة اكتشاف R1: `Application` × `System.Windows.Application`)
+
+تسمية مجلد/مساحة اسم `4.Application/Services/System/` بمساحة اسم `PrimeERP.Application.Services.System` تكسر أي
+مرجع غير مؤهَّل لـ`System.*` (مثل `System.Windows.MessageBox`) داخل أي ملف تحت `PrimeERP.Application.Services.*`
+— C# يبحث في مساحات الاسم المحيطة صعوداً عن مقطع اسم مطابق (`System`) **قبل** استشارة `using` العام، فيجد
+`PrimeERP.Application.Services.System` (مساحة اسم شقيقة حقيقية الآن) بدل `System` العامة. **الحل**: المجلد بقي
+`4.Application/Services/System/` كما طُلب، لكن مساحة الاسم أُبقيت مسطّحة `PrimeERP.Application.Services` (لا
+`.System` كمقطع أخير) — أي مقطع مساحة اسم جديد يطابق اسم مساحة اسم من BCL/WPF (`System`, `Application`, `Data`,
+`Windows`...) يجب تفاديه أو تأهيله بالكامل في كل استخدام.
+
+---
+
 ## اكتشاف فني إضافي أثناء R1 (يستحق التسجيل)
 
 **تسمية الطبقة "Application" تتصادم مع `System.Windows.Application`**: أي ملف تحت شجرة `PrimeERP.*` يستخدم `Application.Current`/`: Application` بلا تأهيل كامل يتعرّض لخطر أن يحلّه المترجم كإشارة لمساحة الاسم `PrimeERP.Application` (طبقة 4) بدل نوع WPF — C# يبحث في مساحات الاسم المحيطة صعوداً قبل استشارة `using`. **الحل المُطبَّق**: كل إشارة WPF لـ `Application` في الكود مؤهَّلة بالكامل الآن (`System.Windows.Application`) — 11 ملفاً. أي ملف جديد يستخدم `Application.Current` مستقبلاً **يجب** أن يكتبها مؤهَّلة بالكامل لنفس السبب.

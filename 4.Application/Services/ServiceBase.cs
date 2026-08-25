@@ -24,11 +24,11 @@ namespace PrimeERP.Application.Services
         protected abstract string EntityName { get; }
 
         protected readonly IPermissionService Permissions;
-        protected readonly ISettingsService Settings;
+        protected readonly ISettingsProvider Settings;
         protected readonly ILocalizationService Localization;
         protected readonly IAuditLogger Audit;
 
-        protected ServiceBase(IPermissionService permissions, ISettingsService settings,
+        protected ServiceBase(IPermissionService permissions, ISettingsProvider settings,
                                ILocalizationService localization, IAuditLogger audit)
         {
             Permissions = permissions;

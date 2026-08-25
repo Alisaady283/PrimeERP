@@ -1,4 +1,5 @@
 using System;
+using PrimeERP.Application.Services;
 using System.Collections.Generic;
 using System.Data.Common;
 using PrimeERP.Application.DTOs.Accounting;
@@ -33,7 +34,7 @@ namespace PrimeERP.Application.Services.Parties
         protected readonly INumberSequenceService Numbers;
         private readonly IAccountRepository _accountRepo;
 
-        protected PartyServiceBase(IPermissionService permissions, ISettingsService settings, ILocalizationService localization,
+        protected PartyServiceBase(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
                                     IAuditLogger audit, IAccountService accounts, INumberSequenceService numbers, IAccountRepository accountRepo)
             : base(permissions, settings, localization, audit)
         {

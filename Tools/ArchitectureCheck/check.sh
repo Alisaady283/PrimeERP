@@ -114,6 +114,15 @@ if [ "$n" -gt 0 ]; then
   grep -rl "using PrimeERP\.Data\.Repositories\b" 6.UI 7.Composition 8.Modules --include="*.cs" 2>/dev/null | sed 's/^/       /'
 else pass; fi
 
+# ISettingsService (Application، تحتاج ServiceBase: صلاحية+audit) مستدعاة من طبقة أدنى (Platform/Data) —
+# الطبقات الدنيا تستخدم ISettingsProvider (Platform، عملية تقنية بحتة بلا صلاحية) فقط. راجع R6 §
+# "مزوّد مقابل خدمة" في ARCHITECTURE.md — اكتُشف هذا القيد فعلياً عبر SettingsService قبل الفصل.
+n=$(grep -rnE "ISettingsService" --include="*.cs" 1.Platform 2.Data 2>/dev/null | grep -vE ":\s*(///|//)")
+if [ -n "$n" ]; then
+  fail "ISettingsService مستدعاة من طبقة أدنى (يجب استخدام ISettingsProvider):"
+  echo "$n" | sed 's/^/       /'
+else pass; fi
+
 # DbHelper يُستدعى من Service (4.Application) بلا مرور بـ Repository — استثناء BackupService (أوامر DB إدارية
 # لا CRUD كيان: BACKUP/RESTORE VERIFYONLY، لا Repository مكافئ لها أصلاً).
 n=$(grep -rl "Db\.\(Query\|Execute\|Scalar\|InsertAndGetId\|CreateCommand\)(" 4.Application --include="*.cs" 2>/dev/null | grep -v "Services/Backup/BackupService.cs")

@@ -1,4 +1,5 @@
 using System;
+using PrimeERP.Application.Services;
 using System.Data.Common;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +11,6 @@ using PrimeERP.Platform.Settings;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Services;
-using PrimeERP.Application.Services;
 using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
 using Xunit;

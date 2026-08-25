@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using PrimeERP.Application.Services;
 using PrimeERP.Platform.Settings;
 using Xunit;
 

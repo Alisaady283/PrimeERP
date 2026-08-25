@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PrimeERP.Application.Services;
 using System.Linq;
 using PrimeERP.Domain.Entities.Common;
 using PrimeERP.Domain.Results;
@@ -19,7 +20,7 @@ namespace PrimeERP.Application.Services
         protected abstract List<TEntity> FindSearch(string term, int maxResults);
         protected abstract TDto ToDto(TEntity entity);
 
-        protected CrudServiceBase(IPermissionService permissions, ISettingsService settings,
+        protected CrudServiceBase(IPermissionService permissions, ISettingsProvider settings,
                                    ILocalizationService localization, IAuditLogger audit)
             : base(permissions, settings, localization, audit) { }
 

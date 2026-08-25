@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using PrimeERP.Domain.Results;
 
-namespace PrimeERP.Platform.Settings
+namespace PrimeERP.Application.Services
 {
     public interface ISettingsService
     {

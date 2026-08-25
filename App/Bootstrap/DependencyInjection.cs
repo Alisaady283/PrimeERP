@@ -1,6 +1,6 @@
 using System;
-using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.Services;
+using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.Services.Backup;
 using PrimeERP.Application.Services.Parties;
@@ -27,7 +27,7 @@ namespace PrimeERP.App.Bootstrap
         public static IServiceCollection AddPlatform(this IServiceCollection services)
         {
             services.AddSingleton<IPermissionService, PermissionService>();
-            services.AddSingleton<ISettingsService, SettingsService>();
+            services.AddSingleton<ISettingsProvider, SettingsProvider>();
             services.AddSingleton<IAuditLogger, AuditLogger>();
             services.AddSingleton<ILocalizationService, LocalizationAdapter>();
             return services;
@@ -46,6 +46,7 @@ namespace PrimeERP.App.Bootstrap
 
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
+            services.AddSingleton<ISettingsService, SettingsService>();
             services.AddSingleton<INumberSequenceService, NumberSequenceService>();
             services.AddSingleton<IAccountService, AccountService>();
             services.AddSingleton<IJournalService, JournalService>();
