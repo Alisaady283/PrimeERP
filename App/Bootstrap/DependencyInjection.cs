@@ -15,6 +15,7 @@ using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Services;
+using PrimeERP.UI.ViewModels;
 
 namespace PrimeERP.App.Bootstrap
 {
@@ -78,6 +79,10 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<ExportService>();
             services.AddSingleton<IExportService>(sp => sp.GetRequiredService<ExportService>());
             services.AddSingleton<IDocumentExporter>(sp => sp.GetRequiredService<ExportService>());
+
+            // ViewModels: Transient — حالة خاصة بعرض واحد (SelectedItem/Filter/Page)، لا تُشارَك بين فتحات
+            // الصفحة المتعددة عكس الخدمات (Singleton طوال عمر التطبيق).
+            services.AddTransient<CustomersViewModel>();
 
             return services;
         }

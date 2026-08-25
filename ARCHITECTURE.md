@@ -538,11 +538,22 @@ Double to ... GridLength`) — التقطه فقط تشغيل `PrimeERP.exe` ح�
 - **إصلاح إضافي مكتشف أثناء المراجعة**: `Foreground="White"` حرفي مرتين (نص الشارة، نص العنصر النشط) — نفس
   قيمة `TextOnBrand` (`P.Color.White`) تماماً، فاستُبدلت بالمرجع الدلالي — صفر فرق بصري، توحيد فقط.
 
+### R7 — إغلاق: CustomersViewModel (أول مستهلك حقيقي، يثبت شرط VM<60 سطر)
+
+شرط إغلاق R7 المُعلَن: "Gallery تعمل، VM نمطي < 60 سطر" — لا يمكن التحقق منه بلا مستهلك حقيقي واحد على
+الأقل لـ`CrudViewModelBase`. `6.UI/ViewModels/CustomersViewModel.cs` (32 سطراً شاملة التوثيق) يطبّق
+`FetchPage`/`IdOf`/`DeleteItem` فوق `ICustomerService` الحقيقية، مُسجَّل `AddTransient` في DI (حالة عرض واحد،
+لا Singleton). `AddNew`/`EditSelected` بلا تنفيذ عمداً وموثَّق — حوار العميل الحقيقي (`CustomerDialog`) لم
+يُبنَ بعد (Views/Dialogs حُذفت كـstubs فارغة في R4، تُبنى عبر 7.Composition/8.Modules في R8/R9) — وضع منطق
+هناك الآن كان سيعني حواراً وهمياً، ممنوع صراحة. `CustomersViewModelTests.ResolvedFromContainer_LoadsRealCustomers`
+يثبت الحل عبر الحاوية الحقيقية (`_db.Services.GetRequiredService<CustomersViewModel>()`، لا `new` يدوي) ضد
+بيانات حقيقية مُنشأة عبر `ICustomerService.Create`.
+
 ### التحقق
 
-`dotnet build` → 0 خطأ. `dotnet test` → **151/151 ناجح** (148 + 3 اختبارات PagedViewModelBase/
-CrudViewModelBase الجديدة). `check.sh` → **صفر FAIL**. **تشغيل فعلي حقيقي** لـ`PrimeERP.exe` — ضُبط أولاً
-على استثناء توقف 8 (لُقِط بتشغيل حقيقي، لا محاكاة)، ثم أُصلح، ثم أُعيد التشغيل فعلياً وتأكَّد الإقلاع بلا أي
+`dotnet build` → 0 خطأ. `dotnet test` → **152/152 ناجح** (148 + 3 PagedViewModelBase/CrudViewModelBase +
+1 CustomersViewModel). `check.sh` → **صفر FAIL**. **تشغيل فعلي حقيقي** لـ`PrimeERP.exe` مرتين — الأولى
+ضبطت استثناء توقف 8 (لُقِط بتشغيل حقيقي، لا محاكاة)، بعد الإصلاح أُعيد التشغيل وتأكَّد الإقلاع بلا أي
 استثناء ولقطة شاشة تُظهر Gallery (شاملاً قسم Documents الذي يحمل الإصلاح) يعمل بصرياً بلا خرق.
 
 **(توثيق أرشيفي لتحقُّق ما قبل R7 — توقف 6/7)**: حينها `dotnet build` → 0 خطأ، `dotnet test` → **148/148
