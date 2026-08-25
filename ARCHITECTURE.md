@@ -488,6 +488,18 @@ R1–R6 كلها تحقّقت عبر `dotnet build`/`dotnet test` — لا أح�
 الاستدعاء المتكرر (CREATE TABLE IF NOT EXISTS، والزارعون تتحقق داخلياً من عدم التكرار). تُستدعى من
 `App.xaml.cs.OnStartup` فوراً بعد بناء الحاوية، قبل `IIdentityService.Initialize()`.
 
+### مبدأ استخراج القطعة (يحكم كل تعميم من R7 فصاعداً)
+
+القطعة تُستخرج حين يكون **العقد موحّداً**، لا حين يتشابه الاسم. اختبار الصحة: هل التجريد سيحتوي
+`if`/`switch` لكل كيان؟
+- **نعم** → ليس قطعة، بل تكرار مُخفى داخل تجريد كاذب. لا تعمّم.
+- **لا** → قطعة صحيحة. عمّم.
+
+تطبيق فعلي (R6/R7): `GetPaged`/`GetById`/`Search`/`Delete` عقودها موحّدة حرفياً عبر كل الخدمات → عُمِّمت
+(`CrudServiceBase`، ولاحقاً `PagedViewModelBase`/`CrudViewModelBase`). `Create`/`Update` تختلف DTOs شكلاً
+بين كيان وآخر (مثال حقيقي: `JournalService.Update` يأخذ `CreateJournalDto` لا `UpdateJournalDto` مستقلة) →
+تعميمها كان سيحتاج `if` لكل كيان داخل القاعدة، فبقيت في كل خدمة/ViewModel فعلي.
+
 ### التحقق
 
 `dotnet build` → 0 خطأ. `dotnet test` → **148/148 ناجح، صفر تعديل**. `check.sh` → **صفر FAIL** (فحص جديد أُضيف:

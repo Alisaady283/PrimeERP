@@ -8,6 +8,7 @@
     <sys:String x:Key="Str.Save">Save</sys:String>
     <sys:String x:Key="Str.Cancel">Cancel</sys:String>
     <sys:String x:Key="Str.Delete">Delete</sys:String>
+    <sys:String x:Key="Str.ConfirmDeleteMessage">Are you sure you want to delete this? This action cannot be undone.</sys:String>
     <sys:String x:Key="Str.Edit">Edit</sys:String>
     <sys:String x:Key="Str.Add">Add</sys:String>
     <sys:String x:Key="Str.Search">Search</sys:String>

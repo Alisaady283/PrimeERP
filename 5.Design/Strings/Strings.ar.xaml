@@ -8,6 +8,7 @@
     <sys:String x:Key="Str.Save">حفظ</sys:String>
     <sys:String x:Key="Str.Cancel">إلغاء</sys:String>
     <sys:String x:Key="Str.Delete">حذف</sys:String>
+    <sys:String x:Key="Str.ConfirmDeleteMessage">هل أنت متأكد من رغبتك في الحذف؟ لا يمكن التراجع عن هذا الإجراء.</sys:String>
     <sys:String x:Key="Str.Edit">تعديل</sys:String>
     <sys:String x:Key="Str.Add">إضافة</sys:String>
     <sys:String x:Key="Str.Search">بحث</sys:String>
