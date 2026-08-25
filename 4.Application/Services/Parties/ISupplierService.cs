@@ -1,22 +1,41 @@
+using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using PrimeERP.Domain.Results;
+using PrimeERP.Application.DTOs.Accounting;
+using PrimeERP.Application.DTOs.Parties;
 
 namespace PrimeERP.Application.Services.Parties
 {
-    // TEMPORARY — يُحذف ويُعاد بناؤه كاملاً في R6 (مع PartyServiceBase). لا تبنِ عليه أي منطق جديد الآن.
     /// <summary>
-    /// عقد جزئي حتى F.3.2 — التوقيعات هنا حُدِّثت في F.3.1 لتطابق ICustomerService.cs (raise بالكود+الاسم لا
-    /// Account كامل) حتى تبقى AccountService.Create/Update/Delete قادرة على معاملة ICustomerService وISupplierService
-    /// بشكل متماثل تماماً في نفس مسار الكود. التنفيذ الفعلي (SupplierService.cs الكامل) يُبنى في F.3.2 (R6).
+    /// المالك الوحيد لمنطق الموردين — Repository تحته CRUD صرف فقط. كل حساب مورد يُنشأ/يُحدَّث/يُحذف عبر
+    /// IAccountService حصراً (لا SupplierRepository يلمس جدول Accounts). نفس شكل ICustomerService حرفياً —
+    /// PartyServiceBase يحمل المنطق المشترك بين الاثنين.
     /// </summary>
     public interface ISupplierService
     {
-        Result<int> CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name);
+        Result<PagedResult<SupplierDto>> GetPaged(int page, int pageSize, SupplierFilter filter = null);
+        Result<SupplierDto> GetById(int id);
+        Result<SupplierDto> GetByCode(string code);
 
-        /// <summary>يحذف المورد المرتبط بهذا الحساب — تستدعيها AccountService.Delete ضمن نفس معاملتها.</summary>
+        Result<List<SupplierDto>> Search(string term, int maxResults = 50);
+
+        Result<List<AccountStatementLine>> GetStatement(int id, DateTime from, DateTime to);
+
+        Result<SupplierDto> Create(CreateSupplierDto dto);
+        Result<SupplierDto> Create(DbConnection conn, DbTransaction tx, CreateSupplierDto dto);
+
+        Result<SupplierDto> CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name);
+
+        Result Update(UpdateSupplierDto dto);
+        Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name);
+
+        Result Delete(int id);
         Result DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode);
 
-        /// <summary>يزامن اسم المورد من تعديل الحساب — تستدعيها AccountService.Update ضمن نفس معاملتها.</summary>
-        Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name);
+        Result RecalculateBalance(int id);
+        Result RecalculateAllBalances();
+
+        Result<CreditCheckResult> CheckCreditLimit(int id, decimal additional);
     }
 }

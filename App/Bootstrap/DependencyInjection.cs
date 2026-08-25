@@ -37,6 +37,7 @@ namespace PrimeERP.App.Bootstrap
         {
             services.AddSingleton<IAccountRepository, AccountRepository>();
             services.AddSingleton<ICustomerRepository, CustomerRepository>();
+            services.AddSingleton<ISupplierRepository, SupplierRepository>();
             services.AddSingleton<IJournalRepository, JournalRepository>();
             services.AddSingleton<IFiscalPeriodRepository, FiscalPeriodRepository>();
             services.AddSingleton<INumberSequenceRepository, NumberSequenceRepository>();
@@ -52,6 +53,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IJournalService, JournalService>();
             services.AddSingleton<IFiscalPeriodService, FiscalPeriodService>();
             services.AddSingleton<ICustomerService, CustomerService>();
+            services.AddSingleton<ISupplierService, SupplierService>();
             services.AddSingleton<IBackupService, BackupService>();
             services.AddSingleton<IPrintService, PrintService>();
 
@@ -59,8 +61,6 @@ namespace PrimeERP.App.Bootstrap
             // التوثيق أعلى FiscalPeriodService.cs. لا يبني IJournalService الآن، فقط عند أول .Value فعلي.
             services.AddSingleton(sp => new Lazy<IJournalService>(() => sp.GetRequiredService<IJournalService>()));
 
-            // TEMPORARY — يُحذف في R6: ISupplierService بلا تنفيذ بعد (راجع ISupplierService.cs)، فلا تسجيل هنا عمداً.
-            // لا تبنِ عليه. AccountService.ResolveAutoLink يحلّها عبر IServiceProvider.GetService (يرجع null بأمان لو غير مسجَّلة).
             return services;
         }
 

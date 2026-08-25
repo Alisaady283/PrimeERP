@@ -50,6 +50,7 @@ namespace PrimeERP.Tests.Services
         public void Dispose() => _db.Dispose();
 
         private int CustomersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("1220").Id;
+        private int SuppliersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("2110").Id;
 
         private int SeedPostedEntry(string date, params (string Code, decimal Debit, decimal Credit)[] lines)
         {
@@ -108,9 +109,41 @@ namespace PrimeERP.Tests.Services
 
         private class FakeSupplierService : ISupplierService
         {
-            public Result<int> CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name) => Result.Ok(1);
-            public Result DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode) => Result.Ok();
-            public Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name) => Result.Ok();
+            public (string Code, string Name)? LastCreatedFor;
+            public string? LastDeletedAccountCode;
+            public (string Code, string Name)? LastNameSync;
+
+            public Result<SupplierDto> CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
+            {
+                LastCreatedFor = (accountCode, name);
+                return Result.Ok(new SupplierDto { Id = 999, Code = "S-TEST", AccountCode = accountCode, Name = name });
+            }
+
+            public Result DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode)
+            {
+                LastDeletedAccountCode = accountCode;
+                return Result.Ok();
+            }
+
+            public Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
+            {
+                LastNameSync = (accountCode, name);
+                return Result.Ok();
+            }
+
+            // بقية ISupplierService غير مستخدَمة من AccountServiceTests — Fake مصغّر بقصد نفس الاختبارات فقط.
+            public Result<PagedResult<SupplierDto>> GetPaged(int page, int pageSize, SupplierFilter filter = null) => throw new NotImplementedException();
+            public Result<SupplierDto> GetById(int id) => throw new NotImplementedException();
+            public Result<SupplierDto> GetByCode(string code) => throw new NotImplementedException();
+            public Result<System.Collections.Generic.List<SupplierDto>> Search(string term, int maxResults = 50) => throw new NotImplementedException();
+            public Result<System.Collections.Generic.List<AccountStatementLine>> GetStatement(int id, DateTime from, DateTime to) => throw new NotImplementedException();
+            public Result<SupplierDto> Create(CreateSupplierDto dto) => throw new NotImplementedException();
+            public Result<SupplierDto> Create(DbConnection conn, DbTransaction tx, CreateSupplierDto dto) => throw new NotImplementedException();
+            public Result Update(UpdateSupplierDto dto) => throw new NotImplementedException();
+            public Result Delete(int id) => throw new NotImplementedException();
+            public Result RecalculateBalance(int id) => throw new NotImplementedException();
+            public Result RecalculateAllBalances() => throw new NotImplementedException();
+            public Result<CreditCheckResult> CheckCreditLimit(int id, decimal additional) => throw new NotImplementedException();
         }
 
         [Fact]
@@ -147,6 +180,25 @@ namespace PrimeERP.Tests.Services
             Assert.True(result.IsSuccess, result.ErrorMessage);
             Assert.NotNull(fake.LastCreatedFor);
             Assert.Equal(result.Value.Code, fake.LastCreatedFor.Value.Code);
+        }
+
+        /// <summary>يتحقق أن ResolveAutoLink يعمل للمورد فعلياً عبر SupplierService الحقيقية (لا Fake) — R6.</summary>
+        [Fact]
+        public void Create_UnderSuppliersRoot_CreatesLinkedSupplier_ViaRealSupplierService()
+        {
+            var services = TestDatabaseFixture.BuildServices();
+            var service = services.GetRequiredService<IAccountService>();
+            var suppliers = services.GetRequiredService<ISupplierService>();
+
+            var result = service.Create(new CreateAccountDto { ParentId = SuppliersRootId(), Name = "مورد مرتبط حقيقي", IsLeaf = true });
+
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+
+            var bySearch = suppliers.Search("مورد مرتبط حقيقي");
+            Assert.True(bySearch.IsSuccess);
+            var created = Assert.Single(bySearch.Value);
+            Assert.Equal(result.Value.Code, created.AccountCode);
+            Assert.Equal("مورد مرتبط حقيقي", created.Name);
         }
 
         [Fact]

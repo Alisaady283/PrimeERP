@@ -51,6 +51,7 @@ namespace PrimeERP.Tests
             numberSequences.CreateTable();
             NumberSequenceSeeder.Seed(numberSequences);
             Services.GetRequiredService<ICustomerRepository>().CreateTable();
+            Services.GetRequiredService<ISupplierRepository>().CreateTable();
 
             MigrationRunner.RunPending();
         }
