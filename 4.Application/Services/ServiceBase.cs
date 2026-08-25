@@ -48,6 +48,13 @@ namespace PrimeERP.Application.Services
         protected Result<T> Require<T>(string action) =>
             Can(action) ? Result.Ok<T>(default) : Result.Fail<T>(Msg("PermissionDenied"), ErrorCode.Unauthorized);
 
+        /// <summary>مفتاح "Str.PermissionDenied" العام المشترك بين عدة خدمات (Account/Journal/FiscalPeriod/
+        /// Customer) — يختلف عن Msg("PermissionDenied") التي تبني "{StringPrefix}.PermissionDenied" (مفتاح
+        /// خاص بكل خدمة، تستخدمه Settings/Backup). استخدم هذه فقط لو الخدمة كانت أصلاً تستدعي المفتاح العام.</summary>
+        protected Result FailDenied() => Result.Fail(Localization.Get("Str.PermissionDenied"), ErrorCode.Unauthorized);
+
+        protected Result<T> FailDenied<T>() => Result.Fail<T>(Localization.Get("Str.PermissionDenied"), ErrorCode.Unauthorized);
+
         protected Result Fail(string key, ErrorCode code, params object[] args) => Result.Fail(Msg(key, args), code);
 
         protected Result Fail(string key, params object[] args) => Result.Fail(Msg(key, args), ErrorCode.Unexpected);
