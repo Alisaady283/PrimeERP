@@ -15,7 +15,7 @@ namespace PrimeERP.Platform.Audit
     /// سجلّ تدقيق كامل (قيم قديمة/جديدة كـ JSON) — قطعة جديدة أوسع من Core/AuditLogger.cs المبسّطة.
     /// لا يفشل أبداً: أي خطأ أثناء التسجيل يُكتب في ملف احتياطي ولا يوقف العملية الأصلية.
     /// </summary>
-    public static class AuditLogger
+    public class AuditLogger : IAuditLogger
     {
         private static readonly HashSet<string> IgnoredColumns = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -27,9 +27,9 @@ namespace PrimeERP.Platform.Audit
         private static readonly string FallbackLogPath =
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs", "audit-fallback.log");
 
-        private static bool _tableEnsured;
+        private bool _tableEnsured;
 
-        public static void CreateTable()
+        public void CreateTable()
         {
             SchemaBuilder.Table("AuditLog")
                 .Id()
@@ -46,7 +46,7 @@ namespace PrimeERP.Platform.Audit
         }
 
         /// <summary>يسجّل عملية كتابة. oldValue/newValue أي كائن — يُحوَّل لـ JSON بعد تجاهل الأعمدة الحساسة واقتطاعه لو تجاوز الحد.</summary>
-        public static void Log(string tableName, int recordId, AuditAction action,
+        public void Log(string tableName, int recordId, AuditAction action,
                                object oldValue = null, object newValue = null, string details = null)
         {
             try
@@ -72,7 +72,7 @@ namespace PrimeERP.Platform.Audit
             }
         }
 
-        private static void EnsureTable()
+        private void EnsureTable()
         {
             if (_tableEnsured) return;
             CreateTable();
@@ -115,7 +115,7 @@ namespace PrimeERP.Platform.Audit
             return dict;
         }
 
-        private static void WriteFallback(string tableName, int recordId, AuditAction action, Exception ex)
+        private void WriteFallback(string tableName, int recordId, AuditAction action, Exception ex)
         {
             try
             {

@@ -12,7 +12,7 @@ using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Application.DTOs.Accounting;
-using Auditor = PrimeERP.Platform.Audit.AuditLogger;
+using PrimeERP.Platform.Audit;
 using AuditAction = PrimeERP.Domain.Enums.AuditAction;
 using Db = PrimeERP.Data.Core.DbHelper;
 
@@ -33,14 +33,17 @@ namespace PrimeERP.Application.Services.Accounting
         private readonly IAccountService _accounts;
         private readonly IFiscalPeriodRepository _fiscalPeriods;
         private readonly Lazy<IJournalService> _journal;
+        private readonly IAuditLogger _audit;
 
-        public FiscalPeriodService(IPermissionService permissions, ISettingsService settings, IAccountService accounts, IFiscalPeriodRepository fiscalPeriods, Lazy<IJournalService> journal)
+        public FiscalPeriodService(IPermissionService permissions, ISettingsService settings, IAccountService accounts,
+            IFiscalPeriodRepository fiscalPeriods, Lazy<IJournalService> journal, IAuditLogger audit)
         {
             _permissions = permissions;
             _settings = settings;
             _accounts = accounts;
             _fiscalPeriods = fiscalPeriods;
             _journal = journal;
+            _audit = audit;
         }
 
         private static string Denied => LocalizationService.Get("Str.PermissionDenied");
@@ -156,7 +159,7 @@ namespace PrimeERP.Application.Services.Accounting
             var details = monthMismatch
                 ? $"إنشاء سنة مالية {name} — تنبيه: شهر البداية ({start.Month}) لا يطابق الإعداد ({configuredStartMonth})"
                 : $"إنشاء سنة مالية {name}";
-            Auditor.Log("FiscalYears", yearId, AuditAction.Insert, details: details);
+            _audit.Log("FiscalYears", yearId, AuditAction.Insert, details: details);
 
             var created = _fiscalPeriods.GetYearById(yearId);
             return Result.Ok(ToYearDto(created, includePeriods: true));
@@ -176,7 +179,7 @@ namespace PrimeERP.Application.Services.Accounting
 
             Db.RunTransaction((conn, tx) => _fiscalPeriods.SetCurrentYear(conn, tx, yearId));
 
-            Auditor.Log("FiscalYears", yearId, AuditAction.Update, details: $"تعيين {year.Name} كسنة حالية");
+            _audit.Log("FiscalYears", yearId, AuditAction.Update, details: $"تعيين {year.Name} كسنة حالية");
             return Result.Ok();
         }
 
@@ -205,7 +208,7 @@ namespace PrimeERP.Application.Services.Accounting
 
             Db.RunTransaction((conn, tx) => _fiscalPeriods.SetPeriodClosed(conn, tx, periodId, DateTime.Now, CurrentUser));
 
-            Auditor.Log("FiscalPeriods", periodId, AuditAction.Update, details: $"إقفال الفترة {period.Name}");
+            _audit.Log("FiscalPeriods", periodId, AuditAction.Update, details: $"إقفال الفترة {period.Name}");
             return Result.Ok();
         }
 
@@ -232,7 +235,7 @@ namespace PrimeERP.Application.Services.Accounting
 
             Db.RunTransaction((conn, tx) => _fiscalPeriods.SetPeriodReopened(conn, tx, periodId));
 
-            Auditor.Log("FiscalPeriods", periodId, AuditAction.Update, details: $"إعادة فتح الفترة {period.Name}");
+            _audit.Log("FiscalPeriods", periodId, AuditAction.Update, details: $"إعادة فتح الفترة {period.Name}");
             return Result.Ok();
         }
 
@@ -312,7 +315,7 @@ namespace PrimeERP.Application.Services.Accounting
                 return Result.Fail(ex.Message);
             }
 
-            Auditor.Log("FiscalYears", yearId, AuditAction.Update, details: $"إقفال السنة المالية {year.Name} — صافي الربح: {netProfit:N2}، قيد الإقفال: {closingEntryId}");
+            _audit.Log("FiscalYears", yearId, AuditAction.Update, details: $"إقفال السنة المالية {year.Name} — صافي الربح: {netProfit:N2}، قيد الإقفال: {closingEntryId}");
             return Result.Ok();
         }
 
@@ -349,7 +352,7 @@ namespace PrimeERP.Application.Services.Accounting
                 return Result.Fail(ex.Message);
             }
 
-            Auditor.Log("FiscalYears", yearId, AuditAction.Update, details: $"إعادة فتح السنة المالية {year.Name} — حذف قيد الإقفال {year.ClosingEntryId}");
+            _audit.Log("FiscalYears", yearId, AuditAction.Update, details: $"إعادة فتح السنة المالية {year.Name} — حذف قيد الإقفال {year.ClosingEntryId}");
             return Result.Ok();
         }
 

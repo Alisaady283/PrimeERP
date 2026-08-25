@@ -7,7 +7,9 @@ using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.Services.Print;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Contracts;
+using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Design;
+using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Services;
@@ -26,6 +28,8 @@ namespace PrimeERP.App.Bootstrap
         {
             services.AddSingleton<IPermissionService, PermissionService>();
             services.AddSingleton<ISettingsService, SettingsService>();
+            services.AddSingleton<IAuditLogger, AuditLogger>();
+            services.AddSingleton<ILocalizationService, LocalizationAdapter>();
             return services;
         }
 

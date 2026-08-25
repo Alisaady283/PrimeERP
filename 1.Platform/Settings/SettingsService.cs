@@ -7,7 +7,7 @@ using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Settings;
-using Auditor = PrimeERP.Platform.Audit.AuditLogger;
+using PrimeERP.Platform.Audit;
 using AuditAction = PrimeERP.Domain.Enums.AuditAction;
 using Db = PrimeERP.Data.Core.DbHelper;
 
@@ -20,10 +20,15 @@ namespace PrimeERP.Platform.Settings
     public class SettingsService : ISettingsService
     {
         private readonly IPermissionService _permissions;
+        private readonly IAuditLogger _audit;
         private readonly object _lock = new();
         private Dictionary<string, string> _cache;
 
-        public SettingsService(IPermissionService permissions) => _permissions = permissions;
+        public SettingsService(IPermissionService permissions, IAuditLogger audit)
+        {
+            _permissions = permissions;
+            _audit = audit;
+        }
 
         public event Action<string> SettingChanged;
 
@@ -72,7 +77,7 @@ namespace PrimeERP.Platform.Settings
                 ModifiedBy    = AppSession.Username
             });
 
-            Auditor.Log("AppSettings", 0, AuditAction.Update, newValue: new { key, value = stringValue }, details: key);
+            _audit.Log("AppSettings", 0, AuditAction.Update, newValue: new { key, value = stringValue }, details: key);
 
             Reload();
             SettingChanged?.Invoke(key);
@@ -110,7 +115,7 @@ namespace PrimeERP.Platform.Settings
                 }
             });
 
-            Auditor.Log("AppSettings", 0, AuditAction.Update, newValue: values, details: $"تعديل {values.Count} إعداد دفعة واحدة");
+            _audit.Log("AppSettings", 0, AuditAction.Update, newValue: values, details: $"تعديل {values.Count} إعداد دفعة واحدة");
 
             Reload();
             foreach (var key in values.Keys)

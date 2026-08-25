@@ -12,7 +12,7 @@ using PrimeERP.Platform.Settings;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.Services.Parties;
-using Auditor = PrimeERP.Platform.Audit.AuditLogger;
+using PrimeERP.Platform.Audit;
 using AuditAction = PrimeERP.Domain.Enums.AuditAction;
 using Db = PrimeERP.Data.Core.DbHelper;
 
@@ -31,14 +31,17 @@ namespace PrimeERP.Application.Services.Accounting
 
         /// <summary>لحلّ ICustomerService/ISupplierService اختيارياً (قد لا تكونا مسجَّلتين — ISupplierService لم يُبنَ تنفيذها بعد) — بديل ServiceLocator.TryGet عبر IServiceProvider.GetService (يرجع null لا استثناء لو غير مسجَّلة).</summary>
         private readonly IServiceProvider _services;
+        private readonly IAuditLogger _audit;
 
-        public AccountService(IPermissionService permissions, ISettingsService settings, IAccountRepository accounts, IJournalRepository journal, IServiceProvider services)
+        public AccountService(IPermissionService permissions, ISettingsService settings, IAccountRepository accounts,
+            IJournalRepository journal, IServiceProvider services, IAuditLogger audit)
         {
             _permissions = permissions;
             _settings = settings;
             _accounts = accounts;
             _journal = journal;
             _services = services;
+            _audit = audit;
         }
 
         private static string Denied => LocalizationService.Get("Str.PermissionDenied");
@@ -183,7 +186,7 @@ namespace PrimeERP.Application.Services.Accounting
                 return id;
             });
 
-            Auditor.Log("Accounts", newId, AuditAction.Insert, newValue: new { account.Code, account.Name });
+            _audit.Log("Accounts", newId, AuditAction.Insert, newValue: new { account.Code, account.Name });
 
             var created = _accounts.GetById(newId);
             return Result.Ok(ToDto(created, _accounts.GetAll(true)));
@@ -273,7 +276,7 @@ namespace PrimeERP.Application.Services.Accounting
                 }
             });
 
-            Auditor.Log("Accounts", account.Id, AuditAction.Update, newValue: new { account.Name, account.IsLeaf });
+            _audit.Log("Accounts", account.Id, AuditAction.Update, newValue: new { account.Name, account.IsLeaf });
             return Result.Ok();
         }
 
@@ -310,7 +313,7 @@ namespace PrimeERP.Application.Services.Accounting
                 }
             });
 
-            Auditor.Log("Accounts", account.Id, AuditAction.Delete, details: account.Code);
+            _audit.Log("Accounts", account.Id, AuditAction.Delete, details: account.Code);
             return Result.Ok();
         }
 
@@ -342,7 +345,7 @@ namespace PrimeERP.Application.Services.Accounting
             var balance = ComputeBalance(code);
             Db.RunTransaction((conn, tx) => _accounts.UpdateBalance(code, balance, conn, tx));
 
-            Auditor.Log("Accounts", account.Id, AuditAction.Update, details: $"إعادة حساب رصيد {code}: {balance:N2}");
+            _audit.Log("Accounts", account.Id, AuditAction.Update, details: $"إعادة حساب رصيد {code}: {balance:N2}");
             return Result.Ok();
         }
 
@@ -376,7 +379,7 @@ namespace PrimeERP.Application.Services.Accounting
                     _accounts.UpdateBalance(account.Code, ComputeBalance(account.Code), conn, tx);
             });
 
-            Auditor.Log("Accounts", 0, AuditAction.Update, details: $"إعادة حساب كل الأرصدة ({leaves.Count} حساب)");
+            _audit.Log("Accounts", 0, AuditAction.Update, details: $"إعادة حساب كل الأرصدة ({leaves.Count} حساب)");
             return Result.Ok();
         }
 

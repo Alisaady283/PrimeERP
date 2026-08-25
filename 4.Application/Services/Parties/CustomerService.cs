@@ -13,7 +13,7 @@ using PrimeERP.Domain.Entities;
 using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Parties;
-using Auditor = PrimeERP.Platform.Audit.AuditLogger;
+using PrimeERP.Platform.Audit;
 using AuditAction = PrimeERP.Domain.Enums.AuditAction;
 using Db = PrimeERP.Data.Core.DbHelper;
 
@@ -34,9 +34,10 @@ namespace PrimeERP.Application.Services.Parties
         private readonly ICustomerRepository _customers;
         private readonly IAccountRepository _accountRepo;
         private readonly IJournalRepository _journalRepo;
+        private readonly IAuditLogger _audit;
 
         public CustomerService(IPermissionService permissions, ISettingsService settings, IAccountService accounts, INumberSequenceService numbers,
-            ICustomerRepository customers, IAccountRepository accountRepo, IJournalRepository journalRepo)
+            ICustomerRepository customers, IAccountRepository accountRepo, IJournalRepository journalRepo, IAuditLogger audit)
         {
             _permissions = permissions;
             _settings = settings;
@@ -45,6 +46,7 @@ namespace PrimeERP.Application.Services.Parties
             _customers = customers;
             _accountRepo = accountRepo;
             _journalRepo = journalRepo;
+            _audit = audit;
         }
 
         private static string Denied => LocalizationService.Get("Str.PermissionDenied");
@@ -180,7 +182,7 @@ namespace PrimeERP.Application.Services.Parties
                 phoneIsDuplicate ? "تحذير: رقم هاتف مكرر." : null
             }.Where(w => w != null));
 
-            Auditor.Log("Customers", newId, AuditAction.Insert, newValue: new { customer.Code, customer.Name },
+            _audit.Log("Customers", newId, AuditAction.Insert, newValue: new { customer.Code, customer.Name },
                 details: string.IsNullOrEmpty(warnings) ? null : warnings);
 
             customer.Id = newId;
@@ -294,7 +296,7 @@ namespace PrimeERP.Application.Services.Parties
                     _accounts.UpdateName(conn, tx, customer.AccountCode, customer.Name);
             });
 
-            Auditor.Log("Customers", customer.Id, AuditAction.Update, newValue: new { customer.Name });
+            _audit.Log("Customers", customer.Id, AuditAction.Update, newValue: new { customer.Name });
             return Result.Ok();
         }
 
@@ -327,7 +329,7 @@ namespace PrimeERP.Application.Services.Parties
                     _accounts.Delete(conn, tx, customer.AccountCode);
             });
 
-            Auditor.Log("Customers", id, AuditAction.Delete, details: customer.Code);
+            _audit.Log("Customers", id, AuditAction.Delete, details: customer.Code);
             return Result.Ok();
         }
 

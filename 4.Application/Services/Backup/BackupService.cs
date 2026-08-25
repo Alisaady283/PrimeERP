@@ -11,7 +11,7 @@ using PrimeERP.Data.Core;
 using PrimeERP.Data.Schema;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
-using Auditor = PrimeERP.Platform.Audit.AuditLogger;
+using PrimeERP.Platform.Audit;
 using AuditAction = PrimeERP.Domain.Enums.AuditAction;
 using Db = PrimeERP.Data.Core.DbHelper;
 using Timer = System.Timers.Timer;
@@ -28,13 +28,15 @@ namespace PrimeERP.Application.Services.Backup
         private readonly IPermissionService _permissions;
         private readonly ISettingsService _settings;
         private readonly IBackupRepository _repo;
+        private readonly IAuditLogger _audit;
         private Timer _autoTimer;
 
-        public BackupService(IPermissionService permissions, ISettingsService settings, IBackupRepository repo)
+        public BackupService(IPermissionService permissions, ISettingsService settings, IBackupRepository repo, IAuditLogger audit)
         {
             _permissions = permissions;
             _settings = settings;
             _repo = repo;
+            _audit = audit;
         }
 
         public event Action<BackupInfo> BackupCompleted;
@@ -73,7 +75,7 @@ namespace PrimeERP.Application.Services.Backup
                 };
 
                 var id = _repo.Insert(record);
-                Auditor.Log("BackupHistory", id, AuditAction.Insert,
+                _audit.Log("BackupHistory", id, AuditAction.Insert,
                     newValue: new { record.FileName, record.SizeBytes }, details: $"إنشاء نسخة احتياطية ({type})");
 
                 var info = ToInfo(record);
@@ -127,7 +129,7 @@ namespace PrimeERP.Application.Services.Backup
                     Db.Execute(sql, Db.Params(("@path", filePath)));
                 }
 
-                Auditor.Log("BackupHistory", 0, AuditAction.Update, details: $"استعادة من نسخة: {Path.GetFileName(filePath)}");
+                _audit.Log("BackupHistory", 0, AuditAction.Update, details: $"استعادة من نسخة: {Path.GetFileName(filePath)}");
                 return Result.Ok();
             }
             catch (NotSupportedException ex)
@@ -224,7 +226,7 @@ namespace PrimeERP.Application.Services.Backup
                 if (record != null)
                     _repo.Delete(record.Id);
 
-                Auditor.Log("BackupHistory", record?.Id ?? 0, AuditAction.Delete, details: Path.GetFileName(filePath));
+                _audit.Log("BackupHistory", record?.Id ?? 0, AuditAction.Delete, details: Path.GetFileName(filePath));
                 return Result.Ok();
             }
             catch (Exception ex)

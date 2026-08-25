@@ -12,7 +12,7 @@ using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Application.DTOs.Accounting;
-using Auditor = PrimeERP.Platform.Audit.AuditLogger;
+using PrimeERP.Platform.Audit;
 using AuditAction = PrimeERP.Domain.Enums.AuditAction;
 using Db = PrimeERP.Data.Core.DbHelper;
 
@@ -38,9 +38,11 @@ namespace PrimeERP.Application.Services.Accounting
         private readonly INumberSequenceService _numbers;
         private readonly IJournalRepository _journal;
         private readonly IAccountRepository _accountRepo;
+        private readonly IAuditLogger _audit;
 
         public JournalService(IPermissionService permissions, ISettingsService settings, IAccountService accounts,
-            IFiscalPeriodService fiscalPeriods, INumberSequenceService numbers, IJournalRepository journal, IAccountRepository accountRepo)
+            IFiscalPeriodService fiscalPeriods, INumberSequenceService numbers, IJournalRepository journal, IAccountRepository accountRepo,
+            IAuditLogger audit)
         {
             _permissions = permissions;
             _settings = settings;
@@ -49,6 +51,7 @@ namespace PrimeERP.Application.Services.Accounting
             _numbers = numbers;
             _journal = journal;
             _accountRepo = accountRepo;
+            _audit = audit;
         }
 
         private static string Denied => LocalizationService.Get("Str.PermissionDenied");
@@ -120,7 +123,7 @@ namespace PrimeERP.Application.Services.Accounting
 
             var newId = Db.RunTransaction((conn, tx) => InsertEntryWithLines(conn, tx, entryNo, dto, accounts.Value));
 
-            Auditor.Log("JournalEntries", newId, AuditAction.Insert, details: $"إنشاء قيد {entryNo} — {dto.Lines.Count} سطر");
+            _audit.Log("JournalEntries", newId, AuditAction.Insert, details: $"إنشاء قيد {entryNo} — {dto.Lines.Count} سطر");
 
             return Result.Ok(BuildDto(newId, entryNo, dto));
         }
@@ -195,7 +198,7 @@ namespace PrimeERP.Application.Services.Accounting
                 _journal.UpdateTotals(conn, tx, dto.Id, totalDebit, totalCredit);
             });
 
-            Auditor.Log("JournalEntries", dto.Id, AuditAction.Update, details: $"تعديل قيد {existing.EntryNo}");
+            _audit.Log("JournalEntries", dto.Id, AuditAction.Update, details: $"تعديل قيد {existing.EntryNo}");
             return Result.Ok();
         }
 
@@ -216,7 +219,7 @@ namespace PrimeERP.Application.Services.Accounting
 
             Db.RunTransaction((conn, tx) => Delete(conn, tx, id));
 
-            Auditor.Log("JournalEntries", id, AuditAction.Delete, details: $"حذف قيد {entry.EntryNo}");
+            _audit.Log("JournalEntries", id, AuditAction.Delete, details: $"حذف قيد {entry.EntryNo}");
             return Result.Ok();
         }
 
@@ -242,7 +245,7 @@ namespace PrimeERP.Application.Services.Accounting
             var result = Db.RunTransaction((conn, tx) => Post(conn, tx, id));
             if (!result.IsSuccess) return result;
 
-            Auditor.Log("JournalEntries", id, AuditAction.Update, details: $"ترحيل قيد {entry.EntryNo}");
+            _audit.Log("JournalEntries", id, AuditAction.Update, details: $"ترحيل قيد {entry.EntryNo}");
             return Result.Ok();
         }
 
@@ -279,7 +282,7 @@ namespace PrimeERP.Application.Services.Accounting
             var result = Db.RunTransaction((conn, tx) => Unpost(conn, tx, id));
             if (!result.IsSuccess) return result;
 
-            Auditor.Log("JournalEntries", id, AuditAction.Update, details: $"إلغاء ترحيل قيد {entry.EntryNo}");
+            _audit.Log("JournalEntries", id, AuditAction.Update, details: $"إلغاء ترحيل قيد {entry.EntryNo}");
             return Result.Ok();
         }
 
@@ -327,7 +330,7 @@ namespace PrimeERP.Application.Services.Accounting
             });
 
             batch.SuccessCount = toPost.Count;
-            Auditor.Log("JournalEntries", 0, AuditAction.Update, details: $"ترحيل دفعي: {batch.SuccessCount} قيد");
+            _audit.Log("JournalEntries", 0, AuditAction.Update, details: $"ترحيل دفعي: {batch.SuccessCount} قيد");
 
             return Result.Ok(batch);
         }
