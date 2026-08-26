@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Windows;
 using System.Windows.Threading;
 
 namespace PrimeERP.Tests
@@ -14,6 +15,12 @@ namespace PrimeERP.Tests
     /// الحل: خيط STA واحد دائم (Background) طوال تشغيل عملية الاختبار كلها، يُنشئ Application مرة واحدة فقط
     /// ثم يبقى في Dispatcher.Run() — كل اختبار يحتاج Application.Current يمرّ عبر Invoke على نفس الخيط، لا
     /// خيطاً جديداً.
+    ///
+    /// ShutdownMode = OnExplicitShutdown إلزامي هنا (نفس اختيار App.xaml.cs الحقيقي): الافتراضي
+    /// OnLastWindowClose يُطلق Application.Shutdown() تلقائياً بمجرد إغلاق أي نافذة اختبار وحيدة تفتحها
+    /// (IdentityServiceTests مثلاً) — Shutdown() يُصفّر Application.Current للأبد بينما علم "أُنشئت بالفعل"
+    /// الداخلي لا يُصفَّر أبداً، فيرمي أي new Application() لاحق (كحارس PrintService.Theme الدفاعي)
+    /// "Cannot create more than one Application instance" — اكتُشف فعلياً عند إضافة اختبار يُغلق نافذته.
     /// </summary>
     public static class WpfApplicationFixture
     {
@@ -41,7 +48,7 @@ namespace PrimeERP.Tests
                 var thread = new Thread(() =>
                 {
                     if (System.Windows.Application.Current == null)
-                        new System.Windows.Application();
+                        new System.Windows.Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
 
                     _dispatcher = Dispatcher.CurrentDispatcher;
                     ready.Set();

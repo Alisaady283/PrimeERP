@@ -26,5 +26,12 @@
     </None>
   </ItemGroup>
 
+  <!-- 6.UI/DevTools (Gallery) أداة تطوير للمراجعة البصرية فقط، بلا مستهلك من مسار حي — تُستثنى من بناء
+       Release كي لا تُشحن للمستخدم النهائي (راجع R9، ARCHITECTURE.md). -->
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <Compile Remove="6.UI\DevTools\**\*.cs" />
+    <Page Remove="6.UI\DevTools\**\*.xaml" />
+    <None Include="6.UI\DevTools\**\*.xaml" />
+  </ItemGroup>
 
 </Project>
