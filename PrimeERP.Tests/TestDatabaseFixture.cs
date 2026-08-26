@@ -64,11 +64,13 @@ namespace PrimeERP.Tests
                 .AddData()
                 .AddApplication()
                 .AddUI()
-                .AddModules();
+                .AddComposition();
 
             configureOverrides?.Invoke(services);
 
-            return services.BuildServiceProvider();
+            var provider = services.BuildServiceProvider();
+            provider.RegisterModules();
+            return provider;
         }
 
         public void Dispose()

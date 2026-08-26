@@ -565,6 +565,81 @@ Double to ... GridLength`) — التقطه فقط تشغيل `PrimeERP.exe` ح�
 
 ---
 
+## R8 — 7.Composition: Definitions + Renderers + Registry
+
+**الفكرة**: صفحة قائمة+CRUD واحدة تُعرَّف تصريحياً (`ModuleDefinition` — Key/TitleKey/PermissionPrefix/
+ViewModelType/Columns) بدل XAML جديد لكل كيان. `CrudPageRenderer.Render(definition, services)` يبني الصفحة
+فعلياً من القطع الجاهزة (`PageHeader`+`FilterBar`+`AppDataGrid`+`AppPagination`، كل قطعة كما هي بلا تعديل)،
+يحلّ ViewModel حقيقية من الحاوية عبر `definition.ViewModelType`، ويربط الخصائص بالاسم (`Items`,
+`SelectedItem`, `CurrentPage`... إلخ) — لا XAML، كل الربط برمجي عبر `BindingOperations.SetBinding`.
+`IModuleRegistry` (Singleton) يخزّن كل `ModuleDefinition` مسجَّلة؛ `8.Modules/ModuleRegistrations.cs` يسجّل
+الوحدات الفعلية.
+
+**قيد عام مكتشف أثناء التصميم**: `CrudViewModelBase<TDto,TFilter>` عامة على نوعين يختلفان بين كل وحدة —
+لا يمكن لـ`ModuleDefinition.ViewModelType` (نوع واحد `Type`) أن يُعبَّر عنه بقيد عام موحّد هنا. الحل: WPF
+`Binding` ينعكس بالاسم على أي كائن وقت التشغيل بصرف النظر عن نوعه المغلَق زمن الترجمة — فلا حاجة لواجهة غير
+عامة أصلاً لأي شيء يمرّ عبر Binding. الاستدعاءات المباشرة القليلة التي ليست Binding (`LoadAsync`،
+`SearchCommand.Execute` من مستمعي أحداث الفلترة/التصفح) تستخدم `dynamic` — نفس فلسفة Binding نفسها (ربط
+بالاسم لا بالنوع)، لا حل مؤقت.
+
+**تقليص UIServices (الشرط المذكور في R8)**: لا يعني حذف استهلاكاتها الست الحالية — كلها قطع XAML بلا
+ViewModel خلفها (leaf pieces مثل `AppButton`/`PermissionButton`)، وهذا بالضبط ما بُنيت UIServices من أجله.
+"التقليص" قيد تصميمي على ما يُبنى جديداً: `CrudPageRenderer` يحصل على كل خدماته (`IServiceProvider`) عبر
+معامل صريح من المُستدعي، لا عبر `UIServices.Provider` — فالصفحات المُركَّبة عبر R8/R9 لا تضيف مستهلكين جدداً
+لـUIServices مهما كثر عددها.
+
+**إثبات شرط الإغلاق ("وحدتان بالتكوين، الثانية <50 سطراً")**: `SuppliersViewModel` (33 سطراً) أقصر فعلياً من
+`CustomersViewModel` (36 سطراً) لأنها تعيد استخدام نفس العقد الموحّد بالكامل (نفس مبدأ استخراج القطعة) —
+سُجِّلت الوحدتان في `ModuleRegistrations.RegisterAll` (46 سطراً لكلتيهما معاً، بيانات تصريحية بحتة).
+
+**فحص جديد في check.sh**: `7.Composition` لا يعتمد على `8.Modules` (نفس نمط فحوصات الطبقات الأخرى — أول مرة
+يُفحص هذان المجلدان، كانا فارغين قبل R8).
+
+### ⚠️ توقف 9 — تعليق (Deadlock) حقيقي بين اختبارين يُنشئان System.Windows.Application كلٌّ على خيطه الخاص
+
+اختبار `CrudPageRendererTests` الجديد (يحتاج `Application.Current` حيّة لبناء `FilterBar`/`AppDataGrid`
+الحقيقيتين) اتّبع نمط `IdentityServiceTests` القائم: `StaThreadHelper.Run` (خيط STA جديد لكل اختبار، يُغلَق
+بـJoin بعد انتهاء الجسم) + `if (Application.Current == null) new Application()`. **بمفرده كل اختبار نجح**؛
+**معاً** (نفس عملية الاختبار، أي ترتيب) — تعليق كامل بلا أي إخراج، لا استثناء. السبب: `Application` نفسها
+`DispatcherObject` مرتبطة بخيط الإنشاء الأول؛ الاختبار الثاني يجد `Application.Current` غير null (من الأول)
+لكنه ينتمي لخيط **انتهى بالفعل** بعد Join — أي وصول له من خيط آخر يُعلَّق (لا رسالة خطأ، لا Dispatcher حيّ
+يستجيب). لم يظهر من قبل لأن `IdentityServiceTests` كانت المستهلك الوحيد لهذا النمط طوال المشروع — أول اختبار
+WPF-Application ثانٍ فعلياً هو ما كشف الخلل.
+
+**الحل**: `PrimeERP.Tests/WpfApplicationFixture.cs` — خيط STA واحد **دائم** (`IsBackground=true`،
+`Dispatcher.Run()`) طوال عملية الاختبار كلها، يُنشئ `Application` مرة واحدة فقط؛ أي اختبار يمرّ عبر
+`WpfApplicationFixture.Run(action)` بدل `StaThreadHelper.Run` مباشرة (`_dispatcher.Invoke(action)` على نفس
+الخيط الثابت دائماً). `IdentityServiceTests` و`CrudPageRendererTests` كلاهما محوَّلان الآن. `StaThreadHelper`
+نفسها بقيت كما هي (لا تزال صحيحة لـ`PrintServiceTests`/`PrintTemplatesTests` — تلك لا تلمس
+`Application.Current` إطلاقاً، فقط `FlowDocument` يحتاج STA بلا حاجة لـApplication مشتركة).
+
+**تبعة مباشرة اكتُشفت أثناء الإصلاح**: خيط `Dispatcher.Run()` الدائم يعني `await` داخل مستمعي الأحداث (مثل
+`root.Loaded += async (_,__) => await vm.LoadAsync();` في `CrudPageRenderer`) تُجدوَل متابعته على **طابور
+نفس الخيط** (`DispatcherSynchronizationContext` حقيقية) — بخلاف `StaThreadHelper` الخام (بلا Dispatcher.Run،
+فالمتابعة تذهب لـThreadPool). استطلاع الاختبار بـ`Thread.Sleep` كان سيُعلِّق الخيط عن معالجة طابوره الخاص
+(الاختبار نفسه يُنفَّذ **داخل** `Dispatcher.Invoke` على ذلك الخيط) — استُبدل بضخّ إطارات متداخلة
+(`DispatcherFrame`/`PushFrame`) في حلقة الاستطلاع، يفسح المجال لمعالجة الطابور بين كل فحص.
+
+**⚠️ خرق حقيقي ثانٍ اكتشفه هذا الاختبار الجديد فور إصلاح التعليق**: `AppPagination.CurrentPageProperty`
+مسجَّلة `FrameworkPropertyMetadataOptions.BindsTwoWayByDefault` — ربط `Binding("CurrentPage")` بلا تحديد
+Mode صراحة يصبح TwoWay تلقائياً، فيحاول WPF الكتابة العكسية على `PagedViewModelBase.CurrentPage` (خاصية
+`private set` عمداً — التنقل الفعلي عبر `PageChanged`→`GoToPageCommand`، لا كتابة مباشرة) فيرمي
+`InvalidOperationException: ... cannot work on the read-only property`. الحل: `Mode = BindingMode.OneWay`
+صراحة على هذا الربط تحديداً (فُحصت بقية الروابط: `TotalItems`/`IsLoading`/`ItemsSource` بلا هذا الخيار
+افتراضياً — `SelectedItem` وحدها TwoWay فعلاً بتصميم، ومطابقة لخاصية VM القابلة للكتابة).
+
+### التحقق
+
+`dotnet build` → 0 خطأ. `check.sh` → **صفر FAIL** (26 فحصاً، فحص جديد لحدود 7.Composition/8.Modules).
+`dotnet test` → **153/153 ناجح** (152 + `CrudPageRendererTests`) — الأهم: **يُكمِل التشغيل فعلياً خلال دقيقة
+ونصف**، لا تعليقاً؛ التحقُّق الحرج هنا لم يكن نجاح الاختبار الجديد بمفرده (نجح من أول محاولة) بل **تشغيل
+مجموعة الاختبارات كاملة معاً** — هذا ما كشف توقف 9 فعلياً. اختبار `CrudPageRendererTests` يبني صفحة حقيقية
+لا XAML، يُطلق `Loaded` يدوياً، ويثبت أن `Items` تمتلئ ببيانات حقيقية من `ICustomerService`. **تشغيل فعلي
+حقيقي** لـ`PrimeERP.exe` بعد ربط `AddComposition()`/`RegisterModules()` في سلسلة `App.xaml.cs.OnStartup` —
+إقلاع سليم بلا استثناء.
+
+---
+
 ## اكتشاف فني إضافي أثناء R1 (يستحق التسجيل)
 
 **تسمية الطبقة "Application" تتصادم مع `System.Windows.Application`**: أي ملف تحت شجرة `PrimeERP.*` يستخدم `Application.Current`/`: Application` بلا تأهيل كامل يتعرّض لخطر أن يحلّه المترجم كإشارة لمساحة الاسم `PrimeERP.Application` (طبقة 4) بدل نوع WPF — C# يبحث في مساحات الاسم المحيطة صعوداً قبل استشارة `using`. **الحل المُطبَّق**: كل إشارة WPF لـ `Application` في الكود مؤهَّلة بالكامل الآن (`System.Windows.Application`) — 11 ملفاً. أي ملف جديد يستخدم `Application.Current` مستقبلاً **يجب** أن يكتبها مؤهَّلة بالكامل لنفس السبب.

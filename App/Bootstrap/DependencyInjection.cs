@@ -5,6 +5,7 @@ using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.Services.Backup;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.Services.Print;
+using PrimeERP.Composition.Registry;
 using PrimeERP.Data.Core;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Data.Seeders;
@@ -16,6 +17,7 @@ using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Services;
 using PrimeERP.UI.ViewModels;
+using PrimeERP.Modules;
 
 namespace PrimeERP.App.Bootstrap
 {
@@ -83,13 +85,26 @@ namespace PrimeERP.App.Bootstrap
             // ViewModels: Transient — حالة خاصة بعرض واحد (SelectedItem/Filter/Page)، لا تُشارَك بين فتحات
             // الصفحة المتعددة عكس الخدمات (Singleton طوال عمر التطبيق).
             services.AddTransient<CustomersViewModel>();
+            services.AddTransient<SuppliersViewModel>();
 
             return services;
         }
 
-        /// <summary>لا موديولات مبنية بعد (7.Composition/8.Modules فارغتان حتى R8/R9). موجودة هنا لإكمال
-        /// شكل سلسلة التسجيل — AddPlatform().AddData().AddApplication().AddUI().AddModules() في App.xaml.cs.</summary>
-        public static IServiceCollection AddModules(this IServiceCollection services) => services;
+        /// <summary>7.Composition — IModuleRegistry وحدها حتى الآن (Definitions/Renderers ثابتة، لا تحتاج DI).</summary>
+        public static IServiceCollection AddComposition(this IServiceCollection services)
+        {
+            services.AddSingleton<IModuleRegistry, ModuleRegistry>();
+            return services;
+        }
+
+        /// <summary>يسجّل الوحدات الفعلية (R8: Customers/Suppliers كإثبات) في IModuleRegistry المبنية في
+        /// AddComposition — يُستدعى بعد BuildServiceProvider في App.xaml.cs (يحتاج IServiceProvider جاهزاً
+        /// لحلّ IModuleRegistry، لا IServiceCollection وقت التسجيل).</summary>
+        public static IServiceProvider RegisterModules(this IServiceProvider services)
+        {
+            ModuleRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
+            return services;
+        }
 
         /// <summary>
         /// ⚠️ توقف 7 — الحلقة المفقودة: التطبيق الحقيقي (App.xaml.cs.OnStartup) لم يكن يستدعي هذه السلسلة

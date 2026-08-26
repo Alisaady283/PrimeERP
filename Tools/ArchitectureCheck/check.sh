@@ -64,6 +64,14 @@ if [ "$n" -gt 0 ]; then
   grep -rl "using PrimeERP\.\(Composition\|Modules\)\b" 6.UI --include="*.cs" 2>/dev/null | sed 's/^/       /'
 else pass; fi
 
+# Composition(7) لا يعتمد على Modules(8) (لأعلى) — سُجِّلت هنا لأول مرة R8، إذ 7.Composition/8.Modules كانتا
+# فارغتين قبل ذلك (لا شيء يُفحص).
+n=$(grep -rl "using PrimeERP\.Modules\b" 7.Composition --include="*.cs" 2>/dev/null | wc -l)
+if [ "$n" -gt 0 ]; then
+  fail "7.Composition يعتمد على طبقة أعلى (8.Modules) ($n ملف):"
+  grep -rl "using PrimeERP\.Modules\b" 7.Composition --include="*.cs" 2>/dev/null | sed 's/^/       /'
+else pass; fi
+
 # Platform(1): لا يعتمد على شيء عدا 2.Data.Core/2.Data.Schema (أدوات SQL خام + تعريف جداول، لا Repositories
 # التي تحمل منطق أعمال) و3.Domain — راجع ARCHITECTURE.md § قيد Platform
 n=$(grep -rl "using PrimeERP\.\(Data\.Repositories\|Data\.Providers\|Application\|Design\|UI\|Composition\|Modules\)\b" 1.Platform --include="*.cs" 2>/dev/null | wc -l)

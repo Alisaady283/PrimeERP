@@ -9,6 +9,12 @@
     <sys:String x:Key="Str.Cancel">إلغاء</sys:String>
     <sys:String x:Key="Str.Delete">حذف</sys:String>
     <sys:String x:Key="Str.ConfirmDeleteMessage">هل أنت متأكد من رغبتك في الحذف؟ لا يمكن التراجع عن هذا الإجراء.</sys:String>
+    <sys:String x:Key="Str.Code">الكود</sys:String>
+    <sys:String x:Key="Str.Name">الاسم</sys:String>
+    <sys:String x:Key="Str.Phone">الهاتف</sys:String>
+    <sys:String x:Key="Str.Balance">الرصيد</sys:String>
+    <sys:String x:Key="Str.Module.Customers">العملاء</sys:String>
+    <sys:String x:Key="Str.Module.Suppliers">الموردون</sys:String>
     <sys:String x:Key="Str.Edit">تعديل</sys:String>
     <sys:String x:Key="Str.Add">إضافة</sys:String>
     <sys:String x:Key="Str.Search">بحث</sys:String>

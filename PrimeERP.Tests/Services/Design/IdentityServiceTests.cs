@@ -44,10 +44,8 @@ namespace PrimeERP.Tests.Services.Design
         [Fact]
         public void Apply_LiveSwap_ChangesAllFiveDimensionsOnAnAlreadyRenderedElement()
         {
-            StaThreadHelper.Run(() =>
+            WpfApplicationFixture.Run(() =>
             {
-                if (System.Windows.Application.Current == null) new System.Windows.Application();
-
                 // Default هو نفسه ما يبنيه Apply فعلياً — لا بناء يدوي مواز قد ينحرف عن السلوك الحقيقي.
                 _service.Apply("Default");
 

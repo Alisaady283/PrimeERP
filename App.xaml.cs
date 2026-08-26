@@ -25,10 +25,11 @@ public partial class App : System.Windows.Application
             .AddData()
             .AddApplication()
             .AddUI()
-            .AddModules();
+            .AddComposition();
 
         Services = services.BuildServiceProvider();
         Services.EnsureDatabaseReady();
+        Services.RegisterModules();
         UIServices.Initialize(Services);
 
         Services.GetRequiredService<IIdentityService>().Initialize();
