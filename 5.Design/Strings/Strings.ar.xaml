@@ -16,6 +16,10 @@
     <sys:String x:Key="Str.Level">المستوى</sys:String>
     <sys:String x:Key="Str.Type">النوع</sys:String>
     <sys:String x:Key="Str.AcceptsEntries">يقبل قيود</sys:String>
+    <sys:String x:Key="Str.Notes">ملاحظات</sys:String>
+    <sys:String x:Key="Str.ParentAccount">الحساب الأب</sys:String>
+    <sys:String x:Key="Str.Accounts.Add">إضافة حساب</sys:String>
+    <sys:String x:Key="Str.Accounts.Edit">تعديل حساب</sys:String>
     <sys:String x:Key="Str.Details">التفاصيل</sys:String>
     <sys:String x:Key="Str.ExpandAll">توسيع الكل</sys:String>
     <sys:String x:Key="Str.CollapseAll">طي الكل</sys:String>

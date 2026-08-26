@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
 using PrimeERP.UI.Components.Tree;
@@ -52,13 +53,32 @@ namespace PrimeERP.UI.Components.Display
             InitializeComponent();
         }
 
+        /// <summary>⚠️ ItemsSource قد تُملأ لاحقاً بشكل غير متزامن (TreeRenderer يربط قبل اكتمال LoadAsync ثم
+        /// يملأ نفس نسخة RootNodes لاحقاً) — نسخة لقطة واحدة وقت الربط فقط (كما كانت) لا تلتقط ذلك أبداً لأن
+        /// قيمة الخاصية نفسها (مرجع المجموعة) لا يتغيّر، فقط محتواها؛ WPF لا يعيد استدعاء معالج تغيّر الخاصية
+        /// لمجرد تغيّر المحتوى. الاشتراك في INotifyCollectionChanged هنا يجعل القطعة تتصرّف كأي ItemsControl
+        /// حقيقي مربوط بـObservableCollection — اكتُشف فعلياً كسبب صفحة شجرة الحسابات الفارغة رغم بيانات حقيقية.</summary>
         private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var c = (AppTreeView)d;
+
+            if (e.OldValue is INotifyCollectionChanged oldNotify)
+                oldNotify.CollectionChanged -= c.OnSourceCollectionChanged;
+
             c._roots = e.NewValue is IEnumerable<TreeNodeViewModel> src
                 ? new List<TreeNodeViewModel>(src)
                 : new List<TreeNodeViewModel>();
+
+            if (e.NewValue is INotifyCollectionChanged newNotify)
+                newNotify.CollectionChanged += c.OnSourceCollectionChanged;
+
             c.RefreshFilter();
+        }
+
+        private void OnSourceCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            _roots = ItemsSource != null ? new List<TreeNodeViewModel>(ItemsSource) : new List<TreeNodeViewModel>();
+            RefreshFilter();
         }
 
         private static void OnSearchTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>

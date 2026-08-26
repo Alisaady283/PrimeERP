@@ -1,6 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using System.Windows.Input;
+using PrimeERP.Domain.Results;
+using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Components.Tree;
 using PrimeERP.UI.Services;
@@ -8,28 +12,55 @@ using PrimeERP.UI.ViewModels.Base;
 
 namespace PrimeERP.UI.ViewModels
 {
-    /// <summary>
-    /// يرث PagedViewModelBase (نفس عقد Fetch — لا تعميم Create/Update، راجع مبدأ استخراج القطعة). يضيف حالة
-    /// عرض الشجرة فقط (عقد جذور/تحديد/توسيع) — لا منطق تحويل List&lt;TDto&gt; إلى شجرة هنا عمداً: ذلك المنطق
-    /// يحتاج TreeLayoutOptions (7.Composition، طبقة أعلى من 6.UI — لا يمكن لهذه الطبقة الاعتماد عليها، راجع
-    /// قيد حدود الطبقات في check.sh). TreeRenderer (7.Composition، يملك التعريف كاملاً) يبني الشجرة فعلياً بعد
-    /// LoadAsync ويملأ RootNodes مباشرة — بالضبط ما يجعل AccountsViewModel بلا أي منطق شجرة إطلاقاً (صفر سطر
-    /// إضافي عن CustomersViewModel، فقط قاعدة مختلفة).
-    /// </summary>
+    // بناء الشجرة نفسه في TreeRenderer (7.Composition، يملك TreeLayoutOptions) لا هنا — راجع TreeRenderer.cs.
     public abstract class TreeViewModelBase<TDto, TFilter> : PagedViewModelBase<TDto, TFilter>
     {
+        protected readonly IDialogService Dialogs;
+
         public ObservableCollection<TreeNodeViewModel> RootNodes { get; } = new();
 
         private TreeNodeViewModel _selectedNode;
         public TreeNodeViewModel SelectedNode { get => _selectedNode; set => SetProperty(ref _selectedNode, value); }
 
+        public ICommand AddCommand { get; }
+        public ICommand EditCommand { get; }
+        public ICommand DeleteCommand { get; }
         public ICommand ExpandAllCommand { get; }
         public ICommand CollapseAllCommand { get; }
 
-        protected TreeViewModelBase(IPermissionService permissions, IToastService toast) : base(permissions, toast)
+        // الحوار الفعلي يُبنى في 7.Composition (DialogRenderer) — الـVM ترفع حدثاً فقط، لا تعرف عنه شيئاً.
+        public event Action AddRequested;
+        public event Action<object> EditRequested;
+
+        protected abstract int IdOf(TDto item);
+        protected abstract Result DeleteItem(int id);
+
+        protected TreeViewModelBase(IPermissionService permissions, IToastService toast, IDialogService dialogs) : base(permissions, toast)
         {
+            Dialogs = dialogs;
+            AddCommand = GuardedCommand(() => AddRequested?.Invoke(), $"{PermissionPrefix}.Create");
+            EditCommand = new RelayCommand(
+                () => { if (SelectedNode?.Data is TDto d) EditRequested?.Invoke(d); },
+                () => SelectedNode?.Data is TDto && Can($"{PermissionPrefix}.Edit"));
+            DeleteCommand = new RelayCommand(async () => await DeleteSelectedAsync(),
+                () => SelectedNode?.Data is TDto && Can($"{PermissionPrefix}.Delete"));
             ExpandAllCommand = new RelayCommand(() => SetAllExpanded(RootNodes, true));
             CollapseAllCommand = new RelayCommand(() => SetAllExpanded(RootNodes, false));
+        }
+
+        private async Task DeleteSelectedAsync()
+        {
+            if (SelectedNode?.Data is not TDto item) return;
+
+            var confirmed = await Dialogs.ConfirmAsync(
+                LocalizationService.Get("Str.Delete"), LocalizationService.Get("Str.ConfirmDeleteMessage"), isDangerous: true);
+            if (!confirmed) return;
+
+            var result = DeleteItem(IdOf(item));
+            if (!result.IsSuccess) { Toast.Error(result.ErrorMessage); return; }
+
+            Toast.Success(LocalizationService.Get("Str.Success"));
+            await LoadAsync();
         }
 
         private static void SetAllExpanded(IEnumerable<TreeNodeViewModel> nodes, bool expanded)

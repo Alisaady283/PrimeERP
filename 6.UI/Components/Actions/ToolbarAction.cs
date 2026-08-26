@@ -55,6 +55,12 @@ namespace PrimeERP.UI.Components.Actions
         public static ToolbarAction Unpost(ICommand command, string permissionKey = null) =>
             Build("unpost", "إلغاء ترحيل", "IconCancel", "warning", command, permissionKey, null, "إلغاء ترحيل المستند");
 
+        public static ToolbarAction ExpandAll(ICommand command) =>
+            Build("expandAll", "توسيع الكل", "IconChevronDown", "ghost", command, null, null, "توسيع كل العقد");
+
+        public static ToolbarAction CollapseAll(ICommand command) =>
+            Build("collapseAll", "طي الكل", "IconChevronUp", "ghost", command, null, null, "طي كل العقد");
+
         private static ToolbarAction Build(string key, string text, string iconKey, string variant,
                                            ICommand command, string permissionKey, string shortcut, string tooltip) => new()
         {

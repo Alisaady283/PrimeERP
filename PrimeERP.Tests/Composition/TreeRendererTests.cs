@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Accounting;
@@ -10,6 +12,7 @@ using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Platform.Design;
 using PrimeERP.Platform.Permissions;
+using PrimeERP.UI.Components.Display;
 using Xunit;
 
 namespace PrimeERP.Tests.Composition
@@ -28,6 +31,7 @@ namespace PrimeERP.Tests.Composition
         {
             WpfApplicationFixture.Run(() =>
             {
+                PrimeERP.UI.Services.UIServices.Initialize(_db.Services);
                 _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
 
                 var accounts = _db.Services.GetRequiredService<IAccountService>();
@@ -57,7 +61,28 @@ namespace PrimeERP.Tests.Composition
                 }
 
                 Assert.True(((IEnumerable)vm.RootNodes).Cast<object>().Any());
+
+                // ⚠️ هذا الجزء تحديداً كشف الخلل الحقيقي (صفحة فارغة رغم بيانات حقيقية): RootNodes.Any() وحدها
+                // لا تثبت أن AppTreeView نفسها تعرض شيئاً — OnItemsSourceChanged كانت تلتقط لقطة واحدة وقت
+                // الربط (فارغة، قبل اكتمال LoadAsync)، فتبقى شجرة WPF الفعلية فارغة للأبد رغم امتلاء RootNodes
+                // لاحقاً. التحقق هنا يفحص AppTreeView.ItemsSource المُعروضة فعلياً، لا حالة الـVM فقط.
+                var treeView = FindVisualChild<AppTreeView>(element);
+                Assert.NotNull(treeView);
+                Assert.NotNull(treeView.ItemsSource);
+                Assert.True(treeView.ItemsSource.Cast<object>().Any());
             });
+        }
+
+        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typed) return typed;
+                var nested = FindVisualChild<T>(child);
+                if (nested != null) return nested;
+            }
+            return null;
         }
     }
 }

@@ -1,5 +1,6 @@
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Parties;
+using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Platform.Localization;
@@ -73,6 +74,22 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Type"),    Binding = nameof(AccountDto.TypeName) },
                     new() { Header = LocalizationService.Get("Str.AcceptsEntries"), Binding = nameof(AccountDto.IsLeaf) },
                     new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(AccountDto.Balance), Format = "N2" },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Accounts.Add",
+                    TitleEditKey = "Str.Accounts.Edit",
+                    GridColumns = 1,
+                    ServiceType = typeof(IAccountService),
+                    CreateDtoType = typeof(CreateAccountDto),
+                    UpdateDtoType = typeof(UpdateAccountDto),
+                    Fields = new()
+                    {
+                        new() { Key = nameof(CreateAccountDto.ParentId), LabelKey = "Str.ParentAccount", Kind = FieldKind.Picker, IsRequired = true, IsReadOnlyOnEdit = true, PickerType = "Account" },
+                        new() { Key = nameof(CreateAccountDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateAccountDto.IsLeaf), LabelKey = "Str.AcceptsEntries", Kind = FieldKind.Check },
+                        new() { Key = nameof(CreateAccountDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea },
+                    }
                 }
             });
         }

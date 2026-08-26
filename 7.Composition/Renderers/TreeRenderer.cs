@@ -1,29 +1,26 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Platform.Localization;
+using PrimeERP.UI.Components.Actions;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Components.Layout;
 using PrimeERP.UI.Components.Tree;
+using PrimeERP.UI.Services;
 
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>
-    /// يبني صفحة شجرة (Tree) أو شجرة+تفاصيل (TreeSplit) كاملة من ModuleDefinition واحدة — نفس فلسفة
-    /// CrudPageRenderer (تجميع قطع جاهزة: PageHeader/FilterBar/AppTreeView/AppCard، صفر XAML جديد). الفرق
-    /// الجوهري: الشجرة تُحمَّل كاملة مرة واحدة (لا ترقيم من طرف الخادم — لا معنى لصفحة واحدة من هرم)، والبحث
-    /// فلترة إخفاء حقيقية جانب العميل عبر AppTreeView.SearchText/TreeFilterEngine، لا استعلام خادم لكل حرف.
-    /// TreeBuilder يحوّل Items المسطَّحة لشجرة عبر Reflection على ModuleDefinition.TreeOptions — يُستدعى من
-    /// هنا بعد LoadAsync مباشرة، لا من داخل TreeViewModelBase (6.UI): TreeLayoutOptions الفعلية معروفة فقط
-    /// عند التسجيل هنا في ModuleDefinition، والوارث (AccountsViewModel) يبقى بلا أي منطق شجرة على الإطلاق.
-    /// </summary>
+    // يبني صفحة شجرة/شجرة+تفاصيل من ModuleDefinition — نفس فلسفة CrudPageRenderer، صفر XAML جديد.
+    // البحث فلترة جانب العميل عبر AppTreeView.SearchText/TreeFilterEngine — بلا استعلام خادم لكل حرف.
     public static class TreeRenderer
     {
         public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services)
@@ -35,11 +32,18 @@ namespace PrimeERP.Composition.Renderers
             var options = definition.TreeOptions;
 
             var header = new PageHeader();
-            var btnExpand = new Button { Content = LocalizationService.Get("Str.ExpandAll") };
-            BindingOperations.SetBinding(btnExpand, ButtonBase.CommandProperty, new Binding("ExpandAllCommand"));
-            var btnCollapse = new Button { Content = LocalizationService.Get("Str.CollapseAll"), Margin = new Thickness(8, 0, 0, 0) };
-            BindingOperations.SetBinding(btnCollapse, ButtonBase.CommandProperty, new Binding("CollapseAllCommand"));
-            header.ActionsContent = new StackPanel { Orientation = Orientation.Horizontal, Children = { btnExpand, btnCollapse } };
+
+            var actions = new List<ToolbarAction>
+            {
+                ToolbarAction.New((ICommand)vm.AddCommand, $"{definition.PermissionPrefix}.Create"),
+                ToolbarAction.Edit((ICommand)vm.EditCommand, $"{definition.PermissionPrefix}.Edit"),
+                ToolbarAction.Delete((ICommand)vm.DeleteCommand, $"{definition.PermissionPrefix}.Delete"),
+                ToolbarAction.Refresh((ICommand)vm.RefreshCommand),
+                ToolbarAction.SeparatorItem(),
+                ToolbarAction.ExpandAll((ICommand)vm.ExpandAllCommand),
+                ToolbarAction.CollapseAll((ICommand)vm.CollapseAllCommand),
+            };
+            header.ActionsContent = new ActionToolbar { ButtonsSource = actions };
 
             var filterBar = new FilterBar { SearchPlaceholder = LocalizationService.Get("Str.Search") };
             filterBar.Search += (_, text) => vm.SearchText = text;
@@ -82,23 +86,43 @@ namespace PrimeERP.Composition.Renderers
                 root.Children.Add(tree);
             }
 
+            void RebuildTree()
+            {
+                IEnumerable items = vm.Items;
+                var built = TreeBuilder.Build(items, options);
+                ObservableCollection<TreeNodeViewModel> rootNodes = vm.RootNodes;
+                rootNodes.Clear();
+                foreach (var node in built) rootNodes.Add(node);
+            }
+
+            ((INotifyCollectionChanged)vm.Items).CollectionChanged += (_, __) => RebuildTree();
+
+            if (definition.Dialog != null)
+            {
+                var toast = services.GetRequiredService<IToastService>();
+                vm.AddRequested += (Action)(() =>
+                {
+                    int? defaultParent = vm.SelectedNode?.Data?.GetType().GetProperty("Id")?.GetValue(vm.SelectedNode.Data) as int?;
+                    if (DialogRenderer.ShowAndSave(definition.Dialog, services, toast, addModeDefaultPickerId: defaultParent))
+                        vm.LoadCommand.Execute(null);
+                });
+                vm.EditRequested += (Action<object>)(item =>
+                {
+                    if (DialogRenderer.ShowAndSave(definition.Dialog, services, toast, item))
+                        vm.LoadCommand.Execute(null);
+                });
+            }
+
             root.Loaded += async (_, __) =>
             {
                 await (Task)vm.LoadAsync();
-
-                IEnumerable items = vm.Items;
-                var built = TreeBuilder.Build(items, options);
-
-                ObservableCollection<TreeNodeViewModel> rootNodes = vm.RootNodes;
-                rootNodes.Clear();
-                foreach (var node in built)
-                    rootNodes.Add(node);
+                RebuildTree();
             };
 
             return root;
         }
 
-        private static AppCard BuildDetailsPanel(System.Collections.Generic.List<GridColumn> columns)
+        private static AppCard BuildDetailsPanel(List<GridColumn> columns)
         {
             var rows = new StackPanel();
 

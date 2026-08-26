@@ -19,7 +19,8 @@ namespace PrimeERP.UI.Components.Feedback
         public AppDialogWindow()
         {
             InitializeComponent();
-            Owner ??= FindActiveWindow();
+            var active = FindActiveWindow();
+            if (Owner == null && active != this) Owner = active;
         }
 
         protected string HeaderTitle

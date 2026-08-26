@@ -31,5 +31,7 @@ namespace PrimeERP.Composition.Definitions
 
         /// <summary>مطلوبة فقط لو LayoutKind = Tree أو TreeSplit — TreeRenderer يتحقق منها.</summary>
         public TreeLayoutOptions TreeOptions { get; init; }
+
+        public DialogDefinition Dialog { get; init; }
     }
 }

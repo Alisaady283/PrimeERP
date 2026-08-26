@@ -16,6 +16,10 @@
     <sys:String x:Key="Str.Level">Level</sys:String>
     <sys:String x:Key="Str.Type">Type</sys:String>
     <sys:String x:Key="Str.AcceptsEntries">Accepts Entries</sys:String>
+    <sys:String x:Key="Str.Notes">Notes</sys:String>
+    <sys:String x:Key="Str.ParentAccount">Parent Account</sys:String>
+    <sys:String x:Key="Str.Accounts.Add">Add Account</sys:String>
+    <sys:String x:Key="Str.Accounts.Edit">Edit Account</sys:String>
     <sys:String x:Key="Str.Details">Details</sys:String>
     <sys:String x:Key="Str.ExpandAll">Expand All</sys:String>
     <sys:String x:Key="Str.CollapseAll">Collapse All</sys:String>

@@ -89,6 +89,10 @@ namespace PrimeERP.UI.Components.Actions
 
         private void CacheWidths()
         {
+            // Rebuild() تُستدعى مرتين متتاليتين (تغيّر ButtonsSource ثم Loaded)، وكل مرة تُجدوِل CacheWidths
+            // عبر BeginInvoke — الاستدعاء الثاني يجد _rendered ممتلئة بالفعل من الأول (Rebuild لا تُصفّرها إلا
+            // عند بدايتها هي، لا هنا)، فيضيف فوق القائمة بدل استبدالها = كل عنصر مكرر في قائمة "المزيد".
+            _rendered.Clear();
             for (int i = 0; i < mainPanel.Children.Count && i < _actions.Count; i++)
             {
                 var el = (FrameworkElement)mainPanel.Children[i];

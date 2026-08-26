@@ -6,16 +6,12 @@ using PrimeERP.UI.Services;
 
 namespace PrimeERP.UI.ViewModels
 {
-    /// <summary>أول مستهلك لـTreeViewModelBase — R11، يثبت أن Composition يمتد لتخطيط شجرة كامل (LayoutKind.
-    /// TreeSplit) بصفر منطق شجرة هنا (TreeRenderer يبني الشجرة فعلياً من TreeLayoutOptions المسجَّلة في
-    /// ModuleRegistrations). PageSize كبيرة عمداً — شجرة تحتاج الهرم كاملاً دفعة واحدة، لا صفحة واحدة منه
-    /// (نفس قيمة AccountPicker.OpenSelectionWindow: DataSource.SearchAsync("", 5000)).</summary>
     public class AccountsViewModel : TreeViewModelBase<AccountDto, AccountTreeFilter>
     {
         private readonly IAccountService _accounts;
 
-        public AccountsViewModel(IAccountService accounts, IPermissionService permissions, IToastService toast)
-            : base(permissions, toast)
+        public AccountsViewModel(IAccountService accounts, IPermissionService permissions, IToastService toast, IDialogService dialogs)
+            : base(permissions, toast, dialogs)
         {
             _accounts = accounts;
             PageSize = 5000;
@@ -25,5 +21,9 @@ namespace PrimeERP.UI.ViewModels
 
         protected override Result<PagedResult<AccountDto>> FetchPage(int page, int pageSize, AccountTreeFilter filter)
             => _accounts.GetPaged(page, pageSize, filter);
+
+        protected override int IdOf(AccountDto item) => item.Id;
+
+        protected override Result DeleteItem(int id) => _accounts.Delete(id);
     }
 }
