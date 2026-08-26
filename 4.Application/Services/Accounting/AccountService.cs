@@ -521,16 +521,20 @@ namespace PrimeERP.Application.Services.Accounting
         }
 
         private string GenerateChildCodeInternal(string parentCode) =>
-            BuildChildCode(parentCode, _accounts.GetChildren(parentCode));
+            BuildChildCode(_accounts.GetByCode(parentCode), _accounts.GetChildren(parentCode));
 
         /// <summary>نفس GenerateChildCodeInternal أعلاه من داخل معاملة قائمة — تستخدمها Create(conn,tx,...).</summary>
         private string GenerateChildCodeInternal(DbConnection conn, DbTransaction tx, string parentCode) =>
-            BuildChildCode(parentCode, _accounts.GetChildren(parentCode, conn, tx));
+            BuildChildCode(_accounts.GetByCode(parentCode, conn, tx), _accounts.GetChildren(parentCode, conn, tx));
 
-        private static string BuildChildCode(string parentCode, List<Account> children)
+        // عرض اللاحقة = مستوى الأب، يتّسع مع العمق بدل D3 ثابت.
+        private static string BuildChildCode(Account parent, List<Account> children)
         {
+            var parentCode = parent.Code;
+            var width = parent.Level;
+
             if (children.Count == 0)
-                return parentCode + "001";
+                return parentCode + 1.ToString("D" + width);
 
             int max = 0;
             foreach (var acc in children)
@@ -539,7 +543,7 @@ namespace PrimeERP.Application.Services.Accounting
                 if (int.TryParse(suffix, out int n) && n > max)
                     max = n;
             }
-            return parentCode + (max + 1).ToString("D3");
+            return parentCode + (max + 1).ToString("D" + width);
         }
 
         /// <summary>يبني AccountDto من بيانات لحظة الإنشاء مباشرة، بلا إعادة قراءة من DB — حساب جديد فعلياً لا أبناء/قيود/علم نظامي له بحكم كونه جديداً (لا تنازل، إجابة صحيحة فعلاً لا تقريب). يخدم Create(conn,tx,...) تفادياً لقراءات _journal.HasLinesForAccount/Settings.GetSection غير الآمنتين داخل معاملة خارجية.</summary>
