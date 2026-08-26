@@ -32,11 +32,17 @@ namespace PrimeERP.Platform.Localization
             if (existing != null)
                 dicts.Remove(existing);
 
-            var path = language == AppLanguage.Ar
-                ? "5.Design/Strings/Strings.ar.xaml"
-                : "5.Design/Strings/Strings.en.xaml";
+            // Uri مطلق (pack://application:,,,/{asm};component/...) لا نسبي عمداً — نفس اصطلاح
+            // IdentityService.Apply/PrintService.Theme: Uri نسبي يعتمد على Application.ResourceAssembly، يُضبط
+            // تلقائياً وصحيحاً في PrimeERP.exe الحقيقي لكنه هشّ في أي مضيف آخر (مضيف اختباري مثلاً) — اكتُشف
+            // فعلياً عند أول اختبار حقيقي لهذه الدالة (IOException "Cannot locate resource").
+            var asmName = typeof(LocalizationService).Assembly.GetName().Name;
+            var file = language == AppLanguage.Ar ? "Strings.ar.xaml" : "Strings.en.xaml";
 
-            dicts.Add(new ResourceDictionary { Source = new Uri(path, UriKind.Relative) });
+            dicts.Add(new ResourceDictionary
+            {
+                Source = new Uri($"pack://application:,,,/{asmName};component/5.Design/Strings/{file}", UriKind.Absolute)
+            });
 
             CurrentLanguage = language;
 

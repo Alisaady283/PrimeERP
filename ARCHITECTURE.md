@@ -766,6 +766,63 @@ System.Windows.Application instance in the same AppDomain` (لا "URI prefix is 
 
 ---
 
+## R10 — التغطية الناقصة + اختبار الحدود + اختبار الهوية
+
+تدقيق شامل لتسع مساحات كانت مذكورة صراحة في نطاق R10 الأصلي (NumberSequence, Theme/Identity, Localization,
+Dialog, Toast, Navigation, Export, Permission, السبعة Validators, فحص حدود طبقات) — لكل منها بحث فعلي عن
+الملف الحقيقي وسطحه العام (لا افتراض)، لا كتابة اختبارات تخمينية. النتيجة: **65 اختباراً جديداً** عبر سبعة
+ملفات، صفر تعديل على أي اختبار قائم.
+
+**Theme/Identity**: مُغطاة بالفعل بالكامل عبر `IdentityServiceTests` (موجودة منذ R7/R8) — لا عمل إضافي.
+
+**المُضافة**: `NumberSequenceServiceTests` (تسلسل/تصفير/Peek بلا استهلاك)، `PermissionServiceTests`
+(Can/CanAny/CanAll/LoadForUser/GetUserPermissions — دور ∪ منح − سحب، بأدوار/مستخدمين حقيقيين تُزرع مباشرة عبر
+DbHelper لا PermissionDb.SeedDefaults الثابتة)، `ValidatorsTests` + `AccountValidatorTests` +
+`UserValidatorTests` (**السبعة معاً**: Customer/Supplier/Journal/Account المُستهلَكة فعلياً، وEmployee/
+Product/User/Invoice غير المُستهلَكة بعد — هذه الأخيرة **لا تغطية أخرى ممكنة لها حالياً** بلا خدمة تستهلكها،
+فالاختبار المباشر هو الوحيد المتاح)، `LocalizationServiceTests`، `NavigationServiceTests`، `ExportServiceTests`
+(CSV/Excel/PDF حقيقية عبر ClosedXML/QuestPDF، بما فيها احترام صلاحية العمود)، و`Architecture/
+LayerBoundaryTests` (تفصيل أدناه).
+
+**قرار نطاق متعمَّد — Dialog/Toast بلا اختبار xUnit**: كلاهما غلاف رفيع فوق `Window.ShowDialog()`/`.Show()`
+حقيقية (`AppConfirmDialog`, `AppMessageDialog`, `ToastHostWindow`) — لا منطق نقي قابل للعزل يستحق اختباراً
+(المعاملات تمر مباشرة، يضمنها المترجم). اختبارها الفعلي الوحيد ذو المعنى هو تشغيل حواري حي (نفس فئة
+`LoginWindow`/`MainWindow` — كلاهما أيضاً بلا اختبار xUnit، يُتحقَّق منهما فقط عبر تشغيل فعلي حقيقي ولقطات
+شاشة، كما في R9). محاولة `ShowDialog()` داخل xUnit تصطدم أصلاً بتوقف 10 (تُعلَّق للأبد في هذه البيئة) — قرار
+عدم الاختبار هنا ليس تهرّباً من عائق بل تصنيف صحيح لنوع الكود (سطح تفاعلي حي، لا منطق أعمال).
+
+### ⚠️ باگ حقيقي كشفه أول اختبار فعلي لـ `LocalizationService.Apply`
+
+أول تشغيل لـ`LocalizationServiceTests` رمى `IOException: Cannot locate resource '5.design/strings/
+strings.ar.xaml'` — **لم يكن خللاً في الاختبار نفسه**. `LocalizationService.Apply` كانت تبني قاموس النصوص
+بـUri **نسبي** (`new Uri("5.Design/Strings/Strings.ar.xaml", UriKind.Relative)`) يعتمد ضمنياً على
+`Application.ResourceAssembly` — يُضبط صحيحاً تلقائياً في `PrimeERP.exe` الحقيقي، لكنه هشّ في أي مضيف آخر
+(هنا: مضيف اختبار `testhost.exe`، بالضبط نفس السبب الجذري الموثَّق مرتين سابقاً في `IdentityService.Apply`
+و`PrintService.Theme`). الكود كان **يعمل بلا خطأ في الإنتاج** فقط لأن لا شيء استدعاه قط في اختبار حتى الآن —
+لا استثناء لعزوه لتوقف 11/12 هنا، خلل مستقل مختلف تماماً كُشف لأول مرة بهذا الاختبار تحديداً.
+
+**الحل**: نفس الاصطلاح المُثبَّت مرتين من قبل — Uri مطلق `pack://application:,,,/{asmName};component/
+5.Design/Strings/{file}` بدل النسبي. إصلاح إنتاجي حقيقي (لا حل اختباري فقط) — يُصلح نفس الهشاشة الكامنة لأي
+مضيف مستقبلي غير `PrimeERP.exe` نفسه.
+
+### `Architecture/LayerBoundaryTests` — نسخة IL من check.sh § 1
+
+`Tools/ArchitectureCheck/check.sh` يفحص نص المصدر (`grep` على `using`) — يفلت منه أي إشارة بنوع مؤهَّل بالكامل
+بلا `using` مطابق. `LayerBoundaryTests` الجديد يفحص بدلاً من ذلك **التوقيعات المُصرَّفة فعلياً** عبر انعكاس
+(Reflection) على `PrimeERP.dll` الناتجة: لكل طبقة (Data/Application/UI/Composition/Platform/Domain)، يفحص
+قاعدة كل نوع + واجهاته + حقوله + خصائصه + توقيعات دواله (بارامترات وقيمة الإرجاع، مع فكّ الأنواع العامة
+المتداخلة مثل `Result<PagedResult<AccountDto>>`) عن أي إشارة لمساحة اسم من طبقة أعلى ممنوعة — نفس قواعد
+check.sh § 1 بالضبط، منفَّذة بأسلوب مختلف تماماً فتُكمِّله لا تكرره. النتيجة: **صفر انتهاك** — يثبت أن الطبقات
+نظيفة فعلياً على مستوى IL، لا فقط على مستوى نمط `using` النصي.
+
+### التحقق
+
+`dotnet build` (Debug وRelease) → 0 خطأ في كلاهما. `check.sh` → **صفر FAIL** (26 فحصاً؛ 2 دين تقني موثَّق
+كسابقاً). `dotnet test` → **218/218 ناجح (153 سابقاً + 65 جديداً)، ثلاث تشغيلات كاملة متتالية متطابقة** (نفس
+منهجية التحقق من توقف 11/12 — لا تشغيلة واحدة تكفي دليلاً بعد تاريخ التقطّع في هذه المجموعة تحديداً).
+
+---
+
 ## اكتشاف فني إضافي أثناء R1 (يستحق التسجيل)
 
 **تسمية الطبقة "Application" تتصادم مع `System.Windows.Application`**: أي ملف تحت شجرة `PrimeERP.*` يستخدم `Application.Current`/`: Application` بلا تأهيل كامل يتعرّض لخطر أن يحلّه المترجم كإشارة لمساحة الاسم `PrimeERP.Application` (طبقة 4) بدل نوع WPF — C# يبحث في مساحات الاسم المحيطة صعوداً قبل استشارة `using`. **الحل المُطبَّق**: كل إشارة WPF لـ `Application` في الكود مؤهَّلة بالكامل الآن (`System.Windows.Application`) — 11 ملفاً. أي ملف جديد يستخدم `Application.Current` مستقبلاً **يجب** أن يكتبها مؤهَّلة بالكامل لنفس السبب.
