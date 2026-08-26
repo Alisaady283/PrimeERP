@@ -78,6 +78,32 @@ namespace PrimeERP.UI.Services
             }
         }
 
+        /// <summary>
+        /// نفس مشكلة ⚠️ توقف 6 لكن لأنواع قيمة (CornerRadius/double) لا Brush: WPF لا يسمح بإعادة تصدير مورد
+        /// من نوع قيمة عبر DynamicResource متسلسل (يُحوَّل من نص عبر TypeConverter عند التحميل، لا مرجعاً حياً) —
+        /// فأي مفتاح L3 يريد "متابعة" قيمة L1 تتغيّر مع الهوية (P.Radius.Md: 6 Default / 3 Corporate،
+        /// P.Font.Size.300: 12 Default / 13 Corporate) لا يمكن أن يكون مجرد `&lt;CornerRadius x:Key="C.Input.Radius"&gt;
+        /// {DynamicResource P.Radius.Md}&lt;/CornerRadius&gt;` — نفس الحل: نسخ القيمة المُحلولة فعلياً برمجياً هنا
+        /// تحت اسم L3، تُعاد كل Apply (لا ApplyMode — هذه قيم تتبع الهوية لا الوضع الفاتح/الداكن).</summary>
+        private static readonly (string L1Key, string L3Key)[] DerivedDimensions =
+        {
+            ("P.Radius.Md",     "C.Input.Radius"),
+            ("P.Font.Size.300", "C.Input.FontSize"),
+        };
+
+        private static void RefreshDerivedDimensions()
+        {
+            var app = System.Windows.Application.Current;
+            if (app == null) return;
+
+            foreach (var (l1Key, l3Key) in DerivedDimensions)
+            {
+                var value = app.TryFindResource(l1Key);
+                if (value != null)
+                    app.Resources[l3Key] = value;
+            }
+        }
+
         public IdentityService(ISettingsService settings) => _settings = settings;
 
         // القيم Str.* هنا مفاتيح ترجمة (تُحلّ في Available فقط، وقت الاستخدام) لا نصاً نهائياً — الحزمة الثابتة تحمل المفاتيح فقط.
@@ -134,6 +160,8 @@ namespace PrimeERP.UI.Services
                         Source = new Uri($"pack://application:,,,/{asmName};component/5.Design/Identity/{identityKey}/{file}", UriKind.Absolute)
                     });
                 }
+
+                RefreshDerivedDimensions();
 
                 // L2 وحدها أولاً (⚠️ توقف 6) — RefreshDerivedColors تحتاج Brush الدلالية مستقرة قبل L3، وL3 جزء
                 // من Theme.xaml التالي مباشرة؛ لو دُمج L2+L3 معاً هنا (كما كان قبل توقف 6) قد يُقيَّم مورد L3

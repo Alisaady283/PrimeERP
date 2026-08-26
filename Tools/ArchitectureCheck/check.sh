@@ -104,6 +104,23 @@ for a in 1.Platform 2.Data 3.Domain 4.Application 5.Design 6.UI 7.Composition 8.
   done
 done
 
+# L3 (5.Design/Components) يشير لـ L1 (P.*) مباشرة — يجب المرور عبر L2 Semantic دائماً (الاستثناء الموثَّق
+# P.Font.*/P.Space.*/P.Radius.* من L1 مباشرة خاص بـ L4 فقط، راجع Style.Input.xaml/Style.Button.xaml — لا L3).
+n=$(grep -rlE "DynamicResource P\." --include="*.xaml" 5.Design/Components 2>/dev/null)
+if [ -n "$n" ]; then
+  fail "L3 (5.Design/Components) يشير لـ L1 مباشرة (تخطي L2):"
+  echo "$n" | sed 's/^/       /'
+else pass; fi
+
+# L4 (5.Design/Styles) يشير للون L1 (P.Color.*) مباشرة — يتجاوز L2 Semantic فيفقد تبدّل الوضع الفاتح/الداكن.
+# الاستثناء الموثَّق (P.Font.*/P.Space.*/P.Radius.*... من L1 مباشرة لأسباب تقنية بحتة، راجع ⚠️ توقف 4) لا
+# يشمل الألوان أبداً — لا سبب تقني يمنع تمرير اللون عبر L2، فهذا خرق حقيقي دائماً لا استثناء.
+n=$(grep -rlE "DynamicResource P\.Color\." --include="*.xaml" 5.Design/Styles 2>/dev/null)
+if [ -n "$n" ]; then
+  fail "L4 (5.Design/Styles) يشير للون L1 مباشرة (يجب المرور عبر L2 Semantic):"
+  echo "$n" | sed 's/^/       /'
+else pass; fi
+
 # ============================================================
 section "2 — حدود المسؤولية"
 # ============================================================
@@ -188,6 +205,16 @@ if [ -n "$n" ]; then
   echo "$n" | sed 's/^/       /'
 else pass; fi
 
+# TextBox/PasswordBox بقياس حرفي (Height/MinHeight/Padding) داخل قطع Inputs — يجب أن يمر عبر C.Input.* دائماً
+# (راجع AppPasswordBox/AppTextBox/AppNumericBox). مقصورة على 6.UI/Components/Inputs تحديداً لا كل 6.UI: محرِّرات
+# الخلايا المضغوطة في شبكات المستندات (DocumentLinesGrid) قياس مختلف عمداً (سياق كثافة مختلف كلياً، ليست حقل
+# نموذج مستقل) — فرض C.Input.* عليها كان سيغيّر شكلها الفعلي، ممنوع صراحة (راجع تعليمات الترحيل).
+n=$(grep -rnE '<(TextBox|PasswordBox)[^>]*\s(Height|MinHeight|Padding)="[0-9]' --include="*.xaml" 6.UI/Components/Inputs 2>/dev/null)
+if [ -n "$n" ]; then
+  fail "قياس حرفي (Height/MinHeight/Padding) على TextBox/PasswordBox داخل 6.UI/Components/Inputs (يجب C.Input.*):"
+  echo "$n" | sed 's/^/       /'
+else pass; fi
+
 # ViewModel فيه Brush/Color (منطق عرض بصري يجب أن يكون في القطعة لا الـ ViewModel)
 n=$(grep -rlE "\bBrush\b|\bColor\b|SolidColorBrush" 6.UI/ViewModels --include="*.cs" 2>/dev/null)
 if [ -n "$n" ]; then
@@ -205,6 +232,23 @@ if [ -n "$n" ]; then
   fail "قيمة Hex حرفية خارج 5.Design:"
   echo "$n" | sed 's/^/       /'
 else pass; fi
+
+# قيمة حرفية Hex داخل L2/L3/L4 (Semantic/Components/Styles) — L1 (Identity/Primitives) وحدها مصدر الحقيقة
+# الحرفي المسموح به في السلسلة كاملة؛ أي طبقة أعلى تُدخل Hex جديداً تكسر تبدّل الهوية/الوضع لهذه القيمة تحديداً.
+n=$(grep -rlE "#[0-9A-Fa-f]{6}" --include="*.xaml" 5.Design/Semantic 5.Design/Components 5.Design/Styles 2>/dev/null)
+if [ -n "$n" ]; then
+  fail "قيمة Hex حرفية داخل L2/L3/L4 (يجب أن تأتي من L1 عبر DynamicResource):"
+  echo "$n" | sed 's/^/       /'
+else pass; fi
+
+# لونان بنفس القيمة الست عشرية باسمين مختلفين ضمن نفس ملف L1 (تكرار محتمل غير مقصود — إرشادي، WARN لا FAIL)
+for f in 5.Design/Identity/*/Primitives.Color.xaml; do
+  [ -f "$f" ] || continue
+  dups=$(grep -oE '#[0-9A-Fa-f]{6}' "$f" | sort | uniq -d)
+  if [ -n "$dups" ]; then
+    warn "$f: قيم Hex مكررة تحت أسماء مختلفة: $(echo $dups | tr '\n' ' ')"
+  fi
+done
 
 # StaticResource للون (يجب DynamicResource) — فحص لأسماء المفاتيح الدلالية اللونية فقط
 n=$(grep -rlE "StaticResource (Brand|Surface|Text[A-Z]|Outline|Success|Danger|Warning|Info|Nav[A-Z]|TopBar|Table[A-Z]|State[A-Z]|FocusRing|Shadow)" --include="*.xaml" 6.UI 5.Design 2>/dev/null)

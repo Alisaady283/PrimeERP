@@ -11,7 +11,10 @@
     <SolidColorBrush x:Key="C.Input.Placeholder" Color="{DynamicResource TextMuted.Color}"/>
 
     <SolidColorBrush x:Key="C.Input.Focus.Border" Color="{DynamicResource OutlineFocus.Color}"/>
-    <sys:Double      x:Key="C.Input.Focus.BorderWidth">2</sys:Double>
+    <!-- Thickness لا sys:Double — قيمة الهدف Border.BorderThickness نفسها Thickness؛ DynamicResource لا يحوّل
+         النوع تلقائياً كما يفعل TypeConverter لقيمة نصية حرفية (اكتُشف فعلياً: InvalidOperationException
+         "'1' is not a valid value for property 'BorderThickness'" عند إعطائها كـsys:Double أول مرة). -->
+    <Thickness       x:Key="C.Input.Focus.BorderWidth">2</Thickness>
 
     <SolidColorBrush x:Key="C.Input.Error.Border" Color="{DynamicResource Danger.Color}"/>
     <SolidColorBrush x:Key="C.Input.Error.Text"   Color="{DynamicResource Danger.Color}"/>
@@ -28,5 +31,16 @@
     <!-- ===== الأبعاد — مستقلة، ثابتة بين الهويات ===== -->
     <sys:Double x:Key="C.Input.Height">36</sys:Double>
     <sys:Double x:Key="C.Input.Height.Sm">32</sys:Double>
+    <sys:Double    x:Key="C.Input.PaddingX">10</sys:Double>
+    <Thickness     x:Key="C.Input.Padding">10,0</Thickness>
+    <Thickness     x:Key="C.Input.BorderThickness">1</Thickness>
+    <Thickness     x:Key="C.Input.Label.Gap.Margin">0,0,0,4</Thickness>
+
+    <!-- C.Input.Radius وC.Input.FontSize غير معرَّفَين هنا عمداً — تتبعان الهوية حياً (P.Radius.Md/
+         P.Font.Size.300 يختلفان قيمةً بين Default وCorporate)، وWPF لا يسمح بإعادة تصدير مورد من نوع قيمة
+         (لا Brush) عبر DynamicResource متسلسل. تُحقنان برمجياً في IdentityService.RefreshDerivedDimensions
+         عند كل Apply — نفس أسلوب "{Name}.Color" الدلالية (راجع ⚠️ توقف 6). تتوفران دائماً في أي مسار حي حقيقي
+         (IdentityService.Initialize يُستدعى أول شيء في App.xaml.cs)، وفي كل اختبار يلمسهما عبر Apply("Default")
+         صراحة أولاً — لا حاجة لقيمة احتياطية ساكنة هنا. -->
 
 </ResourceDictionary>

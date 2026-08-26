@@ -13,6 +13,12 @@
     <sys:String x:Key="Str.Name">Name</sys:String>
     <sys:String x:Key="Str.Phone">Phone</sys:String>
     <sys:String x:Key="Str.Balance">Balance</sys:String>
+    <sys:String x:Key="Str.Level">Level</sys:String>
+    <sys:String x:Key="Str.Type">Type</sys:String>
+    <sys:String x:Key="Str.AcceptsEntries">Accepts Entries</sys:String>
+    <sys:String x:Key="Str.Details">Details</sys:String>
+    <sys:String x:Key="Str.ExpandAll">Expand All</sys:String>
+    <sys:String x:Key="Str.CollapseAll">Collapse All</sys:String>
     <sys:String x:Key="Str.Module.Customers">Customers</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">Suppliers</sys:String>
     <sys:String x:Key="Str.Module.Accounts">Chart of Accounts</sys:String>

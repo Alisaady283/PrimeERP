@@ -12,7 +12,7 @@
     <!-- ===== أجزاء مشتركة ===== -->
 
     <Style x:Key="FieldLabelRowStyle" TargetType="StackPanel">
-        <Setter Property="Margin" Value="0,0,0,4"/>
+        <Setter Property="Margin" Value="{DynamicResource C.Input.Label.Gap.Margin}"/>
     </Style>
 
     <Style x:Key="FieldLabelTextStyle" TargetType="TextBlock">
@@ -30,11 +30,21 @@
     <Style x:Key="FieldInnerTextBoxStyle" TargetType="TextBox">
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
+        <Setter Property="FontSize" Value="{DynamicResource C.Input.FontSize}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
         <Setter Property="Foreground" Value="{DynamicResource C.Input.Fg}"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
-        <Setter Property="Padding" Value="10,0"/>
+        <Setter Property="Padding" Value="{DynamicResource C.Input.Padding}"/>
+    </Style>
+
+    <Style x:Key="FieldInnerPasswordBoxStyle" TargetType="PasswordBox">
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="FontSize" Value="{DynamicResource C.Input.FontSize}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="Foreground" Value="{DynamicResource C.Input.Fg}"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="{DynamicResource C.Input.Padding}"/>
     </Style>
 
     <Style x:Key="FieldPlaceholderStyle" TargetType="TextBlock">
@@ -88,8 +98,8 @@
     <Style x:Key="AppTextBox_FieldBorder" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource C.Input.Bg}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Border}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="{DynamicResource P.Radius.Md}"/>
+        <Setter Property="BorderThickness" Value="{DynamicResource C.Input.BorderThickness}"/>
+        <Setter Property="CornerRadius" Value="{DynamicResource C.Input.Radius}"/>
         <Setter Property="Height" Value="{DynamicResource C.Input.Height}"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppTextBox}}}" Value="False">
@@ -98,9 +108,27 @@
             </DataTrigger>
             <DataTrigger Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppTextBox}}}" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Focus.Border}"/>
-                <Setter Property="BorderThickness" Value="2"/>
+                <Setter Property="BorderThickness" Value="{DynamicResource C.Input.Focus.BorderWidth}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding HasError, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppTextBox}}}" Value="True">
+                <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Error.Border}"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ===== AppPasswordBox (نفس مواصفة AppTextBox بالضبط — ارتفاع/حشو/حد/نصف قطر/حالات) ===== -->
+
+    <Style x:Key="AppPasswordBox_FieldBorder" TargetType="Border" BasedOn="{StaticResource AppTextBox_FieldBorder}">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppPasswordBox}}}" Value="False">
+                <Setter Property="Background" Value="{DynamicResource C.Input.ReadOnly.Bg}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource OutlineSubtle}"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppPasswordBox}}}" Value="True">
+                <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Focus.Border}"/>
+                <Setter Property="BorderThickness" Value="{DynamicResource C.Input.Focus.BorderWidth}"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding HasError, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppPasswordBox}}}" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Error.Border}"/>
             </DataTrigger>
         </Style.Triggers>
@@ -111,8 +139,8 @@
     <Style x:Key="AppSearchBox_FieldBorder" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource C.Input.Bg}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Border}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="{DynamicResource P.Radius.Md}"/>
+        <Setter Property="BorderThickness" Value="{DynamicResource C.Input.BorderThickness}"/>
+        <Setter Property="CornerRadius" Value="{DynamicResource C.Input.Radius}"/>
         <Setter Property="Height" Value="{DynamicResource C.Input.Height.Sm}"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppSearchBox}}}" Value="False">
@@ -121,7 +149,7 @@
             </DataTrigger>
             <DataTrigger Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppSearchBox}}}" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Focus.Border}"/>
-                <Setter Property="BorderThickness" Value="2"/>
+                <Setter Property="BorderThickness" Value="{DynamicResource C.Input.Focus.BorderWidth}"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>
@@ -154,7 +182,7 @@
             </DataTrigger>
             <DataTrigger Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppComboBox}}}" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Focus.Border}"/>
-                <Setter Property="BorderThickness" Value="2"/>
+                <Setter Property="BorderThickness" Value="{DynamicResource C.Input.Focus.BorderWidth}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding HasError, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppComboBox}}}" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Error.Border}"/>

@@ -86,6 +86,7 @@ namespace PrimeERP.App.Bootstrap
             // الصفحة المتعددة عكس الخدمات (Singleton طوال عمر التطبيق).
             services.AddTransient<CustomersViewModel>();
             services.AddTransient<SuppliersViewModel>();
+            services.AddTransient<AccountsViewModel>();
 
             return services;
         }

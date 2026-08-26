@@ -19,9 +19,8 @@
             <inputs:AppTextBox x:Name="txtUsername" Label="{DynamicResource Str.Login.Username}" IsRequired="True"
                                 Margin="{DynamicResource P.Space.2.Bottom}"/>
 
-            <TextBlock Text="{DynamicResource Str.Login.Password}" Foreground="{DynamicResource TextSecondary}"
-                       FontSize="{DynamicResource P.Font.Size.200}" Margin="{DynamicResource P.Space.1.Bottom}"/>
-            <PasswordBox x:Name="txtPassword" KeyDown="txtPassword_KeyDown" Margin="{DynamicResource P.Space.2.Bottom}"/>
+            <inputs:AppPasswordBox x:Name="txtPassword" Label="{DynamicResource Str.Login.Password}" IsRequired="True"
+                                    KeyDown="txtPassword_KeyDown" Margin="{DynamicResource P.Space.2.Bottom}"/>
 
             <TextBlock x:Name="txtError" Foreground="{DynamicResource Danger}" TextWrapping="Wrap"
                        Visibility="Collapsed" Margin="{DynamicResource P.Space.2.Bottom}"/>

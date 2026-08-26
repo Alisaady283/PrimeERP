@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using PrimeERP.UI.Components.Display;
+using PrimeERP.UI.Components.Tree;
 
 namespace PrimeERP.Composition.Definitions
 {
@@ -20,6 +21,15 @@ namespace PrimeERP.Composition.Definitions
         /// وقت التشغيل عبر dynamic — نفس مبدأ ربط WPF بالخصائص بالاسم لا بالنوع الثابت).</summary>
         public required Type ViewModelType { get; init; }
 
+        /// <summary>أعمدة الشبكة (LayoutKind.Grid) — أو أعمدة لوحة التفاصيل (LayoutKind.TreeSplit)، نفس القائمة
+        /// بلا نوع مواز: DetailColumns في TreeRenderer تُبنى من هذه القائمة نفسها، Binding بالاسم يعمل مطابقاً
+        /// على الحالتين (خاصية على TDto).</summary>
         public required List<GridColumn> Columns { get; init; }
+
+        /// <summary>Grid افتراضياً — يحافظ على سلوك كل وحدة حالية بلا أي تغيير.</summary>
+        public LayoutKind LayoutKind { get; init; } = LayoutKind.Grid;
+
+        /// <summary>مطلوبة فقط لو LayoutKind = Tree أو TreeSplit — TreeRenderer يتحقق منها.</summary>
+        public TreeLayoutOptions TreeOptions { get; init; }
     }
 }

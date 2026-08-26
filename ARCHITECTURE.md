@@ -823,6 +823,189 @@ check.sh § 1 بالضبط، منفَّذة بأسلوب مختلف تماماً
 
 ---
 
+## R11 — الوحدة البصرية الشاملة + إصلاح حقول تسجيل الدخول + شجرة الحسابات
+
+طلب مستخدم مباشر بثلاثة بنود متتالية: (3) إكمال سلسلة الرموز L1→L4 + كتالوج مولَّد آلياً + بوابة تحقق أوسع في
+check.sh، (2) إصلاح تطابق حقلي الدخول (اسم المستخدم/كلمة المرور) عبر رموز C.Input.* بدل قيم حرفية، (1) تجميع
+شجرة الحسابات عبر Composition. نُفِّذت بهذا الترتيب (3 يؤسس الرموز التي يعتمد عليها 2، ثم 1 الأكبر) ببوابة
+build→test→check.sh→commit بعد كل بند، بلا توقف بيني كما طُلب صراحة.
+
+### البند 3 — تدقيق السلسلة والنتيجة
+
+تدقيق فعلي (لا افتراض) لكل طبقة: **L1** (Identity/Default وCorporate) — الستة ملفات كاملة في كلا الهويتين،
+صفر نقص. **L2** (Semantic.Light/Dark) — صفر Hex حرفي (تحقُّق `grep` مباشر). **L3** (5.Design/Components) —
+12 ملف Tokens.*.xaml موجودة فعلياً (Badge/Button/Card/Dialog/Document/Grid/Input/Nav/Pagination/Toast/
+Toolbar/Tree) تغطي كل عائلة قطعة حقيقية موجودة؛ صفر إشارة لـL1 مباشرة (`grep` تأكيدي). **L4**
+(5.Design/Styles) — Implicit.xaml (شبكة أمان لعناصر WPF الخام) + Style.Button/Dialog/Input.xaml + ScrollBars؛
+صفر إشارة للون L1 مباشرة. السلسلة كانت نظيفة فعلياً في كل شيء **ما عدا** نقطتين حقيقيتين:
+
+1. **`C.Input.*` ناقصة**: `Height`/`Height.Sm`/`Label.Gap` موجودة، لكن `Radius`/`PaddingX`/`BorderThickness`
+   غائبة — `Style.Input.xaml` كانت تشير لـ`P.Radius.Md` (L1) مباشرة و`Padding="10,0"`/`BorderThickness="1"`
+   حرفيين، بدل رموز L3 مخصَّصة. **هذا الحل الصحيح تحديداً** (لا كسل توثيقي) لأن `P.Radius.Md` **يختلف قيمةً
+   فعلياً بين الهويتين** (Default=6، Corporate=3) — لو بقي مرجعاً حرفياً L1 مباشراً عند حقل الدخول تحديداً، أي
+   حقل مستقبلي لا يعرف أن يتبع نفس القياس دون تكرار نفس الإشارة يدوياً في كل مكان.
+
+2. **مشكلة نوع WPF حقيقية اكتُشفت أثناء التنفيذ (⚠️ توقف 13)**: تفصيلها أدناه — أخطر من نقص توثيقي، تسبَّبت
+   في تعطُّل فعلي للتطبيق.
+
+**الحل لـ`Radius`/`FontSize`** (كلاهما يختلف فعلياً بين الهويتين: `P.Font.Size.300` = 12 Default / 13
+Corporate): WPF **لا يسمح بإعادة تصدير مورد من نوع قيمة** (لا Brush) عبر DynamicResource متسلسل — نفس مشكلة
+⚠️ توقف 6 بالضبط (يومها كانت Color، اليوم CornerRadius/double). لا حل XAML بحت. الحل: `IdentityService`
+اكتسبت `RefreshDerivedDimensions()` (نفس منهج `RefreshDerivedColors()` المعمول به من توقف 6) — تُستدعى من
+`Apply()` بعد دمج ملفات L1 مباشرة، تنسخ القيمة **المُحلولة فعلياً** لـ`P.Radius.Md`/`P.Font.Size.300` تحت
+اسم `C.Input.Radius`/`C.Input.FontSize` برمجياً. `PaddingX`/`BorderThickness`/`Label.Gap` **لا تختلف بين
+الهويتين إطلاقاً** (لم تكن أصلاً مرتبطة بأي مفتاح L1 هوية — كانت أرقاماً حرّة) فتُعرَّف كرموز L3 ثابتة عادية
+في `Tokens.Input.xaml` (نفس نمط `C.Input.Height` الموجود أصلاً) — لا حاجة لآلية الحقن البرمجي لهذه الأربعة.
+
+### ⚠️ توقف 13 — `InvalidOperationException` عند إقلاع فعلي: نوع المورد لا يطابق نوع الخاصية المُستهدفة
+
+أول تشغيل حقيقي بعد الترحيل عطّل التطبيق فوراً عند `LoginWindow.Show()`:
+`'1' is not a valid value for property 'BorderThickness'`. السبب: `C.Input.BorderThickness` (وكذلك
+`C.Input.Focus.BorderWidth` الموجودة أصلاً) عُرِّفتا كـ`sys:Double` — تعمل بلا مشكلة كقيمة نصية حرفية
+(`BorderThickness="1"`، محوَّلة عبر `ThicknessConverter` وقت التحليل)، لكن `{DynamicResource ...}` **لا
+يمرّ عبر أي TypeConverter** — يُعيد الكائن المُخزَّن بنوعه الفعلي مباشرة (هنا `double` مصندَق)، و`Border.
+BorderThickness` تتوقّع بنية `Thickness` لا `double`، فيرمي WPF استثناءً وقت القياس (Measure) لا وقت
+التحليل — **لا خطأ ترجمة، فقط تعطُّل فعلي عند التشغيل**. الحل: تغيير نوع كلا المفتاحين إلى `Thickness` صراحة
+(`<Thickness x:Key="C.Input.BorderThickness">1</Thickness>`) — القيمة الفعلية المعروضة لا تتغيّر (`Thickness`
+أحادية القيمة "1" تكافئ تماماً الأربعة أضلاع التي كان `ThicknessConverter` يبنيها من النص "1" أصلاً).
+
+**الدرس العام** (يُضاف لدرس توقف 11/12): أي رمز L3/L4 جديد يُستهلَك عبر `DynamicResource` على خاصية WPF ذات
+نوع مركّب (`Thickness`/`CornerRadius`/`Brush`... لا `double`/`string` البسيطة) **يجب** أن يُعرَّف بنفس النوع
+المركّب فعلياً في ملف الرموز، لا بنوع "مبسَّط" يُفترض أن XAML سيحوّله — لن يفعل، `DynamicResource` ليس تحليل
+XAML. تحقُّق سريع قبل أي إضافة مماثلة مستقبلاً: ابحث عن نوع الخاصية المُستهدفة الفعلي (`Border.BorderThickness`
+Thickness، `Border.CornerRadius` CornerRadius، `FrameworkElement.Height` double...) وطابق نوع تعريف المورد له
+حرفياً — لا تخمين.
+
+### كتالوج الرموز — `Tools/DesignTokens/generate.sh` + `5.Design/DESIGN_TOKENS.md`
+
+مولِّد جديد (bash، بنفس اصطلاح `Tools/ArchitectureCheck/check.sh`) يقرأ كل ملفات L1-L3 فعلياً (لا كتابة يدوية
+تتقادم) ويبني جدولاً لكل رمز: المفتاح | القيمة | يشير إلى (`{Dynamic|StaticResource}` مُستخرَج من نفس السطر
+إن وُجد) | عدد الملفات المستهلكة (بحث فعلي عبر 5.Design+6.UI+App، مُستبعَداً ملف التعريف نفسه). L4 (Styles)
+فهرس فقط (مفتاح/TargetType/ملف) — كتلة `Style` كاملة متعددة الأسطر لا "قيمة" واحدة تُعرَض في جدول بمعنى.
+أقسام إضافية: **الرموز غير المستخدمة** (صفر مستهلك خارج ملف التعريف) و**مفاتيح Light/Dark غير المتطابقة**
+(تُعيد نفس منطق check.sh لكن كملف مرجعي دائم لا فحصاً عابراً).
+
+⚠️ **درس أداء**: أول تنفيذ استخدم `grep -rl` **واحداً لكل رمز** (~300 رمز × مسح شجرة كاملة لكل واحد) — تجاوز
+4 دقائق وأظهر حِمل عمليات فرعية ثقيلاً بوضوح في بيئة Windows/MSYS. أُعيدت الكتابة: مسح واحد فقط لكل إشارات
+`(Dynamic|Static)Resource` في الشجرة كاملة، ثم جدول بحث في الذاكرة (bash associative array) — صفر عملية
+فرعية جديدة لكل رمز أثناء البحث عن المستهلكين.
+
+### البند 2 — إصلاح حقول الدخول: `AppPasswordBox` قطعة جديدة
+
+**السبب الجذري** (تأكَّد بقراءة `LoginWindow.xaml` مباشرة، لا تخمين): حقل اسم المستخدم يستخدم `AppTextBox`
+(قطعة حقيقية — تسمية + حدود مقوَّسة + حالات تركيز/خطأ)، بينما حقل كلمة المرور كان `PasswordBox` **خاماً تماماً**
+بلا أي نمط مخصَّص — `5.Design/Styles/Implicit.xaml` (شبكة الأمان لعناصر WPF الخام) لا تُعرِّف نمطاً لـ
+`PasswordBox` إطلاقاً، فيظهر بمظهر Windows الافتراضي غير المصمَّم (ارتفاع/حدود/خط مختلفة كلياً) — بالضبط
+كما وصف المستخدم.
+
+**القطعة الجديدة**: `AppPasswordBox` (`6.UI/Components/Inputs/`) — نسخة طبق الأصل من بنية `AppTextBox`
+(تسمية + Border + حقل داخلي + نص خطأ)، لكن `PasswordBox` داخلياً. `Password` خاصية CLR للقراءة فقط تُفوَّض
+مباشرة للعنصر الداخلي (لا `DependencyProperty` قابلة للربط — WPF يمنع ذلك أمنياً على `PasswordBox.Password`
+نفسها أصلاً، فلا معنى لمحاولة تجاوزه هنا). `KeyDown` لا يحتاج تمريراً يدوياً — حدث WPF مُوجَّه (Routed) يصعد
+تلقائياً من `PasswordBox` الداخلي عبر شجرة العناصر المرئية إلى `AppPasswordBox` نفسها (ترثه من `UIElement`)،
+فـ`LoginWindow.xaml.cs` لم يحتَج أي تعديل — `txtPassword.Password` و`KeyDown="txtPassword_KeyDown"` يعملان
+بنفس التوقيع تماماً.
+
+أسلوب الحدود (`AppPasswordBox_FieldBorder`) لا يعيد كتابة القيم — `BasedOn="{StaticResource AppTextBox_
+FieldBorder}"` مع `Style.Triggers` خاصة به (نفس نمط `AppComboBox_FieldBorder` القائم أصلاً) بحيث `AncestorType`
+في كل DataTrigger يطابق نوع القطعة الفعلي (`AppPasswordBox` لا `AppTextBox` — استخدام نمط الأخيرة حرفياً في
+قطعة أخرى كان سيُسكت حالات التركيز/التعطيل/الخطأ بصمت، لأن `RelativeSource AncestorType` لن يجد سلفاً مطابقاً).
+
+**أثناء نفس الترحيل**: `AppNumericBox` (قطعة Inputs أخرى موجودة أصلاً) وُجدت بنفس النمط بالضبط — حدودها الخاصة
+بها (غير مبنية على `AppTextBox_FieldBorder` أصلاً) تستخدم `BorderThickness="1"` حرفياً و`CornerRadius=
+"{DynamicResource P.Radius.Md}"` (L1 مباشرة) و`BorderBrush="{DynamicResource OutlineDefault}"` (يكافئ
+`C.Input.Border` دلالياً لكن باسم مختلف) وحقلها الداخلي `FontSize="{DynamicResource P.Font.Size.300}"` (L1
+مباشرة) و`Padding="10,0"` حرفياً — رُحِّلت كلها لرموز `C.Input.*` المناظرة (صفر تغيير بصري، القيم متطابقة عددياً).
+
+**بوابة check.sh جديدة مُضافة** (مُتحقَّق أولاً أنها نظيفة على الكود الحالي، لا رمياً أعمى): قياس حرفي
+(Height/MinHeight/Padding) على `TextBox`/`PasswordBox` داخل `6.UI/Components/Inputs` تحديداً = FAIL. **مقصورة
+عمداً على هذا المجلد لا كل 6.UI**: مُحرِّرات الخلايا المضغوطة في `DocumentLinesGrid.xaml` (شبكات مستندات،
+`Padding="6,4"`) وحقل `AppTextArea` (حشو رأسي متعمَّد `10,8` لمساحة نص متعددة الأسطر) قياسات **مختلفة عمداً
+عن حقل واحد سطر قياسي** — سياق كثافة/استخدام مختلف كلياً، لا خللاً. فرض `C.Input.*` عليها كان سيُغيّر شكلها
+الفعلي، ممنوع صراحة بنص التعليمات ("لا تعدّل أي قطعة بصرياً"). بالمثل أُضيفت فحوصاً لحدود الطبقات (L3←L1
+مباشرة، L4←لون L1 مباشرة — مقصورة على اللون تحديداً، لا الاستثناء الموثَّق لـFont/Space/Radius) وHex حرفي
+داخل L2/L3/L4، وWARN جديد للون مكرر بقيمة سداسية واحدة تحت اسمين مختلفين ضمن نفس ملف هوية — كلها مُتحقَّقة
+صفر FAIL على الكود الحالي قبل تثبيتها.
+
+### التحقق (البندان 3+2)
+
+`dotnet build` → 0 خطأ (تطلَّب `rm -rf obj bin` مرة واحدة بعد إضافة `AppPasswordBox.xaml` — تعارض تخزين
+مؤقت معروف لـMSBuild XAML markup-compile عند إضافة ملف XAML جديد وسط بناء تزايدي، لا خللاً في الكود).
+`check.sh` → **صفر FAIL** (30 فحصاً، 4 دين تقني: 2 سابقان + 2 WARN لون مكرر جديدان اكتُشفا بالفحص الجديد —
+معلوماتيان فقط، لا خرقاً). `dotnet test` → **218/218 ناجح**. **تشغيل فعلي حقيقي**: التقط توقف 13 تحديداً (لم
+يظهر بأي اختبار وحدة أو بناء — استثناء وقت تشغيل بحت)، ثم بعد الإصلاح لقطة شاشة حقيقية لنافذة الدخول تُثبت
+الحقلين متطابقين تماماً (ارتفاع، حدود، نصف قطر، خط، تسمية بعلامة "*" حمراء).
+
+---
+
+### البند 1 — تجميع شجرة الحسابات عبر Composition
+
+القطع اللازمة كانت جاهزة بالفعل قبل هذا البند: `AppTreeView` (شجرة WPF حقيقية مبنية على `HierarchicalDataTemplate`
++ فلترة إخفاء)، `TreeNodeViewModel`/`TreeFilterEngine` (فلترة حقيقية جانب العميل — الأسلاف المؤدية لمطابقة
+تظهر وتتوسّع تلقائياً، غير المطابق يختفي كلياً لا يُعتّم فقط)، و`AccountPicker.BuildTree` (تحويل يدوي من
+`List<Account>` مسطّحة لشجرة، نمط مرجعي أُعيد استخدامه). المطلوب هنا: نفس التحويل **معمَّماً عبر Composition**
+(تكوين بيانات لا كود مكرر لكل كيان هرمي مستقبلي)، لا XAML مخصَّص لصفحة الحسابات.
+
+**التوسعة المعمارية**: `ModuleDefinition` اكتسبت `LayoutKind` (Grid الافتراضي — صفر تغيير سلوك للوحدات
+الحالية) و`TreeOptions` (`TreeLayoutOptions`). `TreeLayoutOptions`/`LayoutKind`/`SelectableRule` تعيش في
+**6.UI** (`Components/Tree/`) لا 7.Composition رغم أن `ModuleDefinition` (7.Composition) هي من تستهلكها —
+`TreeViewModelBase` (6.UI أيضاً) لا يمكنها الاعتماد على نوع من طبقة أعلى (7.Composition)، بينما العكس
+(Composition يعتمد على UI) هو الاتجاه المسموح والمستخدَم أصلاً فعلاً (`ModuleDefinition.Columns` من
+`PrimeERP.UI.Components.Display` سابقاً). قرار موضع الملف هذا وحده منع خرقاً حقيقياً لحدود الطبقات كان
+سيحدث لو اتُّبع الاسم الحرفي "PageDefinition/TreeLayoutOptions في 7.Composition" دون هذا التدقيق.
+
+**`TreeViewModelBase<TDto,TFilter>`** يرث `PagedViewModelBase` (نفس عقد `FetchPage`) ويضيف فقط حالة عرض
+الشجرة (`RootNodes`, `SelectedNode`, `ExpandAllCommand`, `CollapseAllCommand`) — **صفر منطق تحويل شجرة
+داخلها**: ذلك يحتاج `TreeLayoutOptions` الفعلية (معروفة فقط عند التسجيل في `ModuleRegistrations`)، فبقاؤه
+هناك يجعل `AccountsViewModel` مطابقاً تماماً لبساطة `CustomersViewModel` (21 سطراً، لا فرق بنيوي حقيقي عن
+الوحدات المسطّحة — يثبت الشرط: "AccountsViewModel : TreeViewModelBase — صفر منطق شجرة" حرفياً).
+
+**`TreeRenderer`** (7.Composition) يبني PageHeader (أزرار توسيع/طي الكل) → FilterBar (تُعيّن `SearchText` على
+الـVM فقط، بلا `SearchCommand` — الشجرة كاملة في الذاكرة أصلاً بعد أول تحميل، فلا معنى لإعادة جلب من الخادم
+لكل حرف يُكتب؛ `AppTreeView.SearchText` نفسها OneWay من نفس الخاصية تُشغّل `TreeFilterEngine` تلقائياً) →
+`AppTreeView` (+ `AppCard` تفاصيل لـTreeSplit، Bindings بمسار منقّط `"SelectedNode.Data.{Binding}"` — WPF
+يحلّها عبر Reflection مباشرة، بلا كود إضافي). بعد `LoadAsync()`، `TreeBuilder` (دالة نقية) يحوّل `vm.Items`
+المسطّحة لشجرة عبر Reflection على أسماء حقول `TreeLayoutOptions` (نفس مبدأ "ربط بالاسم لا بالنوع الثابت"
+المتَّبع في `CrudPageRenderer`)، ثم يملأ `vm.RootNodes` مباشرة. `PageRenderer` جديد (نقطة توزيع وحيدة حسب
+`LayoutKind`) يستبدل استدعاء `CrudPageRenderer.Render` المباشر في `MainWindow.xaml.cs` — موضع القرار الوحيد،
+لا فرع شرطي مكرر في كل موضع استدعاء.
+
+### ⚠️ توقف 14 — الصفحة الجديدة كاملة صحيحة، لكن الوحدة لم تُسجَّل في DI إطلاقاً
+
+أول تشغيل فعلي حي (تسجيل دخول admin/admin + نقر "شجرة الحسابات") أغلق التطبيق فوراً بلا أي رسالة مرئية —
+**خرج المستخدم من التطبيق بالكامل**، وليس مجرد صفحة فارغة أو خطأ داخل الصفحة (نفس آلية توقف 13: استثناء غير
+مُمسوك داخل معالج حدث `Loaded` غير متزامن يُنهي العملية كاملة، لا `Application.DispatcherUnhandledException`
+مُسجَّلة). محاولات تكرار الخلل عبر أتمتة نقر/لقطات شاشة حية تعثّرت بتغطية نافذة أخرى للشاشة (بيئة هذا الجلسة
+تحديداً) — بدلاً من الاستمرار في محاولات هشّة، أُعيد إنتاج **نفس المسار البرمجي الحقيقي بالضبط**
+(`PageRenderer.Render` → DI حقيقي → بيانات حقيقية) عبر اختبار STA جديد (`TreeRendererTests`، نفس أسلوب
+`CrudPageRendererTests` القائم) — كشف الاستثناء الحقيقي فوراً بلا حاجة لأي نقر:
+
+```
+InvalidOperationException: No service for type 'PrimeERP.UI.ViewModels.AccountsViewModel' has been registered.
+```
+
+**السبب**: `AccountsViewModel` لم تُسجَّل قط في `App/Bootstrap/DependencyInjection.cs.AddUI()` —
+`services.AddTransient<CustomersViewModel>()`/`<SuppliersViewModel>()` موجودتان، `AccountsViewModel` غائبة
+تماماً. هذا **خطأ سابق على هذا البند** (سقط سهواً عند تسجيل وحدة Accounts أول مرة في R9 من نفس الجلسة) — لم
+يظهر وقتها لأن التحقق البصري وقتها اكتفى بلقطة شاشة لقائمة الشريط الجانبي (تُبنى من `IModuleRegistry` مباشرة،
+لا تحتاج حلّ DI لـViewModel) ولم يشمل نقراً فعلياً على الوحدة (نفس ما تعثّر تكراره الآن). **الدرس**: التحقق
+البصري لقائمة تنقّل ≠ التحقق من أن كل عنصر فيها فعلاً قابل للفتح — الفحصان مختلفان، لا يُغني أحدهما عن الآخر.
+
+الحل: سطر واحد — `services.AddTransient<AccountsViewModel>();`. بعد الإصلاح، `TreeRendererTests` يمرّ
+نظيفاً: صفحة كاملة تُبنى، بيانات حساب أب+ابن حقيقية تُنشأ عبر `IAccountService.Create` وتُحمَّل، `RootNodes`
+تمتلئ بالهرم الصحيح.
+
+### التحقق (البند 1)
+
+`dotnet build` → 0 خطأ (نفس تعارض `rm -rf obj bin` بعد إضافة ملفات جديدة، معروف من قبل). `check.sh` → **صفر
+FAIL** (30 فحصاً، 4 دين تقني كسابقاً). `dotnet test` → **219/219 ناجح** (218 سابقاً + `TreeRendererTests`
+الجديد — أول اختبار STA حقيقي يبني صفحة شجرة كاملة عبر DI حقيقي ويحمّل هرماً حقيقياً من قاعدة بيانات حقيقية).
+**تشغيل فعلي**: توقف 14 اكتُشف وأُصلح عبر تشغيل حقيقي بالضبط كما تقتضي منهجية هذا المشروع؛ التحقق النهائي بعد
+الإصلاح تم عبر `TreeRendererTests` (يعيد إنتاج نفس مسار DI/Composition/بيانات الحقيقي الذي يسلكه التطبيق
+الفعلي، دون الاعتماد على أتمتة نقر هشّة في بيئة كانت نوافذ أخرى تُغطّي الشاشة فيها).
+
+---
+
 ## اكتشاف فني إضافي أثناء R1 (يستحق التسجيل)
 
 **تسمية الطبقة "Application" تتصادم مع `System.Windows.Application`**: أي ملف تحت شجرة `PrimeERP.*` يستخدم `Application.Current`/`: Application` بلا تأهيل كامل يتعرّض لخطر أن يحلّه المترجم كإشارة لمساحة الاسم `PrimeERP.Application` (طبقة 4) بدل نوع WPF — C# يبحث في مساحات الاسم المحيطة صعوداً قبل استشارة `using`. **الحل المُطبَّق**: كل إشارة WPF لـ `Application` في الكود مؤهَّلة بالكامل الآن (`System.Windows.Application`) — 11 ملفاً. أي ملف جديد يستخدم `Application.Current` مستقبلاً **يجب** أن يكتبها مؤهَّلة بالكامل لنفس السبب.

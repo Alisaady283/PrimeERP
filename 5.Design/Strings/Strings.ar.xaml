@@ -13,6 +13,12 @@
     <sys:String x:Key="Str.Name">الاسم</sys:String>
     <sys:String x:Key="Str.Phone">الهاتف</sys:String>
     <sys:String x:Key="Str.Balance">الرصيد</sys:String>
+    <sys:String x:Key="Str.Level">المستوى</sys:String>
+    <sys:String x:Key="Str.Type">النوع</sys:String>
+    <sys:String x:Key="Str.AcceptsEntries">يقبل قيود</sys:String>
+    <sys:String x:Key="Str.Details">التفاصيل</sys:String>
+    <sys:String x:Key="Str.ExpandAll">توسيع الكل</sys:String>
+    <sys:String x:Key="Str.CollapseAll">طي الكل</sys:String>
     <sys:String x:Key="Str.Module.Customers">العملاء</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">الموردون</sys:String>
     <sys:String x:Key="Str.Module.Accounts">شجرة الحسابات</sys:String>

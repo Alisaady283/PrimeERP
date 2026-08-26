@@ -17,9 +17,9 @@
 
         <Border x:Name="border"
                 Background="{DynamicResource C.Input.Bg}"
-                BorderBrush="{DynamicResource OutlineDefault}"
-                BorderThickness="1"
-                CornerRadius="{DynamicResource P.Radius.Md}"
+                BorderBrush="{DynamicResource C.Input.Border}"
+                BorderThickness="{DynamicResource C.Input.BorderThickness}"
+                CornerRadius="{DynamicResource C.Input.Radius}"
                 Height="{DynamicResource C.Input.Height}">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -31,13 +31,13 @@
                 <TextBox x:Name="txt" Grid.Column="0"
                          BorderThickness="0"
                          Background="Transparent"
-                         FontSize="{DynamicResource P.Font.Size.300}"
+                         FontSize="{DynamicResource C.Input.FontSize}"
                          FontFamily="{DynamicResource P.Font.Family.Primary}"
                          Foreground="{DynamicResource TextPrimary}"
                          VerticalContentAlignment="Center"
                          TextAlignment="Left"
                          FlowDirection="LeftToRight"
-                         Padding="10,0"
+                         Padding="{DynamicResource C.Input.Padding}"
                          PreviewTextInput="txt_PreviewTextInput"
                          GotFocus="txt_GotFocus"
                          LostFocus="txt_LostFocus"/>

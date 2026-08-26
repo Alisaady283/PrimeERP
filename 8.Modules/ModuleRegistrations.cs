@@ -4,6 +4,7 @@ using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Components.Display;
+using PrimeERP.UI.Components.Tree;
 using PrimeERP.UI.ViewModels;
 
 namespace PrimeERP.Modules
@@ -50,11 +51,28 @@ namespace PrimeERP.Modules
                 TitleKey = "Str.Module.Accounts",
                 PermissionPrefix = "Accounts",
                 ViewModelType = typeof(AccountsViewModel),
+                LayoutKind = LayoutKind.TreeSplit,
+                TreeOptions = new TreeLayoutOptions
+                {
+                    IdField = nameof(AccountDto.Id),
+                    ParentIdField = nameof(AccountDto.ParentId),
+                    CodeField = nameof(AccountDto.Code),
+                    NameField = nameof(AccountDto.Name),
+                    DisplayTemplate = "{Code} - {Name}",
+                    ExtraInfoTemplate = "({Balance:N2})",
+                    ExpandToLevel = 2,
+                    LeafFlagField = nameof(AccountDto.IsLeaf),
+                },
+                // أعمدة لوحة التفاصيل (TreeSplit) — لا شبكة (Columns.Header فقط، لا Width/Align/Footer، غير
+                // مُستهلَكة هنا؛ TreeRenderer.BuildDetailsPanel يقرأ Header/Binding/Format فقط).
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AccountDto.Code), Width = 90, Align = ColumnAlign.Center },
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AccountDto.Name), Width = 220, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(AccountDto.Balance), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                    new() { Header = LocalizationService.Get("Str.Code"),    Binding = nameof(AccountDto.Code) },
+                    new() { Header = LocalizationService.Get("Str.Name"),    Binding = nameof(AccountDto.Name) },
+                    new() { Header = LocalizationService.Get("Str.Level"),   Binding = nameof(AccountDto.Level) },
+                    new() { Header = LocalizationService.Get("Str.Type"),    Binding = nameof(AccountDto.TypeName) },
+                    new() { Header = LocalizationService.Get("Str.AcceptsEntries"), Binding = nameof(AccountDto.IsLeaf) },
+                    new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(AccountDto.Balance), Format = "N2" },
                 }
             });
         }
