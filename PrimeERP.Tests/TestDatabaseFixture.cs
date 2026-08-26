@@ -6,6 +6,7 @@ using PrimeERP.App.Bootstrap;
 using PrimeERP.Data.Core;
 using PrimeERP.Data.Schema;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Tests
@@ -29,6 +30,11 @@ namespace PrimeERP.Tests
 
         public TestDatabaseFixture()
         {
+            // ⚠️ توقف 11 — يضمن تسجيل مخطَّط pack:// (عبر System.Windows.Application) قبل أي اختبار طباعة،
+            // بصرف النظر عن ترتيب xUnit غير الحتمي؛ TestDatabaseFixture تُبنى في كل اختبار تقريباً فهذا أول
+            // نقطة مضمونة التنفيذ قبل أي منطق اختبار فعلي. راجع WpfApplicationFixture وARCHITECTURE.md.
+            WpfApplicationFixture.Ensure();
+
             DbPath = Path.Combine(Path.GetTempPath(), $"PrimeERP.Tests.{Guid.NewGuid():N}.db");
 
             DbFactory.Configure(new DbConfig
@@ -52,6 +58,15 @@ namespace PrimeERP.Tests
             NumberSequenceSeeder.Seed(numberSequences);
             Services.GetRequiredService<ICustomerRepository>().CreateTable();
             Services.GetRequiredService<ISupplierRepository>().CreateTable();
+
+            // CreateTables فقط، لا SeedDefaults — الأخيرة تلف ~80 صلاحية (Permissions+RolePermissions) عبر
+            // استعلامات فردية غير مُجمَّعة بمعاملة واحدة؛ رخيصة في الإنتاج (مرة واحدة فقط، تتحقق من عدم
+            // التكرار فتتخطى كل شيء من التشغيلة الثانية) لكنها مكلفة هنا لأن كل TestDatabaseFixture يبني
+            // قاعدة SQLite جديدة فارغة فتُنفَّذ كاملة من الصفر في كل مرة — تراكم هذا عبر عشرات فئات الاختبار
+            // تسبَّب فعلياً في تعليق/تعطُّل مضيف الاختبار على التشغيلة الكاملة (⚠️ توقف 11، ARCHITECTURE.md).
+            // لا اختبار حالي يحتاج بيانات مزروعة فعلية (الكل عبر AppSession.DevMode=true) — الجداول فقط
+            // تكفي لسلامة القيود الأجنبية إن استُهلكت لاحقاً.
+            PermissionDb.CreateTables();
 
             MigrationRunner.RunPending();
         }

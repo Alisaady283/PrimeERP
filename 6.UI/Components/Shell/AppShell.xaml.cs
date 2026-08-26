@@ -100,11 +100,14 @@ namespace PrimeERP.UI.Components.Shell
 
         private void topBar_SidebarToggled(object sender, EventArgs e) => sidebar.IsCollapsed = !sidebar.IsCollapsed;
 
-        /// <summary>يحدّث breadcrumb/PageTitle تلقائياً من مسار العنصر المختار الكامل (من الجذر حتى العنصر).</summary>
+        /// <summary>يحدّث breadcrumb/PageTitle من مسار العنصر المختار — Breadcrumb للأسلاف فقط (لا العنصر
+        /// نفسه، PageTitle يعرضه أصلاً)؛ عنصر جذري بلا أسلاف = بلا breadcrumb إطلاقاً (لا معنى لمسار عنصر
+        /// واحد يكرر العنوان). ⚠️ توقف 10 — كان يُدرج العنصر الأخير في القائمتين معاً فيظهر نصاً مكرراً
+        /// حرفياً عند أول تشغيل حقيقي بتنقّل مسطّح (كل الوحدات الحالية بلا تعشيش).</summary>
         private void UpdateBreadcrumb()
         {
             var path = FindPath(NavItems, SelectedKey);
-            topBar.Breadcrumb = path?.Select(i => i.Text).ToList() ?? new List<string>();
+            topBar.Breadcrumb = path?.Take(path.Count - 1).Select(i => i.Text).ToList() ?? new List<string>();
             topBar.PageTitle = path?.LastOrDefault()?.Text ?? "";
         }
 

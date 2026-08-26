@@ -25,7 +25,10 @@ namespace PrimeERP.Composition.Renderers
         {
             dynamic vm = services.GetRequiredService(definition.ViewModelType);
 
-            var header = new PageHeader { Title = LocalizationService.Get(definition.TitleKey) };
+            // بلا Title — AppShell.TopBar يعرض عنوان الصفحة تلقائياً من NavItem المختار (breadcrumb)؛ تكراره
+            // هنا ظهر فعلياً كنص مكرر حرفياً عند أول تشغيل حقيقي (راجع توقف 10). PageHeader هنا لاستضافة زر
+            // الإضافة فقط.
+            var header = new PageHeader();
             var addButton = new Button { Content = LocalizationService.Get("Str.Add") };
             BindingOperations.SetBinding(addButton, ButtonBase.CommandProperty, new Binding("AddCommand"));
             header.ActionsContent = addButton;
@@ -34,7 +37,11 @@ namespace PrimeERP.Composition.Renderers
             BindingOperations.SetBinding(filterBar, FilterBar.ResultCountProperty, new Binding("TotalCount"));
             filterBar.Search += (_, text) => { vm.SearchText = text; vm.SearchCommand.Execute(null); };
 
-            var grid = new AppDataGrid { ColumnsSource = definition.Columns, ShowRowActions = true };
+            // ShowPagination=false — ترقيم AppDataGrid الداخلي جانب العميل (يُقسِّم القائمة الكاملة محلياً)
+            // يتعارض مع الترقيم الحقيقي من طرف الخادم هنا (كل صفحة تُجلَب من GetPaged عند الطلب فقط، لا
+            // القائمة كاملة أبداً في الذاكرة) — AppPagination أدناه هي المرجع الوحيد. اكتُشف التكرار البصري
+            // فعلياً عند أول تشغيل حقيقي (تسجيل دخول + AppShell) — راجع توقف 10 في ARCHITECTURE.md.
+            var grid = new AppDataGrid { ColumnsSource = definition.Columns, ShowRowActions = true, ShowPagination = false };
             BindingOperations.SetBinding(grid, AppDataGrid.ItemsSourceProperty, new Binding("Items"));
             BindingOperations.SetBinding(grid, AppDataGrid.SelectedItemProperty, new Binding("SelectedItem") { Mode = BindingMode.TwoWay });
             BindingOperations.SetBinding(grid, AppDataGrid.IsLoadingProperty, new Binding("IsLoading"));

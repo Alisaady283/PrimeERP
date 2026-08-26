@@ -39,8 +39,14 @@ namespace PrimeERP.Application.Services.Print
             {
                 if (_theme == null)
                 {
-                    // pack URI صريحة باسم التجميعة — تعمل بلا System.Windows.Application.Current قائم فعلياً (اختبارات xUnit مثلاً)،
-                    // بخلاف Uri نسبية بسيطة التي تحتاج سياق تطبيق مُشغَّل لحلّها.
+                    // ⚠️ توقف 11 — مخطَّط pack:// (تسجّله System.Windows.Application ضمن مُنشئها الساكن) لم يكن
+                    // مسجَّلاً بعد لو كانت هذه أول لمسة لأي System.Windows.* في العملية كلها (ترتيب اختبارات
+                    // xUnit غير حتمي — راجع ARCHITECTURE.md). الضمان الصريح هنا (لا الاعتماد على ترتيب تشغيل
+                    // اختبار آخر يلمسها أولاً بالصدفة) يجعل بناء pack:// يعمل دائماً بصرف النظر عمّا سبقه.
+                    if (System.Windows.Application.Current == null) new System.Windows.Application();
+
+                    // pack URI صريحة باسم التجميعة — لا تعتمد على Application.ResourceAssembly (قد يكون مضبوطاً
+                    // خطأً في مضيف اختبار أنشأ Application قبلها) بخلاف Uri نسبية بسيطة.
                     var asmName = typeof(PrintService).Assembly.GetName().Name;
                     var dict = new ResourceDictionary
                     {

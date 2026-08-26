@@ -136,6 +136,12 @@ namespace PrimeERP.App.Bootstrap
             services.GetRequiredService<ICustomerRepository>().CreateTable();
             services.GetRequiredService<ISupplierRepository>().CreateTable();
 
+            // ⚠️ R9 — نفس درس توقف 7: PermissionDb (جداول Permissions/Roles/RolePermissions/Users/
+            // UserPermissions + بذر دور SystemAdmin ومستخدم admin) كانت مبنية بالكامل منذ وقت طويل بلا أي
+            // استدعاء فعلي من مسار حي — Login/الصلاحيات الحقيقية لم يكونا ممكنَين إطلاقاً قبل هذا السطر.
+            PermissionDb.CreateTables();
+            PermissionDb.SeedDefaults();
+
             MigrationRunner.RunPending();
 
             return services;

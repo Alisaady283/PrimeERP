@@ -62,6 +62,14 @@ namespace PrimeERP.UI.Components.Display
             DependencyProperty.Register(nameof(PageSize), typeof(int), typeof(AppDataGrid),
                 new PropertyMetadata(15, OnPageSizeChanged));
 
+        /// <summary>ترقيم AppDataGrid الداخلي جانب العميل (يُقسِّم ItemsSource الكاملة محلياً) — يتعارض مع
+        /// ترقيم من طرف الخادم (Service.GetPaged يُرجع صفحة واحدة فقط، لا القائمة كاملة). false يُخفي شريط
+        /// الترقيم الداخلي فقط؛ لا يغيّر أي سلوك آخر — القطعة الأصلية والاستهلاكات الحالية (Gallery) بلا تأثير
+        /// (الافتراضي true يطابق السلوك السابق حرفياً). أُضيفت عند اكتشاف الفعلي عبر CrudPageRenderer (R9).</summary>
+        public static readonly DependencyProperty ShowPaginationProperty =
+            DependencyProperty.Register(nameof(ShowPagination), typeof(bool), typeof(AppDataGrid),
+                new PropertyMetadata(true, OnShowPaginationChanged));
+
         public IEnumerable<GridColumn> ColumnsSource     { get => (IEnumerable<GridColumn>)GetValue(ColumnsSourceProperty); set => SetValue(ColumnsSourceProperty, value); }
         public IEnumerable             ItemsSource       { get => (IEnumerable)GetValue(ItemsSourceProperty);               set => SetValue(ItemsSourceProperty, value); }
         public object                  SelectedItem      { get => GetValue(SelectedItemProperty);                          set => SetValue(SelectedItemProperty, value); }
@@ -73,6 +81,7 @@ namespace PrimeERP.UI.Components.Display
         public bool                    ShowRowActions    { get => (bool)GetValue(ShowRowActionsProperty);                  set => SetValue(ShowRowActionsProperty, value); }
         public int                     FrozenColumnCount { get => (int)GetValue(FrozenColumnCountProperty);                set => SetValue(FrozenColumnCountProperty, value); }
         public int                     PageSize          { get => (int)GetValue(PageSizeProperty);                        set => SetValue(PageSizeProperty, value); }
+        public bool                    ShowPagination    { get => (bool)GetValue(ShowPaginationProperty);                  set => SetValue(ShowPaginationProperty, value); }
 
         /// <summary>يُستدعى لكل صف ليقرر تلوينه: "danger"/"warning"/null — مفيد لتنبيهات مثل تجاوز حد الائتمان أو نفاد المخزون.</summary>
         public Func<object, string> RowHighlightSelector { get; set; }
@@ -154,6 +163,9 @@ namespace PrimeERP.UI.Components.Display
 
         private static void OnAllowExportChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
             ((AppDataGrid)d).toolbar.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
+
+        private static void OnShowPaginationChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+            ((AppDataGrid)d).pagination.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
 
         private static void OnFrozenColumnCountChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
             ((AppDataGrid)d).grid.FrozenColumnCount = (int)e.NewValue;

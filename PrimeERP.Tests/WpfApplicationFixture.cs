@@ -26,6 +26,11 @@ namespace PrimeERP.Tests
             _dispatcher.Invoke(action);
         }
 
+        /// <summary>يضمن وجود Application (وتسجيل مخطَّط pack:// معها — يُسجَّل ضمن مُنشئها الساكن) بلا تنفيذ
+        /// أي إجراء. تُستدعى من TestDatabaseFixture نفسها (تُبنى في كل اختبار تقريباً) لضمان تسجيل pack://
+        /// **قبل** أي اختبار طباعة يحتاجه، بصرف النظر عن ترتيب تشغيل xUnit غير الحتمي — راجع توقف 11.</summary>
+        public static void Ensure() => EnsureStarted();
+
         private static void EnsureStarted()
         {
             lock (_lock)

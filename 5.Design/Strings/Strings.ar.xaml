@@ -15,6 +15,13 @@
     <sys:String x:Key="Str.Balance">الرصيد</sys:String>
     <sys:String x:Key="Str.Module.Customers">العملاء</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">الموردون</sys:String>
+    <sys:String x:Key="Str.Module.Accounts">شجرة الحسابات</sys:String>
+    <sys:String x:Key="Str.Login.Username">اسم المستخدم</sys:String>
+    <sys:String x:Key="Str.Login.Password">كلمة المرور</sys:String>
+    <sys:String x:Key="Str.Login.Submit">تسجيل الدخول</sys:String>
+    <sys:String x:Key="Str.Login.InvalidCredentials">اسم المستخدم أو كلمة المرور غير صحيحة</sys:String>
+    <sys:String x:Key="Str.Login.AccountInactive">هذا الحساب معطَّل</sys:String>
+    <sys:String x:Key="Str.Logout">تسجيل الخروج</sys:String>
     <sys:String x:Key="Str.Edit">تعديل</sys:String>
     <sys:String x:Key="Str.Add">إضافة</sys:String>
     <sys:String x:Key="Str.Search">بحث</sys:String>

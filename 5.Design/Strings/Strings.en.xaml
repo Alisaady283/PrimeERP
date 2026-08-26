@@ -15,6 +15,13 @@
     <sys:String x:Key="Str.Balance">Balance</sys:String>
     <sys:String x:Key="Str.Module.Customers">Customers</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">Suppliers</sys:String>
+    <sys:String x:Key="Str.Module.Accounts">Chart of Accounts</sys:String>
+    <sys:String x:Key="Str.Login.Username">Username</sys:String>
+    <sys:String x:Key="Str.Login.Password">Password</sys:String>
+    <sys:String x:Key="Str.Login.Submit">Sign In</sys:String>
+    <sys:String x:Key="Str.Login.InvalidCredentials">Invalid username or password</sys:String>
+    <sys:String x:Key="Str.Login.AccountInactive">This account is disabled</sys:String>
+    <sys:String x:Key="Str.Logout">Sign Out</sys:String>
     <sys:String x:Key="Str.Edit">Edit</sys:String>
     <sys:String x:Key="Str.Add">Add</sys:String>
     <sys:String x:Key="Str.Search">Search</sys:String>
