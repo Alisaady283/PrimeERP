@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using PrimeERP.Domain.Results;
@@ -9,11 +10,11 @@ namespace PrimeERP.UI.ViewModels.Base
 {
     /// <summary>
     /// يضيف على PagedViewModelBase حذف عام (Delete(int)→Result موحّد فعلاً عبر كل الخدمات) فوق SelectedItem
-    /// الموروثة.
-    /// Create/Update عمداً غير معمَّمين — نفس قرار CrudServiceBase: DTOs الإنشاء/التعديل تختلف شكلاً بين
-    /// كيان وآخر لدرجة أن قالباً عاماً يخفي المنطق بدل أن يلخّصه (مثال حقيقي: JournalService.Update يأخذ
-    /// CreateJournalDto لا UpdateJournalDto مستقلة). كل ViewModel فعلي ينفّذ AddNew/EditSelected بفتح حواره
-    /// الخاص واستدعاء خدمته الخاصة، تماماً كما تفعل كل خدمة مع Create/Update الخاصين بها.
+    /// الموروثة، بنفس نمط أحداث AddRequested/EditRequested في TreeViewModelBase — الصفحة (Renderer) هي من
+    /// تشترك فيهما وتفتح الحوار المناسب (Dialog أو DocumentDialog) عبر DialogDefinition/DocumentDialogDefinition
+    /// المُعرَّفة في ModuleDefinition، لا الـVM نفسها (كانت الحاجة القديمة لتنفيذ AddNew/EditSelected داخل كل
+    /// VM قبل وجود نظام Composition الحالي؛ الآن الشكل مختلف بين الكيانات محلول عبر Type properties إعلانية،
+    /// لا حاجة لكود VM مخصّص بعد الآن).
     /// </summary>
     public abstract class CrudViewModelBase<TDto, TFilter> : PagedViewModelBase<TDto, TFilter>
     {
@@ -23,19 +24,22 @@ namespace PrimeERP.UI.ViewModels.Base
         public ICommand EditCommand { get; }
         public ICommand DeleteCommand { get; }
 
+        public event Action AddRequested;
+        public event Action<object> EditRequested;
+
         protected CrudViewModelBase(IPermissionService permissions, IToastService toast, IDialogService dialogs)
             : base(permissions, toast)
         {
             Dialogs = dialogs;
-            AddCommand = GuardedCommand(AddNew, $"{PermissionPrefix}.Add");
-            EditCommand = GuardedCommand(EditSelected, $"{PermissionPrefix}.Edit");
+            AddCommand = GuardedCommand(() => AddRequested?.Invoke(), $"{PermissionPrefix}.Add");
+            EditCommand = new RelayCommand(
+                () => { if (SelectedItem != null) EditRequested?.Invoke(SelectedItem); },
+                () => SelectedItem != null && Can($"{PermissionPrefix}.Edit"));
             DeleteCommand = new RelayCommand(
                 async () => await DeleteSelectedAsync(),
                 () => SelectedItem != null && Can($"{PermissionPrefix}.Delete"));
         }
 
-        protected abstract void AddNew();
-        protected abstract void EditSelected();
         protected abstract int IdOf(TDto item);
         protected abstract Result DeleteItem(int id);
 

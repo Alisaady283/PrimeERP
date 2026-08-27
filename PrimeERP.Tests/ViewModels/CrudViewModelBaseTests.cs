@@ -86,8 +86,6 @@ namespace PrimeERP.Tests.ViewModels
             protected override Result<PagedResult<CustomerDto>> FetchPage(int page, int pageSize, CustomerFilter filter)
                 => _service.GetPaged(page, pageSize, filter);
 
-            protected override void AddNew() { }
-            protected override void EditSelected() { }
             protected override int IdOf(CustomerDto item) => item.Id;
             protected override Result DeleteItem(int id) => _service.Delete(id);
 

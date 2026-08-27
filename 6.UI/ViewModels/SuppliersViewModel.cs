@@ -7,9 +7,8 @@ using PrimeERP.UI.ViewModels.Base;
 
 namespace PrimeERP.UI.ViewModels
 {
-    /// <summary>ثاني مستهلك لـCrudViewModelBase — يثبت شرط إغلاق R8 (وحدة ثانية بالتكوين، &lt;50 سطراً)
-    /// لأن العقد موحّد فعلياً مع Customers (راجع مبدأ استخراج القطعة). AddNew/EditSelected بلا تنفيذ لنفس
-    /// سبب CustomersViewModel — حوار المورد الحقيقي يُبنى لاحقاً.</summary>
+    /// <summary>ثاني مستهلك لـCrudViewModelBase — العقد موحّد فعلياً مع Customers (راجع مبدأ استخراج القطعة).
+    /// لا Dialog مسجَّل بعد في ModuleRegistrations لهذه الوحدة — نفس ملاحظة CustomersViewModel.</summary>
     public class SuppliersViewModel : CrudViewModelBase<SupplierDto, SupplierFilter>
     {
         private readonly ISupplierService _suppliers;
@@ -26,8 +25,5 @@ namespace PrimeERP.UI.ViewModels
         protected override int IdOf(SupplierDto item) => item.Id;
 
         protected override Result DeleteItem(int id) => _suppliers.Delete(id);
-
-        protected override void AddNew() { }
-        protected override void EditSelected() { }
     }
 }
