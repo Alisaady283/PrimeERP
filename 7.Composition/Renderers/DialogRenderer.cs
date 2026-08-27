@@ -23,13 +23,16 @@ namespace PrimeERP.Composition.Renderers
     {
         public bool Saved;
 
-        public ComposedDialogWindow(string title, FrameworkElement body, FrameworkElement footer)
+        // عرض النافذة مُثبَّت في XAML على C.Dialog.Width.Sm (420) — كافٍ لحوار حقول مسطّحة، يقصّ أي محتوى
+        // أعرض (صف سطور مستند). width هنا قيمة محلية تتغلّب على DynamicResource تلقائياً، بلا لمس XAML.
+        public ComposedDialogWindow(string title, FrameworkElement body, FrameworkElement footer, double? width = null)
         {
             Title = title;
             HeaderTitle = title;
             HeaderVariant = StatusVariant.Brand;
             Body = body;
             Footer = footer;
+            if (width.HasValue) Width = width.Value;
         }
     }
 
@@ -108,7 +111,7 @@ namespace PrimeERP.Composition.Renderers
 
                 var value = GetControlValue(fields[field.Key], field.Kind);
                 if (value == null) continue;
-                prop.SetValue(dto, Convert.ChangeType(value, prop.PropertyType));
+                prop.SetValue(dto, Convert.ChangeType(value, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType));
             }
         }
 
@@ -146,9 +149,10 @@ namespace PrimeERP.Composition.Renderers
             return controls;
         }
 
-        internal static Grid BuildGrid(List<FieldDefinition> fieldDefs, int gridColumns, Dictionary<string, FrameworkElement> fields)
+        internal static Grid BuildGrid(List<FieldDefinition> fieldDefs, int gridColumns, Dictionary<string, FrameworkElement> fields, double? width = 420)
         {
-            var grid = new Grid { Width = 420 };
+            var grid = new Grid();
+            if (width.HasValue) grid.Width = width.Value;
             for (int i = 0; i < gridColumns; i++)
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 

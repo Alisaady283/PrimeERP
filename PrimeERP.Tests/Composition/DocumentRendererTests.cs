@@ -128,12 +128,14 @@ namespace PrimeERP.Tests.Composition
 
                 Exception thrown = null;
                 Window window = null;
+                double windowWidth = 0;
 
                 Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                 {
                     try
                     {
                         window = System.Windows.Application.Current.Windows.OfType<Window>().Last();
+                        windowWidth = window.Width;
 
                         FindVisualChild<AppDatePicker>(window).SelectedDate = DateTime.Today;
                         FindVisualChild<AppTextBox>(window).Text = "قيد اختباري";
@@ -161,6 +163,9 @@ namespace PrimeERP.Tests.Composition
 
                 Assert.Null(thrown);
                 Assert.True(saved);
+                // إثبات فعلي لإصلاح توقّف 12 (نافذة مقصوصة 420px بغضّ النظر عن عرض صف السطور الحقيقي) —
+                // عرض السطور (حساب220+مدين110+دائن110+ملاحظات180=620) + الهوامش يتجاوز 560، فيُتوقَّع Lg=760.
+                Assert.Equal(760d, windowWidth);
 
                 var journal = _db.Services.GetRequiredService<IJournalService>();
                 var created = journal.GetPaged(1, 20).Value.Items.Single(e => e.Description == "قيد اختباري");

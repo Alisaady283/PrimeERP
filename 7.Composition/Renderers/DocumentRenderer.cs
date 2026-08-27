@@ -40,7 +40,8 @@ namespace PrimeERP.Composition.Renderers
             }
 
             var headerControls = DialogRenderer.BuildAndPopulateFields(def.HeaderFields, services, editItem, isEdit);
-            var headerGrid = DialogRenderer.BuildGrid(def.HeaderFields, 2, headerControls);
+            var headerGrid = DialogRenderer.BuildGrid(def.HeaderFields, 2, headerControls, width: null);
+            headerGrid.HorizontalAlignment = HorizontalAlignment.Stretch;
 
             var rows = new List<(Grid Row, Dictionary<string, FrameworkElement> Controls)>();
             var linesHost = new StackPanel();
@@ -141,7 +142,7 @@ namespace PrimeERP.Composition.Renderers
             linesSection.Children.Add(linesHost);
             linesSection.Children.Add(addLineBtn);
 
-            var body = new StackPanel { Width = 640 };
+            var body = new StackPanel();
             body.Children.Add(headerGrid);
             body.Children.Add(new Separator { Margin = new Thickness(0, 4, 0, 12) });
             body.Children.Add(linesSection);
@@ -151,7 +152,7 @@ namespace PrimeERP.Composition.Renderers
 
             var title = isEdit ? LocalizationService.Get(def.TitleEditKey) : LocalizationService.Get(def.TitleKey);
             var footer = new StackPanel { Orientation = Orientation.Horizontal, Children = { btnCancel, btnSave } };
-            var window = new ComposedDialogWindow(title, body, footer);
+            var window = new ComposedDialogWindow(title, body, footer, width: ComputeDialogWidth(def));
 
             btnCancel.Click += (_, __) => window.Close();
             btnSave.Click += (_, __) =>
@@ -167,6 +168,15 @@ namespace PrimeERP.Composition.Renderers
             Dispatcher.PushFrame(frame);
 
             return window.Saved;
+        }
+
+        // يقرّب لأقرب Token عرض موجود بدل رقم ثابت — النافذة الافتراضية (Sm=420) تكفي حواراً مسطّحاً فقط،
+        // صف السطور هنا أعرض بكثير (حساب+مدين+دائن+ملاحظات+زر حذف).
+        private static double ComputeDialogWidth(DocumentDialogDefinition def)
+        {
+            var contentWidth = def.LineFields.Sum(lf => lf.Width) + 40 + 64;
+            var key = contentWidth <= 560 ? "C.Dialog.Width.Md" : contentWidth <= 760 ? "C.Dialog.Width.Lg" : "C.Dialog.Width.Xl";
+            return (double)System.Windows.Application.Current.FindResource(key);
         }
 
         private static bool TrySave(DocumentDialogDefinition def, IServiceProvider services, IToastService toast,
