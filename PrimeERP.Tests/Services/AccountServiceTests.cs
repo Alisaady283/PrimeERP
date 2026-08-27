@@ -171,6 +171,18 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
+        public void Create_GeneratesCorrectCode_WhenMaxSuffixExceedsReservedWidth()
+        {
+            var repo = _db.Services.GetRequiredService<IAccountRepository>();
+            repo.Insert(new Account { Code = "1220999", Name = "قرب الحد", ParentCode = "1220", Level = 4, IsLeaf = true, Type = 1 });
+
+            var result = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "بعد الحد", IsLeaf = true });
+
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.Equal("12201000", result.Value.Code);
+        }
+
+        [Fact]
         public void Create_UnderLeafAccount_Fails()
         {
             var leaf = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل leaf", IsLeaf = true });
