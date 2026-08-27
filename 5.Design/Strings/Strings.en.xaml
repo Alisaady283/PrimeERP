@@ -49,6 +49,13 @@
     <sys:String x:Key="Str.Customers.Edit">Edit Customer</sys:String>
     <sys:String x:Key="Str.Suppliers.Add">Add Supplier</sys:String>
     <sys:String x:Key="Str.Suppliers.Edit">Edit Supplier</sys:String>
+    <sys:String x:Key="Str.Module.Products">Products</sys:String>
+    <sys:String x:Key="Str.SalePrice">Sale Price</sys:String>
+    <sys:String x:Key="Str.CostPrice">Cost Price</sys:String>
+    <sys:String x:Key="Str.Category">Category</sys:String>
+    <sys:String x:Key="Str.Barcode">Barcode</sys:String>
+    <sys:String x:Key="Str.Products.Add">Add Product</sys:String>
+    <sys:String x:Key="Str.Products.Edit">Edit Product</sys:String>
     <sys:String x:Key="Str.Module.Customers">Customers</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">Suppliers</sys:String>
     <sys:String x:Key="Str.Module.Accounts">Chart of Accounts</sys:String>

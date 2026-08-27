@@ -59,6 +59,7 @@ namespace PrimeERP.Tests
             Services.GetRequiredService<ICustomerRepository>().CreateTable();
             Services.GetRequiredService<ISupplierRepository>().CreateTable();
             Services.GetRequiredService<ICategoryRepository>().CreateTable();
+            Services.GetRequiredService<IProductRepository>().CreateTable();
 
             // CreateTables فقط، لا SeedDefaults — الأخيرة تلف ~80 صلاحية (Permissions+RolePermissions) عبر
             // استعلامات فردية غير مُجمَّعة بمعاملة واحدة؛ رخيصة في الإنتاج (مرة واحدة فقط، تتحقق من عدم

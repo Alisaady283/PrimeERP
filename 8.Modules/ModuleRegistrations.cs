@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Accounting;
+using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
@@ -167,6 +169,39 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateJournalLineDto.Credit), Header = LocalizationService.Get("Str.Credit"), Kind = FieldKind.Number, Width = 110 },
                         new() { Key = nameof(CreateJournalLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 180 },
                     }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Products",
+                TitleKey = "Str.Module.Products",
+                PermissionPrefix = "Products",
+                ViewModelType = typeof(ProductsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(ProductDto.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(ProductDto.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.SalePrice"), Binding = nameof(ProductDto.SalePrice), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(ProductDto.CategoryName), Width = 140 },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Products.Add",
+                    TitleEditKey = "Str.Products.Edit",
+                    GridColumns = 2,
+                    ServiceType = typeof(IProductService),
+                    CreateDtoType = typeof(CreateProductDto),
+                    UpdateDtoType = typeof(UpdateProductDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateProductDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateProductDto.Barcode), LabelKey = "Str.Barcode", Kind = FieldKind.Text, MaxLength = 60 },
+                        new() { Key = nameof(CreateProductDto.CostPrice), LabelKey = "Str.CostPrice", Kind = FieldKind.Number, IsRequired = true },
+                        new() { Key = nameof(CreateProductDto.SalePrice), LabelKey = "Str.SalePrice", Kind = FieldKind.Number, IsRequired = true },
+                        new() { Key = nameof(CreateProductDto.CategoryId), LabelKey = "Str.ParentCategory", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Products" },
+                        new() { Key = nameof(CreateProductDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }.Concat(StandardFields.DialogFields()).ToList()
                 }
             });
         }
