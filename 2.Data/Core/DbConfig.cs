@@ -62,8 +62,14 @@ namespace PrimeERP.Data.Core
                 // appsettings.json غير موجود أو غير صالح — القيم الافتراضية (SQLite محلي) تكفي
             }
 
+            // مسار ثابت خارج bin/ عمداً — تنظيف بناء (rm -rf bin/obj) كان يمسح قاعدة البيانات معه فعلياً
+            // طالما عاشت داخل مجلد الإخراج نفسه؛ AppData يبقى حتى مع أعنف تنظيف بناء.
             if (config.Provider == DatabaseProvider.Sqlite && !Path.IsPathRooted(config.FilePath))
-                config.FilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, config.FilePath);
+            {
+                var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PrimeERP");
+                Directory.CreateDirectory(dataDir);
+                config.FilePath = Path.Combine(dataDir, config.FilePath);
+            }
 
             return config;
         }
