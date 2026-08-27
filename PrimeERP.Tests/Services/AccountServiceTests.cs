@@ -183,6 +183,18 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
+        public void Create_Fails_WhenChildSuffixExceedsMaxCap()
+        {
+            var repo = _db.Services.GetRequiredService<IAccountRepository>();
+            repo.Insert(new Account { Code = "1220" + 9999, Name = "عند الحد", ParentCode = "1220", Level = 4, IsLeaf = true, Type = 1 });
+
+            var result = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "بعد الحد الأقصى", IsLeaf = true });
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ErrorCode.ValidationFailed, result.ErrorCode);
+        }
+
+        [Fact]
         public void Create_UnderLeafAccount_Fails()
         {
             var leaf = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل leaf", IsLeaf = true });

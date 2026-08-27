@@ -132,7 +132,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (parent == null)
                 return Result.Fail<string>("الحساب الأب غير موجود", ErrorCode.NotFound);
 
-            return Result.Ok(GenerateChildCodeInternal(parent.Code));
+            return GenerateChildCodeInternal(parent.Code);
         }
 
         // ===================== الكتابة =====================
@@ -151,8 +151,10 @@ namespace PrimeERP.Application.Services.Accounting
             if (parent.IsLeaf)
                 return Result.Fail<AccountDto>("لا يمكن إضافة حساب فرعي تحت حساب يقبل قيوداً مباشرة (Leaf) — حوّله لأب أولاً عبر التعديل", ErrorCode.ValidationFailed);
 
-            var code = GenerateChildCodeInternal(parent.Code);
-            var account = BuildNewAccount(dto, parent, code);
+            var codeResult = GenerateChildCodeInternal(parent.Code);
+            if (!codeResult.IsSuccess)
+                return Result.Fail<AccountDto>(codeResult.ErrorMessage, codeResult.ErrorCode);
+            var account = BuildNewAccount(dto, parent, codeResult.Value);
 
             var validation = new AccountValidator(_accounts, isEdit: false).Validate(account);
             if (!validation.IsValid)
@@ -202,8 +204,10 @@ namespace PrimeERP.Application.Services.Accounting
             if (parent.IsLeaf)
                 return Result.Fail<AccountDto>("لا يمكن إضافة حساب فرعي تحت حساب يقبل قيوداً مباشرة (Leaf) — حوّله لأب أولاً عبر التعديل", ErrorCode.ValidationFailed);
 
-            var code = GenerateChildCodeInternal(conn, tx, parent.Code);
-            var account = BuildNewAccount(dto, parent, code);
+            var codeResult = GenerateChildCodeInternal(conn, tx, parent.Code);
+            if (!codeResult.IsSuccess)
+                return Result.Fail<AccountDto>(codeResult.ErrorMessage, codeResult.ErrorCode);
+            var account = BuildNewAccount(dto, parent, codeResult.Value);
 
             var validation = new AccountValidator(_accounts, isEdit: false, checkUniqueness: false).Validate(account);
             if (!validation.IsValid)
@@ -520,30 +524,38 @@ namespace PrimeERP.Application.Services.Accounting
             return Result.Ok(resolution);
         }
 
-        private string GenerateChildCodeInternal(string parentCode) =>
+        // حد دفاعي أقصى لعدد الأبناء تحت أب واحد — قابل للتعديل/الإزالة لاحقاً، ليس قيداً محاسبياً فعلياً.
+        private const int MaxChildSuffix = 9999;
+
+        private Result<string> GenerateChildCodeInternal(string parentCode) =>
             BuildChildCode(_accounts.GetByCode(parentCode), _accounts.GetChildren(parentCode));
 
-        /// <summary>نفس GenerateChildCodeInternal أعلاه من داخل معاملة قائمة — تستخدمها Create(conn,tx,...).</summary>
-        private string GenerateChildCodeInternal(DbConnection conn, DbTransaction tx, string parentCode) =>
+        private Result<string> GenerateChildCodeInternal(DbConnection conn, DbTransaction tx, string parentCode) =>
             BuildChildCode(_accounts.GetByCode(parentCode, conn, tx), _accounts.GetChildren(parentCode, conn, tx));
 
         // عرض اللاحقة = مستوى الأب، يتّسع مع العمق بدل D3 ثابت.
-        private static string BuildChildCode(Account parent, List<Account> children)
+        private static Result<string> BuildChildCode(Account parent, List<Account> children)
         {
             var parentCode = parent.Code;
             var width = parent.Level;
 
-            if (children.Count == 0)
-                return parentCode + 1.ToString("D" + width);
-
-            int max = 0;
-            foreach (var acc in children)
+            int next = 1;
+            if (children.Count > 0)
             {
-                var suffix = acc.Code.Length > parentCode.Length ? acc.Code.Substring(parentCode.Length) : "";
-                if (int.TryParse(suffix, out int n) && n > max)
-                    max = n;
+                int max = 0;
+                foreach (var acc in children)
+                {
+                    var suffix = acc.Code.Length > parentCode.Length ? acc.Code.Substring(parentCode.Length) : "";
+                    if (int.TryParse(suffix, out int n) && n > max)
+                        max = n;
+                }
+                next = max + 1;
             }
-            return parentCode + (max + 1).ToString("D" + width);
+
+            if (next > MaxChildSuffix)
+                return Result.Fail<string>($"تجاوز '{parentCode}' الحد الأقصى لعدد الأبناء ({MaxChildSuffix})", ErrorCode.ValidationFailed);
+
+            return Result.Ok(parentCode + next.ToString("D" + width));
         }
 
         /// <summary>يبني AccountDto من بيانات لحظة الإنشاء مباشرة، بلا إعادة قراءة من DB — حساب جديد فعلياً لا أبناء/قيود/علم نظامي له بحكم كونه جديداً (لا تنازل، إجابة صحيحة فعلاً لا تقريب). يخدم Create(conn,tx,...) تفادياً لقراءات _journal.HasLinesForAccount/Settings.GetSection غير الآمنتين داخل معاملة خارجية.</summary>
