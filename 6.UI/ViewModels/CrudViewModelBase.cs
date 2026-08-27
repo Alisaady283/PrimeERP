@@ -31,7 +31,7 @@ namespace PrimeERP.UI.ViewModels.Base
             : base(permissions, toast)
         {
             Dialogs = dialogs;
-            AddCommand = GuardedCommand(() => AddRequested?.Invoke(), $"{PermissionPrefix}.Add");
+            AddCommand = GuardedCommand(() => AddRequested?.Invoke(), $"{PermissionPrefix}.Create");
             EditCommand = new RelayCommand(
                 () => { if (SelectedItem != null) EditRequested?.Invoke(SelectedItem); },
                 () => SelectedItem != null && Can($"{PermissionPrefix}.Edit"));

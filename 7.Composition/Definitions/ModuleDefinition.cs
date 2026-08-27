@@ -33,5 +33,8 @@ namespace PrimeERP.Composition.Definitions
         public TreeLayoutOptions TreeOptions { get; init; }
 
         public DialogDefinition Dialog { get; init; }
+
+        /// <summary>بديل Dialog لمستند رأس+سطور (قيود يومية، فواتير لاحقاً) — لا يجتمعان لنفس الوحدة.</summary>
+        public DocumentDialogDefinition DocumentDialog { get; init; }
     }
 }

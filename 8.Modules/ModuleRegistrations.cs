@@ -94,6 +94,44 @@ namespace PrimeERP.Modules
                     }.Concat(StandardFields.DialogFields()).ToList()
                 }
             });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Journals",
+                TitleKey = "Str.Module.Journals",
+                PermissionPrefix = "Journal",
+                ViewModelType = typeof(JournalsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.EntryNo"), Binding = nameof(JournalEntryDto.EntryNo), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.EntryDate"), Binding = nameof(JournalEntryDto.EntryDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Description"), Binding = nameof(JournalEntryDto.Description), Width = 260, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Debit"), Binding = nameof(JournalEntryDto.TotalDebit), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Credit"), Binding = nameof(JournalEntryDto.TotalCredit), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(JournalEntryDto.StatusText), Width = 110, Align = ColumnAlign.Center },
+                },
+                DocumentDialog = new DocumentDialogDefinition
+                {
+                    TitleKey = "Str.Journals.Add",
+                    TitleEditKey = "Str.Journals.Edit",
+                    ServiceType = typeof(IJournalService),
+                    DtoType = typeof(CreateJournalDto),
+                    LineDtoType = typeof(CreateJournalLineDto),
+                    LinesPropertyName = nameof(CreateJournalDto.Lines),
+                    HeaderFields = new()
+                    {
+                        new() { Key = nameof(CreateJournalDto.EntryDate), LabelKey = "Str.EntryDate", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreateJournalDto.Description), LabelKey = "Str.Description", Kind = FieldKind.Text, IsRequired = true, MaxLength = 300 },
+                    },
+                    LineFields = new()
+                    {
+                        new() { Key = nameof(CreateJournalLineDto.AccountCode), Header = LocalizationService.Get("Str.Account"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Account", PickerLeafOnly = true },
+                        new() { Key = nameof(CreateJournalLineDto.Debit), Header = LocalizationService.Get("Str.Debit"), Kind = FieldKind.Number, Width = 110 },
+                        new() { Key = nameof(CreateJournalLineDto.Credit), Header = LocalizationService.Get("Str.Credit"), Kind = FieldKind.Number, Width = 110 },
+                        new() { Key = nameof(CreateJournalLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 180 },
+                    }
+                }
+            });
         }
     }
 }

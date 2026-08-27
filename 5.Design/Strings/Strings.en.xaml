@@ -28,6 +28,17 @@
     <sys:String x:Key="Str.Status">Status</sys:String>
     <sys:String x:Key="Str.CreatedAt">Created At</sys:String>
     <sys:String x:Key="Str.UpdatedAt">Last Updated</sys:String>
+    <sys:String x:Key="Str.Module.Journals">Journal Entries</sys:String>
+    <sys:String x:Key="Str.EntryNo">Entry No.</sys:String>
+    <sys:String x:Key="Str.EntryDate">Entry Date</sys:String>
+    <sys:String x:Key="Str.Description">Description</sys:String>
+    <sys:String x:Key="Str.Debit">Debit</sys:String>
+    <sys:String x:Key="Str.Credit">Credit</sys:String>
+    <sys:String x:Key="Str.Account">Account</sys:String>
+    <sys:String x:Key="Str.Journals.Add">Add Journal Entry</sys:String>
+    <sys:String x:Key="Str.Journals.Edit">Edit Journal Entry</sys:String>
+    <sys:String x:Key="Str.AddLine">+ Add Line</sys:String>
+    <sys:String x:Key="Str.RemoveLine">Remove Line</sys:String>
     <sys:String x:Key="Str.Module.Customers">Customers</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">Suppliers</sys:String>
     <sys:String x:Key="Str.Module.Accounts">Chart of Accounts</sys:String>

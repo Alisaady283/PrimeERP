@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -38,33 +39,8 @@ namespace PrimeERP.Composition.Renderers
             object editItem = null, int? addModeDefaultPickerId = null)
         {
             bool isEdit = editItem != null;
-            var fields = dialog.Fields.ToDictionary(f => f.Key, BuildField);
-
-            foreach (var field in dialog.Fields)
-            {
-                var control = fields[field.Key];
-
-                // Picker: تحميل العناصر أولاً ثم التحديد بمطابقة Id — SelectedValue وحدها لا تُحدِّد شيئاً في
-                // AppComboBox (لا بحث عكسي من القيمة للعنصر)، فتحتاج SelectedItem الفعلي من القائمة المُحمَّلة.
-                if (field.Kind == FieldKind.Picker)
-                {
-                    LoadPickerItems((AppComboBox)control, field, services);
-                    var presetId = isEdit ? editItem.GetType().GetProperty(field.Key)?.GetValue(editItem) as int? : addModeDefaultPickerId;
-                    if (presetId != null) SelectPickerItem((AppComboBox)control, presetId.Value);
-                }
-                else if (isEdit)
-                {
-                    SetControlValue(control, field, editItem.GetType().GetProperty(field.Key)?.GetValue(editItem));
-                }
-                else if (field.DefaultValue != null)
-                {
-                    SetControlValue(control, field, field.DefaultValue);
-                }
-
-                if (isEdit && field.IsReadOnlyOnEdit) control.IsEnabled = false;
-            }
-
-            var grid = BuildGrid(dialog, fields);
+            var fields = BuildAndPopulateFields(dialog.Fields, services, editItem, isEdit, addModeDefaultPickerId);
+            var grid = BuildGrid(dialog.Fields, dialog.GridColumns, fields);
 
             var btnCancel = new Btn { Text = LocalizationService.Get("Str.Cancel"), Variant = "secondary", Size = "sm" };
             var btnSave = new Btn { Text = LocalizationService.Get("Str.Save"), Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
@@ -101,7 +77,7 @@ namespace PrimeERP.Composition.Renderers
                 var updateDto = Activator.CreateInstance(dialog.UpdateDtoType);
                 var idValue = editItem.GetType().GetProperty("Id")?.GetValue(editItem);
                 dialog.UpdateDtoType.GetProperty("Id")?.SetValue(updateDto, idValue);
-                ApplyFields(dialog, fields, updateDto, editOnly: true);
+                ApplyFields(dialog.Fields, fields, updateDto, editOnly: true);
 
                 var method = dialog.ServiceType.GetMethod("Update", new[] { dialog.UpdateDtoType });
                 var result = (Result)method.Invoke(service, new[] { updateDto });
@@ -110,7 +86,7 @@ namespace PrimeERP.Composition.Renderers
             else
             {
                 var createDto = Activator.CreateInstance(dialog.CreateDtoType);
-                ApplyFields(dialog, fields, createDto, editOnly: false);
+                ApplyFields(dialog.Fields, fields, createDto, editOnly: false);
 
                 var method = dialog.ServiceType.GetMethod("Create", new[] { dialog.CreateDtoType });
                 var result = (Result)method.Invoke(service, new[] { createDto });
@@ -121,10 +97,10 @@ namespace PrimeERP.Composition.Renderers
             return true;
         }
 
-        private static void ApplyFields(DialogDefinition dialog, System.Collections.Generic.Dictionary<string, FrameworkElement> fields, object dto, bool editOnly)
+        internal static void ApplyFields(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> fields, object dto, bool editOnly)
         {
             var dtoType = dto.GetType();
-            foreach (var field in dialog.Fields)
+            foreach (var field in fieldDefs)
             {
                 if (editOnly && field.IsReadOnlyOnEdit) continue;
                 var prop = dtoType.GetProperty(field.Key);
@@ -136,35 +112,69 @@ namespace PrimeERP.Composition.Renderers
             }
         }
 
-        private static Grid BuildGrid(DialogDefinition dialog, System.Collections.Generic.Dictionary<string, FrameworkElement> fields)
+        // بناء + تعبئة القيم لقائمة حقول مسطّحة — يخدم كلاً من الحوار العادي (رأس فقط) ورأس المستند
+        // (DocumentRenderer)؛ لا علاقة له بسطور المستند المتكرّرة (تلك منطق DocumentRenderer الخاص).
+        internal static Dictionary<string, FrameworkElement> BuildAndPopulateFields(
+            List<FieldDefinition> fieldDefs, IServiceProvider services, object editItem, bool isEdit, int? addModeDefaultPickerId = null)
+        {
+            var controls = fieldDefs.ToDictionary(f => f.Key, BuildField);
+
+            foreach (var field in fieldDefs)
+            {
+                var control = controls[field.Key];
+
+                // Picker: تحميل العناصر أولاً ثم التحديد بمطابقة Id — SelectedValue وحدها لا تُحدِّد شيئاً في
+                // AppComboBox (لا بحث عكسي من القيمة للعنصر)، فتحتاج SelectedItem الفعلي من القائمة المُحمَّلة.
+                if (field.Kind == FieldKind.Picker)
+                {
+                    LoadPickerItems((AppComboBox)control, field, services);
+                    var presetId = isEdit ? editItem.GetType().GetProperty(field.Key)?.GetValue(editItem) as int? : addModeDefaultPickerId;
+                    if (presetId != null) SelectPickerItem((AppComboBox)control, presetId.Value);
+                }
+                else if (isEdit)
+                {
+                    SetControlValue(control, field, editItem.GetType().GetProperty(field.Key)?.GetValue(editItem));
+                }
+                else if (field.DefaultValue != null)
+                {
+                    SetControlValue(control, field, field.DefaultValue);
+                }
+
+                if (isEdit && field.IsReadOnlyOnEdit) control.IsEnabled = false;
+            }
+
+            return controls;
+        }
+
+        internal static Grid BuildGrid(List<FieldDefinition> fieldDefs, int gridColumns, Dictionary<string, FrameworkElement> fields)
         {
             var grid = new Grid { Width = 420 };
-            for (int i = 0; i < dialog.GridColumns; i++)
+            for (int i = 0; i < gridColumns; i++)
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             int col = 0, row = 0;
-            foreach (var field in dialog.Fields)
+            foreach (var field in fieldDefs)
             {
                 var control = fields[field.Key];
-                var span = Math.Min(field.ColumnSpan, dialog.GridColumns);
-                if (col + span > dialog.GridColumns) { col = 0; row++; }
+                var span = Math.Min(field.ColumnSpan, gridColumns);
+                if (col + span > gridColumns) { col = 0; row++; }
 
                 if (grid.RowDefinitions.Count <= row) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-                control.Margin = new Thickness(0, 0, col + span < dialog.GridColumns ? 8 : 0, 12);
+                control.Margin = new Thickness(0, 0, col + span < gridColumns ? 8 : 0, 12);
                 Grid.SetRow(control, row);
                 Grid.SetColumn(control, col);
                 Grid.SetColumnSpan(control, span);
                 grid.Children.Add(control);
 
                 col += span;
-                if (col >= dialog.GridColumns) { col = 0; row++; }
+                if (col >= gridColumns) { col = 0; row++; }
             }
 
             return grid;
         }
 
-        private static FrameworkElement BuildField(FieldDefinition field)
+        internal static FrameworkElement BuildField(FieldDefinition field)
         {
             var label = LocalizationService.Get(field.LabelKey);
             return field.Kind switch
@@ -175,12 +185,12 @@ namespace PrimeERP.Composition.Renderers
                 FieldKind.Date => new AppDatePicker { Label = label, IsRequired = field.IsRequired },
                 FieldKind.Check => new AppCheckBox { Label = label },
                 FieldKind.TextArea => new AppTextArea { Label = label, IsRequired = field.IsRequired, MaxLength = field.MaxLength, Rows = 3 },
-                FieldKind.Picker => new AppComboBox { Label = label, IsRequired = field.IsRequired, DisplayMemberPath = "Display", SelectedValuePath = "Id" },
+                FieldKind.Picker => new AppComboBox { Label = label, IsRequired = field.IsRequired, DisplayMemberPath = "Display", SelectedValuePath = field.PickerValueField },
                 _ => new AppTextBox { Label = label }
             };
         }
 
-        private static void SetControlValue(FrameworkElement control, FieldDefinition field, object value)
+        internal static void SetControlValue(FrameworkElement control, FieldDefinition field, object value)
         {
             if (value == null) return;
             switch (field.Kind)
@@ -198,7 +208,7 @@ namespace PrimeERP.Composition.Renderers
             }
         }
 
-        private static object GetControlValue(FrameworkElement control, FieldKind kind) => kind switch
+        internal static object GetControlValue(FrameworkElement control, FieldKind kind) => kind switch
         {
             FieldKind.Text or FieldKind.ReadOnly => ((AppTextBox)control).Text,
             FieldKind.TextArea => ((AppTextArea)control).Text,
@@ -209,16 +219,18 @@ namespace PrimeERP.Composition.Renderers
             _ => null
         };
 
-        private static void SelectPickerItem(AppComboBox combo, int id)
+        // matchProperty="Id" افتراضياً (اختيار برقم داخلي) أو "Code" (سطر يحتاج كود الحساب نصاً — راجع
+        // FieldDefinition.PickerValueField).
+        internal static void SelectPickerItem(AppComboBox combo, object value, string matchProperty = "Id")
         {
             var match = (combo.ItemsSource as System.Collections.IEnumerable)?.Cast<object>()
-                .FirstOrDefault(i => (int)i.GetType().GetProperty("Id").GetValue(i) == id);
+                .FirstOrDefault(i => Equals(i.GetType().GetProperty(matchProperty)?.GetValue(i), value));
             if (match != null) combo.SelectedItem = match;
         }
 
         // PickerType="Account" فقط مدعوم حالياً — عبر IAccountService.GetPaged مباشرة، لا IPickerDataSource<T>
         // عام (غير مسجَّل في DI بعد). نطاق مُبسَّط، راجع تقرير R11.
-        private static void LoadPickerItems(AppComboBox combo, FieldDefinition field, IServiceProvider services)
+        internal static void LoadPickerItems(AppComboBox combo, FieldDefinition field, IServiceProvider services)
         {
             if (field.PickerType != "Account") return;
 
@@ -228,10 +240,10 @@ namespace PrimeERP.Composition.Renderers
             if (!pageResult.IsSuccess) return;
 
             combo.ItemsSource = pageResult.Value.Items
-                .Select(a => new PickerRow { Id = a.Id, Display = $"{a.Code} - {a.Name}" })
+                .Select(a => new PickerRow { Id = a.Id, Code = a.Code, Display = $"{a.Code} - {a.Name}" })
                 .ToList();
         }
 
-        private class PickerRow { public int Id { get; set; } public string Display { get; set; } }
+        private class PickerRow { public int Id { get; set; } public string Code { get; set; } public string Display { get; set; } }
     }
 }

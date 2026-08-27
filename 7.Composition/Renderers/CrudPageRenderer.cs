@@ -9,6 +9,7 @@ using PrimeERP.Composition.Definitions;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Components.Layout;
+using PrimeERP.UI.Services;
 
 namespace PrimeERP.Composition.Renderers
 {
@@ -47,6 +48,35 @@ namespace PrimeERP.Composition.Renderers
             BindingOperations.SetBinding(grid, AppDataGrid.IsLoadingProperty, new Binding("IsLoading"));
             grid.RowEditRequested += (_, row) => { vm.SelectedItem = row; vm.EditCommand.Execute(null); };
             grid.RowDeleteRequested += (_, row) => { vm.SelectedItem = row; vm.DeleteCommand.Execute(null); };
+
+            if (definition.Dialog != null)
+            {
+                var toast = services.GetRequiredService<IToastService>();
+                vm.AddRequested += (Action)(() =>
+                {
+                    if (DialogRenderer.ShowAndSave(definition.Dialog, services, toast))
+                        vm.LoadCommand.Execute(null);
+                });
+                vm.EditRequested += (Action<object>)(item =>
+                {
+                    if (DialogRenderer.ShowAndSave(definition.Dialog, services, toast, item))
+                        vm.LoadCommand.Execute(null);
+                });
+            }
+            else if (definition.DocumentDialog != null)
+            {
+                var toast = services.GetRequiredService<IToastService>();
+                vm.AddRequested += (Action)(() =>
+                {
+                    if (DocumentRenderer.ShowAndSave(definition.DocumentDialog, services, toast))
+                        vm.LoadCommand.Execute(null);
+                });
+                vm.EditRequested += (Action<object>)(item =>
+                {
+                    if (DocumentRenderer.ShowAndSave(definition.DocumentDialog, services, toast, item))
+                        vm.LoadCommand.Execute(null);
+                });
+            }
 
             var pagination = new AppPagination();
             BindingOperations.SetBinding(pagination, AppPagination.TotalItemsProperty, new Binding("TotalCount"));

@@ -20,6 +20,10 @@ namespace PrimeERP.Composition.Definitions
         public string PickerType { get; init; }
         public bool PickerLeafOnly { get; init; }
 
+        // خاصية عنصر القائمة تُستخدَم كقيمة محددة (SelectedValuePath) — "Id" للاختيار برقم داخلي (حساب أب
+        // مثلاً)، "Code" لسطر يحتاج كود الحساب نصاً مباشرة (سطر قيد يومية).
+        public string PickerValueField { get; init; } = "Id";
+
         // وضع الإضافة فقط (لا Picker) — تُدفَع للعنصر لو لا editItem؛ تُتجاهَل في التعديل.
         public object DefaultValue { get; init; }
 

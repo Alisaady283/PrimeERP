@@ -88,6 +88,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddTransient<CustomersViewModel>();
             services.AddTransient<SuppliersViewModel>();
             services.AddTransient<AccountsViewModel>();
+            services.AddTransient<JournalsViewModel>();
 
             return services;
         }

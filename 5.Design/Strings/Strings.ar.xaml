@@ -28,6 +28,17 @@
     <sys:String x:Key="Str.Status">الحالة</sys:String>
     <sys:String x:Key="Str.CreatedAt">تاريخ الإنشاء</sys:String>
     <sys:String x:Key="Str.UpdatedAt">تاريخ آخر تعديل</sys:String>
+    <sys:String x:Key="Str.Module.Journals">قيود اليومية</sys:String>
+    <sys:String x:Key="Str.EntryNo">رقم القيد</sys:String>
+    <sys:String x:Key="Str.EntryDate">تاريخ القيد</sys:String>
+    <sys:String x:Key="Str.Description">البيان</sys:String>
+    <sys:String x:Key="Str.Debit">مدين</sys:String>
+    <sys:String x:Key="Str.Credit">دائن</sys:String>
+    <sys:String x:Key="Str.Account">الحساب</sys:String>
+    <sys:String x:Key="Str.Journals.Add">إضافة قيد</sys:String>
+    <sys:String x:Key="Str.Journals.Edit">تعديل قيد</sys:String>
+    <sys:String x:Key="Str.AddLine">+ إضافة سطر</sys:String>
+    <sys:String x:Key="Str.RemoveLine">حذف السطر</sys:String>
     <sys:String x:Key="Str.Module.Customers">العملاء</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">الموردون</sys:String>
     <sys:String x:Key="Str.Module.Accounts">شجرة الحسابات</sys:String>
