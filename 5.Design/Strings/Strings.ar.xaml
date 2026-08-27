@@ -39,6 +39,10 @@
     <sys:String x:Key="Str.Journals.Edit">تعديل قيد</sys:String>
     <sys:String x:Key="Str.AddLine">+ إضافة سطر</sys:String>
     <sys:String x:Key="Str.RemoveLine">حذف السطر</sys:String>
+    <sys:String x:Key="Str.ParentCategory">التصنيف الأب</sys:String>
+    <sys:String x:Key="Str.Category.Add">إضافة تصنيف</sys:String>
+    <sys:String x:Key="Str.Category.Edit">تعديل تصنيف</sys:String>
+    <sys:String x:Key="Str.AddCategory">إضافة تصنيف جديد</sys:String>
     <sys:String x:Key="Str.Module.Customers">العملاء</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">الموردون</sys:String>
     <sys:String x:Key="Str.Module.Accounts">شجرة الحسابات</sys:String>

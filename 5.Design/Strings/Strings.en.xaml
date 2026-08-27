@@ -39,6 +39,10 @@
     <sys:String x:Key="Str.Journals.Edit">Edit Journal Entry</sys:String>
     <sys:String x:Key="Str.AddLine">+ Add Line</sys:String>
     <sys:String x:Key="Str.RemoveLine">Remove Line</sys:String>
+    <sys:String x:Key="Str.ParentCategory">Parent Category</sys:String>
+    <sys:String x:Key="Str.Category.Add">Add Category</sys:String>
+    <sys:String x:Key="Str.Category.Edit">Edit Category</sys:String>
+    <sys:String x:Key="Str.AddCategory">Add New Category</sys:String>
     <sys:String x:Key="Str.Module.Customers">Customers</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">Suppliers</sys:String>
     <sys:String x:Key="Str.Module.Accounts">Chart of Accounts</sys:String>

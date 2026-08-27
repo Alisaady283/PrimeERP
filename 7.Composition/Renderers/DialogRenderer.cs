@@ -45,6 +45,9 @@ namespace PrimeERP.Composition.Renderers
             var fields = BuildAndPopulateFields(dialog.Fields, services, editItem, isEdit, addModeDefaultPickerId);
             var grid = BuildGrid(dialog.Fields, dialog.GridColumns, fields);
 
+            foreach (var field in dialog.Fields.Where(f => f.Kind == FieldKind.Picker && f.PickerType == "Category"))
+                WireCategoryPickerAddOption((AppComboBox)fields[field.Key], field, services, toast);
+
             var btnCancel = new Btn { Text = LocalizationService.Get("Str.Cancel"), Variant = "secondary", Size = "sm" };
             var btnSave = new Btn { Text = LocalizationService.Get("Str.Save"), Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
 
@@ -81,6 +84,7 @@ namespace PrimeERP.Composition.Renderers
                 var idValue = editItem.GetType().GetProperty("Id")?.GetValue(editItem);
                 dialog.UpdateDtoType.GetProperty("Id")?.SetValue(updateDto, idValue);
                 ApplyFields(dialog.Fields, fields, updateDto, editOnly: true);
+                ApplyFixedValues(dialog, updateDto);
 
                 var method = dialog.ServiceType.GetMethod("Update", new[] { dialog.UpdateDtoType });
                 var result = (Result)method.Invoke(service, new[] { updateDto });
@@ -90,6 +94,7 @@ namespace PrimeERP.Composition.Renderers
             {
                 var createDto = Activator.CreateInstance(dialog.CreateDtoType);
                 ApplyFields(dialog.Fields, fields, createDto, editOnly: false);
+                ApplyFixedValues(dialog, createDto);
 
                 var method = dialog.ServiceType.GetMethod("Create", new[] { dialog.CreateDtoType });
                 var result = (Result)method.Invoke(service, new[] { createDto });
@@ -113,6 +118,14 @@ namespace PrimeERP.Composition.Renderers
                 if (value == null) continue;
                 prop.SetValue(dto, Convert.ChangeType(value, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType));
             }
+        }
+
+        private static void ApplyFixedValues(DialogDefinition dialog, object dto)
+        {
+            if (dialog.FixedValues == null) return;
+            var dtoType = dto.GetType();
+            foreach (var (key, value) in dialog.FixedValues)
+                dtoType.GetProperty(key)?.SetValue(dto, value);
         }
 
         // بناء + تعبئة القيم لقائمة حقول مسطّحة — يخدم كلاً من الحوار العادي (رأس فقط) ورأس المستند
@@ -232,20 +245,49 @@ namespace PrimeERP.Composition.Renderers
             if (match != null) combo.SelectedItem = match;
         }
 
-        // PickerType="Account" فقط مدعوم حالياً — عبر IAccountService.GetPaged مباشرة، لا IPickerDataSource<T>
-        // عام (غير مسجَّل في DI بعد). نطاق مُبسَّط، راجع تقرير R11.
+        // PickerType="Account"/"Category" — عبر الخدمة مباشرة، لا IPickerDataSource<T> عام (غير مسجَّل في DI
+        // بعد). نطاق مُبسَّط، راجع تقرير R11.
         internal static void LoadPickerItems(AppComboBox combo, FieldDefinition field, IServiceProvider services)
         {
-            if (field.PickerType != "Account") return;
+            if (field.PickerType == "Account")
+            {
+                var accountService = services.GetRequiredService<IAccountService>();
+                var filter = new AccountTreeFilter { LeafOnly = field.PickerLeafOnly };
+                var pageResult = accountService.GetPaged(1, 5000, filter);
+                if (!pageResult.IsSuccess) return;
 
-            var accountService = services.GetRequiredService<IAccountService>();
-            var filter = new AccountTreeFilter { LeafOnly = field.PickerLeafOnly };
-            var pageResult = accountService.GetPaged(1, 5000, filter);
-            if (!pageResult.IsSuccess) return;
+                combo.ItemsSource = pageResult.Value.Items
+                    .Select(a => new PickerRow { Id = a.Id, Code = a.Code, Display = $"{a.Code} - {a.Name}" })
+                    .ToList();
+            }
+            else if (field.PickerType == "Category")
+            {
+                var categoryService = services.GetRequiredService<PrimeERP.Application.Services.Common.ICategoryService>();
+                var result = categoryService.GetAll(field.PickerCategoryModuleKey);
+                if (!result.IsSuccess) return;
 
-            combo.ItemsSource = pageResult.Value.Items
-                .Select(a => new PickerRow { Id = a.Id, Code = a.Code, Display = $"{a.Code} - {a.Name}" })
-                .ToList();
+                var rows = result.Value.Select(c => new PickerRow { Id = c.Id, Code = null, Display = c.Name }).ToList();
+                rows.Add(new PickerRow { Id = AddCategorySentinelId, Code = null, Display = "+ " + LocalizationService.Get("Str.AddCategory") });
+                combo.ItemsSource = rows;
+            }
+        }
+
+        // معرّف اصطناعي بند "+ إضافة فئة" في نهاية قائمة منتقي الفئة — راجع WireCategoryPickerAddOption.
+        private const int AddCategorySentinelId = -1;
+
+        private static void WireCategoryPickerAddOption(AppComboBox combo, FieldDefinition field, IServiceProvider services, IToastService toast)
+        {
+            combo.SelectionChanged += (_, __) =>
+            {
+                if (combo.SelectedItem is not PickerRow row || row.Id != AddCategorySentinelId) return;
+
+                ShowAndSave(CategoryDialogFactory.Build(field.PickerCategoryModuleKey), services, toast);
+
+                // إعادة تحميل تشمل أي فئة أُضيفت + بند الإضافة نفسه من جديد؛ التحديد يُترَك فارغاً — المستخدم
+                // يختار الفئة الجديدة من القائمة المُحدَّثة مباشرة (بلا تعقيد لإرجاع الـId المُنشأ من ShowAndSave).
+                LoadPickerItems(combo, field, services);
+                combo.SelectedItem = null;
+            };
         }
 
         private class PickerRow { public int Id { get; set; } public string Code { get; set; } public string Display { get; set; } }

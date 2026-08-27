@@ -15,10 +15,13 @@ namespace PrimeERP.Composition.Definitions
         public int MaxLength { get; init; }
         public int ColumnSpan { get; init; } = 1;
 
-        // Kind.Picker فقط — "Account" مدعوم حالياً عبر IAccountService.GetPaged (لا IPickerDataSource<T> عام،
-        // بلا تسجيل DI حقيقي حتى الآن — نطاق مُبسَّط عمداً، راجع تقرير R11).
+        // Kind.Picker فقط — "Account" عبر IAccountService.GetPaged، "Category" عبر ICategoryService.GetAll
+        // (بلا IPickerDataSource<T> عام، بلا تسجيل DI حقيقي حتى الآن — نطاق مُبسَّط عمداً، راجع تقرير R11).
         public string PickerType { get; init; }
         public bool PickerLeafOnly { get; init; }
+
+        // Kind.Picker مع PickerType="Category" فقط — ModuleKey تُقرَأ منها فئات هذه الوحدة تحديداً.
+        public string PickerCategoryModuleKey { get; init; }
 
         // خاصية عنصر القائمة تُستخدَم كقيمة محددة (SelectedValuePath) — "Id" للاختيار برقم داخلي (حساب أب
         // مثلاً)، "Code" لسطر يحتاج كود الحساب نصاً مباشرة (سطر قيد يومية).
@@ -40,5 +43,9 @@ namespace PrimeERP.Composition.Definitions
         public required Type ServiceType { get; init; }
         public required Type CreateDtoType { get; init; }
         public required Type UpdateDtoType { get; init; }
+
+        // قيم تُطبَّق على الـ DTO مباشرة بعد ApplyFields، بلا أي عنصر مرئي للمستخدم (مثال: ModuleKey ثابتة
+        // لحوار فئة وحدة بعينها عبر CategoryDialogFactory).
+        public Dictionary<string, object> FixedValues { get; init; }
     }
 }
