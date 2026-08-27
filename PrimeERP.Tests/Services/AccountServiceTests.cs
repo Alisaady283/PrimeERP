@@ -22,7 +22,7 @@ namespace PrimeERP.Tests.Services
 {
     /// <summary>
     /// قاعدة بيانات خاصة معزولة لكل اختبار (لا [Collection("Database")] المشتركة) عمداً — اختبارات هذه الفئة
-    /// تفترض شجرة حسابات "نظيفة" (مثال: أول ابن لـ 1220 كوده 1220001 بالضبط)، وهذا يتطلب عدم تسرّب حسابات
+    /// تفترض شجرة حسابات "نظيفة" (مثال: أول ابن لـ 1202 كوده 1202001 بالضبط)، وهذا يتطلب عدم تسرّب حسابات
     /// من اختبار سابق. xUnit يُنشئ نسخة جديدة من فئة الاختبار قبل كل [Fact]، فبناء TestDatabaseFixture هنا
     /// (لا عبر ICollectionFixture مشتركة) يعطي كل اختبار قاعدة بيانات مستقلة تلقائياً.
     /// </summary>
@@ -49,8 +49,8 @@ namespace PrimeERP.Tests.Services
 
         public void Dispose() => _db.Dispose();
 
-        private int CustomersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("1220").Id;
-        private int SuppliersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("2110").Id;
+        private int CustomersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("1202").Id;
+        private int SuppliersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("2101").Id;
 
         private int SeedPostedEntry(string date, params (string Code, decimal Debit, decimal Credit)[] lines)
         {
@@ -152,7 +152,7 @@ namespace PrimeERP.Tests.Services
             var result = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل اختباري 1", IsLeaf = true });
 
             Assert.True(result.IsSuccess, result.ErrorMessage);
-            Assert.Equal("1220001", result.Value.Code);
+            Assert.Equal("1202001", result.Value.Code);
             Assert.Equal(4, result.Value.Level);
         }
 
@@ -161,12 +161,12 @@ namespace PrimeERP.Tests.Services
         {
             var l4 = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "مستوى 4", IsLeaf = false });
             Assert.True(l4.IsSuccess, l4.ErrorMessage);
-            Assert.Equal("1220001", l4.Value.Code);
+            Assert.Equal("1202001", l4.Value.Code);
             Assert.Equal(4, l4.Value.Level);
 
             var l5 = _service.Create(new CreateAccountDto { ParentId = l4.Value.Id, Name = "مستوى 5", IsLeaf = true });
             Assert.True(l5.IsSuccess, l5.ErrorMessage);
-            Assert.Equal("12200010001", l5.Value.Code);
+            Assert.Equal("12020010001", l5.Value.Code);
             Assert.Equal(5, l5.Value.Level);
         }
 
@@ -174,19 +174,19 @@ namespace PrimeERP.Tests.Services
         public void Create_GeneratesCorrectCode_WhenMaxSuffixExceedsReservedWidth()
         {
             var repo = _db.Services.GetRequiredService<IAccountRepository>();
-            repo.Insert(new Account { Code = "1220999", Name = "قرب الحد", ParentCode = "1220", Level = 4, IsLeaf = true, Type = 1 });
+            repo.Insert(new Account { Code = "1202999", Name = "قرب الحد", ParentCode = "1202", Level = 4, IsLeaf = true, Type = 1 });
 
             var result = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "بعد الحد", IsLeaf = true });
 
             Assert.True(result.IsSuccess, result.ErrorMessage);
-            Assert.Equal("12201000", result.Value.Code);
+            Assert.Equal("12021000", result.Value.Code);
         }
 
         [Fact]
         public void Create_Fails_WhenChildSuffixExceedsMaxCap()
         {
             var repo = _db.Services.GetRequiredService<IAccountRepository>();
-            repo.Insert(new Account { Code = "1220" + 9999, Name = "عند الحد", ParentCode = "1220", Level = 4, IsLeaf = true, Type = 1 });
+            repo.Insert(new Account { Code = "1202" + 9999, Name = "عند الحد", ParentCode = "1202", Level = 4, IsLeaf = true, Type = 1 });
 
             var result = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "بعد الحد الأقصى", IsLeaf = true });
 
@@ -272,7 +272,7 @@ namespace PrimeERP.Tests.Services
             var account = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "له قيد", IsLeaf = true });
             Assert.True(account.IsSuccess);
 
-            SeedPostedEntry("2026-01-01", (account.Value.Code, 100m, 0m), ("1240", 0m, 100m));
+            SeedPostedEntry("2026-01-01", (account.Value.Code, 100m, 0m), ("1204", 0m, 100m));
 
             var result = _service.Delete(account.Value.Id);
 
@@ -301,8 +301,8 @@ namespace PrimeERP.Tests.Services
             var account = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "حساب رصيد", IsLeaf = true });
             Assert.True(account.IsSuccess);
 
-            SeedPostedEntry("2026-01-01", (account.Value.Code, 300m, 0m), ("1240", 0m, 300m));
-            SeedPostedEntry("2026-01-05", (account.Value.Code, 0m, 50m), ("1240", 50m, 0m));
+            SeedPostedEntry("2026-01-01", (account.Value.Code, 300m, 0m), ("1204", 0m, 300m));
+            SeedPostedEntry("2026-01-05", (account.Value.Code, 0m, 50m), ("1204", 50m, 0m));
 
             var result = _service.RecalculateBalance(account.Value.Code);
             Assert.True(result.IsSuccess, result.ErrorMessage);
@@ -317,8 +317,8 @@ namespace PrimeERP.Tests.Services
             var account = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "حساب كشف", IsLeaf = true });
             Assert.True(account.IsSuccess);
 
-            SeedPostedEntry("2026-01-01", (account.Value.Code, 200m, 0m), ("1240", 0m, 200m));
-            SeedPostedEntry("2026-01-10", (account.Value.Code, 0m, 80m), ("1240", 80m, 0m));
+            SeedPostedEntry("2026-01-01", (account.Value.Code, 200m, 0m), ("1204", 0m, 200m));
+            SeedPostedEntry("2026-01-10", (account.Value.Code, 0m, 80m), ("1204", 80m, 0m));
 
             var result = _service.GetStatement(account.Value.Code, new DateTime(2026, 1, 1), new DateTime(2026, 1, 31));
 

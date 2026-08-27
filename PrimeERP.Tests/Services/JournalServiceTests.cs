@@ -40,9 +40,9 @@ namespace PrimeERP.Tests.Services
 
         public void Dispose() => _db.Dispose();
 
-        private int AssetRootId() => _accountRepo.GetByCode("1240").Id;
-        private int RevenueRootId() => _accountRepo.GetByCode("4100").Id;
-        private int ExpenseRootId() => _accountRepo.GetByCode("5100").Id;
+        private int AssetRootId() => _accountRepo.GetByCode("1204").Id;
+        private int RevenueRootId() => _accountRepo.GetByCode("41").Id;
+        private int ExpenseRootId() => _accountRepo.GetByCode("51").Id;
 
         private string CreateLeaf(int parentId, string name) =>
             _accounts.Create(new CreateAccountDto { ParentId = parentId, Name = name, IsLeaf = true }).Value.Code;
@@ -129,7 +129,7 @@ namespace PrimeERP.Tests.Services
         {
             var (cash, _) = CreateCashAndRevenue();
 
-            var result = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 100m, 0m), ("4100", 0m, 100m)));
+            var result = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 100m, 0m), ("41", 0m, 100m)));
 
             Assert.False(result.IsSuccess);
         }
@@ -328,7 +328,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Unpost_ClosingEntry_Fails()
         {
-            _settings.Set(SettingKeys.Accounts.RetainedEarnings, "3200");
+            _settings.Set(SettingKeys.Accounts.RetainedEarnings, "32");
             var cash = CreateLeaf(AssetRootId(), "نقدية للإقفال");
             var revenue = CreateLeaf(RevenueRootId(), "إيراد للإقفال");
 

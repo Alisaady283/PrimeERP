@@ -7,12 +7,12 @@ namespace PrimeERP.Domain.Rules
     /// <summary>قواعد تحقق محاسبية جاهزة — قطعة واحدة يعاد استخدامها في التحقق من الحسابات والقيود والفواتير والمخزون.</summary>
     public static class AccountingRules
     {
-        /// <summary>كود الحساب: أرقام فقط، 3 إلى 12 خانة.</summary>
+        /// <summary>كود الحساب: أرقام فقط، 1 إلى 12 خانة (جذر مستوى 1 خانة واحدة في الترقيم الرسمي القصير).</summary>
         public static void AccountCodeFormat(ValidationResult result, string field, string code,
                                              string label = "كود الحساب")
         {
-            if (string.IsNullOrWhiteSpace(code) || !Regex.IsMatch(code, @"^\d{3,12}$"))
-                result.AddError(field, $"{label} يجب أن يتكوّن من أرقام فقط (3-12 خانة)");
+            if (string.IsNullOrWhiteSpace(code) || !Regex.IsMatch(code, @"^\d{1,12}$"))
+                result.AddError(field, $"{label} يجب أن يتكوّن من أرقام فقط (1-12 خانة)");
         }
 
         /// <summary>القيد لا يُحفظ إلا متوازناً: مجموع المدين = مجموع الدائن.</summary>

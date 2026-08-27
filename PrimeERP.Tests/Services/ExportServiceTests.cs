@@ -147,8 +147,8 @@ namespace PrimeERP.Tests.Services
                 TotalCredit = 100m,
                 Lines = new List<JournalLine>
                 {
-                    new() { AccountCode = "1240", AccountName = "الصندوق", Debit = 100m, Credit = 0m },
-                    new() { AccountCode = "4100", AccountName = "إيرادات المبيعات", Debit = 0m, Credit = 100m }
+                    new() { AccountCode = "1204", AccountName = "الصندوق", Debit = 100m, Credit = 0m },
+                    new() { AccountCode = "41", AccountName = "إيرادات المبيعات", Debit = 0m, Credit = 100m }
                 }
             });
 

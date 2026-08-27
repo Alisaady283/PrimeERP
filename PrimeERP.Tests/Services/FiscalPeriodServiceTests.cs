@@ -45,8 +45,8 @@ namespace PrimeERP.Tests.Services
 
         public void Dispose() => _db.Dispose();
 
-        private int RevenueRootId() => _accountRepo.GetByCode("4100").Id;
-        private int ExpenseRootId() => _accountRepo.GetByCode("5100").Id;
+        private int RevenueRootId() => _accountRepo.GetByCode("41").Id;
+        private int ExpenseRootId() => _accountRepo.GetByCode("51").Id;
 
         private void SeedPostedEntry(string date, params (string Code, decimal Debit, decimal Credit)[] lines) =>
             SeedEntry(date, posted: true, lines);
@@ -188,7 +188,7 @@ namespace PrimeERP.Tests.Services
         public void ClosePeriod_WithUnpostedEntries_Fails()
         {
             var year = _service.CreateYear(new DateTime(2026, 1, 1), 12);
-            SeedEntry("2026-01-10", posted: false, ("1240", 100m, 0m), ("1230", 0m, 100m));
+            SeedEntry("2026-01-10", posted: false, ("1204", 100m, 0m), ("1203", 0m, 100m));
 
             var result = _service.ClosePeriod(year.Value.Periods.First().Id);
 
@@ -246,7 +246,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void CloseYear_BuildsBalancedClosingEntry_NetProfitEqualsRevenueMinusExpense()
         {
-            _settings.Set(SettingKeys.Accounts.RetainedEarnings, "3200");
+            _settings.Set(SettingKeys.Accounts.RetainedEarnings, "32");
 
             var year = _service.CreateYear(new DateTime(2026, 1, 1), 1);
             Assert.True(year.IsSuccess);
@@ -256,8 +256,8 @@ namespace PrimeERP.Tests.Services
             Assert.True(revenueAccount.IsSuccess);
             Assert.True(expenseAccount.IsSuccess);
 
-            SeedPostedEntry("2026-01-05", (revenueAccount.Value.Code, 0m, 1000m), ("1240", 1000m, 0m));
-            SeedPostedEntry("2026-01-10", (expenseAccount.Value.Code, 400m, 0m), ("1240", 0m, 400m));
+            SeedPostedEntry("2026-01-05", (revenueAccount.Value.Code, 0m, 1000m), ("1204", 1000m, 0m));
+            SeedPostedEntry("2026-01-10", (expenseAccount.Value.Code, 400m, 0m), ("1204", 0m, 400m));
             _accounts.RecalculateAllBalances();
 
             var closePeriod = _service.ClosePeriod(year.Value.Periods.Single().Id);
@@ -281,7 +281,7 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(400m, expenseLine.Credit);
             Assert.Equal(0m, expenseLine.Debit);
 
-            var retainedLine = lines.Single(l => l.AccountCode == "3200");
+            var retainedLine = lines.Single(l => l.AccountCode == "32");
             Assert.Equal(600m, retainedLine.Credit);
             Assert.Equal(0m, retainedLine.Debit);
         }
@@ -289,13 +289,13 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void ReopenYear_UnpostsAndDeletesClosingEntry_ReopensYear()
         {
-            _settings.Set(SettingKeys.Accounts.RetainedEarnings, "3200");
+            _settings.Set(SettingKeys.Accounts.RetainedEarnings, "32");
 
             var year = _service.CreateYear(new DateTime(2026, 1, 1), 1);
             var revenueAccount = _accounts.Create(new CreateAccountDto { ParentId = RevenueRootId(), Name = "إيراد 2", IsLeaf = true });
             Assert.True(revenueAccount.IsSuccess);
 
-            SeedPostedEntry("2026-01-05", (revenueAccount.Value.Code, 0m, 500m), ("1240", 500m, 0m));
+            SeedPostedEntry("2026-01-05", (revenueAccount.Value.Code, 0m, 500m), ("1204", 500m, 0m));
             _accounts.RecalculateAllBalances();
 
             _service.ClosePeriod(year.Value.Periods.Single().Id);
@@ -390,7 +390,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void ReopenYear_WithoutPermission_Fails()
         {
-            _settings.Set(SettingKeys.Accounts.RetainedEarnings, "3200");
+            _settings.Set(SettingKeys.Accounts.RetainedEarnings, "32");
             var year = _service.CreateYear(new DateTime(2026, 1, 1), 1);
             _service.ClosePeriod(year.Value.Periods.Single().Id);
             _service.CloseYear(year.Value.Id);

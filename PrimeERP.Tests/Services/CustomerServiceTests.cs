@@ -43,7 +43,7 @@ namespace PrimeERP.Tests.Services
 
         public void Dispose() => _db.Dispose();
 
-        private int CustomersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("1220").Id;
+        private int CustomersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("1202").Id;
 
         private static CreateCustomerDto BasicDto(string name = "عميل اختباري") => new()
         {
@@ -77,19 +77,19 @@ namespace PrimeERP.Tests.Services
 
             var account = _accountRepo.GetByCode(result.Value.AccountCode);
             Assert.NotNull(account);
-            Assert.Equal("1220", account.ParentCode);
+            Assert.Equal("1202", account.ParentCode);
             Assert.True(account.IsLeaf);
         }
 
         [Fact]
         public void Create_CreatesExactlyOneAccountAndOneCustomer_NoInfiniteLoop()
         {
-            var before = _accountRepo.GetChildren("1220").Count;
+            var before = _accountRepo.GetChildren("1202").Count;
 
             var result = _service.Create(BasicDto());
             Assert.True(result.IsSuccess, result.ErrorMessage);
 
-            Assert.Equal(before + 1, _accountRepo.GetChildren("1220").Count);
+            Assert.Equal(before + 1, _accountRepo.GetChildren("1202").Count);
             Assert.Single(_customerRepo.GetAll(activeOnly: false));
         }
 
@@ -111,7 +111,7 @@ namespace PrimeERP.Tests.Services
             Assert.True(accountResult.IsSuccess, accountResult.ErrorMessage);
 
             Assert.Single(_customerRepo.GetAll(activeOnly: false));
-            Assert.Single(_accountRepo.GetChildren("1220")); // حساب واحد فقط — لا حسابات إضافية من حلقة
+            Assert.Single(_accountRepo.GetChildren("1202")); // حساب واحد فقط — لا حسابات إضافية من حلقة
         }
 
         [Fact]
@@ -196,7 +196,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Create_WithLeafParentAccount_Fails()
         {
-            var leafAccount = _accounts.Create(new CreateAccountDto { ParentId = _accountRepo.GetByCode("1210").Id, Name = "حساب ورقي", IsLeaf = true });
+            var leafAccount = _accounts.Create(new CreateAccountDto { ParentId = _accountRepo.GetByCode("1201").Id, Name = "حساب ورقي", IsLeaf = true });
             Assert.True(leafAccount.IsSuccess, leafAccount.ErrorMessage);
 
             _settings.Set(SettingKeys.Accounts.Customers, leafAccount.Value.Code);
@@ -218,13 +218,13 @@ namespace PrimeERP.Tests.Services
             var nextCode = _numbers.Peek("Customer");
             _customerRepo.Insert(new Customer { Code = nextCode, Name = "عميل موجود مسبقاً", IsActive = true });
 
-            var accountsBefore = _accountRepo.GetChildren("1220").Count;
+            var accountsBefore = _accountRepo.GetChildren("1202").Count;
 
             var result = _service.Create(BasicDto("سيفشل بسبب تصادم كود العميل"));
 
             Assert.False(result.IsSuccess);
             Assert.Single(_customerRepo.GetAll(activeOnly: false)); // العميل المزروع فقط، لا عميل إضافي معلَّق
-            Assert.Equal(accountsBefore, _accountRepo.GetChildren("1220").Count); // الحساب الذي أُنشئ تراجع أيضاً
+            Assert.Equal(accountsBefore, _accountRepo.GetChildren("1202").Count); // الحساب الذي أُنشئ تراجع أيضاً
         }
 
         // ===================== الائتمان =====================
@@ -277,7 +277,7 @@ namespace PrimeERP.Tests.Services
             var created = _service.Create(BasicDto("رصيد مطابق"));
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
-            SeedPostedEntry("2026-01-05", (created.Value.AccountCode, 300m, 0m), ("1240", 0m, 300m));
+            SeedPostedEntry("2026-01-05", (created.Value.AccountCode, 300m, 0m), ("1204", 0m, 300m));
             _accounts.RecalculateBalance(created.Value.AccountCode);
 
             var result = _service.RecalculateBalance(created.Value.Id);
@@ -293,7 +293,7 @@ namespace PrimeERP.Tests.Services
             Assert.True(created.IsSuccess, created.ErrorMessage);
             Assert.Equal(0m, _customerRepo.GetById(created.Value.Id).Balance);
 
-            SeedPostedEntry("2026-01-05", (created.Value.AccountCode, 750m, 0m), ("1240", 0m, 750m));
+            SeedPostedEntry("2026-01-05", (created.Value.AccountCode, 750m, 0m), ("1204", 0m, 750m));
             _service.RecalculateBalance(created.Value.Id);
 
             Assert.Equal(750m, _customerRepo.GetById(created.Value.Id).Balance);

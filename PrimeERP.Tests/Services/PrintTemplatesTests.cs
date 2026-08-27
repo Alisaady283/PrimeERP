@@ -66,8 +66,8 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void AccountStatementPrint_BuildsNonEmptyFixedDocument()
         {
-            var cash = CreateLeaf("1240", "نقدية اختبار الطباعة");
-            var revenue = CreateLeaf("4100", "إيراد اختبار الطباعة");
+            var cash = CreateLeaf("1204", "نقدية اختبار الطباعة");
+            var revenue = CreateLeaf("41", "إيراد اختبار الطباعة");
             Post(cash, revenue, "2026-01-05", 500m);
             Post(cash, revenue, "2026-01-10", 300m);
 
@@ -89,8 +89,8 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void AccountStatementPrint_RunningBalance_IsSequential()
         {
-            var cash = CreateLeaf("1240", "نقدية تسلسل");
-            var revenue = CreateLeaf("4100", "إيراد تسلسل");
+            var cash = CreateLeaf("1204", "نقدية تسلسل");
+            var revenue = CreateLeaf("41", "إيراد تسلسل");
             Post(cash, revenue, "2026-01-05", 500m);
             Post(cash, revenue, "2026-01-10", 300m);
 
@@ -107,8 +107,8 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void TrialBalancePrint_IsLandscape_AndBuildsNonEmptyFixedDocument()
         {
-            var cash = CreateLeaf("1240", "نقدية ميزان");
-            var revenue = CreateLeaf("4100", "إيراد ميزان");
+            var cash = CreateLeaf("1204", "نقدية ميزان");
+            var revenue = CreateLeaf("41", "إيراد ميزان");
             Post(cash, revenue, "2026-01-05", 1000m);
 
             var trialBalance = _journal.GetTrialBalance(new DateTime(2026, 1, 1), new DateTime(2026, 1, 31)).Value;
@@ -130,8 +130,8 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void TrialBalancePrint_Totals_AreCorrect()
         {
-            var cash = CreateLeaf("1240", "نقدية إجماليات");
-            var revenue = CreateLeaf("4100", "إيراد إجماليات");
+            var cash = CreateLeaf("1204", "نقدية إجماليات");
+            var revenue = CreateLeaf("41", "إيراد إجماليات");
             Post(cash, revenue, "2026-01-05", 700m);
 
             var trialBalance = _journal.GetTrialBalance(new DateTime(2026, 1, 1), new DateTime(2026, 1, 31)).Value;
@@ -149,8 +149,8 @@ namespace PrimeERP.Tests.Services
             // حقيقية) — يختبر مسار التحذير في القالب نفسه بمعزل عن صحة الخدمة.
             var lines = new List<TrialBalanceLine>
             {
-                new() { Code = "1240", Name = "نقدية", Level = 3, Type = AccountType.Asset,   IsLeaf = true, ClosingDebit = 500m, ClosingCredit = 0m },
-                new() { Code = "4100", Name = "إيراد",  Level = 3, Type = AccountType.Revenue, IsLeaf = true, ClosingDebit = 0m,   ClosingCredit = 300m }
+                new() { Code = "1204", Name = "نقدية", Level = 3, Type = AccountType.Asset,   IsLeaf = true, ClosingDebit = 500m, ClosingCredit = 0m },
+                new() { Code = "41", Name = "إيراد",  Level = 3, Type = AccountType.Revenue, IsLeaf = true, ClosingDebit = 0m,   ClosingCredit = 300m }
             };
 
             var printable = TrialBalancePrintTemplate.Build(lines, new DateTime(2026, 1, 1), new DateTime(2026, 1, 31), includesDrafts: false);

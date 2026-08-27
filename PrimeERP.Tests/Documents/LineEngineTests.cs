@@ -61,7 +61,7 @@ namespace PrimeERP.Tests.Documents
         [Fact]
         public void JournalLine_WithBothDebitAndCredit_IsAnError()
         {
-            var line = new DocumentLine { ItemCode = "1110", Debit = 100, Credit = 50 };
+            var line = new DocumentLine { ItemCode = "1101", Debit = 100, Credit = 50 };
             var errors = LineValidationEngine.Validate(line, JournalColumns,
                 new DocumentLinesContext { Mode = DocumentLinesMode.Journal });
             Assert.True(errors.ContainsKey(nameof(DocumentLine.Debit)));
@@ -70,7 +70,7 @@ namespace PrimeERP.Tests.Documents
         [Fact]
         public void JournalLine_WithNeitherDebitNorCredit_IsAnError()
         {
-            var line = new DocumentLine { ItemCode = "1110" };
+            var line = new DocumentLine { ItemCode = "1101" };
             var errors = LineValidationEngine.Validate(line, JournalColumns,
                 new DocumentLinesContext { Mode = DocumentLinesMode.Journal });
             Assert.True(errors.ContainsKey(nameof(DocumentLine.Debit)));
@@ -79,7 +79,7 @@ namespace PrimeERP.Tests.Documents
         [Fact]
         public void JournalLine_WithDebitOnly_IsValid()
         {
-            var line = new DocumentLine { ItemCode = "1110", Debit = 100 };
+            var line = new DocumentLine { ItemCode = "1101", Debit = 100 };
             var errors = LineValidationEngine.Validate(line, JournalColumns,
                 new DocumentLinesContext { Mode = DocumentLinesMode.Journal });
             Assert.Empty(errors);

@@ -7,6 +7,7 @@ using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.Services.Print;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Data.Core;
+using PrimeERP.Data.Migrations;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Data.Seeders;
 using PrimeERP.Domain.Contracts;
@@ -126,6 +127,8 @@ namespace PrimeERP.App.Bootstrap
             var accounts = services.GetRequiredService<IAccountRepository>();
             accounts.CreateTable();
             accounts.SeedDefaults();
+
+            MigrationRunner.Register("2026_08_RenumberAccountCodes", AccountCodeRenumberMigration.Apply);
 
             services.GetRequiredService<IJournalRepository>().CreateTable();
             services.GetRequiredService<IFiscalPeriodRepository>().CreateTable();

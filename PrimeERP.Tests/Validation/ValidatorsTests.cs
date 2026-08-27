@@ -85,8 +85,8 @@ namespace PrimeERP.Tests.Validation
                 EntryDate = "2026-01-01",
                 Lines = new()
                 {
-                    new() { AccountCode = "1240", Debit = 100m, Credit = 0m },
-                    new() { AccountCode = "4100", Debit = 0m,   Credit = 50m }
+                    new() { AccountCode = "1204", Debit = 100m, Credit = 0m },
+                    new() { AccountCode = "41", Debit = 0m,   Credit = 50m }
                 }
             };
 
@@ -100,7 +100,7 @@ namespace PrimeERP.Tests.Validation
             var entry = new JournalEntry
             {
                 EntryDate = "2026-01-01",
-                Lines = new() { new() { AccountCode = "1240", Debit = 100m, Credit = 0m } }
+                Lines = new() { new() { AccountCode = "1204", Debit = 100m, Credit = 0m } }
             };
 
             var result = new JournalValidator().Validate(entry);
@@ -115,8 +115,8 @@ namespace PrimeERP.Tests.Validation
                 EntryDate = "2026-01-01",
                 Lines = new()
                 {
-                    new() { AccountCode = "1240", Debit = 100m, Credit = 100m },
-                    new() { AccountCode = "4100", Debit = 0m,   Credit = 100m }
+                    new() { AccountCode = "1204", Debit = 100m, Credit = 100m },
+                    new() { AccountCode = "41", Debit = 0m,   Credit = 100m }
                 }
             };
 
@@ -132,8 +132,8 @@ namespace PrimeERP.Tests.Validation
                 EntryDate = "not-a-date",
                 Lines = new()
                 {
-                    new() { AccountCode = "1240", Debit = 100m, Credit = 0m },
-                    new() { AccountCode = "4100", Debit = 0m,   Credit = 100m }
+                    new() { AccountCode = "1204", Debit = 100m, Credit = 0m },
+                    new() { AccountCode = "41", Debit = 0m,   Credit = 100m }
                 }
             };
 
@@ -149,8 +149,8 @@ namespace PrimeERP.Tests.Validation
                 EntryDate = "2026-01-01",
                 Lines = new()
                 {
-                    new() { AccountCode = "1240", Debit = 100m, Credit = 0m },
-                    new() { AccountCode = "4100", Debit = 0m,   Credit = 100m }
+                    new() { AccountCode = "1204", Debit = 100m, Credit = 0m },
+                    new() { AccountCode = "41", Debit = 0m,   Credit = 100m }
                 }
             };
 
@@ -296,7 +296,7 @@ namespace PrimeERP.Tests.Validation
         public void Fails_WhenCodeAlreadyExists()
         {
             // 1240 (الصندوق) مزروع افتراضياً عند تهيئة قاعدة الاختبار (راجع IAccountRepository.SeedDefaults في TestDatabaseFixture).
-            var result = new AccountValidator(_repo, isEdit: false, checkUniqueness: true).Validate(new Account { Code = "1240", Name = "حساب جديد" });
+            var result = new AccountValidator(_repo, isEdit: false, checkUniqueness: true).Validate(new Account { Code = "1204", Name = "حساب جديد" });
             Assert.False(result.IsValid);
             Assert.NotNull(result["Code"]);
         }
@@ -305,7 +305,7 @@ namespace PrimeERP.Tests.Validation
         public void Succeeds_OnEdit_EvenWithExistingCode()
         {
             // isEdit=true يتخطّى فحص التفرّد — السجل يعدّل نفسه، لا يتصادم مع كوده الحالي.
-            var result = new AccountValidator(_repo, isEdit: true).Validate(new Account { Code = "1240", Name = "الصندوق المعدَّل" });
+            var result = new AccountValidator(_repo, isEdit: true).Validate(new Account { Code = "1204", Name = "الصندوق المعدَّل" });
             Assert.True(result.IsValid);
         }
 

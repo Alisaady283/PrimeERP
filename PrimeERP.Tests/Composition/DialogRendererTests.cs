@@ -49,7 +49,7 @@ namespace PrimeERP.Tests.Composition
                     try
                     {
                         window = System.Windows.Application.Current.Windows.OfType<Window>().Last();
-                        SetComboSelection(window, "1200");
+                        SetComboSelection(window, "12");
                         SetTextBoxValue(window, "حساب اختباري");
                         ClickButton(window, LocalizationService.Get("Str.Save"));
                     }
