@@ -157,6 +157,20 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
+        public void Create_GeneratesCorrectCode_KeepsScalingPastFourLevels()
+        {
+            var l4 = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "مستوى 4", IsLeaf = false });
+            Assert.True(l4.IsSuccess, l4.ErrorMessage);
+            Assert.Equal("1220001", l4.Value.Code);
+            Assert.Equal(4, l4.Value.Level);
+
+            var l5 = _service.Create(new CreateAccountDto { ParentId = l4.Value.Id, Name = "مستوى 5", IsLeaf = true });
+            Assert.True(l5.IsSuccess, l5.ErrorMessage);
+            Assert.Equal("12200010001", l5.Value.Code);
+            Assert.Equal(5, l5.Value.Level);
+        }
+
+        [Fact]
         public void Create_UnderLeafAccount_Fails()
         {
             var leaf = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل leaf", IsLeaf = true });
