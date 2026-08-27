@@ -195,6 +195,44 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
+        public void Create_RespectsExplicitIsActiveFalse_AndSetsStatusText()
+        {
+            var result = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "حساب معطَّل", IsLeaf = true, IsActive = false });
+
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.False(result.Value.IsActive);
+            Assert.Equal(LocalizationService.Get("Str.Inactive"), result.Value.StatusText);
+        }
+
+        [Fact]
+        public void Create_Default_IsActiveTrue_PersistsAndRoundTrips()
+        {
+            var created = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "حساب نشط", IsLeaf = true });
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+
+            var reloaded = _service.GetById(created.Value.Id);
+            Assert.True(reloaded.IsSuccess);
+            Assert.True(reloaded.Value.IsActive);
+            Assert.Equal(LocalizationService.Get("Str.Active"), reloaded.Value.StatusText);
+            Assert.True(reloaded.Value.CreatedAt > DateTime.MinValue);
+        }
+
+        [Fact]
+        public void Update_TogglesIsActive_PersistsBothDirections()
+        {
+            var created = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "حساب يتغيّر", IsLeaf = true });
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+
+            var deactivate = _service.Update(new UpdateAccountDto { Id = created.Value.Id, Name = created.Value.Name, IsLeaf = true, IsActive = false });
+            Assert.True(deactivate.IsSuccess, deactivate.ErrorMessage);
+            Assert.False(_service.GetById(created.Value.Id).Value.IsActive);
+
+            var reactivate = _service.Update(new UpdateAccountDto { Id = created.Value.Id, Name = created.Value.Name, IsLeaf = true, IsActive = true });
+            Assert.True(reactivate.IsSuccess, reactivate.ErrorMessage);
+            Assert.True(_service.GetById(created.Value.Id).Value.IsActive);
+        }
+
+        [Fact]
         public void Create_UnderLeafAccount_Fails()
         {
             var leaf = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل leaf", IsLeaf = true });

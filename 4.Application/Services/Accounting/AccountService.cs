@@ -240,9 +240,10 @@ namespace PrimeERP.Application.Services.Accounting
 
             var nameChanged = account.Name != dto.Name; // قبل الاستبدال أدناه
 
-            account.Name   = dto.Name;
-            account.Notes  = dto.Notes;
-            account.IsLeaf = dto.IsLeaf;
+            account.Name     = dto.Name;
+            account.Notes    = dto.Notes;
+            account.IsLeaf   = dto.IsLeaf;
+            account.IsActive = dto.IsActive;
 
             var validation = new AccountValidator(_accounts, isEdit: true).Validate(account);
             if (!validation.IsValid)
@@ -270,7 +271,7 @@ namespace PrimeERP.Application.Services.Accounting
                 }
             });
 
-            Audit.Log(EntityName, account.Id, AuditAction.Update, newValue: new { account.Name, account.IsLeaf });
+            Audit.Log(EntityName, account.Id, AuditAction.Update, newValue: new { account.Name, account.IsLeaf, account.IsActive });
             return Result.Ok();
         }
 
@@ -472,7 +473,7 @@ namespace PrimeERP.Application.Services.Accounting
             IsLeaf     = dto.IsLeaf,
             Type       = parent.Type,
             Notes      = dto.Notes,
-            IsActive   = true
+            IsActive   = dto.IsActive
         };
 
         /// <summary>نتيجة تحديد وضع الربط التلقائي (Create/Update/Delete الثلاثة تشترك في نفس المنطق) — كلاس لا Tuple لوضوح الاستدعاء.</summary>
@@ -578,7 +579,10 @@ namespace PrimeERP.Application.Services.Accounting
             HasChildren      = false,
             HasTransactions  = false,
             IsSystem         = false,
-            StatusVariant    = StatusVariant.Success
+            StatusVariant    = a.IsActive ? StatusVariant.Success : StatusVariant.Danger,
+            StatusText       = a.IsActive ? LocalizationService.Get("Str.Active") : LocalizationService.Get("Str.Inactive"),
+            CreatedAt        = DateTime.Now,
+            UpdatedAt        = DateTime.Now
         };
 
         private bool IsSystemAccount(string code) =>
@@ -655,7 +659,10 @@ namespace PrimeERP.Application.Services.Accounting
                 // استعلام لكل حساب — مقبول لحجم شجرة حسابات نموذجي؛ يُستبدل باستعلام مجمَّع واحد لو كبر العدد كثيراً.
                 HasTransactions  = _journal.HasLinesForAccount(a.Code),
                 IsSystem         = IsSystemAccount(a.Code),
-                StatusVariant    = a.IsActive ? StatusVariant.Success : StatusVariant.Danger
+                StatusVariant    = a.IsActive ? StatusVariant.Success : StatusVariant.Danger,
+                StatusText       = a.IsActive ? Localization.Get("Str.Active") : Localization.Get("Str.Inactive"),
+                CreatedAt        = a.CreatedAt,
+                UpdatedAt        = a.UpdatedAt
             };
         }
 

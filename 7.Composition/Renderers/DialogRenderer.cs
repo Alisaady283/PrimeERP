@@ -54,7 +54,11 @@ namespace PrimeERP.Composition.Renderers
                 }
                 else if (isEdit)
                 {
-                    SetControlValue(control, field.Kind, editItem.GetType().GetProperty(field.Key)?.GetValue(editItem));
+                    SetControlValue(control, field, editItem.GetType().GetProperty(field.Key)?.GetValue(editItem));
+                }
+                else if (field.DefaultValue != null)
+                {
+                    SetControlValue(control, field, field.DefaultValue);
                 }
 
                 if (isEdit && field.IsReadOnlyOnEdit) control.IsEnabled = false;
@@ -176,12 +180,16 @@ namespace PrimeERP.Composition.Renderers
             };
         }
 
-        private static void SetControlValue(FrameworkElement control, FieldKind kind, object value)
+        private static void SetControlValue(FrameworkElement control, FieldDefinition field, object value)
         {
             if (value == null) return;
-            switch (kind)
+            switch (field.Kind)
             {
-                case FieldKind.Text: case FieldKind.ReadOnly: ((AppTextBox)control).Text = value.ToString(); break;
+                case FieldKind.Text: ((AppTextBox)control).Text = value.ToString(); break;
+                case FieldKind.ReadOnly:
+                    ((AppTextBox)control).Text = !string.IsNullOrEmpty(field.DisplayFormat) && value is IFormattable f
+                        ? f.ToString(field.DisplayFormat, null) : value.ToString();
+                    break;
                 case FieldKind.TextArea: ((AppTextArea)control).Text = value.ToString(); break;
                 case FieldKind.Number: ((AppNumericBox)control).Value = Convert.ToDecimal(value); break;
                 case FieldKind.Date: ((AppDatePicker)control).SelectedDate = value as DateTime?; break;

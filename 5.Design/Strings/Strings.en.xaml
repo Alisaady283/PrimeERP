@@ -23,6 +23,11 @@
     <sys:String x:Key="Str.Details">Details</sys:String>
     <sys:String x:Key="Str.ExpandAll">Expand All</sys:String>
     <sys:String x:Key="Str.CollapseAll">Collapse All</sys:String>
+    <sys:String x:Key="Str.Active">Active</sys:String>
+    <sys:String x:Key="Str.Inactive">Inactive</sys:String>
+    <sys:String x:Key="Str.Status">Status</sys:String>
+    <sys:String x:Key="Str.CreatedAt">Created At</sys:String>
+    <sys:String x:Key="Str.UpdatedAt">Last Updated</sys:String>
     <sys:String x:Key="Str.Module.Customers">Customers</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">Suppliers</sys:String>
     <sys:String x:Key="Str.Module.Accounts">Chart of Accounts</sys:String>

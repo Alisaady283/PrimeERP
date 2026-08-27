@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
@@ -33,6 +34,9 @@ namespace PrimeERP.Application.DTOs.Accounting
 
         /// <summary>Active → Success، Inactive → Danger — من مفردات الحالة الستة فقط.</summary>
         public StatusVariant StatusVariant { get; set; }
+        public string   StatusText { get; set; }
+        public DateTime CreatedAt  { get; set; }
+        public DateTime UpdatedAt  { get; set; }
     }
 
     /// <summary>للشجرة — نفس حقول AccountDto + أبناء.</summary>
@@ -55,6 +59,7 @@ namespace PrimeERP.Application.DTOs.Accounting
         public int    ParentId { get; set; }
         public string Name     { get; set; }
         public bool   IsLeaf   { get; set; } = true;
+        public bool   IsActive { get; set; } = true;
         public string Notes    { get; set; }
         public LinkedEntityType LinkedEntityType { get; set; } = LinkedEntityType.None;
 
@@ -69,10 +74,11 @@ namespace PrimeERP.Application.DTOs.Accounting
 
     public class UpdateAccountDto
     {
-        public int    Id     { get; set; }
-        public string Name   { get; set; }
-        public bool   IsLeaf { get; set; }
-        public string Notes  { get; set; }
+        public int    Id       { get; set; }
+        public string Name     { get; set; }
+        public bool   IsLeaf   { get; set; }
+        public bool   IsActive { get; set; }
+        public string Notes    { get; set; }
     }
 
     public class AccountStatementLine

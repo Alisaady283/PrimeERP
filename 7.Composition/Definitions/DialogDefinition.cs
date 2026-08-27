@@ -19,6 +19,12 @@ namespace PrimeERP.Composition.Definitions
         // بلا تسجيل DI حقيقي حتى الآن — نطاق مُبسَّط عمداً، راجع تقرير R11).
         public string PickerType { get; init; }
         public bool PickerLeafOnly { get; init; }
+
+        // وضع الإضافة فقط (لا Picker) — تُدفَع للعنصر لو لا editItem؛ تُتجاهَل في التعديل.
+        public object DefaultValue { get; init; }
+
+        // Kind.ReadOnly فقط — تنسيق عرض القيمة (مثال "yyyy-MM-dd HH:mm" لتاريخ)، بلا تنسيق = ToString() عادية.
+        public string DisplayFormat { get; init; }
     }
 
     public class DialogDefinition

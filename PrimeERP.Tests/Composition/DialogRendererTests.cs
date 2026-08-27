@@ -75,6 +75,61 @@ namespace PrimeERP.Tests.Composition
         }
 
         [Fact]
+        public void ShowAndSave_AddMode_StatusCheckboxDefaultsToChecked_AndUncheckingPersistsInactive()
+        {
+            WpfApplicationFixture.Run(() =>
+            {
+                UIServices.Initialize(_db.Services);
+                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+
+                var registry = _db.Services.GetRequiredService<IModuleRegistry>();
+                var dialog = registry.Get("Accounts").Dialog;
+                var toast = _db.Services.GetRequiredService<IToastService>();
+
+                bool? statusWasCheckedByDefault = null;
+                Exception thrown = null;
+                Window window = null;
+
+                Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                {
+                    try
+                    {
+                        window = System.Windows.Application.Current.Windows.OfType<Window>().Last();
+                        SetComboSelection(window, "12");
+                        SetTextBoxValue(window, "حساب حالة افتراضية");
+
+                        var statusBox = FindAllVisualChildren<AppCheckBox>(window).Last();
+                        statusWasCheckedByDefault = statusBox.IsChecked;
+                        statusBox.IsChecked = false;
+
+                        ClickButton(window, LocalizationService.Get("Str.Save"));
+                    }
+                    catch (Exception ex) { thrown = ex; window?.Close(); }
+                }));
+
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+                timer.Tick += (_, __) => { timer.Stop(); window?.Close(); };
+                timer.Start();
+
+                bool saved = false;
+                try { saved = DialogRenderer.ShowAndSave(dialog, _db.Services, toast); }
+                catch (Exception ex) { thrown = ex; }
+
+                Assert.Null(thrown);
+                Assert.True(saved);
+                Assert.True(statusWasCheckedByDefault);
+
+                // اختبار GetPaged العادي (بلا IncludeInactive) لا يُظهر حسابات غير نشطة عمداً — نفس سلوك حذف
+                // منطقي؛ IncludeInactive=true هنا للتحقق فقط، لا استخدام حقيقي متوقَّع من واجهة عادية.
+                var accounts = _db.Services.GetRequiredService<IAccountService>();
+                var created = accounts.GetPaged(1, 5000, new AccountTreeFilter { IncludeInactive = true })
+                    .Value.Items.Single(a => a.Name == "حساب حالة افتراضية");
+                Assert.False(created.IsActive);
+                Assert.Equal(LocalizationService.Get("Str.Inactive"), created.StatusText);
+            });
+        }
+
+        [Fact]
         public void ShowAndSave_EditMode_UpdatesAccount_WithoutCrashing()
         {
             WpfApplicationFixture.Run(() =>
@@ -93,6 +148,7 @@ namespace PrimeERP.Tests.Composition
                 bool saved = false;
                 Exception thrown = null;
                 Window window = null;
+                string createdAtShown = null;
 
                 Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                 {
@@ -100,6 +156,12 @@ namespace PrimeERP.Tests.Composition
                     {
                         window = System.Windows.Application.Current.Windows.OfType<Window>().Last();
                         SetTextBoxValue(window, "بعد التعديل");
+
+                        // ترتيب الحقول: ParentId(Picker), Name(Text), IsLeaf(Check), Notes(TextArea),
+                        // IsActive(Check), CreatedAt(ReadOnly), UpdatedAt(ReadOnly) — فهرس 1 هو CreatedAt.
+                        var textBoxes = FindAllVisualChildren<AppTextBox>(window).ToList();
+                        createdAtShown = textBoxes[1].Text;
+
                         ClickButton(window, LocalizationService.Get("Str.Save"));
                     }
                     catch (Exception ex) { thrown = ex; window?.Close(); }
@@ -114,6 +176,7 @@ namespace PrimeERP.Tests.Composition
 
                 Assert.Null(thrown);
                 Assert.True(saved);
+                Assert.Equal(created.Value.CreatedAt.ToString("yyyy-MM-dd HH:mm"), createdAtShown);
 
                 var updated = accountsService.GetById(created.Value.Id);
                 Assert.Equal("بعد التعديل", updated.Value.Name);

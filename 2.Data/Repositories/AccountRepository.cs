@@ -116,13 +116,13 @@ namespace PrimeERP.Data.Repositories
         /// <summary>إدراج صف كما هو — الخدمة هي من تحسب Level وتضبط IsLeaf للأب والربط والـ Audit، لا هنا.</summary>
         public int Insert(Account a, DbConnection conn = null, DbTransaction tx = null) =>
             InsertGetId(
-                "INSERT INTO Accounts (Code, Name, ParentCode, Level, IsLeaf, Type) VALUES (@code, @name, @parent, @level, @leaf, @type)",
-                conn, tx, ("@code", a.Code), ("@name", a.Name), ("@parent", a.ParentCode), ("@level", a.Level), ("@leaf", a.IsLeaf), ("@type", a.Type));
+                "INSERT INTO Accounts (Code, Name, ParentCode, Level, IsLeaf, Type, Notes, IsActive) VALUES (@code, @name, @parent, @level, @leaf, @type, @notes, @active)",
+                conn, tx, ("@code", a.Code), ("@name", a.Name), ("@parent", a.ParentCode), ("@level", a.Level), ("@leaf", a.IsLeaf), ("@type", a.Type), ("@notes", a.Notes ?? ""), ("@active", a.IsActive));
 
         /// <summary>تحديث حقول الحساب نفسه فقط — مزامنة العميل/المورد المرتبط والـ Audit مسؤولية الخدمة.</summary>
         public void Update(Account a, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec("UPDATE Accounts SET Name = @name, Notes = @notes, IsLeaf = @leaf, UpdatedAt = @now WHERE Code = @code",
-                conn, tx, ("@name", a.Name), ("@notes", a.Notes ?? ""), ("@leaf", a.IsLeaf), ("@now", DateTime.Now), ("@code", a.Code));
+            Exec("UPDATE Accounts SET Name = @name, Notes = @notes, IsLeaf = @leaf, IsActive = @active, UpdatedAt = @now WHERE Code = @code",
+                conn, tx, ("@name", a.Name), ("@notes", a.Notes ?? ""), ("@leaf", a.IsLeaf), ("@active", a.IsActive), ("@now", DateTime.Now), ("@code", a.Code));
 
         /// <summary>تحديث الاسم فقط — تستخدمها AccountService.UpdateName لمزامنة اسم حساب من تعديل الطرف المرتبط (عميل/مورد).</summary>
         public void UpdateName(DbConnection conn, DbTransaction tx, string code, string name) =>

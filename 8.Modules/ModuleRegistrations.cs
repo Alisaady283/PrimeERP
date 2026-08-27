@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.Services.Accounting;
@@ -66,7 +68,7 @@ namespace PrimeERP.Modules
                 },
                 // أعمدة لوحة التفاصيل (TreeSplit) — لا شبكة (Columns.Header فقط، لا Width/Align/Footer، غير
                 // مُستهلَكة هنا؛ TreeRenderer.BuildDetailsPanel يقرأ Header/Binding/Format فقط).
-                Columns = new()
+                Columns = new List<GridColumn>
                 {
                     new() { Header = LocalizationService.Get("Str.Code"),    Binding = nameof(AccountDto.Code) },
                     new() { Header = LocalizationService.Get("Str.Name"),    Binding = nameof(AccountDto.Name) },
@@ -74,7 +76,7 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Type"),    Binding = nameof(AccountDto.TypeName) },
                     new() { Header = LocalizationService.Get("Str.AcceptsEntries"), Binding = nameof(AccountDto.IsLeaf) },
                     new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(AccountDto.Balance), Format = "N2" },
-                },
+                }.Concat(StandardFields.AuditColumns()).ToList(),
                 Dialog = new DialogDefinition
                 {
                     TitleKey = "Str.Accounts.Add",
@@ -83,13 +85,13 @@ namespace PrimeERP.Modules
                     ServiceType = typeof(IAccountService),
                     CreateDtoType = typeof(CreateAccountDto),
                     UpdateDtoType = typeof(UpdateAccountDto),
-                    Fields = new()
+                    Fields = new List<FieldDefinition>
                     {
                         new() { Key = nameof(CreateAccountDto.ParentId), LabelKey = "Str.ParentAccount", Kind = FieldKind.Picker, IsRequired = true, IsReadOnlyOnEdit = true, PickerType = "Account" },
                         new() { Key = nameof(CreateAccountDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
                         new() { Key = nameof(CreateAccountDto.IsLeaf), LabelKey = "Str.AcceptsEntries", Kind = FieldKind.Check },
                         new() { Key = nameof(CreateAccountDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea },
-                    }
+                    }.Concat(StandardFields.DialogFields()).ToList()
                 }
             });
         }
