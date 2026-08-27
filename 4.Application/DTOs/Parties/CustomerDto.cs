@@ -1,3 +1,4 @@
+using System;
 using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.DTOs.Parties
@@ -8,6 +9,10 @@ namespace PrimeERP.Application.DTOs.Parties
         public int    Id              { get; set; }
         public string Code            { get; set; }
         public string Name            { get; set; }
+        public int?     CategoryId    { get; set; }
+        public string   CategoryName  { get; set; }
+        public DateTime CreatedAt     { get; set; }
+        public DateTime UpdatedAt     { get; set; }
         public string NameEn          { get; set; }
         public string Phone           { get; set; }
         public string Phone2          { get; set; }
@@ -56,6 +61,8 @@ namespace PrimeERP.Application.DTOs.Parties
         public decimal CreditLimit     { get; set; }
         public int     PaymentTermDays { get; set; }
         public string  Notes           { get; set; }
+        public int?    CategoryId      { get; set; }
+        public bool    IsActive        { get; set; } = true;
     }
 
     public class UpdateCustomerDto
@@ -75,6 +82,7 @@ namespace PrimeERP.Application.DTOs.Parties
         public int     PaymentTermDays { get; set; }
         public string  Notes           { get; set; }
         public bool    IsActive        { get; set; }
+        public int?    CategoryId      { get; set; }
     }
 
     public class CustomerFilter

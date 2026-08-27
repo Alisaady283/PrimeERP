@@ -43,6 +43,12 @@
     <sys:String x:Key="Str.Category.Add">Add Category</sys:String>
     <sys:String x:Key="Str.Category.Edit">Edit Category</sys:String>
     <sys:String x:Key="Str.AddCategory">Add New Category</sys:String>
+    <sys:String x:Key="Str.Email">Email</sys:String>
+    <sys:String x:Key="Str.CreditLimit">Credit Limit</sys:String>
+    <sys:String x:Key="Str.Customers.Add">Add Customer</sys:String>
+    <sys:String x:Key="Str.Customers.Edit">Edit Customer</sys:String>
+    <sys:String x:Key="Str.Suppliers.Add">Add Supplier</sys:String>
+    <sys:String x:Key="Str.Suppliers.Edit">Edit Supplier</sys:String>
     <sys:String x:Key="Str.Module.Customers">Customers</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">Suppliers</sys:String>
     <sys:String x:Key="Str.Module.Accounts">Chart of Accounts</sys:String>

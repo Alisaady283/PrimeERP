@@ -3,6 +3,7 @@ using System.Linq;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Services.Parties;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Platform.Localization;
@@ -31,6 +32,24 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(CustomerDto.Name), Width = 220, IsStarWidth = true },
                     new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(CustomerDto.Phone), Width = 130 },
                     new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(CustomerDto.Balance), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Customers.Add",
+                    TitleEditKey = "Str.Customers.Edit",
+                    GridColumns = 2,
+                    ServiceType = typeof(ICustomerService),
+                    CreateDtoType = typeof(CreateCustomerDto),
+                    UpdateDtoType = typeof(UpdateCustomerDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateCustomerDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateCustomerDto.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
+                        new() { Key = nameof(CreateCustomerDto.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 150 },
+                        new() { Key = nameof(CreateCustomerDto.CreditLimit), LabelKey = "Str.CreditLimit", Kind = FieldKind.Number },
+                        new() { Key = nameof(CreateCustomerDto.CategoryId), LabelKey = "Str.ParentCategory", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Customers" },
+                        new() { Key = nameof(CreateCustomerDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }.Concat(StandardFields.DialogFields()).ToList()
                 }
             });
 
@@ -45,6 +64,24 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(SupplierDto.Code), Width = 90, Align = ColumnAlign.Center },
                     new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(SupplierDto.Name), Width = 220, IsStarWidth = true },
                     new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(SupplierDto.Phone), Width = 130 },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Suppliers.Add",
+                    TitleEditKey = "Str.Suppliers.Edit",
+                    GridColumns = 2,
+                    ServiceType = typeof(ISupplierService),
+                    CreateDtoType = typeof(CreateSupplierDto),
+                    UpdateDtoType = typeof(UpdateSupplierDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateSupplierDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateSupplierDto.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
+                        new() { Key = nameof(CreateSupplierDto.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 150 },
+                        new() { Key = nameof(CreateSupplierDto.CreditLimit), LabelKey = "Str.CreditLimit", Kind = FieldKind.Number },
+                        new() { Key = nameof(CreateSupplierDto.CategoryId), LabelKey = "Str.ParentCategory", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Suppliers" },
+                        new() { Key = nameof(CreateSupplierDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }.Concat(StandardFields.DialogFields()).ToList()
                 }
             });
 

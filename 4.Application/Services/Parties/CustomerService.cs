@@ -53,14 +53,17 @@ namespace PrimeERP.Application.Services.Parties
         private readonly ICustomerRepository _customers;
         private readonly IJournalRepository _journalRepo;
         private readonly IAccountRepository _accountRepo;
+        private readonly ICategoryRepository _categories;
 
         public CustomerService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
-            IAccountService accounts, INumberSequenceService numbers, ICustomerRepository customers, IAccountRepository accountRepo, IJournalRepository journalRepo)
+            IAccountService accounts, INumberSequenceService numbers, ICustomerRepository customers, IAccountRepository accountRepo,
+            IJournalRepository journalRepo, ICategoryRepository categories)
             : base(permissions, settings, localization, audit, accounts, numbers, accountRepo)
         {
             _customers = customers;
             _accountRepo = accountRepo;
             _journalRepo = journalRepo;
+            _categories = categories;
         }
 
         // ===================== القراءة =====================
@@ -208,6 +211,7 @@ namespace PrimeERP.Application.Services.Parties
             customer.PaymentTermDays = dto.PaymentTermDays;
             customer.Notes           = dto.Notes;
             customer.IsActive        = dto.IsActive;
+            customer.CategoryId      = dto.CategoryId;
             customer.UpdatedBy       = CurrentUser;
 
             var validation = Validator.Validate(customer);
@@ -279,7 +283,8 @@ namespace PrimeERP.Application.Services.Parties
             CreditLimit     = dto.CreditLimit,
             PaymentTermDays = dto.PaymentTermDays,
             Notes           = dto.Notes,
-            IsActive        = true
+            CategoryId      = dto.CategoryId,
+            IsActive        = dto.IsActive
         };
 
         protected override CustomerDto ToDto(Customer c)
@@ -312,6 +317,10 @@ namespace PrimeERP.Application.Services.Parties
                 PaymentTermDays   = c.PaymentTermDays,
                 IsActive          = c.IsActive,
                 Notes             = c.Notes,
+                CategoryId        = c.CategoryId,
+                CategoryName      = c.CategoryId != null ? _categories.GetById(c.CategoryId.Value)?.Name : null,
+                CreatedAt         = c.CreatedAt,
+                UpdatedAt         = c.UpdatedAt,
                 StatusVariant     = variant,
                 StatusText        = Msg($"Status.{statusKey}"),
                 CanEdit           = Can("Edit"),

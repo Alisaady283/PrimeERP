@@ -43,6 +43,12 @@
     <sys:String x:Key="Str.Category.Add">إضافة تصنيف</sys:String>
     <sys:String x:Key="Str.Category.Edit">تعديل تصنيف</sys:String>
     <sys:String x:Key="Str.AddCategory">إضافة تصنيف جديد</sys:String>
+    <sys:String x:Key="Str.Email">البريد الإلكتروني</sys:String>
+    <sys:String x:Key="Str.CreditLimit">الحد الائتماني</sys:String>
+    <sys:String x:Key="Str.Customers.Add">إضافة عميل</sys:String>
+    <sys:String x:Key="Str.Customers.Edit">تعديل عميل</sys:String>
+    <sys:String x:Key="Str.Suppliers.Add">إضافة مورد</sys:String>
+    <sys:String x:Key="Str.Suppliers.Edit">تعديل مورد</sys:String>
     <sys:String x:Key="Str.Module.Customers">العملاء</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">الموردون</sys:String>
     <sys:String x:Key="Str.Module.Accounts">شجرة الحسابات</sys:String>

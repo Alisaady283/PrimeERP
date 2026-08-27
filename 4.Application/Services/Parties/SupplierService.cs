@@ -42,14 +42,17 @@ namespace PrimeERP.Application.Services.Parties
         private readonly ISupplierRepository _suppliers;
         private readonly IJournalRepository _journalRepo;
         private readonly IAccountRepository _accountRepo;
+        private readonly ICategoryRepository _categories;
 
         public SupplierService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
-            IAccountService accounts, INumberSequenceService numbers, ISupplierRepository suppliers, IAccountRepository accountRepo, IJournalRepository journalRepo)
+            IAccountService accounts, INumberSequenceService numbers, ISupplierRepository suppliers, IAccountRepository accountRepo,
+            IJournalRepository journalRepo, ICategoryRepository categories)
             : base(permissions, settings, localization, audit, accounts, numbers, accountRepo)
         {
             _suppliers = suppliers;
             _accountRepo = accountRepo;
             _journalRepo = journalRepo;
+            _categories = categories;
         }
 
         protected override Supplier FindById(int id) => _suppliers.GetById(id);
@@ -150,7 +153,7 @@ namespace PrimeERP.Application.Services.Parties
             supplier.Email = dto.Email; supplier.Address = dto.Address; supplier.City = dto.City; supplier.Country = dto.Country;
             supplier.TaxNumber = dto.TaxNumber; supplier.CommercialRegNo = dto.CommercialRegNo; supplier.CreditLimit = dto.CreditLimit;
             supplier.PaymentTermDays = dto.PaymentTermDays; supplier.SupplierType = dto.SupplierType; supplier.Notes = dto.Notes;
-            supplier.IsActive = dto.IsActive; supplier.UpdatedBy = CurrentUser;
+            supplier.IsActive = dto.IsActive; supplier.CategoryId = dto.CategoryId; supplier.UpdatedBy = CurrentUser;
 
             var validation = Validator.Validate(supplier);
             if (!validation.IsValid)
@@ -208,7 +211,8 @@ namespace PrimeERP.Application.Services.Parties
             PaymentTermDays = dto.PaymentTermDays,
             SupplierType    = dto.SupplierType,
             Notes           = dto.Notes,
-            IsActive        = true
+            CategoryId      = dto.CategoryId,
+            IsActive        = dto.IsActive
         };
 
         protected override SupplierDto ToDto(Supplier s)
@@ -242,6 +246,10 @@ namespace PrimeERP.Application.Services.Parties
                 SupplierType      = s.SupplierType,
                 IsActive          = s.IsActive,
                 Notes             = s.Notes,
+                CategoryId        = s.CategoryId,
+                CategoryName      = s.CategoryId != null ? _categories.GetById(s.CategoryId.Value)?.Name : null,
+                CreatedAt         = s.CreatedAt,
+                UpdatedAt         = s.UpdatedAt,
                 StatusVariant     = variant,
                 StatusText        = Msg($"Status.{statusKey}"),
                 CanEdit           = Can("Edit"),
