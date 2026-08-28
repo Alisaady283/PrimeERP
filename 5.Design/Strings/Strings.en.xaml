@@ -66,6 +66,13 @@
     <sys:String x:Key="Str.PurchaseCost">Purchase Cost</sys:String>
     <sys:String x:Key="Str.CurrentValue">Current Value</sys:String>
     <sys:String x:Key="Str.Location">Location</sys:String>
+    <sys:String x:Key="Str.Module.Employees">Employees</sys:String>
+    <sys:String x:Key="Str.Employees.Add">Add Employee</sys:String>
+    <sys:String x:Key="Str.Employees.Edit">Edit Employee</sys:String>
+    <sys:String x:Key="Str.Department">Department</sys:String>
+    <sys:String x:Key="Str.JobTitle">Job Title</sys:String>
+    <sys:String x:Key="Str.HireDate">Hire Date</sys:String>
+    <sys:String x:Key="Str.Salary">Salary</sys:String>
     <sys:String x:Key="Str.Module.Categories">Product Categories</sys:String>
     <sys:String x:Key="Str.Categories.Add">Add Category</sys:String>
     <sys:String x:Key="Str.Categories.Edit">Edit Category</sys:String>

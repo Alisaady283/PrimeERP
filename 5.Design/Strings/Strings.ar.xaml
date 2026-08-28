@@ -66,6 +66,13 @@
     <sys:String x:Key="Str.PurchaseCost">تكلفة الشراء</sys:String>
     <sys:String x:Key="Str.CurrentValue">القيمة الحالية</sys:String>
     <sys:String x:Key="Str.Location">الموقع</sys:String>
+    <sys:String x:Key="Str.Module.Employees">الموظفون</sys:String>
+    <sys:String x:Key="Str.Employees.Add">إضافة موظف</sys:String>
+    <sys:String x:Key="Str.Employees.Edit">تعديل موظف</sys:String>
+    <sys:String x:Key="Str.Department">القسم</sys:String>
+    <sys:String x:Key="Str.JobTitle">الوظيفة</sys:String>
+    <sys:String x:Key="Str.HireDate">تاريخ التعيين</sys:String>
+    <sys:String x:Key="Str.Salary">الراتب</sys:String>
     <sys:String x:Key="Str.Module.Categories">فئات الأصناف</sys:String>
     <sys:String x:Key="Str.Categories.Add">إضافة فئة</sys:String>
     <sys:String x:Key="Str.Categories.Edit">تعديل فئة</sys:String>

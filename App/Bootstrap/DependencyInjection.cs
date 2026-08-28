@@ -5,6 +5,7 @@ using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.Services.Common;
 using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Assets;
+using PrimeERP.Application.Services.HR;
 using PrimeERP.Application.Services.Backup;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.Services.Print;
@@ -54,6 +55,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<ICategoryRepository, CategoryRepository>();
             services.AddSingleton<IProductRepository, ProductRepository>();
             services.AddSingleton<IAssetRepository, AssetRepository>();
+            services.AddSingleton<IEmployeeRepository, EmployeeRepository>();
             return services;
         }
 
@@ -71,6 +73,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<ICategoryService, CategoryService>();
             services.AddSingleton<IProductService, ProductService>();
             services.AddSingleton<IAssetService, AssetService>();
+            services.AddSingleton<IEmployeeService, EmployeeService>();
 
             // Lazy<IJournalService> يكسر الدائرية الحقيقية JournalService↔FiscalPeriodService — راجع تعليق
             // التوثيق أعلى FiscalPeriodService.cs. لا يبني IJournalService الآن، فقط عند أول .Value فعلي.
@@ -107,6 +110,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddTransient<DepartmentsViewModel>();
             services.AddTransient<JobTitlesViewModel>();
             services.AddTransient<AssetsViewModel>();
+            services.AddTransient<EmployeesViewModel>();
 
             return services;
         }
@@ -161,6 +165,7 @@ namespace PrimeERP.App.Bootstrap
             services.GetRequiredService<ICategoryRepository>().CreateTable();
             services.GetRequiredService<IProductRepository>().CreateTable();
             services.GetRequiredService<IAssetRepository>().CreateTable();
+            services.GetRequiredService<IEmployeeRepository>().CreateTable();
 
             // ⚠️ R9 — نفس درس توقف 7: PermissionDb (جداول Permissions/Roles/RolePermissions/Users/
             // UserPermissions + بذر دور SystemAdmin ومستخدم admin) كانت مبنية بالكامل منذ وقت طويل بلا أي

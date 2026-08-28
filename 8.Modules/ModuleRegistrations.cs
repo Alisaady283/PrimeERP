@@ -7,8 +7,10 @@ using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Assets;
 using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.DTOs.HR;
 using PrimeERP.Application.Services.Assets;
 using PrimeERP.Application.Services.Common;
+using PrimeERP.Application.Services.HR;
 using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Composition.Definitions;
@@ -259,6 +261,46 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateAssetDto.CurrentValue), LabelKey = "Str.CurrentValue", Kind = FieldKind.Number },
                         new() { Key = nameof(CreateAssetDto.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
                         new() { Key = nameof(CreateAssetDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }.Concat(StandardFields.DialogFields()).ToList()
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Employees",
+                TitleKey = "Str.Module.Employees",
+                PermissionPrefix = "HR",
+                ViewModelType = typeof(EmployeesViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(EmployeeDto.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(EmployeeDto.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Department"), Binding = nameof(EmployeeDto.DepartmentName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.JobTitle"), Binding = nameof(EmployeeDto.JobTitleName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(EmployeeDto.Phone), Width = 120 },
+                },
+                Filters = new()
+                {
+                    new() { Key = nameof(EmployeeFilter.DepartmentId), LabelKey = "Str.Department", PickerType = "Category", PickerCategoryModuleKey = "Departments" },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Employees.Add",
+                    TitleEditKey = "Str.Employees.Edit",
+                    GridColumns = 2,
+                    ServiceType = typeof(IEmployeeService),
+                    CreateDtoType = typeof(CreateEmployeeDto),
+                    UpdateDtoType = typeof(UpdateEmployeeDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateEmployeeDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateEmployeeDto.DepartmentId), LabelKey = "Str.Department", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Departments" },
+                        new() { Key = nameof(CreateEmployeeDto.JobTitleId), LabelKey = "Str.JobTitle", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "JobTitles" },
+                        new() { Key = nameof(CreateEmployeeDto.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
+                        new() { Key = nameof(CreateEmployeeDto.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 120 },
+                        new() { Key = nameof(CreateEmployeeDto.HireDate), LabelKey = "Str.HireDate", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreateEmployeeDto.BasicSalary), LabelKey = "Str.Salary", Kind = FieldKind.Number },
+                        new() { Key = nameof(CreateEmployeeDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }.Concat(StandardFields.DialogFields()).ToList()
                 }
             });
