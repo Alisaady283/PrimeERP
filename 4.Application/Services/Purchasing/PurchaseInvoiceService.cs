@@ -160,6 +160,10 @@ namespace PrimeERP.Application.Services.Purchasing
             }
 
             _audit.Log("PurchaseInvoices", invoiceId, AuditAction.Insert, newValue: new { SupplierId = dto.SupplierId, NetTotal = netTotal });
+
+            // نفس ملاحظة SalesInvoiceService — Supplier.Balance عمود مخزَّن، يُعاد حسابه بعد التزام المعاملة فقط.
+            _suppliers.RecalculateBalance(dto.SupplierId);
+
             return GetById(invoiceId);
         }
 

@@ -104,6 +104,13 @@
     <sys:String x:Key="Str.PurchaseInvoices.Add">Add Purchase Invoice</sys:String>
     <sys:String x:Key="Str.PurchaseInvoices.Edit">Purchase Invoice</sys:String>
     <sys:String x:Key="Str.Supplier">Supplier</sys:String>
+    <sys:String x:Key="Str.Report.Run">Run Report</sys:String>
+    <sys:String x:Key="Str.DateFrom">From Date</sys:String>
+    <sys:String x:Key="Str.DateTo">To Date</sys:String>
+    <sys:String x:Key="Str.Module.TrialBalance">Trial Balance</sys:String>
+    <sys:String x:Key="Str.Module.CustomerBalances">Customer Balances</sys:String>
+    <sys:String x:Key="Str.Module.SupplierBalances">Supplier Balances</sys:String>
+    <sys:String x:Key="Str.Module.StockBalances">Stock Balances</sys:String>
     <sys:String x:Key="Str.Module.Categories">Product Categories</sys:String>
     <sys:String x:Key="Str.Categories.Add">Add Category</sys:String>
     <sys:String x:Key="Str.Categories.Edit">Edit Category</sys:String>

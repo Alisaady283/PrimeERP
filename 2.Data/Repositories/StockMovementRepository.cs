@@ -62,6 +62,13 @@ namespace PrimeERP.Data.Repositories
                 warehouseId != null ? new (string, object)[] { ("@p", productId), ("@w", warehouseId.Value) } : new (string, object)[] { ("@p", productId) });
         }
 
+        public List<(int ProductId, int WarehouseId, decimal Balance)> GetAllBalances() =>
+            QueryAs(row => (
+                Convert.ToInt32(row["ProductId"]), Convert.ToInt32(row["WarehouseId"]), Convert.ToDecimal(row["Balance"])),
+                $@"SELECT ProductId, WarehouseId,
+                          COALESCE(SUM(CASE MovementType WHEN {(int)MovementType.Out} THEN -Qty ELSE Qty END), 0) AS Balance
+                   FROM StockMovements GROUP BY ProductId, WarehouseId HAVING Balance != 0");
+
         public List<StockMovement> GetHistory(int productId, int? warehouseId, int maxResults) =>
             Query($@"SELECT * FROM StockMovements WHERE ProductId = @p {(warehouseId != null ? "AND WarehouseId = @w" : "")}
                      ORDER BY Id DESC LIMIT {maxResults}",

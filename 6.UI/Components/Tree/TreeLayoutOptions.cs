@@ -9,7 +9,10 @@ namespace PrimeERP.UI.Components.Tree
         Tree,
 
         /// <summary>شجرة (يمين، RTL) + لوحة تفاصيل للعقدة المختارة (يسار).</summary>
-        TreeSplit
+        TreeSplit,
+
+        /// <summary>معايير + تشغيل + نتيجة عبر ReportRenderer — بلا شبكة CRUD، بلا حوار إضافة/تعديل.</summary>
+        Report
     }
 
     public enum SelectableRule { All, LeafOnly }

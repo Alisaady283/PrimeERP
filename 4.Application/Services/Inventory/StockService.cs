@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using PrimeERP.Application.Services.Common;
 using PrimeERP.Data.Repositories;
@@ -33,6 +34,9 @@ namespace PrimeERP.Application.Services.Inventory
 
         public Result<decimal> GetBalance(int productId, int? warehouseId = null) =>
             Result.Ok(_movements.GetBalance(productId, warehouseId));
+
+        public Result<List<(int ProductId, int WarehouseId, decimal Balance)>> GetAllBalances() =>
+            Result.Ok(_movements.GetAllBalances());
 
         public Result RecordMovement(DbConnection conn, DbTransaction tx, int productId, int warehouseId, MovementType type,
             decimal qty, decimal unitCost, string sourceDocType, int? sourceDocId, string sourceDocNo, DateTime? date = null, string notes = null)

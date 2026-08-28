@@ -151,6 +151,7 @@ namespace PrimeERP.App.Bootstrap
         public static IServiceProvider RegisterModules(this IServiceProvider services)
         {
             ModuleRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
+            ReportRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             return services;
         }
 

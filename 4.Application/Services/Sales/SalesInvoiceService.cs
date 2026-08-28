@@ -167,6 +167,12 @@ namespace PrimeERP.Application.Services.Sales
             }
 
             _audit.Log("SalesInvoices", invoiceId, AuditAction.Insert, newValue: new { CustomerId = dto.CustomerId, NetTotal = netTotal });
+
+            // رصيد العميل عمود مخزَّن (Customer.Balance) لا يُعاد حسابه تلقائياً عند ترحيل قيد — بعد التزام
+            // المعاملة أعلاه فقط (RecalculateBalance يفتح اتصالاً جديداً، يحتاج القيد ملتزَماً ليراه). فشلها
+            // (صلاحية/حساب غير مضبوط) لا يُسقِط الفاتورة المُرحَّلة بالفعل — أثر جانبي غير حرج.
+            _customers.RecalculateBalance(dto.CustomerId);
+
             return GetById(invoiceId);
         }
 
