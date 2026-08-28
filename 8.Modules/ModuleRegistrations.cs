@@ -1,9 +1,12 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Accounting;
+using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Services.Common;
 using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Composition.Definitions;
@@ -207,6 +210,34 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateProductDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }.Concat(StandardFields.DialogFields()).ToList()
                 }
+            });
+
+            // النمط 2 القائم على ModuleKey — سبع وحدات، فرق الأسطر فقط (لا خدمة/ViewModel/Dialog جديدة، كلها
+            // تستدعي CategoryService/CategoryListViewModel/CategoryDialogFactory الموجودة).
+            RegisterLookup(registry, "Categories", "Str.Module.Categories", "Categories.Add", "Categories.Edit", typeof(CategoriesLookupViewModel));
+            RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Edit", typeof(BrandsViewModel));
+            RegisterLookup(registry, "Units", "Str.Module.Units", "Units.Add", "Units.Edit", typeof(UnitsViewModel));
+            RegisterLookup(registry, "Warehouses", "Str.Module.Warehouses", "Warehouses.Add", "Warehouses.Edit", typeof(WarehousesViewModel));
+            RegisterLookup(registry, "AssetCategories", "Str.Module.AssetCategories", "AssetCategories.Add", "AssetCategories.Edit", typeof(AssetCategoriesViewModel));
+            RegisterLookup(registry, "Departments", "Str.Module.Departments", "Departments.Add", "Departments.Edit", typeof(DepartmentsViewModel));
+            RegisterLookup(registry, "JobTitles", "Str.Module.JobTitles", "JobTitles.Add", "JobTitles.Edit", typeof(JobTitlesViewModel));
+        }
+
+        private static void RegisterLookup(IModuleRegistry registry, string moduleKey, string titleKey, string addKey, string editKey, Type viewModelType)
+        {
+            registry.Register(new ModuleDefinition
+            {
+                Key = moduleKey,
+                TitleKey = titleKey,
+                PermissionPrefix = moduleKey,
+                ViewModelType = viewModelType,
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(CategoryDto.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.ParentCategory"), Binding = nameof(CategoryDto.ParentName), Width = 160 },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(CategoryDto.IsActive), Width = 80, Align = ColumnAlign.Center },
+                },
+                Dialog = CategoryDialogFactory.Build(moduleKey, "Str." + addKey, "Str." + editKey)
             });
         }
     }

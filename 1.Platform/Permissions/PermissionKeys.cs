@@ -62,6 +62,43 @@ namespace PrimeERP.Platform.Permissions
             public const string Print  = "Products.Print";
         }
 
+        // النمط 2 القائم على ModuleKey (فئات/ماركات/وحدات/مخازن/فئات أصول/أقسام/وظائف) — نفس الأربعة
+        // مفاتيح لكل وحدة، لا Export/Print (قوائم بحتة بلا طباعة/تصدير حتى الآن).
+        public static class Categories
+        {
+            public const string View = "Categories.View", Create = "Categories.Create", Edit = "Categories.Edit", Delete = "Categories.Delete";
+        }
+
+        public static class Brands
+        {
+            public const string View = "Brands.View", Create = "Brands.Create", Edit = "Brands.Edit", Delete = "Brands.Delete";
+        }
+
+        public static class Units
+        {
+            public const string View = "Units.View", Create = "Units.Create", Edit = "Units.Edit", Delete = "Units.Delete";
+        }
+
+        public static class Warehouses
+        {
+            public const string View = "Warehouses.View", Create = "Warehouses.Create", Edit = "Warehouses.Edit", Delete = "Warehouses.Delete";
+        }
+
+        public static class AssetCategories
+        {
+            public const string View = "AssetCategories.View", Create = "AssetCategories.Create", Edit = "AssetCategories.Edit", Delete = "AssetCategories.Delete";
+        }
+
+        public static class Departments
+        {
+            public const string View = "Departments.View", Create = "Departments.Create", Edit = "Departments.Edit", Delete = "Departments.Delete";
+        }
+
+        public static class JobTitles
+        {
+            public const string View = "JobTitles.View", Create = "JobTitles.Create", Edit = "JobTitles.Edit", Delete = "JobTitles.Delete";
+        }
+
         public static class Inventory
         {
             public const string View     = "Inventory.View";

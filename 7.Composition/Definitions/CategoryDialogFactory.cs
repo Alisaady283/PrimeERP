@@ -9,10 +9,10 @@ namespace PrimeERP.Composition.Definitions
     // ModuleKey تُثبَّت عبر FixedValues، بلا أي عنصر مرئي للمستخدم.
     public static class CategoryDialogFactory
     {
-        public static DialogDefinition Build(string moduleKey) => new()
+        public static DialogDefinition Build(string moduleKey, string titleKey = "Str.Category.Add", string titleEditKey = "Str.Category.Edit") => new()
         {
-            TitleKey = "Str.Category.Add",
-            TitleEditKey = "Str.Category.Edit",
+            TitleKey = titleKey,
+            TitleEditKey = titleEditKey,
             GridColumns = 1,
             ServiceType = typeof(ICategoryService),
             CreateDtoType = typeof(CreateCategoryDto),
