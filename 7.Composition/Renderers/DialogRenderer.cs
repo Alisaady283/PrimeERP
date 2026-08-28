@@ -34,6 +34,12 @@ namespace PrimeERP.Composition.Renderers
             Footer = footer;
             if (width.HasValue) Width = width.Value;
         }
+
+        // القاعدة AppDialogWindow.OnEscapePressed تضبط DialogResult قبل Close() — صحيح لحوارات ShowDialog()
+        // (AppConfirmDialog/AppMessageDialog) لكن يرمي InvalidOperationException هنا تحديداً (النافذة
+        // مفتوحة عبر Show() لا ShowDialog()، توقف 10) فيسقط الاستثناء بصمت ولا يُنفَّذ Close() إطلاقاً —
+        // زر إغلاق الهيدر (X) ومفتاح Escape يبقيان بلا أثر، النافذة تظل مفتوحة.
+        protected override void OnEscapePressed() => Close();
     }
 
     public static class DialogRenderer

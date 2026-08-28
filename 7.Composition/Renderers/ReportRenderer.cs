@@ -40,7 +40,7 @@ namespace PrimeERP.Composition.Renderers
             var runButton = new PrimeERP.UI.Components.Actions.AppButton { Text = LocalizationService.Get("Str.Report.Run"), Variant = "primary", Size = "sm" };
             paramPanel.Children.Add(runButton);
 
-            var resultGrid = new AppDataGrid { ShowRowActions = false, ShowPagination = false };
+            var resultGrid = new AppDataGrid { ShowRowActions = false };
             var totalsText = new TextBlock { Margin = new Thickness(24, 8, 24, 8), FontWeight = FontWeights.SemiBold };
 
             void RunReport()

@@ -75,6 +75,45 @@ namespace PrimeERP.Tests.Composition
         }
 
         [Fact]
+        public void ShowAndSave_ClickingHeaderCloseButton_ClosesWindow_WithoutThrowing()
+        {
+            WpfApplicationFixture.Run(() =>
+            {
+                UIServices.Initialize(_db.Services);
+                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+
+                var registry = _db.Services.GetRequiredService<IModuleRegistry>();
+                var dialog = registry.Get("Accounts").Dialog;
+                var toast = _db.Services.GetRequiredService<IToastService>();
+
+                Exception thrown = null;
+                Window window = null;
+
+                Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                {
+                    try
+                    {
+                        window = System.Windows.Application.Current.Windows.OfType<Window>().Last();
+                        var closeButton = FindAllVisualChildren<Button>(window).First(b => b.Name == "btnClose");
+                        closeButton.RaiseEvent(new RoutedEventArgs(ButtonBase_ClickEvent()));
+                    }
+                    catch (Exception ex) { thrown = ex; window?.Close(); }
+                }));
+
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+                timer.Tick += (_, __) => { timer.Stop(); window?.Close(); };
+                timer.Start();
+
+                bool saved = true;
+                try { saved = DialogRenderer.ShowAndSave(dialog, _db.Services, toast); }
+                catch (Exception ex) { thrown = ex; }
+
+                Assert.Null(thrown);
+                Assert.False(saved);
+            });
+        }
+
+        [Fact]
         public void ShowAndSave_AddMode_StatusCheckboxDefaultsToChecked_AndUncheckingPersistsInactive()
         {
             WpfApplicationFixture.Run(() =>

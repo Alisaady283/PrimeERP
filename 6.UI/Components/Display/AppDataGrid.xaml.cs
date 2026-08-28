@@ -2,6 +2,7 @@ using PrimeERP.UI.Services;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
@@ -139,8 +140,17 @@ namespace PrimeERP.UI.Components.Display
         private static void OnStructuralChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
             ((AppDataGrid)d).RebuildColumns();
 
-        private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
-            ((AppDataGrid)d).LoadItems();
+        private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var c = (AppDataGrid)d;
+            if (e.OldValue is INotifyCollectionChanged oldIncc) oldIncc.CollectionChanged -= c.OnSourceCollectionChanged;
+            if (e.NewValue is INotifyCollectionChanged newIncc) newIncc.CollectionChanged += c.OnSourceCollectionChanged;
+            c.LoadItems();
+        }
+
+        // ItemsSource DP نفسه لا يتغيّر مرجعياً عند Items.Clear()+Add(...) على ObservableCollection ثابتة
+        // (نمط PagedViewModelBase) — بلا هذا المستمع تبقى الشبكة على أول لقطة (غالباً فارغة قبل أول تحميل).
+        private void OnSourceCollectionChanged(object sender, NotifyCollectionChangedEventArgs e) => LoadItems();
 
         private static void OnSelectedItemChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
