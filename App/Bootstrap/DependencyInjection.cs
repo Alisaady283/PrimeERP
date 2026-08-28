@@ -56,6 +56,10 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IProductRepository, ProductRepository>();
             services.AddSingleton<IAssetRepository, AssetRepository>();
             services.AddSingleton<IEmployeeRepository, EmployeeRepository>();
+            services.AddSingleton<IDepartmentRepository, DepartmentRepository>();
+            services.AddSingleton<IJobTitleRepository, JobTitleRepository>();
+            services.AddSingleton<IUnitRepository, UnitRepository>();
+            services.AddSingleton<IWarehouseRepository, WarehouseRepository>();
             return services;
         }
 
@@ -74,6 +78,10 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IProductService, ProductService>();
             services.AddSingleton<IAssetService, AssetService>();
             services.AddSingleton<IEmployeeService, EmployeeService>();
+            services.AddSingleton<IDepartmentService, DepartmentService>();
+            services.AddSingleton<IJobTitleService, JobTitleService>();
+            services.AddSingleton<IUnitService, UnitService>();
+            services.AddSingleton<IWarehouseService, WarehouseService>();
 
             // Lazy<IJournalService> يكسر الدائرية الحقيقية JournalService↔FiscalPeriodService — راجع تعليق
             // التوثيق أعلى FiscalPeriodService.cs. لا يبني IJournalService الآن، فقط عند أول .Value فعلي.
@@ -166,6 +174,10 @@ namespace PrimeERP.App.Bootstrap
             services.GetRequiredService<IProductRepository>().CreateTable();
             services.GetRequiredService<IAssetRepository>().CreateTable();
             services.GetRequiredService<IEmployeeRepository>().CreateTable();
+            services.GetRequiredService<IDepartmentRepository>().CreateTable();
+            services.GetRequiredService<IJobTitleRepository>().CreateTable();
+            services.GetRequiredService<IUnitRepository>().CreateTable();
+            services.GetRequiredService<IWarehouseRepository>().CreateTable();
 
             // ⚠️ R9 — نفس درس توقف 7: PermissionDb (جداول Permissions/Roles/RolePermissions/Users/
             // UserPermissions + بذر دور SystemAdmin ومستخدم admin) كانت مبنية بالكامل منذ وقت طويل بلا أي

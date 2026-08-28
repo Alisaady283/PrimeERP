@@ -129,6 +129,12 @@ namespace PrimeERP.Composition.Renderers
                     if (result.IsSuccess)
                         combo.ItemsSource = result.Value.Select(c => new { c.Id, Display = c.Name }).ToList();
                 }
+                else if (filter.PickerType == "Department")
+                {
+                    var result = services.GetRequiredService<PrimeERP.Application.Services.HR.IDepartmentService>().GetAll();
+                    if (result.IsSuccess)
+                        combo.ItemsSource = result.Value.Select(d => new { d.Id, Display = d.Name }).ToList();
+                }
 
                 combo.SelectionChanged += (_, __) =>
                 {

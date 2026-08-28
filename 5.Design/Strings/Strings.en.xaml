@@ -73,6 +73,8 @@
     <sys:String x:Key="Str.JobTitle">Job Title</sys:String>
     <sys:String x:Key="Str.HireDate">Hire Date</sys:String>
     <sys:String x:Key="Str.Salary">Salary</sys:String>
+    <sys:String x:Key="Str.Symbol">Symbol</sys:String>
+    <sys:String x:Key="Str.ManagerName">Manager Name</sys:String>
     <sys:String x:Key="Str.Module.Categories">Product Categories</sys:String>
     <sys:String x:Key="Str.Categories.Add">Add Category</sys:String>
     <sys:String x:Key="Str.Categories.Edit">Edit Category</sys:String>

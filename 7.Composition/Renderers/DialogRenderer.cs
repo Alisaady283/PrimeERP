@@ -270,6 +270,16 @@ namespace PrimeERP.Composition.Renderers
                 rows.Add(new PickerRow { Id = AddCategorySentinelId, Code = null, Display = "+ " + LocalizationService.Get("Str.AddCategory") });
                 combo.ItemsSource = rows;
             }
+            else if (field.PickerType == "Department")
+            {
+                var result = services.GetRequiredService<PrimeERP.Application.Services.HR.IDepartmentService>().GetAll();
+                if (result.IsSuccess) combo.ItemsSource = result.Value.Select(d => new PickerRow { Id = d.Id, Code = null, Display = d.Name }).ToList();
+            }
+            else if (field.PickerType == "JobTitle")
+            {
+                var result = services.GetRequiredService<PrimeERP.Application.Services.HR.IJobTitleService>().GetAll();
+                if (result.IsSuccess) combo.ItemsSource = result.Value.Select(j => new PickerRow { Id = j.Id, Code = null, Display = j.Name }).ToList();
+            }
         }
 
         // معرّف اصطناعي بند "+ إضافة فئة" في نهاية قائمة منتقي الفئة — راجع WireCategoryPickerAddOption.

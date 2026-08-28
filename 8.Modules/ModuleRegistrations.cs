@@ -220,11 +220,95 @@ namespace PrimeERP.Modules
             // تستدعي CategoryService/CategoryListViewModel/CategoryDialogFactory الموجودة).
             RegisterLookup(registry, "Categories", "Str.Module.Categories", "Categories.Add", "Categories.Edit", typeof(CategoriesLookupViewModel));
             RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Edit", typeof(BrandsViewModel));
-            RegisterLookup(registry, "Units", "Str.Module.Units", "Units.Add", "Units.Edit", typeof(UnitsViewModel));
-            RegisterLookup(registry, "Warehouses", "Str.Module.Warehouses", "Warehouses.Add", "Warehouses.Edit", typeof(WarehousesViewModel));
             RegisterLookup(registry, "AssetCategories", "Str.Module.AssetCategories", "AssetCategories.Add", "AssetCategories.Edit", typeof(AssetCategoriesViewModel));
-            RegisterLookup(registry, "Departments", "Str.Module.Departments", "Departments.Add", "Departments.Edit", typeof(DepartmentsViewModel));
-            RegisterLookup(registry, "JobTitles", "Str.Module.JobTitles", "JobTitles.Add", "JobTitles.Edit", typeof(JobTitlesViewModel));
+
+            // الأربعة أدناه على كيانات Domain مخصصة موجودة مسبقاً (لا جدول Category عام) — حقول/أعمدة مختلفة
+            // لكل واحدة فتُسجَّل صراحة بدل RegisterLookup الموحّد.
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Departments", TitleKey = "Str.Module.Departments", PermissionPrefix = "Departments", ViewModelType = typeof(DepartmentsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(DepartmentDto.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(DepartmentDto.IsActive), Width = 80, Align = ColumnAlign.Center },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Departments.Add", TitleEditKey = "Str.Departments.Edit", GridColumns = 1,
+                    ServiceType = typeof(IDepartmentService), CreateDtoType = typeof(CreateDepartmentDto), UpdateDtoType = typeof(UpdateDepartmentDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateDepartmentDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateDepartmentDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "JobTitles", TitleKey = "Str.Module.JobTitles", PermissionPrefix = "JobTitles", ViewModelType = typeof(JobTitlesViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(JobTitleDto.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(JobTitleDto.IsActive), Width = 80, Align = ColumnAlign.Center },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.JobTitles.Add", TitleEditKey = "Str.JobTitles.Edit", GridColumns = 1,
+                    ServiceType = typeof(IJobTitleService), CreateDtoType = typeof(CreateJobTitleDto), UpdateDtoType = typeof(UpdateJobTitleDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateJobTitleDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateJobTitleDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Units", TitleKey = "Str.Module.Units", PermissionPrefix = "Units", ViewModelType = typeof(UnitsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(UnitDto.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Symbol"), Binding = nameof(UnitDto.Symbol), Width = 100 },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(UnitDto.IsActive), Width = 80, Align = ColumnAlign.Center },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Units.Add", TitleEditKey = "Str.Units.Edit", GridColumns = 1,
+                    ServiceType = typeof(IUnitService), CreateDtoType = typeof(CreateUnitDto), UpdateDtoType = typeof(UpdateUnitDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateUnitDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateUnitDto.Symbol), LabelKey = "Str.Symbol", Kind = FieldKind.Text, MaxLength = 20 },
+                        new() { Key = nameof(CreateUnitDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Warehouses", TitleKey = "Str.Module.Warehouses", PermissionPrefix = "Warehouses", ViewModelType = typeof(WarehousesViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(WarehouseDto.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(WarehouseDto.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Location"), Binding = nameof(WarehouseDto.Location), Width = 160 },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(WarehouseDto.IsActive), Width = 80, Align = ColumnAlign.Center },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Warehouses.Add", TitleEditKey = "Str.Warehouses.Edit", GridColumns = 1,
+                    ServiceType = typeof(IWarehouseService), CreateDtoType = typeof(CreateWarehouseDto), UpdateDtoType = typeof(UpdateWarehouseDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateWarehouseDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateWarehouseDto.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
+                        new() { Key = nameof(CreateWarehouseDto.ManagerName), LabelKey = "Str.ManagerName", Kind = FieldKind.Text, MaxLength = 150 },
+                        new() { Key = nameof(CreateWarehouseDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                    }
+                }
+            });
 
             registry.Register(new ModuleDefinition
             {
@@ -281,7 +365,7 @@ namespace PrimeERP.Modules
                 },
                 Filters = new()
                 {
-                    new() { Key = nameof(EmployeeFilter.DepartmentId), LabelKey = "Str.Department", PickerType = "Category", PickerCategoryModuleKey = "Departments" },
+                    new() { Key = nameof(EmployeeFilter.DepartmentId), LabelKey = "Str.Department", PickerType = "Department" },
                 },
                 Dialog = new DialogDefinition
                 {
@@ -294,8 +378,8 @@ namespace PrimeERP.Modules
                     Fields = new List<FieldDefinition>
                     {
                         new() { Key = nameof(CreateEmployeeDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateEmployeeDto.DepartmentId), LabelKey = "Str.Department", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Departments" },
-                        new() { Key = nameof(CreateEmployeeDto.JobTitleId), LabelKey = "Str.JobTitle", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "JobTitles" },
+                        new() { Key = nameof(CreateEmployeeDto.DepartmentId), LabelKey = "Str.Department", Kind = FieldKind.Picker, PickerType = "Department" },
+                        new() { Key = nameof(CreateEmployeeDto.JobTitleId), LabelKey = "Str.JobTitle", Kind = FieldKind.Picker, PickerType = "JobTitle" },
                         new() { Key = nameof(CreateEmployeeDto.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
                         new() { Key = nameof(CreateEmployeeDto.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 120 },
                         new() { Key = nameof(CreateEmployeeDto.HireDate), LabelKey = "Str.HireDate", Kind = FieldKind.Date, IsRequired = true },

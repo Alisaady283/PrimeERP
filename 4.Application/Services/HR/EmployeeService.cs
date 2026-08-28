@@ -13,9 +13,8 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.HR
 {
-    // بنفس بنية ProductService — القسم/الوظيفة فئتا Category بـModuleKey مختلف (Departments/JobTitles)، لا
-    // جدولان جديدان. IsActive في الحوار/الشبكة مبسَّطة عمداً فوق Employee.Status (Active/Inactive فقط،
-    // OnLeave غير مكشوف بعد — قابل للتطوير لاحقاً بلا توسيع FieldKind الآن).
+    // بنفس بنية ProductService. IsActive في الحوار/الشبكة مبسَّطة عمداً فوق Employee.Status (Active/Inactive
+    // فقط، OnLeave غير مكشوف بعد — قابل للتطوير لاحقاً بلا توسيع FieldKind الآن).
     public class EmployeeService : CrudServiceBase<Employee, EmployeeDto, EmployeeFilter>, IEmployeeService
     {
         protected override string PermissionPrefix => "HR";
@@ -23,15 +22,18 @@ namespace PrimeERP.Application.Services.HR
         protected override string EntityName => "Employees";
 
         private readonly IEmployeeRepository _employees;
-        private readonly ICategoryRepository _categories;
+        private readonly IDepartmentRepository _departments;
+        private readonly IJobTitleRepository _jobTitles;
         private readonly INumberSequenceService _numbers;
 
         public EmployeeService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IEmployeeRepository employees, ICategoryRepository categories, INumberSequenceService numbers)
+            IAuditLogger audit, IEmployeeRepository employees, IDepartmentRepository departments, IJobTitleRepository jobTitles,
+            INumberSequenceService numbers)
             : base(permissions, settings, localization, audit)
         {
             _employees = employees;
-            _categories = categories;
+            _departments = departments;
+            _jobTitles = jobTitles;
             _numbers = numbers;
         }
 
@@ -105,8 +107,8 @@ namespace PrimeERP.Application.Services.HR
             return new EmployeeDto
             {
                 Id = e.Id, Code = e.Code, Name = e.Name,
-                DepartmentId = e.DepartmentId, DepartmentName = e.DepartmentId != null ? _categories.GetById(e.DepartmentId.Value)?.Name : null,
-                JobTitleId = e.JobTitleId, JobTitleName = e.JobTitleId != null ? _categories.GetById(e.JobTitleId.Value)?.Name : null,
+                DepartmentId = e.DepartmentId, DepartmentName = e.DepartmentId != null ? _departments.GetById(e.DepartmentId.Value)?.Name : null,
+                JobTitleId = e.JobTitleId, JobTitleName = e.JobTitleId != null ? _jobTitles.GetById(e.JobTitleId.Value)?.Name : null,
                 Phone = e.Phone, Email = e.Email, HireDate = e.HireDate, BasicSalary = e.BasicSalary, Notes = e.Notes,
                 IsActive = isActive, StatusVariant = variant, StatusText = LocalizationService.Get($"Str.{statusKey}"),
                 CreatedAt = e.CreatedAt, UpdatedAt = e.UpdatedAt,

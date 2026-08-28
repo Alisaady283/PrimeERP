@@ -73,6 +73,8 @@
     <sys:String x:Key="Str.JobTitle">الوظيفة</sys:String>
     <sys:String x:Key="Str.HireDate">تاريخ التعيين</sys:String>
     <sys:String x:Key="Str.Salary">الراتب</sys:String>
+    <sys:String x:Key="Str.Symbol">الرمز</sys:String>
+    <sys:String x:Key="Str.ManagerName">اسم المسؤول</sys:String>
     <sys:String x:Key="Str.Module.Categories">فئات الأصناف</sys:String>
     <sys:String x:Key="Str.Categories.Add">إضافة فئة</sys:String>
     <sys:String x:Key="Str.Categories.Edit">تعديل فئة</sys:String>
