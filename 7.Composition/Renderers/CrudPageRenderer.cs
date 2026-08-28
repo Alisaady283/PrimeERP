@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -37,6 +38,9 @@ namespace PrimeERP.Composition.Renderers
             var filterBar = new FilterBar { SearchPlaceholder = LocalizationService.Get("Str.Search") };
             BindingOperations.SetBinding(filterBar, FilterBar.ResultCountProperty, new Binding("TotalCount"));
             filterBar.Search += (_, text) => { vm.SearchText = text; vm.SearchCommand.Execute(null); };
+
+            if (definition.Filters is { Count: > 0 })
+                filterBar.FiltersContent = BuildFilterControls(definition.Filters, vm, services);
 
             // ShowPagination=false — ترقيم AppDataGrid الداخلي جانب العميل (يُقسِّم القائمة الكاملة محلياً)
             // يتعارض مع الترقيم الحقيقي من طرف الخادم هنا (كل صفحة تُجلَب من GetPaged عند الطلب فقط، لا
@@ -104,6 +108,38 @@ namespace PrimeERP.Composition.Renderers
             root.Loaded += async (_, __) => await (Task)vm.LoadAsync();
 
             return root;
+        }
+
+        private static FrameworkElement BuildFilterControls(System.Collections.Generic.List<FilterDefinition> filters, dynamic vm, IServiceProvider services)
+        {
+            var panel = new StackPanel { Orientation = Orientation.Horizontal };
+            foreach (var filter in filters)
+            {
+                var combo = new PrimeERP.UI.Components.Inputs.AppComboBox
+                {
+                    Placeholder = LocalizationService.Get(filter.LabelKey), Width = filter.Width,
+                    DisplayMemberPath = "Display", SelectedValuePath = "Id", AllowClear = true,
+                    Margin = new Thickness(0, 0, 8, 0)
+                };
+
+                if (filter.PickerType == "Category")
+                {
+                    var categoryService = services.GetRequiredService<PrimeERP.Application.Services.Common.ICategoryService>();
+                    var result = categoryService.GetAll(filter.PickerCategoryModuleKey);
+                    if (result.IsSuccess)
+                        combo.ItemsSource = result.Value.Select(c => new { c.Id, Display = c.Name }).ToList();
+                }
+
+                combo.SelectionChanged += (_, __) =>
+                {
+                    object filterObj = vm.Filter;
+                    filterObj.GetType().GetProperty(filter.Key)?.SetValue(filterObj, combo.SelectedValue);
+                    vm.SearchCommand.Execute(null);
+                };
+
+                panel.Children.Add(combo);
+            }
+            return panel;
         }
     }
 }

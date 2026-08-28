@@ -13,7 +13,7 @@ using PrimeERP.UI.ViewModels.Base;
 namespace PrimeERP.UI.ViewModels
 {
     // بناء الشجرة نفسه في TreeRenderer (7.Composition، يملك TreeLayoutOptions) لا هنا — راجع TreeRenderer.cs.
-    public abstract class TreeViewModelBase<TDto, TFilter> : PagedViewModelBase<TDto, TFilter>
+    public abstract class TreeViewModelBase<TDto, TFilter> : PagedViewModelBase<TDto, TFilter> where TFilter : new()
     {
         protected readonly IDialogService Dialogs;
 

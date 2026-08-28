@@ -16,7 +16,7 @@ namespace PrimeERP.UI.ViewModels.Base
     /// SearchText مقصود بلا ربط تلقائي بـ TFilter (العام بلا شكل مضمون) — الوارث يقرأها داخل FetchPage
     /// ويدمجها مع Filter بنفسه (كيف يُدمَج نص البحث يختلف بين كيان وآخر — نفس اختبار "لا if لكل كيان").
     /// </summary>
-    public abstract class PagedViewModelBase<TDto, TFilter> : PermissionAwareViewModel
+    public abstract class PagedViewModelBase<TDto, TFilter> : PermissionAwareViewModel where TFilter : new()
     {
         protected abstract string PermissionPrefix { get; }
         protected readonly IToastService Toast;
@@ -48,7 +48,8 @@ namespace PrimeERP.UI.ViewModels.Base
 
         public int TotalPages => PageSize <= 0 ? 0 : (int)Math.Ceiling(TotalCount / (double)PageSize);
 
-        private TFilter _filter;
+        // مُهيَّأة دائماً — MasterListRenderer يكتب في خصائصها عبر Reflection (فلاتر إعلانية) بلا حاجة للتحقق من null.
+        private TFilter _filter = new();
         public TFilter Filter { get => _filter; set => SetProperty(ref _filter, value); }
 
         private bool _isLoading;

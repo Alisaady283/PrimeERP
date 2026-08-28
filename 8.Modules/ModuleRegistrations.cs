@@ -185,6 +185,10 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.SalePrice"), Binding = nameof(ProductDto.SalePrice), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
                     new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(ProductDto.CategoryName), Width = 140 },
                 },
+                Filters = new()
+                {
+                    new() { Key = nameof(ProductFilter.CategoryId), LabelKey = "Str.Category", PickerType = "Category", PickerCategoryModuleKey = "Products" },
+                },
                 Dialog = new DialogDefinition
                 {
                     TitleKey = "Str.Products.Add",

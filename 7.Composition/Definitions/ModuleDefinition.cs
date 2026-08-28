@@ -36,5 +36,8 @@ namespace PrimeERP.Composition.Definitions
 
         /// <summary>بديل Dialog لمستند رأس+سطور (قيود يومية، فواتير لاحقاً) — لا يجتمعان لنفس الوحدة.</summary>
         public DocumentDialogDefinition DocumentDialog { get; init; }
+
+        /// <summary>فلاتر إعلانية إضافية بجانب مربع البحث (LayoutKind.Grid فقط) — null/فارغة = بلا تغيير.</summary>
+        public List<FilterDefinition> Filters { get; init; }
     }
 }

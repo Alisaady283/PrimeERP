@@ -16,7 +16,7 @@ namespace PrimeERP.UI.ViewModels.Base
     /// VM قبل وجود نظام Composition الحالي؛ الآن الشكل مختلف بين الكيانات محلول عبر Type properties إعلانية،
     /// لا حاجة لكود VM مخصّص بعد الآن).
     /// </summary>
-    public abstract class CrudViewModelBase<TDto, TFilter> : PagedViewModelBase<TDto, TFilter>
+    public abstract class CrudViewModelBase<TDto, TFilter> : PagedViewModelBase<TDto, TFilter> where TFilter : new()
     {
         protected readonly IDialogService Dialogs;
 
