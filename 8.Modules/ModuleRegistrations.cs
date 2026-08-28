@@ -13,6 +13,8 @@ using PrimeERP.Application.Services.Common;
 using PrimeERP.Application.DTOs.Security;
 using PrimeERP.Application.DTOs.Sales;
 using PrimeERP.Application.Services.HR;
+using PrimeERP.Application.DTOs.Purchasing;
+using PrimeERP.Application.Services.Purchasing;
 using PrimeERP.Application.Services.Sales;
 using PrimeERP.Application.Services.Security;
 using PrimeERP.Application.Services.Inventory;
@@ -468,6 +470,40 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateSalesInvoiceLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
                         new() { Key = nameof(CreateSalesInvoiceLineDto.TaxPercent), Header = LocalizationService.Get("Str.TaxPercent"), Kind = FieldKind.Number, Width = 90 },
                         new() { Key = nameof(CreateSalesInvoiceLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "PurchaseInvoices", TitleKey = "Str.Module.PurchaseInvoices", PermissionPrefix = "Purchases", ViewModelType = typeof(PurchaseInvoicesViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.InvoiceNo"), Binding = nameof(PurchaseInvoiceDto.InvoiceNo), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.InvoiceDate"), Binding = nameof(PurchaseInvoiceDto.InvoiceDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Supplier"), Binding = nameof(PurchaseInvoiceDto.SupplierName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.NetTotal"), Binding = nameof(PurchaseInvoiceDto.NetTotal), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(PurchaseInvoiceDto.StatusText), Width = 100, Align = ColumnAlign.Center },
+                },
+                DocumentDialog = new DocumentDialogDefinition
+                {
+                    TitleKey = "Str.PurchaseInvoices.Add", TitleEditKey = "Str.PurchaseInvoices.Edit",
+                    ServiceType = typeof(IPurchaseInvoiceService), DtoType = typeof(CreatePurchaseInvoiceDto), LineDtoType = typeof(CreatePurchaseInvoiceLineDto),
+                    LinesPropertyName = nameof(CreatePurchaseInvoiceDto.Lines),
+                    HeaderFields = new()
+                    {
+                        new() { Key = nameof(CreatePurchaseInvoiceDto.InvoiceDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreatePurchaseInvoiceDto.SupplierId), LabelKey = "Str.Supplier", Kind = FieldKind.Picker, PickerType = "Supplier", IsRequired = true },
+                        new() { Key = nameof(CreatePurchaseInvoiceDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
+                        new() { Key = nameof(CreatePurchaseInvoiceDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
+                    },
+                    LineFields = new()
+                    {
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.TaxPercent), Header = LocalizationService.Get("Str.TaxPercent"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
                 }
             });

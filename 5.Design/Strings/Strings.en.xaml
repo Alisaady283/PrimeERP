@@ -100,6 +100,10 @@
     <sys:String x:Key="Str.SubTotal">Subtotal</sys:String>
     <sys:String x:Key="Str.TaxAmount">Tax</sys:String>
     <sys:String x:Key="Str.NetTotal">Net Total</sys:String>
+    <sys:String x:Key="Str.Module.PurchaseInvoices">Purchase Invoices</sys:String>
+    <sys:String x:Key="Str.PurchaseInvoices.Add">Add Purchase Invoice</sys:String>
+    <sys:String x:Key="Str.PurchaseInvoices.Edit">Purchase Invoice</sys:String>
+    <sys:String x:Key="Str.Supplier">Supplier</sys:String>
     <sys:String x:Key="Str.Module.Categories">Product Categories</sys:String>
     <sys:String x:Key="Str.Categories.Add">Add Category</sys:String>
     <sys:String x:Key="Str.Categories.Edit">Edit Category</sys:String>

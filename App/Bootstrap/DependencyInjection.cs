@@ -8,6 +8,7 @@ using PrimeERP.Application.Services.Assets;
 using PrimeERP.Application.Services.HR;
 using PrimeERP.Application.Services.Security;
 using PrimeERP.Application.Services.Sales;
+using PrimeERP.Application.Services.Purchasing;
 using PrimeERP.Application.Services.Backup;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.Services.Print;
@@ -64,6 +65,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IWarehouseRepository, WarehouseRepository>();
             services.AddSingleton<IStockMovementRepository, StockMovementRepository>();
             services.AddSingleton<ISalesInvoiceRepository, SalesInvoiceRepository>();
+            services.AddSingleton<IPurchaseInvoiceRepository, PurchaseInvoiceRepository>();
             return services;
         }
 
@@ -88,6 +90,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IWarehouseService, WarehouseService>();
             services.AddSingleton<IStockService, StockService>();
             services.AddSingleton<ISalesInvoiceService, SalesInvoiceService>();
+            services.AddSingleton<IPurchaseInvoiceService, PurchaseInvoiceService>();
             services.AddSingleton<IRoleService, RoleService>();
             services.AddSingleton<IUserService, UserService>();
 
@@ -130,6 +133,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddTransient<RolesViewModel>();
             services.AddTransient<UsersViewModel>();
             services.AddTransient<SalesInvoicesViewModel>();
+            services.AddTransient<PurchaseInvoicesViewModel>();
 
             return services;
         }
@@ -191,6 +195,7 @@ namespace PrimeERP.App.Bootstrap
             services.GetRequiredService<IWarehouseRepository>().CreateTable();
             services.GetRequiredService<IStockMovementRepository>().CreateTable();
             services.GetRequiredService<ISalesInvoiceRepository>().CreateTable();
+            services.GetRequiredService<IPurchaseInvoiceRepository>().CreateTable();
 
             // ⚠️ R9 — نفس درس توقف 7: PermissionDb (جداول Permissions/Roles/RolePermissions/Users/
             // UserPermissions + بذر دور SystemAdmin ومستخدم admin) كانت مبنية بالكامل منذ وقت طويل بلا أي
