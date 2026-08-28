@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Composition.Definitions;
@@ -11,6 +10,7 @@ using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Components.Layout;
 using PrimeERP.UI.Services;
+using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.Composition.Renderers
 {
@@ -31,8 +31,9 @@ namespace PrimeERP.Composition.Renderers
             // هنا ظهر فعلياً كنص مكرر حرفياً عند أول تشغيل حقيقي (راجع توقف 10). PageHeader هنا لاستضافة زر
             // الإضافة فقط.
             var header = new PageHeader();
-            var addButton = new Button { Content = LocalizationService.Get("Str.Add") };
-            BindingOperations.SetBinding(addButton, ButtonBase.CommandProperty, new Binding("AddCommand"));
+            var addButton = new Btn { Text = LocalizationService.Get("Str.Add"), Variant = "primary", Size = "sm",
+                Icon = System.Windows.Application.Current?.TryFindResource("IconAdd") as System.Windows.Media.Geometry };
+            BindingOperations.SetBinding(addButton, Btn.CommandProperty, new Binding("AddCommand"));
             header.ActionsContent = addButton;
 
             var filterBar = new FilterBar { SearchPlaceholder = LocalizationService.Get("Str.Search") };
