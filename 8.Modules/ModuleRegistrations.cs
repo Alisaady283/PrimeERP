@@ -5,7 +5,9 @@ using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
+using PrimeERP.Application.DTOs.Assets;
 using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Services.Assets;
 using PrimeERP.Application.Services.Common;
 using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Parties;
@@ -221,6 +223,45 @@ namespace PrimeERP.Modules
             RegisterLookup(registry, "AssetCategories", "Str.Module.AssetCategories", "AssetCategories.Add", "AssetCategories.Edit", typeof(AssetCategoriesViewModel));
             RegisterLookup(registry, "Departments", "Str.Module.Departments", "Departments.Add", "Departments.Edit", typeof(DepartmentsViewModel));
             RegisterLookup(registry, "JobTitles", "Str.Module.JobTitles", "JobTitles.Add", "JobTitles.Edit", typeof(JobTitlesViewModel));
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Assets",
+                TitleKey = "Str.Module.Assets",
+                PermissionPrefix = "Assets",
+                ViewModelType = typeof(AssetsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetDto.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetDto.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(AssetDto.CategoryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.PurchaseDate"), Binding = nameof(AssetDto.PurchaseDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.CurrentValue"), Binding = nameof(AssetDto.CurrentValue), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                },
+                Filters = new()
+                {
+                    new() { Key = nameof(AssetFilter.CategoryId), LabelKey = "Str.Category", PickerType = "Category", PickerCategoryModuleKey = "AssetCategories" },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Assets.Add",
+                    TitleEditKey = "Str.Assets.Edit",
+                    GridColumns = 2,
+                    ServiceType = typeof(IAssetService),
+                    CreateDtoType = typeof(CreateAssetDto),
+                    UpdateDtoType = typeof(UpdateAssetDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateAssetDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateAssetDto.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "AssetCategories" },
+                        new() { Key = nameof(CreateAssetDto.PurchaseDate), LabelKey = "Str.PurchaseDate", Kind = FieldKind.Date },
+                        new() { Key = nameof(CreateAssetDto.PurchaseCost), LabelKey = "Str.PurchaseCost", Kind = FieldKind.Number, IsRequired = true },
+                        new() { Key = nameof(CreateAssetDto.CurrentValue), LabelKey = "Str.CurrentValue", Kind = FieldKind.Number },
+                        new() { Key = nameof(CreateAssetDto.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
+                        new() { Key = nameof(CreateAssetDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }.Concat(StandardFields.DialogFields()).ToList()
+                }
+            });
         }
 
         private static void RegisterLookup(IModuleRegistry registry, string moduleKey, string titleKey, string addKey, string editKey, Type viewModelType)

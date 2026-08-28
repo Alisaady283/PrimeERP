@@ -59,6 +59,13 @@
     <sys:String x:Key="Str.Module.Customers">Customers</sys:String>
     <sys:String x:Key="Str.Module.Suppliers">Suppliers</sys:String>
     <sys:String x:Key="Str.Module.Accounts">Chart of Accounts</sys:String>
+    <sys:String x:Key="Str.Module.Assets">Fixed Assets</sys:String>
+    <sys:String x:Key="Str.Assets.Add">Add Asset</sys:String>
+    <sys:String x:Key="Str.Assets.Edit">Edit Asset</sys:String>
+    <sys:String x:Key="Str.PurchaseDate">Purchase Date</sys:String>
+    <sys:String x:Key="Str.PurchaseCost">Purchase Cost</sys:String>
+    <sys:String x:Key="Str.CurrentValue">Current Value</sys:String>
+    <sys:String x:Key="Str.Location">Location</sys:String>
     <sys:String x:Key="Str.Module.Categories">Product Categories</sys:String>
     <sys:String x:Key="Str.Categories.Add">Add Category</sys:String>
     <sys:String x:Key="Str.Categories.Edit">Edit Category</sys:String>

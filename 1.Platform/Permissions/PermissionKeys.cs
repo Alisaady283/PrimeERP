@@ -99,6 +99,16 @@ namespace PrimeERP.Platform.Permissions
             public const string View = "JobTitles.View", Create = "JobTitles.Create", Edit = "JobTitles.Edit", Delete = "JobTitles.Delete";
         }
 
+        public static class Assets
+        {
+            public const string View   = "Assets.View";
+            public const string Create = "Assets.Create";
+            public const string Edit   = "Assets.Edit";
+            public const string Delete = "Assets.Delete";
+            public const string Export = "Assets.Export";
+            public const string Print  = "Assets.Print";
+        }
+
         public static class Inventory
         {
             public const string View     = "Inventory.View";
