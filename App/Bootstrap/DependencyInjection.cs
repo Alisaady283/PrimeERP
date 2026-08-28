@@ -61,6 +61,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IJobTitleRepository, JobTitleRepository>();
             services.AddSingleton<IUnitRepository, UnitRepository>();
             services.AddSingleton<IWarehouseRepository, WarehouseRepository>();
+            services.AddSingleton<IStockMovementRepository, StockMovementRepository>();
             return services;
         }
 
@@ -83,6 +84,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IJobTitleService, JobTitleService>();
             services.AddSingleton<IUnitService, UnitService>();
             services.AddSingleton<IWarehouseService, WarehouseService>();
+            services.AddSingleton<IStockService, StockService>();
             services.AddSingleton<IRoleService, RoleService>();
             services.AddSingleton<IUserService, UserService>();
 
@@ -183,6 +185,7 @@ namespace PrimeERP.App.Bootstrap
             services.GetRequiredService<IJobTitleRepository>().CreateTable();
             services.GetRequiredService<IUnitRepository>().CreateTable();
             services.GetRequiredService<IWarehouseRepository>().CreateTable();
+            services.GetRequiredService<IStockMovementRepository>().CreateTable();
 
             // ⚠️ R9 — نفس درس توقف 7: PermissionDb (جداول Permissions/Roles/RolePermissions/Users/
             // UserPermissions + بذر دور SystemAdmin ومستخدم admin) كانت مبنية بالكامل منذ وقت طويل بلا أي
