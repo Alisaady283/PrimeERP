@@ -152,6 +152,17 @@
     <sys:String x:Key="Str.SourceDoc">Source Document</sys:String>
     <sys:String x:Key="Str.MovementType">Movement Type</sys:String>
     <sys:String x:Key="Str.AsOfDate">As Of Date</sys:String>
+    <sys:String x:Key="Str.Module.Settings">Settings</sys:String>
+    <sys:String x:Key="Str.Settings.Company">Company</sys:String>
+    <sys:String x:Key="Str.Settings.Financial">Financial</sys:String>
+    <sys:String x:Key="Str.Settings.Accounts">Accounts</sys:String>
+    <sys:String x:Key="Str.Settings.Documents">Documents</sys:String>
+    <sys:String x:Key="Str.Settings.UI">Interface</sys:String>
+    <sys:String x:Key="Str.Settings.Backup">Backup</sys:String>
+    <sys:String x:Key="Str.Settings.Security">Security</sys:String>
+    <sys:String x:Key="Str.Backup.CreateNow">Create Backup Now</sys:String>
+    <sys:String x:Key="Str.Backup.Restore">Restore</sys:String>
+    <sys:String x:Key="Str.Backup.RestoreConfirm">This will replace the current database with this backup. Are you sure?</sys:String>
     <sys:String x:Key="Str.Report.Run">Run Report</sys:String>
     <sys:String x:Key="Str.DateFrom">From Date</sys:String>
     <sys:String x:Key="Str.DateTo">To Date</sys:String>

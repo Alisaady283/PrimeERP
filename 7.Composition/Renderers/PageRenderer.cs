@@ -15,6 +15,7 @@ namespace PrimeERP.Composition.Renderers
                 LayoutKind.Grid => CrudPageRenderer.Render(definition, services),
                 LayoutKind.Tree or LayoutKind.TreeSplit => TreeRenderer.Render(definition, services),
                 LayoutKind.Report => ReportRenderer.Render(definition, services),
+                LayoutKind.Settings => SettingsPageRenderer.Render(definition, services),
                 _ => throw new NotSupportedException($"LayoutKind غير مدعوم: {definition.LayoutKind}")
             };
     }

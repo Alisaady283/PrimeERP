@@ -152,6 +152,17 @@
     <sys:String x:Key="Str.SourceDoc">المستند المصدر</sys:String>
     <sys:String x:Key="Str.MovementType">نوع الحركة</sys:String>
     <sys:String x:Key="Str.AsOfDate">حتى تاريخ</sys:String>
+    <sys:String x:Key="Str.Module.Settings">الإعدادات</sys:String>
+    <sys:String x:Key="Str.Settings.Company">الشركة</sys:String>
+    <sys:String x:Key="Str.Settings.Financial">المالية</sys:String>
+    <sys:String x:Key="Str.Settings.Accounts">الحسابات</sys:String>
+    <sys:String x:Key="Str.Settings.Documents">المستندات</sys:String>
+    <sys:String x:Key="Str.Settings.UI">الواجهة</sys:String>
+    <sys:String x:Key="Str.Settings.Backup">النسخ الاحتياطي</sys:String>
+    <sys:String x:Key="Str.Settings.Security">الأمان</sys:String>
+    <sys:String x:Key="Str.Backup.CreateNow">إنشاء نسخة الآن</sys:String>
+    <sys:String x:Key="Str.Backup.Restore">استعادة</sys:String>
+    <sys:String x:Key="Str.Backup.RestoreConfirm">سيتم استبدال قاعدة البيانات الحالية بهذه النسخة. هل أنت متأكد؟</sys:String>
     <sys:String x:Key="Str.Report.Run">تشغيل التقرير</sys:String>
     <sys:String x:Key="Str.DateFrom">من تاريخ</sys:String>
     <sys:String x:Key="Str.DateTo">إلى تاريخ</sys:String>

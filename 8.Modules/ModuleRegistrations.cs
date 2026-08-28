@@ -698,6 +698,8 @@ namespace PrimeERP.Modules
                     }
                 }
             });
+
+            registry.Register(new ModuleDefinition { Key = "Settings", TitleKey = "Str.Module.Settings", PermissionPrefix = "Settings", LayoutKind = LayoutKind.Settings });
         }
 
         private static void RegisterLookup(IModuleRegistry registry, string moduleKey, string titleKey, string addKey, string editKey, Type viewModelType)

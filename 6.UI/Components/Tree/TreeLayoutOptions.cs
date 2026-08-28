@@ -12,7 +12,10 @@ namespace PrimeERP.UI.Components.Tree
         TreeSplit,
 
         /// <summary>معايير + تشغيل + نتيجة عبر ReportRenderer — بلا شبكة CRUD، بلا حوار إضافة/تعديل.</summary>
-        Report
+        Report,
+
+        /// <summary>صفحة إعدادات بتبويبات عبر SettingsPageRenderer — وحدة واحدة فقط في كل النظام.</summary>
+        Settings
     }
 
     public enum SelectableRule { All, LeafOnly }
