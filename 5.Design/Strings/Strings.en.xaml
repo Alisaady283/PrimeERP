@@ -53,6 +53,7 @@
     <sys:String x:Key="Str.SalePrice">Sale Price</sys:String>
     <sys:String x:Key="Str.CostPrice">Cost Price</sys:String>
     <sys:String x:Key="Str.Category">Category</sys:String>
+    <sys:String x:Key="Str.Brand">Brand</sys:String>
     <sys:String x:Key="Str.Barcode">Barcode</sys:String>
     <sys:String x:Key="Str.Products.Add">Add Product</sys:String>
     <sys:String x:Key="Str.Products.Edit">Edit Product</sys:String>

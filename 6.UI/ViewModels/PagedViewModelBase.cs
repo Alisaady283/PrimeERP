@@ -85,9 +85,15 @@ namespace PrimeERP.UI.ViewModels.Base
 
         public Task LoadAsync() => GoToPageAsync(1);
 
+        private static readonly System.Reflection.PropertyInfo FilterSearchTextProp =
+            typeof(TFilter).GetProperty("SearchText");
+
         protected async Task GoToPageAsync(int page)
         {
             if (!Can($"{PermissionPrefix}.View")) return;
+
+            if (FilterSearchTextProp != null && FilterSearchTextProp.CanWrite)
+                FilterSearchTextProp.SetValue(Filter, SearchText);
 
             IsLoading = true;
             try

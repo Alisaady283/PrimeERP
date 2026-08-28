@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Inputs
@@ -117,7 +118,11 @@ namespace PrimeERP.UI.Components.Inputs
 
         private static void OnIsReadOnlyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            ((AppTextBox)d).txt.IsReadOnly = (bool)e.NewValue;
+            var c = (AppTextBox)d;
+            var readOnly = (bool)e.NewValue;
+            c.txt.IsReadOnly = readOnly;
+            c.txt.Focusable = !readOnly;
+            c.txt.Cursor = readOnly ? Cursors.Arrow : Cursors.IBeam;
         }
 
         private static void OnMaxLengthChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

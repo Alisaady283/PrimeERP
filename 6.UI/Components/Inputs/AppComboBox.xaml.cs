@@ -225,6 +225,13 @@ namespace PrimeERP.UI.Components.Inputs
             SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        private void chevron_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            txtSearch.Focus();
+            Filter(IsSearchable ? txtSearch.Text : "");
+            e.Handled = true;
+        }
+
         private void btnClear_Click(object sender, RoutedEventArgs e)
         {
             SelectedItem = null;

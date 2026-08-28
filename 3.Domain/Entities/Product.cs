@@ -10,6 +10,7 @@ namespace PrimeERP.Domain.Entities
         public string      Name               { get; set; }
         public string      NameEn             { get; set; }
         public int?        CategoryId         { get; set; }
+        public int?        BrandId            { get; set; }
         public int?        UnitId             { get; set; }
         public decimal     CostPrice          { get; set; }
         public decimal     SalePrice          { get; set; }

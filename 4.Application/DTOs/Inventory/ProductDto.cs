@@ -14,6 +14,8 @@ namespace PrimeERP.Application.DTOs.Inventory
         public string   NameEn       { get; set; }
         public int?     CategoryId   { get; set; }
         public string   CategoryName { get; set; }
+        public int?     BrandId      { get; set; }
+        public string   BrandName    { get; set; }
         public decimal  CostPrice    { get; set; }
         public decimal  SalePrice    { get; set; }
         public decimal  MinPrice     { get; set; }
@@ -34,6 +36,7 @@ namespace PrimeERP.Application.DTOs.Inventory
         public string  Name       { get; set; }
         public string  NameEn     { get; set; }
         public int?    CategoryId { get; set; }
+        public int?    BrandId    { get; set; }
         public decimal CostPrice  { get; set; }
         public decimal SalePrice  { get; set; }
         public decimal MinPrice   { get; set; }
@@ -47,6 +50,7 @@ namespace PrimeERP.Application.DTOs.Inventory
         public string  Name       { get; set; }
         public string  NameEn     { get; set; }
         public int?    CategoryId { get; set; }
+        public int?    BrandId    { get; set; }
         public decimal CostPrice  { get; set; }
         public decimal SalePrice  { get; set; }
         public decimal MinPrice   { get; set; }

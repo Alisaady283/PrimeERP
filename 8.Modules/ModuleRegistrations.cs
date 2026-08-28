@@ -43,8 +43,9 @@ namespace PrimeERP.Modules
                 ViewModelType = typeof(CustomersViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(CustomerDto.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(CustomerDto.Id), Width = 70, Align = ColumnAlign.Center },
                     new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(CustomerDto.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(CustomerDto.CategoryName), Width = 140 },
                     new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(CustomerDto.Phone), Width = 130 },
                     new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(CustomerDto.Balance), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
                 },
@@ -62,7 +63,7 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateCustomerDto.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
                         new() { Key = nameof(CreateCustomerDto.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 150 },
                         new() { Key = nameof(CreateCustomerDto.CreditLimit), LabelKey = "Str.CreditLimit", Kind = FieldKind.Number },
-                        new() { Key = nameof(CreateCustomerDto.CategoryId), LabelKey = "Str.ParentCategory", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Customers" },
+                        new() { Key = nameof(CreateCustomerDto.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Customers" },
                         new() { Key = nameof(CreateCustomerDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }.Concat(StandardFields.DialogFields()).ToList()
                 }
@@ -76,8 +77,9 @@ namespace PrimeERP.Modules
                 ViewModelType = typeof(SuppliersViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(SupplierDto.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(SupplierDto.Id), Width = 70, Align = ColumnAlign.Center },
                     new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(SupplierDto.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(SupplierDto.CategoryName), Width = 140 },
                     new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(SupplierDto.Phone), Width = 130 },
                 },
                 Dialog = new DialogDefinition
@@ -94,7 +96,7 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateSupplierDto.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
                         new() { Key = nameof(CreateSupplierDto.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 150 },
                         new() { Key = nameof(CreateSupplierDto.CreditLimit), LabelKey = "Str.CreditLimit", Kind = FieldKind.Number },
-                        new() { Key = nameof(CreateSupplierDto.CategoryId), LabelKey = "Str.ParentCategory", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Suppliers" },
+                        new() { Key = nameof(CreateSupplierDto.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Suppliers" },
                         new() { Key = nameof(CreateSupplierDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }.Concat(StandardFields.DialogFields()).ToList()
                 }
@@ -195,8 +197,8 @@ namespace PrimeERP.Modules
                 {
                     new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(ProductDto.Code), Width = 90, Align = ColumnAlign.Center },
                     new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(ProductDto.Name), Width = 220, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.SalePrice"), Binding = nameof(ProductDto.SalePrice), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
                     new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(ProductDto.CategoryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.SalePrice"), Binding = nameof(ProductDto.SalePrice), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
                 },
                 Filters = new()
                 {
@@ -216,7 +218,8 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateProductDto.Barcode), LabelKey = "Str.Barcode", Kind = FieldKind.Text, MaxLength = 60 },
                         new() { Key = nameof(CreateProductDto.CostPrice), LabelKey = "Str.CostPrice", Kind = FieldKind.Number, IsRequired = true },
                         new() { Key = nameof(CreateProductDto.SalePrice), LabelKey = "Str.SalePrice", Kind = FieldKind.Number, IsRequired = true },
-                        new() { Key = nameof(CreateProductDto.CategoryId), LabelKey = "Str.ParentCategory", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Products" },
+                        new() { Key = nameof(CreateProductDto.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Products" },
+                        new() { Key = nameof(CreateProductDto.BrandId), LabelKey = "Str.Brand", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Brands" },
                         new() { Key = nameof(CreateProductDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }.Concat(StandardFields.DialogFields()).ToList()
                 }

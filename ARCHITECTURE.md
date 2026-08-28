@@ -1094,3 +1094,63 @@ overloaded method match ... has some invalid arguments`. السبب الجذري
 ## التحقق النهائي لـ R1
 
 `dotnet build PrimeERP.csproj -m:1` → 0 تحذير، 0 خطأ. `dotnet build PrimeERP.Tests/PrimeERP.Tests.csproj -m:1` → 0 خطأ (تحذيرا Nullable سابقان على R1، غير متعلقين به). `dotnet test -m:1 --no-build` → **134/134 ناجح، صفر فشل، صفر تعديل على أي اختبار**.
+
+---
+
+## أخطاء اكتُشفت عبر اختبار حي فعلي بعد اكتمال ~35 وحدة (2026-08-28)
+
+### ⚠️ توقف 19 — `ComposedDialogWindow` يرث `OnEscapePressed` الذي يضبط `DialogResult` على نافذة لم تُفتح بـ`ShowDialog()`
+
+`AppDialogWindow.OnEscapePressed()` (الأساس، تخدم زر X بالهيدر ومفتاح Escape) تضبط `DialogResult = false;` قبل
+`Close()` — صحيح لـ`AppConfirmDialog`/`AppMessageDialog`/`PickerTreeWindow`/`PickerGridWindow` (تُفتح جميعاً
+بـ`ShowDialog()`)، لكن `ComposedDialogWindow` (يخدم كل حوارات `DialogRenderer`/`DocumentRenderer` — كل وحدات
+Pattern 2/3) تُفتح بـ`Show()+DispatcherFrame` بسبب توقف 10، وWPF يرمي `InvalidOperationException` عند ضبط
+`DialogResult` على نافذة كهذه — فلا يُنفَّذ `Close()` أبداً، وزر X والـEscape يفشلان بصمت (النافذة تبقى مفتوحة).
+**الحل**: `ComposedDialogWindow` تُجاوِز `OnEscapePressed()` بـ`Close()` فقط. مُثبَّت بـ`DialogRendererTests.
+ShowAndSave_ClickingHeaderCloseButton_ClosesWindow_WithoutThrowing` (فشل بنفس الاستثناء عند إزالة الإصلاح تجريبياً، تأكيد أنه السبب الحقيقي لا افتراض).
+
+### ⚠️ توقف 20 — `AppDataGrid.ItemsSource` لا تراقب تغيّر محتوى `ObservableCollection` ثابتة، فقط تغيّر مرجعها
+
+نفس فئة خلل توقف 15 لكن في `AppDataGrid` هذه المرة: `PagedViewModelBase.Items` مجموعة ثابتة
+(`ObservableCollection<TDto> Items { get; } = new();`) تُملأ بـ`Clear()+Add()`، لا تُستبدَل. `AppDataGrid.
+OnItemsSourceChanged` كانت تُنفَّذ فقط عند تغيّر **مرجع** الخاصية — يحدث مرة واحدة (عند الربط الأول، والقائمة
+لا تزال فارغة قبل أول `LoadAsync`)، ثم لا يتكرر أبداً رغم امتلاء `Items` لاحقاً. النتيجة: كل صفحات القوائم
+(العملاء/الموردون/القيود...) تعرض عدّاد نتائج صحيح (`TotalCount` خاصية عادية تُطلِق `PropertyChanged` بشكل
+سليم) بينما الجدول نفسه يبقى فارغاً للأبد — بالضبط ما وصفه المستخدم: "يظهر يوجد نتيجة لكن لا يظهر جدول".
+**الحل**: `OnItemsSourceChanged` تشترك الآن في `INotifyCollectionChanged.CollectionChanged` على المصدر
+(إلغاء/اشتراك عند كل تغيّر مرجع) وتُعيد `LoadItems()` عند أي حدث.
+
+### ⚠️ توقف 21 — `ReportRenderer` عطّل ترقيم `AppDataGrid` نسخاً عن `CrudPageRenderer` بلا إضافة بديل
+
+`CrudPageRenderer` يضبط `ShowPagination = false` عمداً لأنه يضيف `AppPagination` خارجية خاصة به (ترقيم من طرف
+الخادم). `ReportRenderer` نسخ نفس السطر رغم أنه **لا** يضيف أي بديل ولا يحتاج له أصلاً — نتيجة التقرير كاملة
+في الذاكرة دفعة واحدة (`report.Generate` لا صفحات)، فترقيم `AppDataGrid` الداخلي الافتراضي (`true`) هو المطلوب
+تماماً بلا أي إضافة. **الحل**: حذف `ShowPagination = false` من `ReportRenderer` فقط.
+
+### ⚠️ توقف 22 — `PermissionDb.SeedAdminRole` تمنح كل `PermissionKeys.All()` لدور المدير فقط عند إنشاء الدور لأول مرة
+
+`SeedDefaults()` تُستدعى في كل إقلاع تطبيق حقيقي، لكن `SeedAdminRole()` كانت `if (existing != null) return
+Convert.ToInt32(existing);` — أي قاعدة بيانات تطوير مستمرة (نفس `PrimeERP.db` عبر جلسات متعددة) تجمّد منح
+دور `SystemAdmin` عند أول تشغيل فقط؛ أي `PermissionKey` جديد يُضاف لاحقاً (أي وحدة جديدة — وقد أُضيفت عشرات
+هذه الجلسة) لا يُمنَح للمدير أبداً في تلك القاعدة رغم `SeedPermissions()` تسجيله بنجاح في جدول `Permissions`
+نفسه. `ActionToolbar.Rebuild()` تفلتر أي زر بصلاحية غير ممنوحة (`UIServices.Permissions.Can`) — فتختفي
+الأزرار بصمت بلا أي خطأ أو تحذير، تحديداً ما وصفه المستخدم: "الإضافة تعمل لكن باقي الأزرار غير موجودة".
+**الحل**: `SeedAdminRole()` تقرأ منح الدور الحالية دائماً (`GetRolePermissions`) وتُكمِّل أي مفتاح ناقص من
+`PermissionKeys.All()`، سواء كان الدور جديداً أو موجوداً من قبل — ذاتية الإصلاح في كل إقلاع تالٍ.
+
+### ملاحظات أصغر من نفس الدفعة
+
+- `PagedViewModelBase.SearchText` موثَّقة كمسؤولية الوارث لدمجها مع `Filter` داخل `FetchPage`، لكن لا أي VM
+  فعلها فعلياً — البحث النصي كان بلا أثر لكل الوحدات رغم أن السلسلة كاملة (Service→Repository→SQL) تعمل
+  بشكل صحيح لو `Filter.SearchText` وصلها. مُركزَت في `GoToPageAsync` نفسها عبر Reflection (خاصية `SearchText`
+  لو وُجدت على `TFilter`) بدل تكرارها يدوياً لكل VM.
+- `AppComboBox`'s `chevron` (سهم القائمة) بلا `Fill` (Stroke فقط، منطقة نقر ضئيلة تقريباً) وبلا أي معالج نقر
+  إطلاقاً — القائمة كانت تُفتح/تُغلَق فقط عبر GotFocus/LostFocus/`Popup.StaysOpen=False`، فالسهم نفسه بلا أثر
+  حقيقي على الإطلاق. أُضيف `Fill="Transparent"` (يوسّع منطقة النقر لكامل الأيقونة) ومعالج نقر يفتح القائمة.
+- `AppTextBox.IsReadOnly` كانت تُمرَّر فقط لـ`TextBox.IsReadOnly` (يمنع التعديل) بلا `Focusable=false` — الحقل
+  يبقى قابلاً للنقر والتحديد بصرياً وكأنه تفاعلي (حقول `CreatedAt`/`UpdatedAt` تحديداً). أُضيف `Focusable`/
+  `Cursor` مرتبطين بنفس الحالة.
+- `CategoryDialogFactory.Build` كانت تعرض حقل اختيار "فئة أب" فوق حقل الاسم مباشرة — مربك عند إضافة فئة جديدة
+  تماماً (لا معنى لاختيار أب حالي وقت الإنشاء الأول حسب طلب المستخدم الحي). أُزيل الحقل، الفورم الآن اسم+ملاحظات
+  فقط. `Str.ParentCategory` ("التصنيف الأب") أُعيد تسميتها استخدامات Customer/Supplier/Product الخاصة بفئة
+  العنصر نفسه (لا فئة أب حقيقية) إلى `Str.Category` ("الفئة") للتوحيد.

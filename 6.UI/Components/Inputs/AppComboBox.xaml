@@ -29,7 +29,8 @@
                     <Path Data="{StaticResource IconClose}" Style="{StaticResource FieldClearIconStyle}"/>
                 </Button>
 
-                <Path x:Name="chevron" Grid.Column="2" Data="{StaticResource IconChevronDown}" Style="{StaticResource ComboChevronStyle}"/>
+                <Path x:Name="chevron" Grid.Column="2" Data="{StaticResource IconChevronDown}" Style="{StaticResource ComboChevronStyle}"
+                      Fill="Transparent" Cursor="Hand" MouseLeftButtonDown="chevron_MouseLeftButtonDown"/>
             </Grid>
         </Border>
 

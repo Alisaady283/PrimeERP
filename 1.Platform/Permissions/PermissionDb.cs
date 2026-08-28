@@ -94,14 +94,14 @@ namespace PrimeERP.Platform.Permissions
         private static int SeedAdminRole()
         {
             var existing = Db.Scalar("SELECT Id FROM Roles WHERE Name = 'SystemAdmin'");
-            if (existing != null)
-                return Convert.ToInt32(existing);
+            var roleId = existing != null
+                ? Convert.ToInt32(existing)
+                : Db.InsertAndGetId(
+                    "INSERT INTO Roles (Name, NameAr, IsSystem) VALUES (@n, @na, @sys)",
+                    Db.Params(("@n", "SystemAdmin"), ("@na", "مدير النظام"), ("@sys", true)));
 
-            var roleId = Db.InsertAndGetId(
-                "INSERT INTO Roles (Name, NameAr, IsSystem) VALUES (@n, @na, @sys)",
-                Db.Params(("@n", "SystemAdmin"), ("@na", "مدير النظام"), ("@sys", true)));
-
-            foreach (var key in PermissionKeys.All())
+            var granted = GetRolePermissions(roleId).ToHashSet();
+            foreach (var key in PermissionKeys.All().Where(k => !granted.Contains(k)))
                 Db.Execute(
                     "INSERT INTO RolePermissions (RoleId, PermissionKey) VALUES (@r, @k)",
                     Db.Params(("@r", roleId), ("@k", key)));

@@ -19,7 +19,6 @@ namespace PrimeERP.Composition.Definitions
             UpdateDtoType = typeof(UpdateCategoryDto),
             Fields = new List<FieldDefinition>
             {
-                new() { Key = nameof(CreateCategoryDto.ParentId), LabelKey = "Str.ParentCategory", Kind = FieldKind.Picker, IsReadOnlyOnEdit = true, PickerType = "Category", PickerCategoryModuleKey = moduleKey },
                 new() { Key = nameof(CreateCategoryDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
                 new() { Key = nameof(CreateCategoryDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea },
             }.Concat(StandardFields.DialogFields()).ToList(),

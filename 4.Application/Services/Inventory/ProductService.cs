@@ -59,7 +59,7 @@ namespace PrimeERP.Application.Services.Inventory
             var product = new Product
             {
                 Code = _numbers.Next("Product"), Barcode = dto.Barcode, Name = dto.Name, NameEn = dto.NameEn,
-                CategoryId = dto.CategoryId, CostPrice = dto.CostPrice, SalePrice = dto.SalePrice, MinPrice = dto.MinPrice,
+                CategoryId = dto.CategoryId, BrandId = dto.BrandId, CostPrice = dto.CostPrice, SalePrice = dto.SalePrice, MinPrice = dto.MinPrice,
                 Notes = dto.Notes, IsActive = dto.IsActive, CreatedBy = CurrentUser
             };
 
@@ -80,7 +80,7 @@ namespace PrimeERP.Application.Services.Inventory
             var product = _products.GetById(dto.Id);
             if (product == null) return Fail("NotFound", ErrorCode.NotFound);
 
-            product.Name = dto.Name; product.NameEn = dto.NameEn; product.CategoryId = dto.CategoryId;
+            product.Name = dto.Name; product.NameEn = dto.NameEn; product.CategoryId = dto.CategoryId; product.BrandId = dto.BrandId;
             product.CostPrice = dto.CostPrice; product.SalePrice = dto.SalePrice; product.MinPrice = dto.MinPrice;
             product.Notes = dto.Notes; product.IsActive = dto.IsActive; product.UpdatedBy = CurrentUser;
 
@@ -111,6 +111,7 @@ namespace PrimeERP.Application.Services.Inventory
             {
                 Id = p.Id, Code = p.Code, Barcode = p.Barcode, Name = p.Name, NameEn = p.NameEn,
                 CategoryId = p.CategoryId, CategoryName = p.CategoryId != null ? _categories.GetById(p.CategoryId.Value)?.Name : null,
+                BrandId = p.BrandId, BrandName = p.BrandId != null ? _categories.GetById(p.BrandId.Value)?.Name : null,
                 CostPrice = p.CostPrice, SalePrice = p.SalePrice, MinPrice = p.MinPrice, Notes = p.Notes,
                 IsActive = p.IsActive, StatusVariant = variant, StatusText = LocalizationService.Get($"Str.{statusKey}"),
                 CreatedAt = p.CreatedAt, UpdatedAt = p.UpdatedAt,

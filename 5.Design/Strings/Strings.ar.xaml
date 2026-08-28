@@ -53,6 +53,7 @@
     <sys:String x:Key="Str.SalePrice">سعر البيع</sys:String>
     <sys:String x:Key="Str.CostPrice">سعر التكلفة</sys:String>
     <sys:String x:Key="Str.Category">الفئة</sys:String>
+    <sys:String x:Key="Str.Brand">الماركة</sys:String>
     <sys:String x:Key="Str.Barcode">الباركود</sys:String>
     <sys:String x:Key="Str.Products.Add">إضافة صنف</sys:String>
     <sys:String x:Key="Str.Products.Edit">تعديل صنف</sys:String>

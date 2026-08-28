@@ -9,6 +9,7 @@ using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.Services.Common;
 using PrimeERP.Composition.Definitions;
+using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Platform.Design;
 using PrimeERP.Platform.Localization;
@@ -39,7 +40,8 @@ namespace PrimeERP.Tests.Composition
                 UIServices.Initialize(_db.Services);
                 _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
 
-                var dialog = CategoryDialogFactory.Build("Products");
+                var registry = _db.Services.GetRequiredService<IModuleRegistry>();
+                var dialog = registry.Get("Products").Dialog;
                 var toast = _db.Services.GetRequiredService<IToastService>();
 
                 Exception thrown = null;
@@ -50,9 +52,8 @@ namespace PrimeERP.Tests.Composition
                     try
                     {
                         window = System.Windows.Application.Current.Windows.OfType<Window>().Last();
-                        var parentCombo = FindVisualChild<AppComboBox>(window);
+                        var categoryCombo = FindVisualChild<AppComboBox>(window);
 
-                        // يُلتقَط أثناء PushFrame الداخلي الذي يفتحه SelectItem أدناه (حوار الفئة المتداخل).
                         Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                         {
                             var nestedWindow = System.Windows.Application.Current.Windows.OfType<Window>().Last();
@@ -60,16 +61,18 @@ namespace PrimeERP.Tests.Composition
                             ClickButton(nestedWindow, "Str.Save");
                         }));
 
-                        var sentinel = ((System.Collections.IEnumerable)parentCombo.ItemsSource).Cast<object>().Last();
+                        var sentinel = ((System.Collections.IEnumerable)categoryCombo.ItemsSource).Cast<object>().Last();
                         typeof(AppComboBox).GetMethod("SelectItem", BindingFlags.NonPublic | BindingFlags.Instance)
-                            .Invoke(parentCombo, new object[] { sentinel });
+                            .Invoke(categoryCombo, new object[] { sentinel });
 
-                        // الحوار المتداخل أُغلق الآن؛ الاختيار يُترَك فارغاً والقائمة تشمل الفئة الجديدة.
-                        var reloaded = ((System.Collections.IEnumerable)parentCombo.ItemsSource).Cast<object>().ToList();
-                        Assert.Null(parentCombo.SelectedItem);
+                        var reloaded = ((System.Collections.IEnumerable)categoryCombo.ItemsSource).Cast<object>().ToList();
+                        Assert.Null(categoryCombo.SelectedItem);
                         Assert.Contains(reloaded, i => (string)i.GetType().GetProperty("Display").GetValue(i) == "فئة متداخلة اختبارية");
 
-                        FindVisualChild<AppTextBox>(window).Text = "فئة رئيسية";
+                        FindVisualChild<AppTextBox>(window).Text = "منتج اختباري";
+                        var numericBoxes = FindAllVisualChildren<AppNumericBox>(window).ToList();
+                        numericBoxes[0].Value = 10;
+                        numericBoxes[1].Value = 20;
                         ClickButton(window, "Str.Save");
                     }
                     catch (Exception ex) { thrown = ex; window?.Close(); }
@@ -88,7 +91,6 @@ namespace PrimeERP.Tests.Composition
 
                 var categories = _db.Services.GetRequiredService<ICategoryService>().GetAll("Products").Value;
                 Assert.Contains(categories, c => c.Name == "فئة متداخلة اختبارية");
-                Assert.Contains(categories, c => c.Name == "فئة رئيسية");
             });
         }
 

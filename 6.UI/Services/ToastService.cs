@@ -14,7 +14,7 @@ namespace PrimeERP.UI.Services
         private int _visibleCount;
 
         public void Success(string message, int durationMs = 3000) => Enqueue(message, "success", durationMs);
-        public void Error(string message) => Enqueue(message, "error", 0);
+        public void Error(string message) => Enqueue(message, "error", 5000);
         public void Warning(string message, int durationMs = 4000) => Enqueue(message, "warning", durationMs);
         public void Info(string message, int durationMs = 3000) => Enqueue(message, "info", durationMs);
 

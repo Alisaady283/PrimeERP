@@ -26,6 +26,7 @@ namespace PrimeERP.Data.Repositories
                 .Text("Name", 200, required: true)
                 .Text("NameEn", 200)
                 .Int("CategoryId")
+                .Int("BrandId")
                 .Int("UnitId")
                 .Decimal("CostPrice")
                 .Decimal("SalePrice")
@@ -46,6 +47,7 @@ namespace PrimeERP.Data.Repositories
                 .SoftDelete()
                 .Concurrency()
                 .Index("CategoryId")
+                .Index("BrandId")
                 .Create();
 
         protected override Product Map(DataRow row) => new()
@@ -56,6 +58,7 @@ namespace PrimeERP.Data.Repositories
             Name               = row["Name"].ToString(),
             NameEn             = row["NameEn"] == DBNull.Value ? null : row["NameEn"].ToString(),
             CategoryId         = row["CategoryId"] == DBNull.Value ? null : Convert.ToInt32(row["CategoryId"]),
+            BrandId            = row["BrandId"] == DBNull.Value ? null : Convert.ToInt32(row["BrandId"]),
             UnitId             = row["UnitId"] == DBNull.Value ? null : Convert.ToInt32(row["UnitId"]),
             CostPrice          = Convert.ToDecimal(row["CostPrice"]),
             SalePrice          = Convert.ToDecimal(row["SalePrice"]),
@@ -123,25 +126,25 @@ namespace PrimeERP.Data.Repositories
 
         private const string InsertSql = @"
             INSERT INTO Products
-                (Code, Barcode, Name, NameEn, CategoryId, CostPrice, SalePrice, MinPrice, Notes, IsActive, CreatedBy)
+                (Code, Barcode, Name, NameEn, CategoryId, BrandId, CostPrice, SalePrice, MinPrice, Notes, IsActive, CreatedBy)
             VALUES
-                (@code, @barcode, @name, @nameEn, @categoryId, @costPrice, @salePrice, @minPrice, @notes, @isActive, @createdBy)";
+                (@code, @barcode, @name, @nameEn, @categoryId, @brandId, @costPrice, @salePrice, @minPrice, @notes, @isActive, @createdBy)";
 
         public int Insert(Product p, DbConnection conn = null, DbTransaction tx = null) =>
             InsertGetId(InsertSql, conn, tx,
                 ("@code", p.Code), ("@barcode", p.Barcode), ("@name", p.Name), ("@nameEn", p.NameEn),
-                ("@categoryId", p.CategoryId), ("@costPrice", p.CostPrice), ("@salePrice", p.SalePrice),
+                ("@categoryId", p.CategoryId), ("@brandId", p.BrandId), ("@costPrice", p.CostPrice), ("@salePrice", p.SalePrice),
                 ("@minPrice", p.MinPrice), ("@notes", p.Notes ?? ""), ("@isActive", p.IsActive), ("@createdBy", p.CreatedBy));
 
         private const string UpdateSql = @"
             UPDATE Products SET
-                Name = @name, NameEn = @nameEn, CategoryId = @categoryId, CostPrice = @costPrice, SalePrice = @salePrice,
+                Name = @name, NameEn = @nameEn, CategoryId = @categoryId, BrandId = @brandId, CostPrice = @costPrice, SalePrice = @salePrice,
                 MinPrice = @minPrice, Notes = @notes, IsActive = @isActive, UpdatedAt = @now, UpdatedBy = @updatedBy
             WHERE Id = @id";
 
         public void Update(Product p, DbConnection conn = null, DbTransaction tx = null) =>
             Exec(UpdateSql, conn, tx,
-                ("@name", p.Name), ("@nameEn", p.NameEn), ("@categoryId", p.CategoryId), ("@costPrice", p.CostPrice),
+                ("@name", p.Name), ("@nameEn", p.NameEn), ("@categoryId", p.CategoryId), ("@brandId", p.BrandId), ("@costPrice", p.CostPrice),
                 ("@salePrice", p.SalePrice), ("@minPrice", p.MinPrice), ("@notes", p.Notes ?? ""), ("@isActive", p.IsActive),
                 ("@now", DateTime.Now), ("@updatedBy", p.UpdatedBy), ("@id", p.Id));
 
