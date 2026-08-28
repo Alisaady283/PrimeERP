@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,12 +32,7 @@ namespace PrimeERP.App
             shell.UserName = AppSession.DisplayName;
             shell.UserRole = AppSession.RoleName;
 
-            shell.NavItems = _registry.All().Select(m => new NavItem
-            {
-                Key = m.Key,
-                Text = LocalizationService.Get(m.TitleKey),
-                PermissionKey = $"{m.PermissionPrefix}.View"
-            }).ToList();
+            shell.NavItems = BuildNavGroups();
 
             var first = _registry.All().FirstOrDefault();
             if (first != null)
@@ -44,6 +40,34 @@ namespace PrimeERP.App
                 shell.SelectedKey = first.Key;
                 shell.CurrentPage = PageRenderer.Render(first, _services);
             }
+        }
+
+        private List<NavItem> BuildNavGroups()
+        {
+            var groups = new (string Text, string[] Keys)[]
+            {
+                ("المحاسبة", new[] { "Accounts", "Journals" }),
+                ("المبيعات", new[] { "SalesInvoices", "SalesReturns", "Customers" }),
+                ("المشتريات", new[] { "PurchaseInvoices", "PurchaseReturns", "Suppliers" }),
+                ("المخزون", new[] { "Products", "Categories", "Brands", "Units", "Warehouses", "StockIn", "StockOut", "StockTransfer" }),
+                ("الأصول", new[] { "Assets", "AssetCategories" }),
+                ("الموارد", new[] { "Employees", "Departments", "JobTitles", "Payroll" }),
+                ("التقارير", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "CustomerStatement", "SupplierStatement", "ItemCard", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport" }),
+                ("الإعدادات", new[] { "Settings", "Users", "Roles" }),
+            };
+
+            var result = new List<NavItem>();
+            foreach (var group in groups)
+            {
+                var children = group.Keys
+                    .Select(k => _registry.Get(k))
+                    .Where(m => m != null)
+                    .Select(m => new NavItem { Key = m.Key, Text = LocalizationService.Get(m.TitleKey), PermissionKey = $"{m.PermissionPrefix}.View" })
+                    .ToList();
+                if (children.Count == 0) continue;
+                result.Add(new NavItem { Text = group.Text, Children = children });
+            }
+            return result;
         }
 
         private void Shell_NavigationRequested(object sender, string key)
