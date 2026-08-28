@@ -7,6 +7,7 @@ using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Assets;
 using PrimeERP.Application.Services.HR;
 using PrimeERP.Application.Services.Security;
+using PrimeERP.Application.Services.Sales;
 using PrimeERP.Application.Services.Backup;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.Services.Print;
@@ -62,6 +63,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IUnitRepository, UnitRepository>();
             services.AddSingleton<IWarehouseRepository, WarehouseRepository>();
             services.AddSingleton<IStockMovementRepository, StockMovementRepository>();
+            services.AddSingleton<ISalesInvoiceRepository, SalesInvoiceRepository>();
             return services;
         }
 
@@ -85,6 +87,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IUnitService, UnitService>();
             services.AddSingleton<IWarehouseService, WarehouseService>();
             services.AddSingleton<IStockService, StockService>();
+            services.AddSingleton<ISalesInvoiceService, SalesInvoiceService>();
             services.AddSingleton<IRoleService, RoleService>();
             services.AddSingleton<IUserService, UserService>();
 
@@ -126,6 +129,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddTransient<EmployeesViewModel>();
             services.AddTransient<RolesViewModel>();
             services.AddTransient<UsersViewModel>();
+            services.AddTransient<SalesInvoicesViewModel>();
 
             return services;
         }
@@ -186,6 +190,7 @@ namespace PrimeERP.App.Bootstrap
             services.GetRequiredService<IUnitRepository>().CreateTable();
             services.GetRequiredService<IWarehouseRepository>().CreateTable();
             services.GetRequiredService<IStockMovementRepository>().CreateTable();
+            services.GetRequiredService<ISalesInvoiceRepository>().CreateTable();
 
             // ⚠️ R9 — نفس درس توقف 7: PermissionDb (جداول Permissions/Roles/RolePermissions/Users/
             // UserPermissions + بذر دور SystemAdmin ومستخدم admin) كانت مبنية بالكامل منذ وقت طويل بلا أي

@@ -85,6 +85,9 @@ namespace PrimeERP.Data.Repositories
         public override Product GetById(int id, DbConnection conn = null, DbTransaction tx = null) =>
             QueryOne("SELECT * FROM Products WHERE Id = @id AND IsDeleted = @d", conn, tx, ("@id", id), ("@d", false));
 
+        public Product GetByCode(string code, DbConnection conn = null, DbTransaction tx = null) =>
+            QueryOne("SELECT * FROM Products WHERE Code = @code AND IsDeleted = @d", conn, tx, ("@code", code), ("@d", false));
+
         public List<Product> Search(string term, int maxResults) =>
             Query($@"SELECT * FROM Products WHERE IsDeleted = @d AND IsActive = @a AND (Name LIKE @t OR Code LIKE @t OR Barcode LIKE @t)
                      ORDER BY Name {DbFactory.Current.LimitClause(0, maxResults)}",

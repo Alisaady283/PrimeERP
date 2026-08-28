@@ -289,6 +289,26 @@ namespace PrimeERP.Composition.Renderers
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Security.IRoleService>().GetAll();
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Select(r => new PickerRow { Id = r.Id, Code = null, Display = r.NameAr }).ToList();
             }
+            else if (field.PickerType == "Customer")
+            {
+                var result = services.GetRequiredService<PrimeERP.Application.Services.Parties.ICustomerService>().GetPaged(1, 5000);
+                if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(c => new PickerRow { Id = c.Id, Code = c.Code, Display = $"{c.Code} - {c.Name}" }).ToList();
+            }
+            else if (field.PickerType == "Supplier")
+            {
+                var result = services.GetRequiredService<PrimeERP.Application.Services.Parties.ISupplierService>().GetPaged(1, 5000);
+                if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(s => new PickerRow { Id = s.Id, Code = s.Code, Display = $"{s.Code} - {s.Name}" }).ToList();
+            }
+            else if (field.PickerType == "Product")
+            {
+                var result = services.GetRequiredService<PrimeERP.Application.Services.Inventory.IProductService>().GetPaged(1, 5000);
+                if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(p => new PickerRow { Id = p.Id, Code = p.Code, Display = $"{p.Code} - {p.Name}" }).ToList();
+            }
+            else if (field.PickerType == "Warehouse")
+            {
+                var result = services.GetRequiredService<PrimeERP.Application.Services.Inventory.IWarehouseService>().GetAll();
+                if (result.IsSuccess) combo.ItemsSource = result.Value.Select(w => new PickerRow { Id = w.Id, Code = w.Code, Display = w.Name }).ToList();
+            }
         }
 
         // معرّف اصطناعي بند "+ إضافة فئة" في نهاية قائمة منتقي الفئة — راجع WireCategoryPickerAddOption.

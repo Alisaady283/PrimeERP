@@ -8,6 +8,7 @@ namespace PrimeERP.Data.Repositories
     {
         void CreateTable();
         Product GetById(int id, DbConnection conn = null, DbTransaction tx = null);
+        Product GetByCode(string code, DbConnection conn = null, DbTransaction tx = null);
         List<Product> Search(string term, int maxResults);
         bool ExistsCode(string code, int? excludeId = null);
         (List<Product> Items, int Total) GetPaged(

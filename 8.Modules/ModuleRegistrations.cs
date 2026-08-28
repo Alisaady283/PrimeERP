@@ -11,7 +11,9 @@ using PrimeERP.Application.DTOs.HR;
 using PrimeERP.Application.Services.Assets;
 using PrimeERP.Application.Services.Common;
 using PrimeERP.Application.DTOs.Security;
+using PrimeERP.Application.DTOs.Sales;
 using PrimeERP.Application.Services.HR;
+using PrimeERP.Application.Services.Sales;
 using PrimeERP.Application.Services.Security;
 using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Parties;
@@ -432,6 +434,40 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateUserDto.RoleId), LabelKey = "Str.Role", Kind = FieldKind.Picker, PickerType = "Role", IsRequired = true },
                         new() { Key = nameof(CreateUserDto.Password), LabelKey = "Str.Password", Kind = FieldKind.Password, IsRequired = true },
                         new() { Key = nameof(CreateUserDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "SalesInvoices", TitleKey = "Str.Module.SalesInvoices", PermissionPrefix = "Sales", ViewModelType = typeof(SalesInvoicesViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.InvoiceNo"), Binding = nameof(SalesInvoiceDto.InvoiceNo), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.InvoiceDate"), Binding = nameof(SalesInvoiceDto.InvoiceDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Customer"), Binding = nameof(SalesInvoiceDto.CustomerName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.NetTotal"), Binding = nameof(SalesInvoiceDto.NetTotal), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(SalesInvoiceDto.StatusText), Width = 100, Align = ColumnAlign.Center },
+                },
+                DocumentDialog = new DocumentDialogDefinition
+                {
+                    TitleKey = "Str.SalesInvoices.Add", TitleEditKey = "Str.SalesInvoices.Edit",
+                    ServiceType = typeof(ISalesInvoiceService), DtoType = typeof(CreateSalesInvoiceDto), LineDtoType = typeof(CreateSalesInvoiceLineDto),
+                    LinesPropertyName = nameof(CreateSalesInvoiceDto.Lines),
+                    HeaderFields = new()
+                    {
+                        new() { Key = nameof(CreateSalesInvoiceDto.InvoiceDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreateSalesInvoiceDto.CustomerId), LabelKey = "Str.Customer", Kind = FieldKind.Picker, PickerType = "Customer", IsRequired = true },
+                        new() { Key = nameof(CreateSalesInvoiceDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
+                        new() { Key = nameof(CreateSalesInvoiceDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
+                    },
+                    LineFields = new()
+                    {
+                        new() { Key = nameof(CreateSalesInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
+                        new() { Key = nameof(CreateSalesInvoiceLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
+                        new() { Key = nameof(CreateSalesInvoiceLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
+                        new() { Key = nameof(CreateSalesInvoiceLineDto.TaxPercent), Header = LocalizationService.Get("Str.TaxPercent"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreateSalesInvoiceLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
                 }
             });
