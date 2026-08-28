@@ -49,6 +49,14 @@ namespace PrimeERP.Modules
             SeedPurchaseInvoice(services, supplierIds[0], warehouseIds[0], productCodes[1]);
         }
 
+        // كل نداء زرع يفترض نجاح Result — بدل NullReferenceException غامض عند فشل صامت (صلاحية/تحقق)، رسالة
+        // الخطأ الحقيقية من الخدمة نفسها تظهر فوراً.
+        private static T Unwrap<T>(PrimeERP.Domain.Results.Result<T> result, string step)
+        {
+            if (!result.IsSuccess) throw new InvalidOperationException($"DemoDataSeeder فشل في {step}: {result.ErrorMessage}");
+            return result.Value;
+        }
+
         // الجذور الافتراضية (41/51/1201/21/12) IsLeaf=false — تُنشئ فرعاً حقيقياً تحت كل واحد وتُحدِّث
         // الإعدادات لتشير إليه، تماماً كما يفعل مسؤول النظام يدوياً أول مرة (نفس ما أثبتته اختبارات الفواتير).
         private static (string Sales, string COGS, string Inventory, string VATOutput, string VATInput) SeedPostingAccounts(IServiceProvider services)
@@ -58,8 +66,8 @@ namespace PrimeERP.Modules
 
             string LeafUnder(string parentCode, string name)
             {
-                var parent = accountSvc.GetByCode(parentCode).Value;
-                return accountSvc.Create(new CreateAccountDto { ParentId = parent.Id, Name = name, IsLeaf = true, SkipAutoLink = true }).Value.Code;
+                var parent = Unwrap(accountSvc.GetByCode(parentCode), $"GetByCode({parentCode})");
+                return Unwrap(accountSvc.Create(new CreateAccountDto { ParentId = parent.Id, Name = name, IsLeaf = true, SkipAutoLink = true }), $"Create account {name}").Code;
             }
 
             var sales = LeafUnder("41", "مبيعات بضائع");
@@ -84,8 +92,8 @@ namespace PrimeERP.Modules
         private static int[] SeedProductCategories(IServiceProvider services)
         {
             var categories = services.GetRequiredService<ICategoryService>();
-            string[] names = { "إلكترونيات", "أدوات مكتبية", "أثاث" };
-            return names.Select(n => categories.Create(new CreateCategoryDto { Name = n, ModuleKey = "Products" }).Value.Id).ToArray();
+            string[] names = { "فئة 1", "فئة 2" };
+            return names.Select(n => Unwrap(categories.Create(new CreateCategoryDto { Name = n, ModuleKey = "Products" }), $"Create category {n}").Id).ToArray();
         }
 
         private static string[] SeedProducts(IServiceProvider services, int[] categoryIds)
@@ -93,16 +101,13 @@ namespace PrimeERP.Modules
             var products = services.GetRequiredService<IProductService>();
             (string Name, decimal Cost, decimal Sale)[] items =
             {
-                ("لابتوب Dell Inspiron", 850, 1100), ("شاشة LG 24 بوصة", 300, 420), ("ماوس لاسلكي", 20, 35),
-                ("لوحة مفاتيح ميكانيكية", 60, 95), ("طابعة HP LaserJet", 400, 550),
-                ("دفتر ملاحظات A4", 3, 6), ("قلم حبر جاف (علبة)", 8, 15), ("آلة حاسبة علمية", 25, 40),
-                ("كرسي مكتب دوّار", 220, 320), ("طاولة مكتب خشبية", 500, 700),
+                ("صنف 1", 10, 15), ("صنف 2", 20, 30),
             };
 
-            return items.Select((it, i) => products.Create(new CreateProductDto
+            return items.Select((it, i) => Unwrap(products.Create(new CreateProductDto
             {
                 Name = it.Name, CategoryId = categoryIds[i % categoryIds.Length], CostPrice = it.Cost, SalePrice = it.Sale, IsActive = true
-            }).Value.Code).ToArray();
+            }), $"Create product {it.Name}").Code).ToArray();
         }
 
         private static int[] SeedWarehouses(IServiceProvider services)
@@ -110,8 +115,8 @@ namespace PrimeERP.Modules
             var warehouses = services.GetRequiredService<IWarehouseService>();
             return new[]
             {
-                warehouses.Create(new CreateWarehouseDto { Name = "المخزن الرئيسي", Location = "القاهرة" }).Value.Id,
-                warehouses.Create(new CreateWarehouseDto { Name = "مخزن الفرع", Location = "الإسكندرية" }).Value.Id,
+                Unwrap(warehouses.Create(new CreateWarehouseDto { Name = "المخزن الرئيسي", Location = "القاهرة" }), "Create warehouse 1").Id,
+                Unwrap(warehouses.Create(new CreateWarehouseDto { Name = "مخزن الفرع", Location = "الإسكندرية" }), "Create warehouse 2").Id,
             };
         }
 
@@ -138,11 +143,9 @@ namespace PrimeERP.Modules
             var customers = services.GetRequiredService<ICustomerService>();
             (string Name, string Phone, string City)[] items =
             {
-                ("شركة النور للتجارة", "01001234567", "القاهرة"), ("مؤسسة الأمل", "01012345678", "الجيزة"),
-                ("محلات السلام", "01023456789", "الإسكندرية"), ("شركة الفجر الحديثة", "01034567890", "المنصورة"),
-                ("عملاء نقدي - أحمد سامي", "01045678901", "أسوان"),
+                ("عميل 1", "01001234567", "القاهرة"), ("عميل 2", "01012345678", "الجيزة"),
             };
-            return items.Select(it => customers.Create(new CreateCustomerDto { Name = it.Name, Phone = it.Phone, City = it.City, CreditLimit = 50000 }).Value.Id).ToArray();
+            return items.Select(it => Unwrap(customers.Create(new CreateCustomerDto { Name = it.Name, Phone = it.Phone, City = it.City, CreditLimit = 50000 }), $"Create customer {it.Name}").Id).ToArray();
         }
 
         private static int[] SeedSuppliers(IServiceProvider services)
@@ -150,11 +153,9 @@ namespace PrimeERP.Modules
             var suppliers = services.GetRequiredService<ISupplierService>();
             (string Name, string Phone, string City)[] items =
             {
-                ("المتحدة لاستيراد الإلكترونيات", "01111234567", "القاهرة"), ("مصنع الأثاث الحديث", "01122345678", "دمياط"),
-                ("الشركة العربية للقرطاسية", "01133456789", "القاهرة"), ("موردون متحدون", "01144567890", "الإسكندرية"),
-                ("التوريدات السريعة", "01155678901", "الجيزة"),
+                ("مورد 1", "01111234567", "القاهرة"), ("مورد 2", "01122345678", "دمياط"),
             };
-            return items.Select(it => suppliers.Create(new CreateSupplierDto { Name = it.Name, Phone = it.Phone, City = it.City, CreditLimit = 100000 }).Value.Id).ToArray();
+            return items.Select(it => Unwrap(suppliers.Create(new CreateSupplierDto { Name = it.Name, Phone = it.Phone, City = it.City, CreditLimit = 100000 }), $"Create supplier {it.Name}").Id).ToArray();
         }
 
         private static (int[] Departments, int[] JobTitles) SeedDepartmentsAndJobTitles(IServiceProvider services)
@@ -162,8 +163,8 @@ namespace PrimeERP.Modules
             var departments = services.GetRequiredService<IDepartmentService>();
             var jobTitles = services.GetRequiredService<IJobTitleService>();
 
-            var deptIds = new[] { "المبيعات", "المحاسبة", "المخازن" }.Select(n => departments.Create(new CreateDepartmentDto { Name = n }).Value.Id).ToArray();
-            var jobIds = new[] { "مندوب مبيعات", "محاسب", "أمين مخزن" }.Select(n => jobTitles.Create(new CreateJobTitleDto { Name = n }).Value.Id).ToArray();
+            var deptIds = new[] { "قسم 1", "قسم 2" }.Select(n => Unwrap(departments.Create(new CreateDepartmentDto { Name = n }), $"Create department {n}").Id).ToArray();
+            var jobIds = new[] { "وظيفة 1", "وظيفة 2" }.Select(n => Unwrap(jobTitles.Create(new CreateJobTitleDto { Name = n }), $"Create job title {n}").Id).ToArray();
             return (deptIds, jobIds);
         }
 
@@ -172,7 +173,7 @@ namespace PrimeERP.Modules
             var employees = services.GetRequiredService<IEmployeeService>();
             (string Name, int DeptIdx, int JobIdx, decimal Salary)[] items =
             {
-                ("محمد إبراهيم", 0, 0, 6000), ("سارة عبد الله", 1, 1, 7500), ("خالد يوسف", 2, 2, 5500),
+                ("موظف 1", 0, 0, 6000), ("موظف 2", 1, 1, 7500),
             };
 
             foreach (var it in items)
@@ -186,13 +187,13 @@ namespace PrimeERP.Modules
         private static void SeedBrandsUnitsAssets(IServiceProvider services)
         {
             var categories = services.GetRequiredService<ICategoryService>();
-            new[] { "Dell", "HP", "LG" }.ToList().ForEach(n => categories.Create(new CreateCategoryDto { Name = n, ModuleKey = "Brands" }));
+            new[] { "ماركة 1", "ماركة 2" }.ToList().ForEach(n => categories.Create(new CreateCategoryDto { Name = n, ModuleKey = "Brands" }));
 
             var units = services.GetRequiredService<IUnitService>();
-            new (string, string)[] { ("قطعة", "PC"), ("كرتونة", "CTN"), ("كيلوجرام", "KG") }
+            new (string, string)[] { ("وحدة 1", "U1"), ("وحدة 2", "U2") }
                 .ToList().ForEach(u => units.Create(new CreateUnitDto { Name = u.Item1, Symbol = u.Item2 }));
 
-            var assetCategoryId = categories.Create(new CreateCategoryDto { Name = "أجهزة حاسوب", ModuleKey = "AssetCategories" }).Value.Id;
+            var assetCategoryId = Unwrap(categories.Create(new CreateCategoryDto { Name = "أجهزة حاسوب", ModuleKey = "AssetCategories" }), "Create asset category").Id;
             var assets = services.GetRequiredService<IAssetService>();
             assets.Create(new CreateAssetDto { Name = "سيرفر مكتبي", CategoryId = assetCategoryId, PurchaseDate = DateTime.Today.AddMonths(-6), PurchaseCost = 15000, CurrentValue = 13000, Location = "غرفة السيرفرات" });
             assets.Create(new CreateAssetDto { Name = "طابعة مكتبية", CategoryId = assetCategoryId, PurchaseDate = DateTime.Today.AddMonths(-3), PurchaseCost = 4000, CurrentValue = 3600, Location = "الاستقبال" });

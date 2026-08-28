@@ -35,11 +35,11 @@ namespace PrimeERP.Tests.Services
             var purchaseInvoices = _db.Services.GetRequiredService<IPurchaseInvoiceService>();
             var stock = _db.Services.GetRequiredService<IStockService>();
 
-            Assert.Equal(5, customers.GetPaged(1, 50).Value.TotalCount);
-            Assert.Equal(5, suppliers.GetPaged(1, 50).Value.TotalCount);
-            Assert.Equal(10, products.GetPaged(1, 50).Value.TotalCount);
+            Assert.Equal(2, customers.GetPaged(1, 50).Value.TotalCount);
+            Assert.Equal(2, suppliers.GetPaged(1, 50).Value.TotalCount);
+            Assert.Equal(2, products.GetPaged(1, 50).Value.TotalCount);
             Assert.Equal(2, warehouses.GetAll().Value.Count);
-            Assert.Equal(3, employees.GetPaged(1, 50).Value.TotalCount);
+            Assert.Equal(2, employees.GetPaged(1, 50).Value.TotalCount);
             Assert.Equal(2, assets.GetPaged(1, 50).Value.TotalCount);
             Assert.Equal(1, salesInvoices.GetPaged(1, 50).Value.TotalCount);
             Assert.Equal(1, purchaseInvoices.GetPaged(1, 50).Value.TotalCount);
@@ -49,8 +49,8 @@ namespace PrimeERP.Tests.Services
 
             // تشغيل ثانٍ — البوابة الداخلية يجب أن تمنع أي تكرار.
             DemoDataSeeder.Seed(_db.Services);
-            Assert.Equal(5, customers.GetPaged(1, 50).Value.TotalCount);
-            Assert.Equal(10, products.GetPaged(1, 50).Value.TotalCount);
+            Assert.Equal(2, customers.GetPaged(1, 50).Value.TotalCount);
+            Assert.Equal(2, products.GetPaged(1, 50).Value.TotalCount);
         }
     }
 }

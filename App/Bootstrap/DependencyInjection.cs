@@ -66,6 +66,12 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IStockMovementRepository, StockMovementRepository>();
             services.AddSingleton<ISalesInvoiceRepository, SalesInvoiceRepository>();
             services.AddSingleton<IPurchaseInvoiceRepository, PurchaseInvoiceRepository>();
+            services.AddSingleton<ISalesReturnRepository, SalesReturnRepository>();
+            services.AddSingleton<IPurchaseReturnRepository, PurchaseReturnRepository>();
+            services.AddSingleton<IStockInRepository, StockInRepository>();
+            services.AddSingleton<IStockOutRepository, StockOutRepository>();
+            services.AddSingleton<IStockTransferRepository, StockTransferRepository>();
+            services.AddSingleton<IPayrollRepository, PayrollRepository>();
             return services;
         }
 
@@ -91,6 +97,12 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IStockService, StockService>();
             services.AddSingleton<ISalesInvoiceService, SalesInvoiceService>();
             services.AddSingleton<IPurchaseInvoiceService, PurchaseInvoiceService>();
+            services.AddSingleton<ISalesReturnService, SalesReturnService>();
+            services.AddSingleton<IPurchaseReturnService, PurchaseReturnService>();
+            services.AddSingleton<IStockInService, StockInService>();
+            services.AddSingleton<IStockOutService, StockOutService>();
+            services.AddSingleton<IStockTransferService, StockTransferService>();
+            services.AddSingleton<IPayrollService, PayrollService>();
             services.AddSingleton<IRoleService, RoleService>();
             services.AddSingleton<IUserService, UserService>();
 
@@ -134,6 +146,12 @@ namespace PrimeERP.App.Bootstrap
             services.AddTransient<UsersViewModel>();
             services.AddTransient<SalesInvoicesViewModel>();
             services.AddTransient<PurchaseInvoicesViewModel>();
+            services.AddTransient<SalesReturnsViewModel>();
+            services.AddTransient<PurchaseReturnsViewModel>();
+            services.AddTransient<StockInViewModel>();
+            services.AddTransient<StockOutViewModel>();
+            services.AddTransient<StockTransferViewModel>();
+            services.AddTransient<PayrollViewModel>();
 
             return services;
         }
@@ -197,6 +215,12 @@ namespace PrimeERP.App.Bootstrap
             services.GetRequiredService<IStockMovementRepository>().CreateTable();
             services.GetRequiredService<ISalesInvoiceRepository>().CreateTable();
             services.GetRequiredService<IPurchaseInvoiceRepository>().CreateTable();
+            services.GetRequiredService<ISalesReturnRepository>().CreateTable();
+            services.GetRequiredService<IPurchaseReturnRepository>().CreateTable();
+            services.GetRequiredService<IStockInRepository>().CreateTable();
+            services.GetRequiredService<IStockOutRepository>().CreateTable();
+            services.GetRequiredService<IStockTransferRepository>().CreateTable();
+            services.GetRequiredService<IPayrollRepository>().CreateTable();
 
             // ⚠️ R9 — نفس درس توقف 7: PermissionDb (جداول Permissions/Roles/RolePermissions/Users/
             // UserPermissions + بذر دور SystemAdmin ومستخدم admin) كانت مبنية بالكامل منذ وقت طويل بلا أي

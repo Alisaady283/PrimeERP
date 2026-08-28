@@ -69,6 +69,12 @@ namespace PrimeERP.Tests
             Services.GetRequiredService<IStockMovementRepository>().CreateTable();
             Services.GetRequiredService<ISalesInvoiceRepository>().CreateTable();
             Services.GetRequiredService<IPurchaseInvoiceRepository>().CreateTable();
+            Services.GetRequiredService<ISalesReturnRepository>().CreateTable();
+            Services.GetRequiredService<IPurchaseReturnRepository>().CreateTable();
+            Services.GetRequiredService<IStockInRepository>().CreateTable();
+            Services.GetRequiredService<IStockOutRepository>().CreateTable();
+            Services.GetRequiredService<IStockTransferRepository>().CreateTable();
+            Services.GetRequiredService<IPayrollRepository>().CreateTable();
 
             // CreateTables فقط، لا SeedDefaults — الأخيرة تلف ~80 صلاحية (Permissions+RolePermissions) عبر
             // استعلامات فردية غير مُجمَّعة بمعاملة واحدة؛ رخيصة في الإنتاج (مرة واحدة فقط، تتحقق من عدم

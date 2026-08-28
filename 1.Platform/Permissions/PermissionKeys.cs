@@ -117,6 +117,11 @@ namespace PrimeERP.Platform.Permissions
             public const string Transfer = "Inventory.Transfer";
             public const string Export   = "Inventory.Export";
             public const string Print    = "Inventory.Print";
+            // CrudViewModelBase العامة (Add/Edit/Delete على شبكة StockIn/StockOut/Transfer) تحتاج هذه الثلاثة
+            // بنفس التسمية القياسية — منفصلة عن StockIn/StockOut أعلاه (تلك لأوامر برمجية محدَّدة لاحقاً).
+            public const string Create   = "Inventory.Create";
+            public const string Edit     = "Inventory.Edit";
+            public const string Delete   = "Inventory.Delete";
         }
 
         public static class Sales

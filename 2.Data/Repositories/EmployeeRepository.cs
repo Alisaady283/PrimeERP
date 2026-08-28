@@ -74,6 +74,9 @@ namespace PrimeERP.Data.Repositories
         public override Employee GetById(int id, DbConnection conn = null, DbTransaction tx = null) =>
             QueryOne("SELECT * FROM Employees WHERE Id = @id AND IsDeleted = @d", conn, tx, ("@id", id), ("@d", false));
 
+        public Employee GetByCode(string code, DbConnection conn = null, DbTransaction tx = null) =>
+            QueryOne("SELECT * FROM Employees WHERE Code = @code AND IsDeleted = @d", conn, tx, ("@code", code), ("@d", false));
+
         public List<Employee> Search(string term, int maxResults) =>
             Query($@"SELECT * FROM Employees WHERE IsDeleted = @d AND (Name LIKE @t OR Code LIKE @t)
                      ORDER BY Name {DbFactory.Current.LimitClause(0, maxResults)}",
