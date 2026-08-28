@@ -34,6 +34,16 @@ namespace PrimeERP.Application.Services.Inventory
 
         protected override Product FindById(int id) => _products.GetById(id);
 
+        public Result<ProductDto> GetByCode(string code)
+        {
+            if (!Can("View")) return FailDenied<ProductDto>();
+
+            var product = _products.GetByCode(code);
+            if (product == null) return Fail<ProductDto>("NotFound", ErrorCode.NotFound);
+
+            return Ok(ToDto(product));
+        }
+
         protected override (List<Product> Items, int Total) FindPaged(int page, int pageSize, ProductFilter filter)
         {
             filter ??= new ProductFilter();

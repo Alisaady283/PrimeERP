@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using PrimeERP.Data.Core;
 using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Data.Schema;
 using PrimeERP.Domain.Entities;
@@ -68,6 +69,13 @@ namespace PrimeERP.Data.Repositories
                 $@"SELECT ProductId, WarehouseId,
                           COALESCE(SUM(CASE MovementType WHEN {(int)MovementType.Out} THEN -Qty ELSE Qty END), 0) AS Balance
                    FROM StockMovements GROUP BY ProductId, WarehouseId HAVING Balance != 0");
+
+        public List<StockMovement> GetMovements(DateTime from, DateTime to, int? warehouseId, int maxResults) =>
+            Query($@"SELECT * FROM StockMovements WHERE MovementDate >= @f AND MovementDate <= @t {(warehouseId != null ? "AND WarehouseId = @w" : "")}
+                     ORDER BY MovementDate DESC, Id DESC {DbFactory.Current.LimitClause(0, maxResults)}",
+                null, null, warehouseId != null
+                    ? new (string, object)[] { ("@f", from), ("@t", to), ("@w", warehouseId.Value) }
+                    : new (string, object)[] { ("@f", from), ("@t", to) });
 
         public List<StockMovement> GetHistory(int productId, int? warehouseId, int maxResults) =>
             Query($@"SELECT * FROM StockMovements WHERE ProductId = @p {(warehouseId != null ? "AND WarehouseId = @w" : "")}

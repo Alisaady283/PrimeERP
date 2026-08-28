@@ -38,6 +38,12 @@ namespace PrimeERP.Application.Services.Inventory
         public Result<List<(int ProductId, int WarehouseId, decimal Balance)>> GetAllBalances() =>
             Result.Ok(_movements.GetAllBalances());
 
+        public Result<List<Domain.Entities.StockMovement>> GetHistory(int productId, int? warehouseId, int maxResults = 200) =>
+            Result.Ok(_movements.GetHistory(productId, warehouseId, maxResults));
+
+        public Result<List<Domain.Entities.StockMovement>> GetMovements(DateTime from, DateTime to, int? warehouseId = null, int maxResults = 500) =>
+            Result.Ok(_movements.GetMovements(from, to, warehouseId, maxResults));
+
         public Result RecordMovement(DbConnection conn, DbTransaction tx, int productId, int warehouseId, MovementType type,
             decimal qty, decimal unitCost, string sourceDocType, int? sourceDocId, string sourceDocNo, DateTime? date = null, string notes = null)
         {

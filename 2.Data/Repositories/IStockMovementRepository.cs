@@ -13,5 +13,8 @@ namespace PrimeERP.Data.Repositories
 
         /// <summary>رصيد كل تركيبة صنف+مخزن ظهرت لها حركة على الإطلاق — استعلام GROUP BY واحد، تستخدمه StockBalancesReport.</summary>
         List<(int ProductId, int WarehouseId, decimal Balance)> GetAllBalances();
+
+        /// <summary>كل الحركات بين تاريخين (بلا فلترة صنف) — تستخدمه StockReport.</summary>
+        List<StockMovement> GetMovements(System.DateTime from, System.DateTime to, int? warehouseId, int maxResults);
     }
 }
