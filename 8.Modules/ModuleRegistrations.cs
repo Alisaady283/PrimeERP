@@ -10,7 +10,9 @@ using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.DTOs.HR;
 using PrimeERP.Application.Services.Assets;
 using PrimeERP.Application.Services.Common;
+using PrimeERP.Application.DTOs.Security;
 using PrimeERP.Application.Services.HR;
+using PrimeERP.Application.Services.Security;
 using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Composition.Definitions;
@@ -386,6 +388,51 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateEmployeeDto.BasicSalary), LabelKey = "Str.Salary", Kind = FieldKind.Number },
                         new() { Key = nameof(CreateEmployeeDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }.Concat(StandardFields.DialogFields()).ToList()
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Roles", TitleKey = "Str.Module.Roles", PermissionPrefix = "Users", ViewModelType = typeof(RolesViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(RoleDto.NameAr), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.RoleNameEn"), Binding = nameof(RoleDto.Name), Width = 160 },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Roles.Add", TitleEditKey = "Str.Roles.Edit", GridColumns = 1,
+                    ServiceType = typeof(IRoleService), CreateDtoType = typeof(CreateRoleDto), UpdateDtoType = typeof(UpdateRoleDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateRoleDto.NameAr), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 100 },
+                        new() { Key = nameof(CreateRoleDto.Name), LabelKey = "Str.RoleNameEn", Kind = FieldKind.Text, IsRequired = true, MaxLength = 100 },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Users", TitleKey = "Str.Module.Users", PermissionPrefix = "Users", ViewModelType = typeof(UsersViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Username"), Binding = nameof(UserDto.Username), Width = 130 },
+                    new() { Header = LocalizationService.Get("Str.DisplayName"), Binding = nameof(UserDto.DisplayName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Role"), Binding = nameof(UserDto.RoleName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(UserDto.StatusText), Width = 90, Align = ColumnAlign.Center },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Users.Add", TitleEditKey = "Str.Users.Edit", GridColumns = 1,
+                    ServiceType = typeof(IUserService), CreateDtoType = typeof(CreateUserDto), UpdateDtoType = typeof(UpdateUserDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateUserDto.Username), LabelKey = "Str.Username", Kind = FieldKind.Text, IsRequired = true, MaxLength = 100, IsReadOnlyOnEdit = true },
+                        new() { Key = nameof(CreateUserDto.DisplayName), LabelKey = "Str.DisplayName", Kind = FieldKind.Text, IsRequired = true, MaxLength = 150 },
+                        new() { Key = nameof(CreateUserDto.RoleId), LabelKey = "Str.Role", Kind = FieldKind.Picker, PickerType = "Role", IsRequired = true },
+                        new() { Key = nameof(CreateUserDto.Password), LabelKey = "Str.Password", Kind = FieldKind.Password, IsRequired = true },
+                        new() { Key = nameof(CreateUserDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                    }
                 }
             });
         }

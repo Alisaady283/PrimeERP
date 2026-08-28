@@ -116,6 +116,8 @@ namespace PrimeERP.Composition.Renderers
 
                 var value = GetControlValue(fields[field.Key], field.Kind);
                 if (value == null) continue;
+                // كلمة مرور فارغة = "بلا تغيير" (وضع التعديل بلا حقل خاص يحمل القيمة الحالية أصلاً) — لا تُكتَب فوق الهاش الحالي.
+                if (field.Kind == FieldKind.Password && string.IsNullOrEmpty((string)value)) continue;
                 prop.SetValue(dto, Convert.ChangeType(value, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType));
             }
         }
@@ -203,6 +205,7 @@ namespace PrimeERP.Composition.Renderers
                 FieldKind.Check => new AppCheckBox { Label = label },
                 FieldKind.TextArea => new AppTextArea { Label = label, IsRequired = field.IsRequired, MaxLength = field.MaxLength, Rows = 3 },
                 FieldKind.Picker => new AppComboBox { Label = label, IsRequired = field.IsRequired, DisplayMemberPath = "Display", SelectedValuePath = field.PickerValueField },
+                FieldKind.Password => new AppPasswordBox { Label = label, IsRequired = field.IsRequired },
                 _ => new AppTextBox { Label = label }
             };
         }
@@ -233,6 +236,7 @@ namespace PrimeERP.Composition.Renderers
             FieldKind.Date => ((AppDatePicker)control).SelectedDate,
             FieldKind.Check => ((AppCheckBox)control).IsChecked,
             FieldKind.Picker => ((AppComboBox)control).SelectedValue,
+            FieldKind.Password => ((AppPasswordBox)control).Password,
             _ => null
         };
 
@@ -279,6 +283,11 @@ namespace PrimeERP.Composition.Renderers
             {
                 var result = services.GetRequiredService<PrimeERP.Application.Services.HR.IJobTitleService>().GetAll();
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Select(j => new PickerRow { Id = j.Id, Code = null, Display = j.Name }).ToList();
+            }
+            else if (field.PickerType == "Role")
+            {
+                var result = services.GetRequiredService<PrimeERP.Application.Services.Security.IRoleService>().GetAll();
+                if (result.IsSuccess) combo.ItemsSource = result.Value.Select(r => new PickerRow { Id = r.Id, Code = null, Display = r.NameAr }).ToList();
             }
         }
 

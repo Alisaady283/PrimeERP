@@ -75,6 +75,17 @@
     <sys:String x:Key="Str.Salary">الراتب</sys:String>
     <sys:String x:Key="Str.Symbol">الرمز</sys:String>
     <sys:String x:Key="Str.ManagerName">اسم المسؤول</sys:String>
+    <sys:String x:Key="Str.Module.Roles">الأدوار</sys:String>
+    <sys:String x:Key="Str.Roles.Add">إضافة دور</sys:String>
+    <sys:String x:Key="Str.Roles.Edit">تعديل دور</sys:String>
+    <sys:String x:Key="Str.Module.Users">المستخدمون</sys:String>
+    <sys:String x:Key="Str.Users.Add">إضافة مستخدم</sys:String>
+    <sys:String x:Key="Str.Users.Edit">تعديل مستخدم</sys:String>
+    <sys:String x:Key="Str.Username">اسم المستخدم</sys:String>
+    <sys:String x:Key="Str.DisplayName">الاسم الظاهر</sys:String>
+    <sys:String x:Key="Str.Password">كلمة المرور</sys:String>
+    <sys:String x:Key="Str.Role">الدور</sys:String>
+    <sys:String x:Key="Str.RoleNameEn">اسم الدور (إنجليزي)</sys:String>
     <sys:String x:Key="Str.Module.Categories">فئات الأصناف</sys:String>
     <sys:String x:Key="Str.Categories.Add">إضافة فئة</sys:String>
     <sys:String x:Key="Str.Categories.Edit">تعديل فئة</sys:String>

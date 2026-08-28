@@ -75,6 +75,17 @@
     <sys:String x:Key="Str.Salary">Salary</sys:String>
     <sys:String x:Key="Str.Symbol">Symbol</sys:String>
     <sys:String x:Key="Str.ManagerName">Manager Name</sys:String>
+    <sys:String x:Key="Str.Module.Roles">Roles</sys:String>
+    <sys:String x:Key="Str.Roles.Add">Add Role</sys:String>
+    <sys:String x:Key="Str.Roles.Edit">Edit Role</sys:String>
+    <sys:String x:Key="Str.Module.Users">Users</sys:String>
+    <sys:String x:Key="Str.Users.Add">Add User</sys:String>
+    <sys:String x:Key="Str.Users.Edit">Edit User</sys:String>
+    <sys:String x:Key="Str.Username">Username</sys:String>
+    <sys:String x:Key="Str.DisplayName">Display Name</sys:String>
+    <sys:String x:Key="Str.Password">Password</sys:String>
+    <sys:String x:Key="Str.Role">Role</sys:String>
+    <sys:String x:Key="Str.RoleNameEn">Role Name (English)</sys:String>
     <sys:String x:Key="Str.Module.Categories">Product Categories</sys:String>
     <sys:String x:Key="Str.Categories.Add">Add Category</sys:String>
     <sys:String x:Key="Str.Categories.Edit">Edit Category</sys:String>

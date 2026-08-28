@@ -6,6 +6,7 @@ using PrimeERP.Application.Services.Common;
 using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Assets;
 using PrimeERP.Application.Services.HR;
+using PrimeERP.Application.Services.Security;
 using PrimeERP.Application.Services.Backup;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.Services.Print;
@@ -82,6 +83,8 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IJobTitleService, JobTitleService>();
             services.AddSingleton<IUnitService, UnitService>();
             services.AddSingleton<IWarehouseService, WarehouseService>();
+            services.AddSingleton<IRoleService, RoleService>();
+            services.AddSingleton<IUserService, UserService>();
 
             // Lazy<IJournalService> يكسر الدائرية الحقيقية JournalService↔FiscalPeriodService — راجع تعليق
             // التوثيق أعلى FiscalPeriodService.cs. لا يبني IJournalService الآن، فقط عند أول .Value فعلي.
@@ -119,6 +122,8 @@ namespace PrimeERP.App.Bootstrap
             services.AddTransient<JobTitlesViewModel>();
             services.AddTransient<AssetsViewModel>();
             services.AddTransient<EmployeesViewModel>();
+            services.AddTransient<RolesViewModel>();
+            services.AddTransient<UsersViewModel>();
 
             return services;
         }
