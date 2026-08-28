@@ -30,6 +30,13 @@ public partial class App : System.Windows.Application
         Services = services.BuildServiceProvider();
         Services.EnsureDatabaseReady();
         Services.RegisterModules();
+
+#if DEBUG
+        // بيانات وهمية للتجربة اليدوية فقط — بوابتها الداخلية (DemoDataSeeder.Seed) تتحقق من عدم وجود
+        // عملاء بالفعل، فلا تُعاد أبداً بعد أول زرع ناجح ولا تدخل نسخة الإنتاج (Release) إطلاقاً.
+        PrimeERP.Modules.DemoDataSeeder.Seed(Services);
+#endif
+
         UIServices.Initialize(Services);
 
         Services.GetRequiredService<IIdentityService>().Initialize();
