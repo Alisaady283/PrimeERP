@@ -52,7 +52,7 @@ namespace PrimeERP.App
                 ("المخزون", new[] { "Products", "Categories", "Brands", "Units", "Warehouses", "StockIn", "StockOut", "StockTransfer" }),
                 ("الأصول", new[] { "Assets", "AssetCategories" }),
                 ("الموارد", new[] { "Employees", "Departments", "JobTitles", "Payroll" }),
-                ("التقارير", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "CustomerStatement", "SupplierStatement", "ItemCard", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport" }),
+                ("التقارير", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "AccountStatement", "CustomerStatement", "SupplierStatement", "ItemCard", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport" }),
                 ("الإعدادات", new[] { "Settings", "Users", "Roles" }),
             };
 

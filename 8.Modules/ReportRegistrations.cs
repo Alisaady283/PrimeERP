@@ -216,6 +216,32 @@ namespace PrimeERP.Modules
 
             registry.Register(new ModuleDefinition
             {
+                Key = "AccountStatement", TitleKey = "Str.Module.AccountStatement", PermissionPrefix = "Reports", LayoutKind = LayoutKind.Report,
+                Report = new ReportDefinition
+                {
+                    Key = "AccountStatement", TitleKey = "Str.Module.AccountStatement", PermissionKey = "Reports.View",
+                    Parameters = new()
+                    {
+                        new() { Key = "AccountId", LabelKey = "Str.Account", Kind = FieldKind.Picker, PickerType = "Account" },
+                        new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = DateTime.Today.AddMonths(-1) },
+                        new() { Key = "To", LabelKey = "Str.DateTo", Kind = FieldKind.Date, DefaultValue = DateTime.Today },
+                    },
+                    Generate = (services, p) =>
+                    {
+                        var accountId = p.TryGetValue("AccountId", out var av) && av is int aid ? aid : 0;
+                        if (accountId == 0) return Result.Fail<ReportResult>("اختر حساباً");
+
+                        var accountResult = services.GetRequiredService<IAccountService>().GetById(accountId);
+                        if (!accountResult.IsSuccess) return Result.Fail<ReportResult>(accountResult.ErrorMessage);
+
+                        return BuildStatement((_, from, to) => services.GetRequiredService<IAccountService>().GetStatement(accountResult.Value.Code, from, to),
+                            "Str.Module.AccountStatement", p, "AccountId");
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
                 Key = "ItemCard", TitleKey = "Str.Module.ItemCard", PermissionPrefix = "Reports", LayoutKind = LayoutKind.Report,
                 Report = new ReportDefinition
                 {

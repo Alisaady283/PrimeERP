@@ -134,6 +134,7 @@
     <sys:String x:Key="Str.BasicSalary">الراتب الأساسي</sys:String>
     <sys:String x:Key="Str.Allowances">البدلات</sys:String>
     <sys:String x:Key="Str.Deductions">الاستقطاعات</sys:String>
+    <sys:String x:Key="Str.Module.AccountStatement">كشف حساب</sys:String>
     <sys:String x:Key="Str.Module.CustomerStatement">كشف حساب عميل</sys:String>
     <sys:String x:Key="Str.Module.SupplierStatement">كشف حساب مورد</sys:String>
     <sys:String x:Key="Str.Module.ItemCard">كارت صنف</sys:String>

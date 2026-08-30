@@ -134,6 +134,7 @@
     <sys:String x:Key="Str.BasicSalary">Basic Salary</sys:String>
     <sys:String x:Key="Str.Allowances">Allowances</sys:String>
     <sys:String x:Key="Str.Deductions">Deductions</sys:String>
+    <sys:String x:Key="Str.Module.AccountStatement">Account Statement</sys:String>
     <sys:String x:Key="Str.Module.CustomerStatement">Customer Statement</sys:String>
     <sys:String x:Key="Str.Module.SupplierStatement">Supplier Statement</sys:String>
     <sys:String x:Key="Str.Module.ItemCard">Item Card</sys:String>

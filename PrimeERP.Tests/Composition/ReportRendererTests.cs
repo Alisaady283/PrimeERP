@@ -104,6 +104,79 @@ namespace PrimeERP.Tests.Composition
             });
         }
 
+        [Fact]
+        public void AccountStatementReport_ForPostedEntry_ShowsOpeningRowAndPostedLine()
+        {
+            WpfApplicationFixture.Run(() =>
+            {
+                UIServices.Initialize(_db.Services);
+                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+
+                var accounts = _db.Services.GetRequiredService<IAccountService>();
+
+                AccountDto LeafUnder(string parentCode, string name)
+                {
+                    var parent = accounts.GetByCode(parentCode).Value;
+                    return accounts.Create(new CreateAccountDto { ParentId = parent.Id, Name = name, IsLeaf = true, SkipAutoLink = true }).Value;
+                }
+
+                var accountA = LeafUnder("41", "حساب أ");
+                var accountB = LeafUnder("51", "حساب ب");
+
+                var journal = _db.Services.GetRequiredService<IJournalService>();
+                var createResult = journal.Create(new CreateJournalDto
+                {
+                    EntryDate = DateTime.Today,
+                    Description = "قيد اختبار",
+                    Lines =
+                    {
+                        new CreateJournalLineDto { LineNo = 1, AccountCode = accountA.Code, Debit = 500, Credit = 0 },
+                        new CreateJournalLineDto { LineNo = 2, AccountCode = accountB.Code, Debit = 0, Credit = 500 },
+                    }
+                });
+                Assert.True(createResult.IsSuccess, createResult.ErrorMessage);
+                var postResult = journal.Post(createResult.Value.Id);
+                Assert.True(postResult.IsSuccess, postResult.ErrorMessage);
+
+                var registry = _db.Services.GetRequiredService<IModuleRegistry>();
+                var definition = registry.Get("AccountStatement");
+
+                var element = PageRenderer.Render(definition, _db.Services);
+
+                var accountField = FindVisualChild<PrimeERP.UI.Components.Inputs.AppComboBox>(element);
+                accountField.SelectedValue = accountA.Id;
+
+                var window = new Window { Content = element, Width = 1200, Height = 800, ShowInTaskbar = false, WindowStyle = WindowStyle.None, ShowActivated = false };
+                window.Show();
+                window.UpdateLayout();
+
+                var runButton = FindAllVisualChildren<PrimeERP.UI.Components.Actions.AppButton>(element)
+                    .First(b => b.Text == PrimeERP.Platform.Localization.LocalizationService.Get("Str.Report.Run"));
+                var innerButton = FindVisualChild<System.Windows.Controls.Button>(runButton);
+                innerButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+
+                var grid = FindVisualChild<AppDataGrid>(element);
+                var rows = ((IEnumerable)grid.ItemsSource).Cast<object>().ToList();
+
+                Assert.Equal(2, rows.Count);
+                var debit = (decimal)rows[1].GetType().GetProperty("Debit").GetValue(rows[1]);
+                Assert.Equal(500, debit);
+                window.Close();
+            });
+        }
+
+        private static System.Collections.Generic.List<T> FindAllVisualChildren<T>(DependencyObject parent) where T : DependencyObject
+        {
+            var results = new System.Collections.Generic.List<T>();
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is T typed) results.Add(typed);
+                results.AddRange(FindAllVisualChildren<T>(child));
+            }
+            return results;
+        }
+
         private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
             for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
