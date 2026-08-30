@@ -1,16 +1,18 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Platform.Localization;
+using PrimeERP.UI.Components.Actions;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Components.Layout;
 using PrimeERP.UI.Services;
-using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.Composition.Renderers
 {
@@ -31,10 +33,14 @@ namespace PrimeERP.Composition.Renderers
             // هنا ظهر فعلياً كنص مكرر حرفياً عند أول تشغيل حقيقي (راجع توقف 10). PageHeader هنا لاستضافة زر
             // الإضافة فقط.
             var header = new PageHeader();
-            var addButton = new Btn { Text = LocalizationService.Get("Str.Add"), Variant = "primary", Size = "sm",
-                Icon = System.Windows.Application.Current?.TryFindResource("IconAdd") as System.Windows.Media.Geometry };
-            BindingOperations.SetBinding(addButton, Btn.CommandProperty, new Binding("AddCommand"));
-            header.ActionsContent = addButton;
+            var actions = new List<ToolbarAction>
+            {
+                ToolbarAction.New((ICommand)vm.AddCommand, $"{definition.PermissionPrefix}.Create"),
+                ToolbarAction.Edit((ICommand)vm.EditCommand, $"{definition.PermissionPrefix}.Edit"),
+                ToolbarAction.Delete((ICommand)vm.DeleteCommand, $"{definition.PermissionPrefix}.Delete"),
+                ToolbarAction.Refresh((ICommand)vm.RefreshCommand),
+            };
+            header.ActionsContent = new ActionToolbar { ButtonsSource = actions };
 
             var filterBar = new FilterBar { SearchPlaceholder = LocalizationService.Get("Str.Search") };
             BindingOperations.SetBinding(filterBar, FilterBar.ResultCountProperty, new Binding("TotalCount"));
