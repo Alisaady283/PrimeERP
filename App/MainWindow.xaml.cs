@@ -53,6 +53,8 @@ namespace PrimeERP.App
             ["Assets"] = "IconAssets", ["AssetCategories"] = "IconFolder",
             ["Employees"] = "IconHR", ["Departments"] = "IconFolder", ["JobTitles"] = "IconFolder", ["Payroll"] = "IconPayroll",
             ["SalesInvoices"] = "IconSales", ["SalesReturns"] = "IconSales",
+            ["Quotation"] = "IconSales", ["SalesOrder"] = "IconSales",
+            ["PurchaseRequest"] = "IconPurchases", ["PurchaseOrder"] = "IconPurchases",
             ["PurchaseInvoices"] = "IconPurchases", ["PurchaseReturns"] = "IconPurchases",
             ["StockIn"] = "IconWarehouse", ["StockOut"] = "IconWarehouse", ["StockTransfer"] = "IconWarehouse",
             ["GoodsReceipt"] = "IconWarehouse", ["GoodsIssue"] = "IconWarehouse",
@@ -69,8 +71,8 @@ namespace PrimeERP.App
             var groups = new (string Text, string IconKey, string[] Keys)[]
             {
                 ("المحاسبة", "IconAccounts", new[] { "Accounts", "Journals" }),
-                ("المبيعات", "IconSales", new[] { "SalesInvoices", "SalesReturns", "Customers" }),
-                ("المشتريات", "IconPurchases", new[] { "PurchaseInvoices", "PurchaseReturns", "Suppliers" }),
+                ("المبيعات", "IconSales", new[] { "Quotation", "SalesOrder", "SalesInvoices", "SalesReturns", "Customers" }),
+                ("المشتريات", "IconPurchases", new[] { "PurchaseRequest", "PurchaseOrder", "PurchaseInvoices", "PurchaseReturns", "Suppliers" }),
                 ("المخزون", "IconWarehouse", new[] { "Products", "Categories", "Brands", "Units", "Warehouses", "StockIn", "StockOut", "StockTransfer", "GoodsReceipt", "GoodsIssue", "DeliveryNote", "SalesReceipt" }),
                 ("الأصول", "IconAssets", new[] { "Assets", "AssetCategories" }),
                 ("الموارد", "IconHR", new[] { "Employees", "Departments", "JobTitles", "Payroll" }),

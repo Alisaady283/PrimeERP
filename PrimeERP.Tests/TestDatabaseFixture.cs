@@ -73,6 +73,10 @@ namespace PrimeERP.Tests
             Services.GetRequiredService<IPurchaseReturnRepository>().CreateTable();
             Services.GetRequiredService<IStockInRepository>().CreateTable();
             Services.GetRequiredService<IStockOutRepository>().CreateTable();
+            Services.GetRequiredService<IPurchaseRequestRepository>().CreateTable();
+            Services.GetRequiredService<IPurchaseOrderRepository>().CreateTable();
+            Services.GetRequiredService<IQuotationRepository>().CreateTable();
+            Services.GetRequiredService<ISalesOrderRepository>().CreateTable();
             Services.GetRequiredService<IGoodsReceiptRepository>().CreateTable();
             Services.GetRequiredService<IGoodsIssueRepository>().CreateTable();
             Services.GetRequiredService<IDeliveryNoteRepository>().CreateTable();

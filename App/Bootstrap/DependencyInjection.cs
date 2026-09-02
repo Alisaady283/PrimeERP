@@ -73,6 +73,10 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IPurchaseReturnRepository, PurchaseReturnRepository>();
             services.AddSingleton<IStockInRepository, StockInRepository>();
             services.AddSingleton<IStockOutRepository, StockOutRepository>();
+            services.AddSingleton<IPurchaseRequestRepository, PurchaseRequestRepository>();
+            services.AddSingleton<IPurchaseOrderRepository, PurchaseOrderRepository>();
+            services.AddSingleton<IQuotationRepository, QuotationRepository>();
+            services.AddSingleton<ISalesOrderRepository, SalesOrderRepository>();
             services.AddSingleton<IGoodsReceiptRepository, GoodsReceiptRepository>();
             services.AddSingleton<IGoodsIssueRepository, GoodsIssueRepository>();
             services.AddSingleton<IDeliveryNoteRepository, DeliveryNoteRepository>();
@@ -110,6 +114,10 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IPurchaseReturnService, PurchaseReturnService>();
             services.AddSingleton<IStockInService, StockInService>();
             services.AddSingleton<IStockOutService, StockOutService>();
+            services.AddSingleton<PrimeERP.Application.Services.Documents.IPurchaseRequestService, PrimeERP.Application.Services.Documents.PurchaseRequestService>();
+            services.AddSingleton<PrimeERP.Application.Services.Documents.IPurchaseOrderService, PrimeERP.Application.Services.Documents.PurchaseOrderService>();
+            services.AddSingleton<PrimeERP.Application.Services.Documents.IQuotationService, PrimeERP.Application.Services.Documents.QuotationService>();
+            services.AddSingleton<PrimeERP.Application.Services.Documents.ISalesOrderService, PrimeERP.Application.Services.Documents.SalesOrderService>();
             services.AddSingleton<IGoodsReceiptService, GoodsReceiptService>();
             services.AddSingleton<IGoodsIssueService, GoodsIssueService>();
             services.AddSingleton<IDeliveryNoteService, DeliveryNoteService>();
@@ -163,6 +171,10 @@ namespace PrimeERP.App.Bootstrap
             services.AddTransient<PurchaseReturnsViewModel>();
             services.AddTransient<StockInViewModel>();
             services.AddTransient<StockOutViewModel>();
+            services.AddTransient<PurchaseRequestViewModel>();
+            services.AddTransient<PurchaseOrderViewModel>();
+            services.AddTransient<QuotationViewModel>();
+            services.AddTransient<SalesOrderViewModel>();
             services.AddTransient<GoodsReceiptViewModel>();
             services.AddTransient<GoodsIssueViewModel>();
             services.AddTransient<DeliveryNoteViewModel>();
@@ -189,6 +201,7 @@ namespace PrimeERP.App.Bootstrap
             ReportRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             PermissionModuleRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             CycleVoucherRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
+            CycleDocumentRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             return services;
         }
 
@@ -238,6 +251,10 @@ namespace PrimeERP.App.Bootstrap
             services.GetRequiredService<IPurchaseReturnRepository>().CreateTable();
             services.GetRequiredService<IStockInRepository>().CreateTable();
             services.GetRequiredService<IStockOutRepository>().CreateTable();
+            services.GetRequiredService<IPurchaseRequestRepository>().CreateTable();
+            services.GetRequiredService<IPurchaseOrderRepository>().CreateTable();
+            services.GetRequiredService<IQuotationRepository>().CreateTable();
+            services.GetRequiredService<ISalesOrderRepository>().CreateTable();
             services.GetRequiredService<IGoodsReceiptRepository>().CreateTable();
             services.GetRequiredService<IGoodsIssueRepository>().CreateTable();
             services.GetRequiredService<IDeliveryNoteRepository>().CreateTable();
