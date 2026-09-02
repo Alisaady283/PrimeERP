@@ -85,6 +85,7 @@ PrimeERP/
 | شجرة | `7.Composition/Renderers/TreeRenderer.cs` + `TreeBuilder.cs` | `ModuleDefinition.TreeOptions` |
 | تقرير | `7.Composition/Renderers/ReportRenderer.cs` | `ModuleDefinition.Report` (`ReportDefinition`) |
 | إعدادات | `7.Composition/Renderers/SettingsPageRenderer.cs` | `LayoutKind.Settings` |
+| شجرة تأشير | `7.Composition/Renderers/TreeCheckListRenderer.cs` | `ModuleDefinition.TreeCheckList` (`TreeCheckListDefinition`) |
 
 `PageRenderer.cs` نقطة التوزيع الوحيدة حسب `ModuleDefinition.LayoutKind`. حوار الحقول المسطّحة (رأس فقط) عبر `DialogRenderer.cs` — تُستهلكه كل من CrudPageRenderer وDocumentRenderer لرأس المستند. `CategoryDialogFactory.cs`/`StandardFields.cs` قطع تعريف قابلة لإعادة الاستخدام (حوار فئة موحّد، حقول نشط/تاريخ إنشاء-تعديل قياسية).
 
@@ -105,7 +106,9 @@ PrimeERP/
 
 **4.Application** — `ServiceBase`/`CrudServiceBase`/`PartyServiceBase` (أساس كل خدمة عمل: صلاحيات + Result موحّد)، `Pipeline/Steps`+`Pipeline/Operations` (تركيب عمليات متعددة الخطوات). كل خدمة عمل (Accounting/Parties/Inventory/Sales/Purchasing/HR/Assets/Security/Backup/Print) ترث من هذه.
 
-**2.Data** — `WhereBuilder` (بناء SQL WHERE آمن)، `RepositoryBase`، `StockAdjustmentRepositoryBase` (أساس مشترك لـStockIn/StockOut). `DbFactory`/`IDbProvider` مع ثلاثة مزوّدين (`Sqlite`/`SqlServer`/`PostgreSql`) — قابل التبديل عبر `DbConfig.Provider`.
+**2.Data** — `WhereBuilder` (بناء SQL WHERE آمن)، `RepositoryBase`، و**أساسان مشتركان للمستندات**: `StockAdjustmentRepositoryBase` (رأس+سطور بمخزن وتكلفة — StockIn/StockOut وأذون الدورة الأربعة) و`CycleDocumentRepositoryBase` (رأس+سطور بطرف وسعر بلا أثر مخزني — طلب/أمر شراء، عرض سعر، أمر توريد). كلاهما يُمرَّر له اسما الجدولين في المُنشئ، فكل مستند جديد وارث بسطر واحد. `DbFactory`/`IDbProvider` مع ثلاثة مزوّدين (`Sqlite`/`SqlServer`/`PostgreSql`) — قابل التبديل عبر `DbConfig.Provider`.
+
+**دورتا الشراء والبيع** — `Documents.SimplifiedFlow` (إعداد) يحكم أي المستندات تظهر عبر `ModuleDefinition.FlowScope` (`Both`/`FullCycleOnly`/`SimplifiedOnly`) و`IModuleRegistry.VisibleFor`. تتبّع السحب في جدول واحد `DocumentLinks` عبر `IDocumentLinkService` (المتبقي/التسجيل/الإلغاء/السلسلة) — لا يعرف نوع مستند بعينه، فالمستندات تمرّر روابطها فقط. `DocumentDialogDefinition.PullSources` يصف من أين يسحب كل مستند.
 
 ---
 
@@ -113,12 +116,18 @@ PrimeERP/
 
 سلسلة موارد أربع طبقات في `5.Design/`، تُستهلَك عبر `DynamicResource` فقط (تتبدّل حيّاً بلا إعادة تحميل):
 
-1. **Identity** (`Identity/{Default,Corporate}/Primitives.*.xaml`) — القيم الخام: ألوان، مسافات، خطوط، أبعاد، ظلال. حزمتان بديلتان (يُختار بينهما عبر `IIdentityService.Apply`).
+1. **Identity** (`Identity/{Signature,Default,Corporate}/Primitives.*.xaml`) — القيم الخام: ألوان، مسافات، خطوط، أبعاد، ظلال. ثلاث حزم بديلة (يُختار بينها عبر `IIdentityService.Apply`)، الافتراضية `Signature`.
 2. **Semantic** (`Semantic/*.xaml`) — تسمية دلالية فوق L1 (`TextPrimary`, `SurfaceDefault`, `BrandDefault`...)، فاتح/داكن منفصلان (`Semantic.Light.xaml`/`Semantic.Dark.xaml`).
 3. **Components** (`Components/Tokens.*.xaml`) — رموز خاصة بمكوّن (أبعاد حوار، ارتفاع إدخال...).
 4. **Styles** (`Styles/*.xaml` + `Implicit.xaml`) — أنماط WPF فعلية (`Style.Button.xaml`, `Style.Input.xaml`...)، منها أنماط ضمنية (`TargetType="Button"` بلا `x:Key`) تُطبَّق تلقائياً على أي عنصر أساسي.
 
-**لتغيير ألوان/خطوط التطبيق بالكامل**: عدّل `5.Design/Identity/{الحزمة}/Primitives.Color.xaml` أو `Primitives.Type.xaml` فقط — لا تلمس Semantic/Components/Styles. مرجع القيم الكامل: `5.Design/DESIGN_TOKENS.md` (مولَّد عبر `Tools/DesignTokens/generate.sh`) و`DESIGN_SYSTEM.md`. الأيقونات في `5.Design/Icons/Icons.xaml` (مفاتيح `IconAdd`/`IconEdit`/... — `Geometry` فقط). النصوص في `5.Design/Strings/Strings.{ar,en}.xaml` عبر `LocalizationService.Get(key)`.
+**لتغيير ألوان/خطوط التطبيق بالكامل**: عدّل `5.Design/Identity/{الحزمة}/Primitives.Color.xaml` أو `Primitives.Type.xaml` فقط — لا تلمس Semantic/Components/Styles.
+
+⚠️ **قاعدتان تكسران الألوان بصمت بلا خطأ بناء**:
+1. رموز L3 تقرأ ألوان L2 عبر مفاتيح `{Name}.Color` التي يشتقّها `IdentityService.RefreshDerivedColors` برمجياً — الاشتقاق يمسح كل فرش الشجرة المدموجة تلقائياً، فلا تُعِده لقائمة أسماء يدوية: أي فرشاة خارج القائمة كانت تُحلّ **شفافة** (سبب ظهور هيدر الجدول أبيض على أبيض).
+2. `UI.Identity` مخزَّن في قاعدة البيانات و`SettingSeeder` لا يستبدل قيمة قائمة — فتغيير الحزمة الافتراضية لا يصل لأي قاعدة قائمة. إطلاق حزمة جديدة يتطلب رفع `IdentityService.IdentityBaseline`، وهو يفرضها مرة واحدة ويسجّلها في `UI.IdentityBaseline` فلا يطغى على اختيار المستخدم لاحقاً.
+
+**الأيقونات**: مواصفة واحدة في `Components/Tokens.Icon.xaml` (سماكة واحدة + أربعة أحجام)، وقطعة `AppIcon` هي المستهلك — لا يحدّد أي موضع استدعاء سماكة أو حجماً بنفسه. مرجع القيم الكامل: `5.Design/DESIGN_TOKENS.md` (مولَّد عبر `Tools/DesignTokens/generate.sh`) و`DESIGN_SYSTEM.md`. الأيقونات في `5.Design/Icons/Icons.xaml` (مفاتيح `IconAdd`/`IconEdit`/... — `Geometry` فقط). النصوص في `5.Design/Strings/Strings.{ar,en}.xaml` عبر `LocalizationService.Get(key)`.
 
 ---
 
