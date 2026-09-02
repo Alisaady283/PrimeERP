@@ -66,6 +66,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IUnitRepository, UnitRepository>();
             services.AddSingleton<IWarehouseRepository, WarehouseRepository>();
             services.AddSingleton<IStockMovementRepository, StockMovementRepository>();
+            services.AddSingleton<IDocumentLinkRepository, DocumentLinkRepository>();
             services.AddSingleton<ISalesInvoiceRepository, SalesInvoiceRepository>();
             services.AddSingleton<IPurchaseInvoiceRepository, PurchaseInvoiceRepository>();
             services.AddSingleton<ISalesReturnRepository, SalesReturnRepository>();
@@ -97,6 +98,8 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IUnitService, UnitService>();
             services.AddSingleton<IWarehouseService, WarehouseService>();
             services.AddSingleton<IStockService, StockService>();
+            services.AddSingleton<PrimeERP.Application.Services.Documents.IDocumentLinkService,
+                                  PrimeERP.Application.Services.Documents.DocumentLinkService>();
             services.AddSingleton<ISalesInvoiceService, SalesInvoiceService>();
             services.AddSingleton<IPurchaseInvoiceService, PurchaseInvoiceService>();
             services.AddSingleton<ISalesReturnService, SalesReturnService>();
@@ -224,6 +227,7 @@ namespace PrimeERP.App.Bootstrap
             services.GetRequiredService<IStockOutRepository>().CreateTable();
             services.GetRequiredService<IStockTransferRepository>().CreateTable();
             services.GetRequiredService<IPayrollRepository>().CreateTable();
+            services.GetRequiredService<IDocumentLinkRepository>().CreateTable();
 
             // ⚠️ R9 — نفس درس توقف 7: PermissionDb (جداول Permissions/Roles/RolePermissions/Users/
             // UserPermissions + بذر دور SystemAdmin ومستخدم admin) كانت مبنية بالكامل منذ وقت طويل بلا أي
