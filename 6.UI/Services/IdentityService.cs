@@ -116,7 +116,9 @@ namespace PrimeERP.UI.Services
             ("Corporate", "Str.Identity.Corporate", "Corporate")
         };
 
-        public string CurrentIdentity { get; private set; } = "Signature";
+        private const string IdentityBaseline = "Signature";
+
+        public string CurrentIdentity { get; private set; } = IdentityBaseline;
 
         public ThemeMode CurrentMode { get; private set; } = ThemeMode.Light;
 
@@ -205,7 +207,14 @@ namespace PrimeERP.UI.Services
         {
             try
             {
-                var identityKey = _settings.Get(SettingKeys.UI.Identity, "Default");
+                // SettingSeeder لا يستبدل قيمة قائمة، فالقاعدة القديمة تبقى على هويتها بلا هذه الترقية.
+                if (_settings.Get(SettingKeys.UI.IdentityBaseline, "") != IdentityBaseline)
+                {
+                    _settings.Set(SettingKeys.UI.Identity, IdentityBaseline);
+                    _settings.Set(SettingKeys.UI.IdentityBaseline, IdentityBaseline);
+                }
+
+                var identityKey = _settings.Get(SettingKeys.UI.Identity, IdentityBaseline);
                 Apply(identityKey);
 
                 var modeText = _settings.Get(SettingKeys.UI.Theme, "Light");

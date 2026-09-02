@@ -93,6 +93,8 @@ namespace PrimeERP.Platform.Settings
 
             /// <summary>مفتاح حزمة الهوية الحالية (اسم مجلد تحت Resources/Design/Identity — "Default"/"Corporate") — يقرأه IIdentityService.Initialize عند الإقلاع.</summary>
             public const string Identity          = "UI.Identity";
+
+            public const string IdentityBaseline  = "UI.IdentityBaseline";
         }
 
         public static class Backup
@@ -167,6 +169,7 @@ namespace PrimeERP.Platform.Settings
             new(UI.PageSize,         "25",          "int",    "UI"),
             new(UI.SidebarCollapsed, "false",       "bool",   "UI"),
             new(UI.Identity,         "Signature",   "string", "UI"),
+            new(UI.IdentityBaseline, "",            "string", "UI", true),
 
             new(Backup.AutoBackupEnabled,       "false", "bool",   "Backup"),
             new(Backup.AutoBackupPath,          "",      "string", "Backup"),
