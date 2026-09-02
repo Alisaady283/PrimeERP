@@ -312,13 +312,17 @@ namespace PrimeERP.UI.Components.Display
             btnFactory.SetValue(Button.BorderThicknessProperty, new Thickness(0));
             btnFactory.SetValue(Button.CursorProperty, System.Windows.Input.Cursors.Hand);
 
+            var iconSize = FindResource("C.Icon.Size.Sm") is double s ? s : 14.0;
             var pathFactory = new FrameworkElementFactory(typeof(Path));
             pathFactory.SetValue(Path.DataProperty, FindResource(iconKey));
             pathFactory.SetValue(Path.StretchProperty, Stretch.Uniform);
-            pathFactory.SetValue(Path.WidthProperty, 13.0);
-            pathFactory.SetValue(Path.HeightProperty, 13.0);
-            pathFactory.SetValue(Path.StrokeProperty, FindResource("TextSecondary"));
-            pathFactory.SetValue(Path.StrokeThicknessProperty, 1.8);
+            pathFactory.SetValue(Path.WidthProperty, iconSize);
+            pathFactory.SetValue(Path.HeightProperty, iconSize);
+            pathFactory.SetValue(Path.StrokeProperty, FindResource("C.Icon.Fg"));
+            pathFactory.SetValue(Path.StrokeThicknessProperty, FindResource("C.Icon.Stroke"));
+            pathFactory.SetValue(Path.StrokeLineJoinProperty, PenLineJoin.Round);
+            pathFactory.SetValue(Path.StrokeStartLineCapProperty, PenLineCap.Round);
+            pathFactory.SetValue(Path.StrokeEndLineCapProperty, PenLineCap.Round);
             btnFactory.AppendChild(pathFactory);
 
             btnFactory.AddHandler(Button.ClickEvent, new RoutedEventHandler((s, e) =>

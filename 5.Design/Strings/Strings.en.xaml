@@ -312,6 +312,7 @@
     <sys:String x:Key="Str.Customer.Status.Inactive">Inactive</sys:String>
     <sys:String x:Key="Str.Customer.Status.OverLimit">Over limit</sys:String>
 
+    <sys:String x:Key="Str.Identity.Signature">Signature</sys:String>
     <sys:String x:Key="Str.Identity.Default">Default</sys:String>
     <sys:String x:Key="Str.Identity.Corporate">Corporate</sys:String>
     <sys:String x:Key="Str.Identity.NotFound">Unknown identity pack</sys:String>

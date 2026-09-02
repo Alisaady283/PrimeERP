@@ -43,6 +43,8 @@
     <Geometry x:Key="IconChevronLeft">M15,4 L7,12 L15,20</Geometry>
     <Geometry x:Key="IconChevronRight">M9,4 L17,12 L9,20</Geometry>
     <Geometry x:Key="IconChevronUp">M4,15 L12,7 L20,15</Geometry>
+    <Geometry x:Key="IconChevronsLeft">M18,5 L11,12 L18,19 M12,5 L5,12 L12,19</Geometry>
+    <Geometry x:Key="IconChevronsRight">M6,5 L13,12 L6,19 M12,5 L19,12 L12,19</Geometry>
     <Geometry x:Key="IconChevronDown">M4,9 L12,17 L20,9</Geometry>
 
     <!-- ===== حالات وإشعارات ===== -->

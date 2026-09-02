@@ -54,8 +54,10 @@
                         <Border Grid.Column="0" x:Name="activeBar" Background="{DynamicResource NavSelectedBar}" Visibility="Collapsed"/>
 
                         <Path Grid.Column="2" x:Name="icon" Data="{Binding IconKey, Converter={StaticResource IconConv}}"
-                              Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"
-                              Stroke="{DynamicResource NavIcon}" StrokeThickness="1.7"/>
+                              Width="{DynamicResource C.Icon.Size.Md}" Height="{DynamicResource C.Icon.Size.Md}"
+                              Stretch="Uniform" VerticalAlignment="Center"
+                              StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Stroke="{DynamicResource NavIcon}" StrokeThickness="{DynamicResource C.Icon.Stroke}"/>
 
                         <TextBlock Grid.Column="3" x:Name="txt" Text="{Binding Text}" VerticalAlignment="Center" Margin="10,0,0,0"
                                    FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"

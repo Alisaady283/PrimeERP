@@ -73,8 +73,8 @@ namespace PrimeERP.UI.Components.Display
 
             txtInfo.Text = $"عرض {from} إلى {to} من {TotalItems} عنصر";
 
-            AddNavButton("«", () => GoTo(1), CurrentPage == 1);
-            AddNavButton("‹", () => GoTo(CurrentPage - 1), CurrentPage == 1);
+            AddNavButton("IconChevronsRight", () => GoTo(1), CurrentPage == 1);
+            AddNavButton("IconChevronRight", () => GoTo(CurrentPage - 1), CurrentPage == 1);
 
             int start = Math.Max(1, CurrentPage - 2);
             int end   = Math.Min(TotalPages, start + 4);
@@ -107,25 +107,28 @@ namespace PrimeERP.UI.Components.Display
                 pnlPages.Children.Add(btn);
             }
 
-            AddNavButton("›", () => GoTo(CurrentPage + 1), CurrentPage == TotalPages);
-            AddNavButton("»", () => GoTo(TotalPages), CurrentPage == TotalPages);
+            AddNavButton("IconChevronLeft", () => GoTo(CurrentPage + 1), CurrentPage == TotalPages);
+            AddNavButton("IconChevronsLeft", () => GoTo(TotalPages), CurrentPage == TotalPages);
         }
 
-        private void AddNavButton(string content, Action action, bool disabled)
+        // أيقونة حقيقية لا رمز نصي («‹›») — الرموز النصية تُرسَم بوزن الخط لا بوزن الأيقونات، فتبدو رفيعة وغريبة.
+        private void AddNavButton(string iconKey, Action action, bool disabled)
         {
             var size = (double)FindResource("C.Pagination.Button.Size");
             var gap  = (double)FindResource("C.Pagination.Button.Gap");
 
             var btn = new Button
             {
-                Content = content,
+                Content = new AppIcon
+                {
+                    Key = iconKey,
+                    Size = "Sm",
+                    Brush = disabled ? (Brush)FindResource("TextMuted") : (Brush)FindResource("TextPrimary")
+                },
                 Width = size, Height = size,
                 Margin = new Thickness(gap / 2, 0, gap / 2, 0),
-                FontSize = (double)FindResource("C.Pagination.Button.FontSize"),
-                FontFamily = (FontFamily)FindResource("P.Font.Family.Primary"),
                 Cursor = System.Windows.Input.Cursors.Hand,
                 Background = (Brush)FindResource("SurfaceDefault"),
-                Foreground = disabled ? (Brush)FindResource("TextMuted") : (Brush)FindResource("TextPrimary"),
                 BorderThickness = new Thickness(1),
                 BorderBrush = (Brush)FindResource("OutlineDefault"),
                 IsEnabled = !disabled,

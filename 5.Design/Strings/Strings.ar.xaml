@@ -312,6 +312,7 @@
     <sys:String x:Key="Str.Customer.Status.Inactive">غير نشط</sys:String>
     <sys:String x:Key="Str.Customer.Status.OverLimit">متجاوز الحد</sys:String>
 
+    <sys:String x:Key="Str.Identity.Signature">التوقيع</sys:String>
     <sys:String x:Key="Str.Identity.Default">افتراضي</sys:String>
     <sys:String x:Key="Str.Identity.Corporate">مؤسسي</sys:String>
     <sys:String x:Key="Str.Identity.NotFound">حزمة هوية غير معروفة</sys:String>

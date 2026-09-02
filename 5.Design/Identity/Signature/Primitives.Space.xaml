@@ -1,0 +1,58 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!--
+        L1 — مقياس المسافات (مضاعفات 4)، حزمة "Default". قيم مطابقة تماماً لسلّم Metrics.xaml السابق (Space0-16)
+        بأسماء P.Space.* الموحّدة. Corporate يعيد تعريف كل مفتاح هنا بقيمة أوسع 25% (راجع تعليق Corporate) —
+        هذا وحده كافٍ لتوسيع كل حشو/تباعد في التطبيق دون تعديل قطعة واحدة، لأن L2 (Semantic.Space.xaml) وL3
+        (Tokens.*.xaml) يشيران لهذه المفاتيح عبر DynamicResource حصراً.
+    -->
+
+    <sys:Double x:Key="P.Space.0">0</sys:Double>
+    <sys:Double x:Key="P.Space.1">4</sys:Double>
+    <sys:Double x:Key="P.Space.2">8</sys:Double>
+    <sys:Double x:Key="P.Space.3">12</sys:Double>
+    <sys:Double x:Key="P.Space.4">16</sys:Double>
+    <sys:Double x:Key="P.Space.5">20</sys:Double>
+    <sys:Double x:Key="P.Space.6">24</sys:Double>
+    <sys:Double x:Key="P.Space.8">32</sys:Double>
+    <sys:Double x:Key="P.Space.10">40</sys:Double>
+    <sys:Double x:Key="P.Space.12">48</sys:Double>
+    <sys:Double x:Key="P.Space.16">64</sys:Double>
+
+    <!--
+        Thickness موازية للحشو/الهوامش المُوحَّدة — قيد WPF: DependencyProperty من نوع Thickness (Padding/Margin)
+        يرفض قيمة double مباشرة عبر SetValue/SetResourceReference (لا تحويل ضمني)، فلا يمكن استعارة P.Space.N
+        كما هو لخاصية Padding حيّة؛ هذه قيم مستقلة حقيقية (لا اسم مستعار) بنفس رقم التصميم — راجع ⚠️ توقف 4.
+    -->
+    <Thickness x:Key="P.Space.4.Uniform">16</Thickness>
+
+    <!--
+        Thickness أحادية الجهة/موحّدة إضافية — أُضيفت في R7 (ترحيل L4) لتغطية أشكال Margin/Padding المتكررة فعلياً
+        عبر 6.UI/Components بقيم تطابق سلّم P.Space حرفياً. القيم المركّبة (رقمان مختلفان في نفس Thickness، مثال
+        "16,8") تبقى حرفية عمداً — ليست "قطعة" بمعنى عقد موحّد، بل شكل خاص بمكانه (راجع مبدأ استخراج القطعة).
+    -->
+    <Thickness x:Key="P.Space.1.Top">0,4,0,0</Thickness>
+    <Thickness x:Key="P.Space.1.Bottom">0,0,0,4</Thickness>
+    <Thickness x:Key="P.Space.1.Right">0,0,4,0</Thickness>
+    <Thickness x:Key="P.Space.2.Left">8,0,0,0</Thickness>
+    <Thickness x:Key="P.Space.2.Top">0,8,0,0</Thickness>
+    <Thickness x:Key="P.Space.2.Bottom">0,0,0,8</Thickness>
+    <Thickness x:Key="P.Space.2.Right">0,0,8,0</Thickness>
+    <Thickness x:Key="P.Space.2.Uniform">8</Thickness>
+    <Thickness x:Key="P.Space.3.Uniform">12</Thickness>
+    <Thickness x:Key="P.Space.3.Right">0,0,12,0</Thickness>
+    <Thickness x:Key="P.Space.4.Top">0,16,0,0</Thickness>
+    <Thickness x:Key="P.Space.4.Bottom">0,0,0,16</Thickness>
+    <Thickness x:Key="P.Space.4.Horizontal">16,0</Thickness>
+
+    <!--
+        ColumnDefinition.Width من نوع GridLength لا Double — DynamicResource يُسنِد الكائن المُحلَّل مباشرة عبر
+        SetValue بلا محوِّل نوع (بخلاف تحليل XAML النصي العادي)، فيفشل InvalidCastException وقت التشغيل فقط
+        (نفس درس ⚠️ توقف 4/6 بالضبط، مطبَّق هنا على GridLength).
+    -->
+    <GridLength x:Key="P.Space.4.Column">16</GridLength>
+
+</ResourceDictionary>

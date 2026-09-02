@@ -1,0 +1,39 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!--
+        L1 — حزمة الهوية "Signature". العائلة Dubai (تُشحن مع Windows 10/11، عربية حديثة مصمَّمة للشاشة)
+        بدل Segoe UI الافتراضية — بلا أي خط يُنزَّل. المقياس أوسع درجة واحدة من Default: الحجم 12 كأساس
+        كان يقرأ مزدحماً على شاشات اليوم، و13 يمنح الجداول الكثيفة تنفّساً بلا تغيير أي ارتفاع صف.
+    -->
+
+    <!-- ===== العائلات ===== -->
+    <FontFamily x:Key="P.Font.Family.Primary">Dubai, Segoe UI, Tahoma, Arial</FontFamily>
+    <FontFamily x:Key="P.Font.Family.Mono">Cascadia Mono, Consolas, Courier New</FontFamily>
+    <FontFamily x:Key="P.Font.Family.Display">Dubai Medium, Dubai, Segoe UI, Tahoma</FontFamily>
+
+    <!-- ===== الأحجام ===== -->
+    <sys:Double x:Key="P.Font.Size.100">11</sys:Double>
+    <sys:Double x:Key="P.Font.Size.200">12</sys:Double>
+    <sys:Double x:Key="P.Font.Size.300">13</sys:Double>
+    <sys:Double x:Key="P.Font.Size.400">14</sys:Double>
+    <sys:Double x:Key="P.Font.Size.500">15</sys:Double>
+    <sys:Double x:Key="P.Font.Size.600">17</sys:Double>
+    <sys:Double x:Key="P.Font.Size.700">20</sys:Double>
+    <sys:Double x:Key="P.Font.Size.800">24</sys:Double>
+    <sys:Double x:Key="P.Font.Size.900">30</sys:Double>
+
+    <!-- ===== الأوزان ===== -->
+    <FontWeight x:Key="P.Font.Weight.Normal">Normal</FontWeight>
+    <FontWeight x:Key="P.Font.Weight.Medium">Medium</FontWeight>
+    <FontWeight x:Key="P.Font.Weight.SemiBold">SemiBold</FontWeight>
+    <FontWeight x:Key="P.Font.Weight.Bold">Bold</FontWeight>
+
+    <!-- ===== ارتفاع السطر ===== -->
+    <sys:Double x:Key="P.Line.Tight">1.25</sys:Double>
+    <sys:Double x:Key="P.Line.Normal">1.5</sys:Double>
+    <sys:Double x:Key="P.Line.Relaxed">1.65</sys:Double>
+
+</ResourceDictionary>

@@ -1,0 +1,647 @@
+<title>خطة تقفيل PrimeERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --paper:      #F5F7F6;
+    --surface:    #FFFFFF;
+    --surface-2:  #EDF1EF;
+    --ink:        #12211F;
+    --ink-2:      #3D524E;
+    --ink-3:      #6B807B;
+    --rule:       #D8E0DD;
+    --rule-2:     #C2CFCB;
+    --brand:      #0C6B62;
+    --brand-soft: #DDEBE8;
+    --brand-ink:  #084A44;
+    --amber:      #A9711A;
+    --amber-soft: #F6EBD6;
+    --clay:       #9E3F2F;
+    --clay-soft:  #F5E2DE;
+    --done:       #2E6B4F;
+    --done-soft:  #DCEBE2;
+
+    --f-display: "Readex Pro", "Segoe UI", Tahoma, sans-serif;
+    --f-body:    "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+    --f-mono:    "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0D1614;
+      --surface:    #14211E;
+      --surface-2:  #1B2A27;
+      --ink:        #E4EDEA;
+      --ink-2:      #B0C3BE;
+      --ink-3:      #869994;
+      --rule:       #24352F;
+      --rule-2:     #32463F;
+      --brand:      #4EBCAC;
+      --brand-soft: #16302C;
+      --brand-ink:  #8FD8CB;
+      --amber:      #D9A555;
+      --amber-soft: #2E2717;
+      --clay:       #D98470;
+      --clay-soft:  #33201C;
+      --done:       #6FBF95;
+      --done-soft:  #16291F;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0D1614;
+    --surface:    #14211E;
+    --surface-2:  #1B2A27;
+    --ink:        #E4EDEA;
+    --ink-2:      #B0C3BE;
+    --ink-3:      #869994;
+    --rule:       #24352F;
+    --rule-2:     #32463F;
+    --brand:      #4EBCAC;
+    --brand-soft: #16302C;
+    --brand-ink:  #8FD8CB;
+    --amber:      #D9A555;
+    --amber-soft: #2E2717;
+    --clay:       #D98470;
+    --clay-soft:  #33201C;
+    --done:       #6FBF95;
+    --done-soft:  #16291F;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--f-body);
+    direction: rtl;
+    line-height: 1.75;
+    font-size: 15px;
+  }
+
+  .doc { max-width: 1040px; margin: 0 auto; padding: 56px 28px 96px; }
+
+  /* ---------- typography ---------- */
+  h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; font-weight: 600; }
+  h1 { font-size: 2.35rem; line-height: 1.25; letter-spacing: -.01em; }
+  h2 { font-size: 1.45rem; line-height: 1.35; }
+  h3 { font-size: 1.05rem; line-height: 1.4; font-weight: 500; }
+  p  { margin: 0; max-width: 74ch; }
+  a  { color: var(--brand); }
+
+  .eyebrow {
+    font-family: var(--f-mono);
+    font-size: .7rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--brand);
+    direction: ltr;
+    display: inline-block;
+  }
+  code, .mono { font-family: var(--f-mono); font-size: .84em; direction: ltr; unicode-bidi: embed; }
+  code {
+    background: var(--surface-2);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: .1em .38em;
+    display: inline-block;
+  }
+
+  /* ---------- structure ---------- */
+  header.masthead { border-bottom: 2px solid var(--ink); padding-bottom: 28px; }
+  .lede { margin-top: 14px; color: var(--ink-2); font-size: 1.05rem; max-width: 70ch; }
+
+  section { margin-top: 64px; }
+  section > h2 { padding-bottom: 10px; border-bottom: 1px solid var(--rule-2); }
+  .stack { display: flex; flex-direction: column; gap: 18px; margin-top: 22px; }
+  .stack-tight { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+
+  /* ---------- status tiles ---------- */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 26px; }
+  .tile {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .tile .n { font-family: var(--f-display); font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .tile .k { color: var(--ink-3); font-size: .8rem; margin-top: 4px; }
+  .tile.ok .n { color: var(--done); }
+  .tile.warn .n { color: var(--amber); }
+
+  /* ---------- finding blocks ---------- */
+  .finding {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-right: 3px solid var(--clay);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .finding.fixed { border-right-color: var(--done); }
+  .finding h3 { margin-bottom: 8px; }
+  .finding p + p { margin-top: 10px; }
+  .finding .why { color: var(--ink-2); }
+  .verdict {
+    display: inline-block;
+    font-size: .74rem;
+    font-family: var(--f-mono);
+    padding: .15em .5em;
+    border-radius: 4px;
+    margin-inline-start: 8px;
+    vertical-align: middle;
+  }
+  .verdict.bad  { background: var(--clay-soft);  color: var(--clay); }
+  .verdict.good { background: var(--done-soft);  color: var(--done); }
+  .verdict.warn { background: var(--amber-soft); color: var(--amber); }
+
+  /* ---------- cycle chains ---------- */
+  .cycle { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 20px; }
+  .cycle h3 { margin-bottom: 14px; }
+  .chain { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .chip {
+    background: var(--surface-2);
+    border: 1px solid var(--rule-2);
+    border-radius: 999px;
+    padding: .3em .85em;
+    font-size: .86rem;
+    white-space: nowrap;
+  }
+  .chip.exists { background: var(--brand-soft); border-color: var(--brand); color: var(--brand-ink); font-weight: 500; }
+  .chip.new    { border-style: dashed; }
+  .arrow { color: var(--ink-3); font-size: .95rem; }
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 14px; color: var(--ink-3); font-size: .82rem; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--rule-2); display: inline-block; }
+
+  /* ---------- tables ---------- */
+  .table-wrap { overflow-x: auto; margin-top: 20px; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { padding: 11px 14px; text-align: right; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    background: var(--surface-2);
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: .82rem;
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tag { font-size: .74rem; font-family: var(--f-mono); padding: .12em .45em; border-radius: 4px; white-space: nowrap; }
+  .tag.exists { background: var(--brand-soft); color: var(--brand-ink); }
+  .tag.new    { background: var(--surface-2);  color: var(--ink-2); }
+
+  /* ---------- palette proposal ---------- */
+  .palette { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 10px; margin-top: 18px; }
+  .pal { border: 1px solid var(--rule); border-radius: 9px; overflow: hidden; background: var(--surface); }
+  .pal .bar { height: 52px; }
+  .pal .meta { padding: 9px 11px; }
+  .pal .name { font-size: .82rem; font-weight: 500; }
+  .pal .hex { font-family: var(--f-mono); font-size: .74rem; color: var(--ink-3); direction: ltr; }
+
+  /* ---------- phases ---------- */
+  ol.phases { list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; counter-reset: ph; }
+  ol.phases > li {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 16px 20px 16px 20px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  ol.phases > li::before {
+    counter-increment: ph;
+    content: counter(ph);
+    font-family: var(--f-mono);
+    font-size: .95rem;
+    color: var(--brand);
+    background: var(--brand-soft);
+    border-radius: 7px;
+    width: 30px; height: 30px;
+    display: grid; place-items: center;
+    font-weight: 500;
+  }
+  .phase-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+  .phase-head h3 { font-weight: 600; }
+  .size { font-size: .74rem; font-family: var(--f-mono); color: var(--ink-3); }
+  ol.phases p { margin-top: 6px; color: var(--ink-2); }
+  ul.plain { margin: 8px 0 0; padding-inline-start: 1.15em; color: var(--ink-2); }
+  ul.plain li { margin-top: 4px; }
+
+  .rule-note {
+    background: var(--brand-soft);
+    border: 1px solid var(--brand);
+    border-radius: 10px;
+    padding: 16px 20px;
+    color: var(--brand-ink);
+    margin-top: 24px;
+  }
+  .rule-note strong { font-weight: 600; }
+
+  footer.end { margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--rule-2); color: var(--ink-3); font-size: .84rem; }
+
+  @media (max-width: 620px) {
+    .doc { padding: 36px 18px 72px; }
+    h1 { font-size: 1.8rem; }
+    ol.phases > li { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="doc">
+
+  <header class="masthead">
+    <span class="eyebrow">Closure Plan</span>
+    <h1>خطة تقفيل PrimeERP</h1>
+    <p class="lede">
+      تشخيص مبني على الكود الفعلي لما تبقّى، وخطة تنفيذ مرتّبة تُغلق دورتي الشراء والبيع،
+      والوضعين المبسّط والشامل، وهوية بصرية بمستوى منتج حقيقي — بنفس مبدأ النسخ وتعديل الفروقات.
+    </p>
+
+    <div class="tiles">
+      <div class="tile ok"><div class="n">282</div><div class="k">اختبار ناجح</div></div>
+      <div class="tile ok"><div class="n">0</div><div class="k">FAIL في check.sh</div></div>
+      <div class="tile warn"><div class="n">6</div><div class="k">دين تقني مسجَّل</div></div>
+      <div class="tile"><div class="n">24</div><div class="k">وحدة مسجَّلة</div></div>
+      <div class="tile"><div class="n">8</div><div class="k">مستند جديد مطلوب</div></div>
+    </div>
+  </header>
+
+  <!-- ============ 1. التشخيص ============ -->
+  <section>
+    <span class="eyebrow">01 — Diagnosis</span>
+    <h2>التشخيص: لماذا يبدو غير احترافي</h2>
+    <p style="margin-top:16px; color:var(--ink-2)">
+      المشكلتان اللتان ذكرتهما ليستا ذوقاً — لكل منهما سبب محدَّد في الكود، وكلاهما يُصلَح من ملف واحد
+      تقريباً بفضل سلسلة الطبقات القائمة.
+    </p>
+
+    <div class="stack">
+
+      <div class="finding">
+        <h3>لوحة الألوان هي لوحة Tailwind الافتراضية حرفياً <span class="verdict bad">السبب الجذري</span></h3>
+        <p class="why">
+          <code>Primitives.Color.xaml</code> يحمل تدرّج Tailwind الجاهز بلا تعديل:
+          <code>Brand.500 = #3B82F6</code> هو Blue-500، والمحايدات كلها Slate، والحالات Emerald/Red/Amber/Cyan.
+          هذه بالضبط اللوحة التي يستخدمها كل مشروع بدأ من قالب — فالنتيجة تبدو «افتراضية» لا «مصمَّمة»،
+          مهما حسّنا التخطيط فوقها.
+        </p>
+        <p>
+          <strong>الرافعة:</strong> لأن السلسلة L1 ← L2 ← L3 ← L4 قائمة فعلاً وتعمل، استبدال اللوحة
+          يعني تعديل <em>ملف واحد لكل حزمة هوية</em> — صفر تعديل في أي مكوّن أو شاشة.
+        </p>
+      </div>
+
+      <div class="finding">
+        <h3>الأيقونات متسقة الشكل لكن غير متسقة بصرياً <span class="verdict bad">قابل للقياس</span></h3>
+        <p class="why">
+          46 أيقونة كلها <code>Path Geometry</code> بأسلوب خطّي سليم، لكن كل موضع استدعاء يحدّد سماكة الخط
+          وحجمه بنفسه: السماكات المستخدمة فعلياً <code>2</code> (11 موضعاً)، <code>1.8</code> (5)،
+          <code>1.7</code>، <code>3</code> — والأحجام تتراوح 9 و11 و13 و18. النتيجة أن الأيقونة نفسها
+          تبدو أثقل في شريط وأخف في جدول، وهذا ما يُقرأ كـ«غير عصري».
+        </p>
+        <p>
+          <strong>الرافعة:</strong> قطعة <code>AppIcon</code> واحدة تُثبّت الشبكة (24) والسماكة والنهايات
+          المستديرة، فيصبح كل موضع استدعاء <code>&lt;AppIcon Key="IconEdit" Size="Sm"/&gt;</code> بلا أرقام.
+          تُغلق أيضاً جزءاً من دين «القيم الحرفية» المسجَّل (24 ملف XAML).
+        </p>
+      </div>
+
+      <div class="finding fixed">
+        <h3>خلل الرموز الشفافة — أُصلح جذرياً <span class="verdict good">مُغلق</span></h3>
+        <p class="why">
+          كان اشتقاق مفاتيح <code>X.Color</code> يعتمد قائمة أسماء يدوية، فأي فرشاة خارجها تُحلّ شفافة بصمت
+          (خمسة رموز جدول كانت كذلك: الهيدر، نصه، الصف البديل، والحدّان). الآن الاشتقاق يمسح كل الفرش
+          المدموجة تلقائياً، واختبار يمنع عودة الخلل.
+        </p>
+      </div>
+
+      <div class="finding">
+        <h3>عمل غير مُرحَّل في الشجرة <span class="verdict warn">يحتاج قراراً</span></h3>
+        <p class="why">
+          تعديلات غير مُلتزَمة في <code>2.Data/Core/IDbProvider.cs</code> والمزوّدين الثلاثة و
+          <code>SchemaBuilder.cs</code>، وإعادة كتابة كاملة لـ<code>ARCHITECTURE.md</code> (‎1085 سطراً محذوفاً)
+          — كلها سابقة لهذه الجلسة ولم أُرحّلها ولم أعكسها. راجعتها ووجدتها سليمة، لكن قرار ترحيلها لك.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ 2. الوضعان ============ -->
+  <section>
+    <span class="eyebrow">02 — Operating Modes</span>
+    <h2>الوضعان: المبسّط والشامل</h2>
+    <p style="margin-top:16px; color:var(--ink-2)">
+      إعداد واحد <code>SettingKeys.Documents.SimplifiedFlow</code> يحكم أي المستندات تظهر، وهل الفاتورة
+      تمسّ المخزون بنفسها أم يفعل الإذن. الفرق بين الوضعين تكوين لا كود.
+    </p>
+
+    <div class="stack">
+      <div class="cycle">
+        <h3>الوضع المبسّط — الافتراضي</h3>
+        <div class="chain">
+          <span class="chip exists">فاتورة شراء</span>
+          <span class="arrow">←→</span>
+          <span class="chip exists">المخزون</span>
+          <span class="arrow">←→</span>
+          <span class="chip exists">فاتورة بيع</span>
+          <span class="arrow">·</span>
+          <span class="chip exists">مرتجع شراء</span>
+          <span class="chip exists">مرتجع بيع</span>
+          <span class="chip exists">أذون مخزن مستقلة</span>
+        </div>
+        <p style="margin-top:12px; color:var(--ink-2)">
+          الفاتورة تُنشئ حركة المخزون داخلياً (<code>AffectsStock = true</code>). كل هذه المستندات
+          موجودة وتعمل اليوم — الوضع المبسّط عملياً <strong>جاهز</strong>، ينقصه فقط مفتاح الإعداد والفلترة.
+        </p>
+      </div>
+
+      <div class="cycle">
+        <h3>الوضع الشامل — دورة الشراء</h3>
+        <div class="chain">
+          <span class="chip new">طلب شراء</span>
+          <span class="arrow">←</span>
+          <span class="chip new">أمر شراء</span>
+          <span class="arrow">←</span>
+          <span class="chip new">إذن إضافة</span>
+          <span class="arrow">←</span>
+          <span class="chip exists">فاتورة شراء</span>
+          <span class="arrow">←</span>
+          <span class="chip exists">مرتجع شراء</span>
+          <span class="arrow">←</span>
+          <span class="chip new">إذن صرف مرتجع</span>
+        </div>
+      </div>
+
+      <div class="cycle">
+        <h3>الوضع الشامل — دورة البيع</h3>
+        <div class="chain">
+          <span class="chip new">عرض سعر</span>
+          <span class="arrow">←</span>
+          <span class="chip new">أمر توريد</span>
+          <span class="arrow">←</span>
+          <span class="chip new">إذن صرف</span>
+          <span class="arrow">←</span>
+          <span class="chip exists">فاتورة بيع</span>
+          <span class="arrow">←</span>
+          <span class="chip exists">مرتجع بيع</span>
+          <span class="arrow">←</span>
+          <span class="chip new">إذن استلام مرتجع</span>
+        </div>
+        <div class="legend">
+          <span><span class="swatch" style="background:var(--brand-soft); border-color:var(--brand)"></span> موجود ويعمل</span>
+          <span><span class="swatch" style="border-style:dashed"></span> يُبنى بالنسخ</span>
+          <span>السحب اختياري دائماً — كل مستند يُنشأ مستقلاً أيضاً</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="rule-note">
+      <strong>قيد التبديل:</strong> الانتقال بين الوضعين يتطلب إعادة تشغيل، ويُمنع كلياً إن وُجد أي مستند
+      دورة قائم — وإلا صارت فواتير قديمة تمسّ المخزون وأخرى لا تمسّه في نفس قاعدة البيانات، وهو فساد بيانات
+      لا يُصلَح لاحقاً.
+    </div>
+  </section>
+
+  <!-- ============ 3. جدول النسخ ============ -->
+  <section>
+    <span class="eyebrow">03 — Copy Map</span>
+    <h2>خريطة النسخ: ماذا يُنسخ من ماذا</h2>
+    <p style="margin-top:16px; color:var(--ink-2)">
+      لا مستند يُكتب من الصفر. الأسطر المذكورة تقدير لفرق التكوين وحده (تسجيل الوحدة) بعد اكتمال توسعة
+      المُصيِّر — إن تجاوز مستندٌ الثلاثين سطراً فذلك إشارة إلى نقص في <code>DocumentDefinition</code>
+      يُسدّ مرة واحدة، لا بكود خاص بالمستند.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>المستند</th>
+            <th>الحالة</th>
+            <th>يُنسخ من</th>
+            <th>الفروقات</th>
+            <th>تقدير الأسطر</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>طلب شراء</td><td><span class="tag new">جديد</span></td><td>فاتورة شراء</td>
+            <td>المورد اختياري · بلا أسعار · <code>AllowPost=false</code> · <code>AffectsStock=false</code></td>
+            <td class="num">~28</td>
+          </tr>
+          <tr>
+            <td>أمر شراء</td><td><span class="tag new">جديد</span></td><td>طلب شراء</td>
+            <td>المورد إلزامي · بأسعار · <code>PullSources=[طلب شراء]</code></td>
+            <td class="num">~22</td>
+          </tr>
+          <tr>
+            <td>إذن إضافة</td><td><span class="tag new">جديد</span></td><td>StockIn</td>
+            <td><code>PullSources=[أمر شراء]</code> · مخزون In · بلا قيد مالي</td>
+            <td class="num">~20</td>
+          </tr>
+          <tr>
+            <td>فاتورة شراء</td><td><span class="tag exists">موجود</span></td><td>—</td>
+            <td>إضافة <code>PullSources=[إذن إضافة, أمر شراء]</code> · <code>AffectsStock=!Simplified</code></td>
+            <td class="num">~6</td>
+          </tr>
+          <tr>
+            <td>مرتجع شراء</td><td><span class="tag exists">موجود</span></td><td>—</td>
+            <td>إضافة <code>PullSources=[فاتورة شراء]</code></td>
+            <td class="num">~4</td>
+          </tr>
+          <tr>
+            <td>إذن صرف مرتجع</td><td><span class="tag new">جديد</span></td><td>StockOut</td>
+            <td><code>PullSources=[مرتجع شراء]</code> · مخزون Out</td>
+            <td class="num">~20</td>
+          </tr>
+          <tr>
+            <td>عرض سعر</td><td><span class="tag new">جديد</span></td><td>فاتورة بيع</td>
+            <td><code>AllowPost=false</code> · <code>AffectsStock=false</code> · بلا قيد</td>
+            <td class="num">~26</td>
+          </tr>
+          <tr>
+            <td>أمر توريد</td><td><span class="tag new">جديد</span></td><td>عرض سعر</td>
+            <td><code>PullSources=[عرض سعر]</code></td>
+            <td class="num">~18</td>
+          </tr>
+          <tr>
+            <td>إذن صرف</td><td><span class="tag new">جديد</span></td><td>StockOut</td>
+            <td><code>PullSources=[أمر توريد]</code> · مخزون Out · بلا قيد</td>
+            <td class="num">~20</td>
+          </tr>
+          <tr>
+            <td>فاتورة بيع</td><td><span class="tag exists">موجود</span></td><td>—</td>
+            <td>إضافة <code>PullSources=[إذن صرف, أمر توريد]</code> · <code>AffectsStock=!Simplified</code></td>
+            <td class="num">~6</td>
+          </tr>
+          <tr>
+            <td>مرتجع بيع</td><td><span class="tag exists">موجود</span></td><td>—</td>
+            <td>إضافة <code>PullSources=[فاتورة بيع]</code></td>
+            <td class="num">~4</td>
+          </tr>
+          <tr>
+            <td>إذن استلام مرتجع</td><td><span class="tag new">جديد</span></td><td>StockIn</td>
+            <td><code>PullSources=[مرتجع بيع]</code> · مخزون In</td>
+            <td class="num">~20</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 4. الهوية البصرية ============ -->
+  <section>
+    <span class="eyebrow">04 — Visual Identity</span>
+    <h2>الهوية: من لوحة افتراضية إلى لوحة مصمَّمة</h2>
+    <p style="margin-top:16px; color:var(--ink-2)">
+      المقترح يبقى داخل نفس البنية: حزمة هوية ثالثة باسم <code>Signature</code> تُضاف بجانب
+      <code>Default</code> و<code>Corporate</code>، فيمكن مقارنتها حيّاً والتراجع بضغطة — بلا مخاطرة على
+      ما يعمل. هذه ألوان هذه الوثيقة نفسها: ما تراه هنا هو المقترح مطبَّقاً.
+    </p>
+
+    <div class="palette">
+      <div class="pal"><div class="bar" style="background:#0C6B62"></div><div class="meta"><div class="name">Brand · الأساس</div><div class="hex">#0C6B62</div></div></div>
+      <div class="pal"><div class="bar" style="background:#084A44"></div><div class="meta"><div class="name">Brand Deep</div><div class="hex">#084A44</div></div></div>
+      <div class="pal"><div class="bar" style="background:#12211F"></div><div class="meta"><div class="name">Ink · النص</div><div class="hex">#12211F</div></div></div>
+      <div class="pal"><div class="bar" style="background:#6B807B"></div><div class="meta"><div class="name">Muted</div><div class="hex">#6B807B</div></div></div>
+      <div class="pal"><div class="bar" style="background:#2E6B4F"></div><div class="meta"><div class="name">Success</div><div class="hex">#2E6B4F</div></div></div>
+      <div class="pal"><div class="bar" style="background:#A9711A"></div><div class="meta"><div class="name">Warning</div><div class="hex">#A9711A</div></div></div>
+      <div class="pal"><div class="bar" style="background:#9E3F2F"></div><div class="meta"><div class="name">Danger</div><div class="hex">#9E3F2F</div></div></div>
+      <div class="pal"><div class="bar" style="background:#F5F7F6; border-bottom:1px solid var(--rule)"></div><div class="meta"><div class="name">Paper</div><div class="hex">#F5F7F6</div></div></div>
+    </div>
+
+    <div class="stack">
+      <div class="finding fixed" style="border-right-color: var(--brand)">
+        <h3>لماذا هذه اللوحة تحديداً</h3>
+        <ul class="plain">
+          <li>أخضر–مزرقّ عميق بدل الأزرق القياسي: يقرأ مؤسسياً ومحاسبياً، ولا يشبه القوالب الجاهزة.</li>
+          <li>محايدات مائلة قليلاً لنفس الطيف بدل رمادي محايد تماماً — فتبدو مختارة لا موروثة.</li>
+          <li>حالات أقل تشبّعاً من Tailwind: النجاح والخطر في جدول بيانات كثيف يجب ألا يصرخا.</li>
+          <li>يبقى متبايناً على أرضية فاتحة وداكنة معاً — الوضع الداكن ليس عكساً آلياً.</li>
+        </ul>
+      </div>
+
+      <div class="finding" style="border-right-color: var(--brand)">
+        <h3>الأيقونات: مواصفة واحدة بدل أرقام متفرقة</h3>
+        <ul class="plain">
+          <li>شبكة 24 · سماكة موحّدة 1.75 · نهايات ووصلات مستديرة · مساحة بصرية متساوية.</li>
+          <li>قطعة <code>AppIcon</code> تقرأ الحجم من <code>C.Icon.Size.*</code> — لا سماكة ولا حجم في أي موضع استدعاء.</li>
+          <li>مراجعة الـ46 أيقونة الحالية على المواصفة، وإكمال الناقص للمستندات الجديدة بنفس الأسلوب.</li>
+          <li>مكسب جانبي: يختفي جزء كبير من دين «القيم البصرية الحرفية» المسجَّل في <code>check.sh</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. الخطة ============ -->
+  <section>
+    <span class="eyebrow">05 — Execution</span>
+    <h2>خطة التنفيذ بالترتيب</h2>
+    <p style="margin-top:16px; color:var(--ink-2)">
+      كل بند بوابة مستقلة: <code>build → test → check.sh → commit</code>. الترتيب ليس اعتباطياً — كل بند
+      يفتح الذي يليه، والبنود 1–3 تُبنى مرة واحدة ثم تخدم كل المستندات.
+    </p>
+
+    <ol class="phases">
+      <li>
+        <div>
+          <div class="phase-head"><h3>توسعة تعريف المستند</h3><span class="size">صغير · يوم</span></div>
+          <p>
+            <code>DocumentDefinition</code> يكتسب <code>PullSources</code> و<code>AllowPost</code> و
+            <code>AffectsStock</code> و<code>PostingRule</code>. بلا هذا البند يتحوّل كل مستند إلى كود خاص —
+            وهو بالضبط ما نتجنّبه.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div class="phase-head"><h3>مصدر السحب القابل للتسجيل</h3><span class="size">متوسط</span></div>
+          <p>
+            <code>GetAvailableForPull</code> تُركت بلا تنفيذ عمداً لأنها تقرأ سطور كل نوع مستند. الحل الذي
+            يُبقيها محايدة: واجهة <code>IPullableSource</code> يسجّلها كل مستند لنفسه (رقم/تاريخ/طرف + سطوره)،
+            فتبقى خدمة الروابط لا تعرف أي نوع بعينه.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div class="phase-head"><h3>حوار السحب الموحّد</h3><span class="size">متوسط–كبير</span></div>
+          <p>
+            <code>PullDialogRenderer</code> واحد يخدم كل الأنواع: مستندات متاحة يميناً، بنودها يساراً مع
+            المتبقي وكمية السحب، وزر «سحب من…» في رأس المستند يظهر فقط إن وُجدت مصادر والصلاحية متاحة.
+            التسجيل في <code>DocumentLinks</code> يتم عند الحفظ داخل معاملة المستند، لا عند السحب.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div class="phase-head"><h3>الأعمدة الناقصة</h3><span class="size">صغير</span></div>
+          <p>
+            قبل المستندات لا بعدها: <code>SourceDocType/Id/No</code> و<code>IsFullyPulled</code> على الرؤوس،
+            و<code>OriginalQty/PulledQty/RemainingQty/SourceLineId</code> على السطور، إضافة إلى
+            <code>LastPurchasePrice/LastSalePrice/AverageCost</code> للأصناف.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div class="phase-head"><h3>المستندات الثمانية</h3><span class="size">كبير · بالنسخ</span></div>
+          <p>
+            حسب خريطة النسخ أعلاه، دورة الشراء أولاً كاملة ثم دورة البيع — فتُختبر الآلية كلها على دورة
+            واحدة قبل تكرارها. اختبار حقيقي لكل مستند: إنشاء، سحب جزئي، تحقّق من المتبقي، سحب الباقي.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div class="phase-head"><h3>الوضع المبسّط/الشامل</h3><span class="size">متوسط</span></div>
+          <p>
+            <code>ModuleRegistry.VisibleFor</code> يفلتر حسب الإعداد، و<code>AffectsStock</code> يُحسب منه،
+            ومنع التبديل عند وجود مستندات دورة برسالة صريحة تشرح السبب.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div class="phase-head"><h3>حزمة الهوية الجديدة</h3><span class="size">متوسط</span></div>
+          <p>
+            <code>Identity/Signature/</code> بالملفات الستة، ثم <code>AppIcon</code> وتوحيد الأيقونات.
+            تُطبَّق وتُقارن حيّاً مع الحزم القائمة قبل اعتمادها افتراضاً.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div class="phase-head"><h3>الإغلاق</h3><span class="size">صغير</span></div>
+          <p>
+            <code>DemoDataSeeder</code> يبذر دورة كاملة لكل اتجاه (طلب ← أمر ← إذن ← فاتورة ← مرتجع ← إذن)،
+            وحوار «نسخ من دور آخر» المؤجَّل، وتشغيل فعلي لكل شاشة جديدة بنداً بنداً.
+          </p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ============ 6. المبادئ ============ -->
+  <section>
+    <span class="eyebrow">06 — Ground Rules</span>
+    <h2>المبادئ الحاكمة أثناء التنفيذ</h2>
+    <div class="stack-tight">
+      <p><strong>النسخ لا الكتابة.</strong> كل مستند من أقرب نظير عامل، وتُعدَّل الفروقات وحدها.</p>
+      <p><strong>نقص في المُصيِّر يُسدّ مرة.</strong> تجاوز فرقٍ للثلاثين سطراً ليس مشكلة المستند، بل إشارة إلى تعريف ناقص.</p>
+      <p><strong>الاستيراد قبل البناء.</strong> القطعة الموجودة تُستدعى ولو احتاجت توسعة صغيرة؛ لا قطعة ثانية بنفس الدور.</p>
+      <p><strong>لا يُكسَر ما يعمل.</strong> الشجرة والحسابات والقيود والفواتير الحالية تبقى كما هي طوال التنفيذ.</p>
+      <p><strong>البوابة بعد كل بند.</strong> بناء، اختبارات كاملة، <code>check.sh</code> بصفر FAIL، ثم التزام واحد واضح.</p>
+      <p><strong>الاختبار يُثبَت بفشله أولاً.</strong> كل إصلاح خلل يُرفَق باختبار تحقّقنا أنه يفشل قبل الإصلاح — وإلا فهو اختبار بلا قيمة.</p>
+    </div>
+  </section>
+
+  <footer class="end">
+    مبني على حالة المستودع بعد آخر التزام (نواة تتبّع السحب) — 282 اختباراً ناجحاً، <code>check.sh</code>
+    بصفر خرق حاسم، وستة بنود دين تقني مسجَّلة وموثَّقة.
+  </footer>
+
+</div>

@@ -162,7 +162,7 @@ namespace PrimeERP.Platform.Settings
             new(UI.DateFormat,       "yyyy-MM-dd",  "string", "UI"),
             new(UI.PageSize,         "25",          "int",    "UI"),
             new(UI.SidebarCollapsed, "false",       "bool",   "UI"),
-            new(UI.Identity,         "Default",     "string", "UI"),
+            new(UI.Identity,         "Signature",   "string", "UI"),
 
             new(Backup.AutoBackupEnabled,       "false", "bool",   "Backup"),
             new(Backup.AutoBackupPath,          "",      "string", "Backup"),

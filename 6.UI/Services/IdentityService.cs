@@ -111,11 +111,12 @@ namespace PrimeERP.UI.Services
         // القيم Str.* هنا مفاتيح ترجمة (تُحلّ في Available فقط، وقت الاستخدام) لا نصاً نهائياً — الحزمة الثابتة تحمل المفاتيح فقط.
         private static readonly List<(string Key, string NameArKey, string NameEn)> Packs = new()
         {
+            ("Signature", "Str.Identity.Signature", "Signature"),
             ("Default",   "Str.Identity.Default",   "Default"),
             ("Corporate", "Str.Identity.Corporate", "Corporate")
         };
 
-        public string CurrentIdentity { get; private set; } = "Default";
+        public string CurrentIdentity { get; private set; } = "Signature";
 
         public ThemeMode CurrentMode { get; private set; } = ThemeMode.Light;
 

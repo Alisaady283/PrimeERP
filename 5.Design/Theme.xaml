@@ -21,6 +21,7 @@
         <ResourceDictionary Source="Components/Tokens.Input.xaml"/>
         <ResourceDictionary Source="Components/Tokens.Dialog.xaml"/>
         <ResourceDictionary Source="Components/Tokens.Grid.xaml"/>
+        <ResourceDictionary Source="Components/Tokens.Icon.xaml"/>
         <ResourceDictionary Source="Components/Tokens.Nav.xaml"/>
         <ResourceDictionary Source="Components/Tokens.Card.xaml"/>
         <ResourceDictionary Source="Components/Tokens.Badge.xaml"/>
