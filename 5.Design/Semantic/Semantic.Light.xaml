@@ -49,6 +49,8 @@
     <SolidColorBrush x:Key="GridHeaderFg" Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="GridRowAltBg" Color="{DynamicResource P.Color.Neutral.50}"/>
 
+    <SolidColorBrush x:Key="TreeFolder" Color="{DynamicResource P.Color.Folder}"/>
+
     <!-- ===== الحالات الدلالية (Semantic) ===== -->
     <SolidColorBrush x:Key="Success"         Color="{DynamicResource P.Color.Success.600}"/>
     <SolidColorBrush x:Key="SuccessHover"    Color="{DynamicResource P.Color.Success.700}"/>

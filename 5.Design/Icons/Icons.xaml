@@ -62,6 +62,8 @@
     <Geometry x:Key="IconEyeOff">M3,3 L21,21 M10.6,10.6 A3,3 0 0 0 13.4,13.4 M6.6,6.7 C4.5,8.1 2.9,10 2,12 C4,17 8,20 12,20 C13.9,20 15.6,19.4 17.1,18.4 M9.9,4.2 C10.6,4.1 11.3,4 12,4 C16,4 20,7 22,12 C21.4,13.4 20.6,14.6 19.6,15.7</Geometry>
     <Geometry x:Key="IconLock">M6,10 L6,7 A6,6 0 0 1 18,7 L18,10 M4,10 L20,10 L20,21 L4,21 Z M12,14 L12,17</Geometry>
     <Geometry x:Key="IconFolder">M3,6 L10,6 L12,8 L21,8 L21,19 L3,19 Z</Geometry>
+    <Geometry x:Key="IconFolderFilled">M2.5,5.5 L9.5,5.5 L11.6,8 L21.5,8 L21.5,18.8 C21.5,19.2 21.2,19.5 20.8,19.5 L3.2,19.5 C2.8,19.5 2.5,19.2 2.5,18.8 Z</Geometry>
+    <Geometry x:Key="IconFileFilled">M6,3 L14,3 L19,8 L19,20 C19,20.4 18.7,20.7 18.3,20.7 L6.7,20.7 C6.3,20.7 6,20.4 6,20 Z M14,3 L14,8 L19,8 Z</Geometry>
     <Geometry x:Key="IconBuilding">M6,21 L6,3 L14,3 L14,21 M18,21 L18,9 L14,9 M9,7 L9,7.01 M9,11 L9,11.01 M9,15 L9,15.01 M16,12 L16,12.01 M16,16 L16,16.01</Geometry>
     <Geometry x:Key="IconUnits">M3,17 L17,3 L21,7 L7,21 Z M6,14 L8,16 M9,11 L11,13 M12,8 L14,10</Geometry>
     <Geometry x:Key="IconAssets">M4,7 L20,7 L20,20 L4,20 Z M9,7 L9,4 L15,4 L15,7 M4,12 L20,12</Geometry>

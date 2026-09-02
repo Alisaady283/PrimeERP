@@ -45,6 +45,8 @@
     <SolidColorBrush x:Key="GridHeaderFg" Color="{DynamicResource P.Color.Neutral.100}"/>
     <SolidColorBrush x:Key="GridRowAltBg" Color="{DynamicResource P.Color.Nav.700}"/>
 
+    <SolidColorBrush x:Key="TreeFolder" Color="{DynamicResource P.Color.Folder}"/>
+
     <!-- ===== الحالات — الناعم يصبح داكناً مشبعاً ===== -->
     <SolidColorBrush x:Key="Success"         Color="{DynamicResource P.Color.Success.500}"/>
     <SolidColorBrush x:Key="SuccessHover"    Color="{DynamicResource P.Color.Success.600}"/>

@@ -22,6 +22,11 @@
                           Stroke="{DynamicResource TextOnBrand}"/>
                 </Border>
 
+                <Path x:Name="nodeIcon" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,7,0"
+                      Width="{DynamicResource C.Icon.Size.Md}" Height="{DynamicResource C.Icon.Size.Md}"
+                      Data="{StaticResource IconFolderFilled}"
+                      Fill="{DynamicResource C.Tree.Folder.Fg}"/>
+
                 <TextBlock x:Name="label" Text="{Binding DisplayText}"
                            VerticalAlignment="Center"
                            FontFamily="{DynamicResource P.Font.Family.Primary}"
@@ -50,6 +55,11 @@
             </StackPanel>
 
             <HierarchicalDataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsLeaf}" Value="True">
+                    <Setter TargetName="nodeIcon" Property="Data" Value="{StaticResource IconFileFilled}"/>
+                    <Setter TargetName="nodeIcon" Property="Fill" Value="{DynamicResource C.Tree.Leaf.Fg}"/>
+                </DataTrigger>
+
                 <DataTrigger Binding="{Binding CheckMode, RelativeSource={RelativeSource AncestorType=display:AppTreeView}}" Value="TwoState">
                     <Setter TargetName="checkBox" Property="Visibility" Value="Visible"/>
                 </DataTrigger>

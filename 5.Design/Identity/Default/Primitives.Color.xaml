@@ -84,6 +84,8 @@
     <Color x:Key="P.Color.Info.900">#164E63</Color>
 
     <!-- ===== Base (بلا صبغة) ===== -->
+    <Color x:Key="P.Color.Folder">#E9B949</Color>
+
     <Color x:Key="P.Color.White">#FFFFFF</Color>
     <Color x:Key="P.Color.Black">#000000</Color>
 

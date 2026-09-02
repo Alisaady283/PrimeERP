@@ -157,7 +157,7 @@ namespace PrimeERP.Platform.Settings
             new(Documents.StockVoucherPrefix,    "SV",   "string", "Documents"),
             new(Documents.NumberPadding,         "5",    "int",    "Documents"),
             new(Documents.ResetNumbersYearly,    "true", "bool",   "Documents"),
-            new(Documents.SimplifiedFlow,        "true", "bool",   "Documents"),
+            new(Documents.SimplifiedFlow,        "false", "bool",  "Documents"),
             new(Documents.CustomerPrefix,        "C",    "string", "Documents"),
             new(Documents.SupplierPrefix,        "S",    "string", "Documents"),
             new(Documents.ProductPrefix,         "P",    "string", "Documents"),

@@ -10,4 +10,7 @@
     <SolidColorBrush x:Key="C.Tree.Item.Disabled.Fg" Color="{DynamicResource TextMuted.Color}"/>
     <SolidColorBrush x:Key="C.Tree.Item.Match.Fg"    Color="{DynamicResource BrandDefault.Color}"/>
 
+    <SolidColorBrush x:Key="C.Tree.Folder.Fg" Color="{DynamicResource TreeFolder.Color}"/>
+    <SolidColorBrush x:Key="C.Tree.Leaf.Fg"   Color="{DynamicResource TextMuted.Color}"/>
+
 </ResourceDictionary>
