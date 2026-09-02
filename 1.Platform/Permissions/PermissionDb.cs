@@ -143,6 +143,30 @@ namespace PrimeERP.Platform.Permissions
             Db.Query("SELECT PermissionKey FROM UserPermissions WHERE UserId = @u AND IsGranted = 0", Db.Params(("@u", userId)))
               .AsEnumerable().Select(r => r["PermissionKey"].ToString()).ToList();
 
+        /// <summary>granted = null يحذف السجل (عودة للموروث من الدور)، وإلا يُثبِّت منحاً أو حجباً صريحاً.</summary>
+        public static void SetUserPermission(int userId, string key, bool? granted)
+        {
+            Db.Execute("DELETE FROM UserPermissions WHERE UserId = @u AND PermissionKey = @k",
+                Db.Params(("@u", userId), ("@k", key)));
+
+            if (granted == null) return;
+
+            Db.Execute("INSERT INTO UserPermissions (UserId, PermissionKey, IsGranted) VALUES (@u, @k, @g)",
+                Db.Params(("@u", userId), ("@k", key), ("@g", granted.Value)));
+        }
+
+        public static void ReplaceRolePermissions(int roleId, IEnumerable<string> keys)
+        {
+            Db.RunTransaction((conn, tx) =>
+            {
+                Db.Execute(conn, tx, "DELETE FROM RolePermissions WHERE RoleId = @r", Db.Params(("@r", roleId)));
+
+                foreach (var key in keys.Distinct())
+                    Db.Execute(conn, tx, "INSERT INTO RolePermissions (RoleId, PermissionKey) VALUES (@r, @k)",
+                        Db.Params(("@r", roleId), ("@k", key)));
+            });
+        }
+
         public class UserRecord
         {
             public int    Id           { get; set; }

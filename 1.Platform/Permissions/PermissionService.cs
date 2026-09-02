@@ -5,7 +5,7 @@ using PrimeERP.Platform.Permissions;
 
 namespace PrimeERP.Platform.Permissions
 {
-    public class PermissionService : IPermissionService
+    public class PermissionService : IPermissionService, IPermissionAdminService
     {
         public bool Can(string key) => AppSession.DevMode || AppSession.Permissions.Contains(key);
 
@@ -36,5 +36,36 @@ namespace PrimeERP.Platform.Permissions
                                    .Distinct()
                                    .ToList();
         }
+
+        public HashSet<string> GetEffectivePermissions(int userId) => GetUserPermissions(userId).ToHashSet();
+
+        public PermissionState GetState(int userId, string key)
+        {
+            if (PermissionDb.GetUserRevokedPermissions(userId).Contains(key)) return PermissionState.Revoked;
+            if (PermissionDb.GetUserGrantedPermissions(userId).Contains(key)) return PermissionState.Granted;
+            return PermissionState.Inherited;
+        }
+
+        public bool IsInheritedFromRole(int userId, string key)
+        {
+            var roleId = PermissionDb.GetRoleIdForUser(userId);
+            return roleId != null && PermissionDb.GetRolePermissions(roleId.Value).Contains(key);
+        }
+
+        public void SetUserPermission(int userId, string key, PermissionState state)
+        {
+            PermissionDb.SetUserPermission(userId, key, state switch
+            {
+                PermissionState.Granted => true,
+                PermissionState.Revoked => false,
+                _ => (bool?)null
+            });
+        }
+
+        public void SetRolePermissions(int roleId, IEnumerable<string> keys) =>
+            PermissionDb.ReplaceRolePermissions(roleId, keys);
+
+        public void CopyRolePermissions(int fromRoleId, int toRoleId) =>
+            PermissionDb.ReplaceRolePermissions(toRoleId, PermissionDb.GetRolePermissions(fromRoleId));
     }
 }

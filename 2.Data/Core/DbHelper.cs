@@ -89,6 +89,14 @@ namespace PrimeERP.Data.Core
             return cmd.ExecuteNonQuery();
         }
 
+        public static int Execute(DbConnection conn, DbTransaction tx, string sql, IDictionary<string, object> parameters = null)
+        {
+            using var cmd = NewCommand(conn, tx);
+            cmd.CommandText = sql;
+            AddParams(cmd, parameters);
+            return cmd.ExecuteNonQuery();
+        }
+
         public static object Scalar(string sql, IDictionary<string, object> parameters = null)
         {
             using var conn = GetConnection();

@@ -12,7 +12,7 @@ namespace PrimeERP.Tests.Services
     public class PermissionServiceTests
     {
         private readonly TestDatabaseFixture _db;
-        private readonly IPermissionService _service = new PermissionService();
+        private readonly PermissionService _service = new();
 
         public PermissionServiceTests(TestDatabaseFixture db) => _db = db;
 
@@ -148,6 +148,58 @@ namespace PrimeERP.Tests.Services
             AppSession.Permissions.Clear();
 
             Assert.True(_service.Can("Anything.NotGranted"));
+        }
+
+        [Fact]
+        public void SetUserPermission_RevokedBeatsRoleGrant_AndInheritedRemovesOverride()
+        {
+            var roleId = CreateRole($"Role.{Guid.NewGuid():N}", "Customers.View", "Customers.Edit");
+            var userId = CreateUser($"user.{Guid.NewGuid():N}", roleId);
+
+            _service.SetUserPermission(userId, "Customers.Edit", PermissionState.Revoked);
+
+            Assert.Equal(PermissionState.Revoked, _service.GetState(userId, "Customers.Edit"));
+            Assert.DoesNotContain("Customers.Edit", _service.GetEffectivePermissions(userId));
+            Assert.Contains("Customers.View", _service.GetEffectivePermissions(userId));
+            Assert.True(_service.IsInheritedFromRole(userId, "Customers.Edit"));
+
+            _service.SetUserPermission(userId, "Customers.Edit", PermissionState.Inherited);
+
+            Assert.Equal(PermissionState.Inherited, _service.GetState(userId, "Customers.Edit"));
+            Assert.Contains("Customers.Edit", _service.GetEffectivePermissions(userId));
+        }
+
+        [Fact]
+        public void SetUserPermission_GrantedAddsKeyOutsideRole()
+        {
+            var roleId = CreateRole($"Role.{Guid.NewGuid():N}", "Customers.View");
+            var userId = CreateUser($"user.{Guid.NewGuid():N}", roleId);
+
+            _service.SetUserPermission(userId, "Suppliers.Delete", PermissionState.Granted);
+
+            Assert.Equal(PermissionState.Granted, _service.GetState(userId, "Suppliers.Delete"));
+            Assert.False(_service.IsInheritedFromRole(userId, "Suppliers.Delete"));
+            Assert.Contains("Suppliers.Delete", _service.GetEffectivePermissions(userId));
+        }
+
+        [Fact]
+        public void SetRolePermissions_ReplacesWholesale_AndCopyClonesAnotherRole()
+        {
+            var source = CreateRole($"Role.{Guid.NewGuid():N}", "Products.View", "Products.Create");
+            var target = CreateRole($"Role.{Guid.NewGuid():N}", "Journal.View");
+            var userId = CreateUser($"user.{Guid.NewGuid():N}", target);
+
+            _service.SetRolePermissions(target, new[] { "Assets.View", "Assets.Edit" });
+            var afterReplace = _service.GetEffectivePermissions(userId);
+            Assert.DoesNotContain("Journal.View", afterReplace);
+            Assert.Contains("Assets.View", afterReplace);
+            Assert.Contains("Assets.Edit", afterReplace);
+
+            _service.CopyRolePermissions(source, target);
+            var afterCopy = _service.GetEffectivePermissions(userId);
+            Assert.DoesNotContain("Assets.View", afterCopy);
+            Assert.Contains("Products.View", afterCopy);
+            Assert.Contains("Products.Create", afterCopy);
         }
     }
 }

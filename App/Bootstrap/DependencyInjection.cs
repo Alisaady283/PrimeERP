@@ -39,7 +39,9 @@ namespace PrimeERP.App.Bootstrap
     {
         public static IServiceCollection AddPlatform(this IServiceCollection services)
         {
-            services.AddSingleton<IPermissionService, PermissionService>();
+            services.AddSingleton<PermissionService>();
+            services.AddSingleton<IPermissionService>(sp => sp.GetRequiredService<PermissionService>());
+            services.AddSingleton<IPermissionAdminService>(sp => sp.GetRequiredService<PermissionService>());
             services.AddSingleton<ISettingsProvider, SettingsProvider>();
             services.AddSingleton<IAuditLogger, AuditLogger>();
             services.AddSingleton<ILocalizationService, LocalizationAdapter>();
