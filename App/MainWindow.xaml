@@ -11,5 +11,6 @@
     <!-- المرحلة H — القاعدة المعمارية: لا منطق ولا عنصر مرئي أصلي في Window، تجميع قطع فقط. AppShell وحدها. -->
     <shell:AppShell x:Name="shell"
                      NavigationRequested="Shell_NavigationRequested"
+                     ThemeToggled="Shell_ThemeToggled"
                      LogoutRequested="Shell_LogoutRequested"/>
 </Window>

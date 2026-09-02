@@ -267,6 +267,8 @@ namespace PrimeERP.UI.Components.Display
 
             var cellStyle = new Style(typeof(TextBlock));
             cellStyle.Setters.Add(new Setter(TextBlock.HorizontalAlignmentProperty, alignment));
+            cellStyle.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
+            cellStyle.Setters.Add(new Setter(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis));
             cellStyle.Setters.Add(new Setter(TextBlock.MarginProperty, new Thickness(12, 0, 12, 0)));
 
             return new DataGridTextColumn
@@ -441,6 +443,7 @@ namespace PrimeERP.UI.Components.Display
 
                 var cellStyle = new Style(typeof(TextBlock));
                 cellStyle.Setters.Add(new Setter(TextBlock.HorizontalAlignmentProperty, alignment));
+                cellStyle.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
                 cellStyle.Setters.Add(new Setter(TextBlock.MarginProperty, new Thickness(12, 0, 12, 0)));
 
                 footerGrid.Columns.Add(new DataGridTextColumn

@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.Services;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
+using PrimeERP.Platform.Design;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
@@ -104,6 +105,14 @@ namespace PrimeERP.App
             if (definition == null) return;
 
             shell.CurrentPage = PageRenderer.Render(definition, _services);
+        }
+
+        private void Shell_ThemeToggled(object sender, EventArgs e)
+        {
+            var identity = _services.GetRequiredService<IIdentityService>();
+            identity.ApplyMode(identity.CurrentMode == PrimeERP.Platform.Design.ThemeMode.Dark
+                ? PrimeERP.Platform.Design.ThemeMode.Light
+                : PrimeERP.Platform.Design.ThemeMode.Dark);
         }
 
         private void Shell_LogoutRequested(object sender, EventArgs e)
