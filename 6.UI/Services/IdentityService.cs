@@ -54,27 +54,29 @@ namespace PrimeERP.UI.Services
         /// وحقنها كقيمة Color خام مباشرة تحت مفتاح "{Name}.Color" — لا DynamicResource متداخل، فلا مشكلة تجميد
         /// (توقف 5) ولا خطأ نوع. يُعاد استدعاؤها من Apply وApplyMode معاً — أي تغيير هوية أو وضع يُحدِّثها فوراً.
         /// </summary>
-        private static readonly string[] DerivedColorNames =
-        {
-            "BrandDefault", "BrandHover", "BrandSoft", "Danger", "DangerSoft",
-            "NavHover", "NavIcon", "NavSelectedBar", "NavSurface", "NavText",
-            "NavTextSelected", "OutlineDefault", "OutlineFocus", "Success",
-            "SurfaceCanvas", "SurfaceDefault", "SurfaceRaised", "SurfaceSunken",
-            "TableRowHover", "TableRowSelected", "TableRowSelectedText",
-            "TextMuted", "TextOnBrand", "TextPrimary", "TextSecondary",
-            "TopBarBorder", "TopBarIcon", "TopBarIconHover", "TopBarSurface",
-            "TopBarText", "Warning", "WarningSoft"
-        };
-
+        /// <summary>كل مفتاح Brush في الشجرة المدموجة يحصل على "{Name}.Color" — لا قائمة أسماء يدوية: أي مفتاح
+        /// L2 جديد كان يحتاج إضافة يدوية هنا وإلا حُلَّ لونه لشفاف صامت (هيدر الجدول ظهر أبيض على أبيض بهذا
+        /// السبب بالضبط).</summary>
         private static void RefreshDerivedColors()
         {
             var app = System.Windows.Application.Current;
             if (app == null) return;
 
-            foreach (var name in DerivedColorNames)
+            var derived = new Dictionary<string, Color>();
+            CollectBrushColors(app.Resources, derived);
+            foreach (var (name, color) in derived)
+                app.Resources[$"{name}.Color"] = color;
+        }
+
+        private static void CollectBrushColors(ResourceDictionary dict, Dictionary<string, Color> into)
+        {
+            foreach (var merged in dict.MergedDictionaries)
+                CollectBrushColors(merged, into);
+
+            foreach (var key in dict.Keys)
             {
-                if (app.TryFindResource(name) is SolidColorBrush brush)
-                    app.Resources[$"{name}.Color"] = brush.Color;
+                if (key is not string name || name.EndsWith(".Color")) continue;
+                if (dict[key] is SolidColorBrush brush) into[name] = brush.Color;
             }
         }
 
