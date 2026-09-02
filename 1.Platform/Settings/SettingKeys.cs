@@ -68,6 +68,9 @@ namespace PrimeERP.Platform.Settings
             public const string NumberPadding         = "Documents.NumberPadding";
             public const string ResetNumbersYearly    = "Documents.ResetNumbersYearly";
 
+            /// <summary>مفعّل: الفاتورة تمسّ المخزون ومستندات الدورة مخفية. معطّل: الدورة الكاملة والإذن يمسّ المخزون.</summary>
+            public const string SimplifiedFlow        = "Documents.SimplifiedFlow";
+
             /// <summary>
             /// البادئة الفعلية لتسلسل NumberSequenceService بالمفتاح "Customer" — يزرعها NumberSequenceSeeder، لا
             /// EnsureRow التلقائية (التي كانت ستجعل البادئة "Customer" نفسها). بلا شرطة لاحقة — NumberSequenceService.
@@ -152,6 +155,7 @@ namespace PrimeERP.Platform.Settings
             new(Documents.StockVoucherPrefix,    "SV",   "string", "Documents"),
             new(Documents.NumberPadding,         "5",    "int",    "Documents"),
             new(Documents.ResetNumbersYearly,    "true", "bool",   "Documents"),
+            new(Documents.SimplifiedFlow,        "true", "bool",   "Documents"),
             new(Documents.CustomerPrefix,        "C",    "string", "Documents"),
             new(Documents.SupplierPrefix,        "S",    "string", "Documents"),
             new(Documents.ProductPrefix,         "P",    "string", "Documents"),

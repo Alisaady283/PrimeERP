@@ -9,5 +9,7 @@ namespace PrimeERP.Composition.Registry
         void Register(ModuleDefinition module);
         ModuleDefinition Get(string key);
         IReadOnlyList<ModuleDefinition> All();
+
+        IReadOnlyList<ModuleDefinition> VisibleFor(bool simplifiedFlow);
     }
 }

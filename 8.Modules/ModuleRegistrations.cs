@@ -584,6 +584,7 @@ namespace PrimeERP.Modules
             registry.Register(new ModuleDefinition
             {
                 Key = "StockIn", TitleKey = "Str.Module.StockIn", PermissionPrefix = "Inventory", ViewModelType = typeof(StockInViewModel),
+                FlowScope = FlowScope.SimplifiedOnly,
                 Columns = new()
                 {
                     new() { Header = LocalizationService.Get("Str.DocNo"), Binding = nameof(StockAdjustmentDto.DocNo), Width = 110 },
@@ -615,6 +616,7 @@ namespace PrimeERP.Modules
             registry.Register(new ModuleDefinition
             {
                 Key = "StockOut", TitleKey = "Str.Module.StockOut", PermissionPrefix = "Inventory", ViewModelType = typeof(StockOutViewModel),
+                FlowScope = FlowScope.SimplifiedOnly,
                 Columns = new()
                 {
                     new() { Header = LocalizationService.Get("Str.DocNo"), Binding = nameof(StockAdjustmentDto.DocNo), Width = 110 },

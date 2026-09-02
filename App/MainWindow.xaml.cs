@@ -76,10 +76,14 @@ namespace PrimeERP.App
                 ("الإعدادات", "IconSettings", new[] { "Settings", "Users", "Roles", "RolePermissions", "UserPermissions" }),
             };
 
+            var simplified = _services.GetRequiredService<ISettingsService>().Get(SettingKeys.Documents.SimplifiedFlow, true);
+            var visible = _registry.VisibleFor(simplified).Select(m => m.Key).ToHashSet();
+
             var result = new List<NavItem>();
             foreach (var group in groups)
             {
                 var children = group.Keys
+                    .Where(visible.Contains)
                     .Select(k => _registry.Get(k))
                     .Where(m => m != null)
                     .Select(m => new NavItem { Key = m.Key, Text = LocalizationService.Get(m.TitleKey), PermissionKey = $"{m.PermissionPrefix}.View", IconKey = IconKeyForModule(m.Key) })

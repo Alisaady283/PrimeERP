@@ -46,5 +46,8 @@ namespace PrimeERP.Composition.Definitions
 
         /// <summary>مطلوبة فقط لو LayoutKind = TreeCheckList (شاشتا الصلاحيات).</summary>
         public TreeCheckListDefinition TreeCheckList { get; init; }
+
+        /// <summary>في أي وضع تظهر هذه الوحدة — الافتراضي: الوضعان معاً.</summary>
+        public FlowScope FlowScope { get; init; } = FlowScope.Both;
     }
 }
