@@ -135,4 +135,32 @@ namespace PrimeERP.Application.Services.Inventory
             INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit)
             : base(repo, products, warehouses, stock, numbers, permissions, audit, MovementType.Out, "StockOut", "StockOut", "StockOut") { }
     }
+
+    public class GoodsReceiptService : StockAdjustmentServiceBase<IGoodsReceiptRepository>, IGoodsReceiptService
+    {
+        public GoodsReceiptService(IGoodsReceiptRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
+            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit)
+            : base(repo, products, warehouses, stock, numbers, permissions, audit, MovementType.In, "GoodsReceipt", "GoodsReceipt", "GoodsReceipt") { }
+    }
+
+    public class GoodsIssueService : StockAdjustmentServiceBase<IGoodsIssueRepository>, IGoodsIssueService
+    {
+        public GoodsIssueService(IGoodsIssueRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
+            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit)
+            : base(repo, products, warehouses, stock, numbers, permissions, audit, MovementType.Out, "GoodsIssue", "GoodsIssue", "GoodsIssue") { }
+    }
+
+    public class DeliveryNoteService : StockAdjustmentServiceBase<IDeliveryNoteRepository>, IDeliveryNoteService
+    {
+        public DeliveryNoteService(IDeliveryNoteRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
+            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit)
+            : base(repo, products, warehouses, stock, numbers, permissions, audit, MovementType.Out, "DeliveryNote", "DeliveryNote", "DeliveryNote") { }
+    }
+
+    public class SalesReceiptService : StockAdjustmentServiceBase<ISalesReceiptRepository>, ISalesReceiptService
+    {
+        public SalesReceiptService(ISalesReceiptRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
+            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit)
+            : base(repo, products, warehouses, stock, numbers, permissions, audit, MovementType.In, "SalesReceipt", "SalesReceipt", "SalesReceipt") { }
+    }
 }

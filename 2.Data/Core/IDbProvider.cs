@@ -28,6 +28,13 @@ namespace PrimeERP.Data.Core
         string CreateTableIfNotExists(string tableName, string columnsAndConstraints);
         string CreateIndexIfNotExists(string indexName, string tableName, string column, bool unique);
 
+        /// <summary>يُرجِع صفوفاً بعمود واحد اسمه "ColumnName" — أعمدة الجدول الموجودة فعلياً. تستخدمها
+        /// SchemaBuilder.Create لإضافة أي عمود جديد أُضيف للكيان بعد إنشاء الجدول فعلياً (CREATE TABLE IF NOT
+        /// EXISTS لا يُعدِّل جدولاً موجوداً).</summary>
+        string ExistingColumnsQuery(string tableName);
+
+        string AddColumnSql(string tableName, string columnDdl);
+
         /// <summary>
         /// يهيّئ عبارة الإدراج لإرجاع المعرف الجديد مباشرة (PostgreSQL يضيف RETURNING).
         /// المحركات التي لا تدعم ذلك (SQLite/SQL Server) ترجع نفس العبارة بلا تعديل —

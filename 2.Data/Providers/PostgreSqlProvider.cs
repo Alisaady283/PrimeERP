@@ -32,6 +32,12 @@ namespace PrimeERP.Data.Providers
             $"CREATE {(unique ? "UNIQUE " : "")}INDEX IF NOT EXISTS {QuoteIdentifier(indexName)} " +
             $"ON {QuoteIdentifier(tableName)} ({QuoteIdentifier(column)})";
 
+        public string ExistingColumnsQuery(string tableName) =>
+            $"SELECT column_name AS \"ColumnName\" FROM information_schema.columns WHERE table_name = '{tableName}'";
+
+        public string AddColumnSql(string tableName, string columnDdl) =>
+            $"ALTER TABLE {QuoteIdentifier(tableName)} ADD COLUMN {columnDdl}";
+
         /// <summary>PostgreSQL يرجع المعرف الجديد مباشرة من عبارة الإدراج نفسها بلا استعلام إضافي.</summary>
         public string AppendReturningId(string insertSql, string idColumn = "Id") =>
             $"{insertSql} RETURNING {QuoteIdentifier(idColumn)}";

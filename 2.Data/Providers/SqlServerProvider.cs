@@ -35,6 +35,12 @@ namespace PrimeERP.Data.Providers
             $"    CREATE {(unique ? "UNIQUE " : "")}INDEX {QuoteIdentifier(indexName)} " +
             $"ON {QuoteIdentifier(tableName)} ({QuoteIdentifier(column)})";
 
+        public string ExistingColumnsQuery(string tableName) =>
+            $"SELECT COLUMN_NAME AS ColumnName FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{tableName}'";
+
+        public string AddColumnSql(string tableName, string columnDdl) =>
+            $"ALTER TABLE {QuoteIdentifier(tableName)} ADD {columnDdl}";
+
         public string AppendReturningId(string insertSql, string idColumn = "Id") => insertSql;
 
         public bool HasAutoRowVersion => true;

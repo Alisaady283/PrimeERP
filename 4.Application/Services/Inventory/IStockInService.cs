@@ -12,12 +12,10 @@ namespace PrimeERP.Application.Services.Inventory
         Result Delete(int id);
     }
 
-    public interface IStockOutService
-    {
-        Result<PagedResult<StockAdjustmentDto>> GetPaged(int page, int pageSize, StockAdjustmentFilter filter = null);
-        Result<StockAdjustmentDetailDto> GetById(int id);
-        Result<StockAdjustmentDetailDto> Create(CreateStockAdjustmentDto dto);
-        Result Update(CreateStockAdjustmentDto dto);
-        Result Delete(int id);
-    }
+    public interface IStockOutService : IStockInService { }
+
+    public interface IGoodsReceiptService : IStockInService { }
+    public interface IGoodsIssueService : IStockInService { }
+    public interface IDeliveryNoteService : IStockInService { }
+    public interface ISalesReceiptService : IStockInService { }
 }

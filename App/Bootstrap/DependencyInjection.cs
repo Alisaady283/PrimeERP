@@ -73,6 +73,10 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IPurchaseReturnRepository, PurchaseReturnRepository>();
             services.AddSingleton<IStockInRepository, StockInRepository>();
             services.AddSingleton<IStockOutRepository, StockOutRepository>();
+            services.AddSingleton<IGoodsReceiptRepository, GoodsReceiptRepository>();
+            services.AddSingleton<IGoodsIssueRepository, GoodsIssueRepository>();
+            services.AddSingleton<IDeliveryNoteRepository, DeliveryNoteRepository>();
+            services.AddSingleton<ISalesReceiptRepository, SalesReceiptRepository>();
             services.AddSingleton<IStockTransferRepository, StockTransferRepository>();
             services.AddSingleton<IPayrollRepository, PayrollRepository>();
             return services;
@@ -106,6 +110,10 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IPurchaseReturnService, PurchaseReturnService>();
             services.AddSingleton<IStockInService, StockInService>();
             services.AddSingleton<IStockOutService, StockOutService>();
+            services.AddSingleton<IGoodsReceiptService, GoodsReceiptService>();
+            services.AddSingleton<IGoodsIssueService, GoodsIssueService>();
+            services.AddSingleton<IDeliveryNoteService, DeliveryNoteService>();
+            services.AddSingleton<ISalesReceiptService, SalesReceiptService>();
             services.AddSingleton<IStockTransferService, StockTransferService>();
             services.AddSingleton<IPayrollService, PayrollService>();
             services.AddSingleton<IRoleService, RoleService>();
@@ -155,6 +163,10 @@ namespace PrimeERP.App.Bootstrap
             services.AddTransient<PurchaseReturnsViewModel>();
             services.AddTransient<StockInViewModel>();
             services.AddTransient<StockOutViewModel>();
+            services.AddTransient<GoodsReceiptViewModel>();
+            services.AddTransient<GoodsIssueViewModel>();
+            services.AddTransient<DeliveryNoteViewModel>();
+            services.AddTransient<SalesReceiptViewModel>();
             services.AddTransient<StockTransferViewModel>();
             services.AddTransient<PayrollViewModel>();
 
@@ -176,6 +188,7 @@ namespace PrimeERP.App.Bootstrap
             ModuleRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             ReportRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             PermissionModuleRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
+            CycleVoucherRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             return services;
         }
 
@@ -225,6 +238,10 @@ namespace PrimeERP.App.Bootstrap
             services.GetRequiredService<IPurchaseReturnRepository>().CreateTable();
             services.GetRequiredService<IStockInRepository>().CreateTable();
             services.GetRequiredService<IStockOutRepository>().CreateTable();
+            services.GetRequiredService<IGoodsReceiptRepository>().CreateTable();
+            services.GetRequiredService<IGoodsIssueRepository>().CreateTable();
+            services.GetRequiredService<IDeliveryNoteRepository>().CreateTable();
+            services.GetRequiredService<ISalesReceiptRepository>().CreateTable();
             services.GetRequiredService<IStockTransferRepository>().CreateTable();
             services.GetRequiredService<IPayrollRepository>().CreateTable();
             services.GetRequiredService<IDocumentLinkRepository>().CreateTable();

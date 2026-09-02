@@ -15,4 +15,9 @@ namespace PrimeERP.Data.Repositories
     }
 
     public interface IStockOutRepository : IStockInRepository { }
+
+    public interface IGoodsReceiptRepository : IStockInRepository { }
+    public interface IGoodsIssueRepository : IStockInRepository { }
+    public interface IDeliveryNoteRepository : IStockInRepository { }
+    public interface ISalesReceiptRepository : IStockInRepository { }
 }

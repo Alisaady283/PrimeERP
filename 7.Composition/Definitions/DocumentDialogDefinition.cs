@@ -29,5 +29,10 @@ namespace PrimeERP.Composition.Definitions
         public required string LinesPropertyName { get; init; }
         public required List<FieldDefinition> HeaderFields { get; init; }
         public required List<LineFieldDefinition> LineFields { get; init; }
+
+        public string DocumentKind { get; init; }
+        public List<PullSource> PullSources { get; init; } = new();
+        public bool AllowPost { get; init; } = true;
+        public StockEffect AffectsStock { get; init; } = StockEffect.None;
     }
 }

@@ -86,4 +86,24 @@ namespace PrimeERP.Data.Repositories
     {
         public StockOutRepository() : base("StockOutDocuments", "StockOutLines") { }
     }
+
+    public class GoodsReceiptRepository : StockAdjustmentRepositoryBase, IGoodsReceiptRepository
+    {
+        public GoodsReceiptRepository() : base("GoodsReceiptDocuments", "GoodsReceiptLines") { }
+    }
+
+    public class GoodsIssueRepository : StockAdjustmentRepositoryBase, IGoodsIssueRepository
+    {
+        public GoodsIssueRepository() : base("GoodsIssueDocuments", "GoodsIssueLines") { }
+    }
+
+    public class DeliveryNoteRepository : StockAdjustmentRepositoryBase, IDeliveryNoteRepository
+    {
+        public DeliveryNoteRepository() : base("DeliveryNoteDocuments", "DeliveryNoteLines") { }
+    }
+
+    public class SalesReceiptRepository : StockAdjustmentRepositoryBase, ISalesReceiptRepository
+    {
+        public SalesReceiptRepository() : base("SalesReceiptDocuments", "SalesReceiptLines") { }
+    }
 }
