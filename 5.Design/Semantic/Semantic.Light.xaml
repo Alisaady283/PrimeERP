@@ -45,7 +45,7 @@
     <SolidColorBrush x:Key="BrandSoftText"   Color="{DynamicResource P.Color.Brand.700}"/>
 
     <!-- ===== هيدر/صفوف الجدول (AppDataGrid) — قيم خاصة بالوضع، راجع C.Grid.* في Tokens.Grid.xaml ===== -->
-    <SolidColorBrush x:Key="GridHeaderBg" Color="{DynamicResource P.Color.Nav.800}"/>
+    <SolidColorBrush x:Key="GridHeaderBg" Color="{DynamicResource P.Color.Brand.600}"/>
     <SolidColorBrush x:Key="GridHeaderFg" Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="GridRowAltBg" Color="{DynamicResource P.Color.Neutral.50}"/>
 
@@ -73,31 +73,31 @@
     <SolidColorBrush x:Key="InfoSoftText" Color="{DynamicResource P.Color.Info.700}"/>
 
     <!-- ===== التنقل — شريط فاتح في الوضع الفاتح، والداكن يعيد تعريفه كحلياً ===== -->
-    <SolidColorBrush x:Key="NavSurface"       Color="{DynamicResource P.Color.Nav.900}"/>
-    <SolidColorBrush x:Key="NavSurfaceRaised" Color="{DynamicResource P.Color.Nav.800}"/>
-    <SolidColorBrush x:Key="NavText"          Color="{DynamicResource P.Color.Neutral.200}"/>
-    <SolidColorBrush x:Key="NavTextHover"     Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="NavTextSelected"  Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="NavIcon"          Color="{DynamicResource P.Color.Neutral.400}"/>
-    <SolidColorBrush x:Key="NavIconHover"     Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="NavIconSelected"  Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="NavHover"         Color="{DynamicResource P.Color.Nav.700}"/>
-    <SolidColorBrush x:Key="NavSelected"      Color="{DynamicResource P.Color.Nav.800}"/>
-    <SolidColorBrush x:Key="NavSelectedBar"   Color="{DynamicResource P.Color.Brand.300}"/>
+    <SolidColorBrush x:Key="NavSurface"       Color="{DynamicResource P.Color.Neutral.50}"/>
+    <SolidColorBrush x:Key="NavSurfaceRaised" Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="NavText"          Color="{DynamicResource P.Color.Neutral.700}"/>
+    <SolidColorBrush x:Key="NavTextHover"     Color="{DynamicResource P.Color.Brand.600}"/>
+    <SolidColorBrush x:Key="NavTextSelected"  Color="{DynamicResource P.Color.Brand.600}"/>
+    <SolidColorBrush x:Key="NavIcon"          Color="{DynamicResource P.Color.Neutral.500}"/>
+    <SolidColorBrush x:Key="NavIconHover"     Color="{DynamicResource P.Color.Brand.600}"/>
+    <SolidColorBrush x:Key="NavIconSelected"  Color="{DynamicResource P.Color.Brand.600}"/>
+    <SolidColorBrush x:Key="NavHover"         Color="{DynamicResource P.Color.Neutral.100}"/>
+    <SolidColorBrush x:Key="NavSelected"      Color="{DynamicResource P.Color.Brand.50}"/>
+    <SolidColorBrush x:Key="NavSelectedBar"   Color="{DynamicResource P.Color.Brand.600}"/>
     <SolidColorBrush x:Key="NavSectionLabel"  Color="{DynamicResource P.Color.Neutral.600}"/>
     <SolidColorBrush x:Key="NavDivider"       Color="{DynamicResource P.Color.Nav.700}"/>
 
     <!-- ===== الشريط العلوي (TopBar) ===== -->
-    <SolidColorBrush x:Key="TopBarSurface"   Color="{DynamicResource P.Color.Nav.800}"/>
-    <SolidColorBrush x:Key="TopBarBorder"    Color="{DynamicResource P.Color.Nav.700}"/>
-    <SolidColorBrush x:Key="TopBarText"      Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="TopBarIcon"      Color="{DynamicResource P.Color.Neutral.300}"/>
-    <SolidColorBrush x:Key="TopBarIconHover" Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="TopBarSurface"   Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="TopBarBorder"    Color="{DynamicResource P.Color.Neutral.200}"/>
+    <SolidColorBrush x:Key="TopBarText"      Color="{DynamicResource P.Color.Neutral.900}"/>
+    <SolidColorBrush x:Key="TopBarIcon"      Color="{DynamicResource P.Color.Neutral.600}"/>
+    <SolidColorBrush x:Key="TopBarIconHover" Color="{DynamicResource P.Color.Brand.600}"/>
 
     <!-- ===== الجداول (Table) ===== -->
-    <SolidColorBrush x:Key="TableHeaderBg"        Color="{DynamicResource P.Color.Nav.800}"/>
+    <SolidColorBrush x:Key="TableHeaderBg"        Color="{DynamicResource P.Color.Brand.600}"/>
     <SolidColorBrush x:Key="TableHeaderText"      Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="TableHeaderBorder"    Color="{DynamicResource P.Color.Nav.700}"/>
+    <SolidColorBrush x:Key="TableHeaderBorder"    Color="{DynamicResource P.Color.Brand.700}"/>
     <SolidColorBrush x:Key="TableRowBg"           Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="TableRowAltBg"        Color="{DynamicResource P.Color.Neutral.50}"/>
     <SolidColorBrush x:Key="TableRowHover"        Color="{DynamicResource P.Color.Brand.50}"/>
