@@ -22,6 +22,7 @@ using PrimeERP.Application.Services.Parties;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Platform.Localization;
+using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Components.Tree;
 using PrimeERP.UI.ViewModels;
@@ -47,6 +48,7 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(CustomerDto.Name), Width = 220, IsStarWidth = true },
                     new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(CustomerDto.CategoryName), Width = 140 },
                     new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(CustomerDto.Phone), Width = 130 },
+                    new() { Header = LocalizationService.Get("Str.CreditLimit"), Binding = nameof(CustomerDto.CreditLimit), Width = 120, Align = ColumnAlign.Center, Format = "N2", PermissionKey = PermissionKeys.Customers.ColumnCreditLimit },
                     new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(CustomerDto.Balance), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
                 },
                 Dialog = new DialogDefinition
@@ -129,7 +131,7 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Level"),   Binding = nameof(AccountDto.Level) },
                     new() { Header = LocalizationService.Get("Str.Type"),    Binding = nameof(AccountDto.TypeName) },
                     new() { Header = LocalizationService.Get("Str.AcceptsEntries"), Binding = nameof(AccountDto.IsLeaf) },
-                    new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(AccountDto.Balance), Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(AccountDto.Balance), Format = "N2", PermissionKey = PermissionKeys.Accounts.ColumnBalance },
                 }.Concat(StandardFields.AuditColumns()).ToList(),
                 Dialog = new DialogDefinition
                 {
@@ -198,6 +200,7 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(ProductDto.Code), Width = 90, Align = ColumnAlign.Center },
                     new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(ProductDto.Name), Width = 220, IsStarWidth = true },
                     new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(ProductDto.CategoryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.CostPrice"), Binding = nameof(ProductDto.CostPrice), Width = 110, Align = ColumnAlign.Center, Format = "N2", PermissionKey = PermissionKeys.Products.ColumnCostPrice },
                     new() { Header = LocalizationService.Get("Str.SalePrice"), Binding = nameof(ProductDto.SalePrice), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
                 },
                 Filters = new()
@@ -371,6 +374,7 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Department"), Binding = nameof(EmployeeDto.DepartmentName), Width = 140 },
                     new() { Header = LocalizationService.Get("Str.JobTitle"), Binding = nameof(EmployeeDto.JobTitleName), Width = 140 },
                     new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(EmployeeDto.Phone), Width = 120 },
+                    new() { Header = LocalizationService.Get("Str.Salary"), Binding = nameof(EmployeeDto.BasicSalary), Width = 110, Align = ColumnAlign.Center, Format = "N2", PermissionKey = PermissionKeys.HR.ColumnSalary },
                 },
                 Filters = new()
                 {

@@ -40,6 +40,7 @@ namespace PrimeERP.Platform.Permissions
             public const string Delete = "Customers.Delete";
             public const string Export = "Customers.Export";
             public const string Print  = "Customers.Print";
+            public const string ColumnCreditLimit = "Customers.Column.CreditLimit";
         }
 
         public static class Suppliers
@@ -60,6 +61,7 @@ namespace PrimeERP.Platform.Permissions
             public const string Delete = "Products.Delete";
             public const string Export = "Products.Export";
             public const string Print  = "Products.Print";
+            public const string ColumnCostPrice = "Products.Column.CostPrice";
         }
 
         // النمط 2 القائم على ModuleKey (فئات/ماركات/وحدات/مخازن/فئات أصول/أقسام/وظائف) — نفس الأربعة
@@ -122,6 +124,8 @@ namespace PrimeERP.Platform.Permissions
             public const string Create   = "Inventory.Create";
             public const string Edit     = "Inventory.Edit";
             public const string Delete   = "Inventory.Delete";
+            public const string Adjust        = "Inventory.Adjust";
+            public const string NegativeStock = "Inventory.NegativeStock";
         }
 
         public static class Sales
@@ -131,6 +135,10 @@ namespace PrimeERP.Platform.Permissions
             public const string Edit    = "Sales.Edit";
             public const string Delete  = "Sales.Delete";
             public const string Confirm = "Sales.Confirm";
+            public const string Post    = "Sales.Post";
+            public const string Unpost  = "Sales.Unpost";
+            public const string Discount    = "Sales.Discount";
+            public const string ChangePrice = "Sales.ChangePrice";
             public const string Export  = "Sales.Export";
             public const string Print   = "Sales.Print";
         }
@@ -142,6 +150,8 @@ namespace PrimeERP.Platform.Permissions
             public const string Edit    = "Purchases.Edit";
             public const string Delete  = "Purchases.Delete";
             public const string Confirm = "Purchases.Confirm";
+            public const string Post    = "Purchases.Post";
+            public const string Unpost  = "Purchases.Unpost";
             public const string Export  = "Purchases.Export";
             public const string Print   = "Purchases.Print";
         }
@@ -155,6 +165,7 @@ namespace PrimeERP.Platform.Permissions
             public const string PaySalary = "HR.PaySalary";
             public const string Export    = "HR.Export";
             public const string Print     = "HR.Print";
+            public const string ColumnSalary = "HR.Column.Salary";
         }
 
         public static class Reports
