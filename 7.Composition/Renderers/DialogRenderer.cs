@@ -24,7 +24,8 @@ namespace PrimeERP.Composition.Renderers
         public bool Saved;
 
         // عرض النافذة مُثبَّت في XAML على C.Dialog.Width.Sm (420) — كافٍ لحوار حقول مسطّحة، يقصّ أي محتوى
-        // أعرض (صف سطور مستند). width هنا قيمة محلية تتغلّب على DynamicResource تلقائياً، بلا لمس XAML.
+        // أعرض (صف سطور مستند/شبكة متعددة الأعمدة). width هنا قيمة محلية تتغلّب على DynamicResource تلقائياً،
+        // بلا لمس XAML.
         public ComposedDialogWindow(string title, FrameworkElement body, FrameworkElement footer, double? width = null)
         {
             Title = title;
@@ -32,7 +33,8 @@ namespace PrimeERP.Composition.Renderers
             HeaderVariant = StatusVariant.Brand;
             Body = body;
             Footer = footer;
-            if (width.HasValue) Width = width.Value;
+            if (width.HasValue) { Width = width.Value; MinWidth = width.Value; }
+            MinHeight = 320;
         }
 
         // القاعدة AppDialogWindow.OnEscapePressed تضبط DialogResult قبل Close() — صحيح لحوارات ShowDialog()
@@ -49,7 +51,8 @@ namespace PrimeERP.Composition.Renderers
         {
             bool isEdit = editItem != null;
             var fields = BuildAndPopulateFields(dialog.Fields, services, editItem, isEdit, addModeDefaultPickerId);
-            var grid = BuildGrid(dialog.Fields, dialog.GridColumns, fields);
+            var width = ComputeDialogWidth(dialog.GridColumns);
+            var grid = BuildGrid(dialog.Fields, dialog.GridColumns, fields, width);
 
             foreach (var field in dialog.Fields.Where(f => f.Kind == FieldKind.Picker && f.PickerType == "Category"))
                 WireCategoryPickerAddOption((AppComboBox)fields[field.Key], field, services, toast);
@@ -59,7 +62,7 @@ namespace PrimeERP.Composition.Renderers
 
             var title = isEdit ? LocalizationService.Get(dialog.TitleEditKey) : LocalizationService.Get(dialog.TitleKey);
             var footer = new StackPanel { Orientation = Orientation.Horizontal, Children = { btnCancel, btnSave } };
-            var window = new ComposedDialogWindow(title, grid, footer);
+            var window = new ComposedDialogWindow(title, grid, footer, width);
 
             btnCancel.Click += (_, __) => window.Close();
             btnSave.Click += (_, __) =>
@@ -170,6 +173,14 @@ namespace PrimeERP.Composition.Renderers
             return controls;
         }
 
+        // GridColumns=1→Sm(420), 2→Md(560), 3→Lg(760), أكثر→Xl(1000) — حوار الحقول المسطّحة العادي، لا حوار
+        // مستند (ذاك يحسب عرضه من مجموع أعمدة سطوره في DocumentRenderer.ComputeDialogWidth).
+        private static double ComputeDialogWidth(int gridColumns)
+        {
+            var key = gridColumns switch { <= 1 => "C.Dialog.Width.Sm", 2 => "C.Dialog.Width.Md", 3 => "C.Dialog.Width.Lg", _ => "C.Dialog.Width.Xl" };
+            return (double)System.Windows.Application.Current.FindResource(key);
+        }
+
         internal static Grid BuildGrid(List<FieldDefinition> fieldDefs, int gridColumns, Dictionary<string, FrameworkElement> fields, double? width = 420)
         {
             var grid = new Grid();
@@ -187,6 +198,8 @@ namespace PrimeERP.Composition.Renderers
                 if (grid.RowDefinitions.Count <= row) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
                 control.Margin = new Thickness(0, 0, col + span < gridColumns ? 8 : 0, 12);
+                control.MinWidth = 180;
+                control.HorizontalAlignment = HorizontalAlignment.Stretch;
                 Grid.SetRow(control, row);
                 Grid.SetColumn(control, col);
                 Grid.SetColumnSpan(control, span);

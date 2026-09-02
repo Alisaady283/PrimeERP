@@ -43,8 +43,8 @@
 
         <!-- ===== Grid + Overlays ===== -->
         <Grid Grid.Row="1" MinHeight="180">
-            <Border BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"
-                    CornerRadius="{DynamicResource P.Radius.Md}" ClipToBounds="True">
+            <Border BorderBrush="{DynamicResource C.Grid.Border}" BorderThickness="{DynamicResource C.Grid.Container.BorderThickness}"
+                    CornerRadius="{DynamicResource C.Grid.Container.Radius}" ClipToBounds="True">
                 <DataGrid x:Name="grid"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
@@ -54,55 +54,58 @@
                           HeadersVisibility="Column"
                           GridLinesVisibility="Horizontal"
                           SelectionUnit="FullRow"
-                          RowHeight="40"
-                          RowHeaderWidth="40"
+                          RowHeight="{DynamicResource C.Grid.Row.Height}"
+                          RowHeaderWidth="{DynamicResource C.Grid.RowHeader.Width}"
                           BorderThickness="0"
-                          Background="{DynamicResource SurfaceDefault}"
-                          RowBackground="{DynamicResource SurfaceDefault}"
-                          AlternatingRowBackground="{DynamicResource SurfaceCanvas}"
-                          HorizontalGridLinesBrush="{DynamicResource OutlineDefault}"
+                          Background="{DynamicResource C.Grid.Row.Bg}"
+                          RowBackground="{DynamicResource C.Grid.Row.Bg}"
+                          AlternatingRowBackground="{DynamicResource C.Grid.Row.AltBg}"
+                          HorizontalGridLinesBrush="{DynamicResource C.Grid.Border}"
                           FontSize="{DynamicResource P.Font.Size.300}"
                           FontFamily="{DynamicResource P.Font.Family.Primary}"
-                          Foreground="{DynamicResource TextPrimary}"
+                          Foreground="{DynamicResource C.Grid.Cell.Fg}"
                           Sorting="grid_Sorting">
                     <DataGrid.RowHeaderStyle>
                         <Style TargetType="DataGridRowHeader">
-                            <Setter Property="Background" Value="{DynamicResource SurfaceCanvas}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                            <Setter Property="Background" Value="{DynamicResource C.Grid.Header.Bg}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource C.Grid.Header.Fg}"/>
                             <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.200}"/>
                             <Setter Property="HorizontalContentAlignment" Value="Center"/>
                             <Setter Property="BorderThickness" Value="0,0,1,0"/>
-                            <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource C.Grid.Header.Border}"/>
                         </Style>
                     </DataGrid.RowHeaderStyle>
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
-                            <Setter Property="Background" Value="{DynamicResource SurfaceCanvas}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+                            <Setter Property="Background" Value="{DynamicResource C.Grid.Header.Bg}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource C.Grid.Header.Fg}"/>
                             <Setter Property="FontWeight" Value="{DynamicResource P.Font.Weight.SemiBold}"/>
                             <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.200}"/>
-                            <Setter Property="Height" Value="40"/>
+                            <Setter Property="Height" Value="{DynamicResource C.Grid.Header.Height}"/>
                             <Setter Property="Padding" Value="12,0"/>
-                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                            <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
+                            <Setter Property="BorderThickness" Value="{DynamicResource C.Grid.Header.BorderBottomThickness}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource C.Grid.Header.Border}"/>
                             <!-- عناوين الأعمدة: وسط دائماً بلا استثناء (قاعدة موحدة لكل جداول النظام) -->
                             <Setter Property="HorizontalContentAlignment" Value="Center"/>
                         </Style>
                     </DataGrid.ColumnHeaderStyle>
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">
+                            <Setter Property="BorderThickness" Value="0"/>
                             <Style.Triggers>
                                 <Trigger Property="Tag" Value="danger">
-                                    <Setter Property="Background" Value="{DynamicResource DangerSoft}"/>
+                                    <Setter Property="Background" Value="{DynamicResource C.Grid.Row.Danger.Bg}"/>
                                 </Trigger>
                                 <Trigger Property="Tag" Value="warning">
-                                    <Setter Property="Background" Value="{DynamicResource WarningSoft}"/>
-                                </Trigger>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource TableRowSelected}"/>
+                                    <Setter Property="Background" Value="{DynamicResource C.Grid.Row.Warning.Bg}"/>
                                 </Trigger>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource TableRowHover}"/>
+                                    <Setter Property="Background" Value="{DynamicResource C.Grid.Row.Hover}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource C.Grid.Row.Selected.Bg}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource C.Grid.Row.Selected.Border}"/>
+                                    <Setter Property="BorderThickness" Value="{DynamicResource C.Grid.Row.Selected.BorderThickness}"/>
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
@@ -117,8 +120,8 @@
         <!-- ===== Footer totals ===== -->
         <Border Grid.Row="2" x:Name="footerWrap"
                 Visibility="Collapsed"
-                BorderBrush="{DynamicResource OutlineDefault}"
-                BorderThickness="1,0,1,1">
+                BorderBrush="{DynamicResource C.Grid.Footer.Border}"
+                BorderThickness="{DynamicResource C.Grid.Footer.BorderThickness}">
             <DataGrid x:Name="footerGrid"
                       HeadersVisibility="None"
                       IsHitTestVisible="False"
@@ -128,12 +131,12 @@
                       CanUserAddRows="False"
                       GridLinesVisibility="None"
                       BorderThickness="0"
-                      RowHeight="36"
-                      Background="{DynamicResource SurfaceCanvas}"
+                      RowHeight="{DynamicResource C.Grid.Footer.Height}"
+                      Background="{DynamicResource C.Grid.Footer.Bg}"
                       FontSize="{DynamicResource P.Font.Size.300}"
                       FontFamily="{DynamicResource P.Font.Family.Primary}"
                       FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
-                      Foreground="{DynamicResource TextPrimary}"/>
+                      Foreground="{DynamicResource C.Grid.Footer.Fg}"/>
         </Border>
 
         <!-- ===== Pagination ===== -->

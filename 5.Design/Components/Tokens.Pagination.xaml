@@ -7,5 +7,10 @@
 
     <SolidColorBrush x:Key="C.Pagination.Info.Fg" Color="{DynamicResource TextMuted.Color}"/>
     <sys:Double      x:Key="C.Pagination.Height">44</sys:Double>
+    <sys:Double      x:Key="C.Pagination.Info.FontSize">12</sys:Double>
+    <sys:Double      x:Key="C.Pagination.Button.Size">34</sys:Double>
+    <sys:Double      x:Key="C.Pagination.Button.Radius">6</sys:Double>
+    <sys:Double      x:Key="C.Pagination.Button.Gap">4</sys:Double>
+    <sys:Double      x:Key="C.Pagination.Button.FontSize">13</sys:Double>
 
 </ResourceDictionary>

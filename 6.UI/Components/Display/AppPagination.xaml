@@ -12,9 +12,9 @@
 
         <TextBlock x:Name="txtInfo" Grid.Column="0"
                    VerticalAlignment="Center"
-                   FontSize="{DynamicResource P.Font.Size.200}"
+                   FontSize="{DynamicResource C.Pagination.Info.FontSize}"
                    FontFamily="{DynamicResource P.Font.Family.Primary}"
-                   Foreground="{DynamicResource TextMuted}"/>
+                   Foreground="{DynamicResource C.Pagination.Info.Fg}"/>
 
         <StackPanel x:Name="pnlPages" Grid.Column="2"
                     Orientation="Horizontal"
@@ -24,12 +24,12 @@
             <TextBlock Text="{DynamicResource Str.RowsPerPage}"
                        VerticalAlignment="Center"
                        Margin="{DynamicResource P.Space.2.Right}"
-                       FontSize="{DynamicResource P.Font.Size.200}"
+                       FontSize="{DynamicResource C.Pagination.Info.FontSize}"
                        FontFamily="{DynamicResource P.Font.Family.Primary}"
-                       Foreground="{DynamicResource TextMuted}"/>
+                       Foreground="{DynamicResource C.Pagination.Info.Fg}"/>
             <ComboBox x:Name="cmbPageSize"
-                      Width="70" Height="{DynamicResource C.Input.Height.Sm}"
-                      FontSize="{DynamicResource P.Font.Size.200}"
+                      Width="70" Height="{DynamicResource C.Input.Height}"
+                      FontSize="{DynamicResource C.Pagination.Info.FontSize}"
                       FontFamily="{DynamicResource P.Font.Family.Primary}"
                       SelectionChanged="cmbPageSize_SelectionChanged"/>
         </StackPanel>

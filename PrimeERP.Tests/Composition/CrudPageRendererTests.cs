@@ -66,5 +66,44 @@ namespace PrimeERP.Tests.Composition
                 Assert.True(((IEnumerable)vm.Items).Cast<object>().Any());
             });
         }
+
+        [Fact]
+        public void Render_ShowRowActions_AddsEditDeleteColumnToInnerDataGrid()
+        {
+            WpfApplicationFixture.Run(() =>
+            {
+                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+
+                var registry = _db.Services.GetRequiredService<IModuleRegistry>();
+                var definition = registry.Get("Customers");
+
+                var element = CrudPageRenderer.Render(definition, _db.Services);
+
+                var window = new Window { Content = element, Width = 1200, Height = 800, ShowInTaskbar = false, WindowStyle = WindowStyle.None, ShowActivated = false };
+                window.Show();
+                window.UpdateLayout();
+
+                var appGrid = FindVisualChild<PrimeERP.UI.Components.Display.AppDataGrid>(element);
+                Assert.NotNull(appGrid);
+
+                var innerGrid = FindVisualChild<DataGrid>(appGrid);
+                Assert.NotNull(innerGrid);
+
+                Assert.Equal(definition.Columns.Count + 1, innerGrid.Columns.Count);
+                window.Close();
+            });
+        }
+
+        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is T typed) return typed;
+                var nested = FindVisualChild<T>(child);
+                if (nested != null) return nested;
+            }
+            return null;
+        }
     }
 }

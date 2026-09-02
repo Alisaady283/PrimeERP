@@ -17,8 +17,8 @@ warn() { echo "  ⚠️  WARN (دين تقني مسجَّل): $1"; WARN=$((WARN+
 pass() { PASS=$((PASS+1)); }
 section() { echo ""; echo "═══ $1 ═══"; }
 
-CS_FILES() { find . -type f -name "*.cs" -not -path "./bin/*" -not -path "./obj/*" -not -path "*/bin/*" -not -path "*/obj/*" -not -path "./.git/*" -not -path "*/PrimeERP.Tests/*"; }
-XAML_FILES() { find . -type f -name "*.xaml" -not -path "./bin/*" -not -path "./obj/*" -not -path "*/bin/*" -not -path "*/obj/*" -not -path "./.git/*"; }
+CS_FILES() { find . -type f -name "*.cs" -not -path "./bin/*" -not -path "./obj/*" -not -path "*/bin/*" -not -path "*/obj/*" -not -path "./.git/*" -not -path "*/PrimeERP.Tests/*" -not -path "./.claude/*"; }
+XAML_FILES() { find . -type f -name "*.xaml" -not -path "./bin/*" -not -path "./obj/*" -not -path "*/bin/*" -not -path "*/obj/*" -not -path "./.git/*" -not -path "./.claude/*"; }
 
 echo "فحص حدود المعمارية — $(date '+%Y-%m-%d %H:%M')"
 
@@ -227,7 +227,7 @@ section "3 — حدود التصميم"
 # ============================================================
 
 # قيمة حرفية Hex خارج 5.Design (الاستثناءات الموثَّقة: ExportTheme.cs, PrintTheme.xaml — ثوابت ورق/تصدير مستقلة عمداً)
-n=$(grep -rlE "#[0-9A-Fa-f]{6}" --include="*.xaml" --include="*.cs" . 2>/dev/null | grep -v "^\./5.Design" | grep -v "/bin/\|/obj/\|PrimeERP.Tests")
+n=$(grep -rlE "#[0-9A-Fa-f]{6}" --include="*.xaml" --include="*.cs" . 2>/dev/null | grep -v "^\./5.Design" | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|^\./.claude/")
 if [ -n "$n" ]; then
   fail "قيمة Hex حرفية خارج 5.Design:"
   echo "$n" | sed 's/^/       /'
@@ -334,14 +334,14 @@ section "5 — المؤقت"
 # ============================================================
 
 # TEMPORARY بلا رقم بند
-n=$(grep -rn "TEMPORARY" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests" | grep -v "TEMPORARY.*R[0-9]")
+n=$(grep -rn "TEMPORARY" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|^\./.claude/" | grep -v "TEMPORARY.*R[0-9]")
 if [ -n "$n" ]; then
   fail "// TEMPORARY بلا رقم بند صريح:"
   echo "$n" | sed 's/^/       /'
 else pass; fi
 
 # TODO بلا رقم بند
-n=$(grep -rn "// TODO" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests" | grep -v "TODO.*R[0-9]")
+n=$(grep -rn "// TODO" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|^\./.claude/" | grep -v "TODO.*R[0-9]")
 if [ -n "$n" ]; then
   warn "// TODO بلا رقم بند صريح ($( echo "$n" | wc -l) موضعاً) — يُفضَّل ربطها ببند أو حذفها"
 fi
@@ -349,7 +349,33 @@ fi
 # سجل كل TEMPORARY الموجودة حالياً (للمرجعية، ليست فشلاً)
 echo ""
 echo "  التعليقات TEMPORARY المسجَّلة حالياً:"
-grep -rn "// TEMPORARY" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests" | sed 's/^/       /'
+grep -rn "// TEMPORARY" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|^\./.claude/" | sed 's/^/       /'
+
+# ============================================================
+section "6 — قيم بصرية حرفية (6.UI/7.Composition)"
+# ============================================================
+
+# FontSize/Height/Width/Padding حرفي (رقم مباشر لا DynamicResource) على عناصر XAML في 6.UI/7.Composition —
+# إرشادي (WARN): كثير من الاستخدامات الحالية سابق لهذا الفحص ويحتاج تنظيفاً تراكمياً لا دفعة واحدة، فرضه FAIL
+# الآن يكسر كل شيء يعمل فعلاً. الهدف: صفر تراكمياً (راجع ARCHITECTURE.md § الدين التقني).
+n=$(grep -rlE '\s(FontSize|Height|Width|Padding|Margin)="[0-9]' --include="*.xaml" 6.UI 7.Composition 2>/dev/null | wc -l)
+if [ "$n" -gt 0 ]; then
+  warn "$n ملف XAML في 6.UI/7.Composition فيه FontSize/Height/Width/Padding/Margin حرفي (يُفضَّل توكن C.*/P.* — دين تقني تراكمي، راجع 1.5)"
+fi
+
+# emoji داخل XAML — القاعدة: Geometry من Icons.xaml فقط، لا رموز تعبيرية كنص
+n=$(grep -rlP "[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]" --include="*.xaml" 6.UI 7.Composition 5.Design 2>/dev/null)
+if [ -n "$n" ]; then
+  fail "emoji داخل XAML (يُمنع — أيقونات Geometry من Icons.xaml فقط):"
+  echo "$n" | sed 's/^/       /'
+else pass; fi
+
+# ToolTip بقيمة نصية حرفية ثابتة (لا Binding/DynamicResource) — مرشّح قوي لتكرار نص ظاهر أصلاً بجوار العنصر
+n=$(grep -rnE 'ToolTip="[^{][^"]*"' --include="*.xaml" 6.UI 7.Composition 2>/dev/null)
+if [ -n "$n" ]; then
+  warn "ToolTip بنص حرفي ثابت (تحقّق يدوياً أنه لا يكرر نصاً ظاهراً أصلاً):"
+  echo "$n" | sed 's/^/       /'
+fi
 
 # ============================================================
 section "الخلاصة"

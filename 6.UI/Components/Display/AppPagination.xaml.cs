@@ -80,6 +80,10 @@ namespace PrimeERP.UI.Components.Display
             int end   = Math.Min(TotalPages, start + 4);
             if (end - start < 4) start = Math.Max(1, end - 4);
 
+            var size = (double)FindResource("C.Pagination.Button.Size");
+            var gap  = (double)FindResource("C.Pagination.Button.Gap");
+            var fontSize = (double)FindResource("C.Pagination.Button.FontSize");
+
             for (int i = start; i <= end; i++)
             {
                 int page = i;
@@ -88,16 +92,16 @@ namespace PrimeERP.UI.Components.Display
                 var btn = new Button
                 {
                     Content = i.ToString(),
-                    Width = 32, Height = 32,
-                    Margin = new Thickness(2, 0, 2, 0),
-                    FontSize = (double)FindResource("P.Font.Size.400"),
+                    Width = size, Height = size,
+                    Margin = new Thickness(gap / 2, 0, gap / 2, 0),
+                    FontSize = fontSize,
                     FontFamily = (FontFamily)FindResource("P.Font.Family.Primary"),
                     Cursor = System.Windows.Input.Cursors.Hand,
                     BorderThickness = new Thickness(1),
                     BorderBrush = active ? (Brush)FindResource("BrandDefault") : (Brush)FindResource("OutlineDefault"),
                     Background = active ? (Brush)FindResource("BrandDefault") : (Brush)FindResource("SurfaceDefault"),
                     Foreground = active ? (Brush)FindResource("TextOnBrand") : (Brush)FindResource("TextPrimary"),
-                    FontWeight = active ? FontWeights.Bold : FontWeights.Normal
+                    FontWeight = active ? FontWeights.SemiBold : FontWeights.Medium
                 };
                 btn.Click += (s, e) => GoTo(page);
                 pnlPages.Children.Add(btn);
@@ -109,12 +113,15 @@ namespace PrimeERP.UI.Components.Display
 
         private void AddNavButton(string content, Action action, bool disabled)
         {
+            var size = (double)FindResource("C.Pagination.Button.Size");
+            var gap  = (double)FindResource("C.Pagination.Button.Gap");
+
             var btn = new Button
             {
                 Content = content,
-                Width = 32, Height = 32,
-                Margin = new Thickness(2, 0, 2, 0),
-                FontSize = (double)FindResource("P.Font.Size.500"),
+                Width = size, Height = size,
+                Margin = new Thickness(gap / 2, 0, gap / 2, 0),
+                FontSize = (double)FindResource("C.Pagination.Button.FontSize"),
                 FontFamily = (FontFamily)FindResource("P.Font.Family.Primary"),
                 Cursor = System.Windows.Input.Cursors.Hand,
                 Background = (Brush)FindResource("SurfaceDefault"),
@@ -122,7 +129,7 @@ namespace PrimeERP.UI.Components.Display
                 BorderThickness = new Thickness(1),
                 BorderBrush = (Brush)FindResource("OutlineDefault"),
                 IsEnabled = !disabled,
-                Opacity = disabled ? 0.5 : 1.0
+                Opacity = disabled ? 0.4 : 1.0
             };
             btn.Click += (s, e) => action();
             pnlPages.Children.Add(btn);

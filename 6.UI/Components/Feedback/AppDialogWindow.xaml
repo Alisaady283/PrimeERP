@@ -43,7 +43,7 @@
         </Border>
 
         <!-- ===== Content ===== -->
-        <ScrollViewer Grid.Row="1" Style="{StaticResource DialogContentScrollStyle}">
+        <ScrollViewer Grid.Row="1" x:Name="contentScroll" Style="{StaticResource DialogContentScrollStyle}">
             <ContentPresenter x:Name="contentHost"/>
         </ScrollViewer>
 

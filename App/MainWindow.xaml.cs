@@ -42,18 +42,37 @@ namespace PrimeERP.App
             }
         }
 
+        // مفتاح أيقونة لكل وحدة — من 5.Design/Icons/Icons.xaml (Geometry فقط، بلا emoji). الوحدات بلا مطابقة
+        // صريحة هنا (كل التقارير مثلاً) تستخدم IconReports كافتراضي عبر IconKeyForModule.
+        private static readonly Dictionary<string, string> ModuleIconKeys = new()
+        {
+            ["Accounts"] = "IconAccounts", ["Journals"] = "IconJournal",
+            ["Customers"] = "IconCustomers", ["Suppliers"] = "IconSuppliers",
+            ["Products"] = "IconProducts", ["Categories"] = "IconFolder", ["Brands"] = "IconBuilding",
+            ["Units"] = "IconUnits", ["Warehouses"] = "IconWarehouse",
+            ["Assets"] = "IconAssets", ["AssetCategories"] = "IconFolder",
+            ["Employees"] = "IconHR", ["Departments"] = "IconFolder", ["JobTitles"] = "IconFolder", ["Payroll"] = "IconPayroll",
+            ["SalesInvoices"] = "IconSales", ["SalesReturns"] = "IconSales",
+            ["PurchaseInvoices"] = "IconPurchases", ["PurchaseReturns"] = "IconPurchases",
+            ["StockIn"] = "IconWarehouse", ["StockOut"] = "IconWarehouse", ["StockTransfer"] = "IconWarehouse",
+            ["Settings"] = "IconSettings", ["Users"] = "IconUsers", ["Roles"] = "IconLock",
+        };
+
+        private static string IconKeyForModule(string key) =>
+            ModuleIconKeys.TryGetValue(key, out var icon) ? icon : "IconReports";
+
         private List<NavItem> BuildNavGroups()
         {
-            var groups = new (string Text, string[] Keys)[]
+            var groups = new (string Text, string IconKey, string[] Keys)[]
             {
-                ("المحاسبة", new[] { "Accounts", "Journals" }),
-                ("المبيعات", new[] { "SalesInvoices", "SalesReturns", "Customers" }),
-                ("المشتريات", new[] { "PurchaseInvoices", "PurchaseReturns", "Suppliers" }),
-                ("المخزون", new[] { "Products", "Categories", "Brands", "Units", "Warehouses", "StockIn", "StockOut", "StockTransfer" }),
-                ("الأصول", new[] { "Assets", "AssetCategories" }),
-                ("الموارد", new[] { "Employees", "Departments", "JobTitles", "Payroll" }),
-                ("التقارير", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "AccountStatement", "CustomerStatement", "SupplierStatement", "ItemCard", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport" }),
-                ("الإعدادات", new[] { "Settings", "Users", "Roles" }),
+                ("المحاسبة", "IconAccounts", new[] { "Accounts", "Journals" }),
+                ("المبيعات", "IconSales", new[] { "SalesInvoices", "SalesReturns", "Customers" }),
+                ("المشتريات", "IconPurchases", new[] { "PurchaseInvoices", "PurchaseReturns", "Suppliers" }),
+                ("المخزون", "IconWarehouse", new[] { "Products", "Categories", "Brands", "Units", "Warehouses", "StockIn", "StockOut", "StockTransfer" }),
+                ("الأصول", "IconAssets", new[] { "Assets", "AssetCategories" }),
+                ("الموارد", "IconHR", new[] { "Employees", "Departments", "JobTitles", "Payroll" }),
+                ("التقارير", "IconReports", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "AccountStatement", "CustomerStatement", "SupplierStatement", "ItemCard", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport" }),
+                ("الإعدادات", "IconSettings", new[] { "Settings", "Users", "Roles" }),
             };
 
             var result = new List<NavItem>();
@@ -62,10 +81,10 @@ namespace PrimeERP.App
                 var children = group.Keys
                     .Select(k => _registry.Get(k))
                     .Where(m => m != null)
-                    .Select(m => new NavItem { Key = m.Key, Text = LocalizationService.Get(m.TitleKey), PermissionKey = $"{m.PermissionPrefix}.View" })
+                    .Select(m => new NavItem { Key = m.Key, Text = LocalizationService.Get(m.TitleKey), PermissionKey = $"{m.PermissionPrefix}.View", IconKey = IconKeyForModule(m.Key) })
                     .ToList();
                 if (children.Count == 0) continue;
-                result.Add(new NavItem { Text = group.Text, Children = children });
+                result.Add(new NavItem { Text = group.Text, IconKey = group.IconKey, Children = children });
             }
             return result;
         }

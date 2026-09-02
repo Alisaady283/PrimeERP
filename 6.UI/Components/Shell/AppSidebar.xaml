@@ -30,8 +30,16 @@
                 <!-- الصف نفسه -->
                 <Border Visibility="{Binding IsSeparator, Converter={StaticResource BoolVis}, ConverterParameter=inverse}"
                         x:Name="rowBorder" Cursor="Hand" Background="Transparent"
-                        ToolTip="{Binding Text}"
                         MouseLeftButtonUp="NavRow_MouseLeftButtonUp">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsCollapsed, RelativeSource={RelativeSource AncestorType=shell:AppSidebar}}" Value="True">
+                                    <Setter Property="ToolTip" Value="{Binding Text}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
                     <Grid Height="42">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="3"/>
@@ -45,9 +53,9 @@
 
                         <Border Grid.Column="0" x:Name="activeBar" Background="{DynamicResource NavSelectedBar}" Visibility="Collapsed"/>
 
-                        <Path Grid.Column="2" Data="{Binding IconKey, Converter={StaticResource IconConv}}"
+                        <Path Grid.Column="2" x:Name="icon" Data="{Binding IconKey, Converter={StaticResource IconConv}}"
                               Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"
-                              Stroke="{DynamicResource NavText}" StrokeThickness="1.7"/>
+                              Stroke="{DynamicResource NavIcon}" StrokeThickness="1.7"/>
 
                         <TextBlock Grid.Column="3" x:Name="txt" Text="{Binding Text}" VerticalAlignment="Center" Margin="10,0,0,0"
                                    FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
@@ -93,10 +101,13 @@
                 <DataTrigger Binding="{Binding IsActive}" Value="True">
                     <Setter TargetName="activeBar" Property="Visibility" Value="Visible"/>
                     <Setter TargetName="rowBorder" Property="Background" Value="{DynamicResource NavHover}"/>
-                    <Setter TargetName="txt" Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+                    <Setter TargetName="txt" Property="Foreground" Value="{DynamicResource NavTextSelected}"/>
+                    <Setter TargetName="icon" Property="Stroke" Value="{DynamicResource NavIconSelected}"/>
                 </DataTrigger>
                 <Trigger SourceName="rowBorder" Property="IsMouseOver" Value="True">
                     <Setter TargetName="rowBorder" Property="Background" Value="{DynamicResource NavHover}"/>
+                    <Setter TargetName="txt" Property="Foreground" Value="{DynamicResource NavTextHover}"/>
+                    <Setter TargetName="icon" Property="Stroke" Value="{DynamicResource NavIconHover}"/>
                 </Trigger>
                 <DataTrigger Binding="{Binding IsExpanded}" Value="True">
                     <DataTrigger.EnterActions>

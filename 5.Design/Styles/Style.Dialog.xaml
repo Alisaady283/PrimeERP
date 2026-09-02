@@ -63,9 +63,9 @@
     </Style>
 
     <Style x:Key="DialogContentScrollStyle" TargetType="ScrollViewer">
-        <Setter Property="MaxHeight" Value="480"/>
         <Setter Property="Padding" Value="20,18"/>
         <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
     </Style>
 
     <Style x:Key="DialogFooterStyle" TargetType="Border">

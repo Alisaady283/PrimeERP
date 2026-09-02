@@ -40,6 +40,11 @@
     <SolidColorBrush x:Key="BrandSoftBorder" Color="{DynamicResource P.Color.Brand.700}"/>
     <SolidColorBrush x:Key="BrandSoftText"   Color="{DynamicResource P.Color.Brand.300}"/>
 
+    <!-- ===== هيدر/صفوف الجدول (AppDataGrid) — قيم خاصة بالوضع، راجع C.Grid.* في Tokens.Grid.xaml ===== -->
+    <SolidColorBrush x:Key="GridHeaderBg" Color="{DynamicResource P.Color.NeutralDark.700}"/>
+    <SolidColorBrush x:Key="GridHeaderFg" Color="{DynamicResource P.Color.Neutral.100}"/>
+    <SolidColorBrush x:Key="GridRowAltBg" Color="{DynamicResource P.Color.Nav.700}"/>
+
     <!-- ===== الحالات — الناعم يصبح داكناً مشبعاً ===== -->
     <SolidColorBrush x:Key="Success"         Color="{DynamicResource P.Color.Success.500}"/>
     <SolidColorBrush x:Key="SuccessHover"    Color="{DynamicResource P.Color.Success.600}"/>
@@ -64,11 +69,11 @@
     <!-- ===== التنقل — الـ Sidebar يصبح أغمق من المحتوى ===== -->
     <SolidColorBrush x:Key="NavSurface"       Color="{DynamicResource P.Color.Nav.950}"/>
     <SolidColorBrush x:Key="NavSurfaceRaised" Color="{DynamicResource P.Color.Nav.800}"/>
-    <SolidColorBrush x:Key="NavText"          Color="{DynamicResource P.Color.Neutral.400}"/>
-    <SolidColorBrush x:Key="NavTextHover"     Color="{DynamicResource P.Color.Neutral.100}"/>
+    <SolidColorBrush x:Key="NavText"          Color="{DynamicResource P.Color.Neutral.200}"/>
+    <SolidColorBrush x:Key="NavTextHover"     Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="NavTextSelected"  Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="NavIcon"          Color="{DynamicResource P.Color.Neutral.500}"/>
-    <SolidColorBrush x:Key="NavIconHover"     Color="{DynamicResource P.Color.Neutral.300}"/>
+    <SolidColorBrush x:Key="NavIcon"          Color="{DynamicResource P.Color.Neutral.400}"/>
+    <SolidColorBrush x:Key="NavIconHover"     Color="{DynamicResource P.Color.Neutral.200}"/>
     <SolidColorBrush x:Key="NavIconSelected"  Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="NavHover"         Color="{DynamicResource P.Color.NeutralDark.800}"/>
     <SolidColorBrush x:Key="NavSelected"      Color="{DynamicResource P.Color.Brand.700}"/>

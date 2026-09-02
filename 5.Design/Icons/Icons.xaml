@@ -61,5 +61,8 @@
     <Geometry x:Key="IconLock">M6,10 L6,7 A6,6 0 0 1 18,7 L18,10 M4,10 L20,10 L20,21 L4,21 Z M12,14 L12,17</Geometry>
     <Geometry x:Key="IconFolder">M3,6 L10,6 L12,8 L21,8 L21,19 L3,19 Z</Geometry>
     <Geometry x:Key="IconBuilding">M6,21 L6,3 L14,3 L14,21 M18,21 L18,9 L14,9 M9,7 L9,7.01 M9,11 L9,11.01 M9,15 L9,15.01 M16,12 L16,12.01 M16,16 L16,16.01</Geometry>
+    <Geometry x:Key="IconUnits">M3,17 L17,3 L21,7 L7,21 Z M6,14 L8,16 M9,11 L11,13 M12,8 L14,10</Geometry>
+    <Geometry x:Key="IconAssets">M4,7 L20,7 L20,20 L4,20 Z M9,7 L9,4 L15,4 L15,7 M4,12 L20,12</Geometry>
+    <Geometry x:Key="IconPayroll">M2,6 L22,6 L22,16 L2,16 Z M12,8 A3,3 0 1 0 12,14 A3,3 0 1 0 12,8 Z M5,6 L5,16 M19,6 L19,16</Geometry>
 
 </ResourceDictionary>

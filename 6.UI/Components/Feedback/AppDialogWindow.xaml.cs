@@ -21,6 +21,7 @@ namespace PrimeERP.UI.Components.Feedback
             InitializeComponent();
             var active = FindActiveWindow();
             if (Owner == null && active != this) Owner = active;
+            contentScroll.MaxHeight = SystemParameters.PrimaryScreenHeight * 0.85;
         }
 
         protected string HeaderTitle
