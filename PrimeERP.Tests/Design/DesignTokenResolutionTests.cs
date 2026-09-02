@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Design;
+using ThemeMode = PrimeERP.Platform.Design.ThemeMode;
 using Xunit;
 
 namespace PrimeERP.Tests.Design
@@ -57,6 +58,55 @@ namespace PrimeERP.Tests.Design
                     Assert.True(headerBg.Color != headerFg.Color, $"حزمة {pack.Key}: نص الهيدر بلون خلفيته");
                     Assert.True(headerBg.Color != rowBg.Color, $"حزمة {pack.Key}: الهيدر بلون الصفوف");
                 }
+            });
+        }
+
+        /// <summary>الوضع الداكن كان يُضاف فوق L3 فتبقى رموز C.* على قيم الفاتح — أي "بلا أثر".</summary>
+        [Fact]
+        public void DarkMode_ActuallyChangesComponentTokens_AndLightRestoresThem()
+        {
+            WpfApplicationFixture.Run(() =>
+            {
+                var identity = _db.Services.GetRequiredService<IIdentityService>();
+                identity.Apply("Signature");
+
+                identity.ApplyMode(ThemeMode.Light);
+                var lightCanvas = Brush("C.Grid.Row.Bg").Color;
+                var lightNav = Brush("C.Nav.Surface").Color;
+                var lightText = Brush("C.Grid.Cell.Fg").Color;
+
+                identity.ApplyMode(ThemeMode.Dark);
+                Assert.NotEqual(lightCanvas, Brush("C.Grid.Row.Bg").Color);
+                Assert.NotEqual(lightNav, Brush("C.Nav.Surface").Color);
+                Assert.NotEqual(lightText, Brush("C.Grid.Cell.Fg").Color);
+
+                identity.ApplyMode(ThemeMode.Light);
+                Assert.Equal(lightCanvas, Brush("C.Grid.Row.Bg").Color);
+                Assert.Equal(lightNav, Brush("C.Nav.Surface").Color);
+            });
+        }
+
+        [Fact]
+        public void BothModes_KeepEveryComponentTokenVisible()
+        {
+            WpfApplicationFixture.Run(() =>
+            {
+                var identity = _db.Services.GetRequiredService<IIdentityService>();
+                identity.Apply("Signature");
+
+                foreach (var mode in new[] { ThemeMode.Light, ThemeMode.Dark })
+                {
+                    identity.ApplyMode(mode);
+
+                    var transparent = CollectComponentBrushes()
+                        .Where(kv => kv.Value.Color.A == 0)
+                        .Select(kv => kv.Key)
+                        .ToList();
+
+                    Assert.True(transparent.Count == 0, $"{mode}: رموز شفافة: " + string.Join(", ", transparent));
+                }
+
+                identity.ApplyMode(ThemeMode.Light);
             });
         }
 

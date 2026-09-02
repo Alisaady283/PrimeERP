@@ -20,5 +20,8 @@ namespace PrimeERP.UI.Services
 
         /// <summary>الأكثر استهلاكاً من قطع الواجهة (إظهار/إخفاء أزرار حسب الصلاحية) — اختصار مباشر بدل Provider.GetRequiredService في كل موضع.</summary>
         public static IPermissionService Permissions => Provider.GetRequiredService<IPermissionService>();
+
+        public static PrimeERP.Platform.Design.IIdentityService Identity =>
+            Provider?.GetService(typeof(PrimeERP.Platform.Design.IIdentityService)) as PrimeERP.Platform.Design.IIdentityService;
     }
 }

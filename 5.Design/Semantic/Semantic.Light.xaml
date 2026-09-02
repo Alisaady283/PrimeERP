@@ -72,18 +72,18 @@
     <SolidColorBrush x:Key="InfoSoft"     Color="{DynamicResource P.Color.Info.50}"/>
     <SolidColorBrush x:Key="InfoSoftText" Color="{DynamicResource P.Color.Info.700}"/>
 
-    <!-- ===== التنقل (Navigation) ===== -->
-    <SolidColorBrush x:Key="NavSurface"       Color="{DynamicResource P.Color.Nav.900}"/>
-    <SolidColorBrush x:Key="NavSurfaceRaised" Color="{DynamicResource P.Color.Nav.700}"/>
-    <SolidColorBrush x:Key="NavText"          Color="{DynamicResource P.Color.Neutral.200}"/>
-    <SolidColorBrush x:Key="NavTextHover"     Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="NavTextSelected"  Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="NavIcon"          Color="{DynamicResource P.Color.Neutral.400}"/>
-    <SolidColorBrush x:Key="NavIconHover"     Color="{DynamicResource P.Color.Neutral.200}"/>
-    <SolidColorBrush x:Key="NavIconSelected"  Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="NavHover"         Color="{DynamicResource P.Color.Nav.700}"/>
-    <SolidColorBrush x:Key="NavSelected"      Color="{DynamicResource P.Color.Brand.600}"/>
-    <SolidColorBrush x:Key="NavSelectedBar"   Color="{DynamicResource P.Color.Brand.400}"/>
+    <!-- ===== التنقل — شريط فاتح في الوضع الفاتح، والداكن يعيد تعريفه كحلياً ===== -->
+    <SolidColorBrush x:Key="NavSurface"       Color="{DynamicResource P.Color.Neutral.50}"/>
+    <SolidColorBrush x:Key="NavSurfaceRaised" Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="NavText"          Color="{DynamicResource P.Color.Neutral.700}"/>
+    <SolidColorBrush x:Key="NavTextHover"     Color="{DynamicResource P.Color.Brand.600}"/>
+    <SolidColorBrush x:Key="NavTextSelected"  Color="{DynamicResource P.Color.Brand.600}"/>
+    <SolidColorBrush x:Key="NavIcon"          Color="{DynamicResource P.Color.Neutral.500}"/>
+    <SolidColorBrush x:Key="NavIconHover"     Color="{DynamicResource P.Color.Brand.600}"/>
+    <SolidColorBrush x:Key="NavIconSelected"  Color="{DynamicResource P.Color.Brand.600}"/>
+    <SolidColorBrush x:Key="NavHover"         Color="{DynamicResource P.Color.Neutral.100}"/>
+    <SolidColorBrush x:Key="NavSelected"      Color="{DynamicResource P.Color.Brand.50}"/>
+    <SolidColorBrush x:Key="NavSelectedBar"   Color="{DynamicResource P.Color.Brand.600}"/>
     <SolidColorBrush x:Key="NavSectionLabel"  Color="{DynamicResource P.Color.Neutral.600}"/>
     <SolidColorBrush x:Key="NavDivider"       Color="{DynamicResource P.Color.Nav.700}"/>
 

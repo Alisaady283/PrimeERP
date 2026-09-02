@@ -34,6 +34,7 @@ namespace PrimeERP.UI.Services
         private readonly ISettingsService _settings;
         private const string ThemeDictSuffix = "Theme.xaml";
         private const string ThemeSemanticDictSuffix = "Theme.Semantic.xaml";
+        private const string DarkDictSuffix = "Semantic.Dark.xaml";
 
         private static readonly string[] PrimitiveFiles =
         {
@@ -133,6 +134,22 @@ namespace PrimeERP.UI.Services
             if (Packs.All(p => p.Key != identityKey))
                 return Result.Fail(LocalizationService.Get("Str.Identity.NotFound"), ErrorCode.NotFound);
 
+            BuildResourceTree(identityKey, ResolvedMode());
+
+            CurrentIdentity = identityKey;
+            _settings.Set(SettingKeys.UI.Identity, identityKey);
+            IdentityChanged?.Invoke();
+            return Result.Ok();
+        }
+
+        private AppThemeMode ResolvedMode() =>
+            CurrentMode == ThemeMode.Auto ? ResolveSystemMode()
+                                          : CurrentMode == ThemeMode.Dark ? AppThemeMode.Dark : AppThemeMode.Light;
+
+        // الوضع جزء من بناء الشجرة لا طبقة تُضاف فوقها: رموز L3 تُبنى من مفاتيح ".Color" المُشتقة، فإضافة
+        // Semantic.Dark بعد L3 تترك تلك الرموز مجمَّدة على قيم الفاتح — وهو سبب أن الوضع الليلي كان بلا أثر.
+        private void BuildResourceTree(string identityKey, AppThemeMode mode)
+        {
             var app = System.Windows.Application.Current;
             if (app != null)
             {
@@ -149,6 +166,7 @@ namespace PrimeERP.UI.Services
                     .Where(d => d.Source == null ||
                                 (!d.Source.OriginalString.EndsWith(ThemeDictSuffix) &&
                                  !d.Source.OriginalString.EndsWith(ThemeSemanticDictSuffix) &&
+                                 !d.Source.OriginalString.EndsWith(DarkDictSuffix) &&
                                  !PrimitiveFiles.Any(f => d.Source.OriginalString.EndsWith(f))))
                     .ToList();
 
@@ -172,6 +190,10 @@ namespace PrimeERP.UI.Services
                 // من Theme.xaml التالي مباشرة؛ لو دُمج L2+L3 معاً هنا (كما كان قبل توقف 6) قد يُقيَّم مورد L3
                 // المُركَّب (SolidColorBrush.Color) قبل استقرار مفاتيح ".Color" فيتجمَّد على قيمة ناقصة/خاطئة.
                 dicts.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/{asmName};component/5.Design/Theme.Semantic.xaml", UriKind.Absolute) });
+
+                if (mode == AppThemeMode.Dark)
+                    dicts.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/{asmName};component/5.Design/Semantic/Semantic.Dark.xaml", UriKind.Absolute) });
+
                 RefreshDerivedColors();
 
                 dicts.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/{asmName};component/5.Design/Theme.xaml", UriKind.Absolute) });
@@ -180,17 +202,13 @@ namespace PrimeERP.UI.Services
                     dicts.Add(old);
             }
 
-            CurrentIdentity = identityKey;
-            _settings.Set(SettingKeys.UI.Identity, identityKey);
-            IdentityChanged?.Invoke();
-            return Result.Ok();
+            ThemeService.SetMode(mode);
         }
 
         public Result ApplyMode(ThemeMode mode)
         {
             var resolved = mode == ThemeMode.Auto ? ResolveSystemMode() : mode == ThemeMode.Dark ? AppThemeMode.Dark : AppThemeMode.Light;
-            ThemeService.Apply(resolved);
-            RefreshDerivedColors();
+            BuildResourceTree(CurrentIdentity, resolved);
 
             CurrentMode = mode;
             _settings.Set(SettingKeys.UI.Theme, mode.ToString());

@@ -331,7 +331,7 @@ namespace PrimeERP.UI.DevTools
                 FontFamily = new System.Windows.Media.FontFamily("Segoe UI"), Foreground = System.Windows.Media.Brushes.White
             };
             shellDemo.TopBarActionsContent = null;
-            shellDemo.ThemeToggled += (s, e) => ThemeService.Toggle();
+            shellDemo.ThemeToggled += (s, e) => UIServices.Identity?.ApplyMode(ThemeService.NextMode);
             shellDemo.LanguageToggled += (s, e) => LocalizationService.Toggle();
             shellDemo.ProfileClicked += (s, e) => _toastService.Info("سيتم فتح صفحة الملف الشخصي هنا");
             shellDemo.PasswordChangeRequested += (s, e) => _toastService.Info("سيتم فتح نافذة تغيير كلمة المرور هنا");
@@ -459,7 +459,7 @@ namespace PrimeERP.UI.DevTools
             FontSize = 13
         };
 
-        private void btnToggleTheme_Click(object sender, RoutedEventArgs e) => ThemeService.Toggle();
+        private void btnToggleTheme_Click(object sender, RoutedEventArgs e) => UIServices.Identity?.ApplyMode(ThemeService.NextMode);
 
         private void btnToggleLanguage_Click(object sender, RoutedEventArgs e) => LocalizationService.Toggle();
 
