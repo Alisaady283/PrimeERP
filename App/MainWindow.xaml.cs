@@ -56,6 +56,7 @@ namespace PrimeERP.App
             ["PurchaseInvoices"] = "IconPurchases", ["PurchaseReturns"] = "IconPurchases",
             ["StockIn"] = "IconWarehouse", ["StockOut"] = "IconWarehouse", ["StockTransfer"] = "IconWarehouse",
             ["Settings"] = "IconSettings", ["Users"] = "IconUsers", ["Roles"] = "IconLock",
+            ["RolePermissions"] = "IconLock", ["UserPermissions"] = "IconLock",
         };
 
         private static string IconKeyForModule(string key) =>
@@ -72,7 +73,7 @@ namespace PrimeERP.App
                 ("الأصول", "IconAssets", new[] { "Assets", "AssetCategories" }),
                 ("الموارد", "IconHR", new[] { "Employees", "Departments", "JobTitles", "Payroll" }),
                 ("التقارير", "IconReports", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "AccountStatement", "CustomerStatement", "SupplierStatement", "ItemCard", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport" }),
-                ("الإعدادات", "IconSettings", new[] { "Settings", "Users", "Roles" }),
+                ("الإعدادات", "IconSettings", new[] { "Settings", "Users", "Roles", "RolePermissions", "UserPermissions" }),
             };
 
             var result = new List<NavItem>();

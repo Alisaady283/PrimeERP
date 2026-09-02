@@ -63,6 +63,19 @@ namespace PrimeERP.UI.Components.Tree
             set => SetProperty(ref _isSelectable, value);
         }
 
+        private NodeCheckState _checkState = NodeCheckState.Unchecked;
+        public NodeCheckState CheckState
+        {
+            get => _checkState;
+            set => SetProperty(ref _checkState, value);
+        }
+
+        /// <summary>false لعقد التجميع التي لا تحمل مفتاحاً بذاتها (اسم الموديول مثلاً) — تُظهر مربعاً يوزّع على الأبناء فقط.</summary>
+        public bool IsCheckable { get; set; } = true;
+
+        /// <summary>نص توضيحي بجانب الحالة الموروثة — مثال "(الدور: مسموح)".</summary>
+        public string InheritedHint { get; set; }
+
         public void AddChild(TreeNodeViewModel child)
         {
             child.Parent = this;

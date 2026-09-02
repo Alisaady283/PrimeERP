@@ -15,7 +15,10 @@ namespace PrimeERP.UI.Components.Tree
         Report,
 
         /// <summary>صفحة إعدادات بتبويبات عبر SettingsPageRenderer — وحدة واحدة فقط في كل النظام.</summary>
-        Settings
+        Settings,
+
+        /// <summary>شجرة قابلة للتأشير (صلاحيات الدور/المستخدم) عبر TreeCheckListRenderer.</summary>
+        TreeCheckList
     }
 
     public enum SelectableRule { All, LeafOnly }

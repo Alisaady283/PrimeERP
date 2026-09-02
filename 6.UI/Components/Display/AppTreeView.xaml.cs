@@ -25,6 +25,19 @@ namespace PrimeERP.UI.Components.Display
             DependencyProperty.Register(nameof(SearchText), typeof(string), typeof(AppTreeView),
                 new PropertyMetadata("", OnSearchTextChanged));
 
+        public static readonly DependencyProperty CheckModeProperty =
+            DependencyProperty.Register(nameof(CheckMode), typeof(TreeCheckMode), typeof(AppTreeView),
+                new PropertyMetadata(TreeCheckMode.None));
+
+        public TreeCheckMode CheckMode
+        {
+            get => (TreeCheckMode)GetValue(CheckModeProperty);
+            set => SetValue(CheckModeProperty, value);
+        }
+
+        /// <summary>يُطلق بعد كل تغيّر حالة تأشير (نقر المستخدم أو انتشار من عقدة أب).</summary>
+        public event EventHandler<TreeNodeViewModel> CheckStateChanged;
+
         public IEnumerable<TreeNodeViewModel> ItemsSource
         {
             get => (IEnumerable<TreeNodeViewModel>)GetValue(ItemsSourceProperty);
@@ -102,6 +115,37 @@ namespace PrimeERP.UI.Components.Display
                 node.IsExpanded = expanded;
                 SetAllExpanded(node.Children, expanded);
             }
+        }
+
+        private void CheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement fe || fe.DataContext is not TreeNodeViewModel node) return;
+            e.Handled = true;
+            Cycle(node);
+        }
+
+        /// <summary>ينقل العقدة للحالة التالية ثم ينشرها لكل الأبناء — عقدة الأب هي "تحديد/إلغاء الكل" لفرعها.</summary>
+        public void Cycle(TreeNodeViewModel node)
+        {
+            var next = CheckMode == TreeCheckMode.ThreeState
+                ? node.CheckState switch
+                {
+                    NodeCheckState.Granted => NodeCheckState.Revoked,
+                    NodeCheckState.Revoked => NodeCheckState.Inherited,
+                    _ => NodeCheckState.Granted
+                }
+                : node.CheckState == NodeCheckState.Checked ? NodeCheckState.Unchecked : NodeCheckState.Checked;
+
+            ApplyState(node, next);
+        }
+
+        public void ApplyState(TreeNodeViewModel node, NodeCheckState state)
+        {
+            node.CheckState = state;
+            CheckStateChanged?.Invoke(this, node);
+
+            foreach (var child in node.Children)
+                ApplyState(child, state);
         }
 
         private void tree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)

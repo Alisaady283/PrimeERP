@@ -43,5 +43,8 @@ namespace PrimeERP.Composition.Definitions
 
         /// <summary>مطلوبة فقط لو LayoutKind = Report — ReportRenderer يستهلكها بدل Columns/ViewModelType.</summary>
         public ReportDefinition Report { get; init; }
+
+        /// <summary>مطلوبة فقط لو LayoutKind = TreeCheckList (شاشتا الصلاحيات).</summary>
+        public TreeCheckListDefinition TreeCheckList { get; init; }
     }
 }

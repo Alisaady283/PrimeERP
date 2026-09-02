@@ -172,6 +172,7 @@ namespace PrimeERP.App.Bootstrap
         {
             ModuleRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             ReportRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
+            PermissionModuleRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             return services;
         }
 

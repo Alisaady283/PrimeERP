@@ -1,28 +1,83 @@
 <UserControl x:Class="PrimeERP.UI.Components.Display.AppTreeView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:tree="clr-namespace:PrimeERP.UI.Components.Tree">
+             xmlns:tree="clr-namespace:PrimeERP.UI.Components.Tree"
+             xmlns:display="clr-namespace:PrimeERP.UI.Components.Display">
 
     <UserControl.Resources>
         <HierarchicalDataTemplate DataType="{x:Type tree:TreeNodeViewModel}" ItemsSource="{Binding VisibleChildren}">
-            <TextBlock Text="{Binding DisplayText}"
-                       FontFamily="{DynamicResource P.Font.Family.Primary}"
-                       FontSize="{DynamicResource P.Font.Size.300}">
-                <TextBlock.Style>
-                    <Style TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsMatch}" Value="True">
-                                <Setter Property="FontWeight" Value="Bold"/>
-                                <Setter Property="Foreground" Value="{DynamicResource BrandDefault}"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsSelectable}" Value="False">
-                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
+            <StackPanel Orientation="Horizontal">
+
+                <!-- مؤشّر الحالة — يظهر فقط حين CheckMode != None، ويُدوِّر الحالة بالنقر -->
+                <Border x:Name="checkBox" Width="16" Height="16" Margin="0,0,8,0"
+                        VerticalAlignment="Center" Cursor="Hand" Visibility="Collapsed"
+                        CornerRadius="{DynamicResource P.Radius.Sm}" BorderThickness="1"
+                        Background="{DynamicResource SurfaceDefault}"
+                        BorderBrush="{DynamicResource OutlineStrong}"
+                        MouseLeftButtonUp="CheckBox_Click">
+                    <Path x:Name="checkGlyph" Stretch="Uniform" Width="10" Height="10"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                          StrokeThickness="2" Visibility="Collapsed"
+                          Data="{StaticResource IconCheck}"
+                          Stroke="{DynamicResource TextOnBrand}"/>
+                </Border>
+
+                <TextBlock x:Name="label" Text="{Binding DisplayText}"
+                           VerticalAlignment="Center"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           FontSize="{DynamicResource P.Font.Size.300}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsMatch}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource BrandDefault}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsSelectable}" Value="False">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <TextBlock x:Name="hint" Text="{Binding InheritedHint}" Margin="8,0,0,0"
+                           VerticalAlignment="Center"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           FontSize="{DynamicResource P.Font.Size.200}"
+                           Foreground="{DynamicResource TextMuted}"/>
+            </StackPanel>
+
+            <HierarchicalDataTemplate.Triggers>
+                <DataTrigger Binding="{Binding CheckMode, RelativeSource={RelativeSource AncestorType=display:AppTreeView}}" Value="TwoState">
+                    <Setter TargetName="checkBox" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CheckMode, RelativeSource={RelativeSource AncestorType=display:AppTreeView}}" Value="ThreeState">
+                    <Setter TargetName="checkBox" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding CheckState}" Value="Checked">
+                    <Setter TargetName="checkBox" Property="Background" Value="{DynamicResource BrandDefault}"/>
+                    <Setter TargetName="checkBox" Property="BorderBrush" Value="{DynamicResource BrandDefault}"/>
+                    <Setter TargetName="checkGlyph" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CheckState}" Value="Granted">
+                    <Setter TargetName="checkBox" Property="Background" Value="{DynamicResource Success}"/>
+                    <Setter TargetName="checkBox" Property="BorderBrush" Value="{DynamicResource Success}"/>
+                    <Setter TargetName="checkGlyph" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CheckState}" Value="Revoked">
+                    <Setter TargetName="checkBox" Property="Background" Value="{DynamicResource Danger}"/>
+                    <Setter TargetName="checkBox" Property="BorderBrush" Value="{DynamicResource Danger}"/>
+                    <Setter TargetName="checkGlyph" Property="Data" Value="{StaticResource IconClose}"/>
+                    <Setter TargetName="checkGlyph" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CheckState}" Value="Inherited">
+                    <Setter TargetName="checkBox" Property="Background" Value="{DynamicResource SurfaceSunken}"/>
+                    <Setter TargetName="checkBox" Property="BorderBrush" Value="{DynamicResource OutlineStrong}"/>
+                </DataTrigger>
+            </HierarchicalDataTemplate.Triggers>
         </HierarchicalDataTemplate>
     </UserControl.Resources>
 
