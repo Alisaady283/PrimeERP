@@ -195,6 +195,7 @@
     <sys:String x:Key="Str.JobTitles.Edit">Edit Job Title</sys:String>
     <sys:String x:Key="Str.Login.Username">Username</sys:String>
     <sys:String x:Key="Str.Login.Password">Password</sys:String>
+    <sys:String x:Key="Str.Login.Subtitle">Sign in to continue</sys:String>
     <sys:String x:Key="Str.Login.Submit">Sign In</sys:String>
     <sys:String x:Key="Str.Login.InvalidCredentials">Invalid username or password</sys:String>
     <sys:String x:Key="Str.Login.AccountInactive">This account is disabled</sys:String>

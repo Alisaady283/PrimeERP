@@ -4,29 +4,66 @@
         xmlns:inputs="clr-namespace:PrimeERP.UI.Components.Inputs"
         Title="{DynamicResource Str.AppName}"
         WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
         ResizeMode="NoResize"
         FlowDirection="RightToLeft"
         SizeToContent="Height"
-        Width="380"
-        Background="{DynamicResource SurfaceCanvas}">
+        Width="440"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
-    <Border Padding="{DynamicResource P.Space.4.Uniform}">
-        <StackPanel>
-            <TextBlock Text="{DynamicResource Str.AppName}" HorizontalAlignment="Center"
-                       FontSize="{DynamicResource P.Font.Size.700}" FontFamily="{DynamicResource P.Font.Family.Primary}"
-                       Foreground="{DynamicResource TextPrimary}" Margin="{DynamicResource P.Space.4.Bottom}"/>
+    <Border Margin="18" Background="{DynamicResource SurfaceDefault}"
+            CornerRadius="{DynamicResource P.Radius.Lg}"
+            BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"
+            Effect="{DynamicResource ShadowLg}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-            <inputs:AppTextBox x:Name="txtUsername" Label="{DynamicResource Str.Login.Username}" IsRequired="True"
-                                Margin="{DynamicResource P.Space.2.Bottom}"/>
+            <Border Grid.Row="0" Background="{DynamicResource BrandDefault}"
+                    CornerRadius="{DynamicResource C.Login.HeaderRadius}" Padding="28,26">
+                <StackPanel>
+                    <TextBlock Text="{DynamicResource Str.AppName}" HorizontalAlignment="Center"
+                               FontSize="{DynamicResource P.Font.Size.800}"
+                               FontFamily="{DynamicResource P.Font.Family.Display}"
+                               FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
+                               Foreground="{DynamicResource TextOnBrand}"/>
+                    <TextBlock Text="{DynamicResource Str.Login.Subtitle}" HorizontalAlignment="Center"
+                               Margin="{DynamicResource P.Space.1.Top}"
+                               FontSize="{DynamicResource P.Font.Size.300}"
+                               FontFamily="{DynamicResource P.Font.Family.Primary}"
+                               Foreground="{DynamicResource TextOnBrand}" Opacity="0.85"/>
+                </StackPanel>
+            </Border>
 
-            <inputs:AppPasswordBox x:Name="txtPassword" Label="{DynamicResource Str.Login.Password}" IsRequired="True"
-                                    KeyDown="txtPassword_KeyDown" Margin="{DynamicResource P.Space.2.Bottom}"/>
+            <StackPanel Grid.Row="1" Margin="28,24,28,28">
+                <inputs:AppTextBox x:Name="txtUsername" Label="{DynamicResource Str.Login.Username}" IsRequired="True"
+                                   Margin="{DynamicResource P.Space.3.Bottom}"/>
 
-            <TextBlock x:Name="txtError" Foreground="{DynamicResource Danger}" TextWrapping="Wrap"
-                       Visibility="Collapsed" Margin="{DynamicResource P.Space.2.Bottom}"/>
+                <inputs:AppPasswordBox x:Name="txtPassword" Label="{DynamicResource Str.Login.Password}" IsRequired="True"
+                                       KeyDown="txtPassword_KeyDown" Margin="{DynamicResource P.Space.3.Bottom}"/>
 
-            <Button x:Name="btnLogin" Content="{DynamicResource Str.Login.Submit}" Style="{StaticResource AppButtonStyle}"
-                    HorizontalAlignment="Stretch" Click="btnLogin_Click"/>
-        </StackPanel>
+                <TextBlock x:Name="txtError" Foreground="{DynamicResource Danger}" TextWrapping="Wrap"
+                           FontSize="{DynamicResource P.Font.Size.300}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           Visibility="Collapsed" Margin="{DynamicResource P.Space.3.Bottom}"/>
+
+                <Button x:Name="btnLogin" Content="{DynamicResource Str.Login.Submit}"
+                        Style="{StaticResource AppButtonStyle}"
+                        HorizontalAlignment="Stretch" Height="{DynamicResource C.Input.Height}"
+                        Click="btnLogin_Click"/>
+
+                <Button x:Name="btnCancel" Content="{DynamicResource Str.Cancel}"
+                        HorizontalAlignment="Center" Margin="{DynamicResource P.Space.3.Top}"
+                        Background="Transparent" BorderThickness="0" Cursor="Hand"
+                        Foreground="{DynamicResource TextMuted}"
+                        FontSize="{DynamicResource P.Font.Size.300}"
+                        FontFamily="{DynamicResource P.Font.Family.Primary}"
+                        Click="btnCancel_Click"/>
+            </StackPanel>
+        </Grid>
     </Border>
 </Window>

@@ -8,7 +8,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Border x:Name="box" Grid.Column="0" VerticalAlignment="Top" Style="{StaticResource CheckBoxBoxStyle}">
+        <Border x:Name="box" Grid.Column="0" VerticalAlignment="Center" Style="{StaticResource CheckBoxBoxStyle}">
             <Grid>
                 <!-- علامة الصح (Checked) -->
                 <Path x:Name="checkPath"
@@ -25,7 +25,7 @@
             </Grid>
         </Border>
 
-        <StackPanel Grid.Column="1">
+        <StackPanel Grid.Column="1" VerticalAlignment="Center">
             <TextBlock x:Name="txtLabel" Style="{StaticResource CheckBoxLabelStyle}"/>
             <TextBlock x:Name="txtDescription" Style="{StaticResource CheckBoxDescriptionStyle}" Visibility="Collapsed"/>
         </StackPanel>

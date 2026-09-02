@@ -195,6 +195,7 @@
     <sys:String x:Key="Str.JobTitles.Edit">تعديل وظيفة</sys:String>
     <sys:String x:Key="Str.Login.Username">اسم المستخدم</sys:String>
     <sys:String x:Key="Str.Login.Password">كلمة المرور</sys:String>
+    <sys:String x:Key="Str.Login.Subtitle">سجّل الدخول للمتابعة</sys:String>
     <sys:String x:Key="Str.Login.Submit">تسجيل الدخول</sys:String>
     <sys:String x:Key="Str.Login.InvalidCredentials">اسم المستخدم أو كلمة المرور غير صحيحة</sys:String>
     <sys:String x:Key="Str.Login.AccountInactive">هذا الحساب معطَّل</sys:String>

@@ -1,0 +1,330 @@
+<title>مراجعة تصميم PrimeERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  :root{
+    --paper:#F7F7F5; --surface:#FFFFFF; --surface-2:#EFEFEC;
+    --ink:#16181A; --ink-2:#454A4E; --ink-3:#767C81;
+    --rule:#E1E1DD; --rule-2:#CBCBC5;
+    --accent:#0F6B5C; --accent-soft:#E2F0EC;
+    --warn:#9C6B12; --warn-soft:#F7ECD8;
+    --bad:#94382C; --bad-soft:#F6E3DF;
+    --good:#2C6B4C; --good-soft:#E1EDE6;
+    --f-body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
+    --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#111314; --surface:#191C1D; --surface-2:#212527;
+      --ink:#E9EBEA; --ink-2:#B4BAB9; --ink-3:#868D8C;
+      --rule:#2A2F30; --rule-2:#3A4142;
+      --accent:#4FBBA6; --accent-soft:#152C28;
+      --warn:#D2A257; --warn-soft:#2C2416;
+      --bad:#D68374; --bad-soft:#301E1A;
+      --good:#6DBE97; --good-soft:#16281F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#111314; --surface:#191C1D; --surface-2:#212527;
+    --ink:#E9EBEA; --ink-2:#B4BAB9; --ink-3:#868D8C;
+    --rule:#2A2F30; --rule-2:#3A4142;
+    --accent:#4FBBA6; --accent-soft:#152C28;
+    --warn:#D2A257; --warn-soft:#2C2416;
+    --bad:#D68374; --bad-soft:#301E1A;
+    --good:#6DBE97; --good-soft:#16281F;
+  }
+
+  body{background:var(--paper);color:var(--ink);font-family:var(--f-body);direction:rtl;line-height:1.75;font-size:15px}
+  .doc{max-width:1060px;margin:0 auto;padding:52px 26px 90px}
+
+  h1,h2,h3{margin:0;text-wrap:balance;font-weight:600}
+  h1{font-size:2.2rem;line-height:1.25}
+  h2{font-size:1.4rem}
+  h3{font-size:1.02rem;font-weight:600}
+  p{margin:0;max-width:74ch}
+  code{font-family:var(--f-mono);font-size:.83em;direction:ltr;unicode-bidi:embed;background:var(--surface-2);border:1px solid var(--rule);border-radius:4px;padding:.08em .36em;display:inline-block}
+  .eyebrow{font-family:var(--f-mono);font-size:.69rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);direction:ltr;display:inline-block}
+
+  header.mast{border-bottom:2px solid var(--ink);padding-bottom:26px}
+  .lede{margin-top:12px;color:var(--ink-2);font-size:1.04rem;max-width:70ch}
+  section{margin-top:58px}
+  section>h2{padding-bottom:9px;border-bottom:1px solid var(--rule-2)}
+  .stack{display:flex;flex-direction:column;gap:14px;margin-top:20px}
+
+  .find{background:var(--surface);border:1px solid var(--rule);border-right:3px solid var(--bad);border-radius:10px;padding:16px 19px}
+  .find.ok{border-right-color:var(--good)}
+  .find.keep{border-right-color:var(--accent)}
+  .find h3{margin-bottom:7px}
+  .find p{color:var(--ink-2)}
+  .find p+p{margin-top:9px}
+  .tag{display:inline-block;font-family:var(--f-mono);font-size:.7rem;padding:.12em .48em;border-radius:4px;margin-inline-start:7px;vertical-align:middle}
+  .tag.bad{background:var(--bad-soft);color:var(--bad)}
+  .tag.ok{background:var(--good-soft);color:var(--good)}
+  .tag.warn{background:var(--warn-soft);color:var(--warn)}
+
+  .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:20px}
+  .opt{background:var(--surface);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+  .opt.pick{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .ramp{display:flex;height:56px}
+  .ramp span{flex:1}
+  .opt .body{padding:14px 16px}
+  .opt h3{display:flex;align-items:center;gap:8px}
+  .pill{font-family:var(--f-mono);font-size:.66rem;background:var(--accent-soft);color:var(--accent);padding:.1em .45em;border-radius:4px}
+  .opt p{color:var(--ink-2);font-size:.9rem;margin-top:6px}
+  .hexes{margin-top:10px;font-family:var(--f-mono);font-size:.72rem;color:var(--ink-3);direction:ltr;text-align:left}
+
+  .tbl{overflow-x:auto;margin-top:18px;border:1px solid var(--rule);border-radius:10px;background:var(--surface)}
+  table{border-collapse:collapse;width:100%;font-size:.88rem}
+  th,td{padding:10px 13px;text-align:right;border-bottom:1px solid var(--rule);vertical-align:top}
+  thead th{background:var(--surface-2);font-weight:600;font-size:.81rem;color:var(--ink-2);white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  ol.steps{list-style:none;margin:22px 0 0;padding:0;display:flex;flex-direction:column;gap:12px;counter-reset:s}
+  ol.steps>li{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:15px 18px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start}
+  ol.steps>li::before{counter-increment:s;content:counter(s);font-family:var(--f-mono);font-size:.9rem;color:var(--accent);background:var(--accent-soft);border-radius:7px;width:28px;height:28px;display:grid;place-items:center}
+  ol.steps p{margin-top:5px;color:var(--ink-2)}
+  .eff{font-family:var(--f-mono);font-size:.72rem;color:var(--ink-3)}
+  ul.pl{margin:8px 0 0;padding-inline-start:1.1em;color:var(--ink-2)}
+  ul.pl li{margin-top:4px}
+
+  footer.end{margin-top:64px;padding-top:18px;border-top:1px solid var(--rule-2);color:var(--ink-3);font-size:.84rem}
+  @media(max-width:620px){.doc{padding:34px 16px 70px}h1{font-size:1.7rem}ol.steps>li{grid-template-columns:1fr}}
+</style>
+
+<div class="doc">
+
+  <header class="mast">
+    <span class="eyebrow">Design Review</span>
+    <h1>مراجعة تصميم PrimeERP</h1>
+    <p class="lede">
+      فحص فعلي للمكوّنات كما هي في الكود الآن — النوافذ والجداول والحدود والزوايا — ثم ما يلزم
+      ليبدو التطبيق كبرنامج ويب حديث لا كنافذة ويندوز قديمة، مع ثلاثة اتجاهات لون بديلة للبنفسجي.
+    </p>
+  </header>
+
+  <section>
+    <span class="eyebrow">01 — Findings</span>
+    <h2>ما وجدته فعلياً</h2>
+
+    <div class="stack">
+
+      <div class="find">
+        <h3>النوافذ تستخدم إطار ويندوز الأصلي <span class="tag bad">أهم سبب للشكل القديم</span></h3>
+        <p>
+          <code>LoginWindow</code> و<code>AppDialogWindow</code> نافذتان عاديتان بلا
+          <code>WindowStyle="None"</code> ولا <code>AllowsTransparency</code> — فالنتيجة زوايا قائمة
+          وشريط عنوان ويندوز رمادي أعلى كل حوار. والأسوأ: حوارات المستندات لها هيدر ملوّن خاص بها،
+          فيظهر <strong>رأسان فوق بعضهما</strong>: شريط ويندوز ثم الهيدر الملوّن.
+        </p>
+        <p>
+          هذا وحده الفارق الأكبر بين «يبدو ويندوز 2010» و«يبدو تطبيق ويب». برامج الويب لا شريط عنوان
+          فيها إطلاقاً: البطاقة نفسها هي النافذة، بزوايا دائرية وظل ناعم.
+        </p>
+      </div>
+
+      <div class="find">
+        <h3>شاشة الدخول بلا بطاقة ولا هوية <span class="tag bad">أول انطباع</span></h3>
+        <p>
+          <code>StackPanel</code> عارٍ فوق خلفية مسطّحة، عرض 380، بلا شعار ولا ظل ولا بطاقة —
+          وهي أول ما يراه العميل. شاشة الدخول في المنتجات الحديثة بطاقة مرفوعة في وسط أرضية هادئة،
+          أو لوحان: هوية على جانب ونموذج على الآخر.
+        </p>
+      </div>
+
+      <div class="find keep">
+        <h3>حدود الجدول: الوضع الحالي صحيح — لا تضف أعمدة <span class="tag ok">أبقِه</span></h3>
+        <p>
+          الجدول يرسم فواصل أفقية فقط (<code>GridLinesVisibility="Horizontal"</code>) بلا فواصل رأسية.
+          هذا بالضبط ما تفعله جداول البيانات الحديثة — الفواصل الرأسية تجعل الجدول يبدو كورقة إكسل
+          قديمة وتزيد الضجيج البصري. المطلوب ليس إضافة حدود بل ضبط ما حولها: حشو الخلية، ارتفاع الصف،
+          ووضوح صف التحديد.
+        </p>
+      </div>
+
+      <div class="find">
+        <h3>الزوايا غير موحّدة عبر المكوّنات <span class="tag warn">تفاوت</span></h3>
+        <p>
+          البطاقة تستخدم <code>P.Radius.Lg</code>، وحاوية الجدول رمزاً خاصاً بقيمة 10،
+          والأزرار <code>P.Radius.Md</code>، والحقول <code>C.Input.Radius</code>. أربع قيم لأربعة
+          مكوّنات متجاورة على نفس الشاشة — العين تلتقط هذا التفاوت حتى دون أن تسمّيه.
+        </p>
+      </div>
+
+      <div class="find">
+        <h3>الأسطح مسطّحة بلا تدرّج ارتفاع <span class="tag warn">عمق مفقود</span></h3>
+        <p>
+          خلفية الصفحة <code>SurfaceCanvas</code> والمحتوى فوقها مباشرة بلا بطاقات ولا ظل.
+          الشكل الحديث: أرضية هادئة، ومحتوى داخل بطاقات مرفوعة قليلاً بظل واسع خفيف — الظلال
+          معرَّفة عندنا بالفعل (<code>P.Shadow.*</code>) لكنها شبه غير مستهلكة.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">02 — Palette</span>
+    <h2>بدائل البنفسجي</h2>
+    <p style="margin-top:14px;color:var(--ink-2)">
+      البنفسجي مرفوض، والدرجة كانت جيدة — فالمطلوب تغيير الطيف لا الأسلوب: نفس المحايدات الدافئة،
+      نفس الحالات المخفوضة، أساس واحد يحمل البنية. ثلاثة اتجاهات، كلها تُطبَّق بتعديل ملف واحد.
+    </p>
+
+    <div class="opts">
+
+      <div class="opt pick">
+        <div class="ramp">
+          <span style="background:#E6F0EE"></span><span style="background:#A9CCC5"></span>
+          <span style="background:#4E958A"></span><span style="background:#0F6B5C"></span>
+          <span style="background:#0A4E43"></span><span style="background:#07332C"></span>
+        </div>
+        <div class="body">
+          <h3>بترولي أخضر <span class="pill">مقترَح</span></h3>
+          <p>
+            محاسبي ومؤسسي، بعيد عن الأزرق المستهلك وعن البنفسجي. يقرأ ثقةً ونضجاً، ويعمل ممتازاً
+            مع الأصفر الذهبي للمجلدات ومع الأحمر الطيني للتحذير.
+          </p>
+          <div class="hexes">#0F6B5C · #0A4E43 · #4E958A</div>
+        </div>
+      </div>
+
+      <div class="opt">
+        <div class="ramp">
+          <span style="background:#E9EDF2"></span><span style="background:#B4C0CF"></span>
+          <span style="background:#5E738C"></span><span style="background:#2C4460"></span>
+          <span style="background:#1E3147"></span><span style="background:#14212F"></span>
+        </div>
+        <div class="body">
+          <h3>كحلي رصاصي</h3>
+          <p>
+            الأكثر حياداً وأماناً: كحلي عميق للبنية ورمادي بارد للأسطح. لا يخطئ أبداً، لكنه أقل
+            تميّزاً — قريب مما تستخدمه أنظمة كثيرة.
+          </p>
+          <div class="hexes">#2C4460 · #1E3147 · #5E738C</div>
+        </div>
+      </div>
+
+      <div class="opt">
+        <div class="ramp">
+          <span style="background:#F0EEE9"></span><span style="background:#C9C2B4"></span>
+          <span style="background:#8A7C63"></span><span style="background:#2B2A26"></span>
+          <span style="background:#1C1B18"></span><span style="background:#C9922F"></span>
+        </div>
+        <div class="body">
+          <h3>جرافيت وذهبي</h3>
+          <p>
+            أسود مائل للدفء كبنية، وذهبي واحد كإجراء. الأكثر تميّزاً و«فخامة»، لكنه يتطلب انضباطاً:
+            الذهبي للإجراء الرئيسي فقط، وإلا انقلب رخيصاً.
+          </p>
+          <div class="hexes">#2B2A26 · #C9922F · #8A7C63</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">03 — Components</span>
+    <h2>تحسينات المكوّنات</h2>
+
+    <div class="tbl">
+      <table>
+        <thead>
+          <tr><th>المكوّن</th><th>الحالة</th><th>التحسين</th><th>الأثر</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>نوافذ الحوار وتسجيل الدخول</td><td>إطار ويندوز أصلي</td>
+            <td><code>WindowStyle=None</code> + <code>AllowsTransparency</code> + بطاقة بزوايا وظل، وشريط سحب خاص</td>
+            <td class="n">الأكبر</td>
+          </tr>
+          <tr>
+            <td>شاشة الدخول</td><td>StackPanel مسطّح</td>
+            <td>بطاقة مرفوعة في وسط أرضية، شعار، وزر بعرض كامل</td>
+            <td class="n">الأكبر</td>
+          </tr>
+          <tr>
+            <td>سلّم الزوايا</td><td>أربع قيم متفاوتة</td>
+            <td>رمز واحد لكل مستوى: حقل/زر = Md، بطاقة/جدول/حوار = Lg</td>
+            <td class="n">كبير</td>
+          </tr>
+          <tr>
+            <td>الصفحة والأسطح</td><td>مسطّحة بلا عمق</td>
+            <td>أرضية + بطاقة محتوى بظل <code>P.Shadow.Sm</code></td>
+            <td class="n">كبير</td>
+          </tr>
+          <tr>
+            <td>الجدول</td><td>فواصل أفقية فقط — صحيح</td>
+            <td>حشو خلية 14 · ارتفاع صف 44 · شريط تحديد أوضح</td>
+            <td class="n">متوسط</td>
+          </tr>
+          <tr>
+            <td>الأزرار</td><td>نمط واحد مسطّح</td>
+            <td>حالة ضغط وظل خفيف للأساسي، وحدّ رفيع للثانوي</td>
+            <td class="n">متوسط</td>
+          </tr>
+          <tr>
+            <td>الحقول</td><td>حدّ ثابت</td>
+            <td>حلقة تركيز بلون الأساس بدل تغيّر الحدّ فقط</td>
+            <td class="n">متوسط</td>
+          </tr>
+          <tr>
+            <td>الشريط الجانبي</td><td>جيد بعد الأيقونات</td>
+            <td>عنوان مجموعة أصغر ومتباعد الحروف، وفاصل أخف</td>
+            <td class="n">صغير</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">04 — Order</span>
+    <h2>ترتيب التنفيذ</h2>
+
+    <ol class="steps">
+      <li><div>
+        <h3>اختيار الطيف <span class="eff">قرارك</span></h3>
+        <p>اتجاه واحد من الثلاثة. التطبيق بعدها تعديل <code>Primitives.Color.xaml</code> لحزمة واحدة — دقائق لا ساعات.</p>
+      </div></li>
+      <li><div>
+        <h3>قشرة النوافذ <span class="eff">كبير · الأثر الأعلى</span></h3>
+        <p>
+          قطعة <code>AppWindowChrome</code> واحدة: بلا إطار ويندوز، زوايا <code>P.Radius.Lg</code>، ظل،
+          وشريط علوي قابل للسحب فيه العنوان وزر الإغلاق — تُستورد في نافذة الحوار وتسجيل الدخول معاً،
+          فيختفي الرأس المزدوج من الاثنين بتعديل واحد.
+        </p>
+      </div></li>
+      <li><div>
+        <h3>توحيد الزوايا والأسطح <span class="eff">متوسط</span></h3>
+        <p>مستويان فقط للزوايا، وبطاقة محتوى للصفحة بظل خفيف — كلاهما رموز، بلا لمس أي شاشة.</p>
+      </div></li>
+      <li><div>
+        <h3>إيقاع الجدول والحقول <span class="eff">متوسط</span></h3>
+        <p>حشو الخلية وارتفاع الصف وحلقة التركيز — من <code>C.Grid.*</code> و<code>C.Input.*</code>.</p>
+      </div></li>
+      <li><div>
+        <h3>شاشة الدخول <span class="eff">صغير بعد 2</span></h3>
+        <p>تصبح بطاقة داخل القشرة الجديدة: شعار، حقلان، زر بعرض كامل.</p>
+      </div></li>
+    </ol>
+
+    <div class="find keep" style="margin-top:18px">
+      <h3>قاعدة تحكم كل ما سبق</h3>
+      <ul class="pl">
+        <li>لا قيمة بصرية في أي شاشة — كل تغيير رمز في <code>5.Design</code> ثم يُستورد.</li>
+        <li>قشرة النافذة قطعة واحدة تُستورد، لا نسخة في كل نافذة.</li>
+        <li>البوابة بعد كل بند: بناء، اختبارات، <code>check.sh</code>، التزام.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="end">
+    مبني على فحص الكود الحالي: <code>AppDataGrid.xaml</code>، <code>AppDialogWindow.xaml</code>،
+    <code>LoginWindow.xaml</code>، <code>AppCard.xaml</code>، <code>Style.Input.xaml</code>، ورموز <code>5.Design</code>.
+  </footer>
+
+</div>

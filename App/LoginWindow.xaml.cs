@@ -35,6 +35,14 @@ namespace PrimeERP.App
 
         private void btnLogin_Click(object sender, RoutedEventArgs e) => TryLogin();
 
+        private void btnCancel_Click(object sender, RoutedEventArgs e) => Close();
+
+        // النافذة بلا إطار ويندوز، فالسحب يدوي.
+        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == MouseButtonState.Pressed) DragMove();
+        }
+
         private void TryLogin()
         {
             var username = txtUsername.Text?.Trim() ?? "";

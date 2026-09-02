@@ -9,18 +9,18 @@
         تغيير هذا الملف وحده يعيد تلوين التطبيق كاملاً — L2/L3/L4 تشير إليه عبر DynamicResource حصراً.
     -->
 
-    <!-- ===== الأساس — نيلي عميق ===== -->
-    <Color x:Key="P.Color.Brand.50">#F1F1FB</Color>
-    <Color x:Key="P.Color.Brand.100">#E1E1F7</Color>
-    <Color x:Key="P.Color.Brand.200">#C5C4EF</Color>
-    <Color x:Key="P.Color.Brand.300">#9E9CE2</Color>
-    <Color x:Key="P.Color.Brand.400">#7C79D6</Color>
-    <Color x:Key="P.Color.Brand.500">#5F5BC7</Color>
-    <Color x:Key="P.Color.Brand.600">#4B46B4</Color>
-    <Color x:Key="P.Color.Brand.700">#3C3893</Color>
-    <Color x:Key="P.Color.Brand.800">#302D74</Color>
-    <Color x:Key="P.Color.Brand.900">#26245B</Color>
-    <Color x:Key="P.Color.Brand.950">#16153A</Color>
+    <!-- ===== الأساس — بترولي أخضر: طيف محاسبي/مؤسسي، لا الأزرق المستهلك ولا البنفسجي ===== -->
+    <Color x:Key="P.Color.Brand.50">#EAF4F1</Color>
+    <Color x:Key="P.Color.Brand.100">#CFE7E1</Color>
+    <Color x:Key="P.Color.Brand.200">#A5D0C7</Color>
+    <Color x:Key="P.Color.Brand.300">#6FB3A6</Color>
+    <Color x:Key="P.Color.Brand.400">#429486</Color>
+    <Color x:Key="P.Color.Brand.500">#1C7B6C</Color>
+    <Color x:Key="P.Color.Brand.600">#0F6B5C</Color>
+    <Color x:Key="P.Color.Brand.700">#0B5449</Color>
+    <Color x:Key="P.Color.Brand.800">#0A4239</Color>
+    <Color x:Key="P.Color.Brand.900">#08332C</Color>
+    <Color x:Key="P.Color.Brand.950">#04201B</Color>
 
     <!-- ===== المحايدات — رمادي دافئ، وأفتحها أبيض دافئ لا بارد ===== -->
     <Color x:Key="P.Color.Neutral.50">#FAF9F7</Color>
@@ -35,19 +35,19 @@
     <Color x:Key="P.Color.Neutral.900">#221F1C</Color>
     <Color x:Key="P.Color.Neutral.950">#14120F</Color>
 
-    <!-- ===== أسطح الوضع الداكن — مائلة قليلاً للنيلي فيبدو الوضعان من عائلة واحدة ===== -->
-    <Color x:Key="P.Color.NeutralDark.950">#0E0E16</Color>
-    <Color x:Key="P.Color.NeutralDark.900">#14141F</Color>
-    <Color x:Key="P.Color.NeutralDark.800">#1B1B29</Color>
-    <Color x:Key="P.Color.NeutralDark.700">#232235</Color>
-    <Color x:Key="P.Color.NeutralDark.600">#2C2B42</Color>
-    <Color x:Key="P.Color.NeutralDark.500">#3A3853</Color>
+    <!-- ===== أسطح الوضع الداكن — مائلة قليلاً لطيف الأساس فيبدو الوضعان من عائلة واحدة ===== -->
+    <Color x:Key="P.Color.NeutralDark.950">#0A100F</Color>
+    <Color x:Key="P.Color.NeutralDark.900">#0F1615</Color>
+    <Color x:Key="P.Color.NeutralDark.800">#151E1C</Color>
+    <Color x:Key="P.Color.NeutralDark.700">#1C2725</Color>
+    <Color x:Key="P.Color.NeutralDark.600">#243230</Color>
+    <Color x:Key="P.Color.NeutralDark.500">#31423F</Color>
 
-    <!-- ===== الشريط الجانبي — أعمق درجات النيلي، يحمل البنية ===== -->
-    <Color x:Key="P.Color.Nav.700">#262357</Color>
-    <Color x:Key="P.Color.Nav.800">#1E1C46</Color>
-    <Color x:Key="P.Color.Nav.900">#171536</Color>
-    <Color x:Key="P.Color.Nav.950">#100F26</Color>
+    <!-- ===== الشريط الجانبي — أعمق درجات الأساس، يحمل البنية ===== -->
+    <Color x:Key="P.Color.Nav.700">#0F3A33</Color>
+    <Color x:Key="P.Color.Nav.800">#0B2E29</Color>
+    <Color x:Key="P.Color.Nav.900">#08231F</Color>
+    <Color x:Key="P.Color.Nav.950">#051816</Color>
 
     <!-- ===== الحالات — محجوزة للمعنى، مخفوضة التشبّع كي لا تنافس الأساس ===== -->
     <Color x:Key="P.Color.Success.50">#EDF6F0</Color>
