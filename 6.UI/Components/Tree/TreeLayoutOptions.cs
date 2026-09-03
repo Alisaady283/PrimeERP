@@ -18,7 +18,10 @@ namespace PrimeERP.UI.Components.Tree
         Settings,
 
         /// <summary>شجرة قابلة للتأشير (صلاحيات الدور/المستخدم) عبر TreeCheckListRenderer.</summary>
-        TreeCheckList
+        TreeCheckList,
+
+        /// <summary>مستند كصفحة كاملة (رأس+سطور+فوتر) عبر DocumentPageRenderer بدل حوار.</summary>
+        DocumentPage
     }
 
     public enum SelectableRule { All, LeafOnly }

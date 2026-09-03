@@ -22,7 +22,17 @@ namespace PrimeERP.Composition.Renderers
     // حيّ في الواجهة عمداً — الخادم (JournalValidator) يرفض القيد غير المتوازن برسالة واضحة عند الحفظ.
     public static class DocumentRenderer
     {
-        public static bool ShowAndSave(DocumentDialogDefinition def, IServiceProvider services, IToastService toast, object editItem = null)
+        internal class DocumentEditor
+        {
+            public FrameworkElement Body;
+            public Dictionary<string, FrameworkElement> HeaderControls;
+            public List<(Grid Row, Dictionary<string, FrameworkElement> Controls)> Rows;
+            public object EditItem;
+            public bool IsEdit;
+        }
+
+        // بناء المحرِّر مفصول عن غلافه — الحوار والصفحة يستهلكانه معاً بلا تكرار.
+        internal static DocumentEditor BuildEditor(DocumentDialogDefinition def, IServiceProvider services, IToastService toast, object editItem)
         {
             bool isEdit = editItem != null;
 
@@ -35,7 +45,7 @@ namespace PrimeERP.Composition.Renderers
                 var service0 = services.GetRequiredService(def.ServiceType);
                 var getById = def.ServiceType.GetMethod("GetById", new[] { typeof(int) });
                 var detailResult = (Result)getById.Invoke(service0, new object[] { id });
-                if (!detailResult.IsSuccess) { toast.Error(detailResult.ErrorMessage); return false; }
+                if (!detailResult.IsSuccess) { toast.Error(detailResult.ErrorMessage); return null; }
                 editItem = detailResult.GetType().GetProperty("Value").GetValue(detailResult);
             }
 
@@ -147,17 +157,32 @@ namespace PrimeERP.Composition.Renderers
             body.Children.Add(new Separator { Margin = new Thickness(0, 4, 0, 12) });
             body.Children.Add(linesSection);
 
+            return new DocumentEditor
+            {
+                Body = body, HeaderControls = headerControls, Rows = rows,
+                EditItem = editItem, IsEdit = isEdit
+            };
+        }
+
+        internal static bool TrySaveEditor(DocumentDialogDefinition def, IServiceProvider services, IToastService toast, DocumentEditor editor) =>
+            TrySave(def, services, toast, editor.HeaderControls, editor.Rows, editor.EditItem, editor.IsEdit);
+
+        public static bool ShowAndSave(DocumentDialogDefinition def, IServiceProvider services, IToastService toast, object editItem = null)
+        {
+            var editor = BuildEditor(def, services, toast, editItem);
+            if (editor == null) return false;
+
             var btnCancel = new Btn { Text = LocalizationService.Get("Str.Cancel"), Variant = "secondary", Size = "sm" };
             var btnSave = new Btn { Text = LocalizationService.Get("Str.Save"), Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
 
-            var title = isEdit ? LocalizationService.Get(def.TitleEditKey) : LocalizationService.Get(def.TitleKey);
+            var title = editor.IsEdit ? LocalizationService.Get(def.TitleEditKey) : LocalizationService.Get(def.TitleKey);
             var footer = new StackPanel { Orientation = Orientation.Horizontal, Children = { btnCancel, btnSave } };
-            var window = new ComposedDialogWindow(title, body, footer, width: ComputeDialogWidth(def));
+            var window = new ComposedDialogWindow(title, editor.Body, footer, width: ComputeDialogWidth(def));
 
             btnCancel.Click += (_, __) => window.Close();
             btnSave.Click += (_, __) =>
             {
-                if (!TrySave(def, services, toast, headerControls, rows, editItem, isEdit)) return;
+                if (!TrySave(def, services, toast, editor.HeaderControls, editor.Rows, editor.EditItem, editor.IsEdit)) return;
                 window.Saved = true;
                 window.Close();
             };

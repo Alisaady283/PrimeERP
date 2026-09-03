@@ -178,6 +178,7 @@ namespace PrimeERP.Composition.Renderers
             [SettingKeys.Documents.JournalPrefix] = "بادئة قيود اليومية", [SettingKeys.Documents.SalesInvoicePrefix] = "بادئة فاتورة البيع",
             [SettingKeys.Documents.PurchaseInvoicePrefix] = "بادئة فاتورة الشراء", [SettingKeys.Documents.StockVoucherPrefix] = "بادئة إذن المخزون",
             [SettingKeys.Documents.NumberPadding] = "عدد أصفار الترقيم", [SettingKeys.Documents.ResetNumbersYearly] = "إعادة الترقيم كل سنة",
+            [SettingKeys.Documents.SimplifiedFlow] = "الوضع المبسّط (بلا طلب/أمر/أذون دورة)",
             [SettingKeys.Documents.CustomerPrefix] = "بادئة كود العميل", [SettingKeys.Documents.SupplierPrefix] = "بادئة كود المورد",
             [SettingKeys.Documents.ProductPrefix] = "بادئة كود الصنف",
 

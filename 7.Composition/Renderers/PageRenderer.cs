@@ -17,6 +17,7 @@ namespace PrimeERP.Composition.Renderers
                 LayoutKind.Report => ReportRenderer.Render(definition, services),
                 LayoutKind.Settings => SettingsPageRenderer.Render(definition, services),
                 LayoutKind.TreeCheckList => TreeCheckListRenderer.Render(definition, services),
+                LayoutKind.DocumentPage => DocumentPageRenderer.Render(definition, services),
                 _ => throw new NotSupportedException($"LayoutKind غير مدعوم: {definition.LayoutKind}")
             };
     }

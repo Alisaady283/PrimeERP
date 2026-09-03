@@ -13,7 +13,7 @@
         Width="440"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
-    <Border Margin="18" Background="{DynamicResource SurfaceDefault}"
+    <Border Margin="18" Background="{DynamicResource LoginBg}"
             CornerRadius="{DynamicResource P.Radius.Lg}"
             BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"
             Effect="{DynamicResource ShadowLg}">

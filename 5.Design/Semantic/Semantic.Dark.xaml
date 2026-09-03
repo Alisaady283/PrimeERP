@@ -45,6 +45,8 @@
     <SolidColorBrush x:Key="GridRowAltBg" Color="{DynamicResource P.Color.Neutral.50}"/>
 
     <SolidColorBrush x:Key="TreeFolder" Color="{DynamicResource P.Color.Folder}"/>
+    <SolidColorBrush x:Key="LoginBg" Color="{DynamicResource P.Color.LoginBg}"/>
+    <SolidColorBrush x:Key="FilterBarBg" Color="{DynamicResource P.Color.White}"/>
 
 
     <!-- ===== الحالات الدلالية (Semantic) ===== -->
