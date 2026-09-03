@@ -51,6 +51,9 @@
 
     <SolidColorBrush x:Key="TreeFolder" Color="{DynamicResource P.Color.Folder}"/>
 
+    <!-- هيدر شاشة الدخول — كحلي في الوضعين، فالنص الأبيض فوقه يقرأ دائماً. -->
+    <SolidColorBrush x:Key="LoginHeaderBg" Color="{DynamicResource P.Color.Nav.900}"/>
+
     <!-- ===== الحالات الدلالية (Semantic) ===== -->
     <SolidColorBrush x:Key="Success"         Color="{DynamicResource P.Color.Success.600}"/>
     <SolidColorBrush x:Key="SuccessHover"    Color="{DynamicResource P.Color.Success.700}"/>

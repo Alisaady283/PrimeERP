@@ -23,7 +23,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Background="{DynamicResource BrandDefault}"
+            <Border Grid.Row="0" Background="{DynamicResource LoginHeaderBg}"
                     CornerRadius="{DynamicResource C.Login.HeaderRadius}" Padding="28,26">
                 <StackPanel>
                     <TextBlock Text="{DynamicResource Str.AppName}" HorizontalAlignment="Center"

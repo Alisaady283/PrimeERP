@@ -61,9 +61,10 @@ namespace PrimeERP.Tests.Design
             });
         }
 
-        /// <summary>الوضع الداكن كان يُضاف فوق L3 فتبقى رموز C.* على قيم الفاتح — أي "بلا أثر".</summary>
+        /// <summary>القاعدة المتفق عليها: تبديل الوضع يغيّر الإطار (شريط جانبي/هيدر) ولا يمسّ أسطح البيانات.
+        /// كان التبديل بلا أثر إطلاقاً حين أُضيف قاموس الوضع فوق L3 بدل أن يكون جزءاً من بنائها.</summary>
         [Fact]
-        public void DarkMode_ActuallyChangesComponentTokens_AndLightRestoresThem()
+        public void SwitchingMode_ChangesChromeOnly_AndLightRestoresIt()
         {
             WpfApplicationFixture.Run(() =>
             {
@@ -71,18 +72,20 @@ namespace PrimeERP.Tests.Design
                 identity.Apply("Signature");
 
                 identity.ApplyMode(ThemeMode.Light);
-                var lightCanvas = Brush("C.Grid.Row.Bg").Color;
                 var lightNav = Brush("C.Nav.Surface").Color;
-                var lightText = Brush("C.Grid.Cell.Fg").Color;
+                var lightHeader = Brush("C.Grid.Header.Bg").Color;
+                var rowBg = Brush("C.Grid.Row.Bg").Color;
+                var cellFg = Brush("C.Grid.Cell.Fg").Color;
 
                 identity.ApplyMode(ThemeMode.Dark);
-                Assert.NotEqual(lightCanvas, Brush("C.Grid.Row.Bg").Color);
                 Assert.NotEqual(lightNav, Brush("C.Nav.Surface").Color);
-                Assert.NotEqual(lightText, Brush("C.Grid.Cell.Fg").Color);
+                Assert.NotEqual(lightHeader, Brush("C.Grid.Header.Bg").Color);
+                Assert.Equal(rowBg, Brush("C.Grid.Row.Bg").Color);
+                Assert.Equal(cellFg, Brush("C.Grid.Cell.Fg").Color);
 
                 identity.ApplyMode(ThemeMode.Light);
-                Assert.Equal(lightCanvas, Brush("C.Grid.Row.Bg").Color);
                 Assert.Equal(lightNav, Brush("C.Nav.Surface").Color);
+                Assert.Equal(lightHeader, Brush("C.Grid.Header.Bg").Color);
             });
         }
 
