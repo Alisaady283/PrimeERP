@@ -8,7 +8,6 @@
     <SolidColorBrush x:Key="C.Dialog.Footer.Bg"     Color="{DynamicResource SurfaceDefault.Color}"/>
     <SolidColorBrush x:Key="C.Dialog.Footer.Border" Color="{DynamicResource OutlineDefault.Color}"/>
 
-    <CornerRadius x:Key="C.Login.HeaderRadius">12,12,0,0</CornerRadius>
 
     <sys:Double x:Key="C.Dialog.Width.Sm">420</sys:Double>
     <sys:Double x:Key="C.Dialog.Width.Md">560</sys:Double>

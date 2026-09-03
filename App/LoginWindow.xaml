@@ -23,21 +23,18 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Background="{DynamicResource LoginHeaderBg}"
-                    CornerRadius="{DynamicResource C.Login.HeaderRadius}" Padding="28,26">
-                <StackPanel>
-                    <TextBlock Text="{DynamicResource Str.AppName}" HorizontalAlignment="Center"
-                               FontSize="{DynamicResource P.Font.Size.800}"
-                               FontFamily="{DynamicResource P.Font.Family.Display}"
-                               FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
-                               Foreground="{DynamicResource TextOnBrand}"/>
-                    <TextBlock Text="{DynamicResource Str.Login.Subtitle}" HorizontalAlignment="Center"
-                               Margin="{DynamicResource P.Space.1.Top}"
-                               FontSize="{DynamicResource P.Font.Size.300}"
-                               FontFamily="{DynamicResource P.Font.Family.Primary}"
-                               Foreground="{DynamicResource TextOnBrand}" Opacity="0.85"/>
-                </StackPanel>
-            </Border>
+            <StackPanel Grid.Row="0" Margin="28,30,28,4">
+                <TextBlock Text="{DynamicResource Str.AppName}" HorizontalAlignment="Center"
+                           FontSize="{DynamicResource P.Font.Size.800}"
+                           FontFamily="{DynamicResource P.Font.Family.Display}"
+                           FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
+                           Foreground="{DynamicResource TextPrimary}"/>
+                <TextBlock Text="{DynamicResource Str.Login.Subtitle}" HorizontalAlignment="Center"
+                           Margin="{DynamicResource P.Space.1.Top}"
+                           FontSize="{DynamicResource P.Font.Size.300}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           Foreground="{DynamicResource TextMuted}"/>
+            </StackPanel>
 
             <StackPanel Grid.Row="1" Margin="28,24,28,28">
                 <inputs:AppTextBox x:Name="txtUsername" Label="{DynamicResource Str.Login.Username}" IsRequired="True"

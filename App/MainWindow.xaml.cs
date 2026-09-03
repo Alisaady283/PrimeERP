@@ -34,6 +34,7 @@ namespace PrimeERP.App
             shell.UserRole = AppSession.RoleName;
 
             shell.NavItems = BuildNavGroups();
+            SyncThemeIndicator();
 
             var first = _registry.All().FirstOrDefault();
             if (first != null)
@@ -113,7 +114,13 @@ namespace PrimeERP.App
             identity.ApplyMode(identity.CurrentMode == PrimeERP.Platform.Design.ThemeMode.Dark
                 ? PrimeERP.Platform.Design.ThemeMode.Light
                 : PrimeERP.Platform.Design.ThemeMode.Dark);
+
+            SyncThemeIndicator();
         }
+
+        private void SyncThemeIndicator() =>
+            shell.IsDarkMode = _services.GetRequiredService<IIdentityService>().CurrentMode
+                               == PrimeERP.Platform.Design.ThemeMode.Dark;
 
         private void Shell_LogoutRequested(object sender, EventArgs e)
         {

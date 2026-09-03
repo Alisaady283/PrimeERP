@@ -36,6 +36,12 @@ namespace PrimeERP.UI.Components.Shell
             DependencyProperty.Register(nameof(UserRole), typeof(string), typeof(AppShell),
                 new PropertyMetadata("", (d, e) => ((AppShell)d).topBar.UserRole = (string)e.NewValue));
 
+        public static readonly DependencyProperty IsDarkModeProperty =
+            DependencyProperty.Register(nameof(IsDarkMode), typeof(bool), typeof(AppShell),
+                new PropertyMetadata(false, (d, e) => ((AppShell)d).topBar.IsDarkMode = (bool)e.NewValue));
+
+        public bool IsDarkMode { get => (bool)GetValue(IsDarkModeProperty); set => SetValue(IsDarkModeProperty, value); }
+
         public List<NavItem> NavItems    { get => (List<NavItem>)GetValue(NavItemsProperty);   set => SetValue(NavItemsProperty, value); }
         public object        CurrentPage { get => GetValue(CurrentPageProperty);                set => SetValue(CurrentPageProperty, value); }
         public string        SelectedKey { get => (string)GetValue(SelectedKeyProperty);        set => SetValue(SelectedKeyProperty, value); }

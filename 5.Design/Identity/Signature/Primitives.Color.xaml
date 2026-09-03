@@ -9,18 +9,18 @@
         تغيير هذا الملف وحده يعيد تلوين التطبيق كاملاً — L2/L3/L4 تشير إليه عبر DynamicResource حصراً.
     -->
 
-    <!-- ===== الأساس — كحلي مؤسسي: 600 هو #263254، والسلّم مبني حوله صعوداً ونزولاً ===== -->
-    <Color x:Key="P.Color.Brand.50">#EEF1F7</Color>
-    <Color x:Key="P.Color.Brand.100">#D8DFEC</Color>
-    <Color x:Key="P.Color.Brand.200">#B3C0DA</Color>
-    <Color x:Key="P.Color.Brand.300">#8195BE</Color>
-    <Color x:Key="P.Color.Brand.400">#556C9E</Color>
-    <Color x:Key="P.Color.Brand.500">#34497C</Color>
-    <Color x:Key="P.Color.Brand.600">#263254</Color>
-    <Color x:Key="P.Color.Brand.700">#1D2743</Color>
-    <Color x:Key="P.Color.Brand.800">#161E34</Color>
-    <Color x:Key="P.Color.Brand.900">#101728</Color>
-    <Color x:Key="P.Color.Brand.950">#0A0F1B</Color>
+    <!-- ===== الأساس — كل السلّم مبني على #0F2442 عند الدرجة 600 ===== -->
+    <Color x:Key="P.Color.Brand.50">#ECF0F6</Color>
+    <Color x:Key="P.Color.Brand.100">#D4DEEB</Color>
+    <Color x:Key="P.Color.Brand.200">#A9BDD6</Color>
+    <Color x:Key="P.Color.Brand.300">#7593BB</Color>
+    <Color x:Key="P.Color.Brand.400">#476C9B</Color>
+    <Color x:Key="P.Color.Brand.500">#234A75</Color>
+    <Color x:Key="P.Color.Brand.600">#0F2442</Color>
+    <Color x:Key="P.Color.Brand.700">#0C1D36</Color>
+    <Color x:Key="P.Color.Brand.800">#09172A</Color>
+    <Color x:Key="P.Color.Brand.900">#07121F</Color>
+    <Color x:Key="P.Color.Brand.950">#040A13</Color>
 
     <!-- ===== المحايدات — رمادي مائل للأزرق، فالنص نفسه كحلي داكن لا أسود ===== -->
     <Color x:Key="P.Color.Neutral.50">#F7F9FC</Color>
@@ -43,11 +43,11 @@
     <Color x:Key="P.Color.NeutralDark.600">#26324C</Color>
     <Color x:Key="P.Color.NeutralDark.500">#35425F</Color>
 
-    <!-- ===== الشريط الجانبي الداكن — 900 هو #002060 ===== -->
-    <Color x:Key="P.Color.Nav.700">#2A3E70</Color>
-    <Color x:Key="P.Color.Nav.800">#16295A</Color>
-    <Color x:Key="P.Color.Nav.900">#002060</Color>
-    <Color x:Key="P.Color.Nav.950">#00164A</Color>
+    <!-- ===== الشريط الجانبي — 900 هو #0F2442، و700 هو لون التمرير المشتقّ منه ===== -->
+    <Color x:Key="P.Color.Nav.700">#1E3D64</Color>
+    <Color x:Key="P.Color.Nav.800">#16304F</Color>
+    <Color x:Key="P.Color.Nav.900">#0F2442</Color>
+    <Color x:Key="P.Color.Nav.950">#0A1930</Color>
 
     <!-- ===== الحالات — محجوزة للمعنى، مخفوضة التشبّع كي لا تنافس الأساس ===== -->
     <Color x:Key="P.Color.Success.50">#EDF6F0</Color>

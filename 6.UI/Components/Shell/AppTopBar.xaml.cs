@@ -9,9 +9,13 @@ namespace PrimeERP.UI.Components.Shell
     /// <summary>شريط علوي عام — عنوان/breadcrumb، تاريخ هجري وميلادي، إشعارات، وقائمة مستخدم منسدلة.</summary>
     public partial class AppTopBar : UserControl
     {
-        private static readonly string[] UserMenuLabels =
+        private const string NightModeLabel = "الوضع الليلي";
+
+        private static string[] BuildUserMenu(bool darkMode) => new[]
         {
-            "الملف الشخصي", "تغيير كلمة المرور", "الوضع الليلي", "اللغة", "تسجيل الخروج"
+            "الملف الشخصي", "تغيير كلمة المرور",
+            darkMode ? NightModeLabel + "  ✓" : NightModeLabel,
+            "اللغة", "تسجيل الخروج"
         };
 
         public static readonly DependencyProperty BreadcrumbProperty =
@@ -33,6 +37,12 @@ namespace PrimeERP.UI.Components.Shell
         public static readonly DependencyProperty ShowDateProperty =
             DependencyProperty.Register(nameof(ShowDate), typeof(bool), typeof(AppTopBar),
                 new PropertyMetadata(true, (d, e) => ((AppTopBar)d).datePanel.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed));
+
+        public static readonly DependencyProperty IsDarkModeProperty =
+            DependencyProperty.Register(nameof(IsDarkMode), typeof(bool), typeof(AppTopBar),
+                new PropertyMetadata(false, (d, e) => ((AppTopBar)d).userMenu.Items = BuildUserMenu((bool)e.NewValue)));
+
+        public bool IsDarkMode { get => (bool)GetValue(IsDarkModeProperty); set => SetValue(IsDarkModeProperty, value); }
 
         public static readonly DependencyProperty NotificationCountProperty =
             DependencyProperty.Register(nameof(NotificationCount), typeof(int), typeof(AppTopBar),
@@ -75,7 +85,7 @@ namespace PrimeERP.UI.Components.Shell
         public AppTopBar()
         {
             InitializeComponent();
-            userMenu.Items = UserMenuLabels;
+            userMenu.Items = BuildUserMenu(IsDarkMode);
             RefreshDate();
         }
 
@@ -102,11 +112,15 @@ namespace PrimeERP.UI.Components.Shell
 
         private void userMenu_ItemSelected(object sender, object item)
         {
-            switch (item as string)
+            var label = item as string ?? "";
+
+            // بادئة لا مطابقة تامة — بند الوضع الليلي يحمل علامة صح حين يكون مفعّلاً.
+            if (label.StartsWith(NightModeLabel)) { ThemeToggled?.Invoke(this, EventArgs.Empty); return; }
+
+            switch (label)
             {
                 case "الملف الشخصي":       ProfileClicked?.Invoke(this, EventArgs.Empty); break;
                 case "تغيير كلمة المرور":  PasswordChangeRequested?.Invoke(this, EventArgs.Empty); break;
-                case "الوضع الليلي":       ThemeToggled?.Invoke(this, EventArgs.Empty); break;
                 case "اللغة":              LanguageToggled?.Invoke(this, EventArgs.Empty); break;
                 case "تسجيل الخروج":       LogoutRequested?.Invoke(this, EventArgs.Empty); break;
             }

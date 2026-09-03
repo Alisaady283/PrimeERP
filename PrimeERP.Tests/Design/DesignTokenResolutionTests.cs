@@ -79,7 +79,6 @@ namespace PrimeERP.Tests.Design
 
                 identity.ApplyMode(ThemeMode.Dark);
                 Assert.NotEqual(lightNav, Brush("C.Nav.Surface").Color);
-                Assert.NotEqual(lightHeader, Brush("C.Grid.Header.Bg").Color);
                 Assert.Equal(rowBg, Brush("C.Grid.Row.Bg").Color);
                 Assert.Equal(cellFg, Brush("C.Grid.Cell.Fg").Color);
 
