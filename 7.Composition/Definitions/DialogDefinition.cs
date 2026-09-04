@@ -40,6 +40,9 @@ namespace PrimeERP.Composition.Definitions
         public string VisibleWhenField { get; init; }
         public object VisibleWhenValue { get; init; }
 
+        /// <summary>بديل VisibleWhenValue لشرط غير مساواة بسيطة — يأخذ قيمة الحقل الحاكم والحاوية.</summary>
+        public Func<object, IServiceProvider, bool> VisibleWhen { get; init; }
+
         // Kind.Picker فقط — تُعاد تعبئة القائمة كلما تغيّرت قيمة هذا الحقل، وتُمرَّر قيمته كمرشِّح
         // (اختيار "بنك" يحصر قائمة الخزائن في الحسابات البنكية مثلاً).
         public string PickerFilterField { get; init; }

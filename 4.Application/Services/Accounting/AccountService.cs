@@ -160,6 +160,9 @@ namespace PrimeERP.Application.Services.Accounting
             if (!validation.IsValid)
                 return Result.Fail<AccountDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
 
+            // ابن أصل مرتبط (عميل/مورد/خزينة/بنك) كيان فعلي لا فئة — يقبل القيود دائماً، فلا معنى لتركه اختياراً.
+            if (IsLinkedRoot(parent.Code)) dto.IsLeaf = true;
+
             var link = ResolveAutoLink(dto.SkipAutoLink, parent.Code);
             if (!link.IsSuccess)
                 return Result.Fail<AccountDto>(link.ErrorMessage, link.ErrorCode);
@@ -478,6 +481,11 @@ namespace PrimeERP.Application.Services.Accounting
 
         /// <summary>أصول الشجرة المرتبطة بكيانات: مفتاح الإعداد الذي يحمل كود الأصل، والخدمة التي تملك الكيان.
         /// إضافة كيان مرتبط جديد = سطر هنا فقط، بلا أي فرع في Create/Update/Delete.</summary>
+        /// <summary>هل هذا الكود أحد أصول الكيانات المضبوطة في الإعدادات.</summary>
+        public bool IsLinkedRoot(string accountCode) =>
+            !string.IsNullOrWhiteSpace(accountCode) &&
+            SettingKeys.Accounts.LinkedRoots.Any(key => Setting(key, "") == accountCode);
+
         private static readonly (string SettingKey, Type ServiceType)[] LinkedRoots =
         {
             (SettingKeys.Accounts.Customers, typeof(ICustomerService)),
@@ -522,10 +530,10 @@ namespace PrimeERP.Application.Services.Accounting
         private const int MaxChildSuffix = 9999;
 
         private Result<string> GenerateChildCodeInternal(string parentCode) =>
-            BuildChildCode(_accounts.GetByCode(parentCode), _accounts.GetChildren(parentCode));
+            BuildChildCode(_accounts.GetByCode(parentCode), _accounts.GetAllChildren(parentCode));
 
         private Result<string> GenerateChildCodeInternal(DbConnection conn, DbTransaction tx, string parentCode) =>
-            BuildChildCode(_accounts.GetByCode(parentCode, conn, tx), _accounts.GetChildren(parentCode, conn, tx));
+            BuildChildCode(_accounts.GetByCode(parentCode, conn, tx), _accounts.GetAllChildren(parentCode, conn, tx));
 
         // عرض اللاحقة = مستوى الأب، يتّسع مع العمق بدل D3 ثابت.
         private static Result<string> BuildChildCode(Account parent, List<Account> children)

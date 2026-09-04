@@ -95,6 +95,11 @@ namespace PrimeERP.Data.Repositories
         public List<Account> GetChildren(string parentCode, DbConnection conn = null, DbTransaction tx = null) =>
             Query("SELECT * FROM Accounts WHERE ParentCode = @p AND IsActive = @a ORDER BY Code", conn, tx, ("@p", parentCode), ("@a", true));
 
+        // يشمل المعطَّل عمداً: الحذف تعطيل لا إزالة، وكوده يبقى محجوزاً بفهرس فريد — توليد كود جديد من
+        // الأبناء النشطين وحدهم كان يعيد استخدام كود محذوف فيُرفَض بـ"الكود مستخدم من قبل".
+        public List<Account> GetAllChildren(string parentCode, DbConnection conn = null, DbTransaction tx = null) =>
+            Query("SELECT * FROM Accounts WHERE ParentCode = @p ORDER BY Code", conn, tx, ("@p", parentCode));
+
         public List<Account> GetLeaves() =>
             Query("SELECT * FROM Accounts WHERE IsLeaf = @l AND IsActive = @a ORDER BY Code", null, null, ("@l", true), ("@a", true));
 

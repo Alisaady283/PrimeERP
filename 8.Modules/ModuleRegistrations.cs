@@ -145,7 +145,20 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreateAccountDto.ParentId), LabelKey = "Str.ParentAccount", Kind = FieldKind.Picker, IsRequired = true, IsReadOnlyOnEdit = true, PickerType = "Account" },
                         new() { Key = nameof(CreateAccountDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateAccountDto.IsLeaf), LabelKey = "Str.AcceptsEntries", Kind = FieldKind.Check },
+                        // يختفي تحت أصول الكيانات (عملاء/موردون/صناديق/بنوك): الابن هناك كيان فعلي يقبل
+                        // القيود دائماً، والخدمة تفرضها — فإظهار الخيار يوحي بقرار غير موجود.
+                        new() { Key = nameof(CreateAccountDto.IsLeaf), LabelKey = "Str.AcceptsEntries", Kind = FieldKind.Check,
+                                VisibleWhenField = nameof(CreateAccountDto.ParentId),
+                                VisibleWhen = (parentId, services) =>
+                                {
+                                    if (parentId == null || services == null) return true;
+
+                                    var accounts = (PrimeERP.Application.Services.Accounting.IAccountService)
+                                        services.GetService(typeof(PrimeERP.Application.Services.Accounting.IAccountService));
+                                    var parent = accounts?.GetById(System.Convert.ToInt32(parentId));
+
+                                    return parent?.IsSuccess != true || !accounts.IsLinkedRoot(parent.Value.Code);
+                                } },
                         new() { Key = nameof(CreateAccountDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea },
                     }.Concat(StandardFields.DialogFields()).ToList()
                 }

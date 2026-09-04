@@ -42,6 +42,7 @@ namespace PrimeERP.Application.Services.Accounting
         Result RecalculateAllBalances();
         Result<decimal> GetBalanceAsOf(string code, DateTime date);
         Result<List<AccountStatementLine>> GetStatement(string code, DateTime from, DateTime to);
+        bool IsLinkedRoot(string accountCode);
 
         // ===== المساعدات =====
         Result<bool> CanAcceptEntries(string code);

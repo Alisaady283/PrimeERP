@@ -12,6 +12,9 @@ namespace PrimeERP.Data.Repositories
         Account GetById(int id, DbConnection conn = null, DbTransaction tx = null);
         Account GetByCode(string code, DbConnection conn = null, DbTransaction tx = null);
         List<Account> GetChildren(string parentCode, DbConnection conn = null, DbTransaction tx = null);
+
+        /// <summary>يشمل المعطَّل — توليد كود ابن جديد يجب ألا يعيد استخدام كود محذوف (محجوز بفهرس فريد).</summary>
+        List<Account> GetAllChildren(string parentCode, DbConnection conn = null, DbTransaction tx = null);
         List<Account> GetLeaves();
         int GetLevel(string code);
         int GetTypeOf(string code);

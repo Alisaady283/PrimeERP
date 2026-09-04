@@ -103,5 +103,20 @@ namespace PrimeERP.Tests.Services
             Assert.Contains("9999", created.ErrorMessage);
             Assert.DoesNotContain(treasuries.GetAll(includeInactive: true).Value, t => t.Name == "بنك بلا أصل");
         }
+
+        [Fact]
+        public void DeletingATreasuryThenAddingAnother_DoesNotReuseTheFreedAccountCode()
+        {
+            var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
+
+            var first = treasuries.Create(new CreateTreasuryDto { Name = "بنك أول", IsBank = true, IsActive = true });
+            Assert.True(first.IsSuccess, first.ErrorMessage);
+
+            Assert.True(treasuries.Delete(first.Value.Id).IsSuccess);
+
+            var second = treasuries.Create(new CreateTreasuryDto { Name = "بنك ثانٍ", IsBank = true, IsActive = true });
+            Assert.True(second.IsSuccess, second.ErrorMessage);
+            Assert.NotEqual(first.Value.AccountCode, second.Value.AccountCode);
+        }
     }
 }

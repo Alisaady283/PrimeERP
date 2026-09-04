@@ -195,7 +195,7 @@ namespace PrimeERP.Composition.Renderers
                 if (isEdit && field.IsReadOnlyOnEdit) control.IsEnabled = false;
             }
 
-            ApplyConditionalVisibility(fieldDefs, controls);
+            ApplyConditionalVisibility(fieldDefs, controls, services);
             ApplyPickerFilters(fieldDefs, controls, services);
             return controls;
         }
@@ -228,9 +228,9 @@ namespace PrimeERP.Composition.Renderers
 
         /// <summary>يُظهر/يُخفي الحقول المشروطة ويعيد التقييم كلما تغيّر الحقل الحاكم — الشرط مُعلَن في التعريف
         /// لا مكتوب يدوياً لكل شاشة.</summary>
-        internal static void ApplyConditionalVisibility(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> controls)
+        internal static void ApplyConditionalVisibility(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> controls, IServiceProvider services = null)
         {
-            var conditional = fieldDefs.Where(f => !string.IsNullOrEmpty(f.VisibleWhenField)).ToList();
+            var conditional = fieldDefs.Where(f => !string.IsNullOrEmpty(f.VisibleWhenField) || f.VisibleWhen != null).ToList();
             if (conditional.Count == 0) return;
 
             void Evaluate()
@@ -241,7 +241,9 @@ namespace PrimeERP.Composition.Renderers
 
                     var sourceField = fieldDefs.First(f => f.Key == field.VisibleWhenField);
                     var current = GetControlValue(source, sourceField.Kind);
-                    var matches = current != null && current.ToString() == field.VisibleWhenValue?.ToString();
+                    var matches = field.VisibleWhen != null
+                        ? field.VisibleWhen(current, services)
+                        : current != null && current.ToString() == field.VisibleWhenValue?.ToString();
                     controls[field.Key].Visibility = matches ? Visibility.Visible : Visibility.Collapsed;
                 }
             }
