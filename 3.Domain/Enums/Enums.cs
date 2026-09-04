@@ -34,7 +34,8 @@ namespace PrimeERP.Domain.Enums
     {
         Cash   = 1,
         Bank   = 2,
-        Credit = 3
+        Credit = 3,
+        Cheque = 4
     }
 
     public enum JournalSource
@@ -90,6 +91,43 @@ namespace PrimeERP.Domain.Enums
         FIFO            = 1,
         WeightedAverage = 2,
         Standard        = 3
+    }
+
+    public enum TreasuryKind
+    {
+        Cash = 1,
+        Bank = 2
+    }
+
+    public enum VoucherKind
+    {
+        Receipt = 1,
+        Payment = 2
+    }
+
+    public enum PartyKind
+    {
+        Customer = 1,
+        Supplier = 2,
+        Other    = 3
+    }
+
+    public enum ChequeDirection
+    {
+        Incoming = 1,
+        Outgoing = 2
+    }
+
+    /// <summary>حالات الشيك — الوارد يبدأ InHand، الصادر يبدأ Issued. كل انتقال يُسجَّل كحركة مستقلة.</summary>
+    public enum ChequeStatus
+    {
+        InHand    = 1,
+        Deposited = 2,
+        Collected = 3,
+        Bounced   = 4,
+        Returned  = 5,
+        Issued    = 6,
+        Paid      = 7
     }
 
     public enum MovementType

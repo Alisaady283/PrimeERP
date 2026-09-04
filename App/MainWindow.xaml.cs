@@ -61,6 +61,7 @@ namespace PrimeERP.App
             ["StockIn"] = "IconWarehouse", ["StockOut"] = "IconWarehouse", ["StockTransfer"] = "IconWarehouse",
             ["GoodsReceipt"] = "IconWarehouse", ["GoodsIssue"] = "IconWarehouse",
             ["DeliveryNote"] = "IconWarehouse", ["SalesReceipt"] = "IconWarehouse",
+            ["Treasuries"] = "IconAccounts", ["Receipts"] = "IconJournal", ["Payments"] = "IconJournal", ["Cheques"] = "IconJournal",
             ["Settings"] = "IconSettings", ["Users"] = "IconUsers", ["Roles"] = "IconLock",
             ["RolePermissions"] = "IconLock", ["UserPermissions"] = "IconLock",
         };
@@ -76,6 +77,7 @@ namespace PrimeERP.App
                 ("المبيعات", "IconSales", new[] { "Quotation", "SalesOrder", "SalesInvoices", "SalesReturns", "Customers" }),
                 ("المشتريات", "IconPurchases", new[] { "PurchaseRequest", "PurchaseOrder", "PurchaseInvoices", "PurchaseReturns", "Suppliers" }),
                 ("المخزون", "IconWarehouse", new[] { "Products", "Categories", "Brands", "Units", "Warehouses", "StockIn", "StockOut", "StockTransfer", "GoodsReceipt", "GoodsIssue", "DeliveryNote", "SalesReceipt" }),
+                ("الخزينة", "IconAccounts", new[] { "Treasuries", "Receipts", "Payments", "Cheques" }),
                 ("الأصول", "IconAssets", new[] { "Assets", "AssetCategories" }),
                 ("الموارد", "IconHR", new[] { "Employees", "Departments", "JobTitles", "Payroll" }),
                 ("التقارير", "IconReports", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "AccountStatement", "CustomerStatement", "SupplierStatement", "ItemCard", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport" }),

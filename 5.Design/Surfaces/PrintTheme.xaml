@@ -40,9 +40,11 @@
     <SolidColorBrush x:Key="InfoSoft"     Color="#ECFEFF"/>
     <SolidColorBrush x:Key="InfoSoftText" Color="#0E7490"/>
 
-    <SolidColorBrush x:Key="BrandSolid"    Color="#2563EB"/>
-    <SolidColorBrush x:Key="BrandSoft"     Color="#EFF6FF"/>
-    <SolidColorBrush x:Key="BrandSoftText" Color="#1D4ED8"/>
+    <SolidColorBrush x:Key="BrandSolid"    Color="#0F2442"/>
+    <SolidColorBrush x:Key="BrandSoft"     Color="#EEF2F7"/>
+    <SolidColorBrush x:Key="BrandSoftText" Color="#1E3D64"/>
+    <SolidColorBrush x:Key="OnBrandText"   Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="OnBrandMuted"  Color="#C9D6E6"/>
 
     <SolidColorBrush x:Key="SuccessSolid"    Color="#16A34A"/>
     <SolidColorBrush x:Key="SuccessSoft"     Color="#F0FDF4"/>

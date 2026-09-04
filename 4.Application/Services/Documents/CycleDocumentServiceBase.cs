@@ -33,14 +33,15 @@ namespace PrimeERP.Application.Services.Documents
         private readonly INumberSequenceService _numbers;
         private readonly IPermissionService _permissions;
         private readonly IAuditLogger _audit;
+        private readonly IDocumentLinkService _links;
         private readonly string _sequenceKey, _permissionPrefix, _entityName;
         private readonly bool _partyRequired;
 
         protected CycleDocumentServiceBase(TRepo repo, IProductRepository products, INumberSequenceService numbers,
-            IPermissionService permissions, IAuditLogger audit, string sequenceKey, string permissionPrefix,
-            string entityName, bool partyRequired)
+            IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links, string sequenceKey,
+            string permissionPrefix, string entityName, bool partyRequired)
         {
-            Repo = repo; _products = products; _numbers = numbers; _permissions = permissions; _audit = audit;
+            Repo = repo; _products = products; _numbers = numbers; _permissions = permissions; _audit = audit; _links = links;
             _sequenceKey = sequenceKey; _permissionPrefix = permissionPrefix; _entityName = entityName; _partyRequired = partyRequired;
         }
 
@@ -70,7 +71,7 @@ namespace PrimeERP.Application.Services.Documents
                 TotalQty = lines.Sum(l => l.Qty), Total = lines.Sum(l => l.Qty * l.UnitPrice), CreatedAt = doc.CreatedAt,
                 Lines = lines.Select(l => new CycleDocumentLineDto
                 {
-                    LineNo = l.LineNo, ProductCode = l.ProductCode, ProductName = l.ProductName,
+                    Id = l.Id, LineNo = l.LineNo, ProductCode = l.ProductCode, ProductName = l.ProductName,
                     Qty = l.Qty, UnitPrice = l.UnitPrice, Notes = l.Notes
                 }).ToList()
             });
@@ -85,6 +86,7 @@ namespace PrimeERP.Application.Services.Documents
                 return Result.Fail<CycleDocumentDetailDto>("الطرف إلزامي في هذا المستند", ErrorCode.ValidationFailed);
 
             var resolved = new List<CycleDocumentLine>();
+            var pulls = new List<CreateCycleDocumentLineDto>();
             var lineNo = 1;
             foreach (var l in dto.Lines)
             {
@@ -94,11 +96,17 @@ namespace PrimeERP.Application.Services.Documents
                 if (l.Qty <= 0)
                     return Result.Fail<CycleDocumentDetailDto>("الكمية يجب أن تكون أكبر من صفر", ErrorCode.ValidationFailed);
 
+                // التحقق من المتبقي على المصدر هنا لا في الواجهة فقط — الواجهة تمنع الخطأ، والخدمة تمنع الالتفاف عليها.
+                var pullCheck = _links.ValidatePull(l.SourceType, l.SourceId, l.SourceLineId, l.Qty, l.SourceNo);
+                if (pullCheck.IsFailure)
+                    return Result.Fail<CycleDocumentDetailDto>(pullCheck.ErrorMessage, pullCheck.ErrorCode);
+
                 resolved.Add(new CycleDocumentLine
                 {
                     LineNo = lineNo++, ProductId = product.Id, ProductCode = product.Code, ProductName = product.Name,
                     Qty = l.Qty, UnitPrice = l.UnitPrice, Notes = l.Notes
                 });
+                pulls.Add(l);
             }
 
             var docId = Db.RunTransaction((conn, tx) =>
@@ -113,7 +121,21 @@ namespace PrimeERP.Application.Services.Documents
                 };
 
                 var id = Repo.InsertHeader(conn, tx, doc);
-                foreach (var line in resolved) Repo.InsertLine(conn, tx, id, line);
+                var links = new List<DocumentLink>();
+                for (int i = 0; i < resolved.Count; i++)
+                {
+                    var lineId = Repo.InsertLine(conn, tx, id, resolved[i]);
+                    var pull = pulls[i];
+                    if (pull.SourceLineId <= 0) continue;
+
+                    links.Add(new DocumentLink
+                    {
+                        SourceType = pull.SourceType, SourceId = pull.SourceId, SourceNo = pull.SourceNo,
+                        SourceLineId = pull.SourceLineId, TargetType = _entityName, TargetId = id,
+                        TargetLineId = lineId, PulledQty = resolved[i].Qty
+                    });
+                }
+                _links.RecordPull(links, conn, tx);
                 return id;
             });
 
@@ -126,7 +148,7 @@ namespace PrimeERP.Application.Services.Documents
             if (!Can("Edit")) return Result.Fail("لا صلاحية", ErrorCode.Unauthorized);
             if (Repo.GetById(dto.Id) == null) return Result.Fail("المستند غير موجود", ErrorCode.NotFound);
 
-            Repo.DeleteDocument(dto.Id);
+            DeleteWithLinks(dto.Id);
             var recreated = Create(dto);
             return recreated.IsSuccess ? Result.Ok() : Result.Fail(recreated.ErrorMessage, recreated.ErrorCode);
         }
@@ -136,10 +158,17 @@ namespace PrimeERP.Application.Services.Documents
             if (!Can("Delete")) return Result.Fail("لا صلاحية", ErrorCode.Unauthorized);
             if (Repo.GetById(id) == null) return Result.Fail("المستند غير موجود", ErrorCode.NotFound);
 
-            Repo.DeleteDocument(id);
+            DeleteWithLinks(id);
             _audit.Log(_entityName, id, AuditAction.Delete);
             return Result.Ok();
         }
+
+        // حذف المستند وتحرير ما سحبه ذرّياً — بعدها يعود المتبقي على المصدر تلقائياً لأنه محسوب لا مخزَّن.
+        private void DeleteWithLinks(int id) => Db.RunTransaction((conn, tx) =>
+        {
+            _links.RemovePull(_entityName, id, conn, tx);
+            Repo.DeleteDocument(conn, tx, id);
+        });
 
         private CycleDocumentDto ToDto(CycleDocument d)
         {
@@ -155,28 +184,28 @@ namespace PrimeERP.Application.Services.Documents
     public class PurchaseRequestService : CycleDocumentServiceBase<IPurchaseRequestRepository>, IPurchaseRequestService
     {
         public PurchaseRequestService(IPurchaseRequestRepository repo, IProductRepository products, INumberSequenceService numbers,
-            IPermissionService permissions, IAuditLogger audit)
-            : base(repo, products, numbers, permissions, audit, "PurchaseRequest", "Purchases", "PurchaseRequest", partyRequired: false) { }
+            IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, numbers, permissions, audit, links, "PurchaseRequest", "Purchases", "PurchaseRequest", partyRequired: false) { }
     }
 
     public class PurchaseOrderService : CycleDocumentServiceBase<IPurchaseOrderRepository>, IPurchaseOrderService
     {
         public PurchaseOrderService(IPurchaseOrderRepository repo, IProductRepository products, INumberSequenceService numbers,
-            IPermissionService permissions, IAuditLogger audit)
-            : base(repo, products, numbers, permissions, audit, "PurchaseOrder", "Purchases", "PurchaseOrder", partyRequired: true) { }
+            IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, numbers, permissions, audit, links, "PurchaseOrder", "Purchases", "PurchaseOrder", partyRequired: true) { }
     }
 
     public class QuotationService : CycleDocumentServiceBase<IQuotationRepository>, IQuotationService
     {
         public QuotationService(IQuotationRepository repo, IProductRepository products, INumberSequenceService numbers,
-            IPermissionService permissions, IAuditLogger audit)
-            : base(repo, products, numbers, permissions, audit, "Quotation", "Sales", "Quotation", partyRequired: false) { }
+            IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, numbers, permissions, audit, links, "Quotation", "Sales", "Quotation", partyRequired: false) { }
     }
 
     public class SalesOrderService : CycleDocumentServiceBase<ISalesOrderRepository>, ISalesOrderService
     {
         public SalesOrderService(ISalesOrderRepository repo, IProductRepository products, INumberSequenceService numbers,
-            IPermissionService permissions, IAuditLogger audit)
-            : base(repo, products, numbers, permissions, audit, "SalesOrder", "Sales", "SalesOrder", partyRequired: true) { }
+            IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, numbers, permissions, audit, links, "SalesOrder", "Sales", "SalesOrder", partyRequired: true) { }
     }
 }

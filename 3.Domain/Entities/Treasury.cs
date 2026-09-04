@@ -1,0 +1,19 @@
+using PrimeERP.Domain.Entities.Common;
+using PrimeERP.Domain.Enums;
+
+namespace PrimeERP.Domain.Entities
+{
+    /// <summary>خزينة/صندوق أو حساب بنكي — AccountCode يربطها بحسابها في شجرة الحسابات، فتصبح هي طرف
+    /// النقدية في قيود السندات بدل حساب عام واحد لكل النظام.</summary>
+    public class Treasury : BaseModel
+    {
+        public string       Code          { get; set; }
+        public string       Name          { get; set; }
+        public TreasuryKind Kind          { get; set; } = TreasuryKind.Cash;
+        public string       AccountCode   { get; set; }
+        public string       BankName      { get; set; }
+        public string       AccountNumber { get; set; }
+        public string       Notes         { get; set; }
+        public bool         IsActive      { get; set; } = true;
+    }
+}

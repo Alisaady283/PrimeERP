@@ -40,6 +40,11 @@ namespace PrimeERP.Composition.Renderers
                 ToolbarAction.Delete((ICommand)vm.DeleteCommand, $"{definition.PermissionPrefix}.Delete"),
                 ToolbarAction.Refresh((ICommand)vm.RefreshCommand),
             };
+
+            // زر الطباعة يظهر فقط لوحدات المستندات — القوائم المجرّدة (أصناف/عملاء) لا ورق لها.
+            if (definition.DocumentDialog != null)
+                actions.Insert(3, ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(_ =>
+                    DocumentPrinter.PrintSelected(definition, services, vm.SelectedItem as object)), $"{definition.PermissionPrefix}.View"));
             header.ActionsContent = new ActionToolbar { ButtonsSource = actions };
 
             var filterBar = new FilterBar { SearchPlaceholder = LocalizationService.Get("Str.Search") };

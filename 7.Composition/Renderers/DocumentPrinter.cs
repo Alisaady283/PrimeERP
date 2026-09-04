@@ -1,0 +1,41 @@
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using PrimeERP.Application.Services.Print;
+using PrimeERP.Composition.Definitions;
+using PrimeERP.Composition.Print;
+using PrimeERP.Domain.Results;
+using PrimeERP.Platform.Localization;
+using PrimeERP.UI.Services;
+
+namespace PrimeERP.Composition.Renderers
+{
+    /// <summary>يجلب المستند الكامل من خدمته ثم يطبعه عبر القالب العام — نقطة واحدة تستهلكها شاشة القائمة
+    /// وصفحة المستند معاً.</summary>
+    public static class DocumentPrinter
+    {
+        public static void PrintSelected(ModuleDefinition definition, IServiceProvider services, object item)
+        {
+            var toast = services.GetRequiredService<IToastService>();
+            var def = definition.DocumentDialog;
+
+            if (def == null) { toast.Error("لا مستند قابل للطباعة في هذه الشاشة"); return; }
+            if (item == null) { toast.Error("اختر مستنداً أولاً"); return; }
+
+            var id = item.GetType().GetProperty("Id")?.GetValue(item);
+            if (id == null) { toast.Error("المستند بلا معرّف"); return; }
+
+            var service = services.GetRequiredService(def.ServiceType);
+            var getById = def.ServiceType.GetMethod("GetById", new[] { typeof(int) });
+            var result = (Result)getById.Invoke(service, new object[] { (int)id });
+            if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
+
+            var document = result.GetType().GetProperty("Value").GetValue(result);
+            var title = LocalizationService.Get(def.TitleKey);
+
+            var printed = services.GetRequiredService<IPrintService>()
+                .PrintPreview(DocumentPrintTemplate.From(def, title, document));
+
+            if (printed.IsFailure) toast.Error(printed.ErrorMessage);
+        }
+    }
+}

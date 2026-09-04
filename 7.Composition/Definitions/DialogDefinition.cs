@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Composition.Definitions
 {
-    public enum FieldKind { Text, Number, Check, TextArea, ReadOnly, Picker, Date, Password }
+    public enum FieldKind { Text, Number, Check, TextArea, ReadOnly, Picker, Date, Password, Image }
 
     public class FieldDefinition
     {

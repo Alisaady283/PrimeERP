@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Inventory;
+using PrimeERP.Application.Services.Documents;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
@@ -23,15 +24,16 @@ namespace PrimeERP.Application.Services.Inventory
         private readonly INumberSequenceService _numbers;
         private readonly IPermissionService _permissions;
         private readonly IAuditLogger _audit;
+        private readonly IDocumentLinkService _links;
         private readonly MovementType _direction;
         private readonly string _sequenceKey, _permissionAction, _entityName;
 
         protected StockAdjustmentServiceBase(TRepo repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit,
+            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links,
             MovementType direction, string sequenceKey, string permissionAction, string entityName)
         {
             Repo = repo; _products = products; _warehouses = warehouses; _stock = stock; _numbers = numbers;
-            _permissions = permissions; _audit = audit; _direction = direction;
+            _permissions = permissions; _audit = audit; _links = links; _direction = direction;
             _sequenceKey = sequenceKey; _permissionAction = permissionAction; _entityName = entityName;
         }
 
@@ -59,7 +61,7 @@ namespace PrimeERP.Application.Services.Inventory
                 Id = baseDto.Id, DocNo = baseDto.DocNo, MovementDate = baseDto.MovementDate, WarehouseId = baseDto.WarehouseId,
                 WarehouseName = baseDto.WarehouseName, TotalQty = baseDto.TotalQty, CreatedAt = baseDto.CreatedAt,
                 Lines = Repo.GetLines(id).Select(l => new StockAdjustmentLineDto
-                { LineNo = l.LineNo, ProductCode = l.ProductCode, ProductName = l.ProductName, Qty = l.Qty, UnitCost = l.UnitCost, Notes = l.Notes }).ToList()
+                { Id = l.Id, LineNo = l.LineNo, ProductCode = l.ProductCode, ProductName = l.ProductName, Qty = l.Qty, UnitCost = l.UnitCost, Notes = l.Notes }).ToList()
             });
         }
 
@@ -69,6 +71,7 @@ namespace PrimeERP.Application.Services.Inventory
             if (dto.Lines == null || dto.Lines.Count == 0) return Result.Fail<StockAdjustmentDetailDto>("المستند يحتاج سطراً واحداً على الأقل", ErrorCode.ValidationFailed);
 
             var resolvedLines = new List<StockAdjustmentLine>();
+            var pulls = new List<CreateStockAdjustmentLineDto>();
             foreach (var l in dto.Lines)
             {
                 var product = _products.GetByCode(l.ProductCode);
@@ -80,6 +83,10 @@ namespace PrimeERP.Application.Services.Inventory
                     LineNo = l.LineNo, ProductId = product.Id, ProductCode = product.Code, ProductName = product.Name,
                     Qty = l.Qty, UnitCost = l.UnitCost > 0 ? l.UnitCost : product.CostPrice, Notes = l.Notes
                 });
+
+                var pullCheck = _links.ValidatePull(l.SourceType, l.SourceId, l.SourceLineId, l.Qty, l.SourceNo);
+                if (pullCheck.IsFailure) return Result.Fail<StockAdjustmentDetailDto>(pullCheck.ErrorMessage, pullCheck.ErrorCode);
+                pulls.Add(l);
             }
 
             int docId;
@@ -91,12 +98,23 @@ namespace PrimeERP.Application.Services.Inventory
                     var doc = new StockAdjustment { DocNo = docNo, MovementDate = dto.MovementDate, WarehouseId = dto.WarehouseId, Notes = dto.Notes, CreatedBy = AppSession.Username };
                     var id = Repo.InsertHeader(conn, tx, doc);
 
-                    foreach (var line in resolvedLines)
+                    var links = new List<DocumentLink>();
+                    for (int i = 0; i < resolvedLines.Count; i++)
                     {
-                        Repo.InsertLine(conn, tx, id, line);
+                        var line = resolvedLines[i];
+                        var lineId = Repo.InsertLine(conn, tx, id, line);
                         var moveResult = _stock.RecordMovement(conn, tx, line.ProductId, dto.WarehouseId, _direction, line.Qty, line.UnitCost, _entityName, id, docNo, dto.MovementDate);
                         if (!moveResult.IsSuccess) throw new InvalidOperationException(moveResult.ErrorMessage);
+
+                        if (pulls[i].SourceLineId <= 0) continue;
+                        links.Add(new DocumentLink
+                        {
+                            SourceType = pulls[i].SourceType, SourceId = pulls[i].SourceId, SourceNo = pulls[i].SourceNo,
+                            SourceLineId = pulls[i].SourceLineId, TargetType = _entityName, TargetId = id,
+                            TargetLineId = lineId, PulledQty = line.Qty
+                        });
                     }
+                    _links.RecordPull(links, conn, tx);
 
                     return id;
                 });
@@ -125,42 +143,42 @@ namespace PrimeERP.Application.Services.Inventory
     public class StockInService : StockAdjustmentServiceBase<IStockInRepository>, IStockInService
     {
         public StockInService(IStockInRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit)
-            : base(repo, products, warehouses, stock, numbers, permissions, audit, MovementType.In, "StockIn", "StockIn", "StockIn") { }
+            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, warehouses, stock, numbers, permissions, audit, links, MovementType.In, "StockIn", "StockIn", "StockIn") { }
     }
 
     public class StockOutService : StockAdjustmentServiceBase<IStockOutRepository>, IStockOutService
     {
         public StockOutService(IStockOutRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit)
-            : base(repo, products, warehouses, stock, numbers, permissions, audit, MovementType.Out, "StockOut", "StockOut", "StockOut") { }
+            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, warehouses, stock, numbers, permissions, audit, links, MovementType.Out, "StockOut", "StockOut", "StockOut") { }
     }
 
     public class GoodsReceiptService : StockAdjustmentServiceBase<IGoodsReceiptRepository>, IGoodsReceiptService
     {
         public GoodsReceiptService(IGoodsReceiptRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit)
-            : base(repo, products, warehouses, stock, numbers, permissions, audit, MovementType.In, "GoodsReceipt", "GoodsReceipt", "GoodsReceipt") { }
+            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, warehouses, stock, numbers, permissions, audit, links, MovementType.In, "GoodsReceipt", "GoodsReceipt", "GoodsReceipt") { }
     }
 
     public class GoodsIssueService : StockAdjustmentServiceBase<IGoodsIssueRepository>, IGoodsIssueService
     {
         public GoodsIssueService(IGoodsIssueRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit)
-            : base(repo, products, warehouses, stock, numbers, permissions, audit, MovementType.Out, "GoodsIssue", "GoodsIssue", "GoodsIssue") { }
+            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, warehouses, stock, numbers, permissions, audit, links, MovementType.Out, "GoodsIssue", "GoodsIssue", "GoodsIssue") { }
     }
 
     public class DeliveryNoteService : StockAdjustmentServiceBase<IDeliveryNoteRepository>, IDeliveryNoteService
     {
         public DeliveryNoteService(IDeliveryNoteRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit)
-            : base(repo, products, warehouses, stock, numbers, permissions, audit, MovementType.Out, "DeliveryNote", "DeliveryNote", "DeliveryNote") { }
+            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, warehouses, stock, numbers, permissions, audit, links, MovementType.Out, "DeliveryNote", "DeliveryNote", "DeliveryNote") { }
     }
 
     public class SalesReceiptService : StockAdjustmentServiceBase<ISalesReceiptRepository>, ISalesReceiptService
     {
         public SalesReceiptService(ISalesReceiptRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit)
-            : base(repo, products, warehouses, stock, numbers, permissions, audit, MovementType.In, "SalesReceipt", "SalesReceipt", "SalesReceipt") { }
+            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, warehouses, stock, numbers, permissions, audit, links, MovementType.In, "SalesReceipt", "SalesReceipt", "SalesReceipt") { }
     }
 }

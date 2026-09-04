@@ -15,6 +15,10 @@ namespace PrimeERP.Platform.Settings
             public const string Phone             = "Company.Phone";
             public const string Email             = "Company.Email";
             public const string LogoPath          = "Company.LogoPath";
+
+            /// <summary>الشعار نفسه Base64 داخل قاعدة البيانات لا مساراً على القرص — ينجو مع النسخة الاحتياطية
+            /// وينتقل مع النظام لجهاز آخر، بخلاف ملف خارجي يضيع بصمت وقت الطباعة.</summary>
+            public const string LogoData          = "Company.LogoData";
         }
 
         public static class Financial
@@ -54,6 +58,11 @@ namespace PrimeERP.Platform.Settings
             public const string RetainedEarnings = "Accounts.RetainedEarnings";
             public const string VATInput         = "Accounts.VATInput";
             public const string VATOutput        = "Accounts.VATOutput";
+
+            /// <summary>حسابات دورة الشيكات — بالمحفظة (وارد لم يودَع)، تحت التحصيل (مودع بالبنك)، وشيكات الدفع (صادر).</summary>
+            public const string ChequesInHand          = "Accounts.ChequesInHand";
+            public const string ChequesUnderCollection = "Accounts.ChequesUnderCollection";
+            public const string ChequesPayable         = "Accounts.ChequesPayable";
 
             /// <summary>false يعطّل الربط التلقائي (حساب↔عميل/مورد) كلياً وبصمت — true (الافتراضي) يفرض نجاح الربط أو Fail صريح، لا سكوت.</summary>
             public const string AutoLinkEnabled  = "Accounts.AutoLinkEnabled";
@@ -125,6 +134,7 @@ namespace PrimeERP.Platform.Settings
             new(Company.Phone,          "",               "string", "Company"),
             new(Company.Email,          "",               "string", "Company"),
             new(Company.LogoPath,       "",               "string", "Company"),
+            new(Company.LogoData,       "",               "string", "Company"),
 
             new(Financial.BaseCurrencyId,       "1",               "int",    "Financial", IsSystem: true),
             new(Financial.DecimalPlaces,        "2",               "int",    "Financial"),
@@ -149,6 +159,9 @@ namespace PrimeERP.Platform.Settings
             new(Accounts.RetainedEarnings, "32",   "string", "Accounts", IsSystem: true),
             new(Accounts.VATInput,         "",     "string", "Accounts", IsSystem: true),
             new(Accounts.VATOutput,        "",     "string", "Accounts", IsSystem: true),
+            new(Accounts.ChequesInHand,          "", "string", "Accounts", IsSystem: true),
+            new(Accounts.ChequesUnderCollection, "", "string", "Accounts", IsSystem: true),
+            new(Accounts.ChequesPayable,         "", "string", "Accounts", IsSystem: true),
             new(Accounts.AutoLinkEnabled,  "true", "bool",   "Accounts"),
 
             new(Documents.JournalPrefix,         "JE",   "string", "Documents"),

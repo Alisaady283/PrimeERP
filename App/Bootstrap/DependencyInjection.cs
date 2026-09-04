@@ -67,6 +67,9 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IWarehouseRepository, WarehouseRepository>();
             services.AddSingleton<IStockMovementRepository, StockMovementRepository>();
             services.AddSingleton<IDocumentLinkRepository, DocumentLinkRepository>();
+            services.AddSingleton<ITreasuryRepository, TreasuryRepository>();
+            services.AddSingleton<IVoucherRepository, VoucherRepository>();
+            services.AddSingleton<IChequeRepository, ChequeRepository>();
             services.AddSingleton<ISalesInvoiceRepository, SalesInvoiceRepository>();
             services.AddSingleton<IPurchaseInvoiceRepository, PurchaseInvoiceRepository>();
             services.AddSingleton<ISalesReturnRepository, SalesReturnRepository>();
@@ -108,6 +111,11 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IStockService, StockService>();
             services.AddSingleton<PrimeERP.Application.Services.Documents.IDocumentLinkService,
                                   PrimeERP.Application.Services.Documents.DocumentLinkService>();
+
+            // محرّك السحب العام — يخدم الواجهة (IPullService) والتحقق داخل الخدمات (IPullSourceReader) بنسخة واحدة.
+            services.AddSingleton<PrimeERP.Composition.Pull.PullService>();
+            services.AddSingleton<PrimeERP.Composition.Pull.IPullService>(sp => sp.GetRequiredService<PrimeERP.Composition.Pull.PullService>());
+            services.AddSingleton<PrimeERP.Domain.Contracts.IPullSourceReader>(sp => sp.GetRequiredService<PrimeERP.Composition.Pull.PullService>());
             services.AddSingleton<ISalesInvoiceService, SalesInvoiceService>();
             services.AddSingleton<IPurchaseInvoiceService, PurchaseInvoiceService>();
             services.AddSingleton<ISalesReturnService, SalesReturnService>();
@@ -123,6 +131,10 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IDeliveryNoteService, DeliveryNoteService>();
             services.AddSingleton<ISalesReceiptService, SalesReceiptService>();
             services.AddSingleton<IStockTransferService, StockTransferService>();
+            services.AddSingleton<PrimeERP.Application.Services.Treasury.ITreasuryService, PrimeERP.Application.Services.Treasury.TreasuryService>();
+            services.AddSingleton<PrimeERP.Application.Services.Vouchers.IReceiptVoucherService, PrimeERP.Application.Services.Vouchers.ReceiptVoucherService>();
+            services.AddSingleton<PrimeERP.Application.Services.Vouchers.IPaymentVoucherService, PrimeERP.Application.Services.Vouchers.PaymentVoucherService>();
+            services.AddSingleton<PrimeERP.Application.Services.Cheques.IChequeService, PrimeERP.Application.Services.Cheques.ChequeService>();
             services.AddSingleton<IPayrollService, PayrollService>();
             services.AddSingleton<IRoleService, RoleService>();
             services.AddSingleton<IUserService, UserService>();
@@ -146,9 +158,14 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<ExportService>();
             services.AddSingleton<IExportService>(sp => sp.GetRequiredService<ExportService>());
             services.AddSingleton<IDocumentExporter>(sp => sp.GetRequiredService<ExportService>());
+            services.AddSingleton<IPrintDialogHost, PrintDialogHost>();
 
             // ViewModels: Transient — حالة خاصة بعرض واحد (SelectedItem/Filter/Page)، لا تُشارَك بين فتحات
             // الصفحة المتعددة عكس الخدمات (Singleton طوال عمر التطبيق).
+            services.AddTransient<TreasuriesViewModel>();
+            services.AddTransient<ReceiptVouchersViewModel>();
+            services.AddTransient<PaymentVouchersViewModel>();
+            services.AddTransient<ChequesViewModel>();
             services.AddTransient<CustomersViewModel>();
             services.AddTransient<SuppliersViewModel>();
             services.AddTransient<AccountsViewModel>();
@@ -202,6 +219,10 @@ namespace PrimeERP.App.Bootstrap
             PermissionModuleRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             CycleVoucherRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             CycleDocumentRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
+            TreasuryRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
+
+            // PrintService لا تفتح نوافذ بنفسها — تُحقن واجهتها المرئية هنا (نفس نمط IDocumentExporter).
+            services.GetRequiredService<IPrintService>().DialogHost = services.GetRequiredService<IPrintDialogHost>();
             return services;
         }
 
@@ -262,6 +283,9 @@ namespace PrimeERP.App.Bootstrap
             services.GetRequiredService<IStockTransferRepository>().CreateTable();
             services.GetRequiredService<IPayrollRepository>().CreateTable();
             services.GetRequiredService<IDocumentLinkRepository>().CreateTable();
+            services.GetRequiredService<ITreasuryRepository>().CreateTable();
+            services.GetRequiredService<IVoucherRepository>().CreateTable();
+            services.GetRequiredService<IChequeRepository>().CreateTable();
 
             // ⚠️ R9 — نفس درس توقف 7: PermissionDb (جداول Permissions/Roles/RolePermissions/Users/
             // UserPermissions + بذر دور SystemAdmin ومستخدم admin) كانت مبنية بالكامل منذ وقت طويل بلا أي

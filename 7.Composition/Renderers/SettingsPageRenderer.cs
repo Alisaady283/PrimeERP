@@ -45,14 +45,16 @@ namespace PrimeERP.Composition.Renderers
                     {
                         // LabelKey هنا نص العرض مباشرة — Get تُعيد المفتاح نفسه لو غير موجود بالقاموس.
                         Key = def.Key, LabelKey = LabelFor(def.Key),
-                        Kind = isAccount ? FieldKind.Picker : def.DataType switch { "bool" => FieldKind.Check, "int" => FieldKind.Number, _ => FieldKind.Text },
+                        Kind = isAccount ? FieldKind.Picker
+                             : def.Key == SettingKeys.Company.LogoData ? FieldKind.Image
+                             : def.DataType switch { "bool" => FieldKind.Check, "int" => FieldKind.Number, _ => FieldKind.Text },
                         PickerType = isAccount ? "Account" : null,
                         PickerValueField = isAccount ? "Code" : "Id",
                     };
 
                     var control = DialogRenderer.BuildField(field);
                     if (isAccount) DialogRenderer.LoadPickerItems((AppComboBox)control, field, services);
-                    control.Width = 260;
+                    if (field.Kind == FieldKind.Image) control.Width = 420; else control.Width = 260;
                     control.Margin = new Thickness(0, 0, 16, 16);
 
                     var currentValue = settingsService.Get<string>(def.Key, def.DefaultValue);
@@ -61,6 +63,7 @@ namespace PrimeERP.Composition.Renderers
                         FieldKind.Check => bool.TryParse(currentValue, out var b) && b,
                         FieldKind.Number => decimal.TryParse(currentValue, out var n) ? n : 0,
                         FieldKind.Picker => currentValue,
+                        FieldKind.Image => currentValue,
                         _ => currentValue
                     };
                     if (field.Kind == FieldKind.Picker) DialogRenderer.SelectPickerItem((AppComboBox)control, typedValue, "Code");
@@ -160,7 +163,8 @@ namespace PrimeERP.Composition.Renderers
             [SettingKeys.Company.Name] = "اسم الشركة", [SettingKeys.Company.NameEn] = "اسم الشركة (إنجليزي)",
             [SettingKeys.Company.TaxNumber] = "الرقم الضريبي", [SettingKeys.Company.CommercialRegNo] = "السجل التجاري",
             [SettingKeys.Company.Address] = "العنوان", [SettingKeys.Company.Phone] = "الهاتف", [SettingKeys.Company.Email] = "البريد الإلكتروني",
-            [SettingKeys.Company.LogoPath] = "مسار الشعار",
+            [SettingKeys.Company.LogoPath] = "اسم ملف الشعار",
+            [SettingKeys.Company.LogoData] = "شعار الشركة",
 
             [SettingKeys.Financial.BaseCurrencyId] = "العملة الأساسية (معرّف)", [SettingKeys.Financial.DecimalPlaces] = "عدد الخانات العشرية",
             [SettingKeys.Financial.FiscalYearStartMonth] = "شهر بداية السنة المالية", [SettingKeys.Financial.AllowNegativeStock] = "السماح برصيد مخزون سالب",
@@ -173,7 +177,10 @@ namespace PrimeERP.Composition.Renderers
             [SettingKeys.Accounts.Sales] = "حساب المبيعات", [SettingKeys.Accounts.SalesReturns] = "حساب مرتجعات المبيعات",
             [SettingKeys.Accounts.COGS] = "حساب تكلفة البضاعة المباعة", [SettingKeys.Accounts.Salaries] = "حساب الرواتب",
             [SettingKeys.Accounts.RetainedEarnings] = "حساب الأرباح المحتجزة", [SettingKeys.Accounts.VATInput] = "حساب ضريبة المدخلات",
-            [SettingKeys.Accounts.VATOutput] = "حساب ضريبة المخرجات", [SettingKeys.Accounts.AutoLinkEnabled] = "تفعيل الربط التلقائي بالشجرة",
+            [SettingKeys.Accounts.VATOutput] = "حساب ضريبة المخرجات",
+            [SettingKeys.Accounts.ChequesInHand] = "حساب شيكات بالمحفظة",
+            [SettingKeys.Accounts.ChequesUnderCollection] = "حساب شيكات تحت التحصيل",
+            [SettingKeys.Accounts.ChequesPayable] = "حساب شيكات الدفع", [SettingKeys.Accounts.AutoLinkEnabled] = "تفعيل الربط التلقائي بالشجرة",
 
             [SettingKeys.Documents.JournalPrefix] = "بادئة قيود اليومية", [SettingKeys.Documents.SalesInvoicePrefix] = "بادئة فاتورة البيع",
             [SettingKeys.Documents.PurchaseInvoicePrefix] = "بادئة فاتورة الشراء", [SettingKeys.Documents.StockVoucherPrefix] = "بادئة إذن المخزون",

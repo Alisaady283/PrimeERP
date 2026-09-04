@@ -225,6 +225,7 @@ namespace PrimeERP.Composition.Renderers
                 FieldKind.TextArea => new AppTextArea { Label = label, IsRequired = field.IsRequired, MaxLength = field.MaxLength, Rows = 3 },
                 FieldKind.Picker => new AppComboBox { Label = label, IsRequired = field.IsRequired, DisplayMemberPath = "Display", SelectedValuePath = field.PickerValueField },
                 FieldKind.Password => new AppPasswordBox { Label = label, IsRequired = field.IsRequired },
+                FieldKind.Image => new AppImagePicker(label),
                 _ => new AppTextBox { Label = label }
             };
         }
@@ -244,6 +245,7 @@ namespace PrimeERP.Composition.Renderers
                 case FieldKind.Date: ((AppDatePicker)control).SelectedDate = value as DateTime?; break;
                 case FieldKind.Check: ((AppCheckBox)control).IsChecked = Convert.ToBoolean(value); break;
                 case FieldKind.Picker: ((AppComboBox)control).SelectedValue = value; break;
+                case FieldKind.Image: ((AppImagePicker)control).Value = value.ToString(); break;
             }
         }
 
@@ -256,6 +258,7 @@ namespace PrimeERP.Composition.Renderers
             FieldKind.Check => ((AppCheckBox)control).IsChecked,
             FieldKind.Picker => ((AppComboBox)control).SelectedValue,
             FieldKind.Password => ((AppPasswordBox)control).Password,
+            FieldKind.Image => ((AppImagePicker)control).Value ?? "",
             _ => null
         };
 
@@ -323,6 +326,20 @@ namespace PrimeERP.Composition.Renderers
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Inventory.IProductService>().GetPaged(1, 5000);
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(p => new PickerRow { Id = p.Id, Code = p.Code, Display = $"{p.Code} - {p.Name}" }).ToList();
             }
+            else if (field.PickerType == "Treasury")
+            {
+                var result = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>().GetAll();
+                if (result.IsSuccess) combo.ItemsSource = result.Value.Select(t => new PickerRow { Id = t.Id, Code = t.Code, Display = $"{t.Name} ({t.KindName})" }).ToList();
+            }
+            else if (field.PickerType == "PaymentMethod")
+            {
+                combo.ItemsSource = new List<PickerRow>
+                {
+                    new() { Id = (int)PrimeERP.Domain.Enums.PaymentMethod.Cash,   Display = "نقدي" },
+                    new() { Id = (int)PrimeERP.Domain.Enums.PaymentMethod.Bank,   Display = "تحويل بنكي" },
+                    new() { Id = (int)PrimeERP.Domain.Enums.PaymentMethod.Cheque, Display = "شيك" },
+                };
+            }
             else if (field.PickerType == "Warehouse")
             {
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Inventory.IWarehouseService>().GetAll();
@@ -353,6 +370,6 @@ namespace PrimeERP.Composition.Renderers
             };
         }
 
-        private class PickerRow { public int Id { get; set; } public string Code { get; set; } public string Display { get; set; } }
+        internal class PickerRow { public int Id { get; set; } public string Code { get; set; } public string Display { get; set; } }
     }
 }

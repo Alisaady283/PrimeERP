@@ -22,6 +22,8 @@ namespace PrimeERP.Application.DTOs.Inventory
 
     public class StockAdjustmentLineDto
     {
+        /// <summary>معرّف السطر في قاعدة البيانات — مرجع السحب في DocumentLinks.SourceLineId.</summary>
+        public int     Id          { get; set; }
         public int     LineNo      { get; set; }
         public string  ProductCode { get; set; }
         public string  ProductName { get; set; }
@@ -30,13 +32,18 @@ namespace PrimeERP.Application.DTOs.Inventory
         public string  Notes       { get; set; }
     }
 
-    public class CreateStockAdjustmentLineDto
+    public class CreateStockAdjustmentLineDto : PrimeERP.Application.DTOs.Documents.IPullableLine
     {
         public int     LineNo      { get; set; }
         public string  ProductCode { get; set; }
         public decimal Qty         { get; set; }
         public decimal UnitCost    { get; set; }
         public string  Notes       { get; set; }
+
+        public string  SourceType   { get; set; }
+        public int     SourceId     { get; set; }
+        public string  SourceNo     { get; set; }
+        public int     SourceLineId { get; set; }
     }
 
     public class CreateStockAdjustmentDto

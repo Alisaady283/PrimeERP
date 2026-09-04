@@ -21,7 +21,10 @@ namespace PrimeERP.UI.Components.Tree
         TreeCheckList,
 
         /// <summary>مستند كصفحة كاملة (رأس+سطور+فوتر) عبر DocumentPageRenderer بدل حوار.</summary>
-        DocumentPage
+        DocumentPage,
+
+        /// <summary>شبكة الشيكات + زر تحريك الحالة عبر ChequeBoardRenderer — لا إضافة ولا حذف (الشيك يُنشأ من السند).</summary>
+        ChequeBoard
     }
 
     public enum SelectableRule { All, LeafOnly }

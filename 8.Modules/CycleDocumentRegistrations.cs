@@ -35,12 +35,6 @@ namespace PrimeERP.Modules
             Label = label,
             PermissionKey = permissionKey,
             MatchFields = new List<string> { nameof(CreateCycleDocumentDto.PartyId) },
-            LineMapping = new Dictionary<string, string>
-            {
-                [nameof(CreateCycleDocumentLineDto.ProductCode)] = nameof(CreateCycleDocumentLineDto.ProductCode),
-                [nameof(CreateCycleDocumentLineDto.Qty)]         = nameof(CreateCycleDocumentLineDto.Qty),
-                [nameof(CreateCycleDocumentLineDto.UnitPrice)]   = nameof(CreateCycleDocumentLineDto.UnitPrice),
-            }
         };
 
         private static void Register(IModuleRegistry registry, string key, string title, Type viewModel, Type service,

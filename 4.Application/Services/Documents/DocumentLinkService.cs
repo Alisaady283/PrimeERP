@@ -23,6 +23,8 @@ namespace PrimeERP.Application.Services.Documents
     public interface IDocumentLinkService
     {
         decimal GetRemainingQty(string sourceType, int sourceLineId, decimal originalQty);
+        Dictionary<int, decimal> GetPulledBySource(string sourceType, int sourceId);
+        Result ValidatePull(string sourceType, int sourceId, int sourceLineId, decimal qty, string sourceNo);
         Result RecordPull(IEnumerable<DocumentLink> links, DbConnection conn = null, DbTransaction tx = null);
         Result RemovePull(string targetType, int targetId, DbConnection conn = null, DbTransaction tx = null);
         Result<List<ChainNode>> GetChain(string docType, int docId);
@@ -33,10 +35,12 @@ namespace PrimeERP.Application.Services.Documents
     public class DocumentLinkService : ServiceBase, IDocumentLinkService
     {
         private readonly IDocumentLinkRepository _links;
+        private readonly IPullSourceReader _sources;
 
         public DocumentLinkService(IDocumentLinkRepository links, IPermissionService permissions,
-            ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
-            : base(permissions, settings, localization, audit) => _links = links;
+            ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
+            IPullSourceReader sources = null)
+            : base(permissions, settings, localization, audit) { _links = links; _sources = sources; }
 
         protected override string PermissionPrefix => "Inventory";
         protected override string StringPrefix => "Str.Document";
@@ -47,6 +51,24 @@ namespace PrimeERP.Application.Services.Documents
             var pulled = _links.GetPulledQty(sourceType, sourceLineId);
             var remaining = originalQty - pulled;
             return remaining > 0 ? remaining : 0m;
+        }
+
+        public Dictionary<int, decimal> GetPulledBySource(string sourceType, int sourceId) =>
+            _links.GetPulledBySource(sourceType, sourceId);
+
+        /// <summary>يمنع سحب أكثر من المتبقي على مستوى الخدمة — الواجهة تمنع الخطأ، وهذا يمنع الالتفاف عليها.
+        /// بلا IPullSourceReader مسجَّل (اختبارات وحدة معزولة) يمرّ التحقق بلا كسر.</summary>
+        public Result ValidatePull(string sourceType, int sourceId, int sourceLineId, decimal qty, string sourceNo)
+        {
+            if (_sources == null || sourceLineId <= 0) return Result.Ok();
+
+            var originalQty = _sources.GetSourceLineQty(sourceType, sourceId, sourceLineId);
+            if (originalQty <= 0) return Result.Ok();
+
+            var remaining = GetRemainingQty(sourceType, sourceLineId, originalQty);
+            return qty <= remaining
+                ? Result.Ok()
+                : Result.Fail($"الكمية المسحوبة ({qty:N2}) تتجاوز المتبقي ({remaining:N2}) في {sourceNo}", ErrorCode.ValidationFailed);
         }
 
         public Result RecordPull(IEnumerable<DocumentLink> links, DbConnection conn = null, DbTransaction tx = null)

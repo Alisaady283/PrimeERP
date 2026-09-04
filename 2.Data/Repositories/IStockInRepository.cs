@@ -11,7 +11,7 @@ namespace PrimeERP.Data.Repositories
         List<StockAdjustmentLine> GetLines(int documentId, DbConnection conn = null, DbTransaction tx = null);
         (List<StockAdjustment> Items, int Total) GetPaged(int page, int pageSize, string searchText, string sortColumn, bool sortDescending);
         int InsertHeader(DbConnection conn, DbTransaction tx, StockAdjustment doc);
-        void InsertLine(DbConnection conn, DbTransaction tx, int documentId, StockAdjustmentLine line);
+        int InsertLine(DbConnection conn, DbTransaction tx, int documentId, StockAdjustmentLine line);
     }
 
     public interface IStockOutRepository : IStockInRepository { }

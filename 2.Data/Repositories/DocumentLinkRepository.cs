@@ -17,6 +17,7 @@ namespace PrimeERP.Data.Repositories
         List<DocumentLink> GetBySource(string sourceType, int sourceId, DbConnection conn = null, DbTransaction tx = null);
         List<DocumentLink> GetByTarget(string targetType, int targetId, DbConnection conn = null, DbTransaction tx = null);
         decimal GetPulledQty(string sourceType, int sourceLineId, DbConnection conn = null, DbTransaction tx = null);
+        Dictionary<int, decimal> GetPulledBySource(string sourceType, int sourceId, DbConnection conn = null, DbTransaction tx = null);
         void DeleteByTarget(string targetType, int targetId, DbConnection conn = null, DbTransaction tx = null);
     }
 
@@ -83,6 +84,22 @@ namespace PrimeERP.Data.Repositories
                 ? Db.Query(conn, tx, sql, Db.Params(("@t", sourceType), ("@l", sourceLineId))).Rows[0][0]
                 : Scalar(sql, ("@t", sourceType), ("@l", sourceLineId));
             return result == DBNull.Value ? 0m : Convert.ToDecimal(result);
+        }
+
+        // استعلام واحد لكل مستند مصدر بدل استعلام لكل سطر — هذا ما يجعل حساب المتبقي وقت السحب رخيصاً
+        // بلا الحاجة لتخزين الكمية المسحوبة على السطر نفسه (قيمة مشتقّة لا تُخزَّن).
+        public Dictionary<int, decimal> GetPulledBySource(string sourceType, int sourceId, DbConnection conn = null, DbTransaction tx = null)
+        {
+            const string sql = @"SELECT SourceLineId, COALESCE(SUM(PulledQty), 0) AS Pulled FROM DocumentLinks
+                                 WHERE SourceType = @t AND SourceId = @i GROUP BY SourceLineId";
+            var table = conn != null
+                ? Db.Query(conn, tx, sql, Db.Params(("@t", sourceType), ("@i", sourceId)))
+                : Db.Query(sql, Db.Params(("@t", sourceType), ("@i", sourceId)));
+
+            var map = new Dictionary<int, decimal>();
+            foreach (DataRow row in table.Rows)
+                map[Convert.ToInt32(row["SourceLineId"])] = Convert.ToDecimal(row["Pulled"]);
+            return map;
         }
 
         public void DeleteByTarget(string targetType, int targetId, DbConnection conn = null, DbTransaction tx = null) =>

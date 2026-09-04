@@ -18,8 +18,9 @@ namespace PrimeERP.Data.Repositories
         List<CycleDocumentLine> GetLines(int documentId, DbConnection conn = null, DbTransaction tx = null);
         (List<CycleDocument> Items, int Total) GetPaged(int page, int pageSize, string searchText, string sortColumn, bool sortDescending);
         int InsertHeader(DbConnection conn, DbTransaction tx, CycleDocument doc);
-        void InsertLine(DbConnection conn, DbTransaction tx, int documentId, CycleDocumentLine line);
+        int InsertLine(DbConnection conn, DbTransaction tx, int documentId, CycleDocumentLine line);
         void DeleteDocument(int id);
+        void DeleteDocument(DbConnection conn, DbTransaction tx, int id);
     }
 
     public interface IPurchaseRequestRepository : ICycleDocumentRepository { }
@@ -88,18 +89,19 @@ namespace PrimeERP.Data.Repositories
                 conn, tx, ("@no", doc.DocNo), ("@date", doc.DocDate), ("@party", (object)doc.PartyId ?? DBNull.Value),
                 ("@notes", doc.Notes ?? ""), ("@by", doc.CreatedBy));
 
-        public void InsertLine(DbConnection conn, DbTransaction tx, int documentId, CycleDocumentLine line) =>
-            Exec($@"INSERT INTO {_lineTable} (DocumentId, LineNo, ProductId, ProductCode, ProductName, Qty, UnitPrice, Notes)
+        public int InsertLine(DbConnection conn, DbTransaction tx, int documentId, CycleDocumentLine line) =>
+            InsertGetId($@"INSERT INTO {_lineTable} (DocumentId, LineNo, ProductId, ProductCode, ProductName, Qty, UnitPrice, Notes)
                     VALUES (@did, @lno, @pid, @pcode, @pname, @qty, @price, @notes)",
                 conn, tx, ("@did", documentId), ("@lno", line.LineNo), ("@pid", line.ProductId), ("@pcode", line.ProductCode),
                 ("@pname", line.ProductName ?? ""), ("@qty", line.Qty), ("@price", line.UnitPrice), ("@notes", line.Notes ?? ""));
 
-        public void DeleteDocument(int id) =>
-            Db.RunTransaction((conn, tx) =>
-            {
-                Exec($"DELETE FROM {_lineTable} WHERE DocumentId = @id", conn, tx, ("@id", id));
-                Exec($"DELETE FROM {_headerTable} WHERE Id = @id", conn, tx, ("@id", id));
-            });
+        public void DeleteDocument(int id) => Db.RunTransaction((conn, tx) => DeleteDocument(conn, tx, id));
+
+        public void DeleteDocument(DbConnection conn, DbTransaction tx, int id)
+        {
+            Exec($"DELETE FROM {_lineTable} WHERE DocumentId = @id", conn, tx, ("@id", id));
+            Exec($"DELETE FROM {_headerTable} WHERE Id = @id", conn, tx, ("@id", id));
+        }
     }
 
     public class PurchaseRequestRepository : CycleDocumentRepositoryBase, IPurchaseRequestRepository

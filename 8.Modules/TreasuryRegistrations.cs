@@ -1,0 +1,114 @@
+using PrimeERP.Application.DTOs.Cheques;
+using PrimeERP.Application.DTOs.Treasury;
+using PrimeERP.Application.DTOs.Vouchers;
+using PrimeERP.Application.Services.Vouchers;
+using PrimeERP.Composition.Definitions;
+using PrimeERP.Composition.Registry;
+using PrimeERP.Platform.Localization;
+using PrimeERP.UI.Components.Display;
+using PrimeERP.UI.Components.Tree;
+using PrimeERP.UI.ViewModels;
+
+namespace PrimeERP.Modules
+{
+    /// <summary>الخزائن والسندات والشيكات. السندان قبض/صرف نفس التعريف بالضبط عدا الطرف والخدمة — تُبنى من
+    /// دالة واحدة بدل نسختين متطابقتين.</summary>
+    public static class TreasuryRegistrations
+    {
+        public static void RegisterAll(IModuleRegistry registry)
+        {
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Treasuries", TitleKey = "Str.Module.Treasuries", PermissionPrefix = "Treasuries",
+                ViewModelType = typeof(TreasuriesViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(TreasuryDto.Code), Width = 100 },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(TreasuryDto.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = "النوع", Binding = nameof(TreasuryDto.KindName), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = "الحساب المرتبط", Binding = nameof(TreasuryDto.AccountCode), Width = 130, Align = ColumnAlign.Center },
+                    new() { Header = "البنك", Binding = nameof(TreasuryDto.BankName), Width = 160 },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Treasuries.Add", TitleEditKey = "Str.Treasuries.Edit", GridColumns = 2,
+                    ServiceType = typeof(PrimeERP.Application.Services.Treasury.ITreasuryService),
+                    CreateDtoType = typeof(CreateTreasuryDto), UpdateDtoType = typeof(UpdateTreasuryDto),
+                    Fields = new()
+                    {
+                        new() { Key = nameof(CreateTreasuryDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateTreasuryDto.IsBank), LabelKey = "حساب بنكي", Kind = FieldKind.Check },
+                        new() { Key = nameof(CreateTreasuryDto.AccountCode), LabelKey = "الحساب المرتبط", Kind = FieldKind.Picker, PickerType = "Account", PickerLeafOnly = true, PickerValueField = "Code", IsRequired = true },
+                        new() { Key = nameof(CreateTreasuryDto.BankName), LabelKey = "اسم البنك", Kind = FieldKind.Text, MaxLength = 200 },
+                        new() { Key = nameof(CreateTreasuryDto.AccountNumber), LabelKey = "رقم الحساب", Kind = FieldKind.Text, MaxLength = 60 },
+                        new() { Key = nameof(CreateTreasuryDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                        new() { Key = nameof(CreateTreasuryDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }
+                }
+            });
+
+            RegisterVoucher(registry, "Receipts", "سند قبض", typeof(ReceiptVouchersViewModel), typeof(IReceiptVoucherService), "Str.Customer", "Customer");
+            RegisterVoucher(registry, "Payments", "سند صرف", typeof(PaymentVouchersViewModel), typeof(IPaymentVoucherService), "Str.Supplier", "Supplier");
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Cheques", TitleKey = "Str.Module.Cheques", PermissionPrefix = "Cheques",
+                ViewModelType = typeof(ChequesViewModel),
+                Columns = new()
+                {
+                    new() { Header = "رقم الشيك", Binding = nameof(ChequeDto.ChequeNo), Width = 110 },
+                    new() { Header = "الاتجاه", Binding = nameof(ChequeDto.DirectionName), Width = 80, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(ChequeDto.PartyName), Width = 180, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Amount"), Binding = nameof(ChequeDto.Amount), Width = 110, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                    new() { Header = "الاستحقاق", Binding = nameof(ChequeDto.DueDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = "البنك", Binding = nameof(ChequeDto.BankName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(ChequeDto.StatusName), Width = 110, Align = ColumnAlign.Center },
+                },
+                LayoutKind = LayoutKind.ChequeBoard
+            });
+        }
+
+        private static void RegisterVoucher(IModuleRegistry registry, string key, string title, System.Type viewModel,
+            System.Type service, string partyLabelKey, string partyPickerType)
+        {
+            registry.Register(new ModuleDefinition
+            {
+                Key = key, TitleKey = title, PermissionPrefix = key, ViewModelType = viewModel,
+                Columns = new()
+                {
+                    new() { Header = "رقم السند", Binding = nameof(VoucherDto.VoucherNo), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(VoucherDto.VoucherDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get(partyLabelKey), Binding = nameof(VoucherDto.PartyName), Width = 180, IsStarWidth = true },
+                    new() { Header = "الخزينة", Binding = nameof(VoucherDto.TreasuryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Amount"), Binding = nameof(VoucherDto.Amount), Width = 110, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                    new() { Header = "الطريقة", Binding = nameof(VoucherDto.MethodName), Width = 90, Align = ColumnAlign.Center },
+                },
+                DocumentDialog = new DocumentDialogDefinition
+                {
+                    TitleKey = title, TitleEditKey = title, DocumentKind = key,
+                    ServiceType = service, DtoType = typeof(CreateVoucherDto), LineDtoType = typeof(CreateVoucherAllocationDto),
+                    LinesPropertyName = nameof(CreateVoucherDto.Allocations),
+                    HeaderFields = new()
+                    {
+                        new() { Key = nameof(CreateVoucherDto.VoucherDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreateVoucherDto.PartyId), LabelKey = partyLabelKey, Kind = FieldKind.Picker, PickerType = partyPickerType, IsRequired = true },
+                        new() { Key = nameof(CreateVoucherDto.TreasuryId), LabelKey = "الخزينة", Kind = FieldKind.Picker, PickerType = "Treasury", IsRequired = true },
+                        new() { Key = nameof(CreateVoucherDto.Amount), LabelKey = "Str.Amount", Kind = FieldKind.Number, IsRequired = true },
+                        new() { Key = nameof(CreateVoucherDto.Method), LabelKey = "طريقة الدفع", Kind = FieldKind.Picker, PickerType = "PaymentMethod", IsRequired = true },
+                        new() { Key = nameof(CreateVoucherDto.Reference), LabelKey = "مرجع", Kind = FieldKind.Text, MaxLength = 100 },
+                        new() { Key = nameof(CreateVoucherDto.ChequeNo), LabelKey = "رقم الشيك", Kind = FieldKind.Text, MaxLength = 40 },
+                        new() { Key = nameof(CreateVoucherDto.ChequeDueDate), LabelKey = "استحقاق الشيك", Kind = FieldKind.Date },
+                        new() { Key = nameof(CreateVoucherDto.ChequeBank), LabelKey = "بنك الشيك", Kind = FieldKind.Text, MaxLength = 200 },
+                        new() { Key = nameof(CreateVoucherDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300, ColumnSpan = 2 },
+                    },
+                    LineFields = new()
+                    {
+                        new() { Key = nameof(CreateVoucherAllocationDto.InvoiceNo), Header = "رقم الفاتورة", Kind = FieldKind.Text, Width = 180 },
+                        new() { Key = nameof(CreateVoucherAllocationDto.Amount), Header = LocalizationService.Get("Str.Amount"), Kind = FieldKind.Number, Width = 120 },
+                        new() { Key = nameof(CreateVoucherAllocationDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 200 },
+                    }
+                }
+            });
+        }
+    }
+}

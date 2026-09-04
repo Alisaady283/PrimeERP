@@ -6,7 +6,7 @@ namespace PrimeERP.Domain.Contracts
 {
     public enum PrintOrientation { Portrait, Landscape }
 
-    public enum PrintSectionType { Title, KeyValues, Table, Text, Spacer, Callout }
+    public enum PrintSectionType { Title, KeyValues, Table, Text, Spacer, Callout, Parties }
 
     public class PrintColumn
     {
@@ -43,8 +43,19 @@ namespace PrimeERP.Domain.Contracts
 
         public string Text { get; set; }
 
+        /// <summary>لـ PrintSectionType.Parties — صناديق متجاورة (البائع/المشتري)، كل صندوق عنوان وأسطر.</summary>
+        public List<PrintParty> Parties { get; set; }
+
         /// <summary>لـ PrintSectionType.Callout فقط — يلوّن الصندوق عبر PrintTheme (Soft/SoftText/Solid لنفس المتغيّر).</summary>
         public StatusVariant? Variant { get; set; }
+    }
+
+    /// <summary>صندوق طرف واحد في قسم Parties — البائع أو المشتري.</summary>
+    public class PrintParty
+    {
+        public string Title { get; set; }
+        public string Name  { get; set; }
+        public List<string> Details { get; set; } = new();
     }
 
     /// <summary>

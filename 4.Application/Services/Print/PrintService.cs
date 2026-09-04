@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Settings;
 
@@ -161,37 +162,50 @@ namespace PrimeERP.Application.Services.Print
             return flow;
         }
 
+        // شريط رأس ملوّن: الشعار يمين (RTL) وبيانات الشركة بجانبه — الشعار من قاعدة البيانات لا من مسار ملف،
+        // فلا يختفي بصمت لو نُقلت الصورة أو استُرجعت نسخة احتياطية على جهاز آخر.
         private Block BuildCompanyHeader()
         {
             var name = _settings.Get(SettingKeys.Company.Name, "");
-            var tax  = _settings.Get(SettingKeys.Company.TaxNumber, "");
-            var addr = _settings.Get(SettingKeys.Company.Address, "");
+            var logo = LoadLogo();
 
-            var panel = new Paragraph
+            var details = new List<string>();
+            foreach (var key in new[] { SettingKeys.Company.CommercialRegNo, SettingKeys.Company.TaxNumber,
+                                        SettingKeys.Company.Phone, SettingKeys.Company.Email, SettingKeys.Company.Address })
             {
-                Margin = new Thickness(0, 0, 0, 12),
-                Padding = new Thickness(0, 0, 0, 10),
-                BorderBrush = Res<Brush>("OutlineDefault"),
-                BorderThickness = new Thickness(0, 0, 0, 1)
-            };
-            panel.Inlines.Add(new Run(name) { FontSize = Res<double>("FontSizeXl"), FontWeight = Res<FontWeight>("FontWeightBold") });
-
-            var sub = new List<string>();
-            if (!string.IsNullOrWhiteSpace(tax))  sub.Add($"الرقم الضريبي: {tax}");
-            if (!string.IsNullOrWhiteSpace(addr)) sub.Add(addr);
-
-            if (sub.Count > 0)
-            {
-                panel.Inlines.Add(new LineBreak());
-                panel.Inlines.Add(new Run(string.Join("  •  ", sub))
-                {
-                    FontSize = Res<double>("FontSizeSm"),
-                    Foreground = Res<Brush>("TextSecondary")
-                });
+                var value = _settings.Get(key, "");
+                if (!string.IsNullOrWhiteSpace(value)) details.Add(value);
             }
 
-            return panel;
+            var info = new Paragraph { Margin = new Thickness(0) };
+            info.Inlines.Add(new Run(name) { FontSize = Res<double>("FontSizeXl"), FontWeight = Res<FontWeight>("FontWeightBold") });
+            if (details.Count > 0)
+            {
+                info.Inlines.Add(new LineBreak());
+                info.Inlines.Add(new Run(string.Join("  •  ", details)) { FontSize = Res<double>("FontSizeSm"), Foreground = Res<Brush>("OnBrandMuted") });
+            }
+
+            var table = new Table { CellSpacing = 0, Margin = new Thickness(0, 0, 0, 12), Background = Res<Brush>("BrandSolid") };
+            if (logo != null) table.Columns.Add(new TableColumn { Width = new GridLength(70) });
+            table.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+
+            var row = new TableRow();
+            if (logo != null)
+            {
+                var imageParagraph = new Paragraph { Margin = new Thickness(0) };
+                imageParagraph.Inlines.Add(new InlineUIContainer(new System.Windows.Controls.Image
+                { Source = logo, Width = 58, Height = 58, Stretch = Stretch.Uniform }));
+                row.Cells.Add(new TableCell(imageParagraph) { Padding = new Thickness(12, 12, 6, 12) });
+            }
+            row.Cells.Add(new TableCell(info) { Padding = new Thickness(6, 14, 14, 14), Foreground = Res<Brush>("OnBrandText") });
+
+            var group = new TableRowGroup();
+            group.Rows.Add(row);
+            table.RowGroups.Add(group);
+            return table;
         }
+
+        private BitmapImage LoadLogo() => ImageData.Decode(_settings.Get(SettingKeys.Company.LogoData, ""));
 
         private Block BuildTitle(string title, string subtitle)
         {
@@ -267,6 +281,10 @@ namespace PrimeERP.Application.Services.Print
                         yield return BuildKeyValues(section.KeyValues);
                     break;
 
+                case PrintSectionType.Parties:
+                    if (section.Parties is { Count: > 0 }) yield return BuildParties(section.Parties);
+                    break;
+
                 case PrintSectionType.Table:
                     if (!string.IsNullOrEmpty(section.Title))
                         yield return new Paragraph(new Run(section.Title))
@@ -292,6 +310,42 @@ namespace PrimeERP.Application.Services.Print
                 Margin = new Thickness(0, 12, 0, 12),
                 FontWeight = Res<FontWeight>("FontWeightSemiBold")
             };
+        }
+
+        /// <summary>صناديق الأطراف جنباً إلى جنب — البائع والمشتري في فاتورة، الطرف الواحد في سند.</summary>
+        private Table BuildParties(List<PrintParty> parties)
+        {
+            var table = new Table { CellSpacing = 8, Margin = new Thickness(0, 0, 0, 12) };
+            foreach (var _ in parties) table.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+
+            var row = new TableRow();
+            foreach (var party in parties)
+            {
+                var content = new Paragraph { Margin = new Thickness(0) };
+                content.Inlines.Add(new Run(party.Title) { FontSize = Res<double>("FontSizeXs"), Foreground = Res<Brush>("TextMuted") });
+                content.Inlines.Add(new LineBreak());
+                content.Inlines.Add(new Run(party.Name ?? "") { FontWeight = Res<FontWeight>("FontWeightSemiBold"), FontSize = Res<double>("FontSizeMd") });
+
+                foreach (var detail in party.Details ?? new List<string>())
+                {
+                    if (string.IsNullOrWhiteSpace(detail)) continue;
+                    content.Inlines.Add(new LineBreak());
+                    content.Inlines.Add(new Run(detail) { FontSize = Res<double>("FontSizeSm"), Foreground = Res<Brush>("TextSecondary") });
+                }
+
+                row.Cells.Add(new TableCell(content)
+                {
+                    Padding = new Thickness(10),
+                    Background = Res<Brush>("NeutralSoft"),
+                    BorderBrush = Res<Brush>("OutlineDefault"),
+                    BorderThickness = new Thickness(1)
+                });
+            }
+
+            var group = new TableRowGroup();
+            group.Rows.Add(row);
+            table.RowGroups.Add(group);
+            return table;
         }
 
         private Table BuildTable(PrintSection section)

@@ -62,6 +62,11 @@ namespace PrimeERP.Composition.Renderers
             };
 
             actions.Children.Add(btnNew);
+            foreach (var pullButton in DocumentRenderer.BuildPullButtons(def, services, () => editor)) actions.Children.Add(pullButton);
+            var btnPrint = new Btn { Text = LocalizationService.Get("Str.Print"), Variant = "secondary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
+            btnPrint.Click += (_, __) => DocumentPrinter.PrintSelected(definition, services, editor?.EditItem);
+
+            actions.Children.Add(btnPrint);
             actions.Children.Add(btnSave);
             header.ActionsContent = actions;
 

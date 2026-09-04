@@ -12,6 +12,7 @@ using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Components.Actions;
 using PrimeERP.UI.Components.Inputs;
+using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
 using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
@@ -22,13 +23,25 @@ namespace PrimeERP.Composition.Renderers
     // حيّ في الواجهة عمداً — الخادم (JournalValidator) يرفض القيد غير المتوازن برسالة واضحة عند الحفظ.
     public static class DocumentRenderer
     {
+        // سطر واحد في شبكة السطور — Link غير فارغ يعني أن السطر جاء بسحب من مستند آخر، فتُنسَخ حقوله
+        // الأربعة على DTO السطر عند الحفظ فيسجّل الرابط في DocumentLinks.
+        internal class EditorRow
+        {
+            public Grid Row;
+            public Dictionary<string, FrameworkElement> Controls;
+            public PullDialog.PulledLine Link;
+        }
+
         internal class DocumentEditor
         {
             public FrameworkElement Body;
             public Dictionary<string, FrameworkElement> HeaderControls;
-            public List<(Grid Row, Dictionary<string, FrameworkElement> Controls)> Rows;
+            public List<EditorRow> Rows;
             public object EditItem;
             public bool IsEdit;
+
+            /// <summary>يضيف سطراً جاهزاً للشبكة — نافذة السحب تستهلكها.</summary>
+            public Action<PullDialog.PulledLine> AddPulledRow;
         }
 
         // بناء المحرِّر مفصول عن غلافه — الحوار والصفحة يستهلكانه معاً بلا تكرار.
@@ -53,16 +66,16 @@ namespace PrimeERP.Composition.Renderers
             var headerGrid = DialogRenderer.BuildGrid(def.HeaderFields, 2, headerControls, width: null);
             headerGrid.HorizontalAlignment = HorizontalAlignment.Stretch;
 
-            var rows = new List<(Grid Row, Dictionary<string, FrameworkElement> Controls)>();
+            var rows = new List<EditorRow>();
             var linesHost = new StackPanel();
 
-            void RemoveRow((Grid Row, Dictionary<string, FrameworkElement> Controls) entry)
+            void RemoveRow(EditorRow entry)
             {
                 linesHost.Children.Remove(entry.Row);
                 rows.Remove(entry);
             }
 
-            void AddRow(object lineItem)
+            EditorRow AddRow(object lineItem)
             {
                 var rowControls = new Dictionary<string, FrameworkElement>();
                 var rowGrid = new Grid { Margin = new Thickness(0, 0, 0, 6) };
@@ -110,11 +123,12 @@ namespace PrimeERP.Composition.Renderers
                 Grid.SetColumn(removeBtn, col);
                 rowGrid.Children.Add(removeBtn);
 
-                var entry = (rowGrid, rowControls);
+                var entry = new EditorRow { Row = rowGrid, Controls = rowControls };
                 removeBtn.Click += (_, __) => RemoveRow(entry);
 
                 rows.Add(entry);
                 linesHost.Children.Add(rowGrid);
+                return entry;
             }
 
             var lineHeaderRow = new Grid { Margin = new Thickness(0, 0, 0, 4) };
@@ -157,11 +171,74 @@ namespace PrimeERP.Composition.Renderers
             body.Children.Add(new Separator { Margin = new Thickness(0, 4, 0, 12) });
             body.Children.Add(linesSection);
 
-            return new DocumentEditor
+            var editor = new DocumentEditor
             {
                 Body = body, HeaderControls = headerControls, Rows = rows,
                 EditItem = editItem, IsEdit = isEdit
             };
+
+            editor.AddPulledRow = pulled =>
+            {
+                // آخر صف فارغ (بلا صنف) يُستهلَك بدل تركه معلّقاً أسفل السطور المسحوبة.
+                var target = rows.LastOrDefault(r => IsEmptyRow(r, def)) ?? AddRow(null);
+                target.Link = pulled;
+
+                SetRowValue(target, def, "ProductCode", pulled.ProductCode);
+                SetRowValue(target, def, "Qty", pulled.Qty);
+                SetRowValue(target, def, "UnitPrice", pulled.UnitValue);
+                SetRowValue(target, def, "UnitCost", pulled.UnitValue);
+            };
+
+            return editor;
+        }
+
+        private static bool IsEmptyRow(EditorRow row, DocumentDialogDefinition def)
+        {
+            var key = def.LineFields.FirstOrDefault(f => f.Kind == FieldKind.Picker)?.Key;
+            return key != null && DialogRenderer.GetControlValue(row.Controls[key], FieldKind.Picker) == null;
+        }
+
+        private static void SetRowValue(EditorRow row, DocumentDialogDefinition def, string key, object value)
+        {
+            var field = def.LineFields.FirstOrDefault(f => f.Key == key);
+            if (field == null || !row.Controls.TryGetValue(key, out var control)) return;
+
+            if (field.Kind == FieldKind.Picker)
+                DialogRenderer.SelectPickerItem((AppComboBox)control, value, "Code");
+            else
+                DialogRenderer.SetControlValue(control, new FieldDefinition { Key = key, LabelKey = "", Kind = field.Kind }, value);
+        }
+
+        // زر لكل مصدر سحب مُعلَن على الوحدة — يقرأ حقول المطابقة من رأس المستند الحالي وقت الضغط لا وقت البناء.
+        internal static List<Btn> BuildPullButtons(DocumentDialogDefinition def, IServiceProvider services, Func<DocumentEditor> current)
+        {
+            var permissions = services.GetRequiredService<IPermissionService>();
+            var buttons = new List<Btn>();
+
+            foreach (var source in def.PullSources ?? new List<PullSource>())
+            {
+                if (!string.IsNullOrEmpty(source.PermissionKey) && !permissions.Can(source.PermissionKey)) continue;
+
+                var button = new Btn { Text = source.Label, Variant = "secondary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
+                var captured = source;
+                button.Click += (_, __) =>
+                {
+                    var editor = current();
+                    if (editor == null) return;
+
+                    var match = new Dictionary<string, object>();
+                    foreach (var field in def.HeaderFields)
+                        if (editor.HeaderControls.TryGetValue(field.Key, out var control))
+                            match[field.Key] = DialogRenderer.GetControlValue(control, field.Kind);
+
+                    var picked = PullDialog.Show(captured, services, match);
+                    if (picked == null) return;
+                    foreach (var line in picked) editor.AddPulledRow(line);
+                };
+                buttons.Add(button);
+            }
+
+            return buttons;
         }
 
         internal static bool TrySaveEditor(DocumentDialogDefinition def, IServiceProvider services, IToastService toast, DocumentEditor editor) =>
@@ -176,7 +253,10 @@ namespace PrimeERP.Composition.Renderers
             var btnSave = new Btn { Text = LocalizationService.Get("Str.Save"), Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
 
             var title = editor.IsEdit ? LocalizationService.Get(def.TitleEditKey) : LocalizationService.Get(def.TitleKey);
-            var footer = new StackPanel { Orientation = Orientation.Horizontal, Children = { btnCancel, btnSave } };
+            var footer = new StackPanel { Orientation = Orientation.Horizontal };
+            foreach (var pullButton in BuildPullButtons(def, services, () => editor)) footer.Children.Add(pullButton);
+            footer.Children.Add(btnCancel);
+            footer.Children.Add(btnSave);
             var window = new ComposedDialogWindow(title, editor.Body, footer, width: ComputeDialogWidth(def));
 
             btnCancel.Click += (_, __) => window.Close();
@@ -205,8 +285,7 @@ namespace PrimeERP.Composition.Renderers
         }
 
         private static bool TrySave(DocumentDialogDefinition def, IServiceProvider services, IToastService toast,
-            Dictionary<string, FrameworkElement> headerControls, List<(Grid Row, Dictionary<string, FrameworkElement> Controls)> rows,
-            object editItem, bool isEdit)
+            Dictionary<string, FrameworkElement> headerControls, List<EditorRow> rows, object editItem, bool isEdit)
         {
             var service = services.GetRequiredService(def.ServiceType);
 
@@ -221,7 +300,7 @@ namespace PrimeERP.Composition.Renderers
 
             var linesList = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(def.LineDtoType));
             int lineNo = 1;
-            foreach (var (_, controls) in rows)
+            foreach (var row in rows)
             {
                 var lineDto = Activator.CreateInstance(def.LineDtoType);
                 var lineDtoType = lineDto.GetType();
@@ -230,11 +309,20 @@ namespace PrimeERP.Composition.Renderers
                     var prop = lineDtoType.GetProperty(lf.Key);
                     if (prop == null || !prop.CanWrite) continue;
 
-                    var value = DialogRenderer.GetControlValue(controls[lf.Key], lf.Kind);
+                    var value = DialogRenderer.GetControlValue(row.Controls[lf.Key], lf.Kind);
                     if (value == null) continue;
-                    prop.SetValue(lineDto, Convert.ChangeType(value, prop.PropertyType));
+                    prop.SetValue(lineDto, Convert.ChangeType(value, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType));
                 }
                 lineDtoType.GetProperty("LineNo")?.SetValue(lineDto, lineNo++);
+
+                if (row.Link != null && lineDto is PrimeERP.Application.DTOs.Documents.IPullableLine pullable)
+                {
+                    pullable.SourceType   = row.Link.SourceType;
+                    pullable.SourceId     = row.Link.SourceId;
+                    pullable.SourceNo     = row.Link.SourceNo;
+                    pullable.SourceLineId = row.Link.SourceLineId;
+                }
+
                 linesList.Add(lineDto);
             }
             def.DtoType.GetProperty(def.LinesPropertyName).SetValue(dto, linesList);

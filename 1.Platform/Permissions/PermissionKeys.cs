@@ -86,6 +86,26 @@ namespace PrimeERP.Platform.Permissions
             public const string View = "Warehouses.View", Create = "Warehouses.Create", Edit = "Warehouses.Edit", Delete = "Warehouses.Delete";
         }
 
+        public static class Treasuries
+        {
+            public const string View = "Treasuries.View", Create = "Treasuries.Create", Edit = "Treasuries.Edit", Delete = "Treasuries.Delete";
+        }
+
+        public static class Receipts
+        {
+            public const string View = "Receipts.View", Create = "Receipts.Create", Edit = "Receipts.Edit", Delete = "Receipts.Delete", Print = "Receipts.Print";
+        }
+
+        public static class Payments
+        {
+            public const string View = "Payments.View", Create = "Payments.Create", Edit = "Payments.Edit", Delete = "Payments.Delete", Print = "Payments.Print";
+        }
+
+        public static class Cheques
+        {
+            public const string View = "Cheques.View", Create = "Cheques.Create", Edit = "Cheques.Edit", Delete = "Cheques.Delete", Print = "Cheques.Print";
+        }
+
         public static class AssetCategories
         {
             public const string View = "AssetCategories.View", Create = "AssetCategories.Create", Edit = "AssetCategories.Edit", Delete = "AssetCategories.Delete";

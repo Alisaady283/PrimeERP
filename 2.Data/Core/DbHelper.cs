@@ -47,6 +47,28 @@ namespace PrimeERP.Data.Core
             return dict;
         }
 
+        /// <summary>
+        /// يقرأ النتيجة صفاً صفاً بدل DataTable.Load — الأخيرة تستنتج قيود المخطط من القارئ، فتضيف قيد
+        /// تفرّد على أي عمود مصدره عمود UNIQUE في الجدول (EntryNo مثلاً). حينها أي استعلام يُعيد نفس المستند
+        /// في أكثر من صف (سطرا قيد على نفس الحساب — وهو مسموح بإعداد AllowDuplicateAccountInEntry) يرمي
+        /// ConstraintException بدل إعادة الصفوف. القراءة هنا بلا استنتاج مخطط: النتيجة بيانات لا جدول قاعدة.
+        /// </summary>
+        private static DataTable ReadTable(DbDataReader reader)
+        {
+            var table = new DataTable();
+            for (int i = 0; i < reader.FieldCount; i++)
+                table.Columns.Add(reader.GetName(i), typeof(object));
+
+            while (reader.Read())
+            {
+                var values = new object[reader.FieldCount];
+                reader.GetValues(values);
+                table.Rows.Add(values);
+            }
+
+            return table;
+        }
+
         public static DataTable Query(string sql, IDictionary<string, object> parameters = null)
         {
             using var conn = GetConnection();
@@ -54,10 +76,8 @@ namespace PrimeERP.Data.Core
             cmd.CommandText = sql;
             AddParams(cmd, parameters);
 
-            var dt = new DataTable();
             using var reader = cmd.ExecuteReader();
-            dt.Load(reader);
-            return dt;
+            return ReadTable(reader);
         }
 
         /// <summary>
@@ -74,10 +94,8 @@ namespace PrimeERP.Data.Core
             cmd.CommandText = sql;
             AddParams(cmd, parameters);
 
-            var dt = new DataTable();
             using var reader = cmd.ExecuteReader();
-            dt.Load(reader);
-            return dt;
+            return ReadTable(reader);
         }
 
         public static int Execute(string sql, IDictionary<string, object> parameters = null)

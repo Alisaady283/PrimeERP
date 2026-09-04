@@ -70,8 +70,8 @@ namespace PrimeERP.Data.Repositories
             InsertGetId($"INSERT INTO {_headerTable} (DocNo, MovementDate, WarehouseId, Notes, CreatedBy) VALUES (@no, @date, @wh, @notes, @by)",
                 conn, tx, ("@no", doc.DocNo), ("@date", doc.MovementDate), ("@wh", doc.WarehouseId), ("@notes", doc.Notes ?? ""), ("@by", doc.CreatedBy));
 
-        public void InsertLine(DbConnection conn, DbTransaction tx, int documentId, StockAdjustmentLine line) =>
-            Exec($@"INSERT INTO {_lineTable} (DocumentId, LineNo, ProductId, ProductCode, ProductName, Qty, UnitCost, Notes)
+        public int InsertLine(DbConnection conn, DbTransaction tx, int documentId, StockAdjustmentLine line) =>
+            InsertGetId($@"INSERT INTO {_lineTable} (DocumentId, LineNo, ProductId, ProductCode, ProductName, Qty, UnitCost, Notes)
                     VALUES (@did, @lno, @pid, @pcode, @pname, @qty, @cost, @notes)",
                 conn, tx, ("@did", documentId), ("@lno", line.LineNo), ("@pid", line.ProductId), ("@pcode", line.ProductCode),
                 ("@pname", line.ProductName ?? ""), ("@qty", line.Qty), ("@cost", line.UnitCost), ("@notes", line.Notes ?? ""));

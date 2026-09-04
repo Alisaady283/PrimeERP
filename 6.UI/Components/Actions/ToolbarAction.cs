@@ -61,7 +61,7 @@ namespace PrimeERP.UI.Components.Actions
         public static ToolbarAction CollapseAll(ICommand command) =>
             Build("collapseAll", "طي الكل", "IconChevronUp", "ghost", command, null, null, "طي كل العقد");
 
-        private static ToolbarAction Build(string key, string text, string iconKey, string variant,
+        public static ToolbarAction Build(string key, string text, string iconKey, string variant,
                                            ICommand command, string permissionKey, string shortcut, string tooltip) => new()
         {
             Key = key,

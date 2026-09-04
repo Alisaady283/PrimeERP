@@ -32,13 +32,7 @@ namespace PrimeERP.Modules
             SourceKind = sourceKind,
             Label = label,
             PermissionKey = "Inventory.Create",
-            MatchFields = new List<string> { nameof(CreateStockAdjustmentDto.WarehouseId) },
-            LineMapping = new Dictionary<string, string>
-            {
-                [nameof(CreateStockAdjustmentLineDto.ProductCode)] = nameof(CreateStockAdjustmentLineDto.ProductCode),
-                [nameof(CreateStockAdjustmentLineDto.Qty)]         = nameof(CreateStockAdjustmentLineDto.Qty),
-                [nameof(CreateStockAdjustmentLineDto.UnitCost)]    = nameof(CreateStockAdjustmentLineDto.UnitCost),
-            }
+            MatchFields = new(),   // أذون المخزن تُسحب من مستندات بلا مخزن (أمر شراء/توريد) — لا حقل مطابقة
         };
 
         private static void Register(IModuleRegistry registry, string key, string title, Type viewModel, Type service,
