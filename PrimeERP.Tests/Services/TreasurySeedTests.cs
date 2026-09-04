@@ -42,6 +42,39 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
+        public void CreatingALeafAccountUnderTheCashOrBankRoot_CreatesItsTreasury()
+        {
+            var accounts = _db.Services.GetRequiredService<IAccountService>();
+            var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
+
+            var cashRoot = accounts.GetByCode("1204").Value;
+            var bankRoot = accounts.GetByCode("1203").Value;
+
+            var cashLeaf = accounts.Create(new PrimeERP.Application.DTOs.Accounting.CreateAccountDto
+            { ParentId = cashRoot.Id, Name = "صندوق الفرع", IsLeaf = true });
+            var bankLeaf = accounts.Create(new PrimeERP.Application.DTOs.Accounting.CreateAccountDto
+            { ParentId = bankRoot.Id, Name = "بنك القاهرة", IsLeaf = true });
+            Assert.True(cashLeaf.IsSuccess, cashLeaf.ErrorMessage);
+            Assert.True(bankLeaf.IsSuccess, bankLeaf.ErrorMessage);
+
+            var all = treasuries.GetAll().Value;
+            var cash = all.Single(t => t.AccountCode == cashLeaf.Value.Code);
+            var bank = all.Single(t => t.AccountCode == bankLeaf.Value.Code);
+
+            Assert.Equal(TreasuryKind.Cash, cash.Kind);
+            Assert.Equal(TreasuryKind.Bank, bank.Kind);
+            Assert.Equal("صندوق الفرع", cash.Name);
+
+            // إعادة تسمية الحساب تعيد تسمية الخزينة، وحذفه يعطّلها — نفس سلوك العملاء.
+            Assert.True(accounts.Update(new PrimeERP.Application.DTOs.Accounting.UpdateAccountDto
+            { Id = cashLeaf.Value.Id, Name = "صندوق الفرع الرئيسي", IsLeaf = true }).IsSuccess);
+            Assert.Equal("صندوق الفرع الرئيسي", treasuries.GetAll().Value.Single(t => t.AccountCode == cashLeaf.Value.Code).Name);
+
+            Assert.True(accounts.Delete(cashLeaf.Value.Id).IsSuccess);
+            Assert.DoesNotContain(treasuries.GetAll().Value, t => t.AccountCode == cashLeaf.Value.Code);
+        }
+
+        [Fact]
         public void CreatingATreasuryWithoutAnAccount_BuildsTheLeafAccountItself()
         {
             var treasuries = _db.Services.GetRequiredService<ITreasuryService>();

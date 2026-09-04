@@ -14,9 +14,12 @@ namespace PrimeERP.Data.Repositories
         void CreateTable();
         List<Treasury> GetAll(bool includeInactive = false);
         Treasury GetById(int id, DbConnection conn = null, DbTransaction tx = null);
-        int Insert(Treasury t);
+        int Insert(Treasury t, DbConnection conn = null, DbTransaction tx = null);
         void Update(Treasury t);
         void Delete(int id);
+        Treasury GetByAccountCode(string accountCode, DbConnection conn = null, DbTransaction tx = null);
+        void UpdateNameByAccountCode(DbConnection conn, DbTransaction tx, string accountCode, string name);
+        void DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode);
     }
 
     public class TreasuryRepository : RepositoryBase<Treasury>, ITreasuryRepository
@@ -45,10 +48,10 @@ namespace PrimeERP.Data.Repositories
         public override Treasury GetById(int id, DbConnection conn = null, DbTransaction tx = null) =>
             QueryOne("SELECT * FROM Treasuries WHERE Id = @id", conn, tx, ("@id", id));
 
-        public int Insert(Treasury t) =>
+        public int Insert(Treasury t, DbConnection conn = null, DbTransaction tx = null) =>
             InsertGetId(@"INSERT INTO Treasuries (Code, Name, Kind, AccountCode, BankName, AccountNumber, Notes, IsActive)
                           VALUES (@code, @name, @kind, @acc, @bank, @accno, @notes, @active)",
-                null, null, ("@code", t.Code), ("@name", t.Name), ("@kind", (int)t.Kind), ("@acc", t.AccountCode ?? ""),
+                conn, tx, ("@code", t.Code), ("@name", t.Name), ("@kind", (int)t.Kind), ("@acc", t.AccountCode ?? ""),
                 ("@bank", t.BankName ?? ""), ("@accno", t.AccountNumber ?? ""), ("@notes", t.Notes ?? ""), ("@active", t.IsActive));
 
         public void Update(Treasury t) =>
@@ -56,6 +59,15 @@ namespace PrimeERP.Data.Repositories
                           AccountNumber = @accno, Notes = @notes, IsActive = @active, UpdatedAt = @now WHERE Id = @id",
                 null, null, ("@name", t.Name), ("@kind", (int)t.Kind), ("@acc", t.AccountCode ?? ""), ("@bank", t.BankName ?? ""),
                 ("@accno", t.AccountNumber ?? ""), ("@notes", t.Notes ?? ""), ("@active", t.IsActive), ("@now", DateTime.Now), ("@id", t.Id));
+
+        public Treasury GetByAccountCode(string accountCode, DbConnection conn = null, DbTransaction tx = null) =>
+            QueryOne("SELECT * FROM Treasuries WHERE AccountCode = @c", conn, tx, ("@c", accountCode ?? ""));
+
+        public void UpdateNameByAccountCode(DbConnection conn, DbTransaction tx, string accountCode, string name) =>
+            Exec("UPDATE Treasuries SET Name = @n WHERE AccountCode = @c", conn, tx, ("@n", name ?? ""), ("@c", accountCode ?? ""));
+
+        public void DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode) =>
+            Exec("UPDATE Treasuries SET IsActive = @a WHERE AccountCode = @c", conn, tx, ("@a", false), ("@c", accountCode ?? ""));
 
         public void Delete(int id) => Exec("UPDATE Treasuries SET IsActive = @a WHERE Id = @id", null, null, ("@a", false), ("@id", id));
 

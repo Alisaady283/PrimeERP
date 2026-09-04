@@ -25,10 +25,9 @@ namespace PrimeERP.Modules
                 Columns = new()
                 {
                     new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(TreasuryDto.Code), Width = 100 },
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(TreasuryDto.Name), Width = 220, IsStarWidth = true },
                     new() { Header = "النوع", Binding = nameof(TreasuryDto.KindName), Width = 90, Align = ColumnAlign.Center },
-                    new() { Header = "الحساب المرتبط", Binding = nameof(TreasuryDto.AccountCode), Width = 130, Align = ColumnAlign.Center },
-                    new() { Header = "البنك", Binding = nameof(TreasuryDto.BankName), Width = 160 },
+                    new() { Header = "اسم الخزينة / البنك", Binding = nameof(TreasuryDto.Name), Width = 240, IsStarWidth = true },
+                    new() { Header = "الحساب بالشجرة", Binding = nameof(TreasuryDto.AccountCode), Width = 130, Align = ColumnAlign.Center },
                 },
                 Dialog = new DialogDefinition
                 {
@@ -37,11 +36,11 @@ namespace PrimeERP.Modules
                     CreateDtoType = typeof(CreateTreasuryDto), UpdateDtoType = typeof(UpdateTreasuryDto),
                     Fields = new()
                     {
-                        new() { Key = nameof(CreateTreasuryDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateTreasuryDto.IsBank), LabelKey = "حساب بنكي", Kind = FieldKind.Check },
-                        new() { Key = nameof(CreateTreasuryDto.AccountCode), LabelKey = "الحساب المرتبط (يُنشأ تلقائياً لو تُرك فارغاً)", Kind = FieldKind.Picker, PickerType = "Account", PickerLeafOnly = true, PickerValueField = "Code" },
-                        new() { Key = nameof(CreateTreasuryDto.BankName), LabelKey = "اسم البنك", Kind = FieldKind.Text, MaxLength = 200 },
-                        new() { Key = nameof(CreateTreasuryDto.AccountNumber), LabelKey = "رقم الحساب", Kind = FieldKind.Text, MaxLength = 60 },
+                        // الحساب لا يُختار: الخزينة ورقة تحت "الصناديق" والبنك تحت "البنوك"، والنوع وحده يحدّد أيهما.
+                        new() { Key = nameof(CreateTreasuryDto.Kind), LabelKey = "النوع", Kind = FieldKind.Picker, PickerType = "TreasuryKind", IsRequired = true, IsReadOnlyOnEdit = true, DefaultValue = (int)TreasuryKind.Cash },
+                        new() { Key = nameof(CreateTreasuryDto.Name), LabelKey = "اسم الخزينة / البنك", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateTreasuryDto.AccountNumber), LabelKey = "رقم الحساب بالبنك", Kind = FieldKind.Text, MaxLength = 60,
+                                VisibleWhenField = nameof(CreateTreasuryDto.Kind), VisibleWhenValue = (int)TreasuryKind.Bank },
                         new() { Key = nameof(CreateTreasuryDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
                         new() { Key = nameof(CreateTreasuryDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }

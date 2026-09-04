@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Treasury;
@@ -12,7 +13,7 @@ using Entity = PrimeERP.Domain.Entities.Treasury;
 
 namespace PrimeERP.Application.Services.Treasury
 {
-    public class TreasuryService : ServiceBase, ITreasuryService
+    public class TreasuryService : ServiceBase, ITreasuryService, IAccountLinkedService
     {
         protected override string PermissionPrefix => "Treasuries";
         protected override string StringPrefix => "Str.Treasury";
@@ -44,6 +45,36 @@ namespace PrimeERP.Application.Services.Treasury
             { ParentId = parent.Value.Id, Name = name, IsLeaf = true, SkipAutoLink = true });
 
             return created.IsSuccess ? created.Value.Code : null;
+        }
+
+        /// <summary>الاتجاه المعاكس — إنشاء حساب ورقي تحت "الصناديق"/"البنوك" في الشجرة يُنشئ خزينته هنا.
+        /// النوع يُستنتَج من الأصل الذي وقع تحته الحساب، فلا يحتاج المستخدم لتكرار الاختيار.</summary>
+        public Result CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name, string rootCode)
+        {
+            if (_repo.GetByAccountCode(accountCode, conn, tx) != null) return Result.Ok();
+
+            var bankRoot = _settingsProvider.Get(SettingKeys.Accounts.Bank, "1203");
+
+            var entity = new Entity
+            {
+                Code = _numbers.Next(conn, tx, "Treasury"), Name = name,
+                Kind = rootCode == bankRoot ? TreasuryKind.Bank : TreasuryKind.Cash,
+                AccountCode = accountCode, IsActive = true
+            };
+            entity.Id = _repo.Insert(entity, conn, tx);
+            return Result.Ok();
+        }
+
+        public Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
+        {
+            _repo.UpdateNameByAccountCode(conn, tx, accountCode, name);
+            return Result.Ok();
+        }
+
+        public Result DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode)
+        {
+            _repo.DeleteByAccountCode(conn, tx, accountCode);
+            return Result.Ok();
         }
 
         /// <summary>خزينة وبنك افتراضيان عند أول تشغيل — بلا هذا تبقى قوائم السندات فارغة فيبدو أنها لا تعمل.</summary>

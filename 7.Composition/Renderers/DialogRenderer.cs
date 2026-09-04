@@ -431,6 +431,14 @@ namespace PrimeERP.Composition.Renderers
 
                 combo.ItemsSource = items.Select(t => new PickerRow { Id = t.Id, Code = t.Code, Display = t.Name }).ToList();
             }
+            else if (field.PickerType == "TreasuryKind")
+            {
+                combo.ItemsSource = new List<PickerRow>
+                {
+                    new() { Id = (int)PrimeERP.Domain.Enums.TreasuryKind.Cash, Display = "خزينة" },
+                    new() { Id = (int)PrimeERP.Domain.Enums.TreasuryKind.Bank, Display = "بنك" },
+                };
+            }
             else if (field.PickerType == "SalesInvoice")
             {
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Sales.ISalesInvoiceService>().GetPaged(1, 2000);

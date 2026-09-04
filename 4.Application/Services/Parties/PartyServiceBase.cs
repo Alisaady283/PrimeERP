@@ -23,7 +23,7 @@ namespace PrimeERP.Application.Services.Parties
     /// <summary>المنطق المشترك بين العملاء والموردين حول ربط الحساب: إنشاء حساب فرعي عند الإنشاء، الاتجاه
     /// المعاكس (CreateFromAccount/DeleteByAccountCode/UpdateNameFromAccount يستدعيها AccountService)، وإعادة
     /// حساب الرصيد وكشف الحساب من IAccountService دائماً (لا حساب مزدوج).</summary>
-    public abstract class PartyServiceBase<TEntity, TDto, TFilter> : CrudServiceBase<TEntity, TDto, TFilter> where TEntity : BaseModel
+    public abstract class PartyServiceBase<TEntity, TDto, TFilter> : CrudServiceBase<TEntity, TDto, TFilter>, IAccountLinkedService where TEntity : BaseModel
     {
         protected abstract string AccountSettingKey { get; }
         protected abstract string SequenceKey { get; }
@@ -73,6 +73,10 @@ namespace PrimeERP.Application.Services.Parties
         }
 
         /// <summary>الاتجاه المعاكس — يستدعيه AccountService.Create عند الربط التلقائي (حساب أُنشئ بالفعل). لا ينشئ حساباً، ينشئ السجل فقط بالكود الممرَّر. بلا Audit مستقل (AccountService.Create سجّلت العملية).</summary>
+        // العقد العام يعيد Result، والعقد الخاص بالطرف يعيد Result<TDto> — تنفيذ صريح يجسر بينهما بلا تكرار منطق.
+        Result IAccountLinkedService.CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name, string rootCode) =>
+            CreateFromAccount(conn, tx, accountCode, name);
+
         public virtual Result<TDto> CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
         {
             var code = Numbers.Next(conn, tx, SequenceKey);

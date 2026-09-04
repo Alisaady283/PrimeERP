@@ -68,11 +68,14 @@ namespace PrimeERP.Tests.Services
             return id;
         }
 
-        private class FakeCustomerService : ICustomerService
+        private class FakeCustomerService : ICustomerService, IAccountLinkedService
         {
             public (string Code, string Name)? LastCreatedFor;
             public string? LastDeletedAccountCode;
             public (string Code, string Name)? LastNameSync;
+
+            Result IAccountLinkedService.CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name, string rootCode) =>
+                CreateFromAccount(conn, tx, accountCode, name);
 
             public Result<CustomerDto> CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
             {
@@ -107,11 +110,14 @@ namespace PrimeERP.Tests.Services
             public Result<CreditCheckResult> CheckCreditLimit(int id, decimal additional) => throw new NotImplementedException();
         }
 
-        private class FakeSupplierService : ISupplierService
+        private class FakeSupplierService : ISupplierService, IAccountLinkedService
         {
             public (string Code, string Name)? LastCreatedFor;
             public string? LastDeletedAccountCode;
             public (string Code, string Name)? LastNameSync;
+
+            Result IAccountLinkedService.CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name, string rootCode) =>
+                CreateFromAccount(conn, tx, accountCode, name);
 
             public Result<SupplierDto> CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
             {
@@ -236,7 +242,7 @@ namespace PrimeERP.Tests.Services
         public void Create_UnderLeafAccount_Fails()
         {
             var leaf = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل leaf", IsLeaf = true });
-            Assert.True(leaf.IsSuccess);
+            Assert.True(leaf.IsSuccess, leaf.ErrorMessage);
 
             var result = _service.Create(new CreateAccountDto { ParentId = leaf.Value.Id, Name = "ابن تحت leaf", IsLeaf = true });
 

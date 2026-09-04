@@ -169,11 +169,7 @@ namespace PrimeERP.Application.Services.Accounting
                 var id = _accounts.Insert(account, conn, tx);
                 account.Id = id;
 
-                if (link.Value.AutoLinkEnabled)
-                {
-                    if (link.Value.IsUnderCustomers) link.Value.CustomerService.CreateFromAccount(conn, tx, account.Code, account.Name);
-                    else if (link.Value.IsUnderSuppliers) link.Value.SupplierService.CreateFromAccount(conn, tx, account.Code, account.Name);
-                }
+                link.Value.Linked?.CreateFromAccount(conn, tx, account.Code, account.Name, link.Value.RootCode);
                 // الأب = المخزون → لا ربط تلقائي عمداً (المنتج يُنشئ حسابه لا العكس) — لا فرع هنا عمداً.
 
                 return id;
@@ -264,11 +260,7 @@ namespace PrimeERP.Application.Services.Accounting
             {
                 _accounts.Update(account, conn, tx);
 
-                if (nameChanged && link.Value.AutoLinkEnabled)
-                {
-                    if (link.Value.IsUnderCustomers) link.Value.CustomerService.UpdateNameFromAccount(conn, tx, account.Code, account.Name);
-                    else if (link.Value.IsUnderSuppliers) link.Value.SupplierService.UpdateNameFromAccount(conn, tx, account.Code, account.Name);
-                }
+                if (nameChanged) link.Value.Linked?.UpdateNameFromAccount(conn, tx, account.Code, account.Name);
             });
 
             Audit.Log(EntityName, account.Id, AuditAction.Update, newValue: new { account.Name, account.IsLeaf, account.IsActive });
@@ -300,11 +292,7 @@ namespace PrimeERP.Application.Services.Accounting
             {
                 _accounts.Delete(account.Code, conn, tx);
 
-                if (link.Value.AutoLinkEnabled)
-                {
-                    if (link.Value.IsUnderCustomers) link.Value.CustomerService.DeleteByAccountCode(conn, tx, account.Code);
-                    else if (link.Value.IsUnderSuppliers) link.Value.SupplierService.DeleteByAccountCode(conn, tx, account.Code);
-                }
+                link.Value.Linked?.DeleteByAccountCode(conn, tx, account.Code);
             });
 
             Audit.Log(EntityName, account.Id, AuditAction.Delete, details: account.Code);
@@ -480,11 +468,23 @@ namespace PrimeERP.Application.Services.Accounting
         private class AutoLinkResolution
         {
             public bool AutoLinkEnabled;
-            public bool IsUnderCustomers;
-            public bool IsUnderSuppliers;
-            public ICustomerService CustomerService;
-            public ISupplierService SupplierService;
+
+            /// <summary>الخدمة المرتبطة بالأصل المطابق — null يعني أن الأب ليس أصلاً مرتبطاً.</summary>
+            public IAccountLinkedService Linked;
+
+            /// <summary>كود الأصل المطابق — الخدمة المرتبطة تحتاجه لتمييز نوعها (صناديق أم بنوك).</summary>
+            public string RootCode;
         }
+
+        /// <summary>أصول الشجرة المرتبطة بكيانات: مفتاح الإعداد الذي يحمل كود الأصل، والخدمة التي تملك الكيان.
+        /// إضافة كيان مرتبط جديد = سطر هنا فقط، بلا أي فرع في Create/Update/Delete.</summary>
+        private static readonly (string SettingKey, Type ServiceType)[] LinkedRoots =
+        {
+            (SettingKeys.Accounts.Customers, typeof(ICustomerService)),
+            (SettingKeys.Accounts.Suppliers, typeof(ISupplierService)),
+            (SettingKeys.Accounts.Cash,      typeof(PrimeERP.Application.Services.Treasury.ITreasuryService)),
+            (SettingKeys.Accounts.Bank,      typeof(PrimeERP.Application.Services.Treasury.ITreasuryService)),
+        };
 
         /// <summary>
         /// يحدّد هل حساب (تحت parentOrAccountCode) مرتبط تلقائياً بعميل/مورد، ويحلّ الخدمة المطلوبة عبر
@@ -497,29 +497,22 @@ namespace PrimeERP.Application.Services.Accounting
             if (skipAutoLink)
                 return Result.Ok(new AutoLinkResolution());
 
-            var customersRoot   = Setting(SettingKeys.Accounts.Customers, "");
-            var suppliersRoot   = Setting(SettingKeys.Accounts.Suppliers, "");
             var autoLinkEnabled = Setting(SettingKeys.Accounts.AutoLinkEnabled, true);
-            var isUnderCustomers = !string.IsNullOrEmpty(customersRoot) && parentOrAccountCode == customersRoot;
-            var isUnderSuppliers = !string.IsNullOrEmpty(suppliersRoot) && parentOrAccountCode == suppliersRoot;
+            var resolution = new AutoLinkResolution { AutoLinkEnabled = autoLinkEnabled };
+            if (!autoLinkEnabled) return Result.Ok(resolution);
 
-            var resolution = new AutoLinkResolution { AutoLinkEnabled = autoLinkEnabled, IsUnderCustomers = isUnderCustomers, IsUnderSuppliers = isUnderSuppliers };
-
-            if (autoLinkEnabled)
+            foreach (var (settingKey, serviceType) in LinkedRoots)
             {
-                if (isUnderCustomers)
-                {
-                    resolution.CustomerService = (ICustomerService)_services.GetService(typeof(ICustomerService));
-                    if (resolution.CustomerService == null)
-                        return Fail<AutoLinkResolution>("CustomerLinkUnavailable");
-                }
+                var root = Setting(settingKey, "");
+                if (string.IsNullOrEmpty(root) || parentOrAccountCode != root) continue;
 
-                if (isUnderSuppliers)
-                {
-                    resolution.SupplierService = (ISupplierService)_services.GetService(typeof(ISupplierService));
-                    if (resolution.SupplierService == null)
-                        return Fail<AutoLinkResolution>("SupplierLinkUnavailable");
-                }
+                resolution.Linked = _services.GetService(serviceType) as IAccountLinkedService;
+                if (resolution.Linked == null)
+                    return Fail<AutoLinkResolution>("AccountLinkUnavailable");
+
+                resolution.RootCode = root;
+
+                break;
             }
 
             return Result.Ok(resolution);
