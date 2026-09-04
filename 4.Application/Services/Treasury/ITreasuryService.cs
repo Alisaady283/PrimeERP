@@ -11,5 +11,6 @@ namespace PrimeERP.Application.Services.Treasury
         Result<TreasuryDto> Create(CreateTreasuryDto dto);
         Result Update(UpdateTreasuryDto dto);
         Result Delete(int id);
+        Result SeedDefaults();
     }
 }

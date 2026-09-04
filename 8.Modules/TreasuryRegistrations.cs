@@ -39,7 +39,7 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreateTreasuryDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
                         new() { Key = nameof(CreateTreasuryDto.IsBank), LabelKey = "حساب بنكي", Kind = FieldKind.Check },
-                        new() { Key = nameof(CreateTreasuryDto.AccountCode), LabelKey = "الحساب المرتبط", Kind = FieldKind.Picker, PickerType = "Account", PickerLeafOnly = true, PickerValueField = "Code", IsRequired = true },
+                        new() { Key = nameof(CreateTreasuryDto.AccountCode), LabelKey = "الحساب المرتبط (يُنشأ تلقائياً لو تُرك فارغاً)", Kind = FieldKind.Picker, PickerType = "Account", PickerLeafOnly = true, PickerValueField = "Code" },
                         new() { Key = nameof(CreateTreasuryDto.BankName), LabelKey = "اسم البنك", Kind = FieldKind.Text, MaxLength = 200 },
                         new() { Key = nameof(CreateTreasuryDto.AccountNumber), LabelKey = "رقم الحساب", Kind = FieldKind.Text, MaxLength = 60 },
                         new() { Key = nameof(CreateTreasuryDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
@@ -149,8 +149,6 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateVoucherDto.ChequeNo), LabelKey = "رقم الشيك", Kind = FieldKind.Text, MaxLength = 40,
                                 VisibleWhenField = nameof(CreateVoucherDto.Method), VisibleWhenValue = (int)PaymentMethod.Cheque },
                         new() { Key = nameof(CreateVoucherDto.ChequeDueDate), LabelKey = "استحقاق الشيك", Kind = FieldKind.Date,
-                                VisibleWhenField = nameof(CreateVoucherDto.Method), VisibleWhenValue = (int)PaymentMethod.Cheque },
-                        new() { Key = nameof(CreateVoucherDto.ChequeBank), LabelKey = "بنك الشيك", Kind = FieldKind.Text, MaxLength = 200,
                                 VisibleWhenField = nameof(CreateVoucherDto.Method), VisibleWhenValue = (int)PaymentMethod.Cheque },
                         new() { Key = nameof(CreateVoucherDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300, ColumnSpan = 2 },
                     },

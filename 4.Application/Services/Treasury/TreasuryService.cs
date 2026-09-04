@@ -20,11 +20,40 @@ namespace PrimeERP.Application.Services.Treasury
 
         private readonly ITreasuryRepository _repo;
         private readonly INumberSequenceService _numbers;
+        private readonly PrimeERP.Application.Services.Accounting.IAccountService _accounts;
+        private readonly ISettingsProvider _settingsProvider;
 
         public TreasuryService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, ITreasuryRepository repo, INumberSequenceService numbers) : base(permissions, settings, localization, audit)
+            IAuditLogger audit, ITreasuryRepository repo, INumberSequenceService numbers,
+            PrimeERP.Application.Services.Accounting.IAccountService accounts) : base(permissions, settings, localization, audit)
         {
-            _repo = repo; _numbers = numbers;
+            _repo = repo; _numbers = numbers; _accounts = accounts; _settingsProvider = settings;
+        }
+
+        /// <summary>الخزينة حساب ورقي تحت "الصناديق" والبنك تحت "البنوك" — يُنشأ تلقائياً عند ترك الحساب فارغاً،
+        /// فلا يضطر المستخدم لبناء الحساب يدوياً قبل إنشاء الخزينة.</summary>
+        private string EnsureAccount(string accountCode, string name, bool isBank)
+        {
+            if (!string.IsNullOrWhiteSpace(accountCode)) return accountCode;
+
+            var parentCode = _settingsProvider.Get(isBank ? SettingKeys.Accounts.Bank : SettingKeys.Accounts.Cash, isBank ? "1203" : "1204");
+            var parent = _accounts.GetByCode(parentCode);
+            if (parent.IsFailure) return null;
+
+            var created = _accounts.Create(new PrimeERP.Application.DTOs.Accounting.CreateAccountDto
+            { ParentId = parent.Value.Id, Name = name, IsLeaf = true, SkipAutoLink = true });
+
+            return created.IsSuccess ? created.Value.Code : null;
+        }
+
+        /// <summary>خزينة وبنك افتراضيان عند أول تشغيل — بلا هذا تبقى قوائم السندات فارغة فيبدو أنها لا تعمل.</summary>
+        public Result SeedDefaults()
+        {
+            if (_repo.GetAll(includeInactive: true).Count > 0) return Result.Ok();
+
+            Create(new CreateTreasuryDto { Name = "الصندوق الرئيسي", IsBank = false, IsActive = true });
+            Create(new CreateTreasuryDto { Name = "البنك الرئيسي",  IsBank = true,  IsActive = true });
+            return Result.Ok();
         }
 
         public Result<List<TreasuryDto>> GetAll(bool includeInactive = false) =>
@@ -44,7 +73,8 @@ namespace PrimeERP.Application.Services.Treasury
             {
                 Code = _numbers.Next("Treasury"), Name = dto.Name,
                 Kind = dto.IsBank ? TreasuryKind.Bank : TreasuryKind.Cash,
-                AccountCode = dto.AccountCode, BankName = dto.BankName, AccountNumber = dto.AccountNumber,
+                AccountCode = EnsureAccount(dto.AccountCode, dto.Name, dto.IsBank),
+                BankName = dto.BankName, AccountNumber = dto.AccountNumber,
                 Notes = dto.Notes, IsActive = dto.IsActive
             };
             entity.Id = _repo.Insert(entity);
@@ -62,7 +92,7 @@ namespace PrimeERP.Application.Services.Treasury
 
             entity.Name = dto.Name;
             entity.Kind = dto.IsBank ? TreasuryKind.Bank : TreasuryKind.Cash;
-            entity.AccountCode = dto.AccountCode; entity.BankName = dto.BankName;
+            entity.AccountCode = EnsureAccount(dto.AccountCode, dto.Name, dto.IsBank); entity.BankName = dto.BankName;
             entity.AccountNumber = dto.AccountNumber; entity.Notes = dto.Notes; entity.IsActive = dto.IsActive;
 
             _repo.Update(entity);

@@ -139,7 +139,7 @@ namespace PrimeERP.Application.Services.Vouchers
 
                     voucher.Id = id;
                     var entryId = method == PaymentMethod.Cheque ? (int?)null : PostEntry(conn, tx, voucher, cashAccount, partyAccount);
-                    var chequeId = method == PaymentMethod.Cheque ? CreateCheque(conn, tx, dto, id, entryId) : (int?)null;
+                    var chequeId = method == PaymentMethod.Cheque ? CreateCheque(conn, tx, dto, id, entryId, treasury.Value.Name) : (int?)null;
                     _repo.SetLinks(conn, tx, id, entryId, chequeId);
 
                     return id;
@@ -206,14 +206,14 @@ namespace PrimeERP.Application.Services.Vouchers
             return created.Value.Id;
         }
 
-        private int CreateCheque(DbConnection conn, DbTransaction tx, CreateVoucherDto dto, int voucherId, int? entryId)
+        private int CreateCheque(DbConnection conn, DbTransaction tx, CreateVoucherDto dto, int voucherId, int? entryId, string treasuryName)
         {
             var cheque = new Cheque
             {
                 ChequeNo = dto.ChequeNo, Direction = IsReceipt ? ChequeDirection.Incoming : ChequeDirection.Outgoing,
                 PartyKind = PartyOf, PartyId = dto.PartyId, Amount = dto.Amount,
                 IssueDate = dto.VoucherDate, DueDate = dto.ChequeDueDate ?? dto.VoucherDate,
-                BankName = dto.ChequeBank, Status = IsReceipt ? ChequeStatus.InHand : ChequeStatus.Issued,
+                BankName = string.IsNullOrWhiteSpace(dto.ChequeBank) ? treasuryName : dto.ChequeBank, Status = IsReceipt ? ChequeStatus.InHand : ChequeStatus.Issued,
                 TreasuryId = dto.TreasuryId, VoucherId = voucherId, CreatedBy = AppSession.Username
             };
             var chequeId = _cheques.Insert(conn, tx, cheque);
