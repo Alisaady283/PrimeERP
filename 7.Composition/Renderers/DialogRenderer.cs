@@ -46,6 +46,23 @@ namespace PrimeERP.Composition.Renderers
 
     public static class DialogRenderer
     {
+        /// <summary>Type.GetMethod على واجهة لا يبحث في الواجهات المُوَرَّثة إطلاقاً — و IQuotationService
+        /// وأخواتها ترث Create/Update/GetById من ICycleDocumentService بلا إعادة تصريح، فكان البحث يُعيد null
+        /// ويسقط الاستدعاء بـ NullReferenceException غير مُعالَج يُنهي التطبيق كله عند الحفظ.</summary>
+        internal static System.Reflection.MethodInfo FindMethod(Type serviceType, string name, params Type[] argumentTypes)
+        {
+            var method = serviceType.GetMethod(name, argumentTypes);
+            if (method != null) return method;
+
+            foreach (var inherited in serviceType.GetInterfaces())
+            {
+                method = inherited.GetMethod(name, argumentTypes);
+                if (method != null) return method;
+            }
+
+            return null;
+        }
+
         public static bool ShowAndSave(DialogDefinition dialog, IServiceProvider services, IToastService toast,
             object editItem = null, int? addModeDefaultPickerId = null)
         {
@@ -95,7 +112,9 @@ namespace PrimeERP.Composition.Renderers
                 ApplyFields(dialog.Fields, fields, updateDto, editOnly: true);
                 ApplyFixedValues(dialog, updateDto);
 
-                var method = dialog.ServiceType.GetMethod("Update", new[] { dialog.UpdateDtoType });
+                var method = FindMethod(dialog.ServiceType, "Update", dialog.UpdateDtoType);
+                if (method == null) { toast.Error($"الخدمة {dialog.ServiceType.Name} بلا Update({dialog.UpdateDtoType.Name})"); return false; }
+
                 var result = (Result)method.Invoke(service, new[] { updateDto });
                 if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return false; }
             }
@@ -105,7 +124,9 @@ namespace PrimeERP.Composition.Renderers
                 ApplyFields(dialog.Fields, fields, createDto, editOnly: false);
                 ApplyFixedValues(dialog, createDto);
 
-                var method = dialog.ServiceType.GetMethod("Create", new[] { dialog.CreateDtoType });
+                var method = FindMethod(dialog.ServiceType, "Create", dialog.CreateDtoType);
+                if (method == null) { toast.Error($"الخدمة {dialog.ServiceType.Name} بلا Create({dialog.CreateDtoType.Name})"); return false; }
+
                 var result = (Result)method.Invoke(service, new[] { createDto });
                 if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return false; }
             }
@@ -170,7 +191,43 @@ namespace PrimeERP.Composition.Renderers
                 if (isEdit && field.IsReadOnlyOnEdit) control.IsEnabled = false;
             }
 
+            ApplyConditionalVisibility(fieldDefs, controls);
             return controls;
+        }
+
+        /// <summary>يُظهر/يُخفي الحقول المشروطة ويعيد التقييم كلما تغيّر الحقل الحاكم — الشرط مُعلَن في التعريف
+        /// لا مكتوب يدوياً لكل شاشة.</summary>
+        internal static void ApplyConditionalVisibility(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> controls)
+        {
+            var conditional = fieldDefs.Where(f => !string.IsNullOrEmpty(f.VisibleWhenField)).ToList();
+            if (conditional.Count == 0) return;
+
+            void Evaluate()
+            {
+                foreach (var field in conditional)
+                {
+                    if (!controls.TryGetValue(field.VisibleWhenField, out var source)) continue;
+
+                    var sourceField = fieldDefs.First(f => f.Key == field.VisibleWhenField);
+                    var current = GetControlValue(source, sourceField.Kind);
+                    var matches = current != null && current.ToString() == field.VisibleWhenValue?.ToString();
+                    controls[field.Key].Visibility = matches ? Visibility.Visible : Visibility.Collapsed;
+                }
+            }
+
+            foreach (var sourceKey in conditional.Select(f => f.VisibleWhenField).Distinct())
+            {
+                if (!controls.TryGetValue(sourceKey, out var source)) continue;
+
+                switch (source)
+                {
+                    case AppComboBox combo:   combo.SelectionChanged += (_, __) => Evaluate(); break;
+                    case AppCheckBox check:   check.CheckedChanged += (_, __) => Evaluate(); break;
+                    case AppTextBox text:     text.TextChanged += (_, __) => Evaluate(); break;
+                }
+            }
+
+            Evaluate();
         }
 
         // GridColumns=1→Sm(420), 2→Md(560), 3→Lg(760), أكثر→Xl(1000) — حوار الحقول المسطّحة العادي، لا حوار

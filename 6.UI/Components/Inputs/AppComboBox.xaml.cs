@@ -79,6 +79,12 @@ namespace PrimeERP.UI.Components.Inputs
         private List<object> _allItems = new();
         private bool _suppressTextChanged;
 
+        // الفتح بالماوس يقع عند الإفلات لا عند الضغط: Popup بـ StaysOpen=False يُغلق نفسه عند أول إفلات
+        // خارج حدوده، فلو فُتح أثناء الضغط (GotFocus يسبق MouseUp) أغلقه الإفلات نفسه فوراً — وهذا سبب
+        // "تظهر وتختفي خلال ثانية" عند النقر على الحقل.
+        private bool _openOnMouseUp;
+        private bool _suppressOpen;
+
         public AppComboBox()
         {
             InitializeComponent();
@@ -168,6 +174,8 @@ namespace PrimeERP.UI.Components.Inputs
 
         private void txtSearch_GotFocus(object sender, RoutedEventArgs e)
         {
+            // تركيز لوحة المفاتيح (Tab) يفتح فوراً؛ تركيز الماوس ينتظر الإفلات.
+            if (_suppressOpen || Mouse.LeftButton == MouseButtonState.Pressed) return;
             Filter(IsSearchable ? txtSearch.Text : "");
         }
 
@@ -175,19 +183,25 @@ namespace PrimeERP.UI.Components.Inputs
         {
             Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
             {
+                // الضغط داخل القائمة ينقل التركيز خارج الحقل — إغلاقها هنا كان يسبق وصول النقرة للعنصر،
+                // فتُغلق بلا اختيار (أول نقرة تفشل والثانية تنجح).
+                if (popup.IsMouseOver) return;
+
                 popup.IsOpen = false;
                 if (!_suppressTextChanged)
                     txtSearch.Text = SelectedItem != null ? GetDisplay(SelectedItem) : "";
             });
         }
 
-        private void txtSearch_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        private void txtSearch_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) => _openOnMouseUp = true;
+
+        private void txtSearch_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (!IsSearchable)
-            {
-                Filter("");
-                e.Handled = false;
-            }
+            if (!_openOnMouseUp) return;
+            _openOnMouseUp = false;
+
+            if (popup.IsOpen) popup.IsOpen = false;
+            else Filter(IsSearchable ? txtSearch.Text : "");
         }
 
         private void txtSearch_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -204,10 +218,16 @@ namespace PrimeERP.UI.Components.Inputs
             }
         }
 
-        private void lst_MouseUp(object sender, MouseButtonEventArgs e)
+        // العنصر يُقرأ من الحاوية المضغوطة لا من lst.SelectedItem — الاعتماد على الأخير كان يفشل في أول
+        // نقرة لأن التحديد لم يكن قد وصل بعد.
+        private void lst_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (lst.SelectedItem != null)
-                SelectItem(lst.SelectedItem);
+            var container = ItemsControl.ContainerFromElement(lst, (DependencyObject)e.OriginalSource) as ListBoxItem;
+            var item = container?.DataContext ?? lst.SelectedItem;
+            if (item == null) return;
+
+            SelectItem(item);
+            e.Handled = true;
         }
 
         private void lst_KeyDown(object sender, KeyEventArgs e)
@@ -222,13 +242,28 @@ namespace PrimeERP.UI.Components.Inputs
         {
             SelectedItem = item;
             popup.IsOpen = false;
+            _openOnMouseUp = false;
+
+            // إعادة التركيز للحقل بلا إعادة فتح القائمة — GotFocus يفتحها افتراضياً.
+            _suppressOpen = true;
+            txtSearch.Focus();
+            _suppressOpen = false;
+
             SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        private void chevron_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        // عند الإفلات لا الضغط، لنفس سبب حقل البحث: الإفلات خارج Popup مفتوح يغلقه فوراً.
+        private void chevron_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            var wasOpen = popup.IsOpen;
+
+            _suppressOpen = true;
             txtSearch.Focus();
-            Filter(IsSearchable ? txtSearch.Text : "");
+            _suppressOpen = false;
+            _openOnMouseUp = false;
+
+            popup.IsOpen = false;
+            if (!wasOpen) Filter(IsSearchable ? txtSearch.Text : "");
             e.Handled = true;
         }
 

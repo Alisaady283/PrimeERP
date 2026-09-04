@@ -32,6 +32,10 @@ namespace PrimeERP.Composition.Definitions
 
         // Kind.ReadOnly فقط — تنسيق عرض القيمة (مثال "yyyy-MM-dd HH:mm" لتاريخ)، بلا تنسيق = ToString() عادية.
         public string DisplayFormat { get; init; }
+
+        // يظهر الحقل فقط عندما تساوي قيمة الحقل المذكور VisibleWhenValue — حقول الشيك تحت طريقة الدفع مثلاً.
+        public string VisibleWhenField { get; init; }
+        public object VisibleWhenValue { get; init; }
     }
 
     public class DialogDefinition

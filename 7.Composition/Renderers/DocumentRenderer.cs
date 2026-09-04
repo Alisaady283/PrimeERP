@@ -56,7 +56,9 @@ namespace PrimeERP.Composition.Renderers
             {
                 var id = (int)editItem.GetType().GetProperty("Id").GetValue(editItem);
                 var service0 = services.GetRequiredService(def.ServiceType);
-                var getById = def.ServiceType.GetMethod("GetById", new[] { typeof(int) });
+                var getById = DialogRenderer.FindMethod(def.ServiceType, "GetById", typeof(int));
+                if (getById == null) { toast.Error($"الخدمة {def.ServiceType.Name} بلا GetById(int)"); return null; }
+
                 var detailResult = (Result)getById.Invoke(service0, new object[] { id });
                 if (!detailResult.IsSuccess) { toast.Error(detailResult.ErrorMessage); return null; }
                 editItem = detailResult.GetType().GetProperty("Value").GetValue(detailResult);
@@ -192,6 +194,20 @@ namespace PrimeERP.Composition.Renderers
             return editor;
         }
 
+        // فارغ = كل حقوله بلا قيمة فعلية (نص فارغ/صفر/بلا اختيار).
+        private static bool IsBlankRow(EditorRow row, DocumentDialogDefinition def)
+        {
+            foreach (var lf in def.LineFields)
+            {
+                var value = DialogRenderer.GetControlValue(row.Controls[lf.Key], lf.Kind);
+                if (value == null) continue;
+                if (value is string text && string.IsNullOrWhiteSpace(text)) continue;
+                if (value is decimal number && number == 0) continue;
+                return false;
+            }
+            return true;
+        }
+
         private static bool IsEmptyRow(EditorRow row, DocumentDialogDefinition def)
         {
             var key = def.LineFields.FirstOrDefault(f => f.Kind == FieldKind.Picker)?.Key;
@@ -302,6 +318,10 @@ namespace PrimeERP.Composition.Renderers
             int lineNo = 1;
             foreach (var row in rows)
             {
+                // المحرِّر يفتح بصفّين فارغين افتراضياً — إرسالهما للخدمة يفشل الحفظ كله برسالة "الصنف غير موجود"
+                // على صف لم يلمسه المستخدم أصلاً. الصف الفارغ يُتجاهَل، والفراغ الكامل يُرفض برسالة واضحة أدناه.
+                if (IsBlankRow(row, def)) continue;
+
                 var lineDto = Activator.CreateInstance(def.LineDtoType);
                 var lineDtoType = lineDto.GetType();
                 foreach (var lf in def.LineFields)
@@ -325,9 +345,13 @@ namespace PrimeERP.Composition.Renderers
 
                 linesList.Add(lineDto);
             }
+            if (linesList.Count == 0) { toast.Error("المستند يحتاج سطراً واحداً على الأقل"); return false; }
+
             def.DtoType.GetProperty(def.LinesPropertyName).SetValue(dto, linesList);
 
-            var method = def.ServiceType.GetMethod(isEdit ? "Update" : "Create", new[] { def.DtoType });
+            var method = DialogRenderer.FindMethod(def.ServiceType, isEdit ? "Update" : "Create", def.DtoType);
+            if (method == null) { toast.Error($"الخدمة {def.ServiceType.Name} بلا {(isEdit ? "Update" : "Create")}({def.DtoType.Name})"); return false; }
+
             var result = (Result)method.Invoke(service, new[] { dto });
             if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return false; }
 

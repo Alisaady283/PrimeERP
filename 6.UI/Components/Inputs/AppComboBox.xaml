@@ -20,7 +20,8 @@
                          TextChanged="txtSearch_TextChanged"
                          GotFocus="txtSearch_GotFocus"
                          LostFocus="txtSearch_LostFocus"
-                         PreviewMouseDown="txtSearch_PreviewMouseDown"
+                         PreviewMouseLeftButtonDown="txtSearch_PreviewMouseLeftButtonDown"
+                         PreviewMouseLeftButtonUp="txtSearch_PreviewMouseLeftButtonUp"
                          PreviewKeyDown="txtSearch_PreviewKeyDown"/>
 
                 <Button x:Name="btnClear" Grid.Column="1" Style="{StaticResource FieldClearButtonStyle}"
@@ -30,7 +31,7 @@
                 </Button>
 
                 <Path x:Name="chevron" Grid.Column="2" Data="{StaticResource IconChevronDown}" Style="{StaticResource ComboChevronStyle}"
-                      Fill="Transparent" Cursor="Hand" MouseLeftButtonDown="chevron_MouseLeftButtonDown"/>
+                      Fill="Transparent" Cursor="Hand" MouseLeftButtonUp="chevron_MouseLeftButtonUp"/>
             </Grid>
         </Border>
 
@@ -43,7 +44,7 @@
             <Border Style="{StaticResource ComboPopupBorderStyle}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ListBox x:Name="lst" Style="{StaticResource ComboPopupListBoxStyle}"
-                             MouseUp="lst_MouseUp"
+                             PreviewMouseLeftButtonUp="lst_PreviewMouseLeftButtonUp"
                              KeyDown="lst_KeyDown"/>
                 </ScrollViewer>
             </Border>

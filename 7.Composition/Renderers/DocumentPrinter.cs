@@ -25,7 +25,9 @@ namespace PrimeERP.Composition.Renderers
             if (id == null) { toast.Error("المستند بلا معرّف"); return; }
 
             var service = services.GetRequiredService(def.ServiceType);
-            var getById = def.ServiceType.GetMethod("GetById", new[] { typeof(int) });
+            var getById = DialogRenderer.FindMethod(def.ServiceType, "GetById", typeof(int));
+            if (getById == null) { toast.Error($"الخدمة {def.ServiceType.Name} بلا GetById(int)"); return; }
+
             var result = (Result)getById.Invoke(service, new object[] { (int)id });
             if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
 
