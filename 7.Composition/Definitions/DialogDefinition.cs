@@ -20,6 +20,9 @@ namespace PrimeERP.Composition.Definitions
         public string PickerType { get; init; }
         public bool PickerLeafOnly { get; init; }
 
+        /// <summary>عكس PickerLeafOnly — لا يعرض إلا الحسابات التجميعية (الآباء). لأصول الشجرة المرتبطة.</summary>
+        public bool PickerGroupsOnly { get; init; }
+
         // Kind.Picker مع PickerType="Category" فقط — ModuleKey تُقرَأ منها فئات هذه الوحدة تحديداً.
         public string PickerCategoryModuleKey { get; init; }
 

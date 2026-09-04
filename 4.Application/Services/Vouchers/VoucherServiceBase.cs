@@ -245,9 +245,9 @@ namespace PrimeERP.Application.Services.Vouchers
         {
             if (method == PaymentMethod.Cheque) return null;
 
-            if (!string.IsNullOrWhiteSpace(treasuryAccount)) return treasuryAccount;
-
-            return _settingsService.Get<string>(treasuryKind == TreasuryKind.Bank ? SettingKeys.Accounts.Bank : SettingKeys.Accounts.Cash, "");
+            // بلا احتياطي على الإعداد: Accounts.Cash/Bank أصلان تجميعيان لا يقبلان ترحيلاً، وكل خزينة
+            // تملك حسابها الورقي بحكم إنشائها.
+            return treasuryAccount;
         }
 
         private VoucherDto ToDto(Voucher v) => new()

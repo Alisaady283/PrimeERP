@@ -370,7 +370,10 @@ namespace PrimeERP.Composition.Renderers
                 var pageResult = accountService.GetPaged(1, 5000, filter);
                 if (!pageResult.IsSuccess) return;
 
-                combo.ItemsSource = pageResult.Value.Items
+                var accountRows = pageResult.Value.Items.AsEnumerable();
+                if (field.PickerGroupsOnly) accountRows = accountRows.Where(a => !a.IsLeaf);
+
+                combo.ItemsSource = accountRows
                     .Select(a => new PickerRow { Id = a.Id, Code = a.Code, Display = $"{a.Code} - {a.Name}" })
                     .ToList();
             }

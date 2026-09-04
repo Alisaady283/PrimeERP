@@ -75,7 +75,6 @@ namespace PrimeERP.Modules
             var inventory = LeafUnder("1201", "مخزون البضائع");
             var vatOutput = LeafUnder("21", "ضريبة مبيعات مستحقة");
             var vatInput = LeafUnder("12", "ضريبة مشتريات مستردة");
-            var cash = LeafUnder("1204", "الصندوق الرئيسي");
             var capital = LeafUnder("31", "رأس المال المدفوع");
             var adminExpense = LeafUnder("51", "مصروفات إدارية عمومية");
 
@@ -84,7 +83,7 @@ namespace PrimeERP.Modules
             settings.Set(SettingKeys.Accounts.Inventory, inventory);
             settings.Set(SettingKeys.Accounts.VATOutput, vatOutput);
             settings.Set(SettingKeys.Accounts.VATInput, vatInput);
-            settings.Set(SettingKeys.Accounts.Cash, cash);
+            // Accounts.Cash أصل تُنشأ تحته الخزائن (مثل Accounts.Customers) — ضبطه على ورقة يُعطّل الربط.
 
             return (sales, cogs, inventory, vatOutput, vatInput);
         }
@@ -204,7 +203,10 @@ namespace PrimeERP.Modules
             var journal = services.GetRequiredService<IJournalService>();
             var accountSvc = services.GetRequiredService<IAccountService>();
 
-            var cash = accountSvc.GetLeaves().Value.First(a => a.Name == "الصندوق الرئيسي").Code;
+            // النقدية تأتي من خزينة فعلية لا من حساب ورقي مزروع مباشرة — الخزينة هي التي تملك حسابها.
+            var treasurySvc = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>();
+            treasurySvc.SeedDefaults();
+            var cash = treasurySvc.GetAll().Value.First(t => t.Kind == PrimeERP.Domain.Enums.TreasuryKind.Cash).AccountCode;
             var capital = accountSvc.GetLeaves().Value.First(a => a.Name == "رأس المال المدفوع").Code;
             var adminExpense = accountSvc.GetLeaves().Value.First(a => a.Name == "مصروفات إدارية عمومية").Code;
 

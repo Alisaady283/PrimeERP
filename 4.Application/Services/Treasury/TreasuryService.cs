@@ -77,6 +77,24 @@ namespace PrimeERP.Application.Services.Treasury
             return Result.Ok();
         }
 
+        /// <summary>قواعد قائمة قد تحمل أصلاً يشير لحساب ورقي (بذر قديم ضبط Accounts.Cash على "الصندوق
+        /// الرئيسي" مثلاً) — عندها لا يتطابق أب أي حساب جديد مع الأصل فلا يحدث ربط إطلاقاً. يُعاد الأصل
+        /// لأب الورقة، وهو ما كان يجب أن يكون منذ البداية.</summary>
+        public Result RepairLinkedRoots()
+        {
+            foreach (var key in SettingKeys.Accounts.LinkedRoots)
+            {
+                var code = _settingsProvider.Get(key, "");
+                if (string.IsNullOrWhiteSpace(code)) continue;
+
+                var account = _accounts.GetByCode(code);
+                if (account.IsFailure || !account.Value.IsLeaf || string.IsNullOrWhiteSpace(account.Value.ParentCode)) continue;
+
+                _settingsProvider.SetRaw(key, account.Value.ParentCode);
+            }
+            return Result.Ok();
+        }
+
         /// <summary>خزينة وبنك افتراضيان عند أول تشغيل — بلا هذا تبقى قوائم السندات فارغة فيبدو أنها لا تعمل.</summary>
         public Result SeedDefaults()
         {

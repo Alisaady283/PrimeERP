@@ -50,6 +50,10 @@ namespace PrimeERP.Composition.Renderers
                              : def.DataType switch { "bool" => FieldKind.Check, "int" => FieldKind.Number, _ => FieldKind.Text },
                         PickerType = isAccount ? "Account" : null,
                         PickerValueField = isAccount ? "Code" : "Id",
+                        // أصل مرتبط = أب تعيش تحته الكيانات، فلا يُعرَض إلا التجميعي؛ وباقي حسابات
+                        // الإعدادات وجهة ترحيل فعلية فلا تُعرَض إلا الورقية.
+                        PickerGroupsOnly = isAccount && SettingKeys.Accounts.LinkedRoots.Contains(def.Key),
+                        PickerLeafOnly = isAccount && !SettingKeys.Accounts.LinkedRoots.Contains(def.Key),
                     };
 
                     var control = DialogRenderer.BuildField(field);
@@ -86,6 +90,19 @@ namespace PrimeERP.Composition.Renderers
                 var values = new Dictionary<string, object>();
                 foreach (var (key, (field, control)) in controls)
                     values[key] = DialogRenderer.GetControlValue(control, field.Kind);
+
+                var accounts = services.GetRequiredService<PrimeERP.Application.Services.Accounting.IAccountService>();
+                foreach (var rootKey in SettingKeys.Accounts.LinkedRoots)
+                {
+                    if (!values.TryGetValue(rootKey, out var code) || code is not string text || string.IsNullOrWhiteSpace(text)) continue;
+
+                    var account = accounts.GetByCode(text);
+                    if (account.IsSuccess && account.Value.IsLeaf)
+                    {
+                        toast.Error($"«{LabelFor(rootKey)}» يجب أن يكون حساباً تجميعياً (أباً) لا حساباً ورقياً — الكيانات تُنشأ تحته.");
+                        return;
+                    }
+                }
 
                 var result = settingsService.SetMany(values);
                 if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }

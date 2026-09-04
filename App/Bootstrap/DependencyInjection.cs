@@ -288,7 +288,9 @@ namespace PrimeERP.App.Bootstrap
             services.GetRequiredService<IPayrollRepository>().CreateTable();
             services.GetRequiredService<IDocumentLinkRepository>().CreateTable();
             services.GetRequiredService<ITreasuryRepository>().CreateTable();
-            services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>().SeedDefaults();
+            var treasuryService = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>();
+            treasuryService.RepairLinkedRoots();
+            treasuryService.SeedDefaults();
             services.GetRequiredService<IVoucherRepository>().CreateTable();
             services.GetRequiredService<IChequeRepository>().CreateTable();
 

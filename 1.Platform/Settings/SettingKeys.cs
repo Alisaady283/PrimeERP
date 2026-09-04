@@ -50,6 +50,10 @@ namespace PrimeERP.Platform.Settings
             public const string Suppliers        = "Accounts.Suppliers";
             public const string Inventory        = "Accounts.Inventory";
             public const string Cash             = "Accounts.Cash";
+
+            /// <summary>مفاتيح الأصول المرتبطة بكيانات: قيمتها كود حساب <b>تجميعي</b> يعيش أبناؤه ككيانات
+            /// (عميل/مورد/خزينة/بنك). ضبطها على حساب ورقي يُعطّل الربط بصمت — لذلك تُرفَض عند الحفظ.</summary>
+            public static readonly string[] LinkedRoots = { Customers, Suppliers, Cash, Bank };
             public const string Bank             = "Accounts.Bank";
             public const string Sales            = "Accounts.Sales";
             public const string SalesReturns     = "Accounts.SalesReturns";

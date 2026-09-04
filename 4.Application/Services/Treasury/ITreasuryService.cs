@@ -12,5 +12,6 @@ namespace PrimeERP.Application.Services.Treasury
         Result Update(UpdateTreasuryDto dto);
         Result Delete(int id);
         Result SeedDefaults();
+        Result RepairLinkedRoots();
     }
 }
