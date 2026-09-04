@@ -135,6 +135,8 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<PrimeERP.Application.Services.Vouchers.IReceiptVoucherService, PrimeERP.Application.Services.Vouchers.ReceiptVoucherService>();
             services.AddSingleton<PrimeERP.Application.Services.Vouchers.IPaymentVoucherService, PrimeERP.Application.Services.Vouchers.PaymentVoucherService>();
             services.AddSingleton<PrimeERP.Application.Services.Cheques.IChequeService, PrimeERP.Application.Services.Cheques.ChequeService>();
+            services.AddSingleton<PrimeERP.Application.Services.Cheques.IChequeReceiptDocumentService, PrimeERP.Application.Services.Cheques.ChequeReceiptDocumentService>();
+            services.AddSingleton<PrimeERP.Application.Services.Cheques.IChequeIssueDocumentService, PrimeERP.Application.Services.Cheques.ChequeIssueDocumentService>();
             services.AddSingleton<IPayrollService, PayrollService>();
             services.AddSingleton<IRoleService, RoleService>();
             services.AddSingleton<IUserService, UserService>();
@@ -166,6 +168,8 @@ namespace PrimeERP.App.Bootstrap
             services.AddTransient<ReceiptVouchersViewModel>();
             services.AddTransient<PaymentVouchersViewModel>();
             services.AddTransient<ChequesViewModel>();
+            services.AddTransient<ChequeReceiptsViewModel>();
+            services.AddTransient<ChequeIssuesViewModel>();
             services.AddTransient<CustomersViewModel>();
             services.AddTransient<SuppliersViewModel>();
             services.AddTransient<AccountsViewModel>();

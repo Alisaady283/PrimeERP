@@ -60,9 +60,6 @@ namespace PrimeERP.Platform.Settings
             public const string VATOutput        = "Accounts.VATOutput";
 
             /// <summary>حسابات دورة الشيكات — بالمحفظة (وارد لم يودَع)، تحت التحصيل (مودع بالبنك)، وشيكات الدفع (صادر).</summary>
-            public const string ChequesInHand          = "Accounts.ChequesInHand";
-            public const string ChequesUnderCollection = "Accounts.ChequesUnderCollection";
-            public const string ChequesPayable         = "Accounts.ChequesPayable";
 
             /// <summary>false يعطّل الربط التلقائي (حساب↔عميل/مورد) كلياً وبصمت — true (الافتراضي) يفرض نجاح الربط أو Fail صريح، لا سكوت.</summary>
             public const string AutoLinkEnabled  = "Accounts.AutoLinkEnabled";
@@ -159,9 +156,6 @@ namespace PrimeERP.Platform.Settings
             new(Accounts.RetainedEarnings, "32",   "string", "Accounts", IsSystem: true),
             new(Accounts.VATInput,         "",     "string", "Accounts", IsSystem: true),
             new(Accounts.VATOutput,        "",     "string", "Accounts", IsSystem: true),
-            new(Accounts.ChequesInHand,          "", "string", "Accounts", IsSystem: true),
-            new(Accounts.ChequesUnderCollection, "", "string", "Accounts", IsSystem: true),
-            new(Accounts.ChequesPayable,         "", "string", "Accounts", IsSystem: true),
             new(Accounts.AutoLinkEnabled,  "true", "bool",   "Accounts"),
 
             new(Documents.JournalPrefix,         "JE",   "string", "Documents"),
@@ -170,7 +164,7 @@ namespace PrimeERP.Platform.Settings
             new(Documents.StockVoucherPrefix,    "SV",   "string", "Documents"),
             new(Documents.NumberPadding,         "5",    "int",    "Documents"),
             new(Documents.ResetNumbersYearly,    "true", "bool",   "Documents"),
-            new(Documents.SimplifiedFlow,        "false", "bool",  "Documents"),
+            new(Documents.SimplifiedFlow,        "true",  "bool",  "Documents"),
             new(Documents.CustomerPrefix,        "C",    "string", "Documents"),
             new(Documents.SupplierPrefix,        "S",    "string", "Documents"),
             new(Documents.ProductPrefix,         "P",    "string", "Documents"),

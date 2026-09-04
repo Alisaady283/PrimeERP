@@ -69,4 +69,39 @@ namespace PrimeERP.UI.ViewModels
         protected override Result DeleteItem(int id) =>
             Result.Fail("الشيك يُلغى بحركة (ارتداد/رد) لا بالحذف", PrimeERP.Domain.Results.ErrorCode.ValidationFailed);
     }
+
+    /// <summary>شبكة شيكات الاتجاه الواحد — الإضافة تفتح مستند "عدة شيكات" عبر DocumentDialog.</summary>
+    public abstract class ChequeDocumentViewModelBase : CrudViewModelBase<ChequeDto, ChequeFilter>
+    {
+        private readonly IChequeDocumentService _documents;
+
+        protected ChequeDocumentViewModelBase(IChequeDocumentService documents, IPermissionService permissions,
+            IToastService toast, IDialogService dialogs)
+            : base(permissions, toast, dialogs) => _documents = documents;
+
+        protected override string PermissionPrefix => "Cheques";
+
+        protected override Result<PagedResult<ChequeDto>> FetchPage(int page, int pageSize, ChequeFilter filter)
+        {
+            var f = filter ?? new ChequeFilter();
+            f.SearchText = SearchText;
+            return _documents.GetPaged(page, pageSize, f);
+        }
+
+        protected override int IdOf(ChequeDto item) => item.Id;
+
+        protected override Result DeleteItem(int id) => _documents.Delete(id);
+    }
+
+    public class ChequeReceiptsViewModel : ChequeDocumentViewModelBase
+    {
+        public ChequeReceiptsViewModel(PrimeERP.Application.Services.Cheques.IChequeReceiptDocumentService documents, IPermissionService permissions,
+            IToastService toast, IDialogService dialogs) : base(documents, permissions, toast, dialogs) { }
+    }
+
+    public class ChequeIssuesViewModel : ChequeDocumentViewModelBase
+    {
+        public ChequeIssuesViewModel(PrimeERP.Application.Services.Cheques.IChequeIssueDocumentService documents, IPermissionService permissions,
+            IToastService toast, IDialogService dialogs) : base(documents, permissions, toast, dialogs) { }
+    }
 }

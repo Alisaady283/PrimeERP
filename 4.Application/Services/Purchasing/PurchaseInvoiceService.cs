@@ -114,6 +114,7 @@ namespace PrimeERP.Application.Services.Purchasing
             int invoiceId;
             try
             {
+                var simplifiedFlow = _settings.Get(SettingKeys.Documents.SimplifiedFlow, true);
                 invoiceId = Db.RunTransaction((conn, tx) =>
                 {
                     var invoiceNo = _numbers.Next(conn, tx, "PurchaseInvoice");
@@ -128,8 +129,12 @@ namespace PrimeERP.Application.Services.Purchasing
                     foreach (var line in resolvedLines)
                     {
                         _invoices.InsertLine(conn, tx, id, line);
-                        var moveResult = _stock.RecordMovement(conn, tx, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, line.UnitPrice,
-                            "PurchaseInvoice", id, invoiceNo, dto.InvoiceDate);
+                        // الوضع المبسّط: الفاتورة تحرّك المخزون بنفسها (لا موظف مخزن ولا أذون). الوضع الشامل:
+                        // إذن الصرف/الاستلام هو من يحرّك المخزون، والفاتورة تُسحب منه — فتحريكها هنا يخصم مرتين.
+                        var moveResult = simplifiedFlow
+                            ? _stock.RecordMovement(conn, tx, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, line.UnitPrice,
+                            "PurchaseInvoice", id, invoiceNo, dto.InvoiceDate)
+                            : Result.Ok();
                         if (!moveResult.IsSuccess) throw new InvalidOperationException(moveResult.ErrorMessage);
                     }
 

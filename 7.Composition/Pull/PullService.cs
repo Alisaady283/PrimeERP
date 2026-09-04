@@ -28,9 +28,15 @@ namespace PrimeERP.Composition.Pull
         public int      SourceId   { get; init; }
         public string   SourceNo   { get; init; }
         public DateTime DocDate    { get; init; }
+        public string   PartyName  { get; init; }
         public List<PullCandidateLine> Lines { get; init; } = new();
 
-        public string Display => $"{SourceNo} — {DocDate:yyyy-MM-dd} ({Lines.Count} سطر)";
+        /// <summary>قيم رأس المصدر بمفاتيح حقول الهدف — تُنسخ للحقول الفارغة في رأس المستند الجديد.</summary>
+        public Dictionary<string, object> HeaderValues { get; init; } = new();
+
+        public int     OpenLineCount => Lines.Count;
+        public decimal RemainingQty  => Lines.Sum(l => l.RemainingQty);
+        public string  Display       => $"{SourceNo} — {DocDate:yyyy-MM-dd} ({Lines.Count} سطر)";
     }
 
     public interface IPullService
@@ -100,6 +106,8 @@ namespace PrimeERP.Composition.Pull
                     SourceType = source.SourceKind, SourceId = id,
                     SourceNo = ReadValue(detail, "DocNo") as string,
                     DocDate = Convert.ToDateTime(ReadValue(detail, "DocDate") ?? ReadValue(detail, "MovementDate")),
+                    PartyName = ReadValue(detail, "PartyName") as string ?? ReadValue(detail, "WarehouseName") as string,
+                    HeaderValues = ReadHeaderValues(detail),
                     Lines = lines
                 });
             }
@@ -120,6 +128,27 @@ namespace PrimeERP.Composition.Pull
                     return Convert.ToDecimal(ReadValue(line, "Qty"));
 
             return 0m;
+        }
+
+        // الحقول المنقولة من رأس المصدر لرأس الهدف — بالاسم، فأي مستند يحمل نفس الأسماء يعمل بلا كود إضافي.
+        private static readonly string[] HeaderKeys = { "PartyId", "CustomerId", "SupplierId", "WarehouseId" };
+
+        private static Dictionary<string, object> ReadHeaderValues(object detail)
+        {
+            var values = new Dictionary<string, object>();
+            foreach (var key in HeaderKeys)
+            {
+                var value = ReadValue(detail, key);
+                if (value != null) values[key] = value;
+            }
+
+            // الطرف واحد أياً كان اسمه على المصدر أو الهدف — عميل/مورد/طرف عام.
+            var party = values.Values.FirstOrDefault();
+            if (party != null)
+                foreach (var key in HeaderKeys.Take(3))
+                    values.TryAdd(key, party);
+
+            return values;
         }
 
         private const int MaxSourceDocuments = 500;

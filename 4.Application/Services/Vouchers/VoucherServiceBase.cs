@@ -113,7 +113,7 @@ namespace PrimeERP.Application.Services.Vouchers
                 return Result.Fail<VoucherDetailDto>("لا حساب مرتبط بالطرف المختار", ErrorCode.ValidationFailed);
 
             var cashAccount = ResolveCashAccount(treasury.Value.AccountCode, treasury.Value.Kind, method);
-            if (string.IsNullOrWhiteSpace(cashAccount))
+            if (method != PaymentMethod.Cheque && string.IsNullOrWhiteSpace(cashAccount))
                 return Result.Fail<VoucherDetailDto>("لا حساب مرتبط بالخزينة المختارة — اربطها بحسابها من شاشة الخزائن", ErrorCode.ValidationFailed);
 
             int voucherId;
@@ -138,7 +138,7 @@ namespace PrimeERP.Application.Services.Vouchers
                         });
 
                     voucher.Id = id;
-                    var entryId = PostEntry(conn, tx, voucher, cashAccount, partyAccount);
+                    var entryId = method == PaymentMethod.Cheque ? (int?)null : PostEntry(conn, tx, voucher, cashAccount, partyAccount);
                     var chequeId = method == PaymentMethod.Cheque ? CreateCheque(conn, tx, dto, id, entryId) : (int?)null;
                     _repo.SetLinks(conn, tx, id, entryId, chequeId);
 
@@ -206,7 +206,7 @@ namespace PrimeERP.Application.Services.Vouchers
             return created.Value.Id;
         }
 
-        private int CreateCheque(DbConnection conn, DbTransaction tx, CreateVoucherDto dto, int voucherId, int entryId)
+        private int CreateCheque(DbConnection conn, DbTransaction tx, CreateVoucherDto dto, int voucherId, int? entryId)
         {
             var cheque = new Cheque
             {
@@ -239,11 +239,11 @@ namespace PrimeERP.Application.Services.Vouchers
             return supplier.IsSuccess ? supplier.Value.AccountCode : null;
         }
 
-        // الشيك لا يمسّ النقدية بعد: يُسجَّل في حساب الشيكات حتى يُحصَّل/يُصرَف فعلاً.
+        // الشيك بلا قيد إطلاقاً حتى يُسدَّد من البنك — القيد يقع وقتها عبر حركة الشيك (ChequeService)،
+        // وحتى ذلك الحين يظهر بكشف حساب الطرف كقيمة استعلامية لا تمسّ الرصيد.
         private string ResolveCashAccount(string treasuryAccount, TreasuryKind treasuryKind, PaymentMethod method)
         {
-            if (method == PaymentMethod.Cheque)
-                return _settingsService.Get<string>(IsReceipt ? SettingKeys.Accounts.ChequesInHand : SettingKeys.Accounts.ChequesPayable, "");
+            if (method == PaymentMethod.Cheque) return null;
 
             if (!string.IsNullOrWhiteSpace(treasuryAccount)) return treasuryAccount;
 

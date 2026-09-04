@@ -130,8 +130,31 @@ namespace PrimeERP.Application.Services.Parties
             var accountCode = AccountCodeOf(entity);
             if (string.IsNullOrWhiteSpace(accountCode)) return Fail<List<AccountStatementLine>>("AccountNotConfigured");
 
-            return Accounts.GetStatement(accountCode, from, to);
+            var statement = Accounts.GetStatement(accountCode, from, to);
+            if (statement.IsFailure || Cheques == null) return statement;
+
+            // الشيك المعلّق يظهر بقيمته ولا يمسّ الرصيد — يُسجَّل محاسبياً عند التحصيل/الصرف فقط.
+            var open = Cheques.GetOpenForParty(id, from, to);
+            if (open.IsFailure || open.Value.Count == 0) return statement;
+
+            var running = statement.Value.Count > 0 ? statement.Value[^1].RunningBalance : 0m;
+            foreach (var cheque in open.Value)
+                statement.Value.Add(new AccountStatementLine
+                {
+                    Date = cheque.DueDate.ToString("yyyy-MM-dd"),
+                    EntryNo = cheque.ChequeNo,
+                    Description = $"شيك {cheque.ChequeNo} — {cheque.BankName} ({cheque.StatusName})",
+                    Debit = 0, Credit = 0,
+                    MemoAmount = cheque.Amount,
+                    RunningBalance = running,
+                    SourceType = "Cheque"
+                });
+
+            return statement;
         }
+
+        /// <summary>اختيارية — تُحقن في العملاء/الموردين فقط، وغيابها يعني كشفاً بلا أسطر شيكات استعلامية.</summary>
+        protected virtual PrimeERP.Application.Services.Cheques.IChequeService Cheques => null;
 
         /// <summary>مطابقة حرفياً بين CustomerService/SupplierService الأصليتين — لا فرق في المنطق بينهما، فانتقلت هنا بدل التكرار.</summary>
         public virtual Result RecalculateAllBalances()

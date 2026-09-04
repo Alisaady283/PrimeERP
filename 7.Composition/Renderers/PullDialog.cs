@@ -7,14 +7,15 @@ using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Pull;
 using PrimeERP.Platform.Localization;
+using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Components.Inputs;
 using PrimeERP.UI.Services;
 using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>نافذة "سحب من": مستند مصدر ← سطوره غير المسحوبة بالكامل، بكميّة قابلة للتعديل حتى المتبقي.
-    /// لا تعرف نوع مستند بعينه — تستهلك PullService العام وتُعيد سطوراً جاهزة للإضافة لمحرِّر المستند الحالي.</summary>
+    /// <summary>نافذة "سحب من": أعلاها قائمة المستندات المتاحة، وأسفلها سطور المستند المختار بكميّة قابلة
+    /// للتعديل حتى المتبقي. لا تعرف نوع مستند بعينه — تستهلك PullService العام.</summary>
     public static class PullDialog
     {
         public class PulledLine
@@ -28,17 +29,35 @@ namespace PrimeERP.Composition.Renderers
             public decimal UnitValue    { get; init; }
         }
 
-        public static List<PulledLine> Show(PullSource source, IServiceProvider services, IDictionary<string, object> matchValues)
+        public class PullResult
+        {
+            public List<PulledLine> Lines { get; init; } = new();
+
+            /// <summary>قيم رأس المستند المصدر (الطرف/المخزن) — تُنسخ للحقول الفارغة في رأس الهدف.</summary>
+            public Dictionary<string, object> Header { get; init; } = new();
+        }
+
+        public static PullResult Show(PullSource source, IServiceProvider services, IDictionary<string, object> matchValues)
         {
             var toast = services.GetRequiredService<IToastService>();
             var result = services.GetRequiredService<IPullService>().GetAvailable(source, matchValues);
             if (result.IsFailure) { toast.Error(result.ErrorMessage); return null; }
             if (result.Value.Count == 0) { toast.Info("لا توجد مستندات متاحة للسحب"); return null; }
 
-            var picker = new AppComboBox
+            var documents = new AppDataGrid
             {
-                Placeholder = source.Label, DisplayMemberPath = nameof(PullCandidate.Display),
-                ItemsSource = result.Value, Margin = new Thickness(0, 0, 0, 12)
+                ColumnsSource = new List<GridColumn>
+                {
+                    new() { Header = "المستند", Binding = nameof(PullCandidate.SourceNo), Width = 130 },
+                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(PullCandidate.DocDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = "الطرف", Binding = nameof(PullCandidate.PartyName), Width = 200, IsStarWidth = true },
+                    new() { Header = "سطور متاحة", Binding = nameof(PullCandidate.OpenLineCount), Width = 100, Align = ColumnAlign.Center },
+                    new() { Header = "المتبقي", Binding = nameof(PullCandidate.RemainingQty), Width = 100, Align = ColumnAlign.Center, Format = "N2" },
+                },
+                ItemsSource = result.Value,
+                ShowRowActions = false,
+                ShowPagination = false,
+                Height = 190
             };
 
             var linesHost = new StackPanel();
@@ -55,9 +74,9 @@ namespace PrimeERP.Composition.Renderers
                 {
                     var grid = NewRowGrid();
                     var check = new AppCheckBox { IsChecked = true, VerticalAlignment = VerticalAlignment.Center };
-                    var name  = new TextBlock { Text = $"{line.ProductCode} - {line.ProductName}", VerticalAlignment = VerticalAlignment.Center };
+                    var name  = new TextBlock { Text = $"{line.ProductCode} - {line.ProductName}", VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
                     var info  = new TextBlock { Text = $"{line.OriginalQty:N2} / {line.PulledQty:N2}", VerticalAlignment = VerticalAlignment.Center };
-                    var qty   = new AppNumericBox { Value = line.RemainingQty, Width = 90 };
+                    var qty   = new AppNumericBox { Value = line.RemainingQty, Width = 100, Max = line.RemainingQty };
                     info.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondary");
 
                     Place(grid, check, 0); Place(grid, name, 1); Place(grid, info, 2); Place(grid, qty, 3);
@@ -66,27 +85,35 @@ namespace PrimeERP.Composition.Renderers
                 }
             }
 
-            picker.SelectionChanged += (_, __) => ShowLines(picker.SelectedItem as PullCandidate);
-            picker.SelectedItem = result.Value[0];
+            documents.SelectionChanged += (_, __) => ShowLines(documents.SelectedItem as PullCandidate);
+            documents.SelectedItem = result.Value[0];
             ShowLines(result.Value[0]);
 
-            var body = new StackPanel { Margin = new Thickness(4) };
-            body.Children.Add(picker);
-            body.Children.Add(new ScrollViewer { Content = linesHost, MaxHeight = 360, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+            var body = new Grid { Margin = new Thickness(4) };
+            body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            body.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+            var documentsCaption = Caption("المستندات المتاحة");
+            var linesCaption = Caption("سطور المستند المختار");
+            var scroll = new ScrollViewer { Content = linesHost, MinHeight = 220, MaxHeight = 320, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+
+            Grid.SetRow(documentsCaption, 0); Grid.SetRow(documents, 1); Grid.SetRow(linesCaption, 2); Grid.SetRow(scroll, 3);
+            body.Children.Add(documentsCaption); body.Children.Add(documents); body.Children.Add(linesCaption); body.Children.Add(scroll);
 
             var btnCancel = new Btn { Text = LocalizationService.Get("Str.Cancel"), Variant = "secondary", Size = "sm" };
             var btnPull   = new Btn { Text = "سحب", Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
             var footer    = new StackPanel { Orientation = Orientation.Horizontal, Children = { btnCancel, btnPull } };
 
             var window = new ComposedDialogWindow(source.Label, body, footer,
-                width: (double)System.Windows.Application.Current.FindResource("C.Dialog.Width.Lg"));
+                width: (double)System.Windows.Application.Current.FindResource("C.Dialog.Width.Xl"));
 
-            List<PulledLine> picked = null;
+            PullResult picked = null;
             btnCancel.Click += (_, __) => window.Close();
             btnPull.Click += (_, __) =>
             {
-                var candidate = picker.SelectedItem as PullCandidate;
-                if (candidate == null) return;
+                if (documents.SelectedItem is not PullCandidate candidate) { toast.Error("اختر مستنداً أولاً"); return; }
 
                 var over = rows.FirstOrDefault(r => r.Check.IsChecked == true && r.Qty.Value > r.Line.RemainingQty);
                 if (over.Line != null)
@@ -95,7 +122,7 @@ namespace PrimeERP.Composition.Renderers
                     return;
                 }
 
-                picked = rows
+                var lines = rows
                     .Where(r => r.Check.IsChecked == true && r.Qty.Value > 0)
                     .Select(r => new PulledLine
                     {
@@ -105,7 +132,9 @@ namespace PrimeERP.Composition.Renderers
                     })
                     .ToList();
 
-                if (picked.Count == 0) { toast.Error("لم يُحدَّد أي سطر"); picked = null; return; }
+                if (lines.Count == 0) { toast.Error("لم يُحدَّد أي سطر"); return; }
+
+                picked = new PullResult { Lines = lines, Header = candidate.HeaderValues };
                 window.Close();
             };
 
@@ -117,12 +146,12 @@ namespace PrimeERP.Composition.Renderers
             return picked;
         }
 
-        private static readonly double[] Widths = { 32, 300, 110, 100 };
+        private static readonly double[] Widths = { 32, 340, 130, 110 };
 
         private static Grid NewRowGrid()
         {
             var grid = new Grid { Margin = new Thickness(0, 0, 0, 6) };
-            foreach (var w in Widths) grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(w) });
+            foreach (var width in Widths) grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(width) });
             return grid;
         }
 
@@ -137,6 +166,13 @@ namespace PrimeERP.Composition.Renderers
                 Place(grid, text, i);
             }
             return grid;
+        }
+
+        private static TextBlock Caption(string text)
+        {
+            var caption = new TextBlock { Text = text, Margin = new Thickness(0, 8, 0, 6) };
+            caption.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondary");
+            return caption;
         }
 
         private static void Place(Grid grid, FrameworkElement element, int column)

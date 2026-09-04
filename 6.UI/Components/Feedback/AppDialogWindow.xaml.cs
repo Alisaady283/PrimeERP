@@ -74,6 +74,12 @@ namespace PrimeERP.UI.Components.Feedback
             Close();
         }
 
+        // WindowStyle=None يلغي شريط عنوان النظام (كان يكرّر عنوان الحوار مرتين) — والسحب يعود عبر الهيدر نفسه.
+        private void headerBorder_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed) DragMove();
+        }
+
         private void AppDialogWindow_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)

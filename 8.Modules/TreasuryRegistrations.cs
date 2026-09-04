@@ -48,8 +48,13 @@ namespace PrimeERP.Modules
                 }
             });
 
-            RegisterVoucher(registry, "Receipts", "سند قبض", typeof(ReceiptVouchersViewModel), typeof(IReceiptVoucherService), "Str.Customer", "Customer");
-            RegisterVoucher(registry, "Payments", "سند صرف", typeof(PaymentVouchersViewModel), typeof(IPaymentVoucherService), "Str.Supplier", "Supplier");
+            RegisterVoucher(registry, "Receipts", "سند قبض", typeof(ReceiptVouchersViewModel), typeof(IReceiptVoucherService), "Str.Customer", "Customer", "SalesInvoice");
+            RegisterVoucher(registry, "Payments", "سند صرف", typeof(PaymentVouchersViewModel), typeof(IPaymentVoucherService), "Str.Supplier", "Supplier", "PurchaseInvoice");
+
+            RegisterChequeDocument(registry, "ChequeReceipts", "استلام شيكات", typeof(ChequeReceiptsViewModel),
+                typeof(PrimeERP.Application.Services.Cheques.IChequeReceiptDocumentService), "Str.Customer", "Customer");
+            RegisterChequeDocument(registry, "ChequeIssues", "صرف شيكات", typeof(ChequeIssuesViewModel),
+                typeof(PrimeERP.Application.Services.Cheques.IChequeIssueDocumentService), "Str.Supplier", "Supplier");
 
             registry.Register(new ModuleDefinition
             {
@@ -69,8 +74,49 @@ namespace PrimeERP.Modules
             });
         }
 
+        // مستند شيكات: رأس (تاريخ/طرف/بيان) وسطور، كل سطر شيك مستقل — نفس محرّر المستندات بلا استثناء.
+        private static void RegisterChequeDocument(IModuleRegistry registry, string key, string title,
+            System.Type viewModel, System.Type service, string partyLabelKey, string partyPickerType)
+        {
+            registry.Register(new ModuleDefinition
+            {
+                Key = key, TitleKey = title, PermissionPrefix = "Cheques", ViewModelType = viewModel,
+                Columns = new()
+                {
+                    new() { Header = "رقم الشيك", Binding = nameof(ChequeDto.ChequeNo), Width = 110 },
+                    new() { Header = "البنك", Binding = nameof(ChequeDto.BankName), Width = 160 },
+                    new() { Header = "الطرف", Binding = nameof(ChequeDto.PartyName), Width = 180, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Amount"), Binding = nameof(ChequeDto.Amount), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                    new() { Header = "الاستحقاق", Binding = nameof(ChequeDto.DueDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(ChequeDto.StatusName), Width = 110, Align = ColumnAlign.Center },
+                },
+                DocumentDialog = new DocumentDialogDefinition
+                {
+                    TitleKey = title, TitleEditKey = title,
+                    ServiceType = service, DtoType = typeof(CreateChequeDocumentDto),
+                    LineDtoType = typeof(CreateChequeLineDto), LinesPropertyName = nameof(CreateChequeDocumentDto.Lines),
+                    DocumentKind = key,
+                    HeaderFields = new()
+                    {
+                        new() { Key = nameof(CreateChequeDocumentDto.DocDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreateChequeDocumentDto.PartyId), LabelKey = partyLabelKey, Kind = FieldKind.Picker, PickerType = partyPickerType },
+                        new() { Key = nameof(CreateChequeDocumentDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    },
+                    LineFields = new()
+                    {
+                        new() { Key = nameof(CreateChequeLineDto.ChequeNo), Header = "رقم الشيك", Kind = FieldKind.Text, Width = 130, IsRequired = true },
+                        new() { Key = nameof(CreateChequeLineDto.BankName), Header = "اسم البنك", Kind = FieldKind.Text, Width = 170 },
+                        new() { Key = nameof(CreateChequeLineDto.Amount), Header = LocalizationService.Get("Str.Amount"), Kind = FieldKind.Number, Width = 120, IsRequired = true },
+                        new() { Key = nameof(CreateChequeLineDto.PartyId), Header = partyLabelKey == "Str.Customer" ? "العميل" : "المورد", Kind = FieldKind.Picker, Width = 190, PickerType = partyPickerType },
+                        new() { Key = nameof(CreateChequeLineDto.DueDate), Header = "الاستحقاق", Kind = FieldKind.Date, Width = 130 },
+                        new() { Key = nameof(CreateChequeLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 150 },
+                    }
+                }
+            });
+        }
+
         private static void RegisterVoucher(IModuleRegistry registry, string key, string title, System.Type viewModel,
-            System.Type service, string partyLabelKey, string partyPickerType)
+            System.Type service, string partyLabelKey, string partyPickerType, string invoicePickerType)
         {
             registry.Register(new ModuleDefinition
             {
@@ -93,7 +139,9 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreateVoucherDto.VoucherDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
                         new() { Key = nameof(CreateVoucherDto.PartyId), LabelKey = partyLabelKey, Kind = FieldKind.Picker, PickerType = partyPickerType, IsRequired = true },
-                        new() { Key = nameof(CreateVoucherDto.TreasuryId), LabelKey = "الخزينة", Kind = FieldKind.Picker, PickerType = "Treasury", IsRequired = true },
+                        new() { Key = nameof(CreateVoucherDto.TreasuryKind), LabelKey = "النوع", Kind = FieldKind.Picker, PickerType = "TreasuryKind", IsRequired = true, DefaultValue = (int)TreasuryKind.Cash },
+                        new() { Key = nameof(CreateVoucherDto.TreasuryId), LabelKey = "الخزينة", Kind = FieldKind.Picker, PickerType = "Treasury", IsRequired = true,
+                                PickerFilterField = nameof(CreateVoucherDto.TreasuryKind) },
                         new() { Key = nameof(CreateVoucherDto.Amount), LabelKey = "Str.Amount", Kind = FieldKind.Number, IsRequired = true },
                         new() { Key = nameof(CreateVoucherDto.Method), LabelKey = "طريقة الدفع", Kind = FieldKind.Picker, PickerType = "PaymentMethod", IsRequired = true },
                         new() { Key = nameof(CreateVoucherDto.Reference), LabelKey = "مرجع", Kind = FieldKind.Text, MaxLength = 100 },
@@ -108,7 +156,7 @@ namespace PrimeERP.Modules
                     },
                     LineFields = new()
                     {
-                        new() { Key = nameof(CreateVoucherAllocationDto.InvoiceNo), Header = "رقم الفاتورة", Kind = FieldKind.Text, Width = 180 },
+                        new() { Key = nameof(CreateVoucherAllocationDto.InvoiceNo), Header = "الفاتورة (اختياري)", Kind = FieldKind.Picker, Width = 260, PickerType = invoicePickerType },
                         new() { Key = nameof(CreateVoucherAllocationDto.Amount), Header = LocalizationService.Get("Str.Amount"), Kind = FieldKind.Number, Width = 120 },
                         new() { Key = nameof(CreateVoucherAllocationDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 200 },
                     }

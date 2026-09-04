@@ -32,6 +32,8 @@ namespace PrimeERP.Application.Services.Parties
         protected override IValidator<Supplier> Validator => new SupplierValidator();
         protected override string AccountCodeOf(Supplier entity) => entity.AccountCode;
         protected override decimal CreditLimitOf(Supplier entity) => entity.CreditLimit;
+        protected override PrimeERP.Application.Services.Cheques.IChequeService Cheques => _cheques;
+
         protected override decimal BalanceOf(Supplier entity) => entity.Balance;
 
         protected override Supplier BuildFromAccount(string code, string name, string accountCode) => new()
@@ -43,16 +45,18 @@ namespace PrimeERP.Application.Services.Parties
         private readonly IJournalRepository _journalRepo;
         private readonly IAccountRepository _accountRepo;
         private readonly ICategoryRepository _categories;
+        private readonly PrimeERP.Application.Services.Cheques.IChequeService _cheques;
 
         public SupplierService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
             IAccountService accounts, INumberSequenceService numbers, ISupplierRepository suppliers, IAccountRepository accountRepo,
-            IJournalRepository journalRepo, ICategoryRepository categories)
+            IJournalRepository journalRepo, ICategoryRepository categories, PrimeERP.Application.Services.Cheques.IChequeService cheques)
             : base(permissions, settings, localization, audit, accounts, numbers, accountRepo)
         {
             _suppliers = suppliers;
             _accountRepo = accountRepo;
             _journalRepo = journalRepo;
             _categories = categories;
+            _cheques = cheques;
         }
 
         protected override Supplier FindById(int id) => _suppliers.GetById(id);

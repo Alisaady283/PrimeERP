@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
+        WindowStyle="None"
         FlowDirection="RightToLeft"
         SizeToContent="Height"
         Width="{DynamicResource C.Dialog.Width.Sm}"
@@ -15,7 +16,8 @@
         </Grid.RowDefinitions>
 
         <!-- ===== Header ===== -->
-        <Border x:Name="headerBorder" Grid.Row="0" Style="{StaticResource DialogHeaderStyle}">
+        <Border x:Name="headerBorder" Grid.Row="0" Style="{StaticResource DialogHeaderStyle}"
+                MouseLeftButtonDown="headerBorder_MouseLeftButtonDown">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>

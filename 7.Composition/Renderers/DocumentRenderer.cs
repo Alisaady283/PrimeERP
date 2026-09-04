@@ -42,6 +42,9 @@ namespace PrimeERP.Composition.Renderers
 
             /// <summary>يضيف سطراً جاهزاً للشبكة — نافذة السحب تستهلكها.</summary>
             public Action<PullDialog.PulledLine> AddPulledRow;
+
+            /// <summary>ينسخ قيم رأس المستند المصدر (الطرف/المخزن) للحقول الفارغة في الرأس الحالي.</summary>
+            public Action<Dictionary<string, object>> ApplyPulledHeader;
         }
 
         // بناء المحرِّر مفصول عن غلافه — الحوار والصفحة يستهلكانه معاً بلا تكرار.
@@ -169,6 +172,8 @@ namespace PrimeERP.Composition.Renderers
             linesSection.Children.Add(addLineBtn);
 
             var body = new StackPanel();
+            var pullBar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+            body.Children.Add(pullBar);
             body.Children.Add(headerGrid);
             body.Children.Add(new Separator { Margin = new Thickness(0, 4, 0, 12) });
             body.Children.Add(linesSection);
@@ -177,6 +182,29 @@ namespace PrimeERP.Composition.Renderers
             {
                 Body = body, HeaderControls = headerControls, Rows = rows,
                 EditItem = editItem, IsEdit = isEdit
+            };
+
+            // السحب فعل يسبق تعبئة السطور — مكانه أعلى النموذج لا في فوتر الحفظ.
+            foreach (var pullButton in BuildPullButtons(def, services, () => editor)) pullBar.Children.Add(pullButton);
+            pullBar.Visibility = pullBar.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+            editor.ApplyPulledHeader = header =>
+            {
+                foreach (var (key, value) in header)
+                {
+                    if (value == null || !headerControls.TryGetValue(key, out var control)) continue;
+
+                    var headerField = def.HeaderFields.FirstOrDefault(f => f.Key == key);
+                    if (headerField == null) continue;
+
+                    // لا يُطمس اختيار قائم — السحب يملأ الفارغ فقط.
+                    if (DialogRenderer.GetControlValue(control, headerField.Kind) != null) continue;
+
+                    if (headerField.Kind == FieldKind.Picker)
+                        DialogRenderer.SelectPickerItem((AppComboBox)control, value, headerField.PickerValueField);
+                    else
+                        DialogRenderer.SetControlValue(control, headerField, value);
+                }
             };
 
             editor.AddPulledRow = pulled =>
@@ -249,7 +277,9 @@ namespace PrimeERP.Composition.Renderers
 
                     var picked = PullDialog.Show(captured, services, match);
                     if (picked == null) return;
-                    foreach (var line in picked) editor.AddPulledRow(line);
+
+                    editor.ApplyPulledHeader(picked.Header);
+                    foreach (var line in picked.Lines) editor.AddPulledRow(line);
                 };
                 buttons.Add(button);
             }
@@ -269,10 +299,7 @@ namespace PrimeERP.Composition.Renderers
             var btnSave = new Btn { Text = LocalizationService.Get("Str.Save"), Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
 
             var title = editor.IsEdit ? LocalizationService.Get(def.TitleEditKey) : LocalizationService.Get(def.TitleKey);
-            var footer = new StackPanel { Orientation = Orientation.Horizontal };
-            foreach (var pullButton in BuildPullButtons(def, services, () => editor)) footer.Children.Add(pullButton);
-            footer.Children.Add(btnCancel);
-            footer.Children.Add(btnSave);
+            var footer = new StackPanel { Orientation = Orientation.Horizontal, Children = { btnCancel, btnSave } };
             var window = new ComposedDialogWindow(title, editor.Body, footer, width: ComputeDialogWidth(def));
 
             btnCancel.Click += (_, __) => window.Close();

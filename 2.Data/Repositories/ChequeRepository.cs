@@ -17,6 +17,7 @@ namespace PrimeERP.Data.Repositories
         Cheque GetById(int id, DbConnection conn = null, DbTransaction tx = null);
         (List<Cheque> Items, int Total) GetPaged(ChequeDirection? direction, ChequeStatus? status, int page, int pageSize, string searchText);
         List<ChequeMovement> GetMovements(int chequeId);
+        List<Cheque> GetOpenForParty(int partyId, DateTime from, DateTime to);
         int Insert(DbConnection conn, DbTransaction tx, Cheque c);
         void SetStatus(DbConnection conn, DbTransaction tx, int id, ChequeStatus status, int? treasuryId);
         void InsertMovement(DbConnection conn, DbTransaction tx, ChequeMovement m);
@@ -108,6 +109,13 @@ namespace PrimeERP.Data.Repositories
                          {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
             return (Query(sql, null, null, where.Parameters), total);
         }
+
+        // المعلّق = لم يُحصَّل/يُصرَف من البنك بعد — يظهر بالكشف كقيمة استعلامية فقط.
+        public List<Cheque> GetOpenForParty(int partyId, DateTime from, DateTime to) =>
+            Query(@"SELECT * FROM Cheques WHERE PartyId = @p AND Status NOT IN (@collected, @paid)
+                    AND IssueDate >= @from AND IssueDate <= @to ORDER BY DueDate",
+                null, null, ("@p", partyId), ("@collected", (int)ChequeStatus.Collected),
+                ("@paid", (int)ChequeStatus.Paid), ("@from", from), ("@to", to));
 
         public List<ChequeMovement> GetMovements(int chequeId) =>
             QueryAs(MapMovement, "SELECT * FROM ChequeMovements WHERE ChequeId = @id ORDER BY Id", null, null, ("@id", chequeId));

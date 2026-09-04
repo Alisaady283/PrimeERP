@@ -39,6 +39,8 @@ namespace PrimeERP.Application.Services.Parties
         protected override IValidator<Customer> Validator => new CustomerValidator();
         protected override string AccountCodeOf(Customer entity) => entity.AccountCode;
         protected override decimal CreditLimitOf(Customer entity) => entity.CreditLimit;
+        protected override PrimeERP.Application.Services.Cheques.IChequeService Cheques => _cheques;
+
         protected override decimal BalanceOf(Customer entity) => entity.Balance;
 
         protected override Customer BuildFromAccount(string code, string name, string accountCode) => new()
@@ -54,16 +56,18 @@ namespace PrimeERP.Application.Services.Parties
         private readonly IJournalRepository _journalRepo;
         private readonly IAccountRepository _accountRepo;
         private readonly ICategoryRepository _categories;
+        private readonly PrimeERP.Application.Services.Cheques.IChequeService _cheques;
 
         public CustomerService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
             IAccountService accounts, INumberSequenceService numbers, ICustomerRepository customers, IAccountRepository accountRepo,
-            IJournalRepository journalRepo, ICategoryRepository categories)
+            IJournalRepository journalRepo, ICategoryRepository categories, PrimeERP.Application.Services.Cheques.IChequeService cheques)
             : base(permissions, settings, localization, audit, accounts, numbers, accountRepo)
         {
             _customers = customers;
             _accountRepo = accountRepo;
             _journalRepo = journalRepo;
             _categories = categories;
+            _cheques = cheques;
         }
 
         // ===================== القراءة =====================

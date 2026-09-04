@@ -141,13 +141,6 @@ namespace PrimeERP.Tests.Services
             treasury = SeedTreasury();
             var customer = SeedCustomer();
 
-            _db.Services.GetRequiredService<ISettingsService>().SetMany(new System.Collections.Generic.Dictionary<string, object>
-            {
-                [SettingKeys.Accounts.ChequesInHand] = treasury.AccountCode,
-                [SettingKeys.Accounts.ChequesUnderCollection] = treasury.AccountCode,
-                [SettingKeys.Accounts.ChequesPayable] = treasury.AccountCode,
-            });
-
             var voucher = _db.Services.GetRequiredService<IReceiptVoucherService>().Create(new CreateVoucherDto
             {
                 VoucherDate = DateTime.Today, PartyId = customer.Id, TreasuryId = treasury.Id,

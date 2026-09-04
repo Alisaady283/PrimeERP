@@ -134,6 +134,16 @@ namespace PrimeERP.UI.Components.Inputs
             e.Handled = !Regex.IsMatch(proposed, pattern);
         }
 
+        // Value كانت تُضبَط عند LostFocus فقط — فمن يكتب رقماً ثم يضغط "حفظ"/"سحب" مباشرة (بلا مغادرة الحقل)
+        // كان يُقرأ منه الرقم القديم. هنا تُضبَط مع كل حرف بلا لمس نص الحقل أثناء الكتابة (التنسيق والقص
+        // على الحدود يبقيان في Commit عند مغادرة الحقل).
+        private void txt_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!_isFocused) return;
+
+            Value = decimal.TryParse(txt.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed) ? parsed : 0m;
+        }
+
         private void txt_GotFocus(object sender, RoutedEventArgs e)
         {
             _isFocused = true;

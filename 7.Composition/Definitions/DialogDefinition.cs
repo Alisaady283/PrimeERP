@@ -36,6 +36,10 @@ namespace PrimeERP.Composition.Definitions
         // يظهر الحقل فقط عندما تساوي قيمة الحقل المذكور VisibleWhenValue — حقول الشيك تحت طريقة الدفع مثلاً.
         public string VisibleWhenField { get; init; }
         public object VisibleWhenValue { get; init; }
+
+        // Kind.Picker فقط — تُعاد تعبئة القائمة كلما تغيّرت قيمة هذا الحقل، وتُمرَّر قيمته كمرشِّح
+        // (اختيار "بنك" يحصر قائمة الخزائن في الحسابات البنكية مثلاً).
+        public string PickerFilterField { get; init; }
     }
 
     public class DialogDefinition

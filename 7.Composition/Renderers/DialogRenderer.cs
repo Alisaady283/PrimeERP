@@ -192,7 +192,34 @@ namespace PrimeERP.Composition.Renderers
             }
 
             ApplyConditionalVisibility(fieldDefs, controls);
+            ApplyPickerFilters(fieldDefs, controls, services);
             return controls;
+        }
+
+        /// <summary>يعيد تعبئة أي قائمة مرتبطة بحقل حاكم كلما تغيّر — بلا كود خاص في كل شاشة.</summary>
+        internal static void ApplyPickerFilters(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> controls, IServiceProvider services)
+        {
+            var filtered = fieldDefs.Where(f => !string.IsNullOrEmpty(f.PickerFilterField) && f.Kind == FieldKind.Picker).ToList();
+
+            foreach (var field in filtered)
+            {
+                if (!controls.TryGetValue(field.PickerFilterField, out var source)) continue;
+                if (!controls.TryGetValue(field.Key, out var target) || target is not AppComboBox combo) continue;
+
+                var sourceField = fieldDefs.First(f => f.Key == field.PickerFilterField);
+                var captured = field;
+
+                void Reload()
+                {
+                    combo.SelectedItem = null;
+                    LoadPickerItems(combo, captured, services, GetControlValue(source, sourceField.Kind));
+                }
+
+                if (source is AppComboBox sourceCombo) sourceCombo.SelectionChanged += (_, __) => Reload();
+                else if (source is AppCheckBox sourceCheck) sourceCheck.CheckedChanged += (_, __) => Reload();
+
+                Reload();
+            }
         }
 
         /// <summary>يُظهر/يُخفي الحقول المشروطة ويعيد التقييم كلما تغيّر الحقل الحاكم — الشرط مُعلَن في التعريف
@@ -330,7 +357,7 @@ namespace PrimeERP.Composition.Renderers
 
         // PickerType="Account"/"Category" — عبر الخدمة مباشرة، لا IPickerDataSource<T> عام (غير مسجَّل في DI
         // بعد). نطاق مُبسَّط، راجع تقرير R11.
-        internal static void LoadPickerItems(AppComboBox combo, FieldDefinition field, IServiceProvider services)
+        internal static void LoadPickerItems(AppComboBox combo, FieldDefinition field, IServiceProvider services, object filterValue = null)
         {
             if (field.PickerType == "Account")
             {
@@ -386,7 +413,35 @@ namespace PrimeERP.Composition.Renderers
             else if (field.PickerType == "Treasury")
             {
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>().GetAll();
-                if (result.IsSuccess) combo.ItemsSource = result.Value.Select(t => new PickerRow { Id = t.Id, Code = t.Code, Display = $"{t.Name} ({t.KindName})" }).ToList();
+                if (!result.IsSuccess) return;
+
+                var items = result.Value.AsEnumerable();
+                if (filterValue != null && int.TryParse(filterValue.ToString(), out var kind) && kind > 0)
+                    items = items.Where(t => (int)t.Kind == kind);
+
+                combo.ItemsSource = items.Select(t => new PickerRow { Id = t.Id, Code = t.Code, Display = t.Name }).ToList();
+            }
+            else if (field.PickerType == "TreasuryKind")
+            {
+                combo.ItemsSource = new List<PickerRow>
+                {
+                    new() { Id = (int)PrimeERP.Domain.Enums.TreasuryKind.Cash, Display = "صندوق" },
+                    new() { Id = (int)PrimeERP.Domain.Enums.TreasuryKind.Bank, Display = "بنك" },
+                };
+            }
+            else if (field.PickerType == "SalesInvoice")
+            {
+                var result = services.GetRequiredService<PrimeERP.Application.Services.Sales.ISalesInvoiceService>().GetPaged(1, 2000);
+                if (result.IsSuccess)
+                    combo.ItemsSource = result.Value.Items
+                        .Select(i => new PickerRow { Id = i.Id, Code = i.InvoiceNo, Display = $"{i.InvoiceNo} — {i.CustomerName} ({i.NetTotal:N2})" }).ToList();
+            }
+            else if (field.PickerType == "PurchaseInvoice")
+            {
+                var result = services.GetRequiredService<PrimeERP.Application.Services.Purchasing.IPurchaseInvoiceService>().GetPaged(1, 2000);
+                if (result.IsSuccess)
+                    combo.ItemsSource = result.Value.Items
+                        .Select(i => new PickerRow { Id = i.Id, Code = i.InvoiceNo, Display = $"{i.InvoiceNo} — {i.SupplierName} ({i.NetTotal:N2})" }).ToList();
             }
             else if (field.PickerType == "PaymentMethod")
             {

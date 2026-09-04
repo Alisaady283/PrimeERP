@@ -5,7 +5,6 @@ using System.Linq;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Cheques;
 using PrimeERP.Application.Services.Accounting;
-using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.Services.Treasury;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
@@ -25,6 +24,8 @@ namespace PrimeERP.Application.Services.Cheques
         Result<ChequeDetailDto> GetById(int id);
         Result<List<ChequeStatus>> GetAllowedTransitions(int id);
         Result Move(MoveChequeDto dto);
+        Result<ChequeDocumentResultDto> CreateBatch(CreateChequeDocumentDto dto, ChequeDirection direction);
+        Result<List<ChequeDto>> GetOpenForParty(int partyId, DateTime from, DateTime to);
     }
 
     /// <summary>دورة الشيك كاملة. القاعدة الوحيدة: لا تتغيّر الحالة بلا سطر حركة وقيد مقابلين في نفس المعاملة —
@@ -33,13 +34,15 @@ namespace PrimeERP.Application.Services.Cheques
     {
         private readonly IChequeRepository _repo;
         private readonly ITreasuryService _treasuries;
-        private readonly ICustomerService _customers;
-        private readonly ISupplierService _suppliers;
+        // المستودعان لا الخدمتان عمداً: خدمة العملاء تستهلك خدمة الشيكات (أسطر الشيك في كشف الحساب)،
+        // فاعتمادها هنا على الخدمة يغلق حلقة اعتماد. المطلوب هنا اسم الطرف وحسابه فقط — كلاهما على الكيان.
+        private readonly ICustomerRepository _customers;
+        private readonly ISupplierRepository _suppliers;
         private readonly IJournalService _journals;
         private readonly ISettingsService _settingsService;
 
-        public ChequeService(IChequeRepository repo, ITreasuryService treasuries, ICustomerService customers,
-            ISupplierService suppliers, IJournalService journals, ISettingsService settingsService,
+        public ChequeService(IChequeRepository repo, ITreasuryService treasuries, ICustomerRepository customers,
+            ISupplierRepository suppliers, IJournalService journals, ISettingsService settingsService,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
             : base(permissions, settings, localization, audit)
         {
@@ -118,14 +121,14 @@ namespace PrimeERP.Application.Services.Cheques
                 return Result.Fail($"لا يمكن نقل الشيك من {StatusName(cheque.Status)} إلى {StatusName(target)}", ErrorCode.ValidationFailed);
 
             var (debit, credit) = ResolveAccounts(cheque, target, dto.TreasuryId);
-            if (string.IsNullOrWhiteSpace(debit) || string.IsNullOrWhiteSpace(credit))
-                return Result.Fail("حسابات دورة الشيكات غير مضبوطة — راجع تبويب الحسابات في الإعدادات", ErrorCode.ValidationFailed);
+            if (AffectsLedger(target) && (string.IsNullOrWhiteSpace(debit) || string.IsNullOrWhiteSpace(credit)))
+                return Result.Fail("لا حساب مرتبط بالخزينة أو بالطرف — اربطهما بحسابيهما أولاً", ErrorCode.ValidationFailed);
 
             try
             {
                 Db.RunTransaction((conn, tx) =>
                 {
-                    var entryId = PostEntry(conn, tx, cheque, target, debit, credit, dto.MovementDate);
+                    var entryId = AffectsLedger(target) ? PostEntry(conn, tx, cheque, target, debit, credit, dto.MovementDate) : (int?)null;
 
                     _repo.InsertMovement(conn, tx, new ChequeMovement
                     {
@@ -146,25 +149,24 @@ namespace PrimeERP.Application.Services.Cheques
             return Result.Ok();
         }
 
-        /// <summary>يحدّد طرفَي القيد لكل انتقال: الخروج من الحساب القديم والدخول في الجديد.</summary>
+        /// <summary>الشيك لا يمسّ الأرصدة قبل أن يُسدَّد من البنك فعلاً — لذلك القيد يقع عند التحصيل/الصرف
+        /// وحدهما، وباقي الحركات (استلام/إيداع/ارتداد/رد) تُسجَّل كحركة بلا قيد. قبلها يظهر الشيك بكشف
+        /// الحساب كقيمة استعلامية فقط (راجع GetOpenForParty).</summary>
         private (string Debit, string Credit) ResolveAccounts(Cheque cheque, ChequeStatus target, int? treasuryId)
         {
-            var inHand     = _settingsService.Get<string>(SettingKeys.Accounts.ChequesInHand, "");
-            var collection = _settingsService.Get<string>(SettingKeys.Accounts.ChequesUnderCollection, "");
-            var payable    = _settingsService.Get<string>(SettingKeys.Accounts.ChequesPayable, "");
-            var cash       = TreasuryAccount(treasuryId ?? cheque.TreasuryId);
-            var party      = PartyAccount(cheque);
+            var cash  = TreasuryAccount(treasuryId ?? cheque.TreasuryId);
+            var party = PartyAccount(cheque);
 
             return target switch
             {
-                ChequeStatus.Deposited => (collection, cheque.Status == ChequeStatus.Bounced ? inHand : inHand),
-                ChequeStatus.Collected => (cash, cheque.Status == ChequeStatus.Deposited ? collection : inHand),
-                ChequeStatus.Bounced   => cheque.Direction == ChequeDirection.Incoming ? (inHand, collection) : (payable, payable),
-                ChequeStatus.Returned  => (party, inHand),
-                ChequeStatus.Paid      => (payable, cash),
+                ChequeStatus.Collected => (cash, party),
+                ChequeStatus.Paid      => (party, cash),
                 _ => (null, null)
             };
         }
+
+        private static bool AffectsLedger(ChequeStatus target) =>
+            target is ChequeStatus.Collected or ChequeStatus.Paid;
 
         private int PostEntry(DbConnection conn, DbTransaction tx, Cheque cheque, ChequeStatus target,
             string debitAccount, string creditAccount, DateTime date)
@@ -205,14 +207,9 @@ namespace PrimeERP.Application.Services.Cheques
         {
             if (cheque.PartyId == null) return null;
 
-            if (cheque.PartyKind == PartyKind.Customer)
-            {
-                var customer = _customers.GetById(cheque.PartyId.Value);
-                return customer.IsSuccess ? customer.Value.AccountCode : null;
-            }
-
-            var supplier = _suppliers.GetById(cheque.PartyId.Value);
-            return supplier.IsSuccess ? supplier.Value.AccountCode : null;
+            return cheque.PartyKind == PartyKind.Customer
+                ? _customers.GetById(cheque.PartyId.Value)?.AccountCode
+                : _suppliers.GetById(cheque.PartyId.Value)?.AccountCode;
         }
 
         private ChequeDto ToDto(Cheque c) => new()
@@ -229,14 +226,58 @@ namespace PrimeERP.Application.Services.Cheques
         {
             if (c.PartyId == null) return null;
 
-            if (c.PartyKind == PartyKind.Customer)
+            return c.PartyKind == PartyKind.Customer
+                ? _customers.GetById(c.PartyId.Value)?.Name
+                : _suppliers.GetById(c.PartyId.Value)?.Name;
+        }
+
+        /// <summary>مستند استلام/صرف شيكات: رأس واحد وعدة شيكات — بلا قيد، الشيك يبقى استعلامياً حتى يُسدَّد.</summary>
+        public Result<ChequeDocumentResultDto> CreateBatch(CreateChequeDocumentDto dto, ChequeDirection direction)
+        {
+            if (!Can("Create")) return FailDenied<ChequeDocumentResultDto>();
+            if (dto.Lines == null || dto.Lines.Count == 0)
+                return Result.Fail<ChequeDocumentResultDto>("المستند يحتاج شيكاً واحداً على الأقل", ErrorCode.ValidationFailed);
+
+            foreach (var line in dto.Lines)
             {
-                var customer = _customers.GetById(c.PartyId.Value);
-                return customer.IsSuccess ? customer.Value.Name : null;
+                if (string.IsNullOrWhiteSpace(line.ChequeNo)) return Result.Fail<ChequeDocumentResultDto>("رقم الشيك مطلوب", ErrorCode.ValidationFailed);
+                if (line.Amount <= 0) return Result.Fail<ChequeDocumentResultDto>($"مبلغ الشيك {line.ChequeNo} يجب أن يكون أكبر من صفر", ErrorCode.ValidationFailed);
             }
 
-            var supplier = _suppliers.GetById(c.PartyId.Value);
-            return supplier.IsSuccess ? supplier.Value.Name : null;
+            var status = direction == ChequeDirection.Incoming ? ChequeStatus.InHand : ChequeStatus.Issued;
+            var partyKind = direction == ChequeDirection.Incoming ? PartyKind.Customer : PartyKind.Supplier;
+            var ids = new List<int>();
+
+            Db.RunTransaction((conn, tx) =>
+            {
+                foreach (var line in dto.Lines)
+                {
+                    var cheque = new Cheque
+                    {
+                        ChequeNo = line.ChequeNo, Direction = direction, PartyKind = partyKind,
+                        PartyId = line.PartyId ?? dto.PartyId, Amount = line.Amount,
+                        IssueDate = dto.DocDate, DueDate = line.DueDate ?? dto.DocDate,
+                        BankName = line.BankName, Status = status, Notes = line.Notes, CreatedBy = AppSession.Username
+                    };
+                    var id = _repo.Insert(conn, tx, cheque);
+                    ids.Add(id);
+
+                    _repo.InsertMovement(conn, tx, new ChequeMovement
+                    {
+                        ChequeId = id, MovementDate = dto.DocDate, FromStatus = status, ToStatus = status,
+                        Notes = dto.Notes, CreatedBy = AppSession.Username
+                    });
+                }
+            });
+
+            Audit.Log(EntityName, ids.FirstOrDefault(), AuditAction.Insert, newValue: new { Count = ids.Count, Direction = direction });
+            return Result.Ok(new ChequeDocumentResultDto { ChequeIds = ids });
+        }
+
+        public Result<List<ChequeDto>> GetOpenForParty(int partyId, DateTime from, DateTime to)
+        {
+            if (!Can("View")) return FailDenied<List<ChequeDto>>();
+            return Result.Ok(_repo.GetOpenForParty(partyId, from, to).Select(ToDto).ToList());
         }
 
         public static string StatusName(ChequeStatus status) => status switch

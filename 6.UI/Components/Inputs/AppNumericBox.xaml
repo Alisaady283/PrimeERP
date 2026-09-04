@@ -39,6 +39,7 @@
                          FlowDirection="LeftToRight"
                          Padding="{DynamicResource C.Input.Padding}"
                          PreviewTextInput="txt_PreviewTextInput"
+                         TextChanged="txt_TextChanged"
                          GotFocus="txt_GotFocus"
                          LostFocus="txt_LostFocus"/>
 

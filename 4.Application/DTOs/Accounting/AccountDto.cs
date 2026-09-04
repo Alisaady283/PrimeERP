@@ -90,5 +90,8 @@ namespace PrimeERP.Application.DTOs.Accounting
         public decimal Credit      { get; set; }
         public decimal RunningBalance { get; set; }
         public string SourceType   { get; set; }
+
+        /// <summary>قيمة استعلامية تظهر بالكشف بلا أثر على الرصيد — شيك لم يُسدَّد من البنك بعد.</summary>
+        public decimal MemoAmount  { get; set; }
     }
 }
