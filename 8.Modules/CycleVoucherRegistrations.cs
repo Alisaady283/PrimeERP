@@ -14,16 +14,16 @@ namespace PrimeERP.Modules
     {
         public static void RegisterAll(IModuleRegistry registry)
         {
-            Register(registry, "GoodsReceipt", "إذن إضافة", typeof(GoodsReceiptViewModel), typeof(IGoodsReceiptService),
+            Register(registry, "GoodsReceipt", "Str.Module.GoodsReceipt", typeof(GoodsReceiptViewModel), typeof(IGoodsReceiptService),
                 StockEffect.In, Pull("PurchaseOrder", "سحب من أمر شراء"));
 
-            Register(registry, "GoodsIssue", "إذن صرف مرتجع", typeof(GoodsIssueViewModel), typeof(IGoodsIssueService),
+            Register(registry, "GoodsIssue", "Str.Module.GoodsIssue", typeof(GoodsIssueViewModel), typeof(IGoodsIssueService),
                 StockEffect.Out, Pull("PurchaseReturns", "سحب من مرتجع شراء"));
 
-            Register(registry, "DeliveryNote", "إذن صرف", typeof(DeliveryNoteViewModel), typeof(IDeliveryNoteService),
+            Register(registry, "DeliveryNote", "Str.Module.DeliveryNote", typeof(DeliveryNoteViewModel), typeof(IDeliveryNoteService),
                 StockEffect.Out, Pull("SalesOrder", "سحب من أمر توريد"));
 
-            Register(registry, "SalesReceipt", "إذن استلام مرتجع", typeof(SalesReceiptViewModel), typeof(ISalesReceiptService),
+            Register(registry, "SalesReceipt", "Str.Module.SalesReceipt", typeof(SalesReceiptViewModel), typeof(ISalesReceiptService),
                 StockEffect.In, Pull("SalesReturns", "سحب من مرتجع بيع"));
         }
 

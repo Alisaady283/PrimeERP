@@ -48,12 +48,12 @@ namespace PrimeERP.Modules
                 }
             });
 
-            RegisterVoucher(registry, "Receipts", "سند قبض", typeof(ReceiptVouchersViewModel), typeof(IReceiptVoucherService), "Str.Customer", "Customer", "SalesInvoice");
-            RegisterVoucher(registry, "Payments", "سند صرف", typeof(PaymentVouchersViewModel), typeof(IPaymentVoucherService), "Str.Supplier", "Supplier", "PurchaseInvoice");
+            RegisterVoucher(registry, "Receipts", "Str.Module.Receipts", typeof(ReceiptVouchersViewModel), typeof(IReceiptVoucherService), "Str.Customer", "Customer", "SalesInvoice");
+            RegisterVoucher(registry, "Payments", "Str.Module.Payments", typeof(PaymentVouchersViewModel), typeof(IPaymentVoucherService), "Str.Supplier", "Supplier", "PurchaseInvoice");
 
-            RegisterChequeDocument(registry, "ChequeReceipts", "استلام شيكات", typeof(ChequeReceiptsViewModel),
+            RegisterChequeDocument(registry, "ChequeReceipts", "Str.Module.ChequeReceipts", typeof(ChequeReceiptsViewModel),
                 typeof(PrimeERP.Application.Services.Cheques.IChequeReceiptDocumentService), "Str.Customer", "Customer");
-            RegisterChequeDocument(registry, "ChequeIssues", "صرف شيكات", typeof(ChequeIssuesViewModel),
+            RegisterChequeDocument(registry, "ChequeIssues", "Str.Module.ChequeIssues", typeof(ChequeIssuesViewModel),
                 typeof(PrimeERP.Application.Services.Cheques.IChequeIssueDocumentService), "Str.Supplier", "Supplier");
 
             registry.Register(new ModuleDefinition
@@ -139,11 +139,11 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreateVoucherDto.VoucherDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
                         new() { Key = nameof(CreateVoucherDto.PartyId), LabelKey = partyLabelKey, Kind = FieldKind.Picker, PickerType = partyPickerType, IsRequired = true },
-                        new() { Key = nameof(CreateVoucherDto.TreasuryKind), LabelKey = "النوع", Kind = FieldKind.Picker, PickerType = "TreasuryKind", IsRequired = true, DefaultValue = (int)TreasuryKind.Cash },
-                        new() { Key = nameof(CreateVoucherDto.TreasuryId), LabelKey = "الخزينة", Kind = FieldKind.Picker, PickerType = "Treasury", IsRequired = true,
-                                PickerFilterField = nameof(CreateVoucherDto.TreasuryKind) },
+                        new() { Key = nameof(CreateVoucherDto.Method), LabelKey = "طريقة الدفع", Kind = FieldKind.Picker, PickerType = "PaymentMethod", IsRequired = true, DefaultValue = (int)PaymentMethod.Cash },
+                        // القائمة تتبع طريقة الدفع: نقداً تعرض الخزن، وتحويلاً أو شيكاً تعرض البنوك.
+                        new() { Key = nameof(CreateVoucherDto.TreasuryId), LabelKey = "الخزينة / البنك", Kind = FieldKind.Picker, PickerType = "Treasury", IsRequired = true,
+                                PickerFilterField = nameof(CreateVoucherDto.Method) },
                         new() { Key = nameof(CreateVoucherDto.Amount), LabelKey = "Str.Amount", Kind = FieldKind.Number, IsRequired = true },
-                        new() { Key = nameof(CreateVoucherDto.Method), LabelKey = "طريقة الدفع", Kind = FieldKind.Picker, PickerType = "PaymentMethod", IsRequired = true },
                         new() { Key = nameof(CreateVoucherDto.Reference), LabelKey = "مرجع", Kind = FieldKind.Text, MaxLength = 100 },
                         // حقول الشيك تظهر فقط عند اختيار طريقة "شيك" — الشرط مُعلَن هنا لا مكتوب في الواجهة.
                         new() { Key = nameof(CreateVoucherDto.ChequeNo), LabelKey = "رقم الشيك", Kind = FieldKind.Text, MaxLength = 40,

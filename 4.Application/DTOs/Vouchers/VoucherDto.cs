@@ -50,8 +50,6 @@ namespace PrimeERP.Application.DTOs.Vouchers
         public DateTime  VoucherDate { get; set; } = DateTime.Today;
         public int?      PartyId     { get; set; }
 
-        /// <summary>صندوق أم بنك — يحصر قائمة الخزائن فقط، الخدمة تقرأ TreasuryId وحدها.</summary>
-        public int       TreasuryKind { get; set; } = (int)PrimeERP.Domain.Enums.TreasuryKind.Cash;
         public int       TreasuryId  { get; set; }
         public decimal   Amount      { get; set; }
         public int       Method      { get; set; } = (int)PaymentMethod.Cash;

@@ -176,7 +176,11 @@ namespace PrimeERP.Composition.Renderers
                 if (field.Kind == FieldKind.Picker)
                 {
                     LoadPickerItems((AppComboBox)control, field, services);
-                    var presetId = isEdit ? editItem.GetType().GetProperty(field.Key)?.GetValue(editItem) as int? : addModeDefaultPickerId;
+                    // في وضع الإضافة: القيمة الافتراضية المُعلَنة على الحقل أولاً (طريقة الدفع "نقداً" مثلاً)،
+                    // وإلا الافتراضي المُمرَّر من الشاشة. بلا هذا يبدأ الحقل فارغاً فلا يرشِّح شيئاً.
+                    var presetId = isEdit
+                        ? editItem.GetType().GetProperty(field.Key)?.GetValue(editItem) as int?
+                        : field.DefaultValue as int? ?? addModeDefaultPickerId;
                     if (presetId != null) SelectPickerItem((AppComboBox)control, presetId.Value);
                 }
                 else if (isEdit)
@@ -415,19 +419,17 @@ namespace PrimeERP.Composition.Renderers
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>().GetAll();
                 if (!result.IsSuccess) return;
 
+                // المرشِّح طريقة دفع لا نوع خزينة: نقداً يعرض الخزن، وتحويلاً بنكياً أو شيكاً يعرض البنوك.
                 var items = result.Value.AsEnumerable();
-                if (filterValue != null && int.TryParse(filterValue.ToString(), out var kind) && kind > 0)
-                    items = items.Where(t => (int)t.Kind == kind);
+                if (filterValue != null && int.TryParse(filterValue.ToString(), out var method) && method > 0)
+                {
+                    var kind = (PrimeERP.Domain.Enums.PaymentMethod)method == PrimeERP.Domain.Enums.PaymentMethod.Cash
+                        ? PrimeERP.Domain.Enums.TreasuryKind.Cash
+                        : PrimeERP.Domain.Enums.TreasuryKind.Bank;
+                    items = items.Where(t => t.Kind == kind);
+                }
 
                 combo.ItemsSource = items.Select(t => new PickerRow { Id = t.Id, Code = t.Code, Display = t.Name }).ToList();
-            }
-            else if (field.PickerType == "TreasuryKind")
-            {
-                combo.ItemsSource = new List<PickerRow>
-                {
-                    new() { Id = (int)PrimeERP.Domain.Enums.TreasuryKind.Cash, Display = "صندوق" },
-                    new() { Id = (int)PrimeERP.Domain.Enums.TreasuryKind.Bank, Display = "بنك" },
-                };
             }
             else if (field.PickerType == "SalesInvoice")
             {

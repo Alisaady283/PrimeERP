@@ -14,17 +14,17 @@ namespace PrimeERP.Modules
     {
         public static void RegisterAll(IModuleRegistry registry)
         {
-            Register(registry, "PurchaseRequest", "طلب شراء", typeof(PurchaseRequestViewModel), typeof(IPurchaseRequestService),
+            Register(registry, "PurchaseRequest", "Str.Module.PurchaseRequest", typeof(PurchaseRequestViewModel), typeof(IPurchaseRequestService),
                 "Purchases", "Str.Supplier", "Supplier", partyRequired: false, showPrices: false, pullSources: new());
 
-            Register(registry, "PurchaseOrder", "أمر شراء", typeof(PurchaseOrderViewModel), typeof(IPurchaseOrderService),
+            Register(registry, "PurchaseOrder", "Str.Module.PurchaseOrder", typeof(PurchaseOrderViewModel), typeof(IPurchaseOrderService),
                 "Purchases", "Str.Supplier", "Supplier", partyRequired: true, showPrices: true,
                 pullSources: new() { Pull("PurchaseRequest", "سحب من طلب شراء", "Purchases.Create") });
 
-            Register(registry, "Quotation", "عرض سعر", typeof(QuotationViewModel), typeof(IQuotationService),
+            Register(registry, "Quotation", "Str.Module.Quotation", typeof(QuotationViewModel), typeof(IQuotationService),
                 "Sales", "Str.Customer", "Customer", partyRequired: false, showPrices: true, pullSources: new());
 
-            Register(registry, "SalesOrder", "أمر توريد", typeof(SalesOrderViewModel), typeof(ISalesOrderService),
+            Register(registry, "SalesOrder", "Str.Module.SalesOrder", typeof(SalesOrderViewModel), typeof(ISalesOrderService),
                 "Sales", "Str.Customer", "Customer", partyRequired: true, showPrices: true,
                 pullSources: new() { Pull("Quotation", "سحب من عرض سعر", "Sales.Create") });
         }

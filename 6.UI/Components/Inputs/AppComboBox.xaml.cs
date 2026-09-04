@@ -104,6 +104,10 @@ namespace PrimeERP.UI.Components.Inputs
             c._suppressTextChanged = false;
             c.SelectedValue = e.NewValue != null ? c.GetValueOf(e.NewValue) : null;
             c.btnClear.Visibility = c.AllowClear && e.NewValue != null ? Visibility.Visible : Visibility.Collapsed;
+
+            // يُرفَع لأي تغيّر — بالنقر أو برمجياً. كان مقصوراً على النقر، فالحقول التابعة (ترشيح قائمة،
+            // إظهار مشروط) لا تُخطَر عند الضبط من الكود أو من قيمة افتراضية.
+            c.SelectionChanged?.Invoke(c, EventArgs.Empty);
         }
 
         private static void OnIsSearchableChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -248,8 +252,6 @@ namespace PrimeERP.UI.Components.Inputs
             _suppressOpen = true;
             txtSearch.Focus();
             _suppressOpen = false;
-
-            SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
 
         // عند الإفلات لا الضغط، لنفس سبب حقل البحث: الإفلات خارج Popup مفتوح يغلقه فوراً.
@@ -271,7 +273,6 @@ namespace PrimeERP.UI.Components.Inputs
         {
             SelectedItem = null;
             txtSearch.Text = "";
-            SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 }
