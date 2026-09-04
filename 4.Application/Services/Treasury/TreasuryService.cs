@@ -33,18 +33,27 @@ namespace PrimeERP.Application.Services.Treasury
 
         /// <summary>الخزينة حساب ورقي تحت "الصناديق" والبنك تحت "البنوك" — يُنشأ تلقائياً عند ترك الحساب فارغاً،
         /// فلا يضطر المستخدم لبناء الحساب يدوياً قبل إنشاء الخزينة.</summary>
-        private string EnsureAccount(string accountCode, string name, bool isBank)
+        private Result<string> EnsureAccount(string accountCode, string name, bool isBank)
         {
-            if (!string.IsNullOrWhiteSpace(accountCode)) return accountCode;
+            if (!string.IsNullOrWhiteSpace(accountCode)) return Result.Ok(accountCode);
 
+            var rootLabel = isBank ? "البنوك" : "الصناديق";
             var parentCode = _settingsProvider.Get(isBank ? SettingKeys.Accounts.Bank : SettingKeys.Accounts.Cash, isBank ? "1203" : "1204");
+
             var parent = _accounts.GetByCode(parentCode);
-            if (parent.IsFailure) return null;
+            if (parent.IsFailure)
+                return Result.Fail<string>($"حساب «{rootLabel}» المضبوط في الإعدادات ({parentCode}) غير موجود في شجرة الحسابات", ErrorCode.ValidationFailed);
+
+            if (parent.Value.IsLeaf)
+                return Result.Fail<string>($"حساب «{rootLabel}» ({parentCode}) ورقي — لا يقبل حسابات تحته. اجعله تجميعياً أو غيّره من الإعدادات", ErrorCode.ValidationFailed);
 
             var created = _accounts.Create(new PrimeERP.Application.DTOs.Accounting.CreateAccountDto
             { ParentId = parent.Value.Id, Name = name, IsLeaf = true, SkipAutoLink = true });
 
-            return created.IsSuccess ? created.Value.Code : null;
+            // الفشل هنا كان يمرّ بصمت فتُنشأ خزينة بلا حساب: لا تظهر بالشجرة ولا يعرف المستخدم لماذا.
+            return created.IsSuccess
+                ? Result.Ok(created.Value.Code)
+                : Result.Fail<string>($"تعذّر إنشاء حساب «{name}» تحت {rootLabel}: {created.ErrorMessage}", created.ErrorCode);
         }
 
         /// <summary>الاتجاه المعاكس — إنشاء حساب ورقي تحت "الصناديق"/"البنوك" في الشجرة يُنشئ خزينته هنا.
@@ -118,11 +127,14 @@ namespace PrimeERP.Application.Services.Treasury
         {
             if (string.IsNullOrWhiteSpace(dto.Name)) return Result.Fail<TreasuryDto>("اسم الخزينة مطلوب", ErrorCode.ValidationFailed);
 
+            var account = EnsureAccount(dto.AccountCode, dto.Name, dto.IsBank);
+            if (account.IsFailure) return Result.Fail<TreasuryDto>(account.ErrorMessage, account.ErrorCode);
+
             var entity = new Entity
             {
                 Code = _numbers.Next("Treasury"), Name = dto.Name,
                 Kind = dto.IsBank ? TreasuryKind.Bank : TreasuryKind.Cash,
-                AccountCode = EnsureAccount(dto.AccountCode, dto.Name, dto.IsBank),
+                AccountCode = account.Value,
                 BankName = dto.BankName, AccountNumber = dto.AccountNumber,
                 Notes = dto.Notes, IsActive = dto.IsActive
             };
@@ -141,7 +153,10 @@ namespace PrimeERP.Application.Services.Treasury
 
             entity.Name = dto.Name;
             entity.Kind = dto.IsBank ? TreasuryKind.Bank : TreasuryKind.Cash;
-            entity.AccountCode = EnsureAccount(dto.AccountCode, dto.Name, dto.IsBank); entity.BankName = dto.BankName;
+            var updatedAccount = EnsureAccount(dto.AccountCode ?? entity.AccountCode, dto.Name, dto.IsBank);
+            if (updatedAccount.IsFailure) return Result.Fail(updatedAccount.ErrorMessage, updatedAccount.ErrorCode);
+
+            entity.AccountCode = updatedAccount.Value; entity.BankName = dto.BankName;
             entity.AccountNumber = dto.AccountNumber; entity.Notes = dto.Notes; entity.IsActive = dto.IsActive;
 
             _repo.Update(entity);

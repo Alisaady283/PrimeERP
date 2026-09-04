@@ -88,5 +88,20 @@ namespace PrimeERP.Tests.Services
             Assert.Equal("خزينة الفرع", account.Value.Name);
             Assert.True(account.Value.IsLeaf);
         }
+
+        [Fact]
+        public void WhenTheRootAccountCannotHoldChildren_CreationFailsWithAReason()
+        {
+            var settings = _db.Services.GetRequiredService<PrimeERP.Application.Services.ISettingsService>();
+            var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
+
+            settings.Set(PrimeERP.Platform.Settings.SettingKeys.Accounts.Bank, "9999");
+
+            var created = treasuries.Create(new CreateTreasuryDto { Name = "بنك بلا أصل", IsBank = true, IsActive = true });
+
+            Assert.True(created.IsFailure, "أُنشئت خزينة بلا حساب بدل رفض واضح");
+            Assert.Contains("9999", created.ErrorMessage);
+            Assert.DoesNotContain(treasuries.GetAll(includeInactive: true).Value, t => t.Name == "بنك بلا أصل");
+        }
     }
 }
