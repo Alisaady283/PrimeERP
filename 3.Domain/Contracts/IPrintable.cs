@@ -7,7 +7,7 @@ namespace PrimeERP.Domain.Contracts
 {
     public enum PrintOrientation { Portrait, Landscape }
 
-    public enum PrintSectionType { Title, KeyValues, Table, Text, Spacer, Callout, Parties }
+    public enum PrintSectionType { Title, KeyValues, Table, Text, Spacer, Callout, Parties, AmountInWords, Terms }
 
     public static class PrintTotals
     {
@@ -58,6 +58,11 @@ namespace PrimeERP.Domain.Contracts
 
         /// <summary>لـ PrintSectionType.Parties — صناديق متجاورة (البائع/المشتري)، كل صندوق عنوان وأسطر.</summary>
         public List<PrintParty> Parties { get; set; }
+
+        /// <summary>AmountInWords فقط — المبلغ رقماً، والنص يُشتقّ منه بعملة الإعدادات.</summary>
+        public decimal Amount { get; set; }
+        public string Currency { get; set; }
+        public string SubUnit { get; set; }
 
         /// <summary>لـ PrintSectionType.Callout فقط — يلوّن الصندوق عبر PrintTheme (Soft/SoftText/Solid لنفس المتغيّر).</summary>
         public StatusVariant? Variant { get; set; }
