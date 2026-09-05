@@ -10,6 +10,9 @@
     -->
 
     <!-- ===== الأسطح (Surfaces) — 5 مستويات ===== -->
+    <!-- أرضية الصفحة خلف البطاقات وشريط الترقيم. مستقلّة عن SurfaceCanvas لأن الأخيرة تخدم
+         الصفوف المتناوبة والتمرير — توحيدهما يجعل تفتيح الأرضية يمحو تظليل الصفوف. -->
+    <SolidColorBrush x:Key="PageBg" Color="{DynamicResource P.Color.Nav.950}"/>
     <SolidColorBrush x:Key="SurfaceCanvas"     Color="{DynamicResource P.Color.Nav.950}"/>  <!-- أرضية الصفحة -->
     <SolidColorBrush x:Key="SurfaceBackground" Color="{DynamicResource P.Color.Nav.950}"/>  <!-- خلفية النافذة -->
     <SolidColorBrush x:Key="SurfaceDefault"    Color="{DynamicResource P.Color.Nav.950}"/>  <!-- خلفية الصفحة -->
