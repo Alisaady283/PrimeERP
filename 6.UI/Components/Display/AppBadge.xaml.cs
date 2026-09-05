@@ -40,20 +40,22 @@ namespace PrimeERP.UI.Components.Display
         private static void OnVariantChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var c = (AppBadge)d;
+
+            // مفاتيح لا فُرَش: FindResource تُثبِّت اللون وقت الاستدعاء فلا يتبع تبديل الوضع الفاتح/الداكن.
             var (bg, fg) = ((string)e.NewValue) switch
             {
-                "success" => ((Brush)c.FindResource("SuccessSoft"),       (Brush)c.FindResource("Success")),
-                "danger"  => ((Brush)c.FindResource("DangerSoft"), (Brush)c.FindResource("Danger")),
-                "warning" => ((Brush)c.FindResource("WarningSoft"),  (Brush)c.FindResource("Warning")),
-                "info"    => ((Brush)c.FindResource("InfoSoft"),     (Brush)c.FindResource("Info")),
-                "brand"   => ((Brush)c.FindResource("BrandSoft"),    (Brush)c.FindResource("BrandDefault")),
-                _         => ((Brush)c.FindResource("SurfaceSunken"),      (Brush)c.FindResource("TextSecondary"))
+                "success" => ("SuccessSoft", "Success"),
+                "danger"  => ("DangerSoft",  "Danger"),
+                "warning" => ("WarningSoft", "Warning"),
+                "info"    => ("InfoSoft",    "Info"),
+                "brand"   => ("BrandSoft",   "BrandDefault"),
+                _         => ("SurfaceSunken", "TextSecondary")
             };
 
-            c.border.Background  = bg;
-            c.border.BorderBrush = fg;
-            c.txt.Foreground     = fg;
-            c.icon.Stroke        = fg;
+            c.border.SetResourceReference(Border.BackgroundProperty, bg);
+            c.border.SetResourceReference(Border.BorderBrushProperty, fg);
+            c.txt.SetResourceReference(TextBlock.ForegroundProperty, fg);
+            c.icon.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, fg);
             c.icon.StrokeThickness = 2;
         }
     }

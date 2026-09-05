@@ -43,15 +43,15 @@ namespace PrimeERP.UI.Components.Actions
         {
             if (!IsLoaded) return;
 
-            var (bg, fg) = Variant switch
+            var stroke = Variant switch
             {
-                "danger" => (Brushes.Transparent, (Brush)FindResource("Danger")),
-                "brand"  => (Brushes.Transparent, (Brush)FindResource("BrandDefault")),
-                _        => (Brushes.Transparent, (Brush)FindResource("TextSecondary"))
+                "danger" => "Danger",
+                "brand"  => "BrandDefault",
+                _        => "TextSecondary"
             };
 
-            btn.Background = bg;
-            icon.Stroke = fg;
+            btn.Background = Brushes.Transparent;
+            icon.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, stroke);
         }
 
         private void btn_Click(object sender, RoutedEventArgs e) => Click?.Invoke(this, e);

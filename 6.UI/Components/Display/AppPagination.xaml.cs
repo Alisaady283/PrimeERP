@@ -98,11 +98,15 @@ namespace PrimeERP.UI.Components.Display
                     FontFamily = (FontFamily)FindResource("P.Font.Family.Numeric"),
                     Cursor = System.Windows.Input.Cursors.Hand,
                     BorderThickness = new Thickness(1),
-                    BorderBrush = active ? (Brush)FindResource("BrandDefault") : (Brush)FindResource("OutlineDefault"),
-                    Background = active ? (Brush)FindResource("BrandDefault") : (Brush)FindResource("SurfaceDefault"),
-                    Foreground = active ? (Brush)FindResource("TextOnBrand") : (Brush)FindResource("TextPrimary"),
                     FontWeight = active ? FontWeights.SemiBold : FontWeights.Medium
                 };
+
+                // مرجع حيّ لا لقطة: FindResource تُثبِّت الفرشاة وقت الإنشاء فلا تتبع تبديل الوضع، وكانت
+                // أزرار الترقيم تبقى بألوان الوضع السابق بعد التحويل للداكن.
+                Bind(btn, Control.BorderBrushProperty, active ? "BrandDefault" : "OutlineDefault");
+                Bind(btn, Control.BackgroundProperty, active ? "BrandDefault" : "SurfaceRaised");
+                Bind(btn, Control.ForegroundProperty, active ? "TextOnBrand" : "TextPrimary");
+
                 btn.Click += (s, e) => GoTo(page);
                 pnlPages.Children.Add(btn);
             }
@@ -117,26 +121,29 @@ namespace PrimeERP.UI.Components.Display
             var size = (double)FindResource("C.Pagination.Button.Size");
             var gap  = (double)FindResource("C.Pagination.Button.Gap");
 
+            var icon = new AppIcon { Key = iconKey, Size = "Sm" };
+            icon.SetResourceReference(AppIcon.BrushProperty, disabled ? "TextMuted" : "TextPrimary");
+
             var btn = new Button
             {
-                Content = new AppIcon
-                {
-                    Key = iconKey,
-                    Size = "Sm",
-                    Brush = disabled ? (Brush)FindResource("TextMuted") : (Brush)FindResource("TextPrimary")
-                },
+                Content = icon,
                 Width = size, Height = size,
                 Margin = new Thickness(gap / 2, 0, gap / 2, 0),
                 Cursor = System.Windows.Input.Cursors.Hand,
-                Background = (Brush)FindResource("SurfaceDefault"),
                 BorderThickness = new Thickness(1),
-                BorderBrush = (Brush)FindResource("OutlineDefault"),
                 IsEnabled = !disabled,
                 Opacity = disabled ? 0.4 : 1.0
             };
+
+            Bind(btn, Control.BackgroundProperty, "SurfaceRaised");
+            Bind(btn, Control.BorderBrushProperty, "OutlineDefault");
+
             btn.Click += (s, e) => action();
             pnlPages.Children.Add(btn);
         }
+
+        private static void Bind(FrameworkElement element, DependencyProperty property, string resourceKey) =>
+            element.SetResourceReference(property, resourceKey);
 
         private void GoTo(int page)
         {
