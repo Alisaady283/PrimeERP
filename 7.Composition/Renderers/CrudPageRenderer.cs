@@ -84,7 +84,9 @@ namespace PrimeERP.Composition.Renderers
             // يتعارض مع الترقيم الحقيقي من طرف الخادم هنا (كل صفحة تُجلَب من GetPaged عند الطلب فقط، لا
             // القائمة كاملة أبداً في الذاكرة) — AppPagination أدناه هي المرجع الوحيد. اكتُشف التكرار البصري
             // فعلياً عند أول تشغيل حقيقي (تسجيل دخول + AppShell) — راجع توقف 10 في ARCHITECTURE.md.
-            var grid = new AppDataGrid { ColumnsSource = definition.Columns, ShowRowActions = true, ShowPagination = false };
+            // بطاقة الجدول تبدأ من رأسه لا من شريط الإجراءات فوقه — الشريط هيكل، والجدول بيانات.
+            var grid = new AppDataGrid
+            { ColumnsSource = definition.Columns, ShowRowActions = true, ShowPagination = false, Margin = new Thickness(0, 12, 0, 0) };
             BindingOperations.SetBinding(grid, AppDataGrid.ItemsSourceProperty, new Binding("Items"));
             BindingOperations.SetBinding(grid, AppDataGrid.SelectedItemProperty, new Binding("SelectedItem") { Mode = BindingMode.TwoWay });
             BindingOperations.SetBinding(grid, AppDataGrid.IsLoadingProperty, new Binding("IsLoading"));

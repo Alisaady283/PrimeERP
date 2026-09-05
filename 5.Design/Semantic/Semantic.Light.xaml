@@ -54,7 +54,7 @@
 
     <SolidColorBrush x:Key="TreeFolder" Color="{DynamicResource P.Color.Folder}"/>
     <SolidColorBrush x:Key="LoginBg" Color="{DynamicResource P.Color.LoginBg}"/>
-    <SolidColorBrush x:Key="FilterBarBg" Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="ToolbarBg" Color="{DynamicResource P.Color.Neutral.50}"/>  <!-- شريط الإجراءات والفلترة: هيكل لا داتا، فيتبع لون الهيكل لا لون الجدول -->
 
 
     <!-- ===== الحالات الدلالية (Semantic) ===== -->
