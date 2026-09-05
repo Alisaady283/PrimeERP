@@ -79,7 +79,7 @@
     <SolidColorBrush x:Key="InfoSoftText" Color="{DynamicResource P.Color.Info.700}"/>
 
     <!-- ===== التنقل — شريط فاتح في الوضع الفاتح، والداكن يعيد تعريفه كحلياً ===== -->
-    <SolidColorBrush x:Key="NavSurface"       Color="{DynamicResource P.Color.White}"/>  <!-- سايد بار أبيض -->
+    <SolidColorBrush x:Key="NavSurface"       Color="{DynamicResource P.Color.Neutral.50}"/>  <!-- سايد بار أفتح من الأبيض بدرجة، ليفصل عن أرضية الصفحة البيضاء -->
     <SolidColorBrush x:Key="NavSurfaceRaised" Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="NavText"          Color="{DynamicResource P.Color.Neutral.700}"/>
     <SolidColorBrush x:Key="NavTextHover"     Color="{DynamicResource P.Color.Brand.600}"/>

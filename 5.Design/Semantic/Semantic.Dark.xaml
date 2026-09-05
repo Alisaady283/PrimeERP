@@ -12,11 +12,11 @@
     <!-- ===== الأسطح (Surfaces) — 5 مستويات ===== -->
     <!-- أرضية الصفحة خلف البطاقات وشريط الترقيم. مستقلّة عن SurfaceCanvas لأن الأخيرة تخدم
          الصفوف المتناوبة والتمرير — توحيدهما يجعل تفتيح الأرضية يمحو تظليل الصفوف. -->
-    <SolidColorBrush x:Key="PageBg" Color="{DynamicResource P.Color.Nav.950}"/>
+    <SolidColorBrush x:Key="PageBg" Color="{DynamicResource P.Color.Nav.900}"/>
     <SolidColorBrush x:Key="SurfaceCanvas"     Color="{DynamicResource P.Color.Nav.950}"/>  <!-- أرضية الصفحة -->
     <SolidColorBrush x:Key="SurfaceBackground" Color="{DynamicResource P.Color.Nav.950}"/>  <!-- خلفية النافذة -->
-    <SolidColorBrush x:Key="SurfaceDefault"    Color="{DynamicResource P.Color.Nav.950}"/>  <!-- خلفية الصفحة -->
-    <SolidColorBrush x:Key="SurfaceRaised"     Color="{DynamicResource P.Color.Nav.900}"/>  <!-- البطاقات والجداول -->
+    <SolidColorBrush x:Key="SurfaceDefault"    Color="{DynamicResource P.Color.Nav.900}"/>  <!-- خلفية الصفحة -->
+    <SolidColorBrush x:Key="SurfaceRaised"     Color="{DynamicResource P.Color.Nav.800}"/>  <!-- البطاقات والجداول -->
     <SolidColorBrush x:Key="SurfaceOverlay"    Color="{DynamicResource P.Color.Nav.900}"/>  <!-- الحوارات والقوائم المنسدلة -->
     <SolidColorBrush x:Key="SurfaceSunken"     Color="{DynamicResource P.Color.Nav.950}"/>  <!-- الحقول المعطَّلة -->
 
@@ -43,9 +43,9 @@
     <SolidColorBrush x:Key="BrandSoftText"   Color="{DynamicResource P.Color.Brand.700}"/>
 
     <!-- ===== هيدر/صفوف الجدول (AppDataGrid) — قيم خاصة بالوضع، راجع C.Grid.* في Tokens.Grid.xaml ===== -->
-    <SolidColorBrush x:Key="GridHeaderBg" Color="{DynamicResource P.Color.Nav.900}"/>
+    <SolidColorBrush x:Key="GridHeaderBg" Color="{DynamicResource P.Color.Nav.950}"/>
     <SolidColorBrush x:Key="GridHeaderFg" Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="GridRowAltBg" Color="{DynamicResource P.Color.Nav.950}"/>  <!-- الصف البديل -->  <!-- الصف البديل -->
+    <SolidColorBrush x:Key="GridRowAltBg" Color="{DynamicResource P.Color.Nav.900}"/>  <!-- الصف البديل -->  <!-- الصف البديل -->
 
     <SolidColorBrush x:Key="TreeFolder" Color="{DynamicResource P.Color.Folder}"/>
     <SolidColorBrush x:Key="LoginBg" Color="{DynamicResource P.Color.LoginBg}"/>
@@ -74,8 +74,8 @@
     <SolidColorBrush x:Key="InfoSoftText" Color="{DynamicResource P.Color.Info.700}"/>
 
     <!-- ===== التنقل — شريط فاتح في الوضع الفاتح، والداكن يعيد تعريفه كحلياً ===== -->
-    <SolidColorBrush x:Key="NavSurface"       Color="{DynamicResource P.Color.Nav.900}"/>
-    <SolidColorBrush x:Key="NavSurfaceRaised" Color="{DynamicResource P.Color.Nav.800}"/>
+    <SolidColorBrush x:Key="NavSurface"       Color="{DynamicResource P.Color.Nav.950}"/>
+    <SolidColorBrush x:Key="NavSurfaceRaised" Color="{DynamicResource P.Color.Nav.900}"/>
     <SolidColorBrush x:Key="NavText"          Color="{DynamicResource P.Color.Neutral.200}"/>
     <SolidColorBrush x:Key="NavTextHover"     Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="NavTextSelected"  Color="{DynamicResource P.Color.White}"/>
@@ -89,7 +89,7 @@
     <SolidColorBrush x:Key="NavDivider"       Color="{DynamicResource P.Color.Nav.700}"/>
 
     <!-- ===== الشريط العلوي (TopBar) ===== -->
-    <SolidColorBrush x:Key="TopBarSurface"   Color="{DynamicResource P.Color.Nav.800}"/>
+    <SolidColorBrush x:Key="TopBarSurface"   Color="{DynamicResource P.Color.Nav.950}"/>
     <SolidColorBrush x:Key="TopBarBorder"    Color="{DynamicResource P.Color.Nav.700}"/>
     <SolidColorBrush x:Key="TopBarText"      Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="TopBarIcon"      Color="{DynamicResource P.Color.Neutral.300}"/>
