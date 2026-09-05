@@ -39,8 +39,7 @@ namespace PrimeERP.Domain.Contracts
         public List<Dictionary<string, object>> Rows { get; set; }
         public List<PrintTotal> Totals { get; set; }
 
-        /// <summary>صف إجماليات داخل الجدول نفسه، مفاتيحه أعمدة الجدول — فيقع مجموع كل عمود تحته لا في
-        /// سطر أزواج منفصل تتوه فيه المطابقة بين الرقم وعموده.</summary>
+        /// <summary>صف إجماليات مفاتيحه أعمدة الجدول.</summary>
         public Dictionary<string, object> TotalsRow { get; set; }
 
         /// <summary>لتمييز صفوف معيّنة (مثال: حسابات تجميعية غير Leaf في ميزان المراجعة) — نفس نمط AppDataGrid.RowHighlightSelector.</summary>

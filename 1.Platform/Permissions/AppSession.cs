@@ -25,6 +25,9 @@ namespace PrimeERP.Platform.Permissions
         public static bool DevMode { get; } = false;
 #endif
 
+        /// <summary>التجاوز قبل تسجيل الدخول فقط — بعده تسري صلاحيات المستخدم وحدها.</summary>
+        public static bool BypassPermissions => DevMode && !IsAuthenticated;
+
         public static HashSet<string> Permissions { get; } = new();
 
         public static void SignIn(int userId, string username, string displayName,

@@ -173,10 +173,7 @@ namespace PrimeERP.Application.Services.Print
 
         // شريط رأس ملوّن: الشعار يمين (RTL) وبيانات الشركة بجانبه — الشعار من قاعدة البيانات لا من مسار ملف،
         // فلا يختفي بصمت لو نُقلت الصورة أو استُرجعت نسخة احتياطية على جهاز آخر.
-        /// <summary>ترويسة المستندات الرسمية: أرضية بيضاء، الشعار على اليسار وبيانات الشركة على اليمين،
-        /// يفصلهما عن الجسم خطّ بلون الهوية. الشريط الملوّن الممتلئ كان يبتلع الشعار (خلفيته البيضاء تظهر
-        /// كمربّع) ويترك فراغاً واسعاً بلا مضمون — والفواتير الرسمية تُطبَع على أبيض لسبب عملي أيضاً:
-        /// حبر أقل ووضوح أعلى عند التصوير.</summary>
+        /// <summary>ترويسة رسمية: بيانات الشركة يميناً والشعار يساراً، يفصلهما خطّ بلون الهوية.</summary>
         private Block BuildCompanyHeader()
         {
             var name = _settings.Get(SettingKeys.Company.Name, "");
@@ -516,8 +513,7 @@ namespace PrimeERP.Application.Services.Print
             };
         }
 
-        /// <summary>سطر لكل جزء: الكود سطراً والاسم سطراً تحته. فاصل السطر داخل Run لا يكسر السطر في
-        /// FlowDocument، فيلزم LineBreak صريح.</summary>
+        /// <summary>سطر لكل جزء — FlowDocument يحتاج LineBreak صريحاً.</summary>
         private static readonly char[] LineSeparators = { (char)10 };
 
 

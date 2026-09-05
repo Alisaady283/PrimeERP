@@ -92,11 +92,9 @@ namespace PrimeERP.Composition.Print
                     .ToList();
 
                 var rows = new List<Dictionary<string, object>>();
-                var totals = new List<PrintTotal>();
 
                 if (Read(_def.LinesPropertyName) is IEnumerable lines)
                 {
-                    decimal totalQty = 0, totalValue = 0;
                     foreach (var line in lines)
                     {
                         var row = new Dictionary<string, object>();
@@ -118,8 +116,7 @@ namespace PrimeERP.Composition.Print
                 return sections;
             }
 
-            /// <summary>الكود والاسم سطران لا سطر واحد: الكود يخدم المطابقة والاسم يخدم القراءة، ودمجهما
-            /// في سطر يُطيل العمود ويُضعف الاثنين.</summary>
+            /// <summary>الكود سطر والاسم سطر تحته.</summary>
             private static object LineValue(object line, string key)
             {
                 var type = line.GetType();

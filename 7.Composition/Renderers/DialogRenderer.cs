@@ -204,9 +204,31 @@ namespace PrimeERP.Composition.Renderers
                 if (isEdit && field.IsReadOnlyOnEdit) control.IsEnabled = false;
             }
 
+            ApplyFlowScope(fieldDefs, controls, services);
             ApplyConditionalVisibility(fieldDefs, controls, services);
             ApplyPickerFilters(fieldDefs, controls, services);
             return controls;
+        }
+
+        /// <summary>يخفي حقول الوضع الآخر — والمخفيّ يُعفى من التحقّق.</summary>
+        private static void ApplyFlowScope(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> controls, IServiceProvider services)
+        {
+            var scoped = fieldDefs.Where(f => f.FlowScope != PrimeERP.Composition.Definitions.FlowScope.Both).ToList();
+            if (scoped.Count == 0) return;
+
+            var settings = services?.GetService(typeof(PrimeERP.Platform.Settings.ISettingsProvider)) as PrimeERP.Platform.Settings.ISettingsProvider;
+            var simplified = settings?.Get(PrimeERP.Platform.Settings.SettingKeys.Documents.SimplifiedFlow, true) ?? true;
+
+            foreach (var field in scoped)
+            {
+                if (!controls.TryGetValue(field.Key, out var control)) continue;
+
+                var matches = field.FlowScope == (simplified
+                    ? PrimeERP.Composition.Definitions.FlowScope.SimplifiedOnly
+                    : PrimeERP.Composition.Definitions.FlowScope.FullCycleOnly);
+
+                control.Visibility = matches ? Visibility.Visible : Visibility.Collapsed;
+            }
         }
 
         /// <summary>يعيد تعبئة أي قائمة مرتبطة بحقل حاكم كلما تغيّر — بلا كود خاص في كل شاشة.</summary>

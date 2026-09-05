@@ -41,12 +41,18 @@ namespace PrimeERP.Composition.Renderers
                 ToolbarAction.Refresh((ICommand)vm.RefreshCommand),
             };
 
-            // زر الطباعة يظهر فقط لوحدات المستندات — القوائم المجرّدة (أصناف/عملاء) لا ورق لها.
-            if (definition.DocumentDialog != null)
-                actions.Insert(3, ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(_ =>
-                    DocumentPrinter.PrintSelected(definition, services, vm.SelectedItem as object)), $"{definition.PermissionPrefix}.View"));
+            // المستوى الأول: إجراءات الصفحة.
             actions.Add(ToolbarAction.Export(new PrimeERP.UI.ViewModels.RelayCommand(
                 _ => ExportGrid(definition, services, vm)), $"{definition.PermissionPrefix}.View"));
+
+            // المستوى الثاني: إجراء على المستند المحدَّد.
+            if (definition.DocumentDialog != null)
+            {
+                actions.Add(ToolbarAction.SeparatorItem());
+                actions.Add(ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(
+                    _ => DocumentPrinter.PrintSelected(definition, services, vm.SelectedItem as object),
+                    _ => vm.SelectedItem != null), $"{definition.PermissionPrefix}.View"));
+            }
 
             // إجراءات الوحدة المُعلَنة (ترحيل قيد، تحريك شيك…) — تعمل على السجل المحدَّد، وتُحدِّث الشبكة بعدها.
             foreach (var rowAction in definition.RowActions ?? new List<RowAction>())

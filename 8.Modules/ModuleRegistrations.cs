@@ -494,7 +494,7 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreateSalesInvoiceDto.InvoiceDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
                         new() { Key = nameof(CreateSalesInvoiceDto.CustomerId), LabelKey = "Str.Customer", Kind = FieldKind.Picker, PickerType = "Customer", IsRequired = true },
-                        new() { Key = nameof(CreateSalesInvoiceDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
+                        new() { Key = nameof(CreateSalesInvoiceDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true, FlowScope = FlowScope.SimplifiedOnly },
                         new() { Key = nameof(CreateSalesInvoiceDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
                     },
                     LineFields = new()
@@ -529,7 +529,7 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreatePurchaseInvoiceDto.InvoiceDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
                         new() { Key = nameof(CreatePurchaseInvoiceDto.SupplierId), LabelKey = "Str.Supplier", Kind = FieldKind.Picker, PickerType = "Supplier", IsRequired = true },
-                        new() { Key = nameof(CreatePurchaseInvoiceDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
+                        new() { Key = nameof(CreatePurchaseInvoiceDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true, FlowScope = FlowScope.SimplifiedOnly },
                         new() { Key = nameof(CreatePurchaseInvoiceDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
                     },
                     LineFields = new()
@@ -563,7 +563,7 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreateSalesReturnDto.ReturnDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
                         new() { Key = nameof(CreateSalesReturnDto.CustomerId), LabelKey = "Str.Customer", Kind = FieldKind.Picker, PickerType = "Customer", IsRequired = true },
-                        new() { Key = nameof(CreateSalesReturnDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
+                        new() { Key = nameof(CreateSalesReturnDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true, FlowScope = FlowScope.SimplifiedOnly },
                         new() { Key = nameof(CreateSalesReturnDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
                     },
                     LineFields = new()
@@ -597,7 +597,7 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreatePurchaseReturnDto.ReturnDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
                         new() { Key = nameof(CreatePurchaseReturnDto.SupplierId), LabelKey = "Str.Supplier", Kind = FieldKind.Picker, PickerType = "Supplier", IsRequired = true },
-                        new() { Key = nameof(CreatePurchaseReturnDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
+                        new() { Key = nameof(CreatePurchaseReturnDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true, FlowScope = FlowScope.SimplifiedOnly },
                         new() { Key = nameof(CreatePurchaseReturnDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
                     },
                     LineFields = new()

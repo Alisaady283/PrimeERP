@@ -30,8 +30,7 @@ namespace PrimeERP.Composition.Definitions
         public required List<FieldDefinition> HeaderFields { get; init; }
         public required List<LineFieldDefinition> LineFields { get; init; }
 
-        /// <summary>اسم المستند على الورق. TitleKey عنوان نموذج الإدخال ("إضافة فاتورة بيع") ولا يصلح
-        /// ترويسةً لمستند رسمي — الورق يحمل اسم المستند نفسه ("فاتورة مبيعات").</summary>
+        /// <summary>اسم المستند على الورق، لا عنوان نموذج الإدخال.</summary>
         public string PrintTitle { get; init; }
 
         public string DocumentKind { get; init; }

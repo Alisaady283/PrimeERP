@@ -24,6 +24,9 @@ namespace PrimeERP.Composition.Definitions
         /// <summary>تعبير نمطي على النص — فارغ يعني بلا قيد صيغة.</summary>
         public string   Pattern        { get; init; }
         public string   PatternMessage { get; init; }
+
+        /// <summary>الوضع الذي يظهر فيه الحقل — المخفيّ لا يُتحقَّق منه.</summary>
+        public FlowScope FlowScope { get; init; } = FlowScope.Both;
         public int ColumnSpan { get; init; } = 1;
 
         // Kind.Picker فقط — "Account" عبر IAccountService.GetPaged، "Category" عبر ICategoryService.GetAll
