@@ -60,9 +60,6 @@ namespace PrimeERP.Domain.Contracts
 
         public bool ShowRowNumbers { get; init; } = true;
         public bool RepeatHeaderOnNewPage { get; init; } = true;
-
-        /// <summary>أعمدة لا تُجمَع (أسعار ونسب) — الباقي الرقمي يُجمَع في صف الإجمالي.</summary>
-        public List<string> NonAdditive { get; init; } = new() { "Price", "Cost", "Rate", "Percent" };
     }
 
     public class TotalRow

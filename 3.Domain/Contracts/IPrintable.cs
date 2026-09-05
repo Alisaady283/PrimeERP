@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Domain.Contracts
@@ -7,6 +8,14 @@ namespace PrimeERP.Domain.Contracts
     public enum PrintOrientation { Portrait, Landscape }
 
     public enum PrintSectionType { Title, KeyValues, Table, Text, Spacer, Callout, Parties }
+
+    public static class PrintTotals
+    {
+        /// <summary>سعر الوحدة ونِسَبها ليست كمّيات تُضاف — فلا تُجمَع في صف الإجمالي.</summary>
+        private static readonly string[] NonAdditive = { "Price", "Cost", "Rate", "Percent", "Discount" };
+
+        public static bool IsAdditive(string columnKey) => !NonAdditive.Any(columnKey.Contains);
+    }
 
     public class PrintColumn
     {

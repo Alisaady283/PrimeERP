@@ -82,10 +82,13 @@ namespace PrimeERP.Composition.Print
                         }
                     });
 
+                var lineItems = (Read(_def.LinesPropertyName) as IEnumerable)?.Cast<object>().ToList() ?? new List<object>();
+                var split = SplitFields(lineItems.FirstOrDefault());
+
                 var columns = new List<PrintColumn>();
                 foreach (var lineField in _def.LineFields)
                 {
-                    var splits = HasCompanionName(lineField.Key);
+                    var splits = split.Contains(lineField.Key);
                     if (splits)
                         columns.Add(new PrintColumn { Key = lineField.Key, Header = "الكود", Width = 0.9, Align = "Center" });
 
@@ -100,23 +103,20 @@ namespace PrimeERP.Composition.Print
                 }
 
                 var rows = new List<Dictionary<string, object>>();
-
-                if (Read(_def.LinesPropertyName) is IEnumerable lines)
+                foreach (var line in lineItems)
                 {
-                    foreach (var line in lines)
+                    var type = line.GetType();
+                    var row = new Dictionary<string, object>();
+
+                    foreach (var lineField in _def.LineFields)
                     {
-                        var row = new Dictionary<string, object>();
-                        foreach (var lineField in _def.LineFields)
-                        {
-                            var type = line.GetType();
-                            row[lineField.Key] = type.GetProperty(lineField.Key)?.GetValue(line);
+                        row[lineField.Key] = type.GetProperty(lineField.Key)?.GetValue(line);
 
-                            if (HasCompanionName(lineField.Key))
-                                row[NameKey(lineField.Key)] = type.GetProperty(NameKey(lineField.Key))?.GetValue(line);
-                        }
-
-                        rows.Add(row);
+                        if (split.Contains(lineField.Key))
+                            row[NameKey(lineField.Key)] = type.GetProperty(NameKey(lineField.Key))?.GetValue(line);
                     }
+
+                    rows.Add(row);
                 }
 
                 if (rows.Count == 0) return sections;
@@ -133,14 +133,18 @@ namespace PrimeERP.Composition.Print
             // الكود عمود والاسم عمود — لا سطران في خلية.
             private static string NameKey(string key) => key[..^4] + "Name";
 
-            private bool HasCompanionName(string key) =>
-                key.EndsWith("Code") && LinesElementType()?.GetProperty(NameKey(key)) != null;
+            /// <summary>تُحسَب مرة واحدة لكل مستند: الانعكاس داخل حلقتَي الأعمدة والسطور كان يعيد تحديد نوع
+            /// العنصر لكل حقل في كل سطر.</summary>
+            private HashSet<string> SplitFields(object sampleLine)
+            {
+                var type = sampleLine?.GetType();
+                if (type == null) return new HashSet<string>();
 
-            private Type LinesElementType() =>
-                (Read(_def.LinesPropertyName) as IEnumerable)?.Cast<object>().FirstOrDefault()?.GetType();
-
-            // الأسعار والنسب لا تُجمَع.
-            private static readonly string[] NonAdditive = { "Price", "Cost", "Rate", "Percent", "Discount%" };
+                return _def.LineFields
+                    .Select(f => f.Key)
+                    .Where(k => k.EndsWith("Code") && type.GetProperty(NameKey(k)) != null)
+                    .ToHashSet();
+            }
 
             private static Dictionary<string, object> BuildTotalsRow(List<PrintColumn> columns, List<Dictionary<string, object>> rows)
             {
@@ -157,9 +161,9 @@ namespace PrimeERP.Composition.Print
                         continue;
                     }
 
-                    totals[column.Key] = NonAdditive.Any(column.Key.Contains)
-                        ? ""
-                        : rows.Sum(r => ToDecimal(r, column.Key));
+                    totals[column.Key] = PrintTotals.IsAdditive(column.Key)
+                        ? rows.Sum(r => ToDecimal(r, column.Key))
+                        : "";
                 }
 
                 return totals;

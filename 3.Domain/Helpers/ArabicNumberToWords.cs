@@ -85,7 +85,7 @@ namespace PrimeERP.Domain.Helpers
                 value /= 1000;
 
                 if (part > 0)
-                    groups.Insert(0, scaleIndex == 0 ? UnderThousand(part, bound: false) : ScaleWords(part, scaleIndex, isLast: groups.Count == 0));
+                    groups.Insert(0, scaleIndex == 0 ? UnderThousand(part) : ScaleWords(part, scaleIndex, isLast: groups.Count == 0));
 
                 scaleIndex++;
             }
@@ -100,12 +100,12 @@ namespace PrimeERP.Domain.Helpers
 
             if (part == 1) return one;
             if (part == 2) return isLast ? dualBound : dual;
-            if (part <= 10) return $"{UnderThousand(part, bound: false)} {many}";
+            if (part <= 10) return $"{UnderThousand(part)} {many}";
 
-            return $"{UnderThousand(part, bound: false)} {one}";
+            return $"{UnderThousand(part)} {one}";
         }
 
-        private static string UnderThousand(int value, bool bound)
+        private static string UnderThousand(int value)
         {
             var parts = new List<string>();
 
