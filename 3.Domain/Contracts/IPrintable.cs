@@ -13,7 +13,8 @@ namespace PrimeERP.Domain.Contracts
         public string Key    { get; set; }
         public string Header { get; set; }
         public double Width  { get; set; } = 1;
-        public string Align  { get; set; } = "Right";
+        /// <summary>فارغ = المحاذاة تُشتقّ من نوع القيمة (نص يميناً، رقم/تاريخ وسطاً).</summary>
+        public string Align  { get; set; }
 
         /// <summary>تنسيق .NET قياسي (مثال: "N2", "yyyy-MM-dd") يُطبَّق عبر IFormattable — فارغ يعني نص كما هو.</summary>
         public string Format { get; set; }

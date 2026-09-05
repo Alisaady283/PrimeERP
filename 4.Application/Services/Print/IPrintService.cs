@@ -12,6 +12,10 @@ namespace PrimeERP.Application.Services.Print
         Result Print(IPrintable document, bool showDialog = true);
         Result PrintPreview(IPrintable document);
         Result<FixedDocument> Build(IPrintable document);
+
+        /// <summary>محتوى المستند قبل تقسيمه لصفحات ثابتة — التقسيم يرسم الصفحات كصور (VisualBrush) فيتعذّر
+        /// فحص عناصرها. تُستهلَك في المعاينة والاختبار.</summary>
+        Result<FlowDocument> BuildContent(IPrintable document);
         Result ExportToPdf(IPrintable document, string path);
     }
 }

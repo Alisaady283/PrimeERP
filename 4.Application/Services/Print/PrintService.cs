@@ -71,6 +71,15 @@ namespace PrimeERP.Application.Services.Print
 
         private static T Res<T>(string key) => (T)Theme[key];
 
+        public Result<FlowDocument> BuildContent(IPrintable document)
+        {
+            if (document == null)
+                return Result.Fail<FlowDocument>("لا مستند لبنائه", ErrorCode.ValidationFailed);
+
+            try { return Result.Ok(BuildFlowDocument(document)); }
+            catch (Exception ex) { return Result.Fail<FlowDocument>($"فشل بناء مستند الطباعة: {ex.Message}", ErrorCode.Unexpected); }
+        }
+
         public Result<FixedDocument> Build(IPrintable document)
         {
             if (document == null)
@@ -360,9 +369,10 @@ namespace PrimeERP.Application.Services.Print
                 table.Columns.Add(new TableColumn { Width = new GridLength(col.Width, GridUnitType.Star) });
 
             var headerGroup = new TableRowGroup();
+            // العنوان وسط الخلية دائماً مهما كانت محاذاة بياناته — قاعدة عرض ثابتة لا تتبع نوع العمود.
             var headerRow = new TableRow { Background = Res<Brush>("HeaderBackground") };
             foreach (var col in columns)
-                headerRow.Cells.Add(NewCell(col.Header, Res<Brush>("TextPrimary"), bold: true, align: AlignOf(col.Align)));
+                headerRow.Cells.Add(NewCell(col.Header, Res<Brush>("TextPrimary"), bold: true, align: TextAlignment.Center, isHeader: true));
             headerGroup.Rows.Add(headerRow);
             table.RowGroups.Add(headerGroup);
 
@@ -375,7 +385,7 @@ namespace PrimeERP.Application.Services.Print
                 {
                     var raw = rowData.TryGetValue(col.Key, out var v) ? v : null;
                     var text = FormatValue(raw, col.Format, culture);
-                    row.Cells.Add(NewCell(text, Res<Brush>("TextPrimary"), bold: isBold, align: AlignOf(col.Align)));
+                    row.Cells.Add(NewCell(text, Res<Brush>("TextPrimary"), bold: isBold, align: AlignFor(col, raw)));
                 }
                 bodyGroup.Rows.Add(row);
             }
@@ -421,7 +431,7 @@ namespace PrimeERP.Application.Services.Print
             return table;
         }
 
-        private TableCell NewCell(string text, Brush foreground, bool bold, TextAlignment align) =>
+        private TableCell NewCell(string text, Brush foreground, bool bold, TextAlignment align, bool isHeader = false) =>
             new(new Paragraph(new Run(text ?? ""))
             {
                 TextAlignment = align,
@@ -429,7 +439,21 @@ namespace PrimeERP.Application.Services.Print
                 Foreground = foreground,
                 Margin = new Thickness(0)
             })
-            { Padding = new Thickness(6, 4, 6, 4) };
+            {
+                Padding = new Thickness(8, 5, 8, 5),
+                // شبكة خفيفة تفصل الخلايا — بلا حدود يقرأ الجدول ككتلة نص لا كجدول.
+                BorderBrush = Res<Brush>("OutlineSubtle"),
+                BorderThickness = isHeader ? new Thickness(0.6, 0.6, 0.6, 1) : new Thickness(0.6)
+            };
+
+        /// <summary>الأرقام والتواريخ وسط الخلية، والنصوص (أسماء الأصناف والبيانات) لليمين — العربية تُقرأ من
+        /// اليمين، فتوسيط النص يكسر عمود الأسماء بصرياً. Align المُعلَن على العمود يتغلّب على ذلك عند تحديده.</summary>
+        private static TextAlignment AlignFor(PrintColumn column, object value)
+        {
+            if (!string.IsNullOrEmpty(column.Align)) return AlignOf(column.Align);
+
+            return value is string or null ? TextAlignment.Right : TextAlignment.Center;
+        }
 
         private static TextAlignment AlignOf(string align) => align switch
         {

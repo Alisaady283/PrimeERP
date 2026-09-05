@@ -15,6 +15,7 @@ namespace PrimeERP.UI.Components.Inputs
         private readonly Image _preview = new() { Stretch = Stretch.Uniform, Height = 96, Margin = new Thickness(0, 0, 12, 0) };
         private readonly TextBlock _empty = new() { Text = "لا صورة", VerticalAlignment = VerticalAlignment.Center };
         private string _base64;
+        private string _error;
 
         public AppImagePicker(string label)
         {
@@ -51,8 +52,12 @@ namespace PrimeERP.UI.Components.Inputs
             };
             if (dialog.ShowDialog() != true) return;
 
-            try { Value = ImageData.Encode(dialog.FileName); }
-            catch (Exception) { Value = null; }
+            // الابتلاع الصامت كان يترك المستخدم يظن أن الشعار حُفظ بينما لم يُقرأ الملف أصلاً — الرسالة
+            // تظهر داخل الحقل نفسه (المكوّن لا يعرف خدمات الإشعارات، ولا يجوز له).
+            try { Value = ImageData.Encode(dialog.FileName); _error = null; }
+            catch (Exception ex) { Value = null; _error = $"تعذّرت قراءة الصورة: {ex.Message}"; }
+
+            Render();
         }
 
         private void Render()
@@ -61,6 +66,8 @@ namespace PrimeERP.UI.Components.Inputs
             _preview.Source = image;
             _preview.Visibility = image == null ? Visibility.Collapsed : Visibility.Visible;
             _empty.Visibility = image == null ? Visibility.Visible : Visibility.Collapsed;
+            _empty.Text = _error ?? "لا صورة";
+            _empty.SetResourceReference(TextBlock.ForegroundProperty, _error == null ? "TextMuted" : "Danger");
         }
     }
 }

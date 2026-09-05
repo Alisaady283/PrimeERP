@@ -30,7 +30,9 @@ namespace PrimeERP.Platform.Settings
             SchemaBuilder.Table("AppSettings")
                 .Id()
                 .Text("Key", 150, required: true, unique: true)
-                .Text("Value", 1000)
+                // بلا حدّ طول: بعض القيم بيانات لا نصّاً قصيراً (شعار الشركة بترميز Base64 مئات الكيلوبايتات)،
+                // والحدّ الثابت كان يقتطعها بصمت فيفشل فكّ الترميز ولا يظهر الشعار في أي مستند.
+                .Text("Value")
                 .Text("Category", 50)
                 .Text("DataType", 30)
                 .Text("DisplayNameAr", 200)
