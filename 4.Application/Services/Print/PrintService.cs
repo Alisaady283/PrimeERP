@@ -173,53 +173,66 @@ namespace PrimeERP.Application.Services.Print
 
         // شريط رأس ملوّن: الشعار يمين (RTL) وبيانات الشركة بجانبه — الشعار من قاعدة البيانات لا من مسار ملف،
         // فلا يختفي بصمت لو نُقلت الصورة أو استُرجعت نسخة احتياطية على جهاز آخر.
+        /// <summary>ترويسة المستندات الرسمية: أرضية بيضاء، الشعار على اليسار وبيانات الشركة على اليمين،
+        /// يفصلهما عن الجسم خطّ بلون الهوية. الشريط الملوّن الممتلئ كان يبتلع الشعار (خلفيته البيضاء تظهر
+        /// كمربّع) ويترك فراغاً واسعاً بلا مضمون — والفواتير الرسمية تُطبَع على أبيض لسبب عملي أيضاً:
+        /// حبر أقل ووضوح أعلى عند التصوير.</summary>
         private Block BuildCompanyHeader()
         {
             var name = _settings.Get(SettingKeys.Company.Name, "");
             var logo = LoadLogo();
 
             var details = new List<string>();
-            foreach (var key in new[] { SettingKeys.Company.CommercialRegNo, SettingKeys.Company.TaxNumber,
-                                        SettingKeys.Company.Phone, SettingKeys.Company.Email, SettingKeys.Company.Address })
+            foreach (var (key, label) in new[]
+                     {
+                         (SettingKeys.Company.CommercialRegNo, "س.ت"),
+                         (SettingKeys.Company.TaxNumber, "الرقم الضريبي"),
+                         (SettingKeys.Company.Phone, "هاتف"),
+                         (SettingKeys.Company.Address, ""),
+                     })
             {
                 var value = _settings.Get(key, "");
-                if (!string.IsNullOrWhiteSpace(value)) details.Add(value);
+                if (!string.IsNullOrWhiteSpace(value)) details.Add(string.IsNullOrEmpty(label) ? value : label + ": " + value);
             }
 
-            var info = new Paragraph { Margin = new Thickness(0) };
-            info.Inlines.Add(new Run(name) { FontSize = Res<double>("FontSizeXl"), FontWeight = Res<FontWeight>("FontWeightBold") });
-            if (details.Count > 0)
+            var info = new Paragraph { Margin = new Thickness(0), TextAlignment = TextAlignment.Right };
+            info.Inlines.Add(new Run(name)
+            {
+                FontSize = Res<double>("FontSizeXl"),
+                FontWeight = Res<FontWeight>("FontWeightBold"),
+                Foreground = Res<Brush>("BrandSolid")
+            });
+
+            foreach (var detail in details)
             {
                 info.Inlines.Add(new LineBreak());
-                info.Inlines.Add(new Run(string.Join("  •  ", details)) { FontSize = Res<double>("FontSizeSm"), Foreground = Res<Brush>("OnBrandMuted") });
+                info.Inlines.Add(new Run(detail) { FontSize = Res<double>("FontSizeSm"), Foreground = Res<Brush>("TextSecondary") });
             }
 
-            // RTL: البيانات في العمود الأول (يمين الورقة) والشعار في الأخير (يسارها). سطر واحد يتوسّط
-            // رأسياً بمحاذاة الشعار، وعدة أسطر تبدأ من أعلاه — بلا فراغ يفصلهما.
-            var table = new Table { CellSpacing = 0, Margin = new Thickness(0, 0, 0, 14), Background = Res<Brush>("BrandSolid") };
+            var table = new Table { CellSpacing = 0, Margin = new Thickness(0, 0, 0, 4) };
             table.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-            if (logo != null) table.Columns.Add(new TableColumn { Width = new GridLength(96) });
+            if (logo != null) table.Columns.Add(new TableColumn { Width = new GridLength(120) });
 
             var row = new TableRow();
-            row.Cells.Add(new TableCell(info)
-            {
-                Padding = new Thickness(16, 14, 16, 14),
-                Foreground = Res<Brush>("OnBrandText"),
-                TextAlignment = TextAlignment.Right
-            });
+            row.Cells.Add(new TableCell(info) { Padding = new Thickness(0, 0, 0, 10) });
 
             if (logo != null)
             {
-                var imageParagraph = new Paragraph { Margin = new Thickness(0), TextAlignment = TextAlignment.Center };
+                var imageParagraph = new Paragraph { Margin = new Thickness(0), TextAlignment = TextAlignment.Left };
                 imageParagraph.Inlines.Add(new InlineUIContainer(new System.Windows.Controls.Image
-                { Source = logo, Width = 72, Height = 72, Stretch = Stretch.Uniform }));
+                { Source = logo, MaxWidth = 110, MaxHeight = 56, Stretch = Stretch.Uniform }));
 
-                row.Cells.Add(new TableCell(imageParagraph) { Padding = new Thickness(8, 10, 16, 10) });
+                row.Cells.Add(new TableCell(imageParagraph) { Padding = new Thickness(0, 0, 0, 10) });
             }
 
             var group = new TableRowGroup();
             group.Rows.Add(row);
             table.RowGroups.Add(group);
+
+            // الخطّ الفاصل يحمل لون الهوية — أثرها البصري بلا شريط ممتلئ.
+            table.BorderBrush = Res<Brush>("BrandSolid");
+            table.BorderThickness = new Thickness(0, 0, 0, 2);
+
             return table;
         }
 
@@ -486,20 +499,41 @@ namespace PrimeERP.Application.Services.Print
             return table;
         }
 
-        private TableCell NewCell(string text, Brush foreground, bool bold, TextAlignment align, bool isHeader = false, bool bare = false) =>
-            new(new Paragraph(new Run(text ?? ""))
-            {
-                TextAlignment = align,
-                FontWeight = bold ? Res<FontWeight>("FontWeightSemiBold") : Res<FontWeight>("FontWeightNormal"),
-                Foreground = foreground,
-                Margin = new Thickness(0)
-            })
+        private TableCell NewCell(string text, Brush foreground, bool bold, TextAlignment align, bool isHeader = false, bool bare = false)
+        {
+            var paragraph = BuildCellParagraph(text);
+            paragraph.TextAlignment = align;
+            paragraph.FontWeight = bold ? Res<FontWeight>("FontWeightSemiBold") : Res<FontWeight>("FontWeightNormal");
+            paragraph.Foreground = foreground;
+            paragraph.Margin = new Thickness(0);
+
+            return new TableCell(paragraph)
             {
                 Padding = new Thickness(8, 5, 8, 5),
                 // شبكة خفيفة تفصل الخلايا — بلا حدود يقرأ الجدول ككتلة نص لا كجدول.
                 BorderBrush = Res<Brush>("OutlineSubtle"),
                 BorderThickness = bare ? new Thickness(0) : isHeader ? new Thickness(0.6, 0.6, 0.6, 1) : new Thickness(0.6)
             };
+        }
+
+        /// <summary>سطر لكل جزء: الكود سطراً والاسم سطراً تحته. فاصل السطر داخل Run لا يكسر السطر في
+        /// FlowDocument، فيلزم LineBreak صريح.</summary>
+        private static readonly char[] LineSeparators = { (char)10 };
+
+
+        private static Paragraph BuildCellParagraph(string text)
+        {
+            var paragraph = new Paragraph();
+            var lines = (text ?? "").Split(LineSeparators);
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (i > 0) paragraph.Inlines.Add(new LineBreak());
+                paragraph.Inlines.Add(new Run(lines[i]));
+            }
+
+            return paragraph;
+        }
 
         /// <summary>الأرقام والتواريخ وسط الخلية، والنصوص (أسماء الأصناف والبيانات) لليمين — العربية تُقرأ من
         /// اليمين، فتوسيط النص يكسر عمود الأسماء بصرياً. Align المُعلَن على العمود يتغلّب على ذلك عند تحديده.</summary>

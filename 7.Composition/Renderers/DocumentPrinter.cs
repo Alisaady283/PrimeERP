@@ -32,7 +32,8 @@ namespace PrimeERP.Composition.Renderers
             if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
 
             var document = result.GetType().GetProperty("Value").GetValue(result);
-            var title = LocalizationService.Get(def.TitleKey);
+            // اسم المستند لا عنوان نموذجه: "فاتورة مبيعات" لا "إضافة فاتورة بيع".
+            var title = def.PrintTitle ?? LocalizationService.Get(definition.TitleKey);
 
             // السند ليس جدول سطور بل إقرار مكتوب — له قالبه، وأي مستند آخر يستهلك القالب العام.
             var printable = document is PrimeERP.Application.DTOs.Vouchers.VoucherDetailDto voucher

@@ -180,6 +180,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
+                    PrintTitle = "قيد يومية",
                     TitleKey = "Str.Journals.Add",
                     TitleEditKey = "Str.Journals.Edit",
                     ServiceType = typeof(IJournalService),
@@ -485,6 +486,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
+                    PrintTitle = "فاتورة مبيعات",
                     TitleKey = "Str.SalesInvoices.Add", TitleEditKey = "Str.SalesInvoices.Edit",
                     ServiceType = typeof(ISalesInvoiceService), DtoType = typeof(CreateSalesInvoiceDto), LineDtoType = typeof(CreateSalesInvoiceLineDto),
                     LinesPropertyName = nameof(CreateSalesInvoiceDto.Lines),
@@ -519,6 +521,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
+                    PrintTitle = "فاتورة مشتريات",
                     TitleKey = "Str.PurchaseInvoices.Add", TitleEditKey = "Str.PurchaseInvoices.Edit",
                     ServiceType = typeof(IPurchaseInvoiceService), DtoType = typeof(CreatePurchaseInvoiceDto), LineDtoType = typeof(CreatePurchaseInvoiceLineDto),
                     LinesPropertyName = nameof(CreatePurchaseInvoiceDto.Lines),
@@ -552,6 +555,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
+                    PrintTitle = "مرتجع مبيعات",
                     TitleKey = "Str.SalesReturns.Add", TitleEditKey = "Str.SalesReturns.Edit",
                     ServiceType = typeof(ISalesReturnService), DtoType = typeof(CreateSalesReturnDto), LineDtoType = typeof(CreateSalesReturnLineDto),
                     LinesPropertyName = nameof(CreateSalesReturnDto.Lines),
@@ -585,6 +589,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
+                    PrintTitle = "مرتجع مشتريات",
                     TitleKey = "Str.PurchaseReturns.Add", TitleEditKey = "Str.PurchaseReturns.Edit",
                     ServiceType = typeof(IPurchaseReturnService), DtoType = typeof(CreatePurchaseReturnDto), LineDtoType = typeof(CreatePurchaseReturnLineDto),
                     LinesPropertyName = nameof(CreatePurchaseReturnDto.Lines),
@@ -619,6 +624,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
+                    PrintTitle = "إذن إضافة مخزني",
                     TitleKey = "Str.StockIn.Add", TitleEditKey = "Str.StockIn.Edit",
                     ServiceType = typeof(IStockInService), DtoType = typeof(CreateStockAdjustmentDto), LineDtoType = typeof(CreateStockAdjustmentLineDto),
                     LinesPropertyName = nameof(CreateStockAdjustmentDto.Lines),
@@ -651,6 +657,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
+                    PrintTitle = "إذن صرف مخزني",
                     TitleKey = "Str.StockOut.Add", TitleEditKey = "Str.StockOut.Edit",
                     ServiceType = typeof(IStockOutService), DtoType = typeof(CreateStockAdjustmentDto), LineDtoType = typeof(CreateStockAdjustmentLineDto),
                     LinesPropertyName = nameof(CreateStockAdjustmentDto.Lines),
@@ -682,6 +689,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
+                    PrintTitle = "إذن تحويل مخزني",
                     TitleKey = "Str.StockTransfer.Add", TitleEditKey = "Str.StockTransfer.Edit",
                     ServiceType = typeof(IStockTransferService), DtoType = typeof(CreateStockTransferDto), LineDtoType = typeof(CreateStockTransferLineDto),
                     LinesPropertyName = nameof(CreateStockTransferDto.Lines),
@@ -712,6 +720,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
+                    PrintTitle = "كشف رواتب",
                     TitleKey = "Str.Payroll.Add", TitleEditKey = "Str.Payroll.Edit",
                     ServiceType = typeof(IPayrollService), DtoType = typeof(CreatePayrollDto), LineDtoType = typeof(CreatePayrollLineDto),
                     LinesPropertyName = nameof(CreatePayrollDto.Lines),
@@ -758,6 +767,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
+                    PrintTitle = "قيد أرصدة افتتاحية",
                     TitleKey = "Str.Module.OpeningBalances", TitleEditKey = "Str.Module.OpeningBalances",
                     ServiceType = typeof(PrimeERP.Application.Services.Accounting.IOpeningBalanceService),
                     DtoType = typeof(CreateJournalDto), LineDtoType = typeof(CreateJournalLineDto),

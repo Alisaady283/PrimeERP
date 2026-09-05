@@ -118,17 +118,22 @@ namespace PrimeERP.Composition.Print
                 return sections;
             }
 
-            /// <summary>الكود لا يعني شيئاً للقارئ — الاسم المرافق يُقرأ بدله متى وُجد (ProductCode ← ProductName).</summary>
+            /// <summary>الكود والاسم سطران لا سطر واحد: الكود يخدم المطابقة والاسم يخدم القراءة، ودمجهما
+            /// في سطر يُطيل العمود ويُضعف الاثنين.</summary>
             private static object LineValue(object line, string key)
             {
                 var type = line.GetType();
-                if (key.EndsWith("Code"))
-                {
-                    var name = type.GetProperty(key[..^4] + "Name")?.GetValue(line) as string;
-                    if (!string.IsNullOrWhiteSpace(name)) return name;
-                }
+                var value = type.GetProperty(key)?.GetValue(line);
 
-                return type.GetProperty(key)?.GetValue(line);
+                if (!key.EndsWith("Code")) return value;
+
+                var name = type.GetProperty(key[..^4] + "Name")?.GetValue(line) as string;
+                var code = value as string;
+
+                if (string.IsNullOrWhiteSpace(name)) return code;
+                if (string.IsNullOrWhiteSpace(code)) return name;
+
+                return code + (char)10 + name;
             }
 
             // الأسعار والنسب لا تُجمَع — جمع سعر الوحدة رقم بلا معنى. تُجمَع الكميات والقيم فقط.
