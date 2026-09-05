@@ -13,17 +13,21 @@ namespace PrimeERP.Composition.Print
     /// جدول سطور، والسند إقرار مكتوب لا كشف بنود.</summary>
     public static class VoucherPrintTemplate
     {
-        public static IPrintable From(VoucherDetailDto voucher, bool isReceipt) => new VoucherPrintable(voucher, isReceipt);
+        public static IPrintable From(VoucherDetailDto voucher, bool isReceipt, string currency, string subUnit) =>
+            new VoucherPrintable(voucher, isReceipt, currency, subUnit);
 
         private class VoucherPrintable : IPrintable
         {
             private readonly VoucherDetailDto _voucher;
             private readonly bool _isReceipt;
+            private readonly string _currency, _subUnit;
 
-            public VoucherPrintable(VoucherDetailDto voucher, bool isReceipt)
+            public VoucherPrintable(VoucherDetailDto voucher, bool isReceipt, string currency, string subUnit)
             {
                 _voucher = voucher;
                 _isReceipt = isReceipt;
+                _currency = currency;
+                _subUnit = subUnit;
             }
 
             public string DocumentTitle    => _isReceipt ? "سند قبض" : "سند صرف";
@@ -64,7 +68,7 @@ namespace PrimeERP.Composition.Print
                     {
                         Type = PrintSectionType.Callout,
                         Variant = StatusVariant.Info,
-                        Text = $"مبلغاً وقدره: {_voucher.Amount:N2}   —   {PrimeERP.Domain.Helpers.ArabicNumberToWords.Convert(_voucher.Amount)}"
+                        Text = $"مبلغاً وقدره: {_voucher.Amount:N2}   —   {PrimeERP.Domain.Helpers.ArabicNumberToWords.Convert(_voucher.Amount, _currency, _subUnit)}"
                     },
                     new() { Type = PrintSectionType.Text, Text = $"وذلك عن: {reason}" },
                     new()

@@ -24,6 +24,7 @@ namespace PrimeERP.Composition.Renderers
             var id = item.GetType().GetProperty("Id")?.GetValue(item);
             if (id == null) { toast.Error("المستند بلا معرّف"); return; }
 
+            var settings = services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>();
             var service = services.GetRequiredService(def.ServiceType);
             var getById = DialogRenderer.FindMethod(def.ServiceType, "GetById", typeof(int));
             if (getById == null) { toast.Error($"الخدمة {def.ServiceType.Name} بلا GetById(int)"); return; }
@@ -37,7 +38,9 @@ namespace PrimeERP.Composition.Renderers
 
             // السند ليس جدول سطور بل إقرار مكتوب — له قالبه، وأي مستند آخر يستهلك القالب العام.
             var printable = document is PrimeERP.Application.DTOs.Vouchers.VoucherDetailDto voucher
-                ? VoucherPrintTemplate.From(voucher, definition.Key == "Receipts")
+                ? VoucherPrintTemplate.From(voucher, definition.Key == "Receipts",
+                    settings.Get(PrimeERP.Platform.Settings.SettingKeys.Financial.CurrencyName, "جنيه"),
+                    settings.Get(PrimeERP.Platform.Settings.SettingKeys.Financial.CurrencySubUnit, "قرش"))
                 : DocumentPrintTemplate.From(def, title, document);
 
             var printed = services.GetRequiredService<IPrintService>().PrintPreview(printable);

@@ -183,6 +183,7 @@ namespace PrimeERP.Composition.Renderers
             [SettingKeys.Company.LogoPath] = "اسم ملف الشعار",
             [SettingKeys.Company.LogoData] = "شعار الشركة",
 
+            [SettingKeys.Financial.CurrencyName] = "اسم العملة (للتفقيط)", [SettingKeys.Financial.CurrencySubUnit] = "الوحدة الفرعية (للتفقيط)",
             [SettingKeys.Financial.BaseCurrencyId] = "العملة الأساسية (معرّف)", [SettingKeys.Financial.DecimalPlaces] = "عدد الخانات العشرية",
             [SettingKeys.Financial.FiscalYearStartMonth] = "شهر بداية السنة المالية", [SettingKeys.Financial.AllowNegativeStock] = "السماح برصيد مخزون سالب",
             [SettingKeys.Financial.DefaultCostMethod] = "طريقة التكلفة الافتراضية", [SettingKeys.Financial.RoundingMethod] = "طريقة التقريب",

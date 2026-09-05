@@ -23,6 +23,10 @@ namespace PrimeERP.Platform.Settings
 
         public static class Financial
         {
+            /// <summary>اسم العملة ووحدتها الفرعية كما يُكتبان في التفقيط على المستندات.</summary>
+            public const string CurrencyName     = "Financial.CurrencyName";
+            public const string CurrencySubUnit  = "Financial.CurrencySubUnit";
+
             public const string BaseCurrencyId       = "Financial.BaseCurrencyId";
             public const string DecimalPlaces        = "Financial.DecimalPlaces";
             public const string FiscalYearStartMonth = "Financial.FiscalYearStartMonth";
@@ -139,6 +143,8 @@ namespace PrimeERP.Platform.Settings
             new(Company.LogoPath,       "",               "string", "Company"),
             new(Company.LogoData,       "",               "string", "Company"),
 
+            new(Financial.CurrencyName,    "جنيه", "string", "Financial"),
+            new(Financial.CurrencySubUnit, "قرش",  "string", "Financial"),
             new(Financial.BaseCurrencyId,       "1",               "int",    "Financial", IsSystem: true),
             new(Financial.DecimalPlaces,        "2",               "int",    "Financial"),
             new(Financial.FiscalYearStartMonth, "1",               "int",    "Financial", IsSystem: true),
