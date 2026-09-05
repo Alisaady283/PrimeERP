@@ -145,11 +145,10 @@ namespace PrimeERP.Application.Services.Accounting
             if (parent == null)
                 return Result.Fail<AccountDto>("الحساب الأب غير موجود", ErrorCode.NotFound);
 
-            // الأب يجب ألّا يكون Leaf: حساب Leaf يقبل قيوداً مباشرة، فلا يجوز تحويله لأب بصمت عبر مجرد إضافة
-            // ابن — ذلك قرار إداري صريح يتم عبر Update (IsLeaf: true→false)، لا تلقائياً هنا. حسابات SeedDefaults
-            // الجذرية كلها IsLeaf=false من البداية أصلاً (فئات لا حسابات فعلية)، فلا تعارض مع الاستخدام الطبيعي.
-            if (parent.IsLeaf)
-                return Result.Fail<AccountDto>("لا يمكن إضافة حساب فرعي تحت حساب يقبل قيوداً مباشرة (Leaf) — حوّله لأب أولاً عبر التعديل", ErrorCode.ValidationFailed);
+            // الحساب إمّا أب وإمّا يقبل قيوداً، والحالة تُشتقّ من البيانات لا من اختيار المستخدم:
+            // قيود مسجَّلة عليه ⇒ يُرفض تفريعه؛ وإلا يتحوّل لأب تلقائياً بمجرد أول ابن (أدناه).
+            if (parent.IsLeaf && _journal.HasLinesForAccount(parent.Code))
+                return Result.Fail<AccountDto>($"الحساب «{parent.Name}» مسجَّل به قيود فلا يقبل حسابات فرعية — احذف قيوده أولاً", ErrorCode.ValidationFailed);
 
             var codeResult = GenerateChildCodeInternal(parent.Code);
             if (!codeResult.IsSuccess)
@@ -160,9 +159,6 @@ namespace PrimeERP.Application.Services.Accounting
             if (!validation.IsValid)
                 return Result.Fail<AccountDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
 
-            // ابن أصل مرتبط (عميل/مورد/خزينة/بنك) كيان فعلي لا فئة — يقبل القيود دائماً، فلا معنى لتركه اختياراً.
-            if (IsLinkedRoot(parent.Code)) dto.IsLeaf = true;
-
             var link = ResolveAutoLink(dto.SkipAutoLink, parent.Code);
             if (!link.IsSuccess)
                 return Result.Fail<AccountDto>(link.ErrorMessage, link.ErrorCode);
@@ -171,6 +167,9 @@ namespace PrimeERP.Application.Services.Accounting
             {
                 var id = _accounts.Insert(account, conn, tx);
                 account.Id = id;
+
+                // أول ابن يحوّل الأب من "يقبل قيوداً" إلى أب — بلا قيود عليه فالتحويل آمن.
+                if (parent.IsLeaf) _accounts.SetIsLeaf(parent.Code, false, conn, tx);
 
                 link.Value.Linked?.CreateFromAccount(conn, tx, account.Code, account.Name, link.Value.RootCode);
                 // الأب = المخزون → لا ربط تلقائي عمداً (المنتج يُنشئ حسابه لا العكس) — لا فرع هنا عمداً.
@@ -231,18 +230,14 @@ namespace PrimeERP.Application.Services.Accounting
             if (IsSystemAccount(account.Code) && !Permissions.Can(PermissionKeys.Settings.System))
                 return Result.Fail(Localization.Get("Str.Settings.SystemPermissionDenied"), ErrorCode.Unauthorized);
 
-            if (dto.IsLeaf && !account.IsLeaf && _accounts.HasChildren(account.Code))
-                return Result.Fail("لا يمكن جعل الحساب فرعياً (Leaf) وله حسابات أبناء", ErrorCode.ValidationFailed);
-
-            if (!dto.IsLeaf && account.IsLeaf && _journal.HasLinesForAccount(account.Code))
-                return Result.Fail("لا يمكن تحويل الحساب لأب وله قيود مسجَّلة عليه مباشرة", ErrorCode.ValidationFailed);
-
             var nameChanged = account.Name != dto.Name; // قبل الاستبدال أدناه
 
             account.Name     = dto.Name;
             account.Notes    = dto.Notes;
-            account.IsLeaf   = dto.IsLeaf;
             account.IsActive = dto.IsActive;
+
+            // "يقبل قيوداً" حالة مشتقّة لا حقل يُحرَّر: له أبناء ⇒ أب، وإلا يقبل القيود.
+            account.IsLeaf   = !_accounts.HasChildren(account.Code);
 
             var validation = new AccountValidator(_accounts, isEdit: true).Validate(account);
             if (!validation.IsValid)
@@ -296,6 +291,10 @@ namespace PrimeERP.Application.Services.Accounting
                 _accounts.Delete(account.Code, conn, tx);
 
                 link.Value.Linked?.DeleteByAccountCode(conn, tx, account.Code);
+
+                // حذف آخر ابن يعيد الأب لحالته الأصلية: بلا أبناء ⇒ يقبل القيود.
+                if (!string.IsNullOrWhiteSpace(account.ParentCode) && !_accounts.HasChildren(account.ParentCode, conn, tx))
+                    _accounts.SetIsLeaf(account.ParentCode, true, conn, tx);
             });
 
             Audit.Log(EntityName, account.Id, AuditAction.Delete, details: account.Code);

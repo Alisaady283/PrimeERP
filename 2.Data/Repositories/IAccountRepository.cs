@@ -19,6 +19,7 @@ namespace PrimeERP.Data.Repositories
         int GetLevel(string code);
         int GetTypeOf(string code);
         bool HasChildren(string code);
+        bool HasChildren(string code, DbConnection conn, DbTransaction tx);
         int Insert(Account a, DbConnection conn = null, DbTransaction tx = null);
         void Update(Account a, DbConnection conn = null, DbTransaction tx = null);
         void UpdateName(DbConnection conn, DbTransaction tx, string code, string name);

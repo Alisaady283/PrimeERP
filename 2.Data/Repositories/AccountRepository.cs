@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Data.Schema;
+using DbHelper = PrimeERP.Data.Core.DbHelper;
 using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Data.Repositories
@@ -115,8 +116,18 @@ namespace PrimeERP.Data.Repositories
             return result != null ? Convert.ToInt32(result) : 1;
         }
 
-        public bool HasChildren(string code) =>
-            Convert.ToInt64(Scalar("SELECT COUNT(*) FROM Accounts WHERE ParentCode = @p AND IsActive = @a", ("@p", code), ("@a", true))) > 0;
+        public bool HasChildren(string code) => HasChildren(code, null, null);
+
+        // بمعاملة صريحة: قراءة حالة الأب بعد حذف ابنه داخل نفس المعاملة تحتاج رؤية تغييرها غير المُثبَّت بعد.
+        public bool HasChildren(string code, DbConnection conn, DbTransaction tx)
+        {
+            const string sql = "SELECT COUNT(*) FROM Accounts WHERE ParentCode = @p AND IsActive = @a";
+            var value = conn != null
+                ? DbHelper.Query(conn, tx, sql, DbHelper.Params(("@p", code), ("@a", true))).Rows[0][0]
+                : Scalar(sql, ("@p", code), ("@a", true));
+
+            return Convert.ToInt64(value) > 0;
+        }
 
         /// <summary>إدراج صف كما هو — الخدمة هي من تحسب Level وتضبط IsLeaf للأب والربط والـ Audit، لا هنا.</summary>
         public int Insert(Account a, DbConnection conn = null, DbTransaction tx = null) =>

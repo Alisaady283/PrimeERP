@@ -239,15 +239,17 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
-        public void Create_UnderLeafAccount_Fails()
+        // القاعدة الحالية: الحساب بلا قيود يتحوّل لأب تلقائياً عند أول ابن — الرفض مشروط بوجود قيود عليه.
+        public void Create_UnderAccountWithoutEntries_TurnsItIntoAParent()
         {
-            var leaf = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل leaf", IsLeaf = true });
+            var leaf = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل leaf" });
             Assert.True(leaf.IsSuccess, leaf.ErrorMessage);
+            Assert.True(leaf.Value.IsLeaf);
 
-            var result = _service.Create(new CreateAccountDto { ParentId = leaf.Value.Id, Name = "ابن تحت leaf", IsLeaf = true });
+            var result = _service.Create(new CreateAccountDto { ParentId = leaf.Value.Id, Name = "ابن تحت leaf" });
 
-            Assert.False(result.IsSuccess);
-            Assert.Equal(ErrorCode.ValidationFailed, result.ErrorCode);
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.False(_service.GetByCode(leaf.Value.Code).Value.IsLeaf);
         }
 
         [Fact]
@@ -284,17 +286,19 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
-        public void Update_SetIsLeafTrue_WithChildren_Fails()
+        // "يقبل قيوداً" لم يعد حقلاً يُحرَّر: التعديل يتجاهل ما يُرسَل ويشتقّ الحالة من وجود الأبناء.
+        public void Update_IgnoresIsLeaf_AndKeepsItDerivedFromChildren()
         {
-            var parent = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "أب له ابن", IsLeaf = false });
+            var parent = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "أب له ابن" });
             Assert.True(parent.IsSuccess, parent.ErrorMessage);
 
-            var child = _service.Create(new CreateAccountDto { ParentId = parent.Value.Id, Name = "ابن", IsLeaf = true });
+            var child = _service.Create(new CreateAccountDto { ParentId = parent.Value.Id, Name = "ابن" });
             Assert.True(child.IsSuccess, child.ErrorMessage);
 
             var result = _service.Update(new UpdateAccountDto { Id = parent.Value.Id, Name = parent.Value.Name, IsLeaf = true });
 
-            Assert.False(result.IsSuccess);
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.False(_service.GetByCode(parent.Value.Code).Value.IsLeaf);
         }
 
         [Fact]
