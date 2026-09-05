@@ -82,14 +82,22 @@ namespace PrimeERP.Composition.Print
                         }
                     });
 
-                var columns = _def.LineFields
-                    .Select(lineField => new PrintColumn
+                var columns = new List<PrintColumn>();
+                foreach (var lineField in _def.LineFields)
+                {
+                    var splits = HasCompanionName(lineField.Key);
+                    if (splits)
+                        columns.Add(new PrintColumn { Key = lineField.Key, Header = "الكود", Width = 0.9, Align = "Center" });
+
+                    columns.Add(new PrintColumn
                     {
-                        Key = lineField.Key, Header = lineField.Header, Width = lineField.Width / 100.0,
+                        Key = splits ? NameKey(lineField.Key) : lineField.Key,
+                        Header = lineField.Header,
+                        Width = lineField.Width / 100.0,
                         Align = lineField.Kind == FieldKind.Number ? "Center" : "Right",
                         Format = lineField.Kind == FieldKind.Number ? "N2" : null
-                    })
-                    .ToList();
+                    });
+                }
 
                 var rows = new List<Dictionary<string, object>>();
 
@@ -99,7 +107,13 @@ namespace PrimeERP.Composition.Print
                     {
                         var row = new Dictionary<string, object>();
                         foreach (var lineField in _def.LineFields)
-                            row[lineField.Key] = LineValue(line, lineField.Key);
+                        {
+                            var type = line.GetType();
+                            row[lineField.Key] = type.GetProperty(lineField.Key)?.GetValue(line);
+
+                            if (HasCompanionName(lineField.Key))
+                                row[NameKey(lineField.Key)] = type.GetProperty(NameKey(lineField.Key))?.GetValue(line);
+                        }
 
                         rows.Add(row);
                     }
@@ -116,24 +130,16 @@ namespace PrimeERP.Composition.Print
                 return sections;
             }
 
-            /// <summary>الكود سطر والاسم سطر تحته.</summary>
-            private static object LineValue(object line, string key)
-            {
-                var type = line.GetType();
-                var value = type.GetProperty(key)?.GetValue(line);
+            // الكود عمود والاسم عمود — لا سطران في خلية.
+            private static string NameKey(string key) => key[..^4] + "Name";
 
-                if (!key.EndsWith("Code")) return value;
+            private bool HasCompanionName(string key) =>
+                key.EndsWith("Code") && LinesElementType()?.GetProperty(NameKey(key)) != null;
 
-                var name = type.GetProperty(key[..^4] + "Name")?.GetValue(line) as string;
-                var code = value as string;
+            private Type LinesElementType() =>
+                (Read(_def.LinesPropertyName) as IEnumerable)?.Cast<object>().FirstOrDefault()?.GetType();
 
-                if (string.IsNullOrWhiteSpace(name)) return code;
-                if (string.IsNullOrWhiteSpace(code)) return name;
-
-                return code + (char)10 + name;
-            }
-
-            // الأسعار والنسب لا تُجمَع — جمع سعر الوحدة رقم بلا معنى. تُجمَع الكميات والقيم فقط.
+            // الأسعار والنسب لا تُجمَع.
             private static readonly string[] NonAdditive = { "Price", "Cost", "Rate", "Percent", "Discount%" };
 
             private static Dictionary<string, object> BuildTotalsRow(List<PrintColumn> columns, List<Dictionary<string, object>> rows)

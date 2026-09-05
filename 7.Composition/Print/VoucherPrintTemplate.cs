@@ -64,7 +64,7 @@ namespace PrimeERP.Composition.Print
                     {
                         Type = PrintSectionType.Callout,
                         Variant = StatusVariant.Info,
-                        Text = $"مبلغاً وقدره: {_voucher.Amount:N2}   —   {ArabicNumberWords.Convert(_voucher.Amount)}"
+                        Text = $"مبلغاً وقدره: {_voucher.Amount:N2}   —   {PrimeERP.Domain.Helpers.ArabicNumberToWords.Convert(_voucher.Amount)}"
                     },
                     new() { Type = PrintSectionType.Text, Text = $"وذلك عن: {reason}" },
                     new()
