@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -44,6 +45,46 @@ namespace PrimeERP.UI.Components.Inputs
         {
             InitializeComponent();
             IsEnabledChanged += (s, e) => ApplyEnabledVisual();
+            Loaded += (_, __) => AttachTextBox();
+        }
+
+        // DatePicker يبني صندوق نصّه في القالب لا في XAML — يُلتقَط بعد التحميل لإضافة سلوك الكتابة.
+        private void AttachTextBox()
+        {
+            var box = picker.Template?.FindName("PART_TextBox", picker) as System.Windows.Controls.Primitives.DatePickerTextBox;
+            if (box == null || _textBox != null) return;
+
+            _textBox = box;
+            _textBox.PreviewTextInput += TextBox_PreviewTextInput;
+            System.Windows.DataObject.AddPastingHandler(_textBox, (_, e) => e.CancelCommand());
+        }
+
+        private System.Windows.Controls.Primitives.DatePickerTextBox _textBox;
+
+        /// <summary>كتابة 05072026 تُنتج 05/07/2026: الفاصل يُدرَج تلقائياً بعد كل رقمين، فلا يضطر المستخدم
+        /// لكتابته ولا يقع في صيغة يرفضها المحلّل فتُقرأ 1/1/0001.</summary>
+        private void TextBox_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
+        {
+            if (e.Text.Length != 1 || !char.IsDigit(e.Text[0])) { e.Handled = true; return; }
+
+            var box = (System.Windows.Controls.TextBox)sender;
+            var digits = new string(box.Text.Where(char.IsDigit).ToArray());
+            if (box.SelectionLength == 0 && digits.Length >= 8) { e.Handled = true; return; }
+
+            if (box.SelectionLength > 0) digits = "";
+            digits += e.Text;
+
+            box.Text = FormatDigits(digits);
+            box.CaretIndex = box.Text.Length;
+            e.Handled = true;
+        }
+
+        private static string FormatDigits(string digits)
+        {
+            if (digits.Length <= 2) return digits;
+            if (digits.Length <= 4) return $"{digits[..2]}/{digits[2..]}";
+
+            return $"{digits[..2]}/{digits[2..4]}/{digits[4..]}";
         }
 
         private static void OnSelectedDateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

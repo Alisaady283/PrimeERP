@@ -102,6 +102,9 @@ namespace PrimeERP.Composition.Renderers
                     if (lf.Kind == FieldKind.Picker)
                         DialogRenderer.LoadPickerItems((AppComboBox)control, fieldDef, services);
 
+                    if (lineItem == null && lf.Kind == FieldKind.Date)
+                        DialogRenderer.SetControlValue(control, fieldDef, DateTime.Today);
+
                     if (lineItem != null)
                     {
                         var value = lineItem.GetType().GetProperty(lf.Key)?.GetValue(lineItem);
@@ -330,6 +333,8 @@ namespace PrimeERP.Composition.Renderers
         private static bool TrySave(DocumentDialogDefinition def, IServiceProvider services, IToastService toast,
             Dictionary<string, FrameworkElement> headerControls, List<EditorRow> rows, object editItem, bool isEdit)
         {
+            if (!FieldValidation.Validate(def.HeaderFields, headerControls)) return false;
+
             var service = services.GetRequiredService(def.ServiceType);
 
             var dto = Activator.CreateInstance(def.DtoType);

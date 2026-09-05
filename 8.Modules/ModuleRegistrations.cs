@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -168,6 +169,18 @@ namespace PrimeERP.Modules
             {
                 Key = "Journals",
                 TitleKey = "Str.Module.Journals",
+                // القيد يُنشأ مسودة، والكشوف والتقارير تقرأ المرحَّل وحده — فبلا هذا الزر لا يظهر القيد
+                // اليدوي في أي مكان بينما تظهر قيود السندات (تُرحَّل تلقائياً عند إنشائها).
+                RowActions = new()
+                {
+                    new()
+                    {
+                        Label = "ترحيل", Variant = "primary", PermissionKey = PermissionKeys.Journal.Post,
+                        AppliesTo = item => item.GetType().GetProperty("IsPosted")?.GetValue(item) is false,
+                        Execute = (services, item) => services.GetRequiredService<IJournalService>()
+                            .Post((int)item.GetType().GetProperty("Id").GetValue(item))
+                    }
+                },
                 PermissionPrefix = "Journal",
                 ViewModelType = typeof(JournalsViewModel),
                 Columns = new()

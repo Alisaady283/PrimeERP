@@ -45,6 +45,29 @@ namespace PrimeERP.Composition.Renderers
             if (definition.DocumentDialog != null)
                 actions.Insert(3, ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(_ =>
                     DocumentPrinter.PrintSelected(definition, services, vm.SelectedItem as object)), $"{definition.PermissionPrefix}.View"));
+            // إجراءات الوحدة المُعلَنة (ترحيل قيد، تحريك شيك…) — تعمل على السجل المحدَّد، وتُحدِّث الشبكة بعدها.
+            foreach (var rowAction in definition.RowActions ?? new List<RowAction>())
+            {
+                var captured = rowAction;
+                var command = new PrimeERP.UI.ViewModels.RelayCommand(
+                    _ =>
+                    {
+                        var item = vm.SelectedItem as object;
+                        if (item == null) return;
+
+                        var outcome = captured.Execute(services, item);
+                        var toastService = services.GetRequiredService<IToastService>();
+
+                        if (outcome.IsFailure) { toastService.Error(outcome.ErrorMessage); return; }
+
+                        toastService.Success(LocalizationService.Get("Str.Success"));
+                        vm.RefreshCommand.Execute(null);
+                    },
+                    _ => vm.SelectedItem != null && (captured.AppliesTo?.Invoke(vm.SelectedItem as object) ?? true));
+
+                actions.Add(ToolbarAction.Build(captured.Label, captured.Label, null, captured.Variant, command, captured.PermissionKey, null, captured.Label));
+            }
+
             header.ActionsContent = new ActionToolbar { ButtonsSource = actions };
 
             var filterBar = new FilterBar { SearchPlaceholder = LocalizationService.Get("Str.Search") };

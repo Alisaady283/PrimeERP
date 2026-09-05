@@ -99,9 +99,12 @@ namespace PrimeERP.Composition.Renderers
 
         // Reflection مباشرة لا dynamic — dynamic كان يرمي RuntimeBinderException غامضاً هنا
         // ("has some invalid arguments") رغم تطابق النوع الفعلي تماماً؛ MethodInfo.Invoke حتمي وواضح.
+        // بوابة واحدة قبل أي حفظ: القواعد مُعلَنة على الحقول، والرسالة تظهر عند الحقل نفسه.
         private static bool TrySave(DialogDefinition dialog, IServiceProvider services, IToastService toast,
             System.Collections.Generic.Dictionary<string, FrameworkElement> fields, object editItem, bool isEdit)
         {
+            if (!FieldValidation.Validate(dialog.Fields, fields)) return false;
+
             var service = services.GetRequiredService(dialog.ServiceType);
 
             if (isEdit)
@@ -190,6 +193,12 @@ namespace PrimeERP.Composition.Renderers
                 else if (field.DefaultValue != null)
                 {
                     SetControlValue(control, field, field.DefaultValue);
+                }
+                else if (field.Kind == FieldKind.Date)
+                {
+                    // حقل تاريخ بلا قيمة يُقرأ صفراً فيُحفظ 0001-01-01 — تاريخ اليوم هو الافتراضي الصحيح
+                    // في كل مستند، ويبقى قابلاً للتجاوز بـ DefaultValue على الحقل.
+                    SetControlValue(control, field, DateTime.Today);
                 }
 
                 if (isEdit && field.IsReadOnlyOnEdit) control.IsEnabled = false;

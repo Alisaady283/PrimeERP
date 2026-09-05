@@ -21,7 +21,9 @@ namespace PrimeERP.UI.Components.Actions
         /// <summary>مثل "Ctrl+N" أو "F5" أو "Delete" — يُسجَّل تلقائياً كـ KeyBinding في نافذة ActionToolbar المضيفة.</summary>
         public string   Shortcut      { get; set; }
 
-        private static Geometry Icon_(string key) => System.Windows.Application.Current?.TryFindResource(key) as Geometry;
+        // إجراء مُعلَن بلا أيقونة وارد (إجراءات الوحدات النصّية) — TryFindResource ترمي على مفتاح فارغ.
+        private static Geometry Icon_(string key) =>
+            string.IsNullOrEmpty(key) ? null : System.Windows.Application.Current?.TryFindResource(key) as Geometry;
 
         public static ToolbarAction SeparatorItem() => new() { Separator = true };
 

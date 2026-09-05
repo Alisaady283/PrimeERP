@@ -13,6 +13,17 @@ namespace PrimeERP.Composition.Definitions
         public bool IsRequired { get; init; }
         public bool IsReadOnlyOnEdit { get; init; }
         public int MaxLength { get; init; }
+
+        // ===== قواعد التحقّق المُعلَنة — يطبّقها FieldValidation وحده لكل الشاشات =====
+        public int      MinLength      { get; init; }
+        public decimal? Min            { get; init; }
+        public decimal? Max            { get; init; }
+        public DateTime? MinDate       { get; init; }
+        public DateTime? MaxDate       { get; init; }
+
+        /// <summary>تعبير نمطي على النص — فارغ يعني بلا قيد صيغة.</summary>
+        public string   Pattern        { get; init; }
+        public string   PatternMessage { get; init; }
         public int ColumnSpan { get; init; } = 1;
 
         // Kind.Picker فقط — "Account" عبر IAccountService.GetPaged، "Category" عبر ICategoryService.GetAll
