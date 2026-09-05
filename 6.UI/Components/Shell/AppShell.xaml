@@ -24,7 +24,8 @@
 
             <!-- ContentControl لا يرسم خلفيته: قالبه الافتراضي مُقدِّم محتوى بلا حدّ، فالقيمة تُضبَط ولا
                  تظهر — وكانت أرضية الصفحة تبقى بلون النافذة أياً كان الوضع. الحدّ هو من يرسمها. -->
-            <Border Grid.Row="1" Background="{DynamicResource SurfaceCanvas}">
+            <Border Grid.Row="1" Background="{DynamicResource SurfaceCanvas}"
+                    Padding="{DynamicResource P.Space.4.Uniform}">
                 <ContentControl x:Name="pageHost"/>
             </Border>
         </Grid>

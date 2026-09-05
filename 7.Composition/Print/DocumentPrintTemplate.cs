@@ -101,21 +101,60 @@ namespace PrimeERP.Composition.Print
                     {
                         var row = new Dictionary<string, object>();
                         foreach (var lineField in _def.LineFields)
-                            row[lineField.Key] = line.GetType().GetProperty(lineField.Key)?.GetValue(line);
+                            row[lineField.Key] = LineValue(line, lineField.Key);
 
-                        totalQty   += ToDecimal(row, "Qty");
-                        totalValue += ToDecimal(row, "Qty") * (ToDecimal(row, "UnitPrice") + ToDecimal(row, "UnitCost"));
                         rows.Add(row);
                     }
-
-                    if (totalQty > 0)   totals.Add(new PrintTotal { Label = "إجمالي الكمية", Value = totalQty.ToString("N2", CultureInfo.InvariantCulture) });
-                    if (totalValue > 0) totals.Add(new PrintTotal { Label = "الإجمالي", Value = totalValue.ToString("N2", CultureInfo.InvariantCulture) });
                 }
 
-                if (rows.Count > 0)
-                    sections.Add(new PrintSection { Type = PrintSectionType.Table, Columns = columns, Rows = rows, Totals = totals.Count > 0 ? totals : null });
+                if (rows.Count == 0) return sections;
+
+                sections.Add(new PrintSection
+                {
+                    Type = PrintSectionType.Table, Columns = columns, Rows = rows,
+                    TotalsRow = BuildTotalsRow(columns, rows)
+                });
 
                 return sections;
+            }
+
+            /// <summary>الكود لا يعني شيئاً للقارئ — الاسم المرافق يُقرأ بدله متى وُجد (ProductCode ← ProductName).</summary>
+            private static object LineValue(object line, string key)
+            {
+                var type = line.GetType();
+                if (key.EndsWith("Code"))
+                {
+                    var name = type.GetProperty(key[..^4] + "Name")?.GetValue(line) as string;
+                    if (!string.IsNullOrWhiteSpace(name)) return name;
+                }
+
+                return type.GetProperty(key)?.GetValue(line);
+            }
+
+            // الأسعار والنسب لا تُجمَع — جمع سعر الوحدة رقم بلا معنى. تُجمَع الكميات والقيم فقط.
+            private static readonly string[] NonAdditive = { "Price", "Cost", "Rate", "Percent", "Discount%" };
+
+            private static Dictionary<string, object> BuildTotalsRow(List<PrintColumn> columns, List<Dictionary<string, object>> rows)
+            {
+                var totals = new Dictionary<string, object>();
+                var labelled = false;
+
+                foreach (var column in columns)
+                {
+                    var isNumeric = rows.Any(r => r.TryGetValue(column.Key, out var v) && v is decimal or int or double);
+                    if (!isNumeric)
+                    {
+                        totals[column.Key] = labelled ? "" : "الإجمالي";
+                        labelled = true;
+                        continue;
+                    }
+
+                    totals[column.Key] = NonAdditive.Any(column.Key.Contains)
+                        ? ""
+                        : rows.Sum(r => ToDecimal(r, column.Key));
+                }
+
+                return totals;
             }
 
             private static decimal ToDecimal(Dictionary<string, object> row, string key) =>

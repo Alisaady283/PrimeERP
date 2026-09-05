@@ -194,19 +194,28 @@ namespace PrimeERP.Application.Services.Print
                 info.Inlines.Add(new Run(string.Join("  •  ", details)) { FontSize = Res<double>("FontSizeSm"), Foreground = Res<Brush>("OnBrandMuted") });
             }
 
-            var table = new Table { CellSpacing = 0, Margin = new Thickness(0, 0, 0, 12), Background = Res<Brush>("BrandSolid") };
-            if (logo != null) table.Columns.Add(new TableColumn { Width = new GridLength(70) });
+            // RTL: البيانات في العمود الأول (يمين الورقة) والشعار في الأخير (يسارها). سطر واحد يتوسّط
+            // رأسياً بمحاذاة الشعار، وعدة أسطر تبدأ من أعلاه — بلا فراغ يفصلهما.
+            var table = new Table { CellSpacing = 0, Margin = new Thickness(0, 0, 0, 14), Background = Res<Brush>("BrandSolid") };
             table.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+            if (logo != null) table.Columns.Add(new TableColumn { Width = new GridLength(96) });
 
             var row = new TableRow();
+            row.Cells.Add(new TableCell(info)
+            {
+                Padding = new Thickness(16, 14, 16, 14),
+                Foreground = Res<Brush>("OnBrandText"),
+                TextAlignment = TextAlignment.Right
+            });
+
             if (logo != null)
             {
-                var imageParagraph = new Paragraph { Margin = new Thickness(0) };
+                var imageParagraph = new Paragraph { Margin = new Thickness(0), TextAlignment = TextAlignment.Center };
                 imageParagraph.Inlines.Add(new InlineUIContainer(new System.Windows.Controls.Image
-                { Source = logo, Width = 58, Height = 58, Stretch = Stretch.Uniform }));
-                row.Cells.Add(new TableCell(imageParagraph) { Padding = new Thickness(12, 12, 6, 12) });
+                { Source = logo, Width = 72, Height = 72, Stretch = Stretch.Uniform }));
+
+                row.Cells.Add(new TableCell(imageParagraph) { Padding = new Thickness(8, 10, 16, 10) });
             }
-            row.Cells.Add(new TableCell(info) { Padding = new Thickness(6, 14, 14, 14), Foreground = Res<Brush>("OnBrandText") });
 
             var group = new TableRowGroup();
             group.Rows.Add(row);
@@ -421,6 +430,21 @@ namespace PrimeERP.Application.Services.Print
                 bodyGroup.Rows.Add(row);
             }
             table.RowGroups.Add(bodyGroup);
+
+            if (section.TotalsRow is { Count: > 0 })
+            {
+                var totalsGroup = new TableRowGroup();
+                var totalsRow = new TableRow { Background = Res<Brush>("HeaderBackground") };
+
+                foreach (var col in columns)
+                {
+                    var raw = section.TotalsRow.TryGetValue(col.Key, out var v) ? v : null;
+                    totalsRow.Cells.Add(NewCell(FormatValue(raw, col.Format ?? "N2", culture), Res<Brush>("TextPrimary"), bold: true, align: AlignFor(col, raw)));
+                }
+
+                totalsGroup.Rows.Add(totalsRow);
+                table.RowGroups.Add(totalsGroup);
+            }
 
             if (section.Totals is { Count: > 0 })
             {
