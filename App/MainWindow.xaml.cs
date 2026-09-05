@@ -62,6 +62,7 @@ namespace PrimeERP.App
             ["GoodsReceipt"] = "IconWarehouse", ["GoodsIssue"] = "IconWarehouse",
             ["DeliveryNote"] = "IconWarehouse", ["SalesReceipt"] = "IconWarehouse",
             ["Treasuries"] = "IconAccounts", ["Receipts"] = "IconJournal", ["Payments"] = "IconJournal", ["Cheques"] = "IconJournal",
+            ["ChequeReceipts"] = "IconJournal", ["ChequeIssues"] = "IconJournal", ["OpeningBalances"] = "IconJournal",
             ["Settings"] = "IconSettings", ["Users"] = "IconUsers", ["Roles"] = "IconLock",
             ["RolePermissions"] = "IconLock", ["UserPermissions"] = "IconLock",
         };
@@ -71,18 +72,7 @@ namespace PrimeERP.App
 
         private List<NavItem> BuildNavGroups()
         {
-            var groups = new (string Text, string IconKey, string[] Keys)[]
-            {
-                ("المحاسبة", "IconAccounts", new[] { "Accounts", "Journals" }),
-                ("المبيعات", "IconSales", new[] { "Quotation", "SalesOrder", "SalesInvoices", "SalesReturns", "Customers" }),
-                ("المشتريات", "IconPurchases", new[] { "PurchaseRequest", "PurchaseOrder", "PurchaseInvoices", "PurchaseReturns", "Suppliers" }),
-                ("المخزون", "IconWarehouse", new[] { "Products", "Categories", "Brands", "Units", "Warehouses", "StockIn", "StockOut", "StockTransfer", "GoodsReceipt", "GoodsIssue", "DeliveryNote", "SalesReceipt" }),
-                ("الخزينة", "IconAccounts", new[] { "Treasuries", "Receipts", "Payments", "Cheques" }),
-                ("الأصول", "IconAssets", new[] { "Assets", "AssetCategories" }),
-                ("الموارد", "IconHR", new[] { "Employees", "Departments", "JobTitles", "Payroll" }),
-                ("التقارير", "IconReports", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "AccountStatement", "CustomerStatement", "SupplierStatement", "ItemCard", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport" }),
-                ("الإعدادات", "IconSettings", new[] { "Settings", "Users", "Roles", "RolePermissions", "UserPermissions" }),
-            };
+            var groups = NavigationMap.Groups;
 
             var simplified = _services.GetRequiredService<ISettingsService>().Get(SettingKeys.Documents.SimplifiedFlow, true);
             var visible = _registry.VisibleFor(simplified).Select(m => m.Key).ToHashSet();
