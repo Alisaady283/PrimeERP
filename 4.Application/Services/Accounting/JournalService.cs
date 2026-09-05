@@ -157,6 +157,9 @@ namespace PrimeERP.Application.Services.Accounting
             if (existing.IsPosted)
                 return Result.Fail(Msg("PostedCannotEdit"), ErrorCode.ValidationFailed);
 
+            var editable = EnsureManualSource(existing.Source, "تعديل");
+            if (editable.IsFailure) return editable;
+
             var shape = ValidateShape(dto);
             if (!shape.IsSuccess) return shape;
 
@@ -204,6 +207,9 @@ namespace PrimeERP.Application.Services.Accounting
 
             if (entry.IsPosted)
                 return Result.Fail(Msg("PostedCannotDelete"), ErrorCode.ValidationFailed);
+
+            var deletable = EnsureManualSource(entry.Source, "حذف");
+            if (deletable.IsFailure) return deletable;
 
             if (!_fiscalPeriods.IsOpen(ParseDate(entry.EntryDate)))
                 return Result.Fail(Msg("PeriodClosed"), ErrorCode.ValidationFailed);
@@ -619,6 +625,15 @@ namespace PrimeERP.Application.Services.Accounting
         }
 
         private static string NormalizeSource(string source) => string.IsNullOrWhiteSpace(source) ? "Manual" : source;
+
+        // القيد المولَّد من فاتورة/سند/شيك يُعدَّل من مستنده لا من شاشة القيود — وإلا انفصل القيد عن مصدره
+        // وصار الرقمان مختلفين بلا أثر يشرح لماذا.
+        private static readonly string[] ManualSources = { "Manual", "يدوي", "" };
+
+        private static Result EnsureManualSource(string source, string action) =>
+            ManualSources.Contains(source ?? "")
+                ? Result.Ok()
+                : Result.Fail($"لا يمكن {action} قيد مصدره «{source}» من شاشة القيود — تمّ من المستند نفسه", ErrorCode.ValidationFailed);
 
         private string SourceText(string source) => Msg($"Source.{NormalizeSource(source)}");
 

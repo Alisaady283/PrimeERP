@@ -1,3 +1,4 @@
+using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Cheques;
 using PrimeERP.Application.DTOs.Vouchers;
 using PrimeERP.Application.Services.Cheques;
@@ -103,5 +104,28 @@ namespace PrimeERP.UI.ViewModels
     {
         public ChequeIssuesViewModel(PrimeERP.Application.Services.Cheques.IChequeIssueDocumentService documents, IPermissionService permissions,
             IToastService toast, IDialogService dialogs) : base(documents, permissions, toast, dialogs) { }
+    }
+
+    /// <summary>الأرصدة الافتتاحية قيود بمصدر OpeningBalance — نفس شبكة القيود بفلتر مصدر واحد.</summary>
+    public class OpeningBalancesViewModel : CrudViewModelBase<JournalEntryDto, JournalFilter>
+    {
+        private readonly PrimeERP.Application.Services.Accounting.IOpeningBalanceService _openings;
+
+        public OpeningBalancesViewModel(PrimeERP.Application.Services.Accounting.IOpeningBalanceService openings,
+            IPermissionService permissions, IToastService toast, IDialogService dialogs)
+            : base(permissions, toast, dialogs) => _openings = openings;
+
+        protected override string PermissionPrefix => "Journal";
+
+        protected override Result<PagedResult<JournalEntryDto>> FetchPage(int page, int pageSize, JournalFilter filter)
+        {
+            var f = filter ?? new JournalFilter();
+            f.SearchText = SearchText;
+            return _openings.GetPaged(page, pageSize, f);
+        }
+
+        protected override int IdOf(JournalEntryDto item) => item.Id;
+
+        protected override Result DeleteItem(int id) => _openings.Delete(id);
     }
 }

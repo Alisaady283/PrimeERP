@@ -49,6 +49,8 @@ namespace PrimeERP.Platform.Settings
             public const string Customers        = "Accounts.Customers";
             public const string Suppliers        = "Accounts.Suppliers";
             public const string Inventory        = "Accounts.Inventory";
+            public const string DepreciationExpense     = "Accounts.DepreciationExpense";
+            public const string AccumulatedDepreciation = "Accounts.AccumulatedDepreciation";
             public const string Cash             = "Accounts.Cash";
 
             /// <summary>مفاتيح الأصول المرتبطة بكيانات: قيمتها كود حساب <b>تجميعي</b> يعيش أبناؤه ككيانات
@@ -151,6 +153,8 @@ namespace PrimeERP.Platform.Settings
             new(Accounts.Customers,        "1202", "string", "Accounts", IsSystem: true),
             new(Accounts.Suppliers,        "2101", "string", "Accounts", IsSystem: true),
             new(Accounts.Inventory,        "1201", "string", "Accounts", IsSystem: true),
+            new(Accounts.DepreciationExpense,     "", "string", "Accounts", IsSystem: true),
+            new(Accounts.AccumulatedDepreciation, "", "string", "Accounts", IsSystem: true),
             new(Accounts.Cash,             "1204", "string", "Accounts", IsSystem: true),
             new(Accounts.Bank,             "1203", "string", "Accounts", IsSystem: true),
             new(Accounts.Sales,            "41",   "string", "Accounts", IsSystem: true),

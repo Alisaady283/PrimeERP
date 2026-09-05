@@ -13,6 +13,9 @@ namespace PrimeERP.Application.DTOs.Assets
         public DateTime? PurchaseDate { get; set; }
         public decimal  PurchaseCost { get; set; }
         public decimal  CurrentValue { get; set; }
+        public int      UsefulLifeYears { get; set; }
+        public decimal  SalvageValue    { get; set; }
+        public decimal  AccumulatedDepreciation { get; set; }
         public string   Location     { get; set; }
         public string   Notes        { get; set; }
         public bool     IsActive     { get; set; }
@@ -32,6 +35,8 @@ namespace PrimeERP.Application.DTOs.Assets
         public DateTime? PurchaseDate { get; set; }
         public decimal  PurchaseCost { get; set; }
         public decimal  CurrentValue { get; set; }
+        public int      UsefulLifeYears { get; set; }
+        public decimal  SalvageValue    { get; set; }
         public string   Location     { get; set; }
         public string   Notes        { get; set; }
         public bool     IsActive     { get; set; } = true;
@@ -40,6 +45,8 @@ namespace PrimeERP.Application.DTOs.Assets
     public class UpdateAssetDto
     {
         public int      Id           { get; set; }
+        public int      UsefulLifeYears { get; set; }
+        public decimal  SalvageValue    { get; set; }
         public string   Name         { get; set; }
         public int?     CategoryId   { get; set; }
         public DateTime? PurchaseDate { get; set; }

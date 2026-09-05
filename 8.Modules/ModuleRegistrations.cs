@@ -338,6 +338,17 @@ namespace PrimeERP.Modules
             {
                 Key = "Assets",
                 TitleKey = "Str.Module.Assets",
+                // الإهلاك معاملة كغيرها: تشغيلة واحدة تُنتج قيداً بكل الأصول المستحقّة حتى تاريخه.
+                RowActions = new()
+                {
+                    new()
+                    {
+                        Label = "احتساب الإهلاك", Variant = "primary", PermissionKey = "Assets.Edit",
+                        Execute = (services, _) => services
+                            .GetRequiredService<PrimeERP.Application.Services.Assets.IAssetDepreciationService>()
+                            .RunFor(DateTime.Today)
+                    }
+                },
                 PermissionPrefix = "Assets",
                 ViewModelType = typeof(AssetsViewModel),
                 Columns = new()
@@ -365,7 +376,9 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateAssetDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
                         new() { Key = nameof(CreateAssetDto.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "AssetCategories" },
                         new() { Key = nameof(CreateAssetDto.PurchaseDate), LabelKey = "Str.PurchaseDate", Kind = FieldKind.Date },
-                        new() { Key = nameof(CreateAssetDto.PurchaseCost), LabelKey = "Str.PurchaseCost", Kind = FieldKind.Number, IsRequired = true },
+                        new() { Key = nameof(CreateAssetDto.PurchaseCost), LabelKey = "Str.PurchaseCost", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
+                        new() { Key = nameof(CreateAssetDto.UsefulLifeYears), LabelKey = "العمر الإنتاجي (سنوات)", Kind = FieldKind.Number, Min = 0, Max = 100 },
+                        new() { Key = nameof(CreateAssetDto.SalvageValue), LabelKey = "القيمة المتبقية", Kind = FieldKind.Number, Min = 0 },
                         new() { Key = nameof(CreateAssetDto.CurrentValue), LabelKey = "Str.CurrentValue", Kind = FieldKind.Number },
                         new() { Key = nameof(CreateAssetDto.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
                         new() { Key = nameof(CreateAssetDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
@@ -716,6 +729,50 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreatePayrollLineDto.Allowances), Header = LocalizationService.Get("Str.Allowances"), Kind = FieldKind.Number, Width = 100 },
                         new() { Key = nameof(CreatePayrollLineDto.Deductions), Header = LocalizationService.Get("Str.Deductions"), Kind = FieldKind.Number, Width = 100 },
                         new() { Key = nameof(CreatePayrollLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 140 },
+                    }
+                }
+            });
+
+            // الأرصدة الافتتاحية: نفس محرِّر القيد بالضبط — الفرق أن الخدمة تضبط المصدر وتُلحق سطر الفرق.
+            registry.Register(new ModuleDefinition
+            {
+                Key = "OpeningBalances", TitleKey = "Str.Module.OpeningBalances", PermissionPrefix = "Journal",
+                ViewModelType = typeof(OpeningBalancesViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.EntryNo"), Binding = nameof(JournalEntryDto.EntryNo), Width = 130 },
+                    new() { Header = LocalizationService.Get("Str.EntryDate"), Binding = nameof(JournalEntryDto.EntryDate), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.Description"), Binding = nameof(JournalEntryDto.Description), Width = 300, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Debit"), Binding = nameof(JournalEntryDto.TotalDebit), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(JournalEntryDto.StatusText), Width = 100, Align = ColumnAlign.Center },
+                },
+                RowActions = new()
+                {
+                    new()
+                    {
+                        Label = "ترحيل", Variant = "primary", PermissionKey = PermissionKeys.Journal.Post,
+                        AppliesTo = item => item.GetType().GetProperty("IsPosted")?.GetValue(item) is false,
+                        Execute = (services, item) => services.GetRequiredService<IJournalService>()
+                            .Post((int)item.GetType().GetProperty("Id").GetValue(item))
+                    }
+                },
+                DocumentDialog = new DocumentDialogDefinition
+                {
+                    TitleKey = "Str.Module.OpeningBalances", TitleEditKey = "Str.Module.OpeningBalances",
+                    ServiceType = typeof(PrimeERP.Application.Services.Accounting.IOpeningBalanceService),
+                    DtoType = typeof(CreateJournalDto), LineDtoType = typeof(CreateJournalLineDto),
+                    LinesPropertyName = nameof(CreateJournalDto.Lines), DocumentKind = "OpeningBalances",
+                    HeaderFields = new()
+                    {
+                        new() { Key = nameof(CreateJournalDto.EntryDate), LabelKey = "Str.EntryDate", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreateJournalDto.Description), LabelKey = "Str.Description", Kind = FieldKind.Text, IsRequired = true, MaxLength = 300 },
+                    },
+                    LineFields = new()
+                    {
+                        new() { Key = nameof(CreateJournalLineDto.AccountCode), Header = LocalizationService.Get("Str.Account"), Kind = FieldKind.Picker, Width = 260, IsRequired = true, PickerType = "Account", PickerLeafOnly = true },
+                        new() { Key = nameof(CreateJournalLineDto.Debit), Header = LocalizationService.Get("Str.Debit"), Kind = FieldKind.Number, Width = 120 },
+                        new() { Key = nameof(CreateJournalLineDto.Credit), Header = LocalizationService.Get("Str.Credit"), Kind = FieldKind.Number, Width = 120 },
+                        new() { Key = nameof(CreateJournalLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
                 }
             });

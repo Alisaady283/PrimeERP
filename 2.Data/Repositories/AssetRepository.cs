@@ -24,6 +24,10 @@ namespace PrimeERP.Data.Repositories
                 .DateCol("PurchaseDate")
                 .Decimal("PurchaseCost")
                 .Decimal("CurrentValue")
+                .Int("UsefulLifeYears")
+                .Decimal("SalvageValue")
+                .Decimal("AccumulatedDepreciation")
+                .DateCol("LastDepreciationDate")
                 .Text("Location", 200)
                 .Text("Notes")
                 .Bool("IsActive", defaultValue: true)
@@ -42,6 +46,10 @@ namespace PrimeERP.Data.Repositories
             PurchaseDate = row["PurchaseDate"] == DBNull.Value ? null : Convert.ToDateTime(row["PurchaseDate"]),
             PurchaseCost = Convert.ToDecimal(row["PurchaseCost"]),
             CurrentValue = Convert.ToDecimal(row["CurrentValue"]),
+            UsefulLifeYears = row["UsefulLifeYears"] == DBNull.Value ? 0 : Convert.ToInt32(row["UsefulLifeYears"]),
+            SalvageValue = row["SalvageValue"] == DBNull.Value ? 0 : Convert.ToDecimal(row["SalvageValue"]),
+            AccumulatedDepreciation = row["AccumulatedDepreciation"] == DBNull.Value ? 0 : Convert.ToDecimal(row["AccumulatedDepreciation"]),
+            LastDepreciationDate = row["LastDepreciationDate"] == DBNull.Value ? null : Convert.ToDateTime(row["LastDepreciationDate"]),
             Location     = row["Location"] == DBNull.Value ? null : row["Location"].ToString(),
             Notes        = row["Notes"] == DBNull.Value ? null : row["Notes"].ToString(),
             IsActive     = Convert.ToBoolean(row["IsActive"]),
@@ -87,27 +95,33 @@ namespace PrimeERP.Data.Repositories
 
         private const string InsertSql = @"
             INSERT INTO Assets
-                (Code, Name, CategoryId, PurchaseDate, PurchaseCost, CurrentValue, Location, Notes, IsActive, CreatedBy)
+                (Code, Name, CategoryId, PurchaseDate, PurchaseCost, CurrentValue, UsefulLifeYears, SalvageValue, AccumulatedDepreciation, LastDepreciationDate, Location, Notes, IsActive, CreatedBy)
             VALUES
-                (@code, @name, @categoryId, @purchaseDate, @purchaseCost, @currentValue, @location, @notes, @isActive, @createdBy)";
+                (@code, @name, @categoryId, @purchaseDate, @purchaseCost, @currentValue, @life, @salvage, @accum, @lastDep, @location, @notes, @isActive, @createdBy)";
 
         public int Insert(Asset a, DbConnection conn = null, DbTransaction tx = null) =>
             InsertGetId(InsertSql, conn, tx,
                 ("@code", a.Code), ("@name", a.Name), ("@categoryId", a.CategoryId), ("@purchaseDate", a.PurchaseDate),
-                ("@purchaseCost", a.PurchaseCost), ("@currentValue", a.CurrentValue), ("@location", a.Location ?? ""),
+                ("@purchaseCost", a.PurchaseCost), ("@currentValue", a.CurrentValue),
+                ("@life", a.UsefulLifeYears), ("@salvage", a.SalvageValue),
+                ("@accum", a.AccumulatedDepreciation), ("@lastDep", a.LastDepreciationDate), ("@location", a.Location ?? ""),
                 ("@notes", a.Notes ?? ""), ("@isActive", a.IsActive), ("@createdBy", a.CreatedBy));
 
         private const string UpdateSql = @"
             UPDATE Assets SET
                 Name = @name, CategoryId = @categoryId, PurchaseDate = @purchaseDate, PurchaseCost = @purchaseCost,
-                CurrentValue = @currentValue, Location = @location, Notes = @notes, IsActive = @isActive,
+                CurrentValue = @currentValue, UsefulLifeYears = @life, SalvageValue = @salvage,
+                AccumulatedDepreciation = @accum, LastDepreciationDate = @lastDep,
+                Location = @location, Notes = @notes, IsActive = @isActive,
                 UpdatedAt = @now, UpdatedBy = @updatedBy
             WHERE Id = @id";
 
         public void Update(Asset a, DbConnection conn = null, DbTransaction tx = null) =>
             Exec(UpdateSql, conn, tx,
                 ("@name", a.Name), ("@categoryId", a.CategoryId), ("@purchaseDate", a.PurchaseDate), ("@purchaseCost", a.PurchaseCost),
-                ("@currentValue", a.CurrentValue), ("@location", a.Location ?? ""), ("@notes", a.Notes ?? ""), ("@isActive", a.IsActive),
+                ("@currentValue", a.CurrentValue), ("@life", a.UsefulLifeYears), ("@salvage", a.SalvageValue),
+                ("@accum", a.AccumulatedDepreciation), ("@lastDep", a.LastDepreciationDate),
+                ("@location", a.Location ?? ""), ("@notes", a.Notes ?? ""), ("@isActive", a.IsActive),
                 ("@now", DateTime.Now), ("@updatedBy", a.UpdatedBy), ("@id", a.Id));
 
         public void Delete(int id, string deletedBy, DbConnection conn = null, DbTransaction tx = null) =>

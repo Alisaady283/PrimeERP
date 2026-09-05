@@ -29,6 +29,25 @@ namespace PrimeERP.Modules
         private class StatementRow { public string Date { get; set; } public string EntryNo { get; set; } public string Description { get; set; } public decimal Debit { get; set; } public decimal Credit { get; set; } public decimal RunningBalance { get; set; } }
         private class ItemCardRow { public string Date { get; set; } public string MovementType { get; set; } public decimal Qty { get; set; } public decimal UnitCost { get; set; } public decimal BalanceAfter { get; set; } public string SourceDoc { get; set; } }
         private class FinancialLineRow { public string Code { get; set; } public string Name { get; set; } public decimal Amount { get; set; } }
+
+        /// <summary>قسم في قائمة مالية: عنوان ثم سطوره ثم مجموعه. القسم الفارغ لا يُعرض إطلاقاً — قائمة
+        /// بلا خصوم لا تُظهر عنوان "الخصوم" بصفر، وهو ما يجعل القائمة تُقرأ كقائمة مالية لا كجدول أرصدة.</summary>
+        private static IEnumerable<FinancialLineRow> Section(string title, List<FinancialLineRow> lines)
+        {
+            if (lines.Count == 0) yield break;
+
+            yield return new FinancialLineRow { Name = title };
+            foreach (var line in lines) yield return line;
+
+            yield return new FinancialLineRow { Name = $"إجمالي {title}", Amount = lines.Sum(l => l.Amount) };
+        }
+
+        private static List<GridColumn> FinancialColumns() => new()
+        {
+            new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(FinancialLineRow.Code), Width = 100 },
+            new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(FinancialLineRow.Name), Width = 300, IsStarWidth = true },
+            new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(FinancialLineRow.Amount), Width = 140, Align = ColumnAlign.Center, Format = "N2" },
+        };
         private class StockMovementRow { public string Date { get; set; } public string ProductCode { get; set; } public string ProductName { get; set; } public string WarehouseName { get; set; } public string MovementType { get; set; } public decimal Qty { get; set; } public decimal BalanceAfter { get; set; } }
         private class SalesReportRow { public string InvoiceNo { get; set; } public string Date { get; set; } public string PartyName { get; set; } public decimal NetTotal { get; set; } }
 
@@ -312,17 +331,16 @@ namespace PrimeERP.Modules
 
                         var totalRevenue = revenue.Sum(r => r.Amount);
                         var totalExpense = expense.Sum(r => r.Amount);
-                        var rows = revenue.Concat(expense).ToList();
+
+                        var rows = Section(LocalizationService.Get("Str.Revenue"), revenue)
+                            .Concat(Section(LocalizationService.Get("Str.Expense"), expense))
+                            .Append(new FinancialLineRow { Name = LocalizationService.Get("Str.NetIncome"), Amount = totalRevenue - totalExpense })
+                            .ToList();
 
                         return Result.Ok(new ReportResult
                         {
                             Title = LocalizationService.Get("Str.Module.IncomeStatement"),
-                            Columns = new()
-                            {
-                                new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(FinancialLineRow.Code), Width = 100 },
-                                new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(FinancialLineRow.Name), Width = 260, IsStarWidth = true },
-                                new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(FinancialLineRow.Amount), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
-                            },
+                            Columns = FinancialColumns(),
                             Rows = rows,
                             Totals = new()
                             {
@@ -360,17 +378,15 @@ namespace PrimeERP.Modules
                         var equity = result.Value.Where(l => l.IsLeaf && l.Type == AccountType.Equity && (l.ClosingDebit != 0 || l.ClosingCredit != 0))
                             .Select(l => new FinancialLineRow { Code = l.Code, Name = l.Name, Amount = l.ClosingCredit - l.ClosingDebit }).ToList();
 
-                        var rows = assets.Concat(liabilities).Concat(equity).ToList();
+                        var rows = Section(LocalizationService.Get("Str.Assets"), assets)
+                            .Concat(Section(LocalizationService.Get("Str.Liabilities"), liabilities))
+                            .Concat(Section(LocalizationService.Get("Str.Equity"), equity))
+                            .ToList();
 
                         return Result.Ok(new ReportResult
                         {
                             Title = LocalizationService.Get("Str.Module.BalanceSheet"),
-                            Columns = new()
-                            {
-                                new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(FinancialLineRow.Code), Width = 100 },
-                                new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(FinancialLineRow.Name), Width = 260, IsStarWidth = true },
-                                new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(FinancialLineRow.Amount), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
-                            },
+                            Columns = FinancialColumns(),
                             Rows = rows,
                             Totals = new()
                             {

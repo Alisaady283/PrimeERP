@@ -195,6 +195,8 @@ namespace PrimeERP.Composition.Renderers
             [SettingKeys.Accounts.COGS] = "حساب تكلفة البضاعة المباعة", [SettingKeys.Accounts.Salaries] = "حساب الرواتب",
             [SettingKeys.Accounts.RetainedEarnings] = "حساب الأرباح المحتجزة", [SettingKeys.Accounts.VATInput] = "حساب ضريبة المدخلات",
             [SettingKeys.Accounts.VATOutput] = "حساب ضريبة المخرجات",
+            [SettingKeys.Accounts.DepreciationExpense] = "حساب مصروف الإهلاك",
+            [SettingKeys.Accounts.AccumulatedDepreciation] = "حساب مجمع الإهلاك",
             [SettingKeys.Accounts.AutoLinkEnabled] = "تفعيل الربط التلقائي بالشجرة",
 
             [SettingKeys.Documents.JournalPrefix] = "بادئة قيود اليومية", [SettingKeys.Documents.SalesInvoicePrefix] = "بادئة فاتورة البيع",

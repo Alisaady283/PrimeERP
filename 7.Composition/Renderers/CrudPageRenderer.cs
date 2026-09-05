@@ -45,6 +45,9 @@ namespace PrimeERP.Composition.Renderers
             if (definition.DocumentDialog != null)
                 actions.Insert(3, ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(_ =>
                     DocumentPrinter.PrintSelected(definition, services, vm.SelectedItem as object)), $"{definition.PermissionPrefix}.View"));
+            actions.Add(ToolbarAction.Export(new PrimeERP.UI.ViewModels.RelayCommand(
+                _ => ExportGrid(definition, services, vm)), $"{definition.PermissionPrefix}.View"));
+
             // إجراءات الوحدة المُعلَنة (ترحيل قيد، تحريك شيك…) — تعمل على السجل المحدَّد، وتُحدِّث الشبكة بعدها.
             foreach (var rowAction in definition.RowActions ?? new List<RowAction>())
             {
@@ -181,6 +184,36 @@ namespace PrimeERP.Composition.Renderers
                 panel.Children.Add(combo);
             }
             return panel;
+        }
+
+        // صيغة واحدة تُختار من امتداد الملف — نافذة الحفظ نفسها هي القائمة، بلا حوار صيغ إضافي.
+        private static void ExportGrid(ModuleDefinition definition, IServiceProvider services, dynamic vm)
+        {
+            var toast = services.GetRequiredService<IToastService>();
+            var items = ((System.Collections.IEnumerable)vm.Items).Cast<object>().ToList();
+            if (items.Count == 0) { toast.Info("لا بيانات للتصدير"); return; }
+
+            var title = LocalizationService.Get(definition.TitleKey);
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                FileName = $"{title}-{DateTime.Today:yyyy-MM-dd}",
+                Filter = "Excel (*.xlsx)|*.xlsx|CSV (*.csv)|*.csv|PDF (*.pdf)|*.pdf"
+            };
+            if (dialog.ShowDialog() != true) return;
+
+            var export = services.GetRequiredService<IExportService>();
+            try
+            {
+                switch (System.IO.Path.GetExtension(dialog.FileName).ToLowerInvariant())
+                {
+                    case ".csv":  export.ExportToCsv(items, definition.Columns, dialog.FileName); break;
+                    case ".pdf":  export.ExportToPdf(items, definition.Columns, dialog.FileName, title); break;
+                    default:      export.ExportToExcel(items, definition.Columns, dialog.FileName); break;
+                }
+
+                toast.Success($"تم التصدير إلى {System.IO.Path.GetFileName(dialog.FileName)}");
+            }
+            catch (Exception ex) { toast.Error($"تعذّر التصدير: {ex.Message}"); }
         }
     }
 }

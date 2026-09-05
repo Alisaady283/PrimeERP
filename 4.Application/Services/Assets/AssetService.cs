@@ -50,6 +50,7 @@ namespace PrimeERP.Application.Services.Assets
             {
                 Code = _numbers.Next("Asset"), Name = dto.Name, CategoryId = dto.CategoryId, PurchaseDate = dto.PurchaseDate,
                 PurchaseCost = dto.PurchaseCost, CurrentValue = dto.CurrentValue, Location = dto.Location,
+                UsefulLifeYears = dto.UsefulLifeYears, SalvageValue = dto.SalvageValue,
                 Notes = dto.Notes, IsActive = dto.IsActive, CreatedBy = CurrentUser
             };
 
@@ -72,6 +73,7 @@ namespace PrimeERP.Application.Services.Assets
 
             asset.Name = dto.Name; asset.CategoryId = dto.CategoryId; asset.PurchaseDate = dto.PurchaseDate;
             asset.PurchaseCost = dto.PurchaseCost; asset.CurrentValue = dto.CurrentValue; asset.Location = dto.Location;
+            asset.UsefulLifeYears = dto.UsefulLifeYears; asset.SalvageValue = dto.SalvageValue;
             asset.Notes = dto.Notes; asset.IsActive = dto.IsActive; asset.UpdatedBy = CurrentUser;
 
             var validation = new AssetValidator().Validate(asset);
@@ -102,6 +104,7 @@ namespace PrimeERP.Application.Services.Assets
                 Id = a.Id, Code = a.Code, Name = a.Name,
                 CategoryId = a.CategoryId, CategoryName = a.CategoryId != null ? _categories.GetById(a.CategoryId.Value)?.Name : null,
                 PurchaseDate = a.PurchaseDate, PurchaseCost = a.PurchaseCost, CurrentValue = a.CurrentValue, Location = a.Location, Notes = a.Notes,
+                UsefulLifeYears = a.UsefulLifeYears, SalvageValue = a.SalvageValue, AccumulatedDepreciation = a.AccumulatedDepreciation,
                 IsActive = a.IsActive, StatusVariant = variant, StatusText = LocalizationService.Get($"Str.{statusKey}"),
                 CreatedAt = a.CreatedAt, UpdatedAt = a.UpdatedAt,
                 CanEdit = Can("Edit"), CanDelete = Can("Delete")

@@ -168,6 +168,7 @@
     <sys:String x:Key="Str.Module.GoodsIssue">Goods Issue (Return)</sys:String>
     <sys:String x:Key="Str.Module.DeliveryNote">Delivery Note</sys:String>
     <sys:String x:Key="Str.Module.SalesReceipt">Sales Return Receipt</sys:String>
+    <sys:String x:Key="Str.Module.OpeningBalances">Opening Balances</sys:String>
     <sys:String x:Key="Str.Module.Settings">Settings</sys:String>
     <sys:String x:Key="Str.Settings.Company">Company</sys:String>
     <sys:String x:Key="Str.Settings.Financial">Financial</sys:String>
