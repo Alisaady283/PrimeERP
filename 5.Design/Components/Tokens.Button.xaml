@@ -33,11 +33,14 @@
     <SolidColorBrush x:Key="C.Button.Danger.Fg"     Color="{DynamicResource TextOnBrand.Color}"/>
     <SolidColorBrush x:Key="C.Button.Danger.Border" Color="{DynamicResource Danger.Color}"/>
 
-    <SolidColorBrush x:Key="C.Button.Ghost.Fg"     Color="{DynamicResource BrandDefault.Color}"/>
+    <!-- نص الزر الشبحي كان لون الهوية (كحلي) — يذوب في الوضع الداكن لأن الأرضية كحلية أيضاً.
+         TextPrimary يتبع الوضع: داكن على الفاتح وأبيض على الداكن. -->
+    <SolidColorBrush x:Key="C.Button.Ghost.Fg"     Color="{DynamicResource TextPrimary.Color}"/>
     <SolidColorBrush x:Key="C.Button.Ghost.Border" Color="{DynamicResource OutlineDefault.Color}"/>
 
     <sys:Double x:Key="C.Button.Pressed.Opacity">0.85</sys:Double>
-    <sys:Double x:Key="C.Button.Disabled.Opacity">0.5</sys:Double>
+    <!-- 0.5 كانت تحوّل النص الأبيض رمادياً باهتاً على أرضية داكنة؛ الزر المعطَّل يجب أن يُقرأ لا أن يختفي. -->
+    <sys:Double x:Key="C.Button.Disabled.Opacity">0.68</sys:Double>
 
     <!-- ===== الأبعاد — مستقلة، ثابتة بين الهويات ===== -->
     <sys:Double x:Key="C.Button.Height.Sm">32</sys:Double>
