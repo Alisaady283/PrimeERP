@@ -97,15 +97,24 @@ namespace PrimeERP.UI.Services
                                 def.RelativeColumn();
                         });
 
+                        // نفس شبكة الطباعة: حدّ كامل لكل خلية وعنوان موسَّط — كان التصدير يرسم فاصلاً سفلياً
+                        // فقط فيُقرأ الجدول ككتلة نص، بخلاف الفاتورة المطبوعة.
                         table.Header(header =>
                         {
                             foreach (var col in cols)
-                                header.Cell().Background(ExportTheme.HeaderBackgroundHex).Padding(4).Text(col.Header).FontSize(ExportTheme.HeaderFontSize).Bold();
+                                header.Cell()
+                                    .Background(ExportTheme.HeaderBackgroundHex)
+                                    .Border(1).BorderColor(ExportTheme.OutlineHex)
+                                    .Padding(5).AlignCenter()
+                                    .Text(col.Header).FontSize(ExportTheme.HeaderFontSize).Bold();
                         });
 
                         foreach (var item in rows)
                             foreach (var col in cols)
-                                table.Cell().Padding(4).BorderBottom(1).BorderColor(ExportTheme.OutlineHex).Text(GetValue(item, col));
+                                table.Cell()
+                                    .Border(1).BorderColor(ExportTheme.OutlineHex)
+                                    .Padding(5)
+                                    .Text(GetValue(item, col));
                     });
 
                     page.Footer().AlignCenter().Text(x =>
@@ -230,7 +239,11 @@ namespace PrimeERP.UI.Services
                 table.Header(header =>
                 {
                     foreach (var c in columns)
-                        header.Cell().Background(ExportTheme.HeaderBackgroundHex).Padding(4).Text(c.Header).FontSize(ExportTheme.HeaderFontSize).Bold();
+                        header.Cell()
+                            .Background(ExportTheme.HeaderBackgroundHex)
+                            .Border(1).BorderColor(ExportTheme.OutlineHex)
+                            .Padding(5).AlignCenter()
+                            .Text(c.Header).FontSize(ExportTheme.HeaderFontSize).Bold();
                 });
 
                 foreach (var row in section.Rows ?? new List<Dictionary<string, object>>())
@@ -240,7 +253,7 @@ namespace PrimeERP.UI.Services
                         var text = raw is IFormattable f && !string.IsNullOrEmpty(c.Format)
                             ? f.ToString(c.Format, CultureInfo.InvariantCulture)
                             : raw?.ToString() ?? "";
-                        table.Cell().Padding(4).BorderBottom(1).BorderColor(ExportTheme.OutlineHex).Text(text);
+                        table.Cell().Border(1).BorderColor(ExportTheme.OutlineHex).Padding(5).Text(text);
                     }
             });
 

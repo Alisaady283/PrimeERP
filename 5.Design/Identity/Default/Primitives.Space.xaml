@@ -46,6 +46,7 @@
     <Thickness x:Key="P.Space.3.Right">0,0,12,0</Thickness>
     <Thickness x:Key="P.Space.4.Top">0,16,0,0</Thickness>
     <Thickness x:Key="P.Space.4.Bottom">0,0,0,16</Thickness>
+    <Thickness x:Key="P.Space.5.Bottom">0,0,0,20</Thickness>
     <Thickness x:Key="P.Space.4.Horizontal">16,0</Thickness>
 
     <!--

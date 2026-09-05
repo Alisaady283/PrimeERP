@@ -95,6 +95,11 @@ namespace PrimeERP.UI.Components.Display
                     Width = size, Height = size,
                     Margin = new Thickness(gap / 2, 0, gap / 2, 0),
                     FontSize = fontSize,
+                    // النمط الضمني للأزرار يفرض حشو 14,8 — داخل زر 32px يبتلع الرقم فيظهر شريطاً رفيعاً
+                    // مقصوصاً بدل "1". الزر هنا مربّع صغير، محتواه يتوسّطه بلا حشو.
+                    Padding = new Thickness(0),
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    VerticalContentAlignment = VerticalAlignment.Center,
                     FontFamily = (FontFamily)FindResource("P.Font.Family.Numeric"),
                     Cursor = System.Windows.Input.Cursors.Hand,
                     BorderThickness = new Thickness(1),
@@ -130,6 +135,9 @@ namespace PrimeERP.UI.Components.Display
                 Width = size, Height = size,
                 Margin = new Thickness(gap / 2, 0, gap / 2, 0),
                 Cursor = System.Windows.Input.Cursors.Hand,
+                Padding = new Thickness(0),
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
                 BorderThickness = new Thickness(1),
                 IsEnabled = !disabled,
                 Opacity = disabled ? 0.4 : 1.0

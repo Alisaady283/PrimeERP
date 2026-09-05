@@ -234,25 +234,56 @@ namespace PrimeERP.Application.Services.Print
             return p;
         }
 
+        /// <summary>الحقل = عنوان بجانب صندوق مؤطَّر يحمل قيمته — الشكل المعتمَد في المستندات الرسمية، وأوضح
+        /// من سطر نصّي متصل لأن حدود القيمة تفصل ما كُتب عمّا هو فارغ. تُلفّ الحقول في صفوف بعمودين.</summary>
         private Block BuildKeyValues(Dictionary<string, string> fields)
         {
+            const int PairsPerRow = 2;
+
             var table = new Table { CellSpacing = 0, Margin = new Thickness(0, 0, 0, 12) };
-            for (int i = 0; i < fields.Count * 2; i++)
-                table.Columns.Add(new TableColumn());
+            for (int i = 0; i < PairsPerRow; i++)
+            {
+                table.Columns.Add(new TableColumn { Width = new GridLength(0.28, GridUnitType.Star) });
+                table.Columns.Add(new TableColumn { Width = new GridLength(0.72, GridUnitType.Star) });
+            }
 
             var group = new TableRowGroup();
-            var row = new TableRow();
+            TableRow row = null;
+            var index = 0;
 
             foreach (var (key, value) in fields)
             {
-                row.Cells.Add(NewCell(key + ":", Res<Brush>("TextSecondary"), bold: false, align: TextAlignment.Right));
-                row.Cells.Add(NewCell(value, Res<Brush>("TextPrimary"), bold: true, align: TextAlignment.Right));
+                if (index % PairsPerRow == 0) { row = new TableRow(); group.Rows.Add(row); }
+
+                row.Cells.Add(NewCell(key + ":", Res<Brush>("TextSecondary"), bold: false, align: TextAlignment.Right, bare: true));
+                row.Cells.Add(BoxedValue(value));
+                index++;
             }
 
-            group.Rows.Add(row);
+            // إكمال الصف الأخير بخلايا فارغة — الجدول يتطلّب عدداً متساوياً من الخلايا في كل صف.
+            while (row != null && index % PairsPerRow != 0)
+            {
+                row.Cells.Add(NewCell("", Res<Brush>("TextSecondary"), bold: false, align: TextAlignment.Right, bare: true));
+                row.Cells.Add(NewCell("", Res<Brush>("TextPrimary"), bold: false, align: TextAlignment.Right, bare: true));
+                index++;
+            }
+
             table.RowGroups.Add(group);
             return table;
         }
+
+        private TableCell BoxedValue(string value) =>
+            new(new Paragraph(new Run(value ?? ""))
+            {
+                TextAlignment = TextAlignment.Center,
+                FontWeight = Res<FontWeight>("FontWeightSemiBold"),
+                Foreground = Res<Brush>("TextPrimary"),
+                Margin = new Thickness(0),
+                Padding = new Thickness(8, 4, 8, 4),
+                BorderBrush = Res<Brush>("OutlineDefault"),
+                BorderThickness = new Thickness(1)
+            })
+            { Padding = new Thickness(2, 3, 8, 3) };
 
         private IEnumerable<Block> BuildSectionBlocks(PrintSection section)
         {
@@ -431,7 +462,7 @@ namespace PrimeERP.Application.Services.Print
             return table;
         }
 
-        private TableCell NewCell(string text, Brush foreground, bool bold, TextAlignment align, bool isHeader = false) =>
+        private TableCell NewCell(string text, Brush foreground, bool bold, TextAlignment align, bool isHeader = false, bool bare = false) =>
             new(new Paragraph(new Run(text ?? ""))
             {
                 TextAlignment = align,
@@ -443,7 +474,7 @@ namespace PrimeERP.Application.Services.Print
                 Padding = new Thickness(8, 5, 8, 5),
                 // شبكة خفيفة تفصل الخلايا — بلا حدود يقرأ الجدول ككتلة نص لا كجدول.
                 BorderBrush = Res<Brush>("OutlineSubtle"),
-                BorderThickness = isHeader ? new Thickness(0.6, 0.6, 0.6, 1) : new Thickness(0.6)
+                BorderThickness = bare ? new Thickness(0) : isHeader ? new Thickness(0.6, 0.6, 0.6, 1) : new Thickness(0.6)
             };
 
         /// <summary>الأرقام والتواريخ وسط الخلية، والنصوص (أسماء الأصناف والبيانات) لليمين — العربية تُقرأ من

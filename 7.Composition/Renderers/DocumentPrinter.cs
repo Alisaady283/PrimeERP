@@ -34,8 +34,12 @@ namespace PrimeERP.Composition.Renderers
             var document = result.GetType().GetProperty("Value").GetValue(result);
             var title = LocalizationService.Get(def.TitleKey);
 
-            var printed = services.GetRequiredService<IPrintService>()
-                .PrintPreview(DocumentPrintTemplate.From(def, title, document));
+            // السند ليس جدول سطور بل إقرار مكتوب — له قالبه، وأي مستند آخر يستهلك القالب العام.
+            var printable = document is PrimeERP.Application.DTOs.Vouchers.VoucherDetailDto voucher
+                ? VoucherPrintTemplate.From(voucher, definition.Key == "Receipts")
+                : DocumentPrintTemplate.From(def, title, document);
+
+            var printed = services.GetRequiredService<IPrintService>().PrintPreview(printable);
 
             if (printed.IsFailure) toast.Error(printed.ErrorMessage);
         }

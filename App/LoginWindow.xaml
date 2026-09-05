@@ -53,7 +53,7 @@
                                    Margin="{DynamicResource P.Space.3.Bottom}"/>
 
                 <inputs:AppPasswordBox x:Name="txtPassword" Label="{DynamicResource Str.Login.Password}" IsRequired="True"
-                                       KeyDown="txtPassword_KeyDown" Margin="{DynamicResource P.Space.3.Bottom}"/>
+                                       KeyDown="txtPassword_KeyDown" Margin="{DynamicResource P.Space.5.Bottom}"/>
 
                 <TextBlock x:Name="txtError" Foreground="{DynamicResource Danger}" TextWrapping="Wrap"
                            FontSize="{DynamicResource P.Font.Size.300}"
