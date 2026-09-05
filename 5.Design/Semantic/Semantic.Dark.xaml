@@ -10,8 +10,8 @@
     -->
 
     <!-- ===== الأسطح (Surfaces) — 5 مستويات ===== -->
-    <SolidColorBrush x:Key="SurfaceCanvas"     Color="{DynamicResource P.Color.Neutral.100}"/>
-    <SolidColorBrush x:Key="SurfaceBackground" Color="{DynamicResource P.Color.Neutral.50}"/>
+    <SolidColorBrush x:Key="SurfaceCanvas"     Color="{DynamicResource P.Color.Nav.950}"/>  <!-- أرضية الصفحة -->
+    <SolidColorBrush x:Key="SurfaceBackground" Color="{DynamicResource P.Color.Nav.950}"/>  <!-- خلفية النافذة -->
     <SolidColorBrush x:Key="SurfaceDefault"    Color="{DynamicResource P.Color.Nav.950}"/>  <!-- خلفية الصفحة -->
     <SolidColorBrush x:Key="SurfaceRaised"     Color="{DynamicResource P.Color.Nav.900}"/>  <!-- البطاقات والجداول -->
     <SolidColorBrush x:Key="SurfaceOverlay"    Color="{DynamicResource P.Color.Nav.900}"/>  <!-- الحوارات والقوائم المنسدلة -->
@@ -20,13 +20,13 @@
     <!-- ===== الحدود (Outlines) — 3 قوى + تركيز ===== -->
     <SolidColorBrush x:Key="OutlineSubtle"  Color="{DynamicResource P.Color.Nav.800}"/>  <!-- فواصل الصفوف -->
     <SolidColorBrush x:Key="OutlineDefault" Color="{DynamicResource P.Color.Nav.700}"/>  <!-- الحدود -->
-    <SolidColorBrush x:Key="OutlineStrong"  Color="{DynamicResource P.Color.Neutral.300}"/>
+    <SolidColorBrush x:Key="OutlineStrong"  Color="{DynamicResource P.Color.Nav.700}"/>  <!-- حدّ أوضح -->
     <SolidColorBrush x:Key="OutlineFocus"   Color="{DynamicResource P.Color.Brand.600}"/>
 
     <!-- ===== النصوص (Text) — 5 مستويات + رابط ===== -->
     <SolidColorBrush x:Key="TextPrimary"   Color="{DynamicResource P.Color.White}"/>  <!-- النص الأساسي -->
     <SolidColorBrush x:Key="TextSecondary" Color="{DynamicResource P.Color.Neutral.400}"/>  <!-- النص الثانوي -->
-    <SolidColorBrush x:Key="TextTertiary"  Color="{DynamicResource P.Color.Neutral.500}"/>
+    <SolidColorBrush x:Key="TextTertiary"  Color="{DynamicResource P.Color.Neutral.400}"/>  <!-- نص ثالثي -->
     <SolidColorBrush x:Key="TextMuted"     Color="{DynamicResource P.Color.Neutral.400}"/>
     <SolidColorBrush x:Key="TextOnBrand"   Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="TextLink"      Color="{DynamicResource P.Color.Brand.600}"/>

@@ -31,6 +31,10 @@ namespace PrimeERP.Tests.Design
             ("NavSurface",        "NavText"),
             ("TopBarSurface",     "TopBarText"),
             ("TableRowSelected",  "TableRowSelectedText"),
+            ("SurfaceCanvas",     "TextPrimary"),
+            ("SurfaceBackground", "TextPrimary"),
+            ("SurfaceCanvas",     "C.Pagination.Info.Fg"),
+            ("SurfaceSunken",     "TextSecondary"),
         };
 
         [Fact]

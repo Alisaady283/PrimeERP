@@ -87,7 +87,8 @@ namespace PrimeERP.UI.Services
                     page.DefaultTextStyle(x => x.FontFamily(ExportTheme.FontFamily).FontSize(ExportTheme.BodyFontSize));
                     page.ContentFromRightToLeft();
 
-                    page.Header().Text(title ?? "").FontSize(ExportTheme.TitleFontSize).Bold();
+                    // التقرير كان بلا ترويسة شركة ولا شعار ولا فوتر — عنوان عارٍ فقط.
+                    ComposeCompanyHeader(page.Header(), title, $"{DateTime.Now:yyyy-MM-dd HH:mm}");
 
                     page.Content().PaddingTop(10).Table(table =>
                     {
@@ -117,15 +118,49 @@ namespace PrimeERP.UI.Services
                                     .Text(GetValue(item, col));
                     });
 
-                    page.Footer().AlignCenter().Text(x =>
-                    {
-                        x.CurrentPageNumber();
-                        x.Span(" / ");
-                        x.TotalPages();
-                    });
+                    ComposeFooter(page.Footer());
                 });
             })
             .GeneratePdf(filePath);
+        }
+
+        private void ComposeFooter(QuestPDF.Infrastructure.IContainer container) =>
+            container.PaddingTop(6).BorderTop(1).BorderColor(ExportTheme.OutlineHex).PaddingTop(4).Row(row =>
+            {
+                row.RelativeItem().Text(_settings.Get(SettingKeys.Company.Name, "")).FontSize(ExportTheme.BodyFontSize);
+                row.RelativeItem().AlignCenter().Text(x => { x.CurrentPageNumber(); x.Span(" / "); x.TotalPages(); });
+                row.RelativeItem().AlignLeft().Text($"{DateTime.Now:yyyy-MM-dd HH:mm}").FontSize(ExportTheme.BodyFontSize);
+            });
+
+        /// <summary>ترويسة الشركة: الشعار وبياناتها — نقطة واحدة يستهلكها تصدير الشبكات وتصدير المستندات،
+        /// فلا يظهر الشعار في الفاتورة ويغيب عن التقرير.</summary>
+        private void ComposeCompanyHeader(QuestPDF.Infrastructure.IContainer container, string title, string subtitle)
+        {
+            var logo = System.Convert.FromBase64String(
+                string.IsNullOrWhiteSpace(_settings.Get(SettingKeys.Company.LogoData, "")) ? "" : _settings.Get(SettingKeys.Company.LogoData, ""));
+
+            var details = new[] { SettingKeys.Company.TaxNumber, SettingKeys.Company.Phone, SettingKeys.Company.Address }
+                .Select(k => _settings.Get(k, "")).Where(v => !string.IsNullOrWhiteSpace(v)).ToList();
+
+            container.Column(col =>
+            {
+                col.Item().Row(row =>
+                {
+                    if (logo.Length > 0) row.ConstantItem(56).Height(56).Image(logo).FitArea();
+
+                    row.RelativeItem().PaddingHorizontal(8).Column(info =>
+                    {
+                        info.Item().Text(_settings.Get(SettingKeys.Company.Name, "")).FontSize(ExportTheme.TitleFontSize).Bold();
+                        if (details.Count > 0)
+                            info.Item().Text(string.Join("  •  ", details)).FontSize(ExportTheme.BodyFontSize);
+                    });
+                });
+
+                col.Item().PaddingTop(6).AlignCenter().Text(title ?? "").FontSize(ExportTheme.HeaderFontSize).Bold();
+
+                if (!string.IsNullOrWhiteSpace(subtitle))
+                    col.Item().AlignCenter().Text(subtitle).FontSize(ExportTheme.BodyFontSize);
+            });
         }
 
         /// <summary>يبني PDF كامل (عناوين/أقسام متعدّدة/توقيعات) من IPrintable — لا يكرّر Document.Create/الترخيص/إعداد الصفحة، كله هنا في مكان واحد.</summary>
@@ -145,16 +180,7 @@ namespace PrimeERP.UI.Services
                         page.DefaultTextStyle(x => x.FontFamily(ExportTheme.FontFamily).FontSize(ExportTheme.BodyFontSize));
                         page.ContentFromRightToLeft();
 
-                        page.Header().Column(col =>
-                        {
-                            if (document.ShowCompanyHeader)
-                                col.Item().Text(_settings.Get(SettingKeys.Company.Name, "")).FontSize(ExportTheme.TitleFontSize).Bold();
-
-                            col.Item().AlignCenter().Text(document.DocumentTitle ?? "").FontSize(ExportTheme.HeaderFontSize).Bold();
-
-                            if (!string.IsNullOrWhiteSpace(document.DocumentSubtitle))
-                                col.Item().AlignCenter().Text(document.DocumentSubtitle).FontSize(ExportTheme.BodyFontSize);
-                        });
+                        ComposeCompanyHeader(page.Header(), document.DocumentTitle, document.DocumentSubtitle);
 
                         page.Content().Column(col =>
                         {
@@ -173,14 +199,7 @@ namespace PrimeERP.UI.Services
                                 RenderSignatures(col, document.SignatureLabels);
                         });
 
-                        if (document.ShowPageNumbers)
-                            page.Footer().AlignCenter().Text(x =>
-                            {
-                                x.Span("صفحة ");
-                                x.CurrentPageNumber();
-                                x.Span(" من ");
-                                x.TotalPages();
-                            });
+                        ComposeFooter(page.Footer());
                     });
                 })
                 .GeneratePdf(path);

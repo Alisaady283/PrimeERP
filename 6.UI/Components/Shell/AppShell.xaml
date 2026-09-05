@@ -22,7 +22,11 @@
 
             <shell:AppTopBar Grid.Row="0" x:Name="topBar" SidebarToggled="topBar_SidebarToggled"/>
 
-            <ContentControl Grid.Row="1" x:Name="pageHost" Background="{DynamicResource SurfaceCanvas}"/>
+            <!-- ContentControl لا يرسم خلفيته: قالبه الافتراضي مُقدِّم محتوى بلا حدّ، فالقيمة تُضبَط ولا
+                 تظهر — وكانت أرضية الصفحة تبقى بلون النافذة أياً كان الوضع. الحدّ هو من يرسمها. -->
+            <Border Grid.Row="1" Background="{DynamicResource SurfaceCanvas}">
+                <ContentControl x:Name="pageHost"/>
+            </Border>
         </Grid>
     </Grid>
 </UserControl>
