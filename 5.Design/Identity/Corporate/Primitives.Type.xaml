@@ -11,6 +11,8 @@
     -->
 
     <FontFamily x:Key="P.Font.Family.Primary">Calibri, Segoe UI, Tahoma</FontFamily>
+    <!-- أرقام واضحة الشكل: رقم "1" في بعض خطوط العرض شرطة رفيعة تُقرأ حرفاً — يُستعمل حيث الرقم وحده معنى (ترقيم الصفحات). -->
+    <FontFamily x:Key="P.Font.Family.Numeric">Segoe UI, Tahoma, Arial</FontFamily>
     <FontFamily x:Key="P.Font.Family.Mono">Consolas, Courier New</FontFamily>
     <FontFamily x:Key="P.Font.Family.Display">Georgia, Segoe UI, Tahoma</FontFamily>
 

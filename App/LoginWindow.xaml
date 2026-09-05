@@ -13,6 +13,18 @@
         Width="440"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
+    <!-- شاشة الدخول فاتحة في الوضعين عمداً. حقولها ونصوصها كانت تتبع توكنات الوضع العام، فتصير داكنة على
+         بطاقة فاتحة عند تفعيل الوضع الليلي. التجاوز هنا محلي بحدود النافذة ولا يمسّ بقية النظام. -->
+    <Window.Resources>
+        <SolidColorBrush x:Key="C.Input.Bg"     Color="{DynamicResource P.Color.White}"/>
+        <SolidColorBrush x:Key="C.Input.Fg"     Color="{DynamicResource P.Color.Neutral.900}"/>
+        <SolidColorBrush x:Key="TextPrimary"    Color="{DynamicResource P.Color.Neutral.900}"/>
+        <SolidColorBrush x:Key="TextSecondary"  Color="{DynamicResource P.Color.Neutral.600}"/>
+        <SolidColorBrush x:Key="TextMuted"      Color="{DynamicResource P.Color.Neutral.500}"/>
+        <SolidColorBrush x:Key="OutlineDefault" Color="{DynamicResource P.Color.Neutral.200}"/>
+        <SolidColorBrush x:Key="SurfaceDefault" Color="{DynamicResource P.Color.White}"/>
+    </Window.Resources>
+
     <Border Margin="18" Background="{DynamicResource LoginBg}"
             CornerRadius="{DynamicResource P.Radius.Lg}"
             BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"

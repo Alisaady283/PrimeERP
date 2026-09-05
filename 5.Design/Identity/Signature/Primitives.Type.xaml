@@ -11,6 +11,8 @@
 
     <!-- ===== العائلات ===== -->
     <FontFamily x:Key="P.Font.Family.Primary">Dubai, Segoe UI, Tahoma, Arial</FontFamily>
+    <!-- أرقام واضحة الشكل: رقم "1" في بعض خطوط العرض شرطة رفيعة تُقرأ حرفاً — يُستعمل حيث الرقم وحده معنى (ترقيم الصفحات). -->
+    <FontFamily x:Key="P.Font.Family.Numeric">Segoe UI, Tahoma, Arial</FontFamily>
     <FontFamily x:Key="P.Font.Family.Mono">Cascadia Mono, Consolas, Courier New</FontFamily>
     <FontFamily x:Key="P.Font.Family.Display">Dubai Medium, Dubai, Segoe UI, Tahoma</FontFamily>
 

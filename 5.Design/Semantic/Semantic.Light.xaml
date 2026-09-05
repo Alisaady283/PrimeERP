@@ -47,7 +47,7 @@
     <!-- ===== هيدر/صفوف الجدول (AppDataGrid) — قيم خاصة بالوضع، راجع C.Grid.* في Tokens.Grid.xaml ===== -->
     <SolidColorBrush x:Key="GridHeaderBg" Color="{DynamicResource P.Color.Neutral.100}"/>  <!-- رأس الجدول رمادي فاتح لا كحلي -->
     <SolidColorBrush x:Key="GridHeaderFg" Color="{DynamicResource P.Color.Neutral.900}"/>
-    <SolidColorBrush x:Key="GridRowAltBg" Color="{DynamicResource P.Color.Neutral.50}"/>
+    <SolidColorBrush x:Key="GridRowAltBg" Color="{DynamicResource P.Color.Neutral.50}"/>  <!-- الصف البديل -->
 
     <SolidColorBrush x:Key="TreeFolder" Color="{DynamicResource P.Color.Folder}"/>
     <SolidColorBrush x:Key="LoginBg" Color="{DynamicResource P.Color.LoginBg}"/>
@@ -101,8 +101,6 @@
     <SolidColorBrush x:Key="TableHeaderBg"        Color="{DynamicResource P.Color.Brand.600}"/>
     <SolidColorBrush x:Key="TableHeaderText"      Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="TableHeaderBorder"    Color="{DynamicResource P.Color.Brand.700}"/>
-    <SolidColorBrush x:Key="TableRowBg"           Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="TableRowAltBg"        Color="{DynamicResource P.Color.Neutral.50}"/>
     <SolidColorBrush x:Key="TableRowHover"        Color="{DynamicResource P.Color.Brand.50}"/>
     <SolidColorBrush x:Key="TableRowSelected"     Color="{DynamicResource P.Color.Brand.100}"/>
     <SolidColorBrush x:Key="TableRowSelectedText" Color="{DynamicResource P.Color.Neutral.900}"/>

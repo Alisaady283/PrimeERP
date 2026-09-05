@@ -9,7 +9,7 @@
     <SolidColorBrush x:Key="C.Grid.Header.Fg"     Color="{DynamicResource GridHeaderFg.Color}"/>
     <SolidColorBrush x:Key="C.Grid.Header.Border" Color="{DynamicResource BrandHover.Color}"/>
 
-    <SolidColorBrush x:Key="C.Grid.Row.Bg"      Color="{DynamicResource SurfaceDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Row.Bg"      Color="{DynamicResource SurfaceRaised.Color}"/>
     <SolidColorBrush x:Key="C.Grid.Row.AltBg"   Color="{DynamicResource GridRowAltBg.Color}"/>
     <SolidColorBrush x:Key="C.Grid.Row.Hover"   Color="{DynamicResource BrandSoft.Color}"/>
     <SolidColorBrush x:Key="C.Grid.Row.Selected.Bg" Color="{DynamicResource BrandSoft.Color}"/>

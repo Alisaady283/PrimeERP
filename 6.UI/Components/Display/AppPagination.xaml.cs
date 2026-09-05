@@ -95,7 +95,7 @@ namespace PrimeERP.UI.Components.Display
                     Width = size, Height = size,
                     Margin = new Thickness(gap / 2, 0, gap / 2, 0),
                     FontSize = fontSize,
-                    FontFamily = (FontFamily)FindResource("P.Font.Family.Primary"),
+                    FontFamily = (FontFamily)FindResource("P.Font.Family.Numeric"),
                     Cursor = System.Windows.Input.Cursors.Hand,
                     BorderThickness = new Thickness(1),
                     BorderBrush = active ? (Brush)FindResource("BrandDefault") : (Brush)FindResource("OutlineDefault"),
