@@ -12,20 +12,20 @@
     <!-- ===== الأسطح (Surfaces) — 5 مستويات ===== -->
     <SolidColorBrush x:Key="SurfaceCanvas"     Color="{DynamicResource P.Color.Neutral.100}"/>
     <SolidColorBrush x:Key="SurfaceBackground" Color="{DynamicResource P.Color.Neutral.50}"/>
-    <SolidColorBrush x:Key="SurfaceDefault"    Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="SurfaceRaised"     Color="{DynamicResource P.Color.White}"/>
+    <SolidColorBrush x:Key="SurfaceDefault"    Color="{DynamicResource P.Color.Nav.950}"/>  <!-- خلفية الصفحة -->
+    <SolidColorBrush x:Key="SurfaceRaised"     Color="{DynamicResource P.Color.Nav.900}"/>  <!-- البطاقات والجداول -->
     <SolidColorBrush x:Key="SurfaceOverlay"    Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="SurfaceSunken"     Color="{DynamicResource P.Color.Neutral.100}"/>
+    <SolidColorBrush x:Key="SurfaceSunken"     Color="{DynamicResource P.Color.Nav.950}"/>  <!-- الحقول المعطَّلة -->
 
     <!-- ===== الحدود (Outlines) — 3 قوى + تركيز ===== -->
-    <SolidColorBrush x:Key="OutlineSubtle"  Color="{DynamicResource P.Color.Neutral.100}"/>
-    <SolidColorBrush x:Key="OutlineDefault" Color="{DynamicResource P.Color.Neutral.200}"/>
+    <SolidColorBrush x:Key="OutlineSubtle"  Color="{DynamicResource P.Color.Nav.800}"/>  <!-- فواصل الصفوف -->
+    <SolidColorBrush x:Key="OutlineDefault" Color="{DynamicResource P.Color.Nav.700}"/>  <!-- الحدود -->
     <SolidColorBrush x:Key="OutlineStrong"  Color="{DynamicResource P.Color.Neutral.300}"/>
     <SolidColorBrush x:Key="OutlineFocus"   Color="{DynamicResource P.Color.Brand.600}"/>
 
     <!-- ===== النصوص (Text) — 5 مستويات + رابط ===== -->
-    <SolidColorBrush x:Key="TextPrimary"   Color="{DynamicResource P.Color.Neutral.900}"/>
-    <SolidColorBrush x:Key="TextSecondary" Color="{DynamicResource P.Color.Neutral.600}"/>
+    <SolidColorBrush x:Key="TextPrimary"   Color="{DynamicResource P.Color.White}"/>  <!-- النص الأساسي -->
+    <SolidColorBrush x:Key="TextSecondary" Color="{DynamicResource P.Color.Neutral.400}"/>  <!-- النص الثانوي -->
     <SolidColorBrush x:Key="TextTertiary"  Color="{DynamicResource P.Color.Neutral.500}"/>
     <SolidColorBrush x:Key="TextMuted"     Color="{DynamicResource P.Color.Neutral.400}"/>
     <SolidColorBrush x:Key="TextOnBrand"   Color="{DynamicResource P.Color.White}"/>
@@ -96,8 +96,8 @@
     <SolidColorBrush x:Key="TableHeaderBg"        Color="{DynamicResource P.Color.Nav.900}"/>
     <SolidColorBrush x:Key="TableHeaderText"      Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="TableHeaderBorder"    Color="{DynamicResource P.Color.Nav.700}"/>
-    <SolidColorBrush x:Key="TableRowBg"           Color="{DynamicResource P.Color.White}"/>
-    <SolidColorBrush x:Key="TableRowAltBg"        Color="{DynamicResource P.Color.Neutral.50}"/>
+    <SolidColorBrush x:Key="TableRowBg"           Color="{DynamicResource P.Color.Nav.900}"/>  <!-- صف الجدول -->
+    <SolidColorBrush x:Key="TableRowAltBg"        Color="{DynamicResource P.Color.Nav.950}"/>  <!-- الصف البديل -->
     <SolidColorBrush x:Key="TableRowHover"        Color="{DynamicResource P.Color.Brand.50}"/>
     <SolidColorBrush x:Key="TableRowSelected"     Color="{DynamicResource P.Color.Brand.100}"/>
     <SolidColorBrush x:Key="TableRowSelectedText" Color="{DynamicResource P.Color.Neutral.900}"/>

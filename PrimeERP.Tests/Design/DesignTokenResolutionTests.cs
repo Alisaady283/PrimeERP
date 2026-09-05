@@ -61,10 +61,11 @@ namespace PrimeERP.Tests.Design
             });
         }
 
-        /// <summary>القاعدة المتفق عليها: تبديل الوضع يغيّر الإطار (شريط جانبي/هيدر) ولا يمسّ أسطح البيانات.
-        /// كان التبديل بلا أثر إطلاقاً حين أُضيف قاموس الوضع فوق L3 بدل أن يكون جزءاً من بنائها.</summary>
+        /// <summary>القاعدة الحالية (بعد اعتماد تصميم الوضعين): الوضع الداكن داكن بالكامل — الهيكل وأسطح
+        /// البيانات معاً — والفاتح يستعيدها كلها. كان التبديل بلا أثر إطلاقاً حين أُضيف قاموس الوضع فوق L3
+        /// بدل أن يكون جزءاً من بنائها، فبقي الاختبار حارساً على أن التبديل يصل فعلاً.</summary>
         [Fact]
-        public void SwitchingMode_ChangesChromeOnly_AndLightRestoresIt()
+        public void SwitchingMode_DarkensChromeAndData_AndLightRestoresBoth()
         {
             WpfApplicationFixture.Run(() =>
             {
@@ -79,12 +80,14 @@ namespace PrimeERP.Tests.Design
 
                 identity.ApplyMode(ThemeMode.Dark);
                 Assert.NotEqual(lightNav, Brush("C.Nav.Surface").Color);
-                Assert.Equal(rowBg, Brush("C.Grid.Row.Bg").Color);
-                Assert.Equal(cellFg, Brush("C.Grid.Cell.Fg").Color);
+                Assert.NotEqual(rowBg, Brush("C.Grid.Row.Bg").Color);
+                Assert.NotEqual(cellFg, Brush("C.Grid.Cell.Fg").Color);
 
                 identity.ApplyMode(ThemeMode.Light);
                 Assert.Equal(lightNav, Brush("C.Nav.Surface").Color);
                 Assert.Equal(lightHeader, Brush("C.Grid.Header.Bg").Color);
+                Assert.Equal(rowBg, Brush("C.Grid.Row.Bg").Color);
+                Assert.Equal(cellFg, Brush("C.Grid.Cell.Fg").Color);
             });
         }
 
