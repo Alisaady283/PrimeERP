@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -21,15 +22,31 @@ namespace PrimeERP.UI.Services
         public void ShowPreview(FixedDocument document, string title)
         {
             var viewer = new DocumentViewer { Document = document };
+
+            // المقاس من مقاس الورقة نفسها لا رقم ثابت: الفاتورة العرضيّة أوسع من التقرير الطولي، ورقم
+            // واحد لهما يقصّ الأولى أو يترك فراغاً في الثاني. والحدّ الأعلى مساحة الشاشة المتاحة.
+            var page = document.DocumentPaginator.PageSize;
+            var area = SystemParameters.WorkArea;
+            const double Chrome = 90;
+
             var window = new Window
             {
                 Title = title,
                 Content = viewer,
-                Width = 900,
-                Height = 700,
+                Width = Math.Min(page.Width + Chrome, area.Width * 0.95),
+                Height = Math.Min(page.Height + Chrome, area.Height * 0.95),
+                MinWidth = 720,
+                MinHeight = 520,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 FlowDirection = FlowDirection.RightToLeft,
                 Owner = System.Windows.Application.Current?.MainWindow
+            };
+
+            // عرض الصفحة كاملاً بلا قصّ أياً كان اتجاهها، والمستخدم يكبّر بعدها كما يشاء.
+            window.Loaded += (_, _) =>
+            {
+                try { viewer.FitToWidth(); }
+                catch (Exception) { /* المعاينة تبقى بمقاسها الافتراضي لو رفض العارض الملاءمة */ }
             };
 
             // ⚠️ Show() لا ShowDialog() — ShowDialog تُعلَّق في بيئة هذا الجهاز (توقف 10، ARCHITECTURE.md).

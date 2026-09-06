@@ -20,6 +20,7 @@ namespace PrimeERP.Composition.Print
             new() { Key = "VatAmount",   Header = "ض. القيمة المضافة", Width = 1.2 },
             new() { Key = "WithholdingAmount", Header = "ض. الخصم والإضافة", Width = 1.2 },
             new() { Key = "NetAmount",   Header = "صافي المبلغ",  Width = 1.2 },
+            new() { Key = "Notes",       Header = "ملاحظات",     Width = 1.6, IsText = true },
         };
 
         /// <summary>عمود الصافي في نموذج الإدخال — للعرض فقط، تملؤه المعادلة لا المستخدم.</summary>
