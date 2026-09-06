@@ -34,4 +34,15 @@
     <None Include="6.UI\DevTools\**\*.xaml" />
   </ItemGroup>
 
+  <!-- مشروع WPF المؤقّت (‎*_wpftmp.csproj‎) يُنشَأ أثناء ترجمة XAML ويُحذَف عند نجاح البناء، فيبقى متخلّفاً
+       كلما انقطع البناء. عندها يرى dotnet run مشروعين ويتوقّف. التنظيف بعد نجاح البناء لا قبله: حينها
+       لا يكون أي مشروع مؤقّت قيد الاستخدام، فلا يُحذف واحد أثناء ترجمته. -->
+  <Target Name="RemoveStaleWpfTempProjects" AfterTargets="Build"
+          Condition="!$(MSBuildProjectName.EndsWith('_wpftmp'))">
+    <ItemGroup>
+      <_StaleWpfTemp Include="$(MSBuildProjectDirectory)\*_wpftmp.csproj" />
+    </ItemGroup>
+    <Delete Files="@(_StaleWpfTemp)" ContinueOnError="true" />
+  </Target>
+
 </Project>
