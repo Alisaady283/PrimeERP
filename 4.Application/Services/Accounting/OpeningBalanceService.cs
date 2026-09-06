@@ -78,7 +78,11 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result Delete(int id) => _journals.Delete(id);
 
-        /// <summary>يُلحق سطر رأس المال بفرق الطرفين — صفر الفرق يعني قيداً متوازناً أصلاً فلا سطر يُضاف.</summary>
+        /// <summary>
+        /// التوازن شرط لا تسوية: القيد غير المتزن يُرفض ويُعرَض فرقه. كان الفرق يُرحَّل تلقائياً لحقوق
+        /// الملكية، فيدخل حسابٌ لم يختره المستخدم بمبلغ لم يقصده — وهو كسرٌ صامت في الميزانية.
+        /// والتاريخ من إعداد بدء العمل لا من كتابة المستخدم: تاريخ حديث يجعل الافتتاحي حركةَ فترة.
+        /// </summary>
         private Result<CreateJournalDto> Balance(CreateJournalDto dto)
         {
             dto.Source = SourceKey;
@@ -87,21 +91,14 @@ namespace PrimeERP.Application.Services.Accounting
             if (dto.Lines.Count == 0)
                 return Result.Fail<CreateJournalDto>("أضف سطراً واحداً على الأقل", ErrorCode.ValidationFailed);
 
-            var difference = dto.Lines.Sum(l => l.Debit) - dto.Lines.Sum(l => l.Credit);
-            if (difference == 0) return Result.Ok(dto);
+            dto.EntryDate = _settingsService.Get(SettingKeys.Company.StartDate, dto.EntryDate);
 
-            var capitalAccount = _settingsService.Get<string>(SettingKeys.Accounts.RetainedEarnings, "");
-            if (string.IsNullOrWhiteSpace(capitalAccount))
-                return Result.Fail<CreateJournalDto>("حساب حقوق الملكية غير مضبوط في الإعدادات — الفرق يُرحَّل إليه", ErrorCode.ValidationFailed);
-
-            dto.Lines.Add(new CreateJournalLineDto
-            {
-                LineNo = dto.Lines.Max(l => l.LineNo) + 1,
-                AccountCode = capitalAccount,
-                Debit = difference < 0 ? -difference : 0,
-                Credit = difference > 0 ? difference : 0,
-                Notes = "فرق الأرصدة الافتتاحية"
-            });
+            var debit = dto.Lines.Sum(l => l.Debit);
+            var credit = dto.Lines.Sum(l => l.Credit);
+            if (debit != credit)
+                return Result.Fail<CreateJournalDto>(
+                    $"القيد غير متزن: المدين {debit:N2} والدائن {credit:N2}، والفرق {Math.Abs(debit - credit):N2}",
+                    ErrorCode.ValidationFailed);
 
             return Result.Ok(dto);
         }

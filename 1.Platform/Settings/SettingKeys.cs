@@ -10,6 +10,10 @@ namespace PrimeERP.Platform.Settings
             public const string Name             = "Company.Name";
             public const string NameEn            = "Company.NameEn";
             public const string TaxNumber         = "Company.TaxNumber";
+
+            /// <summary>تاريخ بدء العمل بالنظام — منه تُؤرَّخ الأرصدة الافتتاحية، فلا تُكتب بتاريخ حديث
+            /// يجعلها حركةَ فترة بدل رصيد ما قبلها.</summary>
+            public const string StartDate         = "Company.StartDate";
             public const string CommercialRegNo   = "Company.CommercialRegNo";
             public const string Address           = "Company.Address";
             public const string Phone             = "Company.Phone";
@@ -149,6 +153,7 @@ namespace PrimeERP.Platform.Settings
             new(Company.Name,           "شركتي",         "string", "Company"),
             new(Company.NameEn,         "My Company",    "string", "Company"),
             new(Company.TaxNumber,      "",               "string", "Company"),
+            new(Company.StartDate,      "2026-01-01",     "date",   "Company"),
             new(Company.CommercialRegNo,"",               "string", "Company"),
             new(Company.Address,        "",               "string", "Company"),
             new(Company.Phone,          "",               "string", "Company"),

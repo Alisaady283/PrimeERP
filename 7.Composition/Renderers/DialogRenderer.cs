@@ -201,7 +201,7 @@ namespace PrimeERP.Composition.Renderers
                     SetControlValue(control, field, DateTime.Today);
                 }
 
-                if (isEdit && field.IsReadOnlyOnEdit) control.IsEnabled = false;
+                if (field.IsReadOnly || (isEdit && field.IsReadOnlyOnEdit)) control.IsEnabled = false;
             }
 
             ApplyFlowScope(fieldDefs, controls, services);

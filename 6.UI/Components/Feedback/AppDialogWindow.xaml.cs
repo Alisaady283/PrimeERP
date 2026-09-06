@@ -21,7 +21,11 @@ namespace PrimeERP.UI.Components.Feedback
             InitializeComponent();
             var active = FindActiveWindow();
             if (Owner == null && active != this) Owner = active;
-            contentScroll.MaxHeight = SystemParameters.PrimaryScreenHeight * 0.85;
+            // السقف من مساحة العمل لا من ارتفاع الشاشة: الأخير يتجاهل شريط المهام، ومع SizeToContent
+            // تنمو النافذة بكل سطر يُضاف حتى يهبط الفوتر تحت حافة الشاشة فيغيب زر الحفظ.
+            const double Chrome = 150;   // الرأس والفوتر
+            MaxHeight = SystemParameters.WorkArea.Height * 0.92;
+            contentScroll.MaxHeight = MaxHeight - Chrome;
         }
 
         protected string HeaderTitle

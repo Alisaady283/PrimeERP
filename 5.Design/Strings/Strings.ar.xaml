@@ -92,6 +92,7 @@
     <sys:String x:Key="Str.SalesInvoices.Edit">فاتورة بيع</sys:String>
     <sys:String x:Key="Str.InvoiceNo">رقم الفاتورة</sys:String>
     <sys:String x:Key="Str.InvoiceDate">تاريخ الفاتورة</sys:String>
+    <sys:String x:Key="Str.StartDate">تاريخ بدء العمل</sys:String>
     <sys:String x:Key="Str.Customer">العميل</sys:String>
     <sys:String x:Key="Str.Warehouse">المخزن</sys:String>
     <sys:String x:Key="Str.Product">الصنف</sys:String>

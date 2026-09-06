@@ -799,7 +799,8 @@ namespace PrimeERP.Modules
                     LinesPropertyName = nameof(CreateJournalDto.Lines), DocumentKind = "OpeningBalances",
                     HeaderFields = new()
                     {
-                        new() { Key = nameof(CreateJournalDto.EntryDate), LabelKey = "Str.EntryDate", Kind = FieldKind.Date, IsRequired = true },
+                        // التاريخ من إعداد بدء العمل لا من كتابة المستخدم — الخدمة تفرضه عند الحفظ.
+                        new() { Key = nameof(CreateJournalDto.EntryDate), LabelKey = "Str.StartDate", Kind = FieldKind.Date, IsReadOnly = true },
                         new() { Key = nameof(CreateJournalDto.Description), LabelKey = "Str.Description", Kind = FieldKind.Text, IsRequired = true, MaxLength = 300 },
                     },
                     LineFields = new()

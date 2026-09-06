@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,7 +28,12 @@ namespace PrimeERP.Composition.Renderers
             var controls = new Dictionary<string, FrameworkElement>();
             foreach (var p in report.Parameters)
             {
-                var fieldDef = new FieldDefinition { Key = p.Key, LabelKey = p.LabelKey, Kind = p.Kind, PickerType = p.PickerType, PickerCategoryModuleKey = p.PickerCategoryModuleKey };
+                var fieldDef = new FieldDefinition
+                {
+                    Key = p.Key, LabelKey = p.LabelKey, Kind = p.Kind,
+                    PickerType = p.PickerType, PickerCategoryModuleKey = p.PickerCategoryModuleKey,
+                    PickerLeafOnly = p.PickerLeafOnly
+                };
                 var control = DialogRenderer.BuildField(fieldDef);
                 if (p.Kind == FieldKind.Picker) DialogRenderer.LoadPickerItems((PrimeERP.UI.Components.Inputs.AppComboBox)control, fieldDef, services);
                 if (p.DefaultValue != null) DialogRenderer.SetControlValue(control, fieldDef, p.DefaultValue);
@@ -43,6 +49,25 @@ namespace PrimeERP.Composition.Renderers
             var resultGrid = new AppDataGrid { ShowRowActions = false };
             var totalsText = new TextBlock { Margin = new Thickness(24, 8, 24, 8), FontWeight = FontWeights.SemiBold };
 
+            // نتيجة آخر تشغيل — أزرار الطباعة والتصدير تعمل عليها، ومعطَّلة قبل أول تشغيل.
+            ReportResult current = null;
+            List<object> Rows() => ((System.Collections.IEnumerable)current.Rows).Cast<object>().ToList();
+
+            var view = $"{definition.PermissionPrefix}.View";
+            header.ActionsContent = new PrimeERP.UI.Components.Actions.ActionToolbar
+            {
+                ButtonsSource = new List<PrimeERP.UI.Components.Actions.ToolbarAction>
+                {
+                    PrimeERP.UI.Components.Actions.ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(
+                        _ => ListOutput.Print(services, current.Title, current.Columns, Rows()),
+                        _ => current != null), view, "طباعة التقرير"),
+
+                    PrimeERP.UI.Components.Actions.ToolbarAction.Export(new PrimeERP.UI.ViewModels.RelayCommand(
+                        _ => ListOutput.Export(services, current.Title, current.Columns, Rows()),
+                        _ => current != null), view, "تصدير التقرير"),
+                }
+            };
+
             void RunReport()
             {
                 var paramValues = new Dictionary<string, object>();
@@ -52,6 +77,7 @@ namespace PrimeERP.Composition.Renderers
                 var result = report.Generate(services, paramValues);
                 if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
 
+                current = result.Value;
                 resultGrid.ColumnsSource = result.Value.Columns;
                 resultGrid.ItemsSource = result.Value.Rows;
                 totalsText.Text = result.Value.Totals is { Count: > 0 }

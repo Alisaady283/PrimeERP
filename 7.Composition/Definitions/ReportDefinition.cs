@@ -14,6 +14,9 @@ namespace PrimeERP.Composition.Definitions
         public FieldKind Kind { get; init; } = FieldKind.Date;
         public string PickerType { get; init; }
         public string PickerCategoryModuleKey { get; init; }
+
+        /// <summary>الحسابات التي تقبل قيوداً فقط — نفس قيد القيود والأرصدة الافتتاحية.</summary>
+        public bool PickerLeafOnly { get; init; }
         public object DefaultValue { get; init; }
     }
 

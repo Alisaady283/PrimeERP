@@ -12,6 +12,9 @@ namespace PrimeERP.Composition.Definitions
         public FieldKind Kind { get; init; } = FieldKind.Text;
         public bool IsRequired { get; init; }
         public bool IsReadOnlyOnEdit { get; init; }
+
+        /// <summary>يُعطَّل دائماً — قيمته من مصدر آخر (إعداد مثلاً) لا من المستخدم.</summary>
+        public bool IsReadOnly { get; init; }
         public int MaxLength { get; init; }
 
         // ===== قواعد التحقّق المُعلَنة — يطبّقها FieldValidation وحده لكل الشاشات =====

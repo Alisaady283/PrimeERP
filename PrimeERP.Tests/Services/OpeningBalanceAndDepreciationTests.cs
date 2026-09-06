@@ -32,7 +32,7 @@ namespace PrimeERP.Tests.Services
             { ParentId = _accounts.GetByCode(parentCode).Value.Id, Name = name, SkipAutoLink = true }).Value.Code;
 
         [Fact]
-        public void OpeningBalances_PostTheDifferenceToEquity_AndReachTheTrialBalance()
+        public void UnbalancedOpeningBalances_AreRefused_NotSilentlyPostedToEquity()
         {
             var equity = Leaf("31", "رأس المال المدفوع");
             _settings.Set(SettingKeys.Accounts.RetainedEarnings, equity);
@@ -40,18 +40,43 @@ namespace PrimeERP.Tests.Services
             var cash = Leaf("1204", "صندوق افتتاحي");
             var openings = _db.Services.GetRequiredService<IOpeningBalanceService>();
 
-            var created = openings.Create(new CreateJournalDto
+            // التوازن شرط لا تسوية: الفرق كان يُرحَّل لحقوق الملكية بلا علم المستخدم.
+            var unbalanced = openings.Create(new CreateJournalDto
             {
-                EntryDate = DateTime.Today,
                 Description = "أرصدة افتتاحية",
                 Lines = { new CreateJournalLineDto { LineNo = 1, AccountCode = cash, Debit = 5000 } }
             });
-            Assert.True(created.IsSuccess, created.ErrorMessage);
 
-            // سطر الفرق أُلحق تلقائياً فصار القيد متوازناً وقابلاً للترحيل.
+            Assert.True(unbalanced.IsFailure);
+            Assert.Contains("غير متزن", unbalanced.ErrorMessage);
+            Assert.Contains("5,000.00", unbalanced.ErrorMessage);
+        }
+
+        [Fact]
+        public void BalancedOpeningBalances_TakeTheirDateFromTheStartSetting_AndReachTheTrialBalance()
+        {
+            var start = new DateTime(2026, 1, 1);
+            _settings.Set(SettingKeys.Company.StartDate, start);
+
+            var equity = Leaf("31", "رأس المال المدفوع");
+            var cash = Leaf("1204", "صندوق افتتاحي");
+
+            var created = _db.Services.GetRequiredService<IOpeningBalanceService>().Create(new CreateJournalDto
+            {
+                EntryDate = DateTime.Today,          // يُتجاهَل — التاريخ من الإعداد
+                Description = "أرصدة افتتاحية",
+                Lines =
+                {
+                    new CreateJournalLineDto { LineNo = 1, AccountCode = cash,   Debit = 5000 },
+                    new CreateJournalLineDto { LineNo = 2, AccountCode = equity, Credit = 5000 },
+                }
+            });
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+            Assert.Equal(start, created.Value.EntryDate.Date);
+
             Assert.True(_db.Services.GetRequiredService<IJournalService>().Post(created.Value.Id).IsSuccess);
 
-            var statement = _accounts.GetStatement(equity, DateTime.Today.AddDays(-1), DateTime.Today).Value;
+            var statement = _accounts.GetStatement(equity, start.AddDays(-1), DateTime.Today).Value;
             Assert.Equal(5000, statement.Sum(l => l.Credit));
         }
 

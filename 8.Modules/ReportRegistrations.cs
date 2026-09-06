@@ -241,7 +241,8 @@ namespace PrimeERP.Modules
                     Key = "AccountStatement", TitleKey = "Str.Module.AccountStatement", PermissionKey = "Reports.View",
                     Parameters = new()
                     {
-                        new() { Key = "AccountId", LabelKey = "Str.Account", Kind = FieldKind.Picker, PickerType = "Account" },
+                        // الكشف يخصّ حساباً يقبل قيوداً — الحسابات التجميعية لا حركة لها بذاتها.
+                        new() { Key = "AccountId", LabelKey = "Str.Account", Kind = FieldKind.Picker, PickerType = "Account", PickerLeafOnly = true },
                         new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = DateTime.Today.AddMonths(-1) },
                         new() { Key = "To", LabelKey = "Str.DateTo", Kind = FieldKind.Date, DefaultValue = DateTime.Today },
                     },
