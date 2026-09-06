@@ -102,11 +102,11 @@
                         <Condition Binding="{Binding CheckState}" Value="Inherited"/>
                         <Condition Binding="{Binding InheritedAllowed}" Value="True"/>
                     </MultiDataTrigger.Conditions>
+                    <Setter TargetName="checkBox" Property="Background" Value="{DynamicResource SuccessSoft}"/>
                     <Setter TargetName="checkBox" Property="BorderBrush" Value="{DynamicResource Success}"/>
                     <Setter TargetName="checkGlyph" Property="Stroke" Value="{DynamicResource Success}"/>
                     <Setter TargetName="checkGlyph" Property="Data" Value="{StaticResource IconCheck}"/>
                     <Setter TargetName="checkGlyph" Property="Visibility" Value="Visible"/>
-                    <Setter TargetName="checkBox" Property="Opacity" Value="0.65"/>
                 </MultiDataTrigger>
             </HierarchicalDataTemplate.Triggers>
         </HierarchicalDataTemplate>

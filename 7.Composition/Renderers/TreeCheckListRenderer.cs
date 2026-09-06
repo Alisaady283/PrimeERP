@@ -24,6 +24,8 @@ namespace PrimeERP.Composition.Renderers
                 ?? throw new InvalidOperationException($"الوحدة '{definition.Key}' بتخطيط TreeCheckList بلا TreeCheckListDefinition.");
 
             var toast = services.GetRequiredService<IToastService>();
+            // القائمة تُستبدَل ولا تُفرَّغ: إسناد نفس المرجع لا يُطلق إشعار تغيير في WPF، فتبقى الشجرة
+            // معروضة بعُقد التحميل الأول بينما الأزرار والحفظ يعملان على عُقد جديدة لا يراها أحد.
             var nodes = new List<TreeNodeViewModel>();
             var tree = new AppTreeView { CheckMode = def.Mode };
 
@@ -51,8 +53,7 @@ namespace PrimeERP.Composition.Renderers
             void LoadTree()
             {
                 var sourceId = SelectedSourceId();
-                nodes.Clear();
-                if (sourceId > 0) nodes.AddRange(def.BuildTree(services, sourceId));
+                nodes = sourceId > 0 ? def.BuildTree(services, sourceId) : new List<TreeNodeViewModel>();
                 def.ApplyRules?.Invoke(nodes);
                 tree.ItemsSource = nodes;
                 RefreshSummary();
