@@ -197,7 +197,6 @@ namespace PrimeERP.Application.Services.Print
         private Block BuildCompanyHeader()
         {
             var name = _settings.Get(SettingKeys.Company.Name, "");
-            var logo = LoadLogo();
 
             var details = new List<string>();
             foreach (var (key, label) in new[]
@@ -221,6 +220,7 @@ namespace PrimeERP.Application.Services.Print
                 FlowDirection = FlowDirection.RightToLeft,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 TextWrapping = TextWrapping.NoWrap,
+                FontFamily = Res<FontFamily>("FontFamilyPrimary"),
                 FontSize = Res<double>(size),
                 FontWeight = bold ? Res<FontWeight>("FontWeightBold") : FontWeights.Normal,
                 Foreground = Res<Brush>(colour)
@@ -236,6 +236,12 @@ namespace PrimeERP.Application.Services.Print
             text.Children.Add(Line(name, "FontSizeXl", "BrandSolid", bold: true));
             foreach (var detail in details) text.Children.Add(Line(detail, "FontSizeSm", "TextSecondary"));
 
+            // مقاس الشعار يُشتقّ من ارتفاع بيانات الشركة: نسبة منه، والعرض يتبع نسبة الصورة حتى حدّ العرض.
+            // فلو زادت حقول الشركة أو نقصت تحرّك الشعار معها بدل أن يبقى رقماً ثابتاً يكبر أو يصغر عليها.
+            text.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var logoHeight = text.DesiredSize.Height * Res<double>("LogoHeightRatio");
+            var logo = LoadLogo((int)Math.Round(logoHeight * Res<double>("PrintPixelScale")));
+
             var layout = new Grid { FlowDirection = FlowDirection.LeftToRight };
             layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -247,8 +253,11 @@ namespace PrimeERP.Application.Services.Print
             {
                 var image = new System.Windows.Controls.Image
                 {
-                    Source = logo, MaxWidth = 170, MaxHeight = 72,
-                    Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center
+                    Source = logo,
+                    Height = logoHeight,
+                    MaxWidth = logoHeight * Res<double>("LogoAspectMax"),
+                    Stretch = Stretch.Uniform,
+                    VerticalAlignment = VerticalAlignment.Center
                 };
 
                 Grid.SetColumn(image, 0);
@@ -265,7 +274,8 @@ namespace PrimeERP.Application.Services.Print
             { Margin = new Thickness(0, 0, 0, 10) };
         }
 
-        private BitmapImage LoadLogo() => ImageData.Decode(_settings.Get(SettingKeys.Company.LogoData, ""));
+        private BitmapImage LoadLogo(int pixelHeight = 0) =>
+            ImageData.Decode(_settings.Get(SettingKeys.Company.LogoData, ""), pixelHeight);
 
         private Block BuildTitle(string title, string subtitle)
         {

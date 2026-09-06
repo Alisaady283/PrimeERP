@@ -19,6 +19,12 @@
     <sys:Double x:Key="FontSizeLg">16</sys:Double>
     <sys:Double x:Key="FontSizeXl">20</sys:Double>
 
+    <!-- الشعار: ارتفاعه نسبة من ارتفاع بيانات الشركة، وعرضه يتبع نسبة الصورة حتى هذا الحدّ.
+         PixelScale كثافة بكسل الطباعة مقابل ٩٦ DPI — تُفكّ بها الصورة فلا تُطبع مهترئة ولا تُحمَّل أكبر من اللازم. -->
+    <sys:Double x:Key="LogoHeightRatio">1.0</sys:Double>
+    <sys:Double x:Key="LogoAspectMax">4</sys:Double>
+    <sys:Double x:Key="PrintPixelScale">3</sys:Double>
+
     <FontWeight x:Key="FontWeightNormal">Normal</FontWeight>
     <FontWeight x:Key="FontWeightSemiBold">SemiBold</FontWeight>
     <FontWeight x:Key="FontWeightBold">Bold</FontWeight>
