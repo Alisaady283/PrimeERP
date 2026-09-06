@@ -14,6 +14,10 @@ namespace PrimeERP.UI.Components.Display
     public class GridColumn
     {
         public string Header { get; set; }
+
+        /// <summary>عنوان مجموعة يعلو عدة أعمدة متجاورة (مثل: الأرصدة الافتتاحية فوق مدين ودائن).
+        /// فارغ = العمود بلا مجموعة، فيمتدّ عنوانه على صفَّي الرأس.</summary>
+        public string Group { get; set; }
         public string Binding { get; set; }
         public double Width { get; set; } = 120;
         public bool IsStarWidth { get; set; }

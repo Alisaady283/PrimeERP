@@ -99,8 +99,13 @@ namespace PrimeERP.Tests.Composition
 
                 var rows = ((IEnumerable)grid.ItemsSource).Cast<object>().ToList();
                 Assert.Single(rows);
-                var balance = (decimal)rows[0].GetType().GetProperty("Balance").GetValue(rows[0]);
-                Assert.Equal(125, balance);
+
+                // الشكل الرسمي: أول المدة ثم حركتا الفترة ثم آخر المدة — لا عمود رصيد واحد.
+                decimal Value(string name) => (decimal)rows[0].GetType().GetProperty(name).GetValue(rows[0]);
+
+                Assert.Equal(125, Value("Charged"));
+                Assert.Equal(0, Value("Settled"));
+                Assert.Equal(125, Value("Closing"));
             });
         }
 
@@ -158,9 +163,14 @@ namespace PrimeERP.Tests.Composition
                 var grid = FindVisualChild<AppDataGrid>(element);
                 var rows = ((IEnumerable)grid.ItemsSource).Cast<object>().ToList();
 
-                Assert.Equal(2, rows.Count);
-                var debit = (decimal)rows[1].GetType().GetProperty("Debit").GetValue(rows[1]);
-                Assert.Equal(500, debit);
+                // رصيد افتتاحي + السطر المُرحَّل + رصيد آخر المدة
+                Assert.Equal(3, rows.Count);
+
+                object Cell(int row, string name) => rows[row].GetType().GetProperty(name).GetValue(rows[row]);
+
+                Assert.Equal(500m, (decimal)Cell(1, "Debit"));
+                Assert.Equal("رصيد آخر المدة", (string)Cell(2, "Description"));
+                Assert.Equal((decimal)Cell(1, "RunningBalance"), (decimal)Cell(2, "RunningBalance"));
                 window.Close();
             });
         }

@@ -43,7 +43,19 @@
 
         <!-- ===== Grid + Overlays ===== -->
         <Grid Grid.Row="1" MinHeight="180">
-            <Border BorderBrush="{DynamicResource C.Grid.Border}" BorderThickness="{DynamicResource C.Grid.Container.BorderThickness}"
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- صفّ المجموعات: أعمدته تحاذي أعمدة الشبكة، وخلية المجموعة تمتدّ على أعمدتها. -->
+            <Border x:Name="groupHeaderWrap" Grid.Row="0" Visibility="Collapsed"
+                    Background="{DynamicResource C.Grid.Header.Bg}"
+                    BorderBrush="{DynamicResource C.Grid.Header.Border}" BorderThickness="0,0,0,1">
+                <Grid x:Name="groupHeader"/>
+            </Border>
+
+            <Border Grid.Row="1" BorderBrush="{DynamicResource C.Grid.Border}" BorderThickness="{DynamicResource C.Grid.Container.BorderThickness}"
                     CornerRadius="{DynamicResource C.Grid.Container.Radius}" ClipToBounds="True">
                 <DataGrid x:Name="grid"
                           AutoGenerateColumns="False"
@@ -127,8 +139,8 @@
                 </DataGrid>
             </Border>
 
-            <display:AppEmptyState x:Name="emptyState" Visibility="Collapsed"/>
-            <display:AppLoadingOverlay x:Name="loadingOverlay"/>
+            <display:AppEmptyState x:Name="emptyState" Grid.Row="1" Visibility="Collapsed"/>
+            <display:AppLoadingOverlay x:Name="loadingOverlay" Grid.Row="1"/>
         </Grid>
 
         <!-- ===== Footer totals ===== -->

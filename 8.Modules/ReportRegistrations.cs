@@ -23,12 +23,49 @@ namespace PrimeERP.Modules
     // القالب حرفياً.
     public static class ReportRegistrations
     {
-        private class TrialBalanceRow { public string Code { get; set; } public string Name { get; set; } public decimal Debit { get; set; } public decimal Credit { get; set; } }
+        /// <summary>ميزان المراجعة القياسي: افتتاحي ثم حركة الفترة ثم ختامي، كلٌّ مدين ودائن.</summary>
+        private class TrialBalanceRow
+        {
+            public string  Code { get; set; }
+            public string  Name { get; set; }
+            public decimal OpeningDebit  { get; set; }
+            public decimal OpeningCredit { get; set; }
+            public decimal PeriodDebit   { get; set; }
+            public decimal PeriodCredit  { get; set; }
+            public decimal ClosingDebit  { get; set; }
+            public decimal ClosingCredit { get; set; }
+        }
         private class BalanceRow { public string Code { get; set; } public string Name { get; set; } public decimal Balance { get; set; } }
         private class StockBalanceRow { public string ProductCode { get; set; } public string ProductName { get; set; } public string WarehouseName { get; set; } public decimal Balance { get; set; } }
         private class StatementRow { public string Date { get; set; } public string EntryNo { get; set; } public string Description { get; set; } public decimal Debit { get; set; } public decimal Credit { get; set; } public decimal RunningBalance { get; set; } }
         private class ItemCardRow { public string Date { get; set; } public string MovementType { get; set; } public decimal Qty { get; set; } public decimal UnitCost { get; set; } public decimal BalanceAfter { get; set; } public string SourceDoc { get; set; } }
         private class FinancialLineRow { public string Code { get; set; } public string Name { get; set; } public decimal Amount { get; set; } }
+
+        /// <summary>أعمدة ميزان المراجعة — ثلاث مجموعات، كلٌّ مدين ودائن، والكود والاسم بلا مجموعة
+        /// فيمتدّ عنوانهما على صفَّي الرأس.</summary>
+        private static List<GridColumn> TrialBalanceColumns()
+        {
+            var debit = LocalizationService.Get("Str.Debit");
+            var credit = LocalizationService.Get("Str.Credit");
+
+            GridColumn Money(string group, string header, string binding) => new()
+            {
+                Group = group, Header = header, Binding = binding,
+                Width = 120, Align = ColumnAlign.Center, Format = "N2"
+            };
+
+            return new List<GridColumn>
+            {
+                new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(TrialBalanceRow.Code), Width = 110 },
+                new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(TrialBalanceRow.Name), Width = 240, IsStarWidth = true },
+                Money("الأرصدة الافتتاحية", debit,  nameof(TrialBalanceRow.OpeningDebit)),
+                Money("الأرصدة الافتتاحية", credit, nameof(TrialBalanceRow.OpeningCredit)),
+                Money("الحركة خلال الفترة", debit,  nameof(TrialBalanceRow.PeriodDebit)),
+                Money("الحركة خلال الفترة", credit, nameof(TrialBalanceRow.PeriodCredit)),
+                Money("الأرصدة الختامية",  debit,  nameof(TrialBalanceRow.ClosingDebit)),
+                Money("الأرصدة الختامية",  credit, nameof(TrialBalanceRow.ClosingCredit)),
+            };
+        }
 
         /// <summary>قسم في قائمة مالية: عنوان ثم سطوره ثم مجموعه. القسم الفارغ لا يُعرض إطلاقاً — قائمة
         /// بلا خصوم لا تُظهر عنوان "الخصوم" بصفر، وهو ما يجعل القائمة تُقرأ كقائمة مالية لا كجدول أرصدة.</summary>
@@ -73,21 +110,25 @@ namespace PrimeERP.Modules
                         var result = journal.GetTrialBalance(from, to);
                         if (!result.IsSuccess) return Result.Fail<ReportResult>(result.ErrorMessage);
 
-                        var rows = result.Value.Where(l => l.PeriodDebit != 0 || l.PeriodCredit != 0)
-                            .Select(l => new TrialBalanceRow { Code = l.Code, Name = l.Name, Debit = l.PeriodDebit, Credit = l.PeriodCredit }).ToList();
+                        var rows = result.Value.Select(l => new TrialBalanceRow
+                        {
+                            Code = l.Code, Name = l.Name,
+                            OpeningDebit = l.OpeningDebit, OpeningCredit = l.OpeningCredit,
+                            PeriodDebit  = l.PeriodDebit,  PeriodCredit  = l.PeriodCredit,
+                            ClosingDebit = l.ClosingDebit, ClosingCredit = l.ClosingCredit
+                        }).ToList();
 
                         return Result.Ok(new ReportResult
                         {
                             Title = LocalizationService.Get("Str.Module.TrialBalance"),
-                            Columns = new()
-                            {
-                                new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(TrialBalanceRow.Code), Width = 100 },
-                                new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(TrialBalanceRow.Name), Width = 260, IsStarWidth = true },
-                                new() { Header = LocalizationService.Get("Str.Debit"), Binding = nameof(TrialBalanceRow.Debit), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
-                                new() { Header = LocalizationService.Get("Str.Credit"), Binding = nameof(TrialBalanceRow.Credit), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
-                            },
+                            Columns = TrialBalanceColumns(),
                             Rows = rows,
-                            Totals = new() { ["Debit"] = $"{LocalizationService.Get("Str.Debit")}: {rows.Sum(r => r.Debit):N2}", ["Credit"] = $"{LocalizationService.Get("Str.Credit")}: {rows.Sum(r => r.Credit):N2}" }
+                            Totals = new()
+                            {
+                                ["Opening"] = $"افتتاحي: {rows.Sum(r => r.OpeningDebit):N2} / {rows.Sum(r => r.OpeningCredit):N2}",
+                                ["Period"]  = $"الفترة: {rows.Sum(r => r.PeriodDebit):N2} / {rows.Sum(r => r.PeriodCredit):N2}",
+                                ["Closing"] = $"ختامي: {rows.Sum(r => r.ClosingDebit):N2} / {rows.Sum(r => r.ClosingCredit):N2}",
+                            }
                         });
                     }
                 }
@@ -99,27 +140,16 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "CustomerBalances", TitleKey = "Str.Module.CustomerBalances", PermissionKey = "Reports.View",
+                    Parameters = BalanceReportFactory.Period(),
                     Generate = (services, p) =>
                     {
-                        var customers = services.GetRequiredService<ICustomerService>();
-                        var result = customers.GetPaged(1, 5000);
+                        var result = services.GetRequiredService<ICustomerService>().GetPaged(1, 5000);
                         if (!result.IsSuccess) return Result.Fail<ReportResult>(result.ErrorMessage);
 
-                        var rows = result.Value.Items.Where(c => c.Balance != 0)
-                            .Select(c => new BalanceRow { Code = c.Code, Name = c.Name, Balance = c.Balance }).ToList();
-
-                        return Result.Ok(new ReportResult
-                        {
-                            Title = LocalizationService.Get("Str.Module.CustomerBalances"),
-                            Columns = new()
-                            {
-                                new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(BalanceRow.Code), Width = 100 },
-                                new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(BalanceRow.Name), Width = 260, IsStarWidth = true },
-                                new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(BalanceRow.Balance), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
-                            },
-                            Rows = rows,
-                            Totals = new() { ["Balance"] = $"{LocalizationService.Get("Str.Total")}: {rows.Sum(r => r.Balance):N2}" }
-                        });
+                        return BalanceReportFactory.Build(services, p,
+                            result.Value.Items.Select(c => (c.Code, c.Name, c.AccountCode)).ToList(),
+                            debitIsCharge: true,
+                            LocalizationService.Get("Str.Module.CustomerBalances"), "المبيعات", "المقبوضات");
                     }
                 }
             });
@@ -130,27 +160,16 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "SupplierBalances", TitleKey = "Str.Module.SupplierBalances", PermissionKey = "Reports.View",
+                    Parameters = BalanceReportFactory.Period(),
                     Generate = (services, p) =>
                     {
-                        var suppliers = services.GetRequiredService<ISupplierService>();
-                        var result = suppliers.GetPaged(1, 5000);
+                        var result = services.GetRequiredService<ISupplierService>().GetPaged(1, 5000);
                         if (!result.IsSuccess) return Result.Fail<ReportResult>(result.ErrorMessage);
 
-                        var rows = result.Value.Items.Where(s => s.Balance != 0)
-                            .Select(s => new BalanceRow { Code = s.Code, Name = s.Name, Balance = s.Balance }).ToList();
-
-                        return Result.Ok(new ReportResult
-                        {
-                            Title = LocalizationService.Get("Str.Module.SupplierBalances"),
-                            Columns = new()
-                            {
-                                new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(BalanceRow.Code), Width = 100 },
-                                new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(BalanceRow.Name), Width = 260, IsStarWidth = true },
-                                new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(BalanceRow.Balance), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
-                            },
-                            Rows = rows,
-                            Totals = new() { ["Balance"] = $"{LocalizationService.Get("Str.Total")}: {rows.Sum(r => r.Balance):N2}" }
-                        });
+                        return BalanceReportFactory.Build(services, p,
+                            result.Value.Items.Select(x => (x.Code, x.Name, x.AccountCode)).ToList(),
+                            debitIsCharge: false,
+                            LocalizationService.Get("Str.Module.SupplierBalances"), "المشتريات", "المدفوعات");
                     }
                 }
             });
@@ -557,6 +576,15 @@ namespace PrimeERP.Modules
 
             var rows = result.Value.Select(l => new StatementRow
             { Date = l.Date, EntryNo = l.EntryNo, Description = l.Description, Debit = l.Debit, Credit = l.Credit, RunningBalance = l.RunningBalance }).ToList();
+
+            // رصيد آخر المدة سطراً ختامياً — الكشف بلا خلاصة يُجبر القارئ على تتبّع آخر رصيد جارٍ بعينه.
+            if (rows.Count > 0)
+                rows.Add(new StatementRow
+                {
+                    Date = to.ToString("yyyy-MM-dd"),
+                    Description = "رصيد آخر المدة",
+                    RunningBalance = rows[^1].RunningBalance
+                });
 
             return Result.Ok(new ReportResult { Title = LocalizationService.Get(titleKey), Columns = StatementColumns(), Rows = rows });
         }

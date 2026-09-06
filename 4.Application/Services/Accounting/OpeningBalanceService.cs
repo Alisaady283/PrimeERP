@@ -60,12 +60,18 @@ namespace PrimeERP.Application.Services.Accounting
             });
         }
 
+        /// <summary>يُنشئ ويُرحّل معاً: القيد المسودّة لا تقرأه التقارير (تقرأ المُرحَّل فقط)، فرصيد
+        /// افتتاحي غير مُرحَّل يبقى غائباً عن الميزان والكشوف وكأنه لم يُدخَل.</summary>
         public Result<JournalEntryDto> Create(CreateJournalDto dto)
         {
             var balanced = Balance(dto);
             if (balanced.IsFailure) return Result.Fail<JournalEntryDto>(balanced.ErrorMessage, balanced.ErrorCode);
 
-            return _journals.Create(balanced.Value);
+            var created = _journals.Create(balanced.Value);
+            if (created.IsFailure) return created;
+
+            var posted = _journals.Post(created.Value.Id);
+            return posted.IsSuccess ? created : Result.Fail<JournalEntryDto>(posted.ErrorMessage, posted.ErrorCode);
         }
 
         public Result Update(CreateJournalDto dto)

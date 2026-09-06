@@ -217,6 +217,7 @@ namespace PrimeERP.UI.Components.Display
 
             grid.FrozenColumnCount = FrozenColumnCount;
 
+            BuildGroupHeader();
             RebuildFooterColumns();
         }
 
@@ -281,6 +282,73 @@ namespace PrimeERP.UI.Components.Display
                 ElementStyle = cellStyle,
                 IsReadOnly = true
             };
+        }
+
+        /// <summary>
+        /// صفّ رؤوس المجموعات فوق رؤوس الأعمدة: خلية واحدة تمتدّ على أعمدة المجموعة، وعمودٌ بلا مجموعة
+        /// يُكتب عنوانه هنا ممتدّاً على الصفَّين (ورأسه في الشبكة يُترك فارغاً) — فيتوسّط بينهما.
+        /// عروض الأعمدة تُربَط بعرض أعمدة الشبكة الفعلي فتبقى المحاذاة قائمة مع أي تغيير.
+        /// </summary>
+        private void BuildGroupHeader()
+        {
+            groupHeader.ColumnDefinitions.Clear();
+            groupHeader.Children.Clear();
+
+            var grouped = _visibleColumns.Any(c => !string.IsNullOrEmpty(c.Group));
+            groupHeaderWrap.Visibility = grouped ? Visibility.Visible : Visibility.Collapsed;
+            if (!grouped) return;
+
+            var dataColumns = grid.Columns.OfType<DataGridTextColumn>().ToList();
+            if (dataColumns.Count != _visibleColumns.Count) return;
+
+            for (var i = 0; i < _visibleColumns.Count; i++)
+            {
+                var definition = new ColumnDefinition();
+                System.Windows.Data.BindingOperations.SetBinding(definition, ColumnDefinition.WidthProperty,
+                    new System.Windows.Data.Binding(nameof(DataGridColumn.ActualWidth))
+                    {
+                        Source = dataColumns[i],
+                        Converter = new PixelWidthConverter()
+                    });
+                groupHeader.ColumnDefinitions.Add(definition);
+            }
+
+            var index = 0;
+            while (index < _visibleColumns.Count)
+            {
+                var group = _visibleColumns[index].Group;
+                var span = 1;
+                while (index + span < _visibleColumns.Count && _visibleColumns[index + span].Group == group) span++;
+
+                var text = new TextBlock
+                {
+                    Text = string.IsNullOrEmpty(group) ? _visibleColumns[index].Header : group,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    FontWeight = FontWeights.SemiBold,
+                    Margin = new Thickness(4, 8, 4, 8)
+                };
+                text.SetResourceReference(TextBlock.ForegroundProperty, "C.Grid.Header.Fg");
+
+                Grid.SetColumn(text, index);
+                Grid.SetColumnSpan(text, span);
+                groupHeader.Children.Add(text);
+
+                // عمود بلا مجموعة: عنوانه أعلاه، فيُفرَّغ رأسه في الشبكة كي لا يتكرّر.
+                if (string.IsNullOrEmpty(group)) dataColumns[index].Header = "";
+
+                index += span;
+            }
+        }
+
+        /// <summary>عرض عمود الشبكة الفعلي إلى GridLength بالبكسل.</summary>
+        private class PixelWidthConverter : System.Windows.Data.IValueConverter
+        {
+            public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) =>
+                new GridLength(value is double width ? width : 0, GridUnitType.Pixel);
+
+            public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) =>
+                throw new NotSupportedException();
         }
 
         private DataGridColumn BuildActionsColumn()

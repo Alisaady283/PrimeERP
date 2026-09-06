@@ -74,8 +74,7 @@ namespace PrimeERP.Tests.Services
             Assert.True(created.IsSuccess, created.ErrorMessage);
             Assert.Equal(start, created.Value.EntryDate.Date);
 
-            Assert.True(_db.Services.GetRequiredService<IJournalService>().Post(created.Value.Id).IsSuccess);
-
+            // تُرحَّل فور إنشائها — المسودّة لا تصل التقارير، فترحيل يدوي لاحق ليس شرطاً.
             var statement = _accounts.GetStatement(equity, start.AddDays(-1), DateTime.Today).Value;
             Assert.Equal(5000, statement.Sum(l => l.Credit));
         }
