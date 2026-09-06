@@ -212,45 +212,54 @@ namespace PrimeERP.Application.Services.Print
                 if (!string.IsNullOrWhiteSpace(value)) details.Add(string.IsNullOrEmpty(label) ? value : label + ": " + value);
             }
 
-            var info = new Paragraph { Margin = new Thickness(0), TextAlignment = TextAlignment.Right };
-            info.Inlines.Add(new Run(name)
+            // تخطيط Grid لا جدول FlowDocument: الأخير لا يوزّع العرض النسبي بثبات، فكان عمود البيانات
+            // ينضغط حتى يتكسّر اسم الشركة حرفاً في كل سطر.
+            var text = new StackPanel { HorizontalAlignment = HorizontalAlignment.Right };
+            text.Children.Add(new System.Windows.Controls.TextBlock
             {
+                Text = name,
+                TextWrapping = TextWrapping.NoWrap,
                 FontSize = Res<double>("FontSizeXl"),
                 FontWeight = Res<FontWeight>("FontWeightBold"),
                 Foreground = Res<Brush>("BrandSolid")
             });
 
             foreach (var detail in details)
-            {
-                info.Inlines.Add(new LineBreak());
-                info.Inlines.Add(new Run(detail) { FontSize = Res<double>("FontSizeSm"), Foreground = Res<Brush>("TextSecondary") });
-            }
+                text.Children.Add(new System.Windows.Controls.TextBlock
+                {
+                    Text = detail,
+                    TextWrapping = TextWrapping.NoWrap,
+                    FontSize = Res<double>("FontSizeSm"),
+                    Foreground = Res<Brush>("TextSecondary")
+                });
 
-            var table = new Table { CellSpacing = 0, Margin = new Thickness(0, 0, 0, 4) };
-            table.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-            if (logo != null) table.Columns.Add(new TableColumn { Width = new GridLength(120) });
+            var layout = new Grid { FlowDirection = FlowDirection.RightToLeft };
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            var row = new TableRow();
-            row.Cells.Add(new TableCell(info) { Padding = new Thickness(0, 0, 0, 10) });
+            Grid.SetColumn(text, 0);
+            layout.Children.Add(text);
 
             if (logo != null)
             {
-                var imageParagraph = new Paragraph { Margin = new Thickness(0), TextAlignment = TextAlignment.Left };
-                imageParagraph.Inlines.Add(new InlineUIContainer(new System.Windows.Controls.Image
-                { Source = logo, MaxWidth = 110, MaxHeight = 56, Stretch = Stretch.Uniform }));
+                var image = new System.Windows.Controls.Image
+                {
+                    Source = logo, MaxWidth = 130, MaxHeight = 64,
+                    Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center
+                };
 
-                row.Cells.Add(new TableCell(imageParagraph) { Padding = new Thickness(0, 0, 0, 10) });
+                Grid.SetColumn(image, 1);
+                layout.Children.Add(image);
             }
 
-            var group = new TableRowGroup();
-            group.Rows.Add(row);
-            table.RowGroups.Add(group);
-
-            // الخطّ الفاصل يحمل لون الهوية — أثرها البصري بلا شريط ممتلئ.
-            table.BorderBrush = Res<Brush>("BrandSolid");
-            table.BorderThickness = new Thickness(0, 0, 0, 2);
-
-            return table;
+            return new BlockUIContainer(new Border
+            {
+                Child = layout,
+                Padding = new Thickness(0, 0, 0, 10),
+                BorderBrush = Res<Brush>("BrandSolid"),
+                BorderThickness = new Thickness(0, 0, 0, 2)
+            })
+            { Margin = new Thickness(0, 0, 0, 10) };
         }
 
         private BitmapImage LoadLogo() => ImageData.Decode(_settings.Get(SettingKeys.Company.LogoData, ""));

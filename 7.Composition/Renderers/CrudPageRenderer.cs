@@ -41,18 +41,23 @@ namespace PrimeERP.Composition.Renderers
                 ToolbarAction.Refresh((ICommand)vm.RefreshCommand),
             };
 
-            // المستوى الأول: إجراءات الصفحة.
+            // المستوى الأول: القائمة كتقرير — طباعة وتصدير، بلا حاجة لتحديد سجل.
+            var view = $"{definition.PermissionPrefix}.View";
+            actions.Add(ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(
+                _ => PrintList(definition, services, vm)), view, "طباعة التقرير"));
             actions.Add(ToolbarAction.Export(new PrimeERP.UI.ViewModels.RelayCommand(
-                _ => ExportGrid(definition, services, vm)), $"{definition.PermissionPrefix}.View"));
+                _ => ExportGrid(definition, services, vm)), view, "تصدير التقرير"));
 
-            // المستوى الثاني: إجراء على المستند المحدَّد.
-            if (definition.DocumentDialog != null)
+            // المستوى الثاني يعيش في صفّ الفلترة أدناه، لا هنا — إجراءات الصفحة وإجراءات المستند صفّان لا صفّ.
+            var documentActions = definition.DocumentDialog == null ? null : new List<ToolbarAction>
             {
-                actions.Add(ToolbarAction.SeparatorItem());
-                actions.Add(ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(
+                ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(
                     _ => DocumentPrinter.PrintSelected(definition, services, vm.SelectedItem as object),
-                    _ => vm.SelectedItem != null), $"{definition.PermissionPrefix}.View"));
-            }
+                    _ => vm.SelectedItem != null), view, "طباعة المستند"),
+                ToolbarAction.Export(new PrimeERP.UI.ViewModels.RelayCommand(
+                    _ => DocumentPrinter.ExportSelected(definition, services, vm.SelectedItem as object),
+                    _ => vm.SelectedItem != null), view, "تصدير المستند"),
+            };
 
             // إجراءات الوحدة المُعلَنة (ترحيل قيد، تحريك شيك…) — تعمل على السجل المحدَّد، وتُحدِّث الشبكة بعدها.
             foreach (var rowAction in definition.RowActions ?? new List<RowAction>())
@@ -85,6 +90,9 @@ namespace PrimeERP.Composition.Renderers
 
             if (definition.Filters is { Count: > 0 })
                 filterBar.FiltersContent = BuildFilterControls(definition.Filters, vm, services);
+
+            if (documentActions != null)
+                filterBar.ActionsContent = new ActionToolbar { ButtonsSource = documentActions };
 
             // ShowPagination=false — ترقيم AppDataGrid الداخلي جانب العميل (يُقسِّم القائمة الكاملة محلياً)
             // يتعارض مع الترقيم الحقيقي من طرف الخادم هنا (كل صفحة تُجلَب من GetPaged عند الطلب فقط، لا
@@ -193,6 +201,30 @@ namespace PrimeERP.Composition.Renderers
                 panel.Children.Add(combo);
             }
             return panel;
+        }
+
+        /// <summary>القائمة المعروضة كتقرير مطبوع — نفس أعمدة الشبكة، بترويسة الشركة وتذييلها.</summary>
+        private static void PrintList(ModuleDefinition definition, IServiceProvider services, dynamic vm)
+        {
+            var toast = services.GetRequiredService<IToastService>();
+            var items = ((System.Collections.IEnumerable)vm.Items).Cast<object>().ToList();
+            if (items.Count == 0) { toast.Info("لا بيانات للطباعة"); return; }
+
+            var report = new ReportResult
+            {
+                Title = LocalizationService.Get(definition.TitleKey),
+                Columns = definition.Columns,
+                Rows = items
+            };
+
+            var orientation = definition.Columns.Count > 6
+                ? PrimeERP.Domain.Contracts.PrintOrientation.Landscape
+                : PrimeERP.Domain.Contracts.PrintOrientation.Portrait;
+
+            var printed = services.GetRequiredService<PrimeERP.Application.Services.Print.IPrintService>()
+                .PrintPreview(Print.PrintDocuments.Report(report, orientation));
+
+            if (printed.IsFailure) toast.Error(printed.ErrorMessage);
         }
 
         // صيغة واحدة تُختار من امتداد الملف — نافذة الحفظ نفسها هي القائمة، بلا حوار صيغ إضافي.

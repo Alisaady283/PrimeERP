@@ -12,7 +12,9 @@ namespace PrimeERP.Domain.Contracts
     public static class PrintTotals
     {
         /// <summary>سعر الوحدة ونِسَبها ليست كمّيات تُضاف — فلا تُجمَع في صف الإجمالي.</summary>
-        private static readonly string[] NonAdditive = { "Price", "Cost", "Rate", "Percent", "Discount" };
+        // الأسعار والنِّسَب ليست كمّيات، والأكواد والمعرّفات ليست أرقاماً تُجمَع أصلاً.
+        private static readonly string[] NonAdditive =
+            { "Price", "Cost", "Rate", "Percent", "Discount", "Code", "Id", "No", "Number" };
 
         public static bool IsAdditive(string columnKey) => !NonAdditive.Any(columnKey.Contains);
     }

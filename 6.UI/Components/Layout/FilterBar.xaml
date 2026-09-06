@@ -51,6 +51,9 @@
                                FontFamily="{DynamicResource P.Font.Family.Primary}"
                                Foreground="{DynamicResource TextSecondary}"/>
                 </Button>
+
+                <!-- إجراءات المستند المحدَّد — مستوى ثانٍ منفصل عن إجراءات الصفحة أعلاه. -->
+                <ContentPresenter x:Name="actionsPresenter" Margin="{DynamicResource P.Space.3.Right}" VerticalAlignment="Center"/>
             </StackPanel>
         </Grid>
     </Border>

@@ -42,11 +42,11 @@ namespace PrimeERP.UI.Components.Actions
         public static ToolbarAction Cancel(ICommand command, string permissionKey = null) =>
             Build("cancel", "إلغاء", "IconCancel", "ghost", command, permissionKey, null, "إلغاء العملية");
 
-        public static ToolbarAction Print(ICommand command, string permissionKey = null) =>
-            Build("print", "طباعة", "IconPrint", "secondary", command, permissionKey, "Ctrl+P", "طباعة");
+        public static ToolbarAction Print(ICommand command, string permissionKey = null, string text = "طباعة") =>
+            Build("print:" + text, text, "IconPrint", "secondary", command, permissionKey, null, text);
 
-        public static ToolbarAction Export(ICommand command, string permissionKey = null) =>
-            Build("export", "تصدير", "IconExport", "secondary", command, permissionKey, null, "تصدير البيانات");
+        public static ToolbarAction Export(ICommand command, string permissionKey = null, string text = "تصدير") =>
+            Build("export:" + text, text, "IconExport", "secondary", command, permissionKey, null, text);
 
         public static ToolbarAction Refresh(ICommand command, string permissionKey = null) =>
             Build("refresh", "تحديث", "IconRefresh", "ghost", command, permissionKey, "F5", "تحديث البيانات");

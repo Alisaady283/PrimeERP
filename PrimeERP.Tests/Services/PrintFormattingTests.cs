@@ -56,9 +56,7 @@ namespace PrimeERP.Tests.Services
                 var built = _db.Services.GetRequiredService<IPrintService>().BuildContent(new SamplePrintable());
                 Assert.True(built.IsSuccess, built.ErrorMessage);
 
-                var images = Paragraphs(built.Value.Blocks)
-                    .SelectMany(p => p.Inlines.OfType<InlineUIContainer>())
-                    .Select(c => c.Child).OfType<System.Windows.Controls.Image>().ToList();
+                var images = Elements<System.Windows.Controls.Image>(built.Value.Blocks).ToList();
                 Assert.True(images.Any(i => i.Source != null), "الشعار لم يصل لمستند الطباعة");
             });
         }
@@ -79,6 +77,38 @@ namespace PrimeERP.Tests.Services
                 Assert.Equal(System.Windows.TextAlignment.Right, paragraphs.First(p => TextOf(p) == "صنف تجريبي").TextAlignment);
                 Assert.Equal(System.Windows.TextAlignment.Center, paragraphs.First(p => TextOf(p) == "5").TextAlignment);
             });
+        }
+
+        /// <summary>الرأس عناصر WPF داخل BlockUIContainer لا Inlines — البحث ينزل للشجرة المنطقية هناك.</summary>
+        private static System.Collections.Generic.IEnumerable<T> Elements<T>(BlockCollection blocks)
+            where T : System.Windows.DependencyObject
+        {
+            foreach (var block in blocks)
+            {
+                if (block is BlockUIContainer container && container.Child != null)
+                    foreach (var found in Descendants<T>(container.Child)) yield return found;
+
+                if (block is Table table)
+                    foreach (var cell in table.RowGroups.SelectMany(g => g.Rows).SelectMany(r => r.Cells))
+                        foreach (var found in Elements<T>(cell.Blocks)) yield return found;
+
+                if (block is Section section)
+                    foreach (var found in Elements<T>(section.Blocks)) yield return found;
+
+                if (block is Paragraph paragraph)
+                    foreach (var inline in paragraph.Inlines.OfType<InlineUIContainer>())
+                        foreach (var found in Descendants<T>(inline.Child)) yield return found;
+            }
+        }
+
+        private static System.Collections.Generic.IEnumerable<T> Descendants<T>(System.Windows.DependencyObject node)
+            where T : System.Windows.DependencyObject
+        {
+            if (node == null) yield break;
+            if (node is T typed) yield return typed;
+
+            foreach (var child in System.Windows.LogicalTreeHelper.GetChildren(node).OfType<System.Windows.DependencyObject>())
+                foreach (var found in Descendants<T>(child)) yield return found;
         }
 
         // FlowDocument شجرة كتل لا شجرة منطقية — LogicalTreeHelper لا يصل لخلايا الجداول.

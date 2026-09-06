@@ -69,7 +69,33 @@ namespace PrimeERP.Composition.Renderers
         }
 
 
-        public static void PrintSelected(ModuleDefinition definition, IServiceProvider services, object item)
+        public static void PrintSelected(ModuleDefinition definition, IServiceProvider services, object item) =>
+            WithDocument(definition, services, item, (printable, toast) =>
+            {
+                var printed = services.GetRequiredService<IPrintService>().PrintPreview(printable);
+                if (printed.IsFailure) toast.Error(printed.ErrorMessage);
+            });
+
+        /// <summary>PDF للمستند المحدَّد وحده — لا للقائمة.</summary>
+        public static void ExportSelected(ModuleDefinition definition, IServiceProvider services, object item) =>
+            WithDocument(definition, services, item, (printable, toast) =>
+            {
+                var dialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    FileName = $"{printable.DocumentTitle}-{printable.DocumentSubtitle}",
+                    Filter = "PDF (*.pdf)|*.pdf"
+                };
+                if (dialog.ShowDialog() != true) return;
+
+                var exported = services.GetRequiredService<IPrintService>().ExportToPdf(printable, dialog.FileName);
+                if (exported.IsFailure) { toast.Error(exported.ErrorMessage); return; }
+
+                toast.Success($"تم التصدير إلى {System.IO.Path.GetFileName(dialog.FileName)}");
+            });
+
+        /// <summary>يجلب المستند الكامل ويبنيه مرة واحدة — الطباعة والتصدير يختلفان في الوجهة فقط.</summary>
+        private static void WithDocument(ModuleDefinition definition, IServiceProvider services, object item,
+            Action<IPrintable, IToastService> use)
         {
             var toast = services.GetRequiredService<IToastService>();
             var def = definition.DocumentDialog;
@@ -96,9 +122,7 @@ namespace PrimeERP.Composition.Renderers
                 ? VoucherDocument(voucher, definition.Key == "Receipts", settings)
                 : PrintDocuments.Trade(def, title, document, PaperFrom(settings, doc: document));
 
-            var printed = services.GetRequiredService<IPrintService>().PrintPreview(printable);
-
-            if (printed.IsFailure) toast.Error(printed.ErrorMessage);
+            use(printable, toast);
         }
     }
 }

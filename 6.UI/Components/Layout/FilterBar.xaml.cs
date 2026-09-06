@@ -10,6 +10,10 @@ namespace PrimeERP.UI.Components.Layout
             DependencyProperty.Register(nameof(SearchPlaceholder), typeof(string), typeof(FilterBar),
                 new PropertyMetadata("", OnSearchPlaceholderChanged));
 
+        public static readonly DependencyProperty ActionsContentProperty =
+            DependencyProperty.Register(nameof(ActionsContent), typeof(object), typeof(FilterBar),
+                new PropertyMetadata(null, OnActionsContentChanged));
+
         public static readonly DependencyProperty FiltersContentProperty =
             DependencyProperty.Register(nameof(FiltersContent), typeof(object), typeof(FilterBar),
                 new PropertyMetadata(null, OnFiltersContentChanged));
@@ -20,6 +24,9 @@ namespace PrimeERP.UI.Components.Layout
 
         public string SearchPlaceholder { get => (string)GetValue(SearchPlaceholderProperty); set => SetValue(SearchPlaceholderProperty, value); }
         public object FiltersContent    { get => GetValue(FiltersContentProperty);              set => SetValue(FiltersContentProperty, value); }
+
+        /// <summary>إجراءات المستند المحدَّد — المستوى الثاني.</summary>
+        public object ActionsContent    { get => GetValue(ActionsContentProperty);              set => SetValue(ActionsContentProperty, value); }
         public int?   ResultCount       { get => (int?)GetValue(ResultCountProperty);           set => SetValue(ResultCountProperty, value); }
 
         /// <summary>يُطلق بعد فترة التهدئة الخاصة بـ AppSearchBox — استخدمه لتصفية البيانات فعلياً.</summary>
@@ -39,6 +46,9 @@ namespace PrimeERP.UI.Components.Layout
 
         private static void OnFiltersContentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
             ((FilterBar)d).filtersPresenter.Content = e.NewValue;
+
+        private static void OnActionsContentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+            ((FilterBar)d).actionsPresenter.Content = e.NewValue;
 
         private static void OnResultCountChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
