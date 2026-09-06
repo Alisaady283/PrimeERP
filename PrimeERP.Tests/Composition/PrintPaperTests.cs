@@ -78,6 +78,25 @@ namespace PrimeERP.Tests.Composition
         }
 
         [Fact]
+        public void CopiesAfterTheOriginalCarryAWatermark()
+        {
+            var printable = Build(1, new PrintDocuments.PaperOptions { CopyLabels = new() { "أصل", "صورة العميل" } });
+
+            // الفحص داخل خيط الإنشاء — عناصر WPF مملوكة لخيطها.
+            var rotatedStamps = StaThreadHelper.Run(() =>
+            {
+                var built = _db.Services.GetRequiredService<IPrintService>().Build(printable);
+                Assert.True(built.IsSuccess, built.ErrorMessage);
+
+                return built.Value.Pages
+                    .SelectMany(p => p.Child.Children.OfType<System.Windows.Controls.TextBlock>())
+                    .Count(t => t.Text == "صورة العميل" && t.RenderTransform is System.Windows.Media.RotateTransform);
+            });
+
+            Assert.True(rotatedStamps > 0, "لا ختم على النسخة");
+        }
+
+        [Fact]
         public void TheBarcodeIsEncodedFromTheDocumentNumber()
         {
             var printable = Build(1, new PrintDocuments.PaperOptions { BarcodeText = "INV-7" });

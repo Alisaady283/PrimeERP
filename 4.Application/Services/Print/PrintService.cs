@@ -93,8 +93,13 @@ namespace PrimeERP.Application.Services.Print
                 // كل نسخة تُبنى كصفحاتها الخاصة وتُضاف لمستند واحد — نقل PageContent بين مستندين لا يعمل.
                 var combined = new FixedDocument();
                 foreach (var label in labels)
-                    foreach (var page in BuildPages(BuildFlowDocument(document, label), pageSize, document.ShowPageNumbers))
+                {
+                    // الأصل بلا ختم؛ ما بعده صورة تُميَّز بختم قطري.
+                    var watermark = labels.IndexOf(label) == 0 ? null : label;
+
+                    foreach (var page in BuildPages(BuildFlowDocument(document, label), pageSize, document.ShowPageNumbers, watermark))
                         combined.Pages.Add(page);
+                }
 
                 return Result.Ok(combined);
             }
@@ -639,7 +644,26 @@ namespace PrimeERP.Application.Services.Print
         }
 
         /// <summary>صفحات غير مرتبطة بمستند — PageContent لا يقبل مستندين، فبناء النسخ يحتاجها حرّة.</summary>
-        private static List<PageContent> BuildPages(FlowDocument flowDocument, Size pageSize, bool showPageNumbers)
+        /// <summary>ختم قطري باهت يميّز الصورة عن الأصل بلا حجب المحتوى.</summary>
+        private static UIElement Watermark(string text, Size pageSize)
+        {
+            var label = new System.Windows.Controls.TextBlock
+            {
+                Text = text,
+                FontSize = 64,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Colors.Gray) { Opacity = 0.12 },
+                FlowDirection = FlowDirection.RightToLeft,
+                RenderTransformOrigin = new Point(0.5, 0.5),
+                RenderTransform = new RotateTransform(-35)
+            };
+
+            FixedPage.SetLeft(label, pageSize.Width * 0.18);
+            FixedPage.SetTop(label, pageSize.Height * 0.42);
+            return label;
+        }
+
+        private static List<PageContent> BuildPages(FlowDocument flowDocument, Size pageSize, bool showPageNumbers, string watermark = null)
         {
             flowDocument.PageWidth  = pageSize.Width;
             flowDocument.PageHeight = pageSize.Height;
@@ -682,6 +706,8 @@ namespace PrimeERP.Application.Services.Print
                     FixedPage.SetTop(pageText, pageSize.Height - 24);
                     fixedPage.Children.Add(pageText);
                 }
+
+                if (!string.IsNullOrWhiteSpace(watermark)) fixedPage.Children.Add(Watermark(watermark, pageSize));
 
                 var pageContent = new PageContent();
                 ((IAddChild)pageContent).AddChild(fixedPage);

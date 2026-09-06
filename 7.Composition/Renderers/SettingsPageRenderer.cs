@@ -78,6 +78,7 @@ namespace PrimeERP.Composition.Renderers
                 }
 
                 if (cat.Category == "Backup") panel.Children.Add(BuildBackupPanel(services, toast));
+                if (cat.Category == "Print") panel.Children.Add(BuildChequeCalibration(services, toast));
 
                 return new AppTabItem { Header = LocalizationService.Get(cat.TitleKey), Content = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
             }).ToList();
@@ -122,6 +123,39 @@ namespace PrimeERP.Composition.Renderers
 
             return root;
         }
+
+        /// <summary>ورقة شبكة سنتيمترية تُطبَع على ورق الشيك لقياس إزاحة الطابعة ثم تُحفَظ في الإعدادات.</summary>
+        private static FrameworkElement BuildChequeCalibration(IServiceProvider services, IToastService toast)
+        {
+            var button = new Btn { Text = "طباعة ورقة معايرة الشيك", Variant = "secondary", Size = "sm", Margin = new Thickness(0, 8, 0, 0) };
+            button.Click += (_, __) =>
+            {
+                var settings = services.GetRequiredService<ISettingsService>();
+                var layout = new PrimeERP.Application.Services.Print.ChequeLayout
+                {
+                    OffsetX = ReadNumber(settings, SettingKeys.Print.ChequeOffsetX),
+                    OffsetY = ReadNumber(settings, SettingKeys.Print.ChequeOffsetY),
+                    Fields =
+                    {
+                        new() { Text = "اسم المستفيد", X = 3.0, Y = 1.6 },
+                        new() { Text = "المبلغ رقماً", X = 12.5, Y = 1.6 },
+                        new() { Text = "المبلغ كتابةً", X = 3.0, Y = 2.8 },
+                        new() { Text = "التاريخ", X = 12.5, Y = 0.8 },
+                    }
+                };
+
+                var sheet = services.GetRequiredService<PrimeERP.Application.Services.Print.IChequePrinter>().BuildCalibrationSheet(layout);
+                if (sheet.IsFailure) { toast.Error(sheet.ErrorMessage); return; }
+
+                services.GetRequiredService<PrimeERP.Application.Services.Print.IPrintService>()
+                    .DialogHost?.ShowPreview(sheet.Value, "معايرة الشيك");
+            };
+
+            return new StackPanel { Width = 500, Children = { button } };
+        }
+
+        private static double ReadNumber(ISettingsService settings, string key) =>
+            double.TryParse(settings.Get<string>(key, "0"), out var value) ? value : 0;
 
         private static FrameworkElement BuildBackupPanel(IServiceProvider services, IToastService toast)
         {
