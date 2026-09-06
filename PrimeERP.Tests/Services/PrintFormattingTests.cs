@@ -62,6 +62,41 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
+        public void TheHeader_KeepsTheLogoLeft_AndCompanyDataAtTheRightEdge()
+        {
+            StaThreadHelper.Run(() =>
+            {
+                const string pixel = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+                var settings = _db.Services.GetRequiredService<ISettingsService>();
+                settings.Set(SettingKeys.Company.LogoData, pixel);
+                settings.Set(SettingKeys.Company.Name, "شركة برايم للتجارة والتوزيع");
+
+                var built = _db.Services.GetRequiredService<IPrintService>().BuildContent(new SamplePrintable());
+                Assert.True(built.IsSuccess, built.ErrorMessage);
+
+                const double width = 714;
+                var header = (System.Windows.FrameworkElement)built.Value.Blocks.OfType<BlockUIContainer>().First().Child;
+                header.Measure(new System.Windows.Size(width, double.PositiveInfinity));
+                header.Arrange(new System.Windows.Rect(0, 0, width, header.DesiredSize.Height));
+                header.UpdateLayout();
+
+                // الترويسة تُرسم داخل مستند RTL، فإحداثيات الحاوية معكوسة عن المرئي — هذا يعيدها للمرئي.
+                (double Left, double Right) Visual(System.Windows.FrameworkElement element)
+                {
+                    var box = element.TransformToAncestor(header).TransformBounds(new System.Windows.Rect(element.RenderSize));
+                    return (width - box.X - box.Width, width - box.X);
+                }
+
+                var logo = Visual(Descendants<System.Windows.Controls.Image>(header).First());
+                var company = Visual(Descendants<System.Windows.Controls.StackPanel>(header).First());
+
+                Assert.True(logo.Left < 2, $"الشعار ليس على حافة اليسار: {logo.Left:F0}");
+                Assert.True(company.Right > width - 2, $"بيانات الشركة لا تبلغ حافة اليمين: {company.Right:F0}");
+                Assert.True(company.Left - logo.Right > width / 3, "الطرفان ملتصقان ككتلة واحدة بدل طرفَي الورقة");
+            });
+        }
+
+        [Fact]
         public void TableHeaders_AreCentred_AndTextCellsAreRightAligned()
         {
             StaThreadHelper.Run(() =>

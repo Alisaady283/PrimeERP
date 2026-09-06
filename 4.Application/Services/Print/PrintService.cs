@@ -212,43 +212,46 @@ namespace PrimeERP.Application.Services.Print
                 if (!string.IsNullOrWhiteSpace(value)) details.Add(string.IsNullOrEmpty(label) ? value : label + ": " + value);
             }
 
-            // تخطيط Grid لا جدول FlowDocument: الأخير لا يوزّع العرض النسبي بثبات، فكان عمود البيانات
-            // ينضغط حتى يتكسّر اسم الشركة حرفاً في كل سطر.
-            var text = new StackPanel { HorizontalAlignment = HorizontalAlignment.Right };
-            text.Children.Add(new System.Windows.Controls.TextBlock
+            // الاتجاه هنا LeftToRight عمداً: RTL يعكس المواضع والمحاذاة معاً، فكان HorizontalAlignment.Right
+            // يعني يمين العمود بعد الانعكاس أي جنب الشعار، فيلتصق الطرفان ككتلة واحدة. المواضع مطلقة الآن،
+            // والعربية تبقى صحيحة لأن اتجاه كل سطر نصّي وحده RTL.
+            System.Windows.Controls.TextBlock Line(string value, string size, string colour, bool bold = false) => new()
             {
-                Text = name,
+                Text = value,
+                FlowDirection = FlowDirection.RightToLeft,
+                HorizontalAlignment = HorizontalAlignment.Right,
                 TextWrapping = TextWrapping.NoWrap,
-                FontSize = Res<double>("FontSizeXl"),
-                FontWeight = Res<FontWeight>("FontWeightBold"),
-                Foreground = Res<Brush>("BrandSolid")
-            });
+                FontSize = Res<double>(size),
+                FontWeight = bold ? Res<FontWeight>("FontWeightBold") : FontWeights.Normal,
+                Foreground = Res<Brush>(colour)
+            };
 
-            foreach (var detail in details)
-                text.Children.Add(new System.Windows.Controls.TextBlock
-                {
-                    Text = detail,
-                    TextWrapping = TextWrapping.NoWrap,
-                    FontSize = Res<double>("FontSizeSm"),
-                    Foreground = Res<Brush>("TextSecondary")
-                });
+            var text = new StackPanel
+            {
+                FlowDirection = FlowDirection.LeftToRight,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center
+            };
 
-            var layout = new Grid { FlowDirection = FlowDirection.RightToLeft };
-            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            text.Children.Add(Line(name, "FontSizeXl", "BrandSolid", bold: true));
+            foreach (var detail in details) text.Children.Add(Line(detail, "FontSizeSm", "TextSecondary"));
+
+            var layout = new Grid { FlowDirection = FlowDirection.LeftToRight };
             layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            Grid.SetColumn(text, 0);
+            Grid.SetColumn(text, 1);
             layout.Children.Add(text);
 
             if (logo != null)
             {
                 var image = new System.Windows.Controls.Image
                 {
-                    Source = logo, MaxWidth = 130, MaxHeight = 64,
+                    Source = logo, MaxWidth = 170, MaxHeight = 72,
                     Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center
                 };
 
-                Grid.SetColumn(image, 1);
+                Grid.SetColumn(image, 0);
                 layout.Children.Add(image);
             }
 
