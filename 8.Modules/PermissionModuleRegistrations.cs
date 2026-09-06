@@ -46,7 +46,7 @@ namespace PrimeERP.Modules
                         services.GetRequiredService<IPermissionAdminService>().SetRolePermissions(roleId, keys);
                         return Result.Ok();
                     },
-                    OnCheckChanged = (node, roots) => ApplyViewGate(node, roots, on: NodeCheckState.Checked),
+                    ApplyRules = roots => SyncModules(roots, NodeCheckState.Checked),
                     Actions = new List<TreeCheckListAction>
                     {
                         new()
@@ -112,7 +112,7 @@ namespace PrimeERP.Modules
                         }
                         return Result.Ok();
                     },
-                    OnCheckChanged = (node, roots) => ApplyViewGate(node, roots, on: NodeCheckState.Granted),
+                    ApplyRules = roots => SyncModules(roots, NodeCheckState.Granted),
                     Actions = new List<TreeCheckListAction>
                     {
                         new()
@@ -134,12 +134,6 @@ namespace PrimeERP.Modules
             foreach (var module in roots) SyncModule(module, on);
         }
 
-        private static void ApplyViewGate(TreeNodeViewModel node, List<TreeNodeViewModel> roots, NodeCheckState on)
-        {
-            var module = roots.FirstOrDefault(r => r.Children.Contains(node)) ?? roots.FirstOrDefault(r => r == node);
-            if (module != null) SyncModule(module, on);
-        }
-
         private static void SyncModule(TreeNodeViewModel module, NodeCheckState on)
         {
             var view = module.Children.FirstOrDefault(child => child.Id == PermissionRules.ViewKeyOf(child.Id));
@@ -158,8 +152,16 @@ namespace PrimeERP.Modules
 
         private static void SetAll(List<TreeNodeViewModel> nodes, NodeCheckState state)
         {
-            foreach (var node in PermissionTreeFactory.KeyNodes(nodes))
-                node.CheckState = state;
+            foreach (var module in nodes)
+            {
+                module.CheckState = state;
+                foreach (var node in module.Children)
+                {
+                    // التعطيل يُرفع أولاً وإلا بقيت عقدة معطَّلة على حالتها القديمة بعد «تحديد الكل».
+                    node.IsCheckEnabled = true;
+                    node.CheckState = state;
+                }
+            }
         }
     }
 }

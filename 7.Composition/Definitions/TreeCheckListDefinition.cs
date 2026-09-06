@@ -23,9 +23,9 @@ namespace PrimeERP.Composition.Definitions
         /// <summary>أزرار إضافية بجانب الحفظ (نسخ من دور، إعادة للموروث...).</summary>
         public List<TreeCheckListAction> Actions { get; init; } = new();
 
-        /// <summary>يُستدعى بعد كل تغيير تأشير: العقدة المتغيّرة وكل الجذور — لفرض قواعد بين العقد
-        /// (مثل: لا فعل بلا عرض) لحظةَ النقر لا عند الحفظ.</summary>
-        public Action<TreeNodeViewModel, List<TreeNodeViewModel>> OnCheckChanged { get; init; }
+        /// <summary>قواعد بين العقد (مثل: لا فعل بلا عرض) — تُطبَّق بعد البناء وبعد كل نقرة وبعد كل
+        /// إجراء جماعي. موضع واحد لا ثلاثة، وإلا سرت القاعدة في مسار وسقطت في آخر.</summary>
+        public Action<List<TreeNodeViewModel>> ApplyRules { get; init; }
 
         public string PermissionKey { get; init; }
     }

@@ -53,14 +53,15 @@ namespace PrimeERP.Composition.Renderers
                 var sourceId = SelectedSourceId();
                 nodes.Clear();
                 if (sourceId > 0) nodes.AddRange(def.BuildTree(services, sourceId));
+                def.ApplyRules?.Invoke(nodes);
                 tree.ItemsSource = nodes;
                 RefreshSummary();
             }
 
             sourcePicker.SelectionChanged += (_, __) => LoadTree();
-            tree.CheckStateChanged += (_, node) =>
+            tree.CheckStateChanged += (_, __) =>
             {
-                def.OnCheckChanged?.Invoke(node, nodes);
+                def.ApplyRules?.Invoke(nodes);
                 RefreshSummary();
             };
 
@@ -74,6 +75,7 @@ namespace PrimeERP.Composition.Renderers
                 {
                     if (SelectedSourceId() == 0) return;
                     action.Run(services, SelectedSourceId(), nodes);
+                    def.ApplyRules?.Invoke(nodes);
                     RefreshSummary();
                 };
                 actions.Children.Add(button);

@@ -96,6 +96,43 @@ namespace PrimeERP.Tests.Composition
             });
         }
 
+        [Fact]
+        public void SelectAllThenClearAll_ReachEveryNodeIncludingSections()
+        {
+            WpfApplicationFixture.Run(() =>
+            {
+                UIServices.Initialize(_db.Services);
+                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                PermissionDb.InsertRole("Assistant", "مساعد");
+
+                var definition = _db.Services.GetRequiredService<IModuleRegistry>().Get("RolePermissions");
+                var page = TreeCheckListRenderer.Render(definition, _db.Services);
+                page.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
+                page.Measure(new Size(1200, 800));
+                page.Arrange(new Rect(0, 0, 1200, 800));
+                page.UpdateLayout();
+
+                var tree = Descendants<AppTreeView>(page).Single();
+                var buttons = Descendants<PrimeERP.UI.Components.Actions.AppButton>(page).ToList();
+
+                void Click(string text) => Descendants<System.Windows.Controls.Button>(
+                    buttons.Single(b => b.Text == text)).First().RaiseEvent(
+                        new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+
+                var roots = tree.ItemsSource.ToList();
+                var leaves = roots.SelectMany(r => r.Children).ToList();
+
+                Click("تحديد الكل");
+                Assert.All(leaves, n => Assert.Equal(NodeCheckState.Checked, n.CheckState));
+                Assert.All(roots, r => Assert.Equal(NodeCheckState.Checked, r.CheckState));
+                Assert.All(leaves, n => Assert.True(n.IsCheckEnabled));
+
+                Click("إلغاء الكل");
+                Assert.All(leaves, n => Assert.Equal(NodeCheckState.Unchecked, n.CheckState));
+                Assert.All(roots, r => Assert.Equal(NodeCheckState.Unchecked, r.CheckState));
+            });
+        }
+
         private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
         {
             if (root is T typed) yield return typed;
