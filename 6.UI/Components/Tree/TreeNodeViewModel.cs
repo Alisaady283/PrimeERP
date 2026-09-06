@@ -84,6 +84,15 @@ namespace PrimeERP.UI.Components.Tree
         /// <summary>نص توضيحي بجانب الحالة الموروثة — مثال "(الدور: مسموح)".</summary>
         public string InheritedHint { get; set; }
 
+        private bool _inheritedAllowed;
+        /// <summary>الموروث المسموح يتمايز بصرياً عن الممنوع — بلا ذلك يبدوان فارغَين فيظنّ المستخدم أن
+        /// لا شيء ممنوح، فيضغط «تحديد الكل» ويحوّل الوراثة كلها لمنح صريح.</summary>
+        public bool InheritedAllowed
+        {
+            get => _inheritedAllowed;
+            set { if (_inheritedAllowed == value) return; _inheritedAllowed = value; OnPropertyChanged(); }
+        }
+
         public void AddChild(TreeNodeViewModel child)
         {
             child.Parent = this;

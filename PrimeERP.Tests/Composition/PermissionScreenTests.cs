@@ -133,6 +133,49 @@ namespace PrimeERP.Tests.Composition
             });
         }
 
+        [Fact]
+        public void CheckingView_OnlyEnablesTheOthers_AndClearingItClearsThemAll()
+        {
+            WpfApplicationFixture.Run(() =>
+            {
+                UIServices.Initialize(_db.Services);
+                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                PermissionDb.InsertRole("Assistant", "مساعد");
+
+                var definition = _db.Services.GetRequiredService<IModuleRegistry>().Get("RolePermissions");
+                var page = TreeCheckListRenderer.Render(definition, _db.Services);
+                page.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
+                page.Measure(new Size(1200, 800));
+                page.Arrange(new Rect(0, 0, 1200, 800));
+                page.UpdateLayout();
+
+                var tree = Descendants<AppTreeView>(page).Single();
+                var sales = tree.ItemsSource.Single(r => r.Id == "Sales");
+                var view = sales.Children.First();
+                var others = sales.Children.Skip(1).ToList();
+
+                tree.Cycle(view);
+
+                // يفتح فقط: لا يؤشّر شيئاً منها.
+                Assert.True(others.All(n => n.IsCheckEnabled), "الأزرار لم تُفتح بعد تأشير العرض");
+                Assert.All(others, n => Assert.Equal(NodeCheckState.Unchecked, n.CheckState));
+
+                // ويُسمح بالتأشير والإلغاء لكلٍّ على حدة.
+                var print = others.Single(n => n.Id == "Sales.Print");
+                tree.Cycle(print);
+                Assert.Equal(NodeCheckState.Checked, print.CheckState);
+                tree.Cycle(print);
+                Assert.Equal(NodeCheckState.Unchecked, print.CheckState);
+
+                tree.Cycle(print);
+                tree.Cycle(others.Single(n => n.Id == "Sales.Create"));
+                tree.Cycle(view);   // إلغاء العرض يلغي الكل
+
+                Assert.All(sales.Children, n => Assert.Equal(NodeCheckState.Unchecked, n.CheckState));
+                Assert.All(others, n => Assert.False(n.IsCheckEnabled));
+            });
+        }
+
         private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
         {
             if (root is T typed) yield return typed;

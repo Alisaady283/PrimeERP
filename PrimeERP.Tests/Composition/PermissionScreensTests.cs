@@ -96,7 +96,7 @@ namespace PrimeERP.Tests.Composition
 
             var inherited = keyNodes.First(n => n.Id == "Suppliers.View");
             Assert.Equal(NodeCheckState.Inherited, inherited.CheckState);
-            Assert.Equal("(الدور: مسموح)", inherited.InheritedHint);
+            Assert.Equal("(من الدور)", inherited.InheritedHint);
 
             keyNodes.First(n => n.Id == "Suppliers.View").CheckState = NodeCheckState.Revoked;
             keyNodes.First(n => n.Id == "Products.Create").CheckState = NodeCheckState.Granted;

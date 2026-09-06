@@ -91,8 +91,10 @@ namespace PrimeERP.Modules
                                 _ => NodeCheckState.Inherited
                             };
 
-                            if (node.CheckState == NodeCheckState.Inherited)
-                                node.InheritedHint = admin.IsInheritedFromRole(userId, node.Id) ? "(الدور: مسموح)" : "(الدور: ممنوع)";
+                            if (node.CheckState != NodeCheckState.Inherited) continue;
+
+                            node.InheritedAllowed = admin.IsInheritedFromRole(userId, node.Id);
+                            node.InheritedHint = node.InheritedAllowed ? "(من الدور)" : "";
                         }
 
                         SyncModules(roots, NodeCheckState.Granted);
@@ -139,10 +141,14 @@ namespace PrimeERP.Modules
             var view = module.Children.FirstOrDefault(child => child.Id == PermissionRules.ViewKeyOf(child.Id));
             if (view == null) return;
 
-            var open = view.CheckState == on;
+            // البوّابة تُقاس بالعرض الفعّال: منحٌ صريح، أو موروث يسمح به الدور. المستخدم يرى القسم في
+            // الحالتين، فحجب باقي إجراءاته في الثانية منعٌ بلا سبب.
+            var open = view.CheckState == on ||
+                       (view.CheckState == NodeCheckState.Inherited && view.InheritedAllowed);
 
             foreach (var action in module.Children.Where(child => child != view))
             {
+                // مفتوح = يُسمح بالتأشير والإلغاء، لا أن يُؤشَّر. مغلق = يُلغى ويُعطَّل.
                 action.IsCheckEnabled = open;
                 if (!open) action.CheckState = view.CheckState;
             }
