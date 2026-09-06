@@ -13,8 +13,11 @@ using PrimeERP.Composition.Registry;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Localization;
+using PrimeERP.Application.Services;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Components.Tree;
+
+using F = PrimeERP.Modules.FinancialStatementFactory;
 
 namespace PrimeERP.Modules
 {
@@ -344,17 +347,31 @@ namespace PrimeERP.Modules
                         var result = journal.GetTrialBalance(from, to);
                         if (!result.IsSuccess) return Result.Fail<ReportResult>(result.ErrorMessage);
 
-                        var revenue = result.Value.Where(l => l.IsLeaf && l.Type == AccountType.Revenue && (l.PeriodDebit != 0 || l.PeriodCredit != 0))
-                            .Select(l => new FinancialLineRow { Code = l.Code, Name = l.Name, Amount = l.PeriodCredit - l.PeriodDebit }).ToList();
-                        var expense = result.Value.Where(l => l.IsLeaf && l.Type == AccountType.Expense && (l.PeriodDebit != 0 || l.PeriodCredit != 0))
-                            .Select(l => new FinancialLineRow { Code = l.Code, Name = l.Name, Amount = l.PeriodDebit - l.PeriodCredit }).ToList();
+                        // بالوظيفة كما في IFRS 18: إيرادات ناقص تكلفة البضاعة المباعة = مجمل الربح،
+                        // ناقص المصروفات التشغيلية = الربح التشغيلي، ثم البنود الأخرى = صافي الربح.
+                        var cogsAccount = services.GetRequiredService<ISettingsService>().Get(SettingKeys.Accounts.COGS, "");
 
-                        var totalRevenue = revenue.Sum(r => r.Amount);
-                        var totalExpense = expense.Sum(r => r.Amount);
+                        var sales     = F.PeriodUnder(result.Value, AccountType.Revenue, true,  F.StartsWith("41"));
+                        var cogs      = string.IsNullOrWhiteSpace(cogsAccount)
+                                      ? new List<F.Line>()
+                                      : F.PeriodUnder(result.Value, AccountType.Expense, false, F.StartsWith(cogsAccount));
+                        var operating = F.PeriodUnder(result.Value, AccountType.Expense, false, F.StartsWithBut("51", cogsAccount));
+                        var otherIn   = F.PeriodUnder(result.Value, AccountType.Revenue, true,  F.StartsWith("42"));
+                        var otherOut  = F.PeriodUnder(result.Value, AccountType.Expense, false, F.StartsWithBut("52", cogsAccount));
 
-                        var rows = Section(LocalizationService.Get("Str.Revenue"), revenue)
-                            .Concat(Section(LocalizationService.Get("Str.Expense"), expense))
-                            .Append(new FinancialLineRow { Name = LocalizationService.Get("Str.NetIncome"), Amount = totalRevenue - totalExpense })
+                        var totalRevenue    = sales.Sum(r => r.Amount);
+                        var grossProfit     = totalRevenue - cogs.Sum(r => r.Amount);
+                        var operatingProfit = grossProfit - operating.Sum(r => r.Amount);
+                        var netIncome       = operatingProfit + otherIn.Sum(r => r.Amount) - otherOut.Sum(r => r.Amount);
+
+                        var rows = F.Section("الإيرادات", sales)
+                            .Concat(F.Section("تكلفة البضاعة المباعة", cogs))
+                            .Append(F.Result("مجمل الربح", grossProfit))
+                            .Concat(F.Section("المصروفات التشغيلية", operating))
+                            .Append(F.Result("الربح التشغيلي", operatingProfit))
+                            .Concat(F.Section("إيرادات أخرى", otherIn))
+                            .Concat(F.Section("مصروفات أخرى", otherOut))
+                            .Append(F.Result(LocalizationService.Get("Str.NetIncome"), netIncome))
                             .ToList();
 
                         return Result.Ok(new ReportResult
@@ -364,9 +381,9 @@ namespace PrimeERP.Modules
                             Rows = rows,
                             Totals = new()
                             {
-                                ["Revenue"] = $"{LocalizationService.Get("Str.Revenue")}: {totalRevenue:N2}",
-                                ["Expense"] = $"{LocalizationService.Get("Str.Expense")}: {totalExpense:N2}",
-                                ["Net"] = $"{LocalizationService.Get("Str.NetIncome")}: {(totalRevenue - totalExpense):N2}"
+                                ["Gross"] = $"مجمل الربح: {grossProfit:N2}",
+                                ["Operating"] = $"الربح التشغيلي: {operatingProfit:N2}",
+                                ["Net"] = $"{LocalizationService.Get("Str.NetIncome")}: {netIncome:N2}"
                             }
                         });
                     }
@@ -390,17 +407,25 @@ namespace PrimeERP.Modules
                         var result = journal.GetTrialBalance(new DateTime(1900, 1, 1), asOf);
                         if (!result.IsSuccess) return Result.Fail<ReportResult>(result.ErrorMessage);
 
-                        FinancialLineRow ToRow(TrialBalanceLine l) => new() { Code = l.Code, Name = l.Name, Amount = l.ClosingDebit - l.ClosingCredit };
+                        // مصنَّف كما يوجب IAS 1: متداول وغير متداول منفصلان في الأصول والخصوم.
+                        var nonCurrentAssets = F.Under(result.Value, AccountType.Asset, false, F.StartsWith("11"));
+                        var currentAssets    = F.Under(result.Value, AccountType.Asset, false, F.StartsWith("12"));
+                        var currentLiab      = F.Under(result.Value, AccountType.Liability, true, F.StartsWith("21"));
+                        var longTermLiab     = F.Under(result.Value, AccountType.Liability, true, F.StartsWith("22"));
+                        var equity           = F.Under(result.Value, AccountType.Equity, true, _ => true);
 
-                        var assets = result.Value.Where(l => l.IsLeaf && l.Type == AccountType.Asset && (l.ClosingDebit != 0 || l.ClosingCredit != 0)).Select(ToRow).ToList();
-                        var liabilities = result.Value.Where(l => l.IsLeaf && l.Type == AccountType.Liability && (l.ClosingDebit != 0 || l.ClosingCredit != 0))
-                            .Select(l => new FinancialLineRow { Code = l.Code, Name = l.Name, Amount = l.ClosingCredit - l.ClosingDebit }).ToList();
-                        var equity = result.Value.Where(l => l.IsLeaf && l.Type == AccountType.Equity && (l.ClosingDebit != 0 || l.ClosingCredit != 0))
-                            .Select(l => new FinancialLineRow { Code = l.Code, Name = l.Name, Amount = l.ClosingCredit - l.ClosingDebit }).ToList();
+                        var assetsTotal      = nonCurrentAssets.Sum(r => r.Amount) + currentAssets.Sum(r => r.Amount);
+                        var liabilitiesTotal = currentLiab.Sum(r => r.Amount) + longTermLiab.Sum(r => r.Amount);
+                        var equityTotal      = equity.Sum(r => r.Amount);
 
-                        var rows = Section(LocalizationService.Get("Str.Assets"), assets)
-                            .Concat(Section(LocalizationService.Get("Str.Liabilities"), liabilities))
-                            .Concat(Section(LocalizationService.Get("Str.Equity"), equity))
+                        var rows = F.Section("أصول غير متداولة", nonCurrentAssets)
+                            .Concat(F.Section("أصول متداولة", currentAssets))
+                            .Append(F.Result("إجمالي الأصول", assetsTotal))
+                            .Concat(F.Section("خصوم متداولة", currentLiab))
+                            .Concat(F.Section("خصوم طويلة الأجل", longTermLiab))
+                            .Append(F.Result("إجمالي الخصوم", liabilitiesTotal))
+                            .Concat(F.Section(LocalizationService.Get("Str.Equity"), equity))
+                            .Append(F.Result("إجمالي الخصوم وحقوق الملكية", liabilitiesTotal + equityTotal))
                             .ToList();
 
                         return Result.Ok(new ReportResult
@@ -410,9 +435,11 @@ namespace PrimeERP.Modules
                             Rows = rows,
                             Totals = new()
                             {
-                                ["Assets"] = $"{LocalizationService.Get("Str.Assets")}: {assets.Sum(r => r.Amount):N2}",
-                                ["Liabilities"] = $"{LocalizationService.Get("Str.Liabilities")}: {liabilities.Sum(r => r.Amount):N2}",
-                                ["Equity"] = $"{LocalizationService.Get("Str.Equity")}: {equity.Sum(r => r.Amount):N2}"
+                                ["Assets"] = $"إجمالي الأصول: {assetsTotal:N2}",
+                                ["Sources"] = $"الخصوم وحقوق الملكية: {(liabilitiesTotal + equityTotal):N2}",
+                                ["Check"] = assetsTotal == liabilitiesTotal + equityTotal
+                                    ? "الميزانية متوازنة"
+                                    : $"فرق غير متوازن: {(assetsTotal - liabilitiesTotal - equityTotal):N2}"
                             }
                         });
                     }
