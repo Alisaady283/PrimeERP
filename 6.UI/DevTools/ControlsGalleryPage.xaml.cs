@@ -427,7 +427,7 @@ namespace PrimeERP.UI.DevTools
             {
                 subtotal += line.Qty * line.Price;
                 discount += line.DiscountAmount;
-                tax += line.TaxAmount;
+                tax += line.VatAmount;
                 net += line.LineTotal;
             }
 

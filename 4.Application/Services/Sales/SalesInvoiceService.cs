@@ -8,6 +8,7 @@ using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Helpers;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
@@ -65,12 +66,17 @@ namespace PrimeERP.Application.Services.Sales
             {
                 Id = baseDto.Id, InvoiceNo = baseDto.InvoiceNo, InvoiceDate = baseDto.InvoiceDate, CustomerId = baseDto.CustomerId,
                 CustomerName = baseDto.CustomerName, WarehouseId = baseDto.WarehouseId, WarehouseName = baseDto.WarehouseName,
-                SubTotal = baseDto.SubTotal, TaxAmount = baseDto.TaxAmount, NetTotal = baseDto.NetTotal, StatusText = baseDto.StatusText,
+                SubTotal = baseDto.SubTotal, DiscountAmount = baseDto.DiscountAmount, VatAmount = baseDto.VatAmount,
+                WithholdingAmount = baseDto.WithholdingAmount, NetTotal = baseDto.NetTotal, StatusText = baseDto.StatusText,
                 CreatedAt = baseDto.CreatedAt,
                 Lines = _invoices.GetLines(id).Select(l => new SalesInvoiceLineDto
                 {
                     LineNo = l.LineNo, ProductCode = l.ProductCode, ProductName = l.ProductName, Qty = l.Qty,
-                    UnitPrice = l.UnitPrice, TaxPercent = l.TaxPercent, LineTotal = l.LineTotal, Notes = l.Notes
+                    UnitPrice = l.UnitPrice,
+                    DiscountPercent = l.DiscountPercent, DiscountAmount = l.DiscountAmount,
+                    VatPercent = l.VatPercent, VatAmount = l.VatAmount,
+                    WithholdingPercent = l.WithholdingPercent, WithholdingAmount = l.WithholdingAmount,
+                    LineTotal = l.LineTotal, NetAmount = l.NetAmount, Notes = l.Notes
                 }).ToList()
             };
             return Result.Ok(detail);
@@ -93,28 +99,37 @@ namespace PrimeERP.Application.Services.Sales
                 if (product == null) return Result.Fail<SalesInvoiceDetailDto>($"الصنف بالكود {l.ProductCode} غير موجود", ErrorCode.ValidationFailed);
                 if (l.Qty <= 0) return Result.Fail<SalesInvoiceDetailDto>("الكمية يجب أن تكون أكبر من صفر", ErrorCode.ValidationFailed);
 
-                var lineTotal = l.Qty * l.UnitPrice;
-                var lineTax = lineTotal * l.TaxPercent / 100m;
+                var amounts = DocumentTotals.ForLine(l.Qty, l.UnitPrice, l.DiscountPercent, l.VatPercent, l.WithholdingPercent);
                 resolvedLines.Add((new SalesInvoiceLine
                 {
                     LineNo = l.LineNo, ProductId = product.Id, ProductCode = product.Code, ProductName = product.Name,
-                    Qty = l.Qty, UnitPrice = l.UnitPrice, TaxPercent = l.TaxPercent, TaxAmount = lineTax, LineTotal = lineTotal, Notes = l.Notes
+                    Qty = l.Qty, UnitPrice = l.UnitPrice,
+                    DiscountPercent = l.DiscountPercent, DiscountAmount = amounts.Discount,
+                    VatPercent = l.VatPercent, VatAmount = amounts.Vat,
+                    WithholdingPercent = l.WithholdingPercent, WithholdingAmount = amounts.Withholding,
+                    LineTotal = amounts.Gross, NetAmount = amounts.Net, Notes = l.Notes
                 }, product.CostPrice));
             }
 
             var subTotal = resolvedLines.Sum(x => x.Line.LineTotal);
-            var taxAmount = resolvedLines.Sum(x => x.Line.TaxAmount);
-            var netTotal = subTotal + taxAmount;
+            var discountAmount = resolvedLines.Sum(x => x.Line.DiscountAmount);
+            var taxableAmount = subTotal - discountAmount;
+            var vatAmount = resolvedLines.Sum(x => x.Line.VatAmount);
+            var withholdingAmount = resolvedLines.Sum(x => x.Line.WithholdingAmount);
+            var netTotal = resolvedLines.Sum(x => x.Line.NetAmount);
             var totalCost = resolvedLines.Sum(x => x.Line.Qty * x.UnitCost);
 
             var salesAccount = _settings.Get(SettingKeys.Accounts.Sales, "");
             var vatAccount = _settings.Get(SettingKeys.Accounts.VATOutput, "");
+            var withholdingAccount = _settings.Get(SettingKeys.Accounts.WithholdingReceivable, "");
             var cogsAccount = _settings.Get(SettingKeys.Accounts.COGS, "");
             var inventoryAccount = _settings.Get(SettingKeys.Accounts.Inventory, "");
             if (string.IsNullOrWhiteSpace(salesAccount) || string.IsNullOrWhiteSpace(cogsAccount) || string.IsNullOrWhiteSpace(inventoryAccount))
                 return Result.Fail<SalesInvoiceDetailDto>("حسابات المبيعات/التكلفة/المخزون غير مضبوطة في الإعدادات", ErrorCode.ValidationFailed);
-            if (taxAmount > 0 && string.IsNullOrWhiteSpace(vatAccount))
+            if (vatAmount > 0 && string.IsNullOrWhiteSpace(vatAccount))
                 return Result.Fail<SalesInvoiceDetailDto>("حساب ضريبة المخرجات (VATOutput) غير مضبوط في الإعدادات", ErrorCode.ValidationFailed);
+            if (withholdingAmount > 0 && string.IsNullOrWhiteSpace(withholdingAccount))
+                return Result.Fail<SalesInvoiceDetailDto>("حساب ضريبة الخصم والإضافة (WithholdingReceivable) غير مضبوط في الإعدادات", ErrorCode.ValidationFailed);
 
             int invoiceId;
             try
@@ -126,7 +141,7 @@ namespace PrimeERP.Application.Services.Sales
                     var invoice = new SalesInvoice
                     {
                         InvoiceNo = invoiceNo, InvoiceDate = dto.InvoiceDate, CustomerId = dto.CustomerId, WarehouseId = dto.WarehouseId,
-                        SubTotal = subTotal, TaxAmount = taxAmount, NetTotal = netTotal, Status = InvoiceStatus.Confirmed, Notes = dto.Notes,
+                        SubTotal = subTotal, DiscountAmount = discountAmount, VatAmount = vatAmount, WithholdingAmount = withholdingAmount, NetTotal = netTotal, Status = InvoiceStatus.Confirmed, Notes = dto.Notes,
                         CreatedBy = AppSession.Username
                     };
                     var id = _invoices.InsertHeader(conn, tx, invoice);
@@ -146,9 +161,11 @@ namespace PrimeERP.Application.Services.Sales
                     var journalLines = new List<CreateJournalLineDto>
                     {
                         new() { LineNo = 1, AccountCode = customer.Value.AccountCode, Debit = netTotal },
-                        new() { LineNo = 2, AccountCode = salesAccount, Credit = subTotal },
+                        new() { LineNo = 2, AccountCode = salesAccount, Credit = taxableAmount },
                     };
-                    if (taxAmount > 0) journalLines.Add(new() { LineNo = 3, AccountCode = vatAccount, Credit = taxAmount });
+                    if (vatAmount > 0) journalLines.Add(new() { LineNo = 3, AccountCode = vatAccount, Credit = vatAmount });
+                    // المحجوز لا يصل الخزينة بل يُورَّد للمصلحة باسمنا — فهو مدين لدينا لا نقص في الإيراد.
+                    if (withholdingAmount > 0) journalLines.Add(new() { LineNo = journalLines.Count + 1, AccountCode = withholdingAccount, Debit = withholdingAmount });
                     journalLines.Add(new() { LineNo = journalLines.Count + 1, AccountCode = cogsAccount, Debit = totalCost });
                     journalLines.Add(new() { LineNo = journalLines.Count + 1, AccountCode = inventoryAccount, Credit = totalCost });
 
@@ -189,7 +206,10 @@ namespace PrimeERP.Application.Services.Sales
         {
             Id = i.Id, InvoiceNo = i.InvoiceNo, InvoiceDate = i.InvoiceDate, CustomerId = i.CustomerId,
             CustomerName = _customers.GetById(i.CustomerId) is { IsSuccess: true } c ? c.Value.Name : null,
-            WarehouseId = i.WarehouseId ?? 0, SubTotal = i.SubTotal, TaxAmount = i.TaxAmount, NetTotal = i.NetTotal,
+            WarehouseId = i.WarehouseId ?? 0,
+            WarehouseName = _warehouses.GetAll(true) is { IsSuccess: true } ws ? ws.Value.FirstOrDefault(w => w.Id == i.WarehouseId)?.Name : null,
+            SubTotal = i.SubTotal, DiscountAmount = i.DiscountAmount, VatAmount = i.VatAmount,
+            WithholdingAmount = i.WithholdingAmount, NetTotal = i.NetTotal,
             StatusText = LocalizationService.Get($"Str.Journal.Status.{(i.Status == InvoiceStatus.Confirmed ? "Posted" : "Draft")}"),
             CreatedAt = i.CreatedAt
         };

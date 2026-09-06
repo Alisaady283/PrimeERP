@@ -12,7 +12,9 @@ namespace PrimeERP.Application.DTOs.Purchasing
         public string   SupplierName  { get; set; }
         public int      WarehouseId   { get; set; }
         public decimal  SubTotal      { get; set; }
-        public decimal  TaxAmount     { get; set; }
+        public decimal  DiscountAmount     { get; set; }
+        public decimal  VatAmount     { get; set; }
+        public decimal  WithholdingAmount     { get; set; }
         public decimal  NetTotal      { get; set; }
         public string   StatusText    { get; set; }
         public DateTime CreatedAt     { get; set; }
@@ -30,8 +32,14 @@ namespace PrimeERP.Application.DTOs.Purchasing
         public string  ProductName { get; set; }
         public decimal Qty         { get; set; }
         public decimal UnitPrice   { get; set; }
-        public decimal TaxPercent  { get; set; }
+        public decimal DiscountPercent  { get; set; }
+        public decimal DiscountAmount  { get; set; }
+        public decimal VatPercent  { get; set; }
+        public decimal VatAmount  { get; set; }
+        public decimal WithholdingPercent  { get; set; }
+        public decimal WithholdingAmount  { get; set; }
         public decimal LineTotal   { get; set; }
+        public decimal NetAmount   { get; set; }
         public string  Notes       { get; set; }
     }
 
@@ -41,7 +49,9 @@ namespace PrimeERP.Application.DTOs.Purchasing
         public string  ProductCode { get; set; }
         public decimal Qty         { get; set; }
         public decimal UnitPrice   { get; set; }
-        public decimal TaxPercent  { get; set; }
+        public decimal DiscountPercent  { get; set; }
+        public decimal VatPercent  { get; set; }
+        public decimal WithholdingPercent  { get; set; }
         public string  Notes       { get; set; }
     }
 

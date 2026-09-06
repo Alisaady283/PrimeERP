@@ -18,18 +18,18 @@ namespace PrimeERP.UI.Components.Documents
 
             RegisterFormula("DiscountAmount", line => line.Qty * line.Price * line.DiscountPercent / 100m);
 
-            RegisterFormula("TaxAmount", line =>
+            RegisterFormula("VatAmount", line =>
             {
                 var subTotal = line.Qty * line.Price;
                 var discount = subTotal * line.DiscountPercent / 100m;
-                return (subTotal - discount) * line.TaxPercent / 100m;
+                return (subTotal - discount) * line.VatPercent / 100m;
             });
 
             RegisterFormula("LineTotal", line =>
             {
                 var subTotal = line.Qty * line.Price;
                 var discount = subTotal * line.DiscountPercent / 100m;
-                var tax = (subTotal - discount) * line.TaxPercent / 100m;
+                var tax = (subTotal - discount) * line.VatPercent / 100m;
                 return subTotal - discount + tax;
             });
 

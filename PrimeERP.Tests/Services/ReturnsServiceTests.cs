@@ -71,7 +71,7 @@ namespace PrimeERP.Tests.Services
             invoices.Create(new CreateSalesInvoiceDto
             {
                 InvoiceDate = DateTime.Today, CustomerId = _customerId, WarehouseId = _warehouseId,
-                Lines = { new CreateSalesInvoiceLineDto { LineNo = 1, ProductCode = _productCode, Qty = 10, UnitPrice = 25, TaxPercent = 14 } }
+                Lines = { new CreateSalesInvoiceLineDto { LineNo = 1, ProductCode = _productCode, Qty = 10, UnitPrice = 25, VatPercent = 14 } }
             });
 
             var stock = _db.Services.GetRequiredService<IStockService>();
@@ -81,7 +81,7 @@ namespace PrimeERP.Tests.Services
             var result = returns.Create(new CreateSalesReturnDto
             {
                 ReturnDate = DateTime.Today, CustomerId = _customerId, WarehouseId = _warehouseId,
-                Lines = { new CreateSalesReturnLineDto { LineNo = 1, ProductCode = _productCode, Qty = 4, UnitPrice = 25, TaxPercent = 14 } }
+                Lines = { new CreateSalesReturnLineDto { LineNo = 1, ProductCode = _productCode, Qty = 4, UnitPrice = 25, VatPercent = 14 } }
             });
 
             Assert.True(result.IsSuccess, result.ErrorMessage);
@@ -99,7 +99,7 @@ namespace PrimeERP.Tests.Services
             invoices.Create(new CreatePurchaseInvoiceDto
             {
                 InvoiceDate = DateTime.Today, SupplierId = _supplierId, WarehouseId = _warehouseId,
-                Lines = { new CreatePurchaseInvoiceLineDto { LineNo = 1, ProductCode = _productCode, Qty = 20, UnitPrice = 8, TaxPercent = 14 } }
+                Lines = { new CreatePurchaseInvoiceLineDto { LineNo = 1, ProductCode = _productCode, Qty = 20, UnitPrice = 8, VatPercent = 14 } }
             });
 
             var stock = _db.Services.GetRequiredService<IStockService>();
@@ -109,7 +109,7 @@ namespace PrimeERP.Tests.Services
             var result = returns.Create(new CreatePurchaseReturnDto
             {
                 ReturnDate = DateTime.Today, SupplierId = _supplierId, WarehouseId = _warehouseId,
-                Lines = { new CreatePurchaseReturnLineDto { LineNo = 1, ProductCode = _productCode, Qty = 5, UnitPrice = 8, TaxPercent = 14 } }
+                Lines = { new CreatePurchaseReturnLineDto { LineNo = 1, ProductCode = _productCode, Qty = 5, UnitPrice = 8, VatPercent = 14 } }
             });
 
             Assert.True(result.IsSuccess, result.ErrorMessage);

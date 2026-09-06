@@ -234,7 +234,7 @@ namespace PrimeERP.Modules
             services.GetRequiredService<ISalesInvoiceService>().Create(new CreateSalesInvoiceDto
             {
                 InvoiceDate = DateTime.Today, CustomerId = customerId, WarehouseId = warehouseId,
-                Lines = { new CreateSalesInvoiceLineDto { LineNo = 1, ProductCode = productCode, Qty = 3, UnitPrice = product.SalePrice, TaxPercent = 14 } }
+                Lines = { new CreateSalesInvoiceLineDto { LineNo = 1, ProductCode = productCode, Qty = 3, UnitPrice = product.SalePrice, VatPercent = 14 } }
             });
         }
 
@@ -246,7 +246,7 @@ namespace PrimeERP.Modules
             services.GetRequiredService<IPurchaseInvoiceService>().Create(new CreatePurchaseInvoiceDto
             {
                 InvoiceDate = DateTime.Today, SupplierId = supplierId, WarehouseId = warehouseId,
-                Lines = { new CreatePurchaseInvoiceLineDto { LineNo = 1, ProductCode = productCode, Qty = 20, UnitPrice = product.CostPrice, TaxPercent = 14 } }
+                Lines = { new CreatePurchaseInvoiceLineDto { LineNo = 1, ProductCode = productCode, Qty = 20, UnitPrice = product.CostPrice, VatPercent = 14 } }
             });
         }
     }

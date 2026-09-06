@@ -72,12 +72,12 @@ namespace PrimeERP.Tests.Services
             _db.Services.GetRequiredService<ISalesInvoiceService>().Create(new CreateSalesInvoiceDto
             {
                 InvoiceDate = DateTime.Today, CustomerId = _customerId, WarehouseId = _warehouseId,
-                Lines = { new CreateSalesInvoiceLineDto { LineNo = 1, ProductCode = _productCode, Qty = 5, UnitPrice = 25, TaxPercent = 14 } }
+                Lines = { new CreateSalesInvoiceLineDto { LineNo = 1, ProductCode = _productCode, Qty = 5, UnitPrice = 25, VatPercent = 14 } }
             });
             _db.Services.GetRequiredService<IPurchaseInvoiceService>().Create(new CreatePurchaseInvoiceDto
             {
                 InvoiceDate = DateTime.Today, SupplierId = _supplierId, WarehouseId = _warehouseId,
-                Lines = { new CreatePurchaseInvoiceLineDto { LineNo = 1, ProductCode = _productCode, Qty = 10, UnitPrice = 8, TaxPercent = 14 } }
+                Lines = { new CreatePurchaseInvoiceLineDto { LineNo = 1, ProductCode = _productCode, Qty = 10, UnitPrice = 8, VatPercent = 14 } }
             });
         }
 

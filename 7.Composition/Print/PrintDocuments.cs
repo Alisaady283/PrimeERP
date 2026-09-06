@@ -31,6 +31,7 @@ namespace PrimeERP.Composition.Print
 
             var party = doc.Display("PartyName") ?? doc.Display("CustomerName") ?? doc.Display("SupplierName");
             var number = doc.Number();
+            var docDate = doc.Display("DocDate") ?? doc.Display("InvoiceDate") ?? doc.Display("ReturnDate") ?? "";
 
             if (!string.IsNullOrWhiteSpace(party))
                 sections.Add(new PrintSection
@@ -39,15 +40,19 @@ namespace PrimeERP.Composition.Print
                     Parties = new()
                     {
                         new() { Title = "الطرف", Name = party },
-                        new() { Title = "المستند", Name = number, Details = { doc.Display("DocDate") ?? doc.Display("InvoiceDate") ?? "" } }
+                        new() { Title = "المستند", Name = number, Details = { docDate } }
                     }
                 });
 
             var lines = doc.Lines(definition.LinesPropertyName);
             if (lines.Count > 0)
             {
-                var split = SplitFields(definition, lines[0]);
-                sections.Add(BuildTable(definition, lines, split));
+                var table = definition.PrintColumns is { Count: > 0 }
+                    ? BuildTable(definition.PrintColumns, lines)
+                    : BuildTable(definition, lines, SplitFields(definition, lines[0]));
+
+                table.Totals = DocumentTotalsOf(definition, doc);
+                sections.Add(table);
             }
 
             if (!string.IsNullOrWhiteSpace(paper?.BarcodeText))
@@ -60,8 +65,8 @@ namespace PrimeERP.Composition.Print
             {
                 Title = title,
                 Subtitle = number,
-                Orientation = definition.LineFields.Count > 5 ? PrintOrientation.Landscape : PrintOrientation.Portrait,
-                Header = HeaderFields(definition, doc),
+                Orientation = ColumnCount(definition) > 5 ? PrintOrientation.Landscape : PrintOrientation.Portrait,
+                Header = HeaderFields(definition, doc, party, number, docDate),
                 Footer = doc.NotesField(),
                 Signatures = TradeSignatures.ToList(),
                 CopyLabels = paper?.CopyLabels ?? new(),
@@ -139,7 +144,8 @@ namespace PrimeERP.Composition.Print
             return values.Aggregate(template, (text, pair) => text.Replace("{" + pair.Key + "}", pair.Value ?? ""));
         }
 
-        private static Dictionary<string, string> HeaderFields(DocumentDialogDefinition definition, DocumentReader doc)
+        /// <summary>ما ظهر في صندوق الأطراف لا يُعاد في صندوق الرأس — الطرف والرقم والتاريخ مرة واحدة.</summary>
+        private static Dictionary<string, string> HeaderFields(DocumentDialogDefinition definition, DocumentReader doc, params string[] shown)
         {
             var result = new Dictionary<string, string>();
             foreach (var field in definition.HeaderFields)
@@ -147,7 +153,9 @@ namespace PrimeERP.Composition.Print
                 if (field.Kind == FieldKind.TextArea) continue;
 
                 var value = doc.Display(field.Key);
-                if (!string.IsNullOrWhiteSpace(value)) result[LocalizationService.Get(field.LabelKey)] = value;
+                if (string.IsNullOrWhiteSpace(value) || shown.Contains(value)) continue;
+
+                result[LocalizationService.Get(field.LabelKey)] = value;
             }
 
             return result;
@@ -203,6 +211,50 @@ namespace PrimeERP.Composition.Print
                 Type = PrintSectionType.Table, Columns = columns, Rows = rows,
                 TotalsRow = TotalsRow(columns, rows)
             };
+        }
+
+        private static int ColumnCount(DocumentDialogDefinition definition) =>
+            definition.PrintColumns is { Count: > 0 } ? definition.PrintColumns.Count : definition.LineFields.Count;
+
+        /// <summary>جدول من أعمدة الورق — يقرأ خصائص السطر المخزَّن، فتظهر القيم المحسوبة كما تظهر المُدخَلة.</summary>
+        private static PrintSection BuildTable(List<PrintColumnDefinition> definitions, List<object> lines)
+        {
+            var columns = definitions.Select(d => new PrintColumn
+            {
+                Key = d.Key, Header = d.Header, Width = d.Width,
+                Align = d.IsText ? "Right" : "Center",
+                Format = d.IsText ? null : d.Format
+            }).ToList();
+
+            var rows = lines
+                .Select(line => definitions.ToDictionary(d => d.Key, d => line.GetType().GetProperty(d.Key)?.GetValue(line)))
+                .ToList();
+
+            return new PrintSection
+            {
+                Type = PrintSectionType.Table, Columns = columns, Rows = rows,
+                TotalsRow = TotalsRow(columns, rows)
+            };
+        }
+
+        /// <summary>صندوق إجماليات المستند — من رأس المستند لا من جمع السطور، فهو ما رُحِّل فعلاً.</summary>
+        private static List<PrintTotal> DocumentTotalsOf(DocumentDialogDefinition definition, DocumentReader doc)
+        {
+            if (definition.PrintTotals is not { Count: > 0 }) return null;
+
+            var totals = new List<PrintTotal>();
+            foreach (var total in definition.PrintTotals)
+            {
+                var raw = doc.Raw(total.Key);
+                if (raw == null) continue;
+
+                var value = Convert.ToDecimal(raw);
+                if (value == 0 && total.HideWhenZero) continue;
+
+                totals.Add(new PrintTotal { Label = total.Label, Value = value.ToString("N2", CultureInfo.InvariantCulture), IsBold = total.IsBold });
+            }
+
+            return totals.Count > 0 ? totals : null;
         }
 
         private static Dictionary<string, object> TotalsRow(List<PrintColumn> columns, List<Dictionary<string, object>> rows)

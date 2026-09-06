@@ -8,6 +8,7 @@ using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Helpers;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
@@ -63,12 +64,17 @@ namespace PrimeERP.Application.Services.Purchasing
             {
                 Id = baseDto.Id, InvoiceNo = baseDto.InvoiceNo, InvoiceDate = baseDto.InvoiceDate, SupplierId = baseDto.SupplierId,
                 SupplierName = baseDto.SupplierName, WarehouseId = baseDto.WarehouseId,
-                SubTotal = baseDto.SubTotal, TaxAmount = baseDto.TaxAmount, NetTotal = baseDto.NetTotal, StatusText = baseDto.StatusText,
+                SubTotal = baseDto.SubTotal, DiscountAmount = baseDto.DiscountAmount, VatAmount = baseDto.VatAmount,
+                WithholdingAmount = baseDto.WithholdingAmount, NetTotal = baseDto.NetTotal, StatusText = baseDto.StatusText,
                 CreatedAt = baseDto.CreatedAt,
                 Lines = _invoices.GetLines(id).Select(l => new PurchaseInvoiceLineDto
                 {
                     LineNo = l.LineNo, ProductCode = l.ProductCode, ProductName = l.ProductName, Qty = l.Qty,
-                    UnitPrice = l.UnitPrice, TaxPercent = l.TaxPercent, LineTotal = l.LineTotal, Notes = l.Notes
+                    UnitPrice = l.UnitPrice,
+                    DiscountPercent = l.DiscountPercent, DiscountAmount = l.DiscountAmount,
+                    VatPercent = l.VatPercent, VatAmount = l.VatAmount,
+                    WithholdingPercent = l.WithholdingPercent, WithholdingAmount = l.WithholdingAmount,
+                    LineTotal = l.LineTotal, NetAmount = l.NetAmount, Notes = l.Notes
                 }).ToList()
             };
             return Result.Ok(detail);
@@ -91,25 +97,34 @@ namespace PrimeERP.Application.Services.Purchasing
                 if (product == null) return Result.Fail<PurchaseInvoiceDetailDto>($"الصنف بالكود {l.ProductCode} غير موجود", ErrorCode.ValidationFailed);
                 if (l.Qty <= 0) return Result.Fail<PurchaseInvoiceDetailDto>("الكمية يجب أن تكون أكبر من صفر", ErrorCode.ValidationFailed);
 
-                var lineTotal = l.Qty * l.UnitPrice;
-                var lineTax = lineTotal * l.TaxPercent / 100m;
+                var amounts = DocumentTotals.ForLine(l.Qty, l.UnitPrice, l.DiscountPercent, l.VatPercent, l.WithholdingPercent);
                 resolvedLines.Add(new PurchaseInvoiceLine
                 {
                     LineNo = l.LineNo, ProductId = product.Id, ProductCode = product.Code, ProductName = product.Name,
-                    Qty = l.Qty, UnitPrice = l.UnitPrice, TaxPercent = l.TaxPercent, TaxAmount = lineTax, LineTotal = lineTotal, Notes = l.Notes
+                    Qty = l.Qty, UnitPrice = l.UnitPrice,
+                    DiscountPercent = l.DiscountPercent, DiscountAmount = amounts.Discount,
+                    VatPercent = l.VatPercent, VatAmount = amounts.Vat,
+                    WithholdingPercent = l.WithholdingPercent, WithholdingAmount = amounts.Withholding,
+                    LineTotal = amounts.Gross, NetAmount = amounts.Net, Notes = l.Notes
                 });
             }
 
             var subTotal = resolvedLines.Sum(x => x.LineTotal);
-            var taxAmount = resolvedLines.Sum(x => x.TaxAmount);
-            var netTotal = subTotal + taxAmount;
+            var discountAmount = resolvedLines.Sum(x => x.DiscountAmount);
+            var taxableAmount = subTotal - discountAmount;
+            var vatAmount = resolvedLines.Sum(x => x.VatAmount);
+            var withholdingAmount = resolvedLines.Sum(x => x.WithholdingAmount);
+            var netTotal = resolvedLines.Sum(x => x.NetAmount);
 
             var inventoryAccount = _settings.Get(SettingKeys.Accounts.Inventory, "");
             var vatAccount = _settings.Get(SettingKeys.Accounts.VATInput, "");
+            var withholdingAccount = _settings.Get(SettingKeys.Accounts.WithholdingPayable, "");
             if (string.IsNullOrWhiteSpace(inventoryAccount))
                 return Result.Fail<PurchaseInvoiceDetailDto>("حساب المخزون غير مضبوط في الإعدادات", ErrorCode.ValidationFailed);
-            if (taxAmount > 0 && string.IsNullOrWhiteSpace(vatAccount))
+            if (vatAmount > 0 && string.IsNullOrWhiteSpace(vatAccount))
                 return Result.Fail<PurchaseInvoiceDetailDto>("حساب ضريبة المدخلات (VATInput) غير مضبوط في الإعدادات", ErrorCode.ValidationFailed);
+            if (withholdingAmount > 0 && string.IsNullOrWhiteSpace(withholdingAccount))
+                return Result.Fail<PurchaseInvoiceDetailDto>("حساب ضريبة الخصم والإضافة (WithholdingPayable) غير مضبوط في الإعدادات", ErrorCode.ValidationFailed);
 
             int invoiceId;
             try
@@ -121,7 +136,7 @@ namespace PrimeERP.Application.Services.Purchasing
                     var invoice = new PurchaseInvoice
                     {
                         InvoiceNo = invoiceNo, InvoiceDate = dto.InvoiceDate, SupplierId = dto.SupplierId, WarehouseId = dto.WarehouseId,
-                        SubTotal = subTotal, TaxAmount = taxAmount, NetTotal = netTotal, Status = InvoiceStatus.Confirmed, Notes = dto.Notes,
+                        SubTotal = subTotal, DiscountAmount = discountAmount, VatAmount = vatAmount, WithholdingAmount = withholdingAmount, NetTotal = netTotal, Status = InvoiceStatus.Confirmed, Notes = dto.Notes,
                         CreatedBy = AppSession.Username
                     };
                     var id = _invoices.InsertHeader(conn, tx, invoice);
@@ -140,10 +155,12 @@ namespace PrimeERP.Application.Services.Purchasing
 
                     var journalLines = new List<CreateJournalLineDto>
                     {
-                        new() { LineNo = 1, AccountCode = inventoryAccount, Debit = subTotal },
+                        new() { LineNo = 1, AccountCode = inventoryAccount, Debit = taxableAmount },
                         new() { LineNo = 2, AccountCode = supplier.Value.AccountCode, Credit = netTotal },
                     };
-                    if (taxAmount > 0) journalLines.Add(new() { LineNo = 3, AccountCode = vatAccount, Debit = taxAmount });
+                    if (vatAmount > 0) journalLines.Add(new() { LineNo = 3, AccountCode = vatAccount, Debit = vatAmount });
+                    // ما نحجزه من المورد نُورّده للمصلحة نيابةً عنه — التزام علينا لا خصم من قيمة الشراء.
+                    if (withholdingAmount > 0) journalLines.Add(new() { LineNo = journalLines.Count + 1, AccountCode = withholdingAccount, Credit = withholdingAmount });
 
                     var journalDto = new CreateJournalDto
                     {
@@ -180,7 +197,8 @@ namespace PrimeERP.Application.Services.Purchasing
         {
             Id = i.Id, InvoiceNo = i.InvoiceNo, InvoiceDate = i.InvoiceDate, SupplierId = i.SupplierId,
             SupplierName = _suppliers.GetById(i.SupplierId) is { IsSuccess: true } s ? s.Value.Name : null,
-            WarehouseId = i.WarehouseId ?? 0, SubTotal = i.SubTotal, TaxAmount = i.TaxAmount, NetTotal = i.NetTotal,
+            WarehouseId = i.WarehouseId ?? 0, SubTotal = i.SubTotal, DiscountAmount = i.DiscountAmount, VatAmount = i.VatAmount,
+            WithholdingAmount = i.WithholdingAmount, NetTotal = i.NetTotal,
             StatusText = LocalizationService.Get($"Str.Journal.Status.{(i.Status == InvoiceStatus.Confirmed ? "Posted" : "Draft")}"),
             CreatedAt = i.CreatedAt
         };

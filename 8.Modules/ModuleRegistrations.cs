@@ -21,6 +21,7 @@ using PrimeERP.Application.Services.Security;
 using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Composition.Definitions;
+using PrimeERP.Composition.Print;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
@@ -487,6 +488,8 @@ namespace PrimeERP.Modules
                 DocumentDialog = new DocumentDialogDefinition
                 {
                     PrintTitle = "فاتورة مبيعات",
+                    PrintColumns = TradePaper.Columns(),
+                    PrintTotals = TradePaper.Totals(),
                     TitleKey = "Str.SalesInvoices.Add", TitleEditKey = "Str.SalesInvoices.Edit",
                     ServiceType = typeof(ISalesInvoiceService), DtoType = typeof(CreateSalesInvoiceDto), LineDtoType = typeof(CreateSalesInvoiceLineDto),
                     LinesPropertyName = nameof(CreateSalesInvoiceDto.Lines),
@@ -502,7 +505,9 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateSalesInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
                         new() { Key = nameof(CreateSalesInvoiceLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
                         new() { Key = nameof(CreateSalesInvoiceLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
-                        new() { Key = nameof(CreateSalesInvoiceLineDto.TaxPercent), Header = LocalizationService.Get("Str.TaxPercent"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreateSalesInvoiceLineDto.DiscountPercent), Header = "خصم %", Kind = FieldKind.Number, Width = 70 },
+                        new() { Key = nameof(CreateSalesInvoiceLineDto.VatPercent), Header = "ق.مضافة %", Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreateSalesInvoiceLineDto.WithholdingPercent), Header = "خ.إضافة %", Kind = FieldKind.Number, Width = 80 },
                         new() { Key = nameof(CreateSalesInvoiceLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
                 }
@@ -522,6 +527,8 @@ namespace PrimeERP.Modules
                 DocumentDialog = new DocumentDialogDefinition
                 {
                     PrintTitle = "فاتورة مشتريات",
+                    PrintColumns = TradePaper.Columns(),
+                    PrintTotals = TradePaper.Totals(),
                     TitleKey = "Str.PurchaseInvoices.Add", TitleEditKey = "Str.PurchaseInvoices.Edit",
                     ServiceType = typeof(IPurchaseInvoiceService), DtoType = typeof(CreatePurchaseInvoiceDto), LineDtoType = typeof(CreatePurchaseInvoiceLineDto),
                     LinesPropertyName = nameof(CreatePurchaseInvoiceDto.Lines),
@@ -537,7 +544,9 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
-                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.TaxPercent), Header = LocalizationService.Get("Str.TaxPercent"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.DiscountPercent), Header = "خصم %", Kind = FieldKind.Number, Width = 70 },
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.VatPercent), Header = "ق.مضافة %", Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.WithholdingPercent), Header = "خ.إضافة %", Kind = FieldKind.Number, Width = 80 },
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
                 }
@@ -556,6 +565,8 @@ namespace PrimeERP.Modules
                 DocumentDialog = new DocumentDialogDefinition
                 {
                     PrintTitle = "مرتجع مبيعات",
+                    PrintColumns = TradePaper.Columns(),
+                    PrintTotals = TradePaper.Totals(),
                     TitleKey = "Str.SalesReturns.Add", TitleEditKey = "Str.SalesReturns.Edit",
                     ServiceType = typeof(ISalesReturnService), DtoType = typeof(CreateSalesReturnDto), LineDtoType = typeof(CreateSalesReturnLineDto),
                     LinesPropertyName = nameof(CreateSalesReturnDto.Lines),
@@ -571,7 +582,9 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateSalesReturnLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
                         new() { Key = nameof(CreateSalesReturnLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
                         new() { Key = nameof(CreateSalesReturnLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
-                        new() { Key = nameof(CreateSalesReturnLineDto.TaxPercent), Header = LocalizationService.Get("Str.TaxPercent"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreateSalesReturnLineDto.DiscountPercent), Header = "خصم %", Kind = FieldKind.Number, Width = 70 },
+                        new() { Key = nameof(CreateSalesReturnLineDto.VatPercent), Header = "ق.مضافة %", Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreateSalesReturnLineDto.WithholdingPercent), Header = "خ.إضافة %", Kind = FieldKind.Number, Width = 80 },
                         new() { Key = nameof(CreateSalesReturnLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
                 }
@@ -590,6 +603,8 @@ namespace PrimeERP.Modules
                 DocumentDialog = new DocumentDialogDefinition
                 {
                     PrintTitle = "مرتجع مشتريات",
+                    PrintColumns = TradePaper.Columns(),
+                    PrintTotals = TradePaper.Totals(),
                     TitleKey = "Str.PurchaseReturns.Add", TitleEditKey = "Str.PurchaseReturns.Edit",
                     ServiceType = typeof(IPurchaseReturnService), DtoType = typeof(CreatePurchaseReturnDto), LineDtoType = typeof(CreatePurchaseReturnLineDto),
                     LinesPropertyName = nameof(CreatePurchaseReturnDto.Lines),
@@ -605,7 +620,9 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreatePurchaseReturnLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
                         new() { Key = nameof(CreatePurchaseReturnLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
                         new() { Key = nameof(CreatePurchaseReturnLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
-                        new() { Key = nameof(CreatePurchaseReturnLineDto.TaxPercent), Header = LocalizationService.Get("Str.TaxPercent"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePurchaseReturnLineDto.DiscountPercent), Header = "خصم %", Kind = FieldKind.Number, Width = 70 },
+                        new() { Key = nameof(CreatePurchaseReturnLineDto.VatPercent), Header = "ق.مضافة %", Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreatePurchaseReturnLineDto.WithholdingPercent), Header = "خ.إضافة %", Kind = FieldKind.Number, Width = 80 },
                         new() { Key = nameof(CreatePurchaseReturnLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
                 }

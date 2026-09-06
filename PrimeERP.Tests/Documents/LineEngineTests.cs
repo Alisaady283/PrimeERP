@@ -7,7 +7,7 @@ namespace PrimeERP.Tests.Documents
     /// <summary>محوَّلة من Views/Controls/Documents/Tests/LineEngineTests.cs (مُشغِّل اختبارات يدوي بلا إطار) إلى xUnit حقيقية.</summary>
     public class LineComputeEngineTests
     {
-        private static DocumentLine InvoiceLine() => new() { Qty = 10, Price = 100, DiscountPercent = 10, TaxPercent = 14 };
+        private static DocumentLine InvoiceLine() => new() { Qty = 10, Price = 100, DiscountPercent = 10, VatPercent = 14 };
 
         [Fact]
         public void LineSubTotal_EqualsQtyTimesPrice() =>
@@ -19,7 +19,7 @@ namespace PrimeERP.Tests.Documents
 
         [Fact]
         public void TaxAmount_EqualsSubTotalMinusDiscountTimesTaxPercent() =>
-            Assert.Equal(126m, LineComputeEngine.Compute("TaxAmount", InvoiceLine())); // (1000-100)*14% = 126
+            Assert.Equal(126m, LineComputeEngine.Compute("VatAmount", InvoiceLine())); // (1000-100)*14% = 126
 
         [Fact]
         public void LineTotal_EqualsSubTotalMinusDiscountPlusTax() =>

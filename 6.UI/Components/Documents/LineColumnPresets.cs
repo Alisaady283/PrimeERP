@@ -37,15 +37,15 @@ namespace PrimeERP.UI.Components.Documents
         {
             new() { Key = "LineNo",  Header = "#",      Type = LineColumnType.RowNumber, Width = 40, IsReadOnly = true },
             new() { Key = "ItemCode",Header = "كود الصنف",  Type = LineColumnType.Picker, PickerType = pickerType, Width = 110,
-                    FillsFrom = new() { ["ItemName"] = "Name", ["Price"] = "SalePrice", ["UnitName"] = "UnitName", ["TaxPercent"] = "TaxRate" } },
+                    FillsFrom = new() { ["ItemName"] = "Name", ["Price"] = "SalePrice", ["UnitName"] = "UnitName", ["VatPercent"] = "TaxRate" } },
             new() { Key = "ItemName",Header = "اسم الصنف",  Type = LineColumnType.Text, Width = 180, IsStarWidth = true, IsReadOnly = true },
             new() { Key = "Qty",     Header = "الكمية", Type = LineColumnType.Decimal, Width = 80, IsRequired = true },
             new() { Key = "UnitName",Header = "الوحدة", Type = LineColumnType.Text, Width = 70, IsReadOnly = true },
             new() { Key = "Price",   Header = "السعر",  Type = LineColumnType.Money, Width = 100 },
             new() { Key = "DiscountPercent", Header = "خصم%",    Type = LineColumnType.Percent, Width = 70 },
             new() { Key = "DiscountAmount",  Header = "الخصم",   Type = LineColumnType.Computed, ComputeExpression = "DiscountAmount", Width = 90, IsReadOnly = true },
-            new() { Key = "TaxPercent",      Header = "ضريبة%",  Type = LineColumnType.Percent, Width = 70 },
-            new() { Key = "TaxAmount",       Header = "الضريبة", Type = LineColumnType.Computed, ComputeExpression = "TaxAmount", Width = 90, IsReadOnly = true },
+            new() { Key = "VatPercent",      Header = "ضريبة%",  Type = LineColumnType.Percent, Width = 70 },
+            new() { Key = "VatAmount",       Header = "الضريبة", Type = LineColumnType.Computed, ComputeExpression = "VatAmount", Width = 90, IsReadOnly = true },
             new() { Key = "LineTotal",       Header = "الإجمالي",Type = LineColumnType.Computed, ComputeExpression = "LineTotal", Width = 110,
                     IsReadOnly = true, Footer = LineColumnFooter.Sum },
         };

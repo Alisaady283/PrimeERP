@@ -26,7 +26,9 @@ namespace PrimeERP.Data.Repositories
                 .Int("SupplierId", nullable: false)
                 .Int("WarehouseId", nullable: false)
                 .Decimal("SubTotal")
-                .Decimal("TaxAmount")
+                .Decimal("DiscountAmount")
+                .Decimal("VatAmount")
+                .Decimal("WithholdingAmount")
                 .Decimal("NetTotal")
                 .Int("Status", nullable: false, defaultValue: (int)InvoiceStatus.Confirmed)
                 .Int("JournalEntryId")
@@ -44,9 +46,14 @@ namespace PrimeERP.Data.Repositories
                 .Text("ProductName", 200)
                 .Decimal("Qty")
                 .Decimal("UnitPrice")
-                .Decimal("TaxPercent")
-                .Decimal("TaxAmount")
+                .Decimal("DiscountPercent")
+                .Decimal("DiscountAmount")
+                .Decimal("VatPercent")
+                .Decimal("VatAmount")
+                .Decimal("WithholdingPercent")
+                .Decimal("WithholdingAmount")
                 .Decimal("LineTotal")
+                .Decimal("NetAmount")
                 .Text("Notes")
                 .ForeignKey("InvoiceId", "PurchaseInvoices", "Id")
                 .Index("InvoiceId")
@@ -61,7 +68,9 @@ namespace PrimeERP.Data.Repositories
             SupplierId     = Convert.ToInt32(row["SupplierId"]),
             WarehouseId    = Convert.ToInt32(row["WarehouseId"]),
             SubTotal       = Convert.ToDecimal(row["SubTotal"]),
-            TaxAmount      = Convert.ToDecimal(row["TaxAmount"]),
+            DiscountAmount      = Convert.ToDecimal(row["DiscountAmount"]),
+            VatAmount      = Convert.ToDecimal(row["VatAmount"]),
+            WithholdingAmount      = Convert.ToDecimal(row["WithholdingAmount"]),
             NetTotal       = Convert.ToDecimal(row["NetTotal"]),
             Status         = (InvoiceStatus)Convert.ToInt32(row["Status"]),
             JournalEntryId = row["JournalEntryId"] == DBNull.Value ? null : Convert.ToInt32(row["JournalEntryId"]),
@@ -80,9 +89,14 @@ namespace PrimeERP.Data.Repositories
             ProductName = row["ProductName"] == DBNull.Value ? null : row["ProductName"].ToString(),
             Qty         = Convert.ToDecimal(row["Qty"]),
             UnitPrice   = Convert.ToDecimal(row["UnitPrice"]),
-            TaxPercent  = Convert.ToDecimal(row["TaxPercent"]),
-            TaxAmount   = Convert.ToDecimal(row["TaxAmount"]),
-            LineTotal   = Convert.ToDecimal(row["LineTotal"]),
+            DiscountPercent  = Convert.ToDecimal(row["DiscountPercent"]),
+            DiscountAmount  = Convert.ToDecimal(row["DiscountAmount"]),
+            VatPercent  = Convert.ToDecimal(row["VatPercent"]),
+            VatAmount  = Convert.ToDecimal(row["VatAmount"]),
+            WithholdingPercent  = Convert.ToDecimal(row["WithholdingPercent"]),
+            WithholdingAmount  = Convert.ToDecimal(row["WithholdingAmount"]),
+            LineTotal  = Convert.ToDecimal(row["LineTotal"]),
+            NetAmount  = Convert.ToDecimal(row["NetAmount"]),
             Notes       = row["Notes"] == DBNull.Value ? null : row["Notes"].ToString(),
         };
 
@@ -109,19 +123,21 @@ namespace PrimeERP.Data.Repositories
         }
 
         public int InsertHeader(DbConnection conn, DbTransaction tx, PurchaseInvoice invoice) =>
-            InsertGetId(@"INSERT INTO PurchaseInvoices (InvoiceNo, InvoiceDate, SupplierId, WarehouseId, SubTotal, TaxAmount, NetTotal, Status, Notes, CreatedBy)
-                          VALUES (@no, @date, @supp, @wh, @sub, @tax, @net, @status, @notes, @by)",
+            InsertGetId(@"INSERT INTO PurchaseInvoices (InvoiceNo, InvoiceDate, SupplierId, WarehouseId, SubTotal, DiscountAmount, VatAmount, WithholdingAmount, NetTotal, Status, Notes, CreatedBy)
+                          VALUES (@no, @date, @supp, @wh, @sub, @disc, @tax, @wht, @net, @status, @notes, @by)",
                 conn, tx,
                 ("@no", invoice.InvoiceNo), ("@date", invoice.InvoiceDate), ("@supp", invoice.SupplierId), ("@wh", invoice.WarehouseId),
-                ("@sub", invoice.SubTotal), ("@tax", invoice.TaxAmount), ("@net", invoice.NetTotal), ("@status", (int)invoice.Status),
+                ("@sub", invoice.SubTotal), ("@disc", invoice.DiscountAmount), ("@tax", invoice.VatAmount), ("@wht", invoice.WithholdingAmount), ("@net", invoice.NetTotal), ("@status", (int)invoice.Status),
                 ("@notes", invoice.Notes ?? ""), ("@by", invoice.CreatedBy));
 
         public void InsertLine(DbConnection conn, DbTransaction tx, int invoiceId, PurchaseInvoiceLine line) =>
-            Exec(@"INSERT INTO PurchaseInvoiceLines (InvoiceId, LineNo, ProductId, ProductCode, ProductName, Qty, UnitPrice, TaxPercent, TaxAmount, LineTotal, Notes)
-                  VALUES (@iid, @lno, @pid, @pcode, @pname, @qty, @price, @taxPct, @tax, @total, @notes)",
+            Exec(@"INSERT INTO PurchaseInvoiceLines (InvoiceId, LineNo, ProductId, ProductCode, ProductName, Qty, UnitPrice, DiscountPercent, DiscountAmount, VatPercent, VatAmount, WithholdingPercent, WithholdingAmount, LineTotal, NetAmount, Notes)
+                  VALUES (@iid, @lno, @pid, @pcode, @pname, @qty, @price, @discPct, @disc, @taxPct, @tax, @whtPct, @wht, @total, @net, @notes)",
                 conn, tx,
                 ("@iid", invoiceId), ("@lno", line.LineNo), ("@pid", line.ProductId), ("@pcode", line.ProductCode), ("@pname", line.ProductName ?? ""),
-                ("@qty", line.Qty), ("@price", line.UnitPrice), ("@taxPct", line.TaxPercent), ("@tax", line.TaxAmount), ("@total", line.LineTotal),
+                ("@qty", line.Qty), ("@price", line.UnitPrice), ("@discPct", line.DiscountPercent), ("@disc", line.DiscountAmount),
+                ("@taxPct", line.VatPercent), ("@tax", line.VatAmount), ("@whtPct", line.WithholdingPercent), ("@wht", line.WithholdingAmount),
+                ("@total", line.LineTotal), ("@net", line.NetAmount),
                 ("@notes", line.Notes ?? ""));
 
         public void SetJournalEntryId(DbConnection conn, DbTransaction tx, int invoiceId, int journalEntryId) =>

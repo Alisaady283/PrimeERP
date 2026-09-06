@@ -43,8 +43,8 @@ namespace PrimeERP.UI.Components.Documents
         public decimal Price           { get => GetDecimal(nameof(Price));           set => SetValue(nameof(Price), value); }
         public decimal DiscountPercent { get => GetDecimal(nameof(DiscountPercent)); set => SetValue(nameof(DiscountPercent), value); }
         public decimal DiscountAmount  { get => GetDecimal(nameof(DiscountAmount));  set => SetValue(nameof(DiscountAmount), value); }
-        public decimal TaxPercent      { get => GetDecimal(nameof(TaxPercent));      set => SetValue(nameof(TaxPercent), value); }
-        public decimal TaxAmount       { get => GetDecimal(nameof(TaxAmount));       set => SetValue(nameof(TaxAmount), value); }
+        public decimal VatPercent      { get => GetDecimal(nameof(VatPercent));      set => SetValue(nameof(VatPercent), value); }
+        public decimal VatAmount       { get => GetDecimal(nameof(VatAmount));       set => SetValue(nameof(VatAmount), value); }
 
         public decimal Debit     { get => GetDecimal(nameof(Debit));     set => SetValue(nameof(Debit), value); }
         public decimal Credit    { get => GetDecimal(nameof(Credit));    set => SetValue(nameof(Credit), value); }

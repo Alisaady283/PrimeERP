@@ -76,14 +76,14 @@ namespace PrimeERP.Tests.Services
             var result = _invoices.Create(new CreateSalesInvoiceDto
             {
                 InvoiceDate = DateTime.Today, CustomerId = _customerId, WarehouseId = _warehouseId,
-                Lines = { new CreateSalesInvoiceLineDto { LineNo = 1, ProductCode = productCode, Qty = 10, UnitPrice = 25, TaxPercent = 15 } }
+                Lines = { new CreateSalesInvoiceLineDto { LineNo = 1, ProductCode = productCode, Qty = 10, UnitPrice = 25, VatPercent = 15 } }
             });
 
             Assert.True(result.IsSuccess, result.ErrorMessage);
             var invoice = result.Value;
 
             Assert.Equal(250, invoice.SubTotal);
-            Assert.Equal(37.5m, invoice.TaxAmount);
+            Assert.Equal(37.5m, invoice.VatAmount);
             Assert.Equal(287.5m, invoice.NetTotal);
             Assert.Single(invoice.Lines);
 

@@ -17,7 +17,8 @@ namespace PrimeERP.Domain.Entities
         public decimal    SubTotal        { get; set; }
         public decimal    DiscountAmount  { get; set; }
         public decimal    DiscountPercent { get; set; }
-        public decimal    TaxAmount       { get; set; }
+        public decimal    VatAmount       { get; set; }
+        public decimal    WithholdingAmount { get; set; }
         public decimal    NetTotal        { get; set; }
         public decimal    PaidAmount      { get; set; }
         public decimal    RemainingAmount { get; set; }

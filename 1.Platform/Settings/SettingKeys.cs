@@ -69,6 +69,10 @@ namespace PrimeERP.Platform.Settings
             public const string VATInput         = "Accounts.VATInput";
             public const string VATOutput        = "Accounts.VATOutput";
 
+            /// <summary>ضريبة الخصم والإضافة: ما يُحجَز من مستحقّاتنا أصلٌ لدى المصلحة، وما نحجزه من الموردين التزام علينا.</summary>
+            public const string WithholdingReceivable = "Accounts.WithholdingReceivable";
+            public const string WithholdingPayable    = "Accounts.WithholdingPayable";
+
             /// <summary>حسابات دورة الشيكات — بالمحفظة (وارد لم يودَع)، تحت التحصيل (مودع بالبنك)، وشيكات الدفع (صادر).</summary>
 
             /// <summary>false يعطّل الربط التلقائي (حساب↔عميل/مورد) كلياً وبصمت — true (الافتراضي) يفرض نجاح الربط أو Fail صريح، لا سكوت.</summary>
@@ -179,6 +183,8 @@ namespace PrimeERP.Platform.Settings
             new(Accounts.RetainedEarnings, "32",   "string", "Accounts", IsSystem: true),
             new(Accounts.VATInput,         "",     "string", "Accounts", IsSystem: true),
             new(Accounts.VATOutput,        "",     "string", "Accounts", IsSystem: true),
+            new(Accounts.WithholdingReceivable, "", "string", "Accounts", IsSystem: true),
+            new(Accounts.WithholdingPayable,    "", "string", "Accounts", IsSystem: true),
             new(Accounts.AutoLinkEnabled,  "true", "bool",   "Accounts"),
 
             new(Print.ChequeOffsetX, "0",  "string", "Print"),

@@ -524,16 +524,27 @@ namespace PrimeERP.Application.Services.Print
                 table.RowGroups.Add(totalsGroup);
             }
 
+            // سطر لكل إجمالي لا صفّ واحد يحشرها جميعاً: الخلية الأولى تبتلع الأعمدة الباقية فتُحاذى
+            // التسمية والقيمة تحت آخر عمودين، وهو موضعهما في أي فاتورة رسمية.
             if (section.Totals is { Count: > 0 })
             {
                 var totalsGroup = new TableRowGroup();
-                var totalsRow = new TableRow { Background = Res<Brush>("NeutralSoft") };
+                var span = Math.Max(1, table.Columns.Count - 3);
+
                 foreach (var total in section.Totals)
                 {
-                    totalsRow.Cells.Add(NewCell(total.Label, Res<Brush>("TextSecondary"), total.IsBold, TextAlignment.Right));
-                    totalsRow.Cells.Add(NewCell(total.Value, Res<Brush>("TextPrimary"), total.IsBold, TextAlignment.Right));
+                    var row = new TableRow { Background = Res<Brush>(total.IsBold ? "BrandSoft" : "NeutralSoft") };
+                    var filler = NewCell("", Res<Brush>("TextPrimary"), false, TextAlignment.Right);
+                    filler.ColumnSpan = span;
+
+                    row.Cells.Add(filler);
+                    var label = NewCell(total.Label, Res<Brush>("TextSecondary"), total.IsBold, TextAlignment.Right);
+                    label.ColumnSpan = 2;
+                    row.Cells.Add(label);
+                    row.Cells.Add(NewCell(total.Value, Res<Brush>("TextPrimary"), total.IsBold, TextAlignment.Center));
+                    totalsGroup.Rows.Add(row);
                 }
-                totalsGroup.Rows.Add(totalsRow);
+
                 table.RowGroups.Add(totalsGroup);
             }
 

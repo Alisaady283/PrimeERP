@@ -13,9 +13,14 @@ namespace PrimeERP.Domain.Entities
         public decimal UnitPrice       { get; set; }
         public decimal DiscountPercent { get; set; }
         public decimal DiscountAmount  { get; set; }
-        public decimal TaxPercent      { get; set; }
-        public decimal TaxAmount       { get; set; }
+        public decimal VatPercent      { get; set; }
+        public decimal VatAmount       { get; set; }
+        public decimal WithholdingPercent { get; set; }
+        public decimal WithholdingAmount  { get; set; }
+        /// <summary>الكمية × السعر قبل أي خصم أو ضريبة.</summary>
         public decimal LineTotal       { get; set; }
+        /// <summary>صافي المبلغ: الوعاء + القيمة المضافة − الخصم والإضافة.</summary>
+        public decimal NetAmount       { get; set; }
         public string  Notes           { get; set; }
     }
 }
