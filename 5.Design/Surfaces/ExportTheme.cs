@@ -19,6 +19,9 @@ namespace PrimeERP.Design.Surfaces
         public const string TextSecondaryHex = "#475569";
         public const string OutlineHex       = "#E2E8F0";
         public const string HeaderBackgroundHex = "#F1F5F9";
+        public const string BrandHex         = "#0F2442";
+        public const string BrandSoftHex     = "#EEF2F7";
+        public const string SurfaceHex       = "#FFFFFF";
 
         public static string SolidHex(StatusVariant variant) => variant switch
         {

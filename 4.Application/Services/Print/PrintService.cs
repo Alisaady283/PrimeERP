@@ -196,20 +196,8 @@ namespace PrimeERP.Application.Services.Print
         /// <summary>ترويسة رسمية: بيانات الشركة يميناً والشعار يساراً، يفصلهما خطّ بلون الهوية.</summary>
         private Block BuildCompanyHeader()
         {
-            var name = _settings.Get(SettingKeys.Company.Name, "");
-
-            var details = new List<string>();
-            foreach (var (key, label) in new[]
-                     {
-                         (SettingKeys.Company.CommercialRegNo, "س.ت"),
-                         (SettingKeys.Company.TaxNumber, "الرقم الضريبي"),
-                         (SettingKeys.Company.Phone, "هاتف"),
-                         (SettingKeys.Company.Address, ""),
-                     })
-            {
-                var value = _settings.Get(key, "");
-                if (!string.IsNullOrWhiteSpace(value)) details.Add(string.IsNullOrEmpty(label) ? value : label + ": " + value);
-            }
+            var company = CompanyHeaderReader.From(k => _settings.Get(k, ""));
+            var logo = ImageData.Decode(company.LogoData);
 
             // الاتجاه هنا LeftToRight عمداً: RTL يعكس المواضع والمحاذاة معاً، فكان HorizontalAlignment.Right
             // يعني يمين العمود بعد الانعكاس أي جنب الشعار، فيلتصق الطرفان ككتلة واحدة. المواضع مطلقة الآن،
@@ -220,7 +208,6 @@ namespace PrimeERP.Application.Services.Print
                 FlowDirection = FlowDirection.RightToLeft,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 TextWrapping = TextWrapping.NoWrap,
-                FontFamily = Res<FontFamily>("FontFamilyPrimary"),
                 FontSize = Res<double>(size),
                 FontWeight = bold ? Res<FontWeight>("FontWeightBold") : FontWeights.Normal,
                 Foreground = Res<Brush>(colour)
@@ -233,14 +220,8 @@ namespace PrimeERP.Application.Services.Print
                 VerticalAlignment = VerticalAlignment.Center
             };
 
-            text.Children.Add(Line(name, "FontSizeXl", "BrandSolid", bold: true));
-            foreach (var detail in details) text.Children.Add(Line(detail, "FontSizeSm", "TextSecondary"));
-
-            // مقاس الشعار يُشتقّ من ارتفاع بيانات الشركة: نسبة منه، والعرض يتبع نسبة الصورة حتى حدّ العرض.
-            // فلو زادت حقول الشركة أو نقصت تحرّك الشعار معها بدل أن يبقى رقماً ثابتاً يكبر أو يصغر عليها.
-            text.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            var logoHeight = text.DesiredSize.Height * Res<double>("LogoHeightRatio");
-            var logo = LoadLogo((int)Math.Round(logoHeight * Res<double>("PrintPixelScale")));
+            text.Children.Add(Line(company.Name, "FontSizeXl", "BrandSolid", bold: true));
+            foreach (var detail in company.Details) text.Children.Add(Line(detail, "FontSizeSm", "TextSecondary"));
 
             var layout = new Grid { FlowDirection = FlowDirection.LeftToRight };
             layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -253,11 +234,8 @@ namespace PrimeERP.Application.Services.Print
             {
                 var image = new System.Windows.Controls.Image
                 {
-                    Source = logo,
-                    Height = logoHeight,
-                    MaxWidth = logoHeight * Res<double>("LogoAspectMax"),
-                    Stretch = Stretch.Uniform,
-                    VerticalAlignment = VerticalAlignment.Center
+                    Source = logo, MaxWidth = 170, MaxHeight = 72,
+                    Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center
                 };
 
                 Grid.SetColumn(image, 0);
@@ -273,9 +251,6 @@ namespace PrimeERP.Application.Services.Print
             })
             { Margin = new Thickness(0, 0, 0, 10) };
         }
-
-        private BitmapImage LoadLogo(int pixelHeight = 0) =>
-            ImageData.Decode(_settings.Get(SettingKeys.Company.LogoData, ""), pixelHeight);
 
         private Block BuildTitle(string title, string subtitle)
         {
@@ -384,6 +359,37 @@ namespace PrimeERP.Application.Services.Print
 
                 case PrintSectionType.Parties:
                     if (section.Parties is { Count: > 0 }) yield return BuildParties(section.Parties);
+                    break;
+
+                // الثلاثة التالية كانت تُبنى في المستند وتُسقَط بصمت هنا: باركود بلا رسم، وشروط بلا مكان،
+                // ومبلغ كتابةً يُحسب ولا يُطبع.
+                case PrintSectionType.AmountInWords:
+                    yield return BuildCallout(
+                        (string.IsNullOrWhiteSpace(section.Title) ? "مبلغاً وقدره" : section.Title) + ": " +
+                        PrimeERP.Domain.Helpers.ArabicNumberToWords.Convert(section.Amount,
+                            string.IsNullOrWhiteSpace(section.Currency) ? "جنيه" : section.Currency,
+                            string.IsNullOrWhiteSpace(section.SubUnit) ? "قرش" : section.SubUnit),
+                        StatusVariant.Neutral);
+                    break;
+
+                case PrintSectionType.Terms:
+                    if (!string.IsNullOrWhiteSpace(section.Text))
+                    {
+                        yield return new Paragraph(new Run(string.IsNullOrWhiteSpace(section.Title) ? "الشروط والأحكام" : section.Title))
+                        {
+                            FontWeight = Res<FontWeight>("FontWeightSemiBold"),
+                            Margin = new Thickness(0, 14, 0, 4)
+                        };
+                        yield return new Paragraph(new Run(section.Text))
+                        {
+                            FontSize = Res<double>("FontSizeXs"),
+                            Foreground = Res<Brush>("TextSecondary")
+                        };
+                    }
+                    break;
+
+                case PrintSectionType.Barcode:
+                    if (BuildBarcode(section.Text) is { } barcode) yield return barcode;
                     break;
 
                 case PrintSectionType.Table:

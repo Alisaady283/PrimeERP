@@ -1,4 +1,5 @@
 using PrimeERP.Domain.Contracts;
+using PrimeERP.Domain.Helpers;
 using PrimeERP.Application.Services;
 using System;
 using System.Collections;
@@ -12,6 +13,7 @@ using ClosedXML.Excel;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Design.Surfaces;
+using PrimeERP.Application.Services.Print;
 using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Components.Display;
 using QuestPDF.Fluent;
@@ -132,31 +134,31 @@ namespace PrimeERP.UI.Services
                 row.RelativeItem().AlignLeft().Text($"{DateTime.Now:yyyy-MM-dd HH:mm}").FontSize(ExportTheme.BodyFontSize);
             });
 
-        /// <summary>ترويسة الشركة: الشعار وبياناتها — نقطة واحدة يستهلكها تصدير الشبكات وتصدير المستندات،
-        /// فلا يظهر الشعار في الفاتورة ويغيب عن التقرير.</summary>
+        /// <summary>نفس ترويسة الطباعة حرفاً بحرف: محتواها من CompanyHeaderReader لا من قراءة إعدادات ثانية،
+        /// وترتيبها بيانات الشركة يميناً والشعار يساراً يفصلهما خطّ — فلا تفترق الورقة عن الشاشة.</summary>
         private void ComposeCompanyHeader(QuestPDF.Infrastructure.IContainer container, string title, string subtitle)
         {
-            var logo = System.Convert.FromBase64String(
-                string.IsNullOrWhiteSpace(_settings.Get(SettingKeys.Company.LogoData, "")) ? "" : _settings.Get(SettingKeys.Company.LogoData, ""));
-
-            var details = new[] { SettingKeys.Company.TaxNumber, SettingKeys.Company.Phone, SettingKeys.Company.Address }
-                .Select(k => _settings.Get(k, "")).Where(v => !string.IsNullOrWhiteSpace(v)).ToList();
+            var company = CompanyHeaderReader.From(k => _settings.Get(k, ""));
+            var logo = company.HasLogo ? System.Convert.FromBase64String(company.LogoData) : null;
 
             container.Column(col =>
             {
                 col.Item().Row(row =>
                 {
-                    if (logo.Length > 0) row.ConstantItem(56).Height(56).Image(logo).FitArea();
-
-                    row.RelativeItem().PaddingHorizontal(8).Column(info =>
+                    // الصفحة RTL فأول عنصر في الصفّ هو الأيمن: البيانات أولاً ثم الشعار، أي الشعار يساراً.
+                    row.RelativeItem().Column(info =>
                     {
-                        info.Item().Text(_settings.Get(SettingKeys.Company.Name, "")).FontSize(ExportTheme.TitleFontSize).Bold();
-                        if (details.Count > 0)
-                            info.Item().Text(string.Join("  •  ", details)).FontSize(ExportTheme.BodyFontSize);
+                        info.Item().Text(company.Name).FontSize(ExportTheme.TitleFontSize).Bold();
+                        foreach (var detail in company.Details)
+                            info.Item().Text(detail).FontSize(ExportTheme.BodyFontSize);
                     });
+
+                    if (logo != null) row.ConstantItem(130).MaxHeight(64).AlignMiddle().Image(logo).FitArea();
                 });
 
-                col.Item().PaddingTop(6).AlignCenter().Text(title ?? "").FontSize(ExportTheme.HeaderFontSize).Bold();
+                col.Item().PaddingTop(8).BorderBottom(2).BorderColor(ExportTheme.BrandHex);
+
+                col.Item().PaddingTop(10).AlignCenter().Text(title ?? "").FontSize(ExportTheme.HeaderFontSize).Bold();
 
                 if (!string.IsNullOrWhiteSpace(subtitle))
                     col.Item().AlignCenter().Text(subtitle).FontSize(ExportTheme.BodyFontSize);
@@ -240,12 +242,88 @@ namespace PrimeERP.UI.Services
                         col.Item().PaddingTop(8).Text(section.Title).Bold();
                     RenderTable(col, section);
                     break;
+
+                // الأربعة التالية كانت تُبنى في المستند وتُسقَط بصمت هنا، فيخرج PDF ناقصاً عن الورق المطبوع.
+                case PrintSectionType.Callout:
+                    col.Item().PaddingVertical(8)
+                       .Background(ExportTheme.SoftHex(section.Variant ?? StatusVariant.Info))
+                       .Border(1).BorderColor(ExportTheme.SolidHex(section.Variant ?? StatusVariant.Info))
+                       .Padding(8).Text(section.Text).Bold();
+                    break;
+
+                case PrintSectionType.Parties:
+                    if (section.Parties is { Count: > 0 })
+                        col.Item().PaddingBottom(10).Row(row =>
+                        {
+                            foreach (var party in section.Parties)
+                                row.RelativeItem().PaddingHorizontal(4)
+                                   .Background(ExportTheme.HeaderBackgroundHex)
+                                   .Border(1).BorderColor(ExportTheme.OutlineHex).Padding(8).Column(box =>
+                                   {
+                                       box.Item().Text(party.Title).FontSize(ExportTheme.BodyFontSize)
+                                          .FontColor(ExportTheme.TextSecondaryHex);
+                                       box.Item().Text(party.Name).Bold();
+                                       foreach (var line in party.Details ?? new List<string>())
+                                           box.Item().Text(line).FontSize(ExportTheme.BodyFontSize);
+                                   });
+                        });
+                    break;
+
+                case PrintSectionType.AmountInWords:
+                    col.Item().PaddingVertical(8).Background(ExportTheme.HeaderBackgroundHex)
+                       .Border(1).BorderColor(ExportTheme.OutlineHex).Padding(8)
+                       .Text(WordsOf(section)).Bold();
+                    break;
+
+                case PrintSectionType.Terms:
+                    if (!string.IsNullOrWhiteSpace(section.Text))
+                    {
+                        col.Item().PaddingTop(14)
+                           .Text(string.IsNullOrWhiteSpace(section.Title) ? "الشروط والأحكام" : section.Title).Bold();
+                        col.Item().Text(section.Text).FontSize(ExportTheme.BodyFontSize)
+                           .FontColor(ExportTheme.TextSecondaryHex);
+                    }
+                    break;
+
+                case PrintSectionType.Barcode:
+                    RenderBarcode(col, section.Text);
+                    break;
             }
+        }
+
+        private static string WordsOf(PrintSection section) =>
+            (string.IsNullOrWhiteSpace(section.Title) ? "مبلغاً وقدره" : section.Title) + ": " +
+            ArabicNumberToWords.Convert(section.Amount,
+                string.IsNullOrWhiteSpace(section.Currency) ? "جنيه" : section.Currency,
+                string.IsNullOrWhiteSpace(section.SubUnit) ? "قرش" : section.SubUnit);
+
+        /// <summary>نفس ترميز Code128 المستخدَم في الطباعة — الأشرطة مستطيلات بعرض متناوب.</summary>
+        private static void RenderBarcode(QuestPDF.Fluent.ColumnDescriptor col, string text)
+        {
+            var widths = Code128.Encode(text ?? "");
+            if (widths.Count == 0) return;
+
+            col.Item().PaddingTop(10).AlignCenter().Height(34).Row(row =>
+            {
+                for (var i = 0; i < widths.Count; i++)
+                    row.ConstantItem(widths[i] * 0.85f)
+                       .Background(i % 2 == 0 ? ExportTheme.TextPrimaryHex : ExportTheme.SurfaceHex);
+            });
+
+            col.Item().AlignCenter().Text(text).FontSize(ExportTheme.BodyFontSize);
         }
 
         private static void RenderTable(QuestPDF.Fluent.ColumnDescriptor col, PrintSection section)
         {
             var columns = section.Columns ?? new List<PrintColumn>();
+
+            static string CellText(Dictionary<string, object> source, PrintColumn column)
+            {
+                var raw = source.TryGetValue(column.Key, out var v) ? v : null;
+                return raw is IFormattable f && !string.IsNullOrEmpty(column.Format)
+                    ? f.ToString(column.Format, CultureInfo.InvariantCulture)
+                    : raw?.ToString() ?? "";
+            }
 
             col.Item().Table(table =>
             {
@@ -268,20 +346,31 @@ namespace PrimeERP.UI.Services
                 foreach (var row in section.Rows ?? new List<Dictionary<string, object>>())
                     foreach (var c in columns)
                     {
-                        var raw = row.TryGetValue(c.Key, out var v) ? v : null;
-                        var text = raw is IFormattable f && !string.IsNullOrEmpty(c.Format)
-                            ? f.ToString(c.Format, CultureInfo.InvariantCulture)
-                            : raw?.ToString() ?? "";
-                        table.Cell().Border(1).BorderColor(ExportTheme.OutlineHex).Padding(5).Text(text);
+                        var cell = table.Cell().Border(1).BorderColor(ExportTheme.OutlineHex).Padding(5);
+                        (c.Align == "Center" ? cell.AlignCenter() : cell).Text(CellText(row, c));
+                    }
+
+                // صفّ إجمالي الأعمدة كان غائباً عن PDF وحده، فيخرج الجدول بلا خلاصة.
+                if (section.TotalsRow is { Count: > 0 })
+                    foreach (var c in columns)
+                    {
+                        var cell = table.Cell().Background(ExportTheme.HeaderBackgroundHex)
+                                        .Border(1).BorderColor(ExportTheme.OutlineHex).Padding(5);
+                        (c.Align == "Center" ? cell.AlignCenter() : cell).Text(CellText(section.TotalsRow, c)).Bold();
                     }
             });
 
+            // سطر لكل إجمالي لا صفّ أفقي واحد يحشرها — نفس ترتيب الورق المطبوع.
             if (section.Totals is { Count: > 0 })
-                col.Item().PaddingTop(4).Row(row =>
-                {
-                    foreach (var t in section.Totals)
-                        row.RelativeItem().Text($"{t.Label}: {t.Value}");
-                });
+                foreach (var total in section.Totals)
+                    col.Item().PaddingTop(2)
+                       .Background(total.IsBold ? ExportTheme.BrandSoftHex : ExportTheme.HeaderBackgroundHex)
+                       .Padding(5).Row(line =>
+                       {
+                           line.RelativeItem();
+                           line.ConstantItem(150).Text(total.Label).FontColor(ExportTheme.TextSecondaryHex);
+                           line.ConstantItem(90).AlignCenter().Text(total.Value).Bold();
+                       });
         }
 
         private static void RenderSignatures(QuestPDF.Fluent.ColumnDescriptor col, List<string> labels)

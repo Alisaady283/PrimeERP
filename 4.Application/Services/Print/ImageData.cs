@@ -32,23 +32,15 @@ namespace PrimeERP.Application.Services.Print
 
         /// <summary>الصورة تُجمَّد قبل إعادتها — بناء مستند الطباعة يجري على خيط STA غير خيط الإنشاء، وبلا
         /// تجميد يرمي "belongs to a different thread" (نفس سبب تجميد فُرَش PrintTheme).</summary>
-        /// <param name="pixelHeight">صفر = الأبعاد الأصلية؛ أكبر يفكّ الصورة بهذا الارتفاع والعرض يتبع نسبتها.</param>
-        public static BitmapImage Decode(string base64, int pixelHeight = 0)
+        public static BitmapImage Decode(string base64)
         {
             if (string.IsNullOrWhiteSpace(base64)) return null;
 
             try
             {
-                var bytes = Convert.FromBase64String(base64);
-
-                // لا تُفكّ أكبر من دقّتها الأصلية: التكبير عند الفكّ يستهلك ذاكرة بلا أي مكسب في الوضوح.
-                var natural = BitmapFrame.Create(new MemoryStream(bytes),
-                    BitmapCreateOptions.DelayCreation, BitmapCacheOption.None).PixelHeight;
-
                 var image = new BitmapImage();
                 image.BeginInit();
-                image.StreamSource = new MemoryStream(bytes);
-                if (pixelHeight > 0 && pixelHeight < natural) image.DecodePixelHeight = pixelHeight;
+                image.StreamSource = new MemoryStream(Convert.FromBase64String(base64));
                 image.CacheOption = BitmapCacheOption.OnLoad;
                 image.EndInit();
                 image.Freeze();
