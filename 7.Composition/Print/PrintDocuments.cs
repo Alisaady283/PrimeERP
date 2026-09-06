@@ -15,7 +15,16 @@ namespace PrimeERP.Composition.Print
     {
         private static readonly string[] TradeSignatures = { "المُعِد", "المراجع", "المستلم" };
 
-        public static IPrintable Trade(DocumentDialogDefinition definition, string title, object document, string terms = null)
+        /// <summary>خيارات الورق المشتركة — تُقرأ من الإعدادات مرة، وتسري على كل العائلات.</summary>
+        public class PaperOptions
+        {
+            public List<string> CopyLabels { get; init; } = new();
+            public int LinesPerPage { get; init; }
+            public string Terms { get; init; }
+            public string BarcodeText { get; init; }
+        }
+
+        public static IPrintable Trade(DocumentDialogDefinition definition, string title, object document, PaperOptions paper = null)
         {
             var doc = new DocumentReader(document);
             var sections = new List<PrintSection>();
@@ -41,8 +50,11 @@ namespace PrimeERP.Composition.Print
                 sections.Add(BuildTable(definition, lines, split));
             }
 
-            if (!string.IsNullOrWhiteSpace(terms))
-                sections.Add(new PrintSection { Type = PrintSectionType.Terms, Text = terms });
+            if (!string.IsNullOrWhiteSpace(paper?.BarcodeText))
+                sections.Add(new PrintSection { Type = PrintSectionType.Barcode, Text = paper.BarcodeText });
+
+            if (!string.IsNullOrWhiteSpace(paper?.Terms))
+                sections.Add(new PrintSection { Type = PrintSectionType.Terms, Text = paper.Terms });
 
             return new ComposedPrintable
             {
@@ -52,7 +64,38 @@ namespace PrimeERP.Composition.Print
                 Header = HeaderFields(definition, doc),
                 Footer = doc.NotesField(),
                 Signatures = TradeSignatures.ToList(),
+                CopyLabels = paper?.CopyLabels ?? new(),
+                LinesPerPage = paper?.LinesPerPage ?? 0,
                 Sections = sections
+            };
+        }
+
+        /// <summary>تقرير: نفس جدول العائلة التجارية بأعمدة التقرير وصفوفه.</summary>
+        public static IPrintable Report(Definitions.ReportResult result, PrintOrientation orientation = PrintOrientation.Portrait)
+        {
+            var columns = result.Columns
+                .Select(c => new PrintColumn
+                {
+                    Key = c.Binding, Header = c.Header, Width = c.Width / 100.0,
+                    Align = c.Align == UI.Components.Display.ColumnAlign.Center ? "Center" : null,
+                    Format = c.Format
+                })
+                .ToList();
+
+            var rows = result.Rows.Cast<object>()
+                .Select(item => columns.ToDictionary(c => c.Key, c => item.GetType().GetProperty(c.Key)?.GetValue(item)))
+                .ToList();
+
+            var section = new PrintSection { Type = PrintSectionType.Table, Columns = columns, Rows = rows };
+            if (rows.Count > 0) section.TotalsRow = TotalsRow(columns, rows);
+
+            return new ComposedPrintable
+            {
+                Title = result.Title,
+                Subtitle = result.SubTitle ?? result.GeneratedAt.ToString("yyyy-MM-dd HH:mm"),
+                Orientation = orientation,
+                Signatures = new(),
+                Sections = new() { section }
             };
         }
 
@@ -243,6 +286,9 @@ namespace PrimeERP.Composition.Print
             public bool ShowPageNumbers => true;
             public bool ShowSignatures => Signatures is { Count: > 0 };
             public List<string> SignatureLabels => Signatures;
+
+            public List<string> CopyLabels { get; init; } = new();
+            public int LinesPerPage { get; init; }
 
             public List<PrintSection> BuildSections() => Sections;
         }

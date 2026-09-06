@@ -28,5 +28,13 @@ namespace PrimeERP.Tests
 
             capturedException?.Throw();
         }
+
+        /// <summary>نسخة تُعيد قيمة — بناء مستند الطباعة يجري على خيط STA ونتيجته تُفحَص بعده.</summary>
+        public static T Run<T>(Func<T> function)
+        {
+            var result = default(T);
+            Run(() => { result = function(); });
+            return result;
+        }
     }
 }

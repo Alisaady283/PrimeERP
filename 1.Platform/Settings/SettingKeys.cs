@@ -75,6 +75,15 @@ namespace PrimeERP.Platform.Settings
             public const string AutoLinkEnabled  = "Accounts.AutoLinkEnabled";
         }
 
+        public static class Print
+        {
+            public const string ChequeOffsetX = "Print.ChequeOffsetX";
+            public const string ChequeOffsetY = "Print.ChequeOffsetY";
+            public const string CopyLabels    = "Print.CopyLabels";
+            public const string LinesPerPage  = "Print.LinesPerPage";
+            public const string Terms         = "Print.Terms";
+        }
+
         public static class Documents
         {
             public const string JournalPrefix         = "Documents.JournalPrefix";
@@ -172,6 +181,11 @@ namespace PrimeERP.Platform.Settings
             new(Accounts.VATOutput,        "",     "string", "Accounts", IsSystem: true),
             new(Accounts.AutoLinkEnabled,  "true", "bool",   "Accounts"),
 
+            new(Print.ChequeOffsetX, "0",  "string", "Print"),
+            new(Print.ChequeOffsetY, "0",  "string", "Print"),
+            new(Print.CopyLabels,    "",   "string", "Print"),
+            new(Print.LinesPerPage,  "0",  "int",    "Print"),
+            new(Print.Terms,         "",   "string", "Print"),
             new(Documents.JournalPrefix,         "JE",   "string", "Documents"),
             new(Documents.SalesInvoicePrefix,    "INV",  "string", "Documents"),
             new(Documents.PurchaseInvoicePrefix, "PINV", "string", "Documents"),

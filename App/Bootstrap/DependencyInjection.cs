@@ -134,6 +134,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<PrimeERP.Application.Services.Treasury.ITreasuryService, PrimeERP.Application.Services.Treasury.TreasuryService>();
             services.AddSingleton<PrimeERP.Application.Services.Vouchers.IReceiptVoucherService, PrimeERP.Application.Services.Vouchers.ReceiptVoucherService>();
             services.AddSingleton<PrimeERP.Application.Services.Vouchers.IPaymentVoucherService, PrimeERP.Application.Services.Vouchers.PaymentVoucherService>();
+            services.AddSingleton<PrimeERP.Application.Services.Print.IChequePrinter, PrimeERP.Application.Services.Print.ChequePrinter>();
             services.AddSingleton<PrimeERP.Application.Services.Assets.IAssetDepreciationService, PrimeERP.Application.Services.Assets.AssetDepreciationService>();
             services.AddSingleton<PrimeERP.Application.Services.Accounting.IOpeningBalanceService, PrimeERP.Application.Services.Accounting.OpeningBalanceService>();
             services.AddSingleton<PrimeERP.Application.Services.Cheques.IChequeService, PrimeERP.Application.Services.Cheques.ChequeService>();

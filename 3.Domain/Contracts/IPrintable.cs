@@ -7,7 +7,7 @@ namespace PrimeERP.Domain.Contracts
 {
     public enum PrintOrientation { Portrait, Landscape }
 
-    public enum PrintSectionType { Title, KeyValues, Table, Text, Spacer, Callout, Parties, AmountInWords, Terms }
+    public enum PrintSectionType { Title, KeyValues, Table, Text, Spacer, Callout, Parties, AmountInWords, Terms, Barcode }
 
     public static class PrintTotals
     {
@@ -94,5 +94,11 @@ namespace PrimeERP.Domain.Contracts
         bool ShowPageNumbers { get; }
         bool ShowSignatures { get; }
         List<string> SignatureLabels { get; }
+
+        /// <summary>تسميات النسخ (أصل / صورة العميل) — فارغة تعني نسخة واحدة بلا تسمية.</summary>
+        List<string> CopyLabels => new();
+
+        /// <summary>صفر = جدول واحد؛ أكبر يقسّمه ويكرّر رأسه في كل صفحة.</summary>
+        int LinesPerPage => 0;
     }
 }

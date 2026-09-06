@@ -23,7 +23,7 @@ namespace PrimeERP.Composition.Renderers
         private static readonly (string Category, string TitleKey)[] CategoryOrder =
         {
             ("Company", "Str.Settings.Company"), ("Financial", "Str.Settings.Financial"), ("Accounts", "Str.Settings.Accounts"),
-            ("Documents", "Str.Settings.Documents"), ("UI", "Str.Settings.UI"), ("Backup", "Str.Settings.Backup"), ("Security", "Str.Settings.Security"),
+            ("Documents", "Str.Settings.Documents"), ("UI", "Str.Settings.UI"), ("Print", "الطباعة"), ("Backup", "Str.Settings.Backup"), ("Security", "Str.Settings.Security"),
         };
 
         public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services)
@@ -200,6 +200,9 @@ namespace PrimeERP.Composition.Renderers
             [SettingKeys.Accounts.AccumulatedDepreciation] = "حساب مجمع الإهلاك",
             [SettingKeys.Accounts.AutoLinkEnabled] = "تفعيل الربط التلقائي بالشجرة",
 
+            [SettingKeys.Print.ChequeOffsetX] = "معايرة الشيك أفقياً (سم)", [SettingKeys.Print.ChequeOffsetY] = "معايرة الشيك رأسياً (سم)",
+            [SettingKeys.Print.CopyLabels] = "تسميات النسخ (مفصولة بفاصلة)", [SettingKeys.Print.LinesPerPage] = "سطور الجدول في الصفحة (0 = تلقائي)",
+            [SettingKeys.Print.Terms] = "الشروط والأحكام",
             [SettingKeys.Documents.JournalPrefix] = "بادئة قيود اليومية", [SettingKeys.Documents.SalesInvoicePrefix] = "بادئة فاتورة البيع",
             [SettingKeys.Documents.PurchaseInvoicePrefix] = "بادئة فاتورة الشراء", [SettingKeys.Documents.StockVoucherPrefix] = "بادئة إذن المخزون",
             [SettingKeys.Documents.NumberPadding] = "عدد أصفار الترقيم", [SettingKeys.Documents.ResetNumbersYearly] = "إعادة الترقيم كل سنة",

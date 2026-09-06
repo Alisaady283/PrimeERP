@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.Services.Print;
 using PrimeERP.Composition.Definitions;
@@ -16,6 +17,22 @@ namespace PrimeERP.Composition.Renderers
     {
         private const string ReceiptNarrative = "استلمنا من السيد / السادة: {Party}";
         private const string PaymentNarrative = "ادفعوا بموجب هذا الأمر إلى السيد / السادة: {Party}";
+
+        /// <summary>النسخ وسطور الصفحة والشروط والباركود — كلها من الإعدادات، فلا قيمة ورقية في الكود.</summary>
+        private static PrintDocuments.PaperOptions PaperFrom(PrimeERP.Platform.Settings.ISettingsProvider settings, object doc)
+        {
+            var labels = settings.Get(PrimeERP.Platform.Settings.SettingKeys.Print.CopyLabels, "");
+            var number = doc?.GetType().GetProperty("DocNo")?.GetValue(doc) as string
+                      ?? doc?.GetType().GetProperty("InvoiceNo")?.GetValue(doc) as string;
+
+            return new PrintDocuments.PaperOptions
+            {
+                CopyLabels = labels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
+                LinesPerPage = settings.Get(PrimeERP.Platform.Settings.SettingKeys.Print.LinesPerPage, 0),
+                Terms = settings.Get(PrimeERP.Platform.Settings.SettingKeys.Print.Terms, ""),
+                BarcodeText = number
+            };
+        }
 
         private static IPrintable VoucherDocument(PrimeERP.Application.DTOs.Vouchers.VoucherDetailDto voucher,
             bool isReceipt, PrimeERP.Platform.Settings.ISettingsProvider settings)
@@ -77,7 +94,7 @@ namespace PrimeERP.Composition.Renderers
 
             var printable = document is PrimeERP.Application.DTOs.Vouchers.VoucherDetailDto voucher
                 ? VoucherDocument(voucher, definition.Key == "Receipts", settings)
-                : PrintDocuments.Trade(def, title, document);
+                : PrintDocuments.Trade(def, title, document, PaperFrom(settings, doc: document));
 
             var printed = services.GetRequiredService<IPrintService>().PrintPreview(printable);
 

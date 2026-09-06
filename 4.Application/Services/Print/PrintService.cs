@@ -87,10 +87,16 @@ namespace PrimeERP.Application.Services.Print
 
             try
             {
-                var flowDocument = BuildFlowDocument(document);
                 var pageSize = PageSizeFor(document.Orientation);
-                var fixedDocument = ConvertToFixedDocument(flowDocument, pageSize, document.ShowPageNumbers);
-                return Result.Ok(fixedDocument);
+                var labels = document.CopyLabels is { Count: > 0 } ? document.CopyLabels : new List<string> { null };
+
+                // كل نسخة تُبنى كصفحاتها الخاصة وتُضاف لمستند واحد — نقل PageContent بين مستندين لا يعمل.
+                var combined = new FixedDocument();
+                foreach (var label in labels)
+                    foreach (var page in BuildPages(BuildFlowDocument(document, label), pageSize, document.ShowPageNumbers))
+                        combined.Pages.Add(page);
+
+                return Result.Ok(combined);
             }
             catch (Exception ex)
             {
@@ -138,7 +144,7 @@ namespace PrimeERP.Application.Services.Print
 
         // ===== بناء المحتوى =====
 
-        private FlowDocument BuildFlowDocument(IPrintable document)
+        private FlowDocument BuildFlowDocument(IPrintable document, string copyLabel = null)
         {
             var flow = new FlowDocument
             {
@@ -155,11 +161,20 @@ namespace PrimeERP.Application.Services.Print
 
             flow.Blocks.Add(BuildTitle(document.DocumentTitle, document.DocumentSubtitle));
 
+            if (!string.IsNullOrWhiteSpace(copyLabel))
+                flow.Blocks.Add(new Paragraph(new Run(copyLabel))
+                {
+                    TextAlignment = TextAlignment.Center,
+                    FontSize = Res<double>("FontSizeSm"),
+                    Foreground = Res<Brush>("TextSecondary"),
+                    Margin = new Thickness(0, 0, 0, 8)
+                });
+
             if (document.HeaderFields is { Count: > 0 })
                 flow.Blocks.Add(BuildKeyValues(document.HeaderFields));
 
             foreach (var section in document.BuildSections() ?? new List<PrintSection>())
-                foreach (var block in BuildSectionBlocks(section))
+                foreach (var block in BuildSectionBlocks(section, document.LinesPerPage))
                     flow.Blocks.Add(block);
 
             if (document.FooterFields is { Count: > 0 })
@@ -304,7 +319,7 @@ namespace PrimeERP.Application.Services.Print
             })
             { Padding = new Thickness(2, 3, 8, 3) };
 
-        private IEnumerable<Block> BuildSectionBlocks(PrintSection section)
+        private IEnumerable<Block> BuildSectionBlocks(PrintSection section, int linesPerPage)
         {
             switch (section.Type)
             {
@@ -351,7 +366,7 @@ namespace PrimeERP.Application.Services.Print
                             FontWeight = Res<FontWeight>("FontWeightSemiBold"),
                             Margin = new Thickness(0, 10, 0, 4)
                         };
-                    yield return BuildTable(section);
+                    foreach (var table in BuildTablePages(section, linesPerPage)) yield return table;
                     break;
             }
         }
@@ -405,6 +420,32 @@ namespace PrimeERP.Application.Services.Print
             group.Rows.Add(row);
             table.RowGroups.Add(group);
             return table;
+        }
+
+        /// <summary>الجدول الطويل يُقسَّم لجداول كلٌّ برأسه، فيتكرّر الرأس مع كل صفحة. صفر = جدول واحد.</summary>
+        private IEnumerable<Block> BuildTablePages(PrintSection section, int linesPerPage)
+        {
+            var rows = section.Rows ?? new List<Dictionary<string, object>>();
+            if (linesPerPage <= 0 || rows.Count <= linesPerPage)
+            {
+                yield return BuildTable(section);
+                yield break;
+            }
+
+            for (var offset = 0; offset < rows.Count; offset += linesPerPage)
+            {
+                var isLast = offset + linesPerPage >= rows.Count;
+                var table = BuildTable(new PrintSection
+                {
+                    Type = section.Type, Columns = section.Columns, RowBold = section.RowBold,
+                    Rows = rows.Skip(offset).Take(linesPerPage).ToList(),
+                    TotalsRow = isLast ? section.TotalsRow : null,
+                    Totals = isLast ? section.Totals : null
+                });
+
+                table.BreakPageBefore = offset > 0;
+                yield return table;
+            }
         }
 
         private Table BuildTable(PrintSection section)
@@ -513,6 +554,31 @@ namespace PrimeERP.Application.Services.Print
             };
         }
 
+        /// <summary>أشرطة Code128 بعروض متناوبة — الترميز في Domain والرسم هنا.</summary>
+        private Block BuildBarcode(string text)
+        {
+            var widths = PrimeERP.Domain.Helpers.Code128.Encode(text);
+            if (widths.Count == 0) return null;
+
+            const double Unit = 1.1, Height = 38;
+            var bars = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, FlowDirection = FlowDirection.LeftToRight };
+
+            for (var i = 0; i < widths.Count; i++)
+                bars.Children.Add(new System.Windows.Shapes.Rectangle
+                {
+                    Width = widths[i] * Unit,
+                    Height = Height,
+                    Fill = i % 2 == 0 ? Res<Brush>("TextPrimary") : Brushes.Transparent
+                });
+
+            var paragraph = new Paragraph { TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 6, 0, 2) };
+            paragraph.Inlines.Add(new InlineUIContainer(bars));
+            paragraph.Inlines.Add(new LineBreak());
+            paragraph.Inlines.Add(new Run(text) { FontSize = Res<double>("FontSizeXs"), Foreground = Res<Brush>("TextSecondary") });
+
+            return paragraph;
+        }
+
         /// <summary>سطر لكل جزء — FlowDocument يحتاج LineBreak صريحاً.</summary>
         private static readonly char[] LineSeparators = { (char)10 };
 
@@ -566,6 +632,15 @@ namespace PrimeERP.Application.Services.Print
         /// <summary>يحوّل FlowDocument المُرقَّم إلى FixedDocument (تقنية VisualBrush القياسية في WPF)، مع تذييل "صفحة X من Y" حقيقي لكل صفحة فعلية.</summary>
         private static FixedDocument ConvertToFixedDocument(FlowDocument flowDocument, Size pageSize, bool showPageNumbers)
         {
+            var document = new FixedDocument();
+            foreach (var page in BuildPages(flowDocument, pageSize, showPageNumbers)) document.Pages.Add(page);
+
+            return document;
+        }
+
+        /// <summary>صفحات غير مرتبطة بمستند — PageContent لا يقبل مستندين، فبناء النسخ يحتاجها حرّة.</summary>
+        private static List<PageContent> BuildPages(FlowDocument flowDocument, Size pageSize, bool showPageNumbers)
+        {
             flowDocument.PageWidth  = pageSize.Width;
             flowDocument.PageHeight = pageSize.Height;
             flowDocument.ColumnWidth = pageSize.Width;
@@ -577,7 +652,7 @@ namespace PrimeERP.Application.Services.Print
             if (paginator is DynamicDocumentPaginator dynamicPaginator && !dynamicPaginator.IsPageCountValid)
                 dynamicPaginator.ComputePageCount();
 
-            var fixedDocument = new FixedDocument();
+            var pages = new List<PageContent>();
             int totalPages = paginator.PageCount;
 
             for (int i = 0; i < totalPages; i++)
@@ -610,10 +685,10 @@ namespace PrimeERP.Application.Services.Print
 
                 var pageContent = new PageContent();
                 ((IAddChild)pageContent).AddChild(fixedPage);
-                fixedDocument.Pages.Add(pageContent);
+                pages.Add(pageContent);
             }
 
-            return fixedDocument;
+            return pages;
         }
     }
 }
