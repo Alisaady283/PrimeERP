@@ -7,7 +7,7 @@
 
     <SolidColorBrush x:Key="C.Grid.Header.Bg"     Color="{DynamicResource GridHeaderBg.Color}"/>
     <SolidColorBrush x:Key="C.Grid.Header.Fg"     Color="{DynamicResource GridHeaderFg.Color}"/>
-    <SolidColorBrush x:Key="C.Grid.Header.Border" Color="{DynamicResource BrandHover.Color}"/>
+    <SolidColorBrush x:Key="C.Grid.Header.Border" Color="{DynamicResource OutlineDefault.Color}"/>  <!-- فاصل لا لون هوية: الكحلي الداكن كان يكسر الرأس الرمادي في الوضع الفاتح -->
 
     <SolidColorBrush x:Key="C.Grid.Row.Bg"      Color="{DynamicResource SurfaceRaised.Color}"/>
     <SolidColorBrush x:Key="C.Grid.Row.AltBg"   Color="{DynamicResource GridRowAltBg.Color}"/>
@@ -29,7 +29,7 @@
     <sys:Double      x:Key="C.Grid.Empty.IconSize">40</sys:Double>
 
     <sys:Double x:Key="C.Grid.Header.Height">44</sys:Double>
-    <Thickness  x:Key="C.Grid.Header.BorderBottomThickness">0,0,0,2</Thickness>
+    <Thickness  x:Key="C.Grid.Header.BorderBottomThickness">0,0,0,1</Thickness>
     <sys:Double x:Key="C.Grid.Row.Height">40</sys:Double>
     <Thickness  x:Key="C.Grid.Row.Selected.BorderThickness">0,0,3,0</Thickness>
     <sys:Double x:Key="C.Grid.Footer.Height">36</sys:Double>
