@@ -22,6 +22,19 @@ namespace PrimeERP.Composition.Print
             new() { Key = "NetAmount",   Header = "صافي المبلغ",  Width = 1.2 },
         };
 
+        /// <summary>عمود الصافي في نموذج الإدخال — للعرض فقط، تملؤه المعادلة لا المستخدم.</summary>
+        public static LineFieldDefinition NetColumn() => new()
+        {
+            Key = "NetAmount", Header = "صافي المبلغ", Kind = FieldKind.ReadOnly, Width = 110
+        };
+
+        public static LineMathDefinition LineMath() => new()
+        {
+            QtyKey = "Qty", PriceKey = "UnitPrice",
+            DiscountPercentKey = "DiscountPercent", VatPercentKey = "VatPercent",
+            WithholdingPercentKey = "WithholdingPercent", NetKey = "NetAmount"
+        };
+
         public static List<PrintTotalDefinition> Totals() => new()
         {
             new() { Key = "SubTotal",          Label = "الإجمالي" },

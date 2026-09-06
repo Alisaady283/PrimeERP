@@ -13,5 +13,6 @@
     <sys:Double x:Key="C.Dialog.Width.Md">560</sys:Double>
     <sys:Double x:Key="C.Dialog.Width.Lg">760</sys:Double>
     <sys:Double x:Key="C.Dialog.Width.Xl">1000</sys:Double>
+    <sys:Double x:Key="C.Dialog.Width.Xxl">1260</sys:Double>
 
 </ResourceDictionary>

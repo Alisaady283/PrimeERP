@@ -39,6 +39,18 @@ namespace PrimeERP.Composition.Definitions
         public bool IsBold { get; init; }
     }
 
+    /// <summary>حساب صافي السطر حيّاً أثناء الإدخال — المفاتيح فقط، والمعادلة من DocumentTotals نفسها
+    /// التي يرحّل بها الحفظ، فلا تُكتب مرتين ولا يختلف ما يراه المستخدم عمّا يُخزَّن.</summary>
+    public class LineMathDefinition
+    {
+        public required string QtyKey { get; init; }
+        public required string PriceKey { get; init; }
+        public string DiscountPercentKey { get; init; }
+        public string VatPercentKey { get; init; }
+        public string WithholdingPercentKey { get; init; }
+        public required string NetKey { get; init; }
+    }
+
     public class DocumentDialogDefinition
     {
         public required string TitleKey { get; init; }
@@ -59,6 +71,9 @@ namespace PrimeERP.Composition.Definitions
 
         /// <summary>إجماليات أسفل المستند: تسمية ← خاصية على الرأس. فارغ = بلا صندوق إجماليات.</summary>
         public List<PrintTotalDefinition> PrintTotals { get; init; }
+
+        /// <summary>فارغ = بلا حساب حيّ.</summary>
+        public LineMathDefinition LineMath { get; init; }
 
         public string DocumentKind { get; init; }
         public List<PullSource> PullSources { get; init; } = new();

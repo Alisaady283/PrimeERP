@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using PrimeERP.Domain.Helpers;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -131,6 +133,8 @@ namespace PrimeERP.Composition.Renderers
                 Grid.SetColumn(removeBtn, col);
                 rowGrid.Children.Add(removeBtn);
 
+                WireLineMath(def, rowControls);
+
                 var entry = new EditorRow { Row = rowGrid, Controls = rowControls };
                 removeBtn.Click += (_, __) => RemoveRow(entry);
 
@@ -223,6 +227,33 @@ namespace PrimeERP.Composition.Renderers
             };
 
             return editor;
+        }
+
+        /// <summary>يربط صافي السطر بمدخلاته: أي تغيير في الكمية أو السعر أو النِّسَب يعيد الحساب فوراً
+        /// بنفس DocumentTotals التي يرحّل بها الحفظ — فما يراه المستخدم هو ما يُخزَّن، لا معادلة ثانية.</summary>
+        private static void WireLineMath(DocumentDialogDefinition def, Dictionary<string, FrameworkElement> controls)
+        {
+            var math = def.LineMath;
+            if (math == null || !controls.TryGetValue(math.NetKey, out var netControl) || netControl is not AppTextBox net) return;
+
+            decimal Value(string key) =>
+                key != null && controls.TryGetValue(key, out var control) && control is AppNumericBox box ? box.Value : 0m;
+
+            void Recalculate() => net.Text = DocumentTotals.ForLine(
+                Value(math.QtyKey), Value(math.PriceKey),
+                Value(math.DiscountPercentKey), Value(math.VatPercentKey), Value(math.WithholdingPercentKey))
+                .Net.ToString("N2");
+
+            foreach (var key in new[] { math.QtyKey, math.PriceKey, math.DiscountPercentKey, math.VatPercentKey, math.WithholdingPercentKey })
+            {
+                if (key == null || !controls.TryGetValue(key, out var control) || control is not AppNumericBox box) continue;
+
+                // AppNumericBox.Value خاصية اعتمادية بلا حدث عام — هذا الأسلوب القياسي للاستماع لها.
+                DependencyPropertyDescriptor.FromProperty(AppNumericBox.ValueProperty, typeof(AppNumericBox))
+                    .AddValueChanged(box, (_, _) => Recalculate());
+            }
+
+            Recalculate();
         }
 
         // فارغ = كل حقوله بلا قيمة فعلية (نص فارغ/صفر/بلا اختيار).
@@ -326,7 +357,9 @@ namespace PrimeERP.Composition.Renderers
         private static double ComputeDialogWidth(DocumentDialogDefinition def)
         {
             var contentWidth = def.LineFields.Sum(lf => lf.Width) + 40 + 64;
-            var key = contentWidth <= 560 ? "C.Dialog.Width.Md" : contentWidth <= 760 ? "C.Dialog.Width.Lg" : "C.Dialog.Width.Xl";
+            var key = contentWidth <= 560 ? "C.Dialog.Width.Md"
+                    : contentWidth <= 760 ? "C.Dialog.Width.Lg"
+                    : contentWidth <= 1000 ? "C.Dialog.Width.Xl" : "C.Dialog.Width.Xxl";
             return (double)System.Windows.Application.Current.FindResource(key);
         }
 

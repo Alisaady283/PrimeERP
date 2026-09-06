@@ -87,6 +87,12 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(287.5m, invoice.NetTotal);
             Assert.Single(invoice.Lines);
 
+            // صافي السطر يُخزَّن ويُقرأ — كان يُحسب ثم يسقط من خريطة الـDTO فيُطبع صفراً.
+            var line = invoice.Lines.Single();
+            Assert.Equal(250m, line.LineTotal);
+            Assert.Equal(37.5m, line.VatAmount);
+            Assert.Equal(287.5m, line.NetAmount);
+
             var stock = _db.Services.GetRequiredService<IStockService>();
             Assert.Equal(90, stock.GetBalance(_productId, _warehouseId).Value);
 
