@@ -127,6 +127,8 @@ namespace PrimeERP.UI.Components.Display
         /// <summary>ينقل العقدة للحالة التالية ثم ينشرها لكل الأبناء — عقدة الأب هي "تحديد/إلغاء الكل" لفرعها.</summary>
         public void Cycle(TreeNodeViewModel node)
         {
+            if (!node.IsCheckEnabled) return;
+
             var next = CheckMode == TreeCheckMode.ThreeState
                 ? node.CheckState switch
                 {

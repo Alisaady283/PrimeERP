@@ -34,6 +34,8 @@ namespace PrimeERP.Modules
                         var roots = PermissionTreeFactory.Build();
                         foreach (var node in PermissionTreeFactory.KeyNodes(roots))
                             node.CheckState = granted.Contains(node.Id) ? NodeCheckState.Checked : NodeCheckState.Unchecked;
+
+                        SyncModules(roots, NodeCheckState.Checked);
                         return roots;
                     },
                     Save = (services, roleId, nodes) =>
@@ -44,6 +46,7 @@ namespace PrimeERP.Modules
                         services.GetRequiredService<IPermissionAdminService>().SetRolePermissions(roleId, keys);
                         return Result.Ok();
                     },
+                    OnCheckChanged = (node, roots) => ApplyViewGate(node, roots, on: NodeCheckState.Checked),
                     Actions = new List<TreeCheckListAction>
                     {
                         new()
@@ -92,6 +95,7 @@ namespace PrimeERP.Modules
                                 node.InheritedHint = admin.IsInheritedFromRole(userId, node.Id) ? "(الدور: مسموح)" : "(الدور: ممنوع)";
                         }
 
+                        SyncModules(roots, NodeCheckState.Granted);
                         return roots;
                     },
                     Save = (services, userId, nodes) =>
@@ -108,6 +112,7 @@ namespace PrimeERP.Modules
                         }
                         return Result.Ok();
                     },
+                    OnCheckChanged = (node, roots) => ApplyViewGate(node, roots, on: NodeCheckState.Granted),
                     Actions = new List<TreeCheckListAction>
                     {
                         new()
@@ -118,6 +123,37 @@ namespace PrimeERP.Modules
                     }
                 }
             });
+        }
+
+        /// <summary>
+        /// العرض بوّابة القسم: باقي إجراءاته معطَّلة حتى يُؤشَّر، فلا تُبنى حالة خاطئة أصلاً بدل تصحيحها
+        /// لاحقاً بصمت. ورفعه يُنزل إجراءاته معه، والقسم يتبع أبناءه فيظهر مؤشَّراً بأوّل إجراء.
+        /// </summary>
+        public static void SyncModules(List<TreeNodeViewModel> roots, NodeCheckState on)
+        {
+            foreach (var module in roots) SyncModule(module, on);
+        }
+
+        private static void ApplyViewGate(TreeNodeViewModel node, List<TreeNodeViewModel> roots, NodeCheckState on)
+        {
+            var module = roots.FirstOrDefault(r => r.Children.Contains(node)) ?? roots.FirstOrDefault(r => r == node);
+            if (module != null) SyncModule(module, on);
+        }
+
+        private static void SyncModule(TreeNodeViewModel module, NodeCheckState on)
+        {
+            var view = module.Children.FirstOrDefault(child => child.Id == PermissionRules.ViewKeyOf(child.Id));
+            if (view == null) return;
+
+            var open = view.CheckState == on;
+
+            foreach (var action in module.Children.Where(child => child != view))
+            {
+                action.IsCheckEnabled = open;
+                if (!open) action.CheckState = view.CheckState;
+            }
+
+            module.CheckState = module.Children.Any(child => child.CheckState == on) ? on : view.CheckState;
         }
 
         private static void SetAll(List<TreeNodeViewModel> nodes, NodeCheckState state)

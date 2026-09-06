@@ -73,6 +73,14 @@ namespace PrimeERP.UI.Components.Tree
         /// <summary>false لعقد التجميع التي لا تحمل مفتاحاً بذاتها (اسم الموديول مثلاً) — تُظهر مربعاً يوزّع على الأبناء فقط.</summary>
         public bool IsCheckable { get; set; } = true;
 
+        private bool _isCheckEnabled = true;
+        /// <summary>false يمنع النقر ويُبهت المؤشّر — قاعدة بين العقد تُقرّرها الشاشة، لا الشجرة.</summary>
+        public bool IsCheckEnabled
+        {
+            get => _isCheckEnabled;
+            set { if (_isCheckEnabled == value) return; _isCheckEnabled = value; OnPropertyChanged(); }
+        }
+
         /// <summary>نص توضيحي بجانب الحالة الموروثة — مثال "(الدور: مسموح)".</summary>
         public string InheritedHint { get; set; }
 

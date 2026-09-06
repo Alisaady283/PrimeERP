@@ -77,9 +77,11 @@ namespace PrimeERP.Tests.Composition
             Assert.True(def.Save(_db.Services, roleId, nodes).IsSuccess);
 
             var saved = PermissionDb.GetRolePermissions(roleId);
-            Assert.DoesNotContain("Customers.View", saved);
             Assert.Contains("Customers.Delete", saved);
             Assert.Contains("Customers.Edit", saved);
+
+            // العرض بوّابة القسم: حذف بلا عرض يعني قسماً محجوباً وصلاحية معطَّلة، فيلحق العرض بالحفظ.
+            Assert.Contains("Customers.View", saved);
         }
 
         [Fact]
@@ -108,6 +110,7 @@ namespace PrimeERP.Tests.Composition
             var effective = admin.GetEffectivePermissions(userId);
             Assert.DoesNotContain("Suppliers.View", effective);
             Assert.Contains("Products.Create", effective);
+            Assert.Contains("Products.View", effective);
         }
     }
 }

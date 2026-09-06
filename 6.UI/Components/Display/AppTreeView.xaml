@@ -67,6 +67,13 @@
                     <Setter TargetName="checkBox" Property="Visibility" Value="Visible"/>
                 </DataTrigger>
 
+                <DataTrigger Binding="{Binding IsCheckEnabled}" Value="False">
+                    <Setter TargetName="checkBox" Property="IsHitTestVisible" Value="False"/>
+                    <Setter TargetName="checkBox" Property="Opacity" Value="0.35"/>
+                    <Setter TargetName="checkBox" Property="Cursor" Value="Arrow"/>
+                    <Setter TargetName="label" Property="Opacity" Value="0.45"/>
+                </DataTrigger>
+
                 <DataTrigger Binding="{Binding CheckState}" Value="Checked">
                     <Setter TargetName="checkBox" Property="Background" Value="{DynamicResource BrandDefault}"/>
                     <Setter TargetName="checkBox" Property="BorderBrush" Value="{DynamicResource BrandDefault}"/>

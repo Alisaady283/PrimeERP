@@ -56,7 +56,8 @@ namespace PrimeERP.Composition.Definitions
                     IsExpanded = false
                 };
 
-                foreach (var key in group.OrderBy(k => k))
+                // العرض أولاً: هو بوّابة القسم، فمكانه رأس القائمة لا وسطها.
+                foreach (var key in group.OrderBy(k => k.EndsWith(".View") ? 0 : 1).ThenBy(k => k))
                 {
                     moduleNode.AddChild(new TreeNodeViewModel
                     {

@@ -41,6 +41,31 @@ namespace PrimeERP.Tests.Composition
         }
 
         [Fact]
+        public void CheckingAnActionWithoutView_StillOpensTheSection()
+        {
+            var roleId = PermissionDb.InsertRole("Printer", "طابع");
+            var userId = PermissionDb.InsertUser("printer", "p", "طابع", roleId, true);
+
+            var screen = RoleScreen();
+            var nodes = screen.BuildTree(_db.Services, roleId);
+
+            // طباعة بلا عرض: القسم محجوب فلا شيء يُطبع — العرض بوّابة لباقي الإجراءات.
+            foreach (var node in PermissionTreeFactory.KeyNodes(nodes))
+                if (node.Id == "Sales.Print") node.CheckState = NodeCheckState.Checked;
+
+            Assert.True(screen.Save(_db.Services, roleId, nodes).IsSuccess);
+
+            var permissions = _db.Services.GetRequiredService<IPermissionService>();
+            permissions.LoadForUser(userId);
+
+            Assert.True(permissions.Can("Sales.Print"));
+            Assert.True(permissions.Can("Sales.View"), "الطباعة مُنحت والعرض لم يلحق بها");
+
+            // ولا تتسرّب لوحدة أخرى.
+            Assert.False(permissions.Can("Purchases.View"));
+        }
+
+        [Fact]
         public void GrantingARole_Persists_AndReachesTheUsersSession()
         {
             var roleId = PermissionDb.InsertRole("Assistant", "مساعد");

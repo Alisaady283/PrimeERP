@@ -58,7 +58,11 @@ namespace PrimeERP.Composition.Renderers
             }
 
             sourcePicker.SelectionChanged += (_, __) => LoadTree();
-            tree.CheckStateChanged += (_, __) => RefreshSummary();
+            tree.CheckStateChanged += (_, node) =>
+            {
+                def.OnCheckChanged?.Invoke(node, nodes);
+                RefreshSummary();
+            };
 
             var header = new PageHeader();
             var actions = new StackPanel { Orientation = Orientation.Horizontal };

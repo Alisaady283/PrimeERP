@@ -31,10 +31,12 @@ namespace PrimeERP.Platform.Permissions
             var granted = PermissionDb.GetUserGrantedPermissions(userId);
             var revoked = PermissionDb.GetUserRevokedPermissions(userId).ToHashSet();
 
-            return rolePermissions.Union(granted)
-                                   .Where(k => !revoked.Contains(k))
-                                   .Distinct()
-                                   .ToList();
+            var effective = rolePermissions.Union(granted)
+                                            .Where(k => !revoked.Contains(k))
+                                            .Distinct();
+
+            // العرض يلحق بأي صلاحية في وحدته — بلا هذا تبقى الطباعة ممنوحة والقسم محجوباً.
+            return PermissionRules.WithImpliedView(effective).ToList();
         }
 
         public HashSet<string> GetEffectivePermissions(int userId) => GetUserPermissions(userId).ToHashSet();
@@ -60,10 +62,33 @@ namespace PrimeERP.Platform.Permissions
                 PermissionState.Revoked => false,
                 _ => (bool?)null
             });
+
+            // منح فعلٍ يجرّ معه عرض وحدته، وسحب العرض يسحب كل أفعالها — وإلا بقيت صلاحيات بلا باب تدخل منه.
+            if (state == PermissionState.Granted) GrantViewFor(userId, key);
+            else if (state == PermissionState.Revoked && IsViewKey(key)) RevokeModuleActions(userId, key);
         }
 
         public void SetRolePermissions(int roleId, IEnumerable<string> keys) =>
-            PermissionDb.ReplaceRolePermissions(roleId, keys);
+            PermissionDb.ReplaceRolePermissions(roleId, PermissionRules.WithImpliedView(keys));
+
+        private static bool IsViewKey(string key) => key == PermissionRules.ViewKeyOf(key);
+
+        private static void GrantViewFor(int userId, string key)
+        {
+            var view = PermissionRules.ViewKeyOf(key);
+            if (view == null || view == key || !PermissionKeys.All().Contains(view)) return;
+            if (PermissionDb.GetUserRevokedPermissions(userId).Contains(view) ||
+                !PermissionDb.GetUserGrantedPermissions(userId).Contains(view))
+                PermissionDb.SetUserPermission(userId, view, true);
+        }
+
+        private static void RevokeModuleActions(int userId, string viewKey)
+        {
+            var module = viewKey[..viewKey.IndexOf('.')] + ".";
+            foreach (var granted in PermissionDb.GetUserGrantedPermissions(userId)
+                                                .Where(k => k != viewKey && k.StartsWith(module)).ToList())
+                PermissionDb.SetUserPermission(userId, granted, false);
+        }
 
         public void CopyRolePermissions(int fromRoleId, int toRoleId) =>
             PermissionDb.ReplaceRolePermissions(toRoleId, PermissionDb.GetRolePermissions(fromRoleId));
