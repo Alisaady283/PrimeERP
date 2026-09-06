@@ -10,6 +10,14 @@
         عند تفعيل الوضع الداكن في التطبيق. نفس المجموعات الدلالية الست الموجودة في Themes وExportTheme، بنفس القيم.
     -->
 
+    <!-- هندسة الورق: رقم واحد يخدم الطباعة والتصدير معاً. الوحدة 96 لكل بوصة (وحدة الطباعة)،
+         والتصدير يحوّلها لنقاط PDF عبر PaperTheme.Points. -->
+    <sys:Double x:Key="PageMargin">40</sys:Double>
+    <sys:Double x:Key="LogoMaxWidth">170</sys:Double>
+    <sys:Double x:Key="LogoMaxHeight">72</sys:Double>
+    <sys:Double x:Key="HeaderSeparator">2</sys:Double>
+    <sys:Double x:Key="HeaderGap">10</sys:Double>
+
     <FontFamily x:Key="FontFamilyPrimary">Segoe UI, Tahoma, Arial</FontFamily>
 
     <sys:Double x:Key="FontSizeXs">9</sys:Double>

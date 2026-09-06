@@ -80,15 +80,17 @@ namespace PrimeERP.Tests.Services
                 header.Arrange(new System.Windows.Rect(0, 0, width, header.DesiredSize.Height));
                 header.UpdateLayout();
 
-                // الترويسة تُرسم داخل مستند RTL، فإحداثيات الحاوية معكوسة عن المرئي — هذا يعيدها للمرئي.
+                // القطعة تضع مواضعها مطلقة فلا تتبع اتجاه المستند — الإحداثيات هنا هي المرئية كما هي.
                 (double Left, double Right) Visual(System.Windows.FrameworkElement element)
                 {
                     var box = element.TransformToAncestor(header).TransformBounds(new System.Windows.Rect(element.RenderSize));
-                    return (width - box.X - box.Width, width - box.X);
+                    return (box.X, box.X + box.Width);
                 }
 
                 var logo = Visual(Descendants<System.Windows.Controls.Image>(header).First());
-                var company = Visual(Descendants<System.Windows.Controls.StackPanel>(header).First());
+                // الجذر لوح رصّ أيضاً — المقصود لوح بيانات الشركة، أي أوّل ما يحمل أسطراً نصّية.
+                var company = Visual(Descendants<System.Windows.Controls.StackPanel>(header)
+                    .First(panel => panel.Children.OfType<System.Windows.Controls.TextBlock>().Any()));
 
                 Assert.True(logo.Left < 2, $"الشعار ليس على حافة اليسار: {logo.Left:F0}");
                 Assert.True(company.Right > width - 2, $"بيانات الشركة لا تبلغ حافة اليمين: {company.Right:F0}");

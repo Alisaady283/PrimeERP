@@ -24,7 +24,6 @@ namespace PrimeERP.Application.Services.Print
     {
         private readonly ISettingsService _settings;
         private readonly IDocumentExporter _exporter;
-        private static ResourceDictionary _theme;
 
         public PrintService(ISettingsService settings, IDocumentExporter exporter)
         {
@@ -34,42 +33,8 @@ namespace PrimeERP.Application.Services.Print
 
         public IPrintDialogHost DialogHost { get; set; }
 
-        private static ResourceDictionary Theme
-        {
-            get
-            {
-                if (_theme == null)
-                {
-                    // ⚠️ توقف 11 — مخطَّط pack:// (تسجّله System.Windows.Application ضمن مُنشئها الساكن) لم يكن
-                    // مسجَّلاً بعد لو كانت هذه أول لمسة لأي System.Windows.* في العملية كلها (ترتيب اختبارات
-                    // xUnit غير حتمي — راجع ARCHITECTURE.md). الضمان الصريح هنا (لا الاعتماد على ترتيب تشغيل
-                    // اختبار آخر يلمسها أولاً بالصدفة) يجعل بناء pack:// يعمل دائماً بصرف النظر عمّا سبقه.
-                    if (System.Windows.Application.Current == null) new System.Windows.Application();
 
-                    // pack URI صريحة باسم التجميعة — لا تعتمد على Application.ResourceAssembly (قد يكون مضبوطاً
-                    // خطأً في مضيف اختبار أنشأ Application قبلها) بخلاف Uri نسبية بسيطة.
-                    var asmName = typeof(PrintService).Assembly.GetName().Name;
-                    var dict = new ResourceDictionary
-                    {
-                        Source = new Uri($"pack://application:,,,/{asmName};component/5.Design/Surfaces/PrintTheme.xaml", UriKind.Absolute)
-                    };
-
-                    // _theme مفرد ثابت واحد يُشارَك بين كل الخيوط التي تبني مستند طباعة (STA منفصلة متعددة عبر
-                    // StaThreadHelper في الاختبارات، أو نافذة طباعة لاحقة في التطبيق) — Freezable (SolidColorBrush)
-                    // يرتبط ضمنياً بخيط إنشائه ما لم يُجمَّد. بلا Freeze هنا، أول استخدام على خيط غير خيط أول تحميل
-                    // للثيم يرمي "Cannot use a DependencyObject that belongs to a different thread" — اكتُشف فعلياً
-                    // عند إضافة اختبار طباعة ثانٍ (F.2.4) يعمل على خيط STA مختلف عن أول اختبار طباعة (F.1.3).
-                    foreach (var value in dict.Values)
-                        if (value is Freezable freezable && freezable.CanFreeze)
-                            freezable.Freeze();
-
-                    _theme = dict;
-                }
-                return _theme;
-            }
-        }
-
-        private static T Res<T>(string key) => (T)Theme[key];
+        private static T Res<T>(string key) => PaperTheme.Value<T>(key);
 
         public Result<FlowDocument> BuildContent(IPrintable document)
         {
@@ -158,7 +123,7 @@ namespace PrimeERP.Application.Services.Print
                 FontSize = Res<double>("FontSizeBase"),
                 Foreground = Res<Brush>("TextPrimary"),
                 Background = Res<Brush>("SurfaceDefault"),
-                PagePadding = new Thickness(40)
+                PagePadding = new Thickness(Res<double>("PageMargin"))
             };
 
             if (document.ShowCompanyHeader)
@@ -191,66 +156,10 @@ namespace PrimeERP.Application.Services.Print
             return flow;
         }
 
-        // شريط رأس ملوّن: الشعار يمين (RTL) وبيانات الشركة بجانبه — الشعار من قاعدة البيانات لا من مسار ملف،
-        // فلا يختفي بصمت لو نُقلت الصورة أو استُرجعت نسخة احتياطية على جهاز آخر.
-        /// <summary>ترويسة رسمية: بيانات الشركة يميناً والشعار يساراً، يفصلهما خطّ بلون الهوية.</summary>
-        private Block BuildCompanyHeader()
-        {
-            var company = CompanyHeaderReader.From(k => _settings.Get(k, ""));
-            var logo = ImageData.Decode(company.LogoData);
-
-            // الاتجاه هنا LeftToRight عمداً: RTL يعكس المواضع والمحاذاة معاً، فكان HorizontalAlignment.Right
-            // يعني يمين العمود بعد الانعكاس أي جنب الشعار، فيلتصق الطرفان ككتلة واحدة. المواضع مطلقة الآن،
-            // والعربية تبقى صحيحة لأن اتجاه كل سطر نصّي وحده RTL.
-            System.Windows.Controls.TextBlock Line(string value, string size, string colour, bool bold = false) => new()
-            {
-                Text = value,
-                FlowDirection = FlowDirection.RightToLeft,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                TextWrapping = TextWrapping.NoWrap,
-                FontSize = Res<double>(size),
-                FontWeight = bold ? Res<FontWeight>("FontWeightBold") : FontWeights.Normal,
-                Foreground = Res<Brush>(colour)
-            };
-
-            var text = new StackPanel
-            {
-                FlowDirection = FlowDirection.LeftToRight,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            text.Children.Add(Line(company.Name, "FontSizeXl", "BrandSolid", bold: true));
-            foreach (var detail in company.Details) text.Children.Add(Line(detail, "FontSizeSm", "TextSecondary"));
-
-            var layout = new Grid { FlowDirection = FlowDirection.LeftToRight };
-            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-            Grid.SetColumn(text, 1);
-            layout.Children.Add(text);
-
-            if (logo != null)
-            {
-                var image = new System.Windows.Controls.Image
-                {
-                    Source = logo, MaxWidth = 170, MaxHeight = 72,
-                    Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center
-                };
-
-                Grid.SetColumn(image, 0);
-                layout.Children.Add(image);
-            }
-
-            return new BlockUIContainer(new Border
-            {
-                Child = layout,
-                Padding = new Thickness(0, 0, 0, 10),
-                BorderBrush = Res<Brush>("BrandSolid"),
-                BorderThickness = new Thickness(0, 0, 0, 2)
-            })
-            { Margin = new Thickness(0, 0, 0, 10) };
-        }
+        /// <summary>الترويسة قطعة تُستدعى لا رسم محلّي — CompanyHeaderComponent يقرّرها، وهذا ينفّذها.</summary>
+        private Block BuildCompanyHeader() =>
+            new BlockUIContainer(PaperNodeRenderer.ToElement(
+                CompanyHeaderComponent.Build(key => _settings.Get(key, "")), PaperTheme.Raw));
 
         private Block BuildTitle(string title, string subtitle)
         {

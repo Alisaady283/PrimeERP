@@ -85,7 +85,7 @@ namespace PrimeERP.UI.Services
                 container.Page(page =>
                 {
                     page.Size(PageSizes.A4);
-                    page.Margin(30);
+                    page.Margin(PaperTheme.Points("PageMargin"));
                     page.DefaultTextStyle(x => x.FontFamily(ExportTheme.FontFamily).FontSize(ExportTheme.BodyFontSize));
                     page.ContentFromRightToLeft();
 
@@ -134,35 +134,65 @@ namespace PrimeERP.UI.Services
                 row.RelativeItem().AlignLeft().Text($"{DateTime.Now:yyyy-MM-dd HH:mm}").FontSize(ExportTheme.BodyFontSize);
             });
 
-        /// <summary>نفس ترويسة الطباعة حرفاً بحرف: محتواها من CompanyHeaderReader لا من قراءة إعدادات ثانية،
-        /// وترتيبها بيانات الشركة يميناً والشعار يساراً يفصلهما خطّ — فلا تفترق الورقة عن الشاشة.</summary>
+        /// <summary>الترويسة تُستدعى كقطعة ثم تُنفَّذ — لا تخطيط محلّي هنا، والعنوان وحده فوقها.</summary>
         private void ComposeCompanyHeader(QuestPDF.Infrastructure.IContainer container, string title, string subtitle)
         {
-            var company = CompanyHeaderReader.From(k => _settings.Get(k, ""));
-            var logo = company.HasLogo ? System.Convert.FromBase64String(company.LogoData) : null;
-
             container.Column(col =>
             {
-                col.Item().Row(row =>
-                {
-                    // الصفحة RTL فأول عنصر في الصفّ هو الأيمن: البيانات أولاً ثم الشعار، أي الشعار يساراً.
-                    row.RelativeItem().Column(info =>
-                    {
-                        info.Item().Text(company.Name).FontSize(ExportTheme.TitleFontSize).Bold();
-                        foreach (var detail in company.Details)
-                            info.Item().Text(detail).FontSize(ExportTheme.BodyFontSize);
-                    });
+                RenderNode(col.Item(), CompanyHeaderComponent.Build(k => _settings.Get(k, "")));
 
-                    if (logo != null) row.ConstantItem(130).MaxHeight(64).AlignMiddle().Image(logo).FitArea();
-                });
-
-                col.Item().PaddingTop(8).BorderBottom(2).BorderColor(ExportTheme.BrandHex);
-
-                col.Item().PaddingTop(10).AlignCenter().Text(title ?? "").FontSize(ExportTheme.HeaderFontSize).Bold();
+                col.Item().AlignCenter().Text(title ?? "").FontSize(ExportTheme.HeaderFontSize).Bold();
 
                 if (!string.IsNullOrWhiteSpace(subtitle))
                     col.Item().AlignCenter().Text(subtitle).FontSize(ExportTheme.BodyFontSize);
             });
+        }
+
+        /// <summary>مترجم PaperNode إلى QuestPDF — عام، لا يعرف عن الترويسة شيئاً. المقاسات وحدتها 96
+        /// لكل بوصة فتُحوَّل لنقاط، والصفّ أوّلُه يمتدّ فيقع يميناً في صفحة RTL وما بعده يلاصق اليسار.</summary>
+        private static void RenderNode(QuestPDF.Infrastructure.IContainer container, PaperNode node)
+        {
+            const float ToPoints = 0.75f;
+
+            switch (node)
+            {
+                case PaperText text:
+                    var styled = container.Text(text.Text);
+                    if (text.Role == PaperTextRole.Name)
+                        styled.FontSize(ExportTheme.TitleFontSize).Bold();
+                    else
+                        styled.FontSize(ExportTheme.BodyFontSize);
+                    break;
+
+                case PaperImage image when !string.IsNullOrWhiteSpace(image.Data):
+                    container.MaxWidth((float)image.MaxWidth * ToPoints)
+                             .Height((float)image.MaxHeight * ToPoints)
+                             .AlignMiddle().Image(Convert.FromBase64String(image.Data)).FitHeight();
+                    break;
+
+                case PaperStack stack:
+                    container.Column(col =>
+                    {
+                        foreach (var child in stack.Children) RenderNode(col.Item(), child);
+                    });
+                    break;
+
+                case PaperRow row:
+                    container.Row(line =>
+                    {
+                        var children = row.Children.ToList();
+                        if (children.Count > 0) RenderNode(line.RelativeItem(), children[0]);
+                        foreach (var child in children.Skip(1)) RenderNode(line.AutoItem(), child);
+                    });
+                    break;
+
+                case PaperRule rule:
+                    container.PaddingTop((float)rule.GapAbove * ToPoints)
+                             .PaddingBottom((float)rule.GapBelow * ToPoints)
+                             .BorderBottom((float)rule.Thickness * ToPoints)
+                             .BorderColor(ExportTheme.BrandHex);
+                    break;
+            }
         }
 
         /// <summary>يبني PDF كامل (عناوين/أقسام متعدّدة/توقيعات) من IPrintable — لا يكرّر Document.Create/الترخيص/إعداد الصفحة، كله هنا في مكان واحد.</summary>
@@ -178,7 +208,7 @@ namespace PrimeERP.UI.Services
                     container.Page(page =>
                     {
                         page.Size(document.Orientation == PrintOrientation.Landscape ? PageSizes.A4.Landscape() : PageSizes.A4);
-                        page.Margin(30);
+                        page.Margin(PaperTheme.Points("PageMargin"));
                         page.DefaultTextStyle(x => x.FontFamily(ExportTheme.FontFamily).FontSize(ExportTheme.BodyFontSize));
                         page.ContentFromRightToLeft();
 
