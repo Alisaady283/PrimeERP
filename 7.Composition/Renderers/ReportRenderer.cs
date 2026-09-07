@@ -78,6 +78,8 @@ namespace PrimeERP.Composition.Renderers
                 if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
 
                 current = result.Value;
+                resultGrid.RowHighlightSelector = result.Value.RowKind;
+                resultGrid.UseAlternatingRows = result.Value.AlternatingRows;
                 resultGrid.ColumnsSource = result.Value.Columns;
                 resultGrid.ItemsSource = result.Value.Rows;
                 totalsText.Text = result.Value.Totals is { Count: > 0 }

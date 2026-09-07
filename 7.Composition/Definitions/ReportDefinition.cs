@@ -24,6 +24,12 @@ namespace PrimeERP.Composition.Definitions
     // IEnumerable (WPF يربط بالاسم على النوع الفعلي وقت التشغيل بصرف النظر عن نوع القائمة المُعلَن).
     public class ReportResult
     {
+        /// <summary>نوع الصفّ (heading/total) لتمييزه — فارغ يعني صفّ بيانات عادياً.</summary>
+        public Func<object, string> RowKind { get; init; }
+
+        /// <summary>false يوقف تبادل ألوان الصفوف — للقوائم المالية.</summary>
+        public bool AlternatingRows { get; init; } = true;
+
         public string Title { get; init; }
         public string SubTitle { get; init; }
         public required List<GridColumn> Columns { get; init; }

@@ -552,18 +552,19 @@ namespace PrimeERP.Application.Services.Print
 
         /// <summary>الأرقام والتواريخ وسط الخلية، والنصوص (أسماء الأصناف والبيانات) لليمين — العربية تُقرأ من
         /// اليمين، فتوسيط النص يكسر عمود الأسماء بصرياً. Align المُعلَن على العمود يتغلّب على ذلك عند تحديده.</summary>
-        private static TextAlignment AlignFor(PrintColumn column, object value)
-        {
-            if (!string.IsNullOrEmpty(column.Align)) return AlignOf(column.Align);
-
-            return value is string or null ? TextAlignment.Right : TextAlignment.Center;
-        }
+        /// <summary>
+        /// المستند RTL، وTextAlignment ينعكس معه: طلب Right يُخرج النصّ على حافة اليسار. الأسماء هنا
+        /// بصرية لا منطقية — Right تعني «يُرى يميناً»، فتُترجَم إلى Left ليُصيبها الانعكاس فتستقيم.
+        /// </summary>
+        private static TextAlignment AlignFor(PrintColumn column, object value) =>
+            !string.IsNullOrEmpty(column.Align) ? AlignOf(column.Align)
+                                                : AlignOf(value is string or null ? "Right" : "Center");
 
         private static TextAlignment AlignOf(string align) => align switch
         {
-            "Left"   => TextAlignment.Left,
+            "Left"   => TextAlignment.Right,
             "Center" => TextAlignment.Center,
-            _        => TextAlignment.Right
+            _        => TextAlignment.Left
         };
 
         private static string FormatValue(object value, string format, CultureInfo culture)

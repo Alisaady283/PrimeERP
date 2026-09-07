@@ -39,7 +39,17 @@ namespace PrimeERP.Modules
             public decimal ClosingCredit { get; set; }
         }
         private class BalanceRow { public string Code { get; set; } public string Name { get; set; } public decimal Balance { get; set; } }
-        private class StockBalanceRow { public string ProductCode { get; set; } public string ProductName { get; set; } public string WarehouseName { get; set; } public decimal Balance { get; set; } }
+        /// <summary>المخزون بشكل الفترة كالعملاء والموردين: أول المدة، الوارد، المنصرف، آخر المدة.</summary>
+        private class StockBalanceRow
+        {
+            public string  ProductCode   { get; set; }
+            public string  ProductName   { get; set; }
+            public string  WarehouseName { get; set; }
+            public decimal Opening       { get; set; }
+            public decimal In            { get; set; }
+            public decimal Out           { get; set; }
+            public decimal Closing       { get; set; }
+        }
         private class StatementRow { public string Date { get; set; } public string EntryNo { get; set; } public string Description { get; set; } public decimal Debit { get; set; } public decimal Credit { get; set; } public decimal RunningBalance { get; set; } }
         private class ItemCardRow { public string Date { get; set; } public string MovementType { get; set; } public decimal Qty { get; set; } public decimal UnitCost { get; set; } public decimal BalanceAfter { get; set; } public string SourceDoc { get; set; } }
         private class FinancialLineRow { public string Code { get; set; } public string Name { get; set; } public decimal Amount { get; set; } }
@@ -183,38 +193,78 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "StockBalances", TitleKey = "Str.Module.StockBalances", PermissionKey = "Reports.View",
+                    Parameters = BalanceReportFactory.Period(),
                     Generate = (services, p) =>
                     {
+                        var from = (DateTime)(p["From"] ?? DateTime.Today.AddMonths(-1));
+                        var to = (DateTime)(p["To"] ?? DateTime.Today);
+
                         var stock = services.GetRequiredService<IStockService>();
-                        var products = services.GetRequiredService<IProductService>();
-                        var warehouses = services.GetRequiredService<IWarehouseService>().GetAll();
+                        var products = services.GetRequiredService<IProductService>().GetPaged(1, 5000);
+                        if (!products.IsSuccess) return Result.Fail<ReportResult>(products.ErrorMessage);
+
+                        var warehouses = services.GetRequiredService<IWarehouseService>().GetAll(true);
                         if (!warehouses.IsSuccess) return Result.Fail<ReportResult>(warehouses.ErrorMessage);
+
+                        // كل الحركات منذ البداية: ما قبل الفترة رصيدٌ أول المدة، وما فيها وارد ومنصرف.
+                        var history = stock.GetMovements(new DateTime(1900, 1, 1), to, null, int.MaxValue);
+                        if (!history.IsSuccess) return Result.Fail<ReportResult>(history.ErrorMessage);
+
+                        var productNames = products.Value.Items.ToDictionary(x => x.Id, x => (x.Code, x.Name));
                         var warehouseNames = warehouses.Value.ToDictionary(w => w.Id, w => w.Name);
 
-                        var balances = stock.GetAllBalances();
-                        if (!balances.IsSuccess) return Result.Fail<ReportResult>(balances.ErrorMessage);
-
-                        var rows = balances.Value.Select(b =>
-                        {
-                            var product = products.GetById(b.ProductId);
-                            return new StockBalanceRow
+                        var rows = history.Value
+                            .GroupBy(m => (m.ProductId, m.WarehouseId))
+                            .Select(g =>
                             {
-                                ProductCode = product.IsSuccess ? product.Value.Code : null, ProductName = product.IsSuccess ? product.Value.Name : null,
-                                WarehouseName = warehouseNames.TryGetValue(b.WarehouseId, out var wn) ? wn : "-", Balance = b.Balance
-                            };
-                        }).ToList();
+                                decimal Signed(Domain.Entities.StockMovement m) =>
+                                    m.MovementType == MovementType.Out ? -m.Qty : m.Qty;
+
+                                var before = g.Where(m => m.MovementDate < from).Sum(Signed);
+                                var inside = g.Where(m => m.MovementDate >= from && m.MovementDate <= to).ToList();
+                                var received = inside.Where(m => Signed(m) > 0).Sum(Signed);
+                                var issued = -inside.Where(m => Signed(m) < 0).Sum(Signed);
+
+                                var product = productNames.TryGetValue(g.Key.ProductId, out var pn) ? pn : ("", "");
+                                return new StockBalanceRow
+                                {
+                                    ProductCode = product.Item1,
+                                    ProductName = product.Item2,
+                                    WarehouseName = warehouseNames.TryGetValue(g.Key.WarehouseId, out var wn) ? wn : "",
+                                    Opening = before,
+                                    In = received,
+                                    Out = issued,
+                                    Closing = before + received - issued,
+                                };
+                            })
+                            .Where(r => r.Opening != 0 || r.In != 0 || r.Out != 0 || r.Closing != 0)
+                            .OrderBy(r => r.ProductCode)
+                            .ToList();
+
+                        GridColumn Qty(string header, string binding) => new()
+                        { Header = header, Binding = binding, Width = 120, Align = ColumnAlign.Center, Format = "N2" };
 
                         return Result.Ok(new ReportResult
                         {
                             Title = LocalizationService.Get("Str.Module.StockBalances"),
                             Columns = new()
                             {
-                                new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(StockBalanceRow.ProductCode), Width = 100 },
+                                new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(StockBalanceRow.ProductCode), Width = 110 },
                                 new() { Header = LocalizationService.Get("Str.Product"), Binding = nameof(StockBalanceRow.ProductName), Width = 220, IsStarWidth = true },
-                                new() { Header = LocalizationService.Get("Str.Warehouse"), Binding = nameof(StockBalanceRow.WarehouseName), Width = 160 },
-                                new() { Header = LocalizationService.Get("Str.Qty"), Binding = nameof(StockBalanceRow.Balance), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                                new() { Header = LocalizationService.Get("Str.Warehouse"), Binding = nameof(StockBalanceRow.WarehouseName), Width = 150 },
+                                Qty("رصيد أول المدة", nameof(StockBalanceRow.Opening)),
+                                Qty("الوارد", nameof(StockBalanceRow.In)),
+                                Qty("المنصرف", nameof(StockBalanceRow.Out)),
+                                Qty("رصيد آخر المدة", nameof(StockBalanceRow.Closing)),
                             },
-                            Rows = rows
+                            Rows = rows,
+                            Totals = new()
+                            {
+                                ["Opening"] = $"أول المدة: {rows.Sum(r => r.Opening):N2}",
+                                ["In"] = $"الوارد: {rows.Sum(r => r.In):N2}",
+                                ["Out"] = $"المنصرف: {rows.Sum(r => r.Out):N2}",
+                                ["Closing"] = $"آخر المدة: {rows.Sum(r => r.Closing):N2}",
+                            }
                         });
                     }
                 }
@@ -377,6 +427,8 @@ namespace PrimeERP.Modules
                         {
                             Title = LocalizationService.Get("Str.Module.IncomeStatement"),
                             Columns = F.Columns(),
+                            RowKind = F.RowKind,
+                            AlternatingRows = false,
                             Rows = rows,
                             Totals = new()
                             {
@@ -434,6 +486,8 @@ namespace PrimeERP.Modules
                         {
                             Title = LocalizationService.Get("Str.Module.BalanceSheet"),
                             Columns = F.Columns(),
+                            RowKind = F.RowKind,
+                            AlternatingRows = false,
                             Rows = rows,
                             Totals = new()
                             {
@@ -507,6 +561,8 @@ namespace PrimeERP.Modules
                         {
                             Title = LocalizationService.Get("Str.Module.CashFlow"),
                             Columns = F.Columns(),
+                            RowKind = F.RowKind,
+                            AlternatingRows = false,
                             Rows = rows,
                             Totals = new()
                             {

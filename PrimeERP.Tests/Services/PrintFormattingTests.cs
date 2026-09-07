@@ -111,7 +111,10 @@ namespace PrimeERP.Tests.Services
                 string TextOf(Paragraph p) => ((Run)p.Inlines.FirstInline).Text;
 
                 Assert.Equal(System.Windows.TextAlignment.Center, paragraphs.First(p => TextOf(p) == "الصنف").TextAlignment);
-                Assert.Equal(System.Windows.TextAlignment.Right, paragraphs.First(p => TextOf(p) == "صنف تجريبي").TextAlignment);
+
+                // المستند RTL وTextAlignment ينعكس معه: Left هنا هي التي تُرى يميناً — والنصّ العربي
+                // كان يخرج على حافة اليسار حين طُلبت Right.
+                Assert.Equal(System.Windows.TextAlignment.Left, paragraphs.First(p => TextOf(p) == "صنف تجريبي").TextAlignment);
                 Assert.Equal(System.Windows.TextAlignment.Center, paragraphs.First(p => TextOf(p) == "5").TextAlignment);
             });
         }

@@ -119,6 +119,16 @@
                         <Style TargetType="DataGridRow">
                             <Setter Property="BorderThickness" Value="0"/>
                             <Style.Triggers>
+                                <!-- القائمة المالية ليست جدول بيانات: عنوان القسم وإجماليه يُميَّزان
+                                     بدل تبادل ألوان يُقرأ كصفوف متساوية. -->
+                                <Trigger Property="Tag" Value="heading">
+                                    <Setter Property="Background" Value="{DynamicResource C.Grid.Header.Bg}"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                </Trigger>
+                                <Trigger Property="Tag" Value="total">
+                                    <Setter Property="Background" Value="{DynamicResource BrandSoft}"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Trigger>
                                 <Trigger Property="Tag" Value="danger">
                                     <Setter Property="Background" Value="{DynamicResource C.Grid.Row.Danger.Bg}"/>
                                 </Trigger>

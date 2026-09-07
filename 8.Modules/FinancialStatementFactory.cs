@@ -20,16 +20,21 @@ namespace PrimeERP.Modules
             public string   Statement { get; set; }
             public decimal? Partial   { get; set; }
             public decimal? Total     { get; set; }
+            /// <summary>heading لعنوان قسم، total لمجموع، فارغ لبند — تُميَّز الثلاثة بصرياً.</summary>
+            public string   Kind      { get; set; }
         }
+
+        /// <summary>يُمرَّر لـ ReportResult.RowKind فتُلوّن الشبكة العناوين والمجاميع.</summary>
+        public static readonly Func<object, string> RowKind = row => (row as Line)?.Kind;
 
         private const string Indent = "      ";
 
         /// <summary>عنوان قسم بلا مبلغ.</summary>
-        public static Line Heading(string title) => new() { Statement = title };
+        public static Line Heading(string title) => new() { Statement = title, Kind = "heading" };
 
         /// <summary>مجموع في عمود «كلي».</summary>
         public static Line Grand(string label, decimal amount, int level = 0) =>
-            new() { Statement = Repeat(level) + label, Total = amount };
+            new() { Statement = Repeat(level) + label, Total = amount, Kind = "total" };
 
         /// <summary>
         /// قسم كامل: عنوانه، ثم بنوده في «جزئي»، ثم مجموعه في «كلي». يُعرض دائماً ولو بصفر — القائمة
@@ -37,7 +42,7 @@ namespace PrimeERP.Modules
         /// </summary>
         public static IEnumerable<Line> Group(string title, List<Line> items, string totalLabel = null, int level = 1)
         {
-            yield return new Line { Statement = Repeat(level) + title };
+            yield return new Line { Statement = Repeat(level) + title, Kind = "heading" };
 
             foreach (var item in items)
                 yield return new Line { Statement = Repeat(level + 1) + item.Statement, Partial = item.Partial };
@@ -45,7 +50,8 @@ namespace PrimeERP.Modules
             yield return new Line
             {
                 Statement = Repeat(level + 1) + (totalLabel ?? $"إجمالي {title}"),
-                Total = items.Sum(i => i.Partial ?? 0)
+                Total = items.Sum(i => i.Partial ?? 0),
+                Kind = "total"
             };
         }
 

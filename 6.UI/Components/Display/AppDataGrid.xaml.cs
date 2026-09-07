@@ -87,6 +87,22 @@ namespace PrimeERP.UI.Components.Display
         /// <summary>يُستدعى لكل صف ليقرر تلوينه: "danger"/"warning"/null — مفيد لتنبيهات مثل تجاوز حد الائتمان أو نفاد المخزون.</summary>
         public Func<object, string> RowHighlightSelector { get; set; }
 
+        public static readonly DependencyProperty UseAlternatingRowsProperty =
+            DependencyProperty.Register(nameof(UseAlternatingRows), typeof(bool), typeof(AppDataGrid),
+                new PropertyMetadata(true, (d, _) => ((AppDataGrid)d).grid.AlternatingRowBackground =
+                    ((AppDataGrid)d).AlternatingRowBrush));
+
+        /// <summary>false يوقف تبادل ألوان الصفوف — القوائم المالية تُميَّز بأقسامها لا بخطوط متبادلة.</summary>
+        public bool UseAlternatingRows
+        {
+            get => (bool)GetValue(UseAlternatingRowsProperty);
+            set => SetValue(UseAlternatingRowsProperty, value);
+        }
+
+        private Brush AlternatingRowBrush => UseAlternatingRows
+            ? (Brush)FindResource("C.Grid.Row.AltBg")
+            : Brushes.Transparent;
+
         public IReadOnlyList<object> SelectedItems => grid.SelectedItems.Cast<object>().ToList();
 
         public event EventHandler<object> RowDoubleClick;
