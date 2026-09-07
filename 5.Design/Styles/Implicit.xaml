@@ -250,6 +250,44 @@
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
     </Style>
 
+    <Style TargetType="CalendarItem">
+        <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
+    </Style>
+
+    <Style TargetType="CalendarDayButton">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{DynamicResource BrandDefault}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+            </Trigger>
+            <Trigger Property="IsInactive" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="CalendarButton">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+    </Style>
+
+    <Style TargetType="DatePickerTextBox">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
     <!-- ===== ToolTip ===== -->
 
     <Style TargetType="ToolTip">

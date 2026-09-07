@@ -31,7 +31,31 @@ namespace PrimeERP.UI.Components.Shell
 
         public static readonly DependencyProperty LogoContentProperty =
             DependencyProperty.Register(nameof(LogoContent), typeof(object), typeof(AppSidebar),
-                new PropertyMetadata(null, (d, e) => ((AppSidebar)d).logoPresenter.Content = e.NewValue));
+                new PropertyMetadata(null, (d, e) => ((AppSidebar)d).logoPresenter.Content = e.NewValue ?? DefaultBrand()));
+
+        /// <summary>اسم البرنامج حين لا يُمرَّر محتوى — رأس السايد بار لا يُترك فارغاً.</summary>
+        private static FrameworkElement DefaultBrand()
+        {
+            var name = new TextBlock
+            {
+                Text = "PrimeLogic",
+                FontSize = 20,
+                FontWeight = FontWeights.Bold,
+                FlowDirection = FlowDirection.LeftToRight
+            };
+            name.SetResourceReference(TextBlock.ForegroundProperty, "NavTextSelected");
+
+            var suffix = new TextBlock
+            {
+                Text = "ERP",
+                FontSize = 12,
+                Margin = new Thickness(0, 2, 0, 0),
+                FlowDirection = FlowDirection.LeftToRight
+            };
+            suffix.SetResourceReference(TextBlock.ForegroundProperty, "NavIcon");
+
+            return new StackPanel { Children = { name, suffix } };
+        }
 
         public static readonly DependencyProperty FooterContentProperty =
             DependencyProperty.Register(nameof(FooterContent), typeof(object), typeof(AppSidebar),
@@ -51,6 +75,7 @@ namespace PrimeERP.UI.Components.Shell
         {
             InitializeComponent();
             itemsHost.ItemsSource = _rootItems;
+            logoPresenter.Content ??= DefaultBrand();
 
             Loaded += (s, e) => AppSession.PermissionsChanged += OnPermissionsChanged;
             Unloaded += (s, e) => AppSession.PermissionsChanged -= OnPermissionsChanged;

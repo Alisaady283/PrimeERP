@@ -210,11 +210,41 @@
         <Setter Property="Effect" Value="{DynamicResource ShadowMd}"/>
     </Style>
 
+    <!-- بلا هذا القالب يرث العنصر فُرَش النظام: خلفية زرقاء ونصّ أسود تحت أي ثيم. -->
+    <Style x:Key="ComboPopupItemStyle" TargetType="ListBoxItem">
+        <Setter Property="Padding" Value="10,7"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="bd" Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            CornerRadius="{DynamicResource P.Radius.Sm}"
+                            Margin="2,1">
+                        <ContentPresenter TextBlock.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{DynamicResource BrandSoft}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{DynamicResource BrandDefault}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="ComboPopupListBoxStyle" TargetType="ListBox">
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
+        <Setter Property="ItemContainerStyle" Value="{StaticResource ComboPopupItemStyle}"/>
     </Style>
 
     <!-- ===== AppCheckBox ===== -->

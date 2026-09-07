@@ -7,7 +7,7 @@
 
     <!-- ثانوي لا خافت: TextMuted على أرضية الصفحة تباينه 2.26 — أقل من حدّ القراءة، وقد كشفه ThemeContrastTests. -->
     <SolidColorBrush x:Key="C.Pagination.Info.Fg" Color="{DynamicResource TextSecondary.Color}"/>
-    <sys:Double      x:Key="C.Pagination.Height">44</sys:Double>
+    <sys:Double      x:Key="C.Pagination.Height">36</sys:Double>
     <sys:Double      x:Key="C.Pagination.Info.FontSize">12</sys:Double>
     <sys:Double      x:Key="C.Pagination.Button.Size">34</sys:Double>
     <sys:Double      x:Key="C.Pagination.Button.Radius">6</sys:Double>

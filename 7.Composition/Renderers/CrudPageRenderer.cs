@@ -137,7 +137,7 @@ namespace PrimeERP.Composition.Renderers
             }
 
             // حشو متساوٍ حول الصفحة يأتي من AppShell؛ هنا الفصل بين الجدول وشريط الترقيم وحده.
-            var pagination = new AppPagination { Margin = new Thickness(0, 12, 0, 0) };
+            var pagination = new AppPagination { Margin = new Thickness(0, 8, 0, 0) };
             BindingOperations.SetBinding(pagination, AppPagination.TotalItemsProperty, new Binding("TotalCount"));
             BindingOperations.SetBinding(pagination, AppPagination.PageSizeProperty, new Binding("PageSize"));
             // OneWay صراحة — CurrentPage على الـVM للقراءة فقط (private set)، والتنقل الفعلي عبر PageChanged→GoToPageCommand
