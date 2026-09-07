@@ -339,6 +339,12 @@ namespace PrimeERP.Application.Services.Accounting
             if (!leaves.IsSuccess)
                 return Result.Fail<List<TrialBalanceLine>>(leaves.ErrorMessage, leaves.ErrorCode);
 
+            // أسماء الحسابات كلها — الأوراق وحدها لا تكفي لتسمية الأب الذي تُجمَّع عنده القوائم.
+            var all = _accounts.GetPaged(1, 100000);
+            var namesByCode = all.IsSuccess
+                ? all.Value.Items.GroupBy(a => a.Code).ToDictionary(g => g.Key, g => g.First().Name)
+                : new Dictionary<string, string>();
+
             // استعلامان مجمَّعان فقط (لا حلقة استعلامات على الحسابات): مرة منذ البداية حتى قبل from يوماً
             // للرصيد الافتتاحي، ومرة بين from وto لحركة الفترة.
             var openingSums = _journal.GetAccountSums(null, from.AddDays(-1), postedOnly).ToDictionary(x => x.AccountCode);
@@ -366,6 +372,9 @@ namespace PrimeERP.Application.Services.Accounting
                 {
                     Code    = account.Code,
                     Name    = account.Name,
+                    ParentCode = account.ParentCode,
+                    ParentName = account.ParentCode != null && namesByCode.TryGetValue(account.ParentCode, out var parentName)
+                                 ? parentName : account.ParentCode,
                     Level   = account.Level,
                     Type    = account.Type,
                     IsLeaf  = account.IsLeaf,

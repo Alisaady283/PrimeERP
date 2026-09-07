@@ -63,12 +63,27 @@ namespace PrimeERP.Modules
             Func<string, bool> matches) =>
             Read(balance, type, matches, l => creditNatured ? l.PeriodCredit - l.PeriodDebit : l.PeriodDebit - l.PeriodCredit);
 
+        /// <summary>
+        /// القراءة عند مستوى التجميع لا عند الورقة: الشجرة ثلاث طبقات — رئيسي (١..٥)، وتجميعي بينهما،
+        /// وتفصيلي هو الورقة. القائمة تعرض «ذمم مدينة» سطراً واحداً لا اسم كل عميل، فتُجمَع أرصدة
+        /// الأوراق عند أبيها التجميعي. وحسابٌ ورقةٌ بذاته (كالأرباح المحتجزة) يظهر باسمه.
+        /// </summary>
         private static List<Line> Read(IEnumerable<TrialBalanceLine> balance, AccountType type,
-            Func<string, bool> matches, Func<TrialBalanceLine, decimal> amount) =>
-            balance
+            Func<string, bool> matches, Func<TrialBalanceLine, decimal> amount)
+        {
+            return balance
                 .Where(l => l.IsLeaf && l.Type == type && matches(l.Code))
-                .Select(l => new Line { Statement = l.Name, Partial = amount(l) })
+                .GroupBy(GroupOf)
+                .Select(g => new Line { Statement = g.Key.Name, Partial = g.Sum(amount) })
+                .OrderBy(l => l.Statement, StringComparer.Ordinal)
                 .ToList();
+        }
+
+        /// <summary>أب الورقة التجميعي، أو الورقة نفسها إن كانت رئيسية أو بلا أب.</summary>
+        private static (string Code, string Name) GroupOf(TrialBalanceLine leaf) =>
+            string.IsNullOrEmpty(leaf.ParentCode) || leaf.Level <= 2
+                ? (leaf.Code, leaf.Name)
+                : (leaf.ParentCode, leaf.ParentName ?? leaf.ParentCode);
 
         public static Func<string, bool> StartsWith(params string[] prefixes) =>
             code => prefixes.Any(p => !string.IsNullOrEmpty(p) && code != null && code.StartsWith(p, StringComparison.Ordinal));

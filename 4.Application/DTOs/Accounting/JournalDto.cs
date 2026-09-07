@@ -93,6 +93,9 @@ namespace PrimeERP.Application.DTOs.Accounting
     {
         public string      Code    { get; set; }
         public string      Name    { get; set; }
+        /// <summary>الحساب التجميعي الأب — القوائم تُجمِّع عنده فتعرض «العملاء» لا اسم كل عميل.</summary>
+        public string      ParentCode { get; set; }
+        public string      ParentName { get; set; }
         public int         Level   { get; set; }
         public AccountType Type    { get; set; }
         public bool        IsLeaf  { get; set; }
