@@ -36,6 +36,13 @@ namespace PrimeERP.Tests.Design
             ("PageBg",           "C.Pagination.Info.Fg"),
             ("PageBg",           "TextPrimary"),
             ("SurfaceSunken",     "TextSecondary"),
+
+            // نصّ كل زرّ على خلفيته — الملوّن يقرأ TextOnBrand والعادي TextPrimary.
+            ("C.Button.Primary.Bg",   "C.Button.Primary.Fg"),
+            ("C.Button.Secondary.Bg", "C.Button.Secondary.Fg"),
+            ("C.Button.Success.Bg",   "C.Button.Success.Fg"),
+            ("C.Button.Warning.Bg",   "C.Button.Warning.Fg"),
+            ("C.Button.Danger.Bg",    "C.Button.Danger.Fg"),
         };
 
         [Fact]

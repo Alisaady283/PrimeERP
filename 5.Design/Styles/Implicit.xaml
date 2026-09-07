@@ -138,6 +138,7 @@
 
     <!-- Foreground عمداً غائب — نص التسمية يورث من الحاوية؛ لون صندوق الصح/الحدود ثابت لأنه هوية الصندوق نفسه لا نص. -->
     <Style TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Template">
@@ -170,6 +171,7 @@
 
     <!-- Foreground عمداً غائب — نفس منطق CheckBox أعلاه. -->
     <Style TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Template">
@@ -312,6 +314,7 @@
     <!-- ===== ContextMenu / MenuItem ===== -->
 
     <Style TargetType="ContextMenu">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -332,6 +335,7 @@
 
     <!-- Foreground عمداً غائب — يورث من ContextMenu (يضمن خلفية فاتحة بثبات عبر نمطه الخاص). -->
     <Style TargetType="MenuItem">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Padding" Value="10,7"/>
@@ -384,6 +388,7 @@
 
     <!-- Foreground عمداً غائب على مستوى الـ Style (المحتوى يورث)؛ عنوان الرأس له لونه الخاص صراحة داخل القالب أسفله. -->
     <Style TargetType="GroupBox">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
@@ -413,6 +418,7 @@
 
     <!-- Foreground عمداً غائب — عنوان ومحتوى Expander يورثان من الحاوية. -->
     <Style TargetType="Expander">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="Template">
@@ -465,6 +471,7 @@
     <!-- ===== TabControl / TabItem ===== -->
 
     <Style TargetType="TabControl">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
@@ -508,6 +515,7 @@
 
     <!-- Foreground عمداً غائب — يورث من ListBox (يضمن Background+Foreground متطابقين عبر نمطه الخاص). -->
     <Style TargetType="ListBoxItem">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="Padding" Value="8,6"/>
         <Setter Property="Template">
             <Setter.Value>

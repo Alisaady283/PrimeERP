@@ -3,73 +3,89 @@ using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Domain.Enums;
+using PrimeERP.Platform.Localization;
+using PrimeERP.UI.Components.Display;
 
 namespace PrimeERP.Modules
 {
     /// <summary>
-    /// القوائم المالية بالشكل المحاسبي: أقسام مصنَّفة، وإجماليات فرعية بينها، لا جدول أرصدة مسطّح.
-    /// التصنيف من كود الحساب نفسه — الشجرة مصنَّفة أصلاً (١١ غير متداولة، ١٢ متداولة، ٢١ متداولة،
-    /// ٢٢ طويلة الأجل، ٥١ تشغيلية، ٥٢ أخرى) فلا يحتاج التقرير بيانات إضافية.
+    /// القوائم المالية بشكلها الرسمي: البيان، جزئي، كلي. البنود تُكتب في «جزئي» والمجاميع في «كلي»،
+    /// والتدرّج بالإزاحة — فتُقرأ كقائمة محاسبية لا كجدول أرصدة. قطعة واحدة تستوردها قائمة الدخل
+    /// والمركز المالي والتدفقات، فلا يبقى لكلٍّ تخطيطه.
     /// </summary>
     public static class FinancialStatementFactory
     {
         public class Line
         {
-            public string  Code   { get; set; }
-            public string  Name   { get; set; }
-            public decimal Amount { get; set; }
+            public string   Statement { get; set; }
+            public decimal? Partial   { get; set; }
+            public decimal? Total     { get; set; }
         }
 
-        /// <summary>عنوان قسم ثم سطوره ثم مجموعه — القسم الفارغ لا يُعرض إطلاقاً.</summary>
-        public static IEnumerable<Line> Section(string title, List<Line> lines, string totalLabel = null)
-        {
-            if (lines.Count == 0) yield break;
+        private const string Indent = "      ";
 
-            yield return new Line { Name = title };
-            foreach (var line in lines) yield return line;
-            yield return new Line { Name = totalLabel ?? $"إجمالي {title}", Amount = lines.Sum(l => l.Amount) };
+        /// <summary>عنوان قسم بلا مبلغ.</summary>
+        public static Line Heading(string title) => new() { Statement = title };
+
+        /// <summary>مجموع في عمود «كلي».</summary>
+        public static Line Grand(string label, decimal amount, int level = 0) =>
+            new() { Statement = Repeat(level) + label, Total = amount };
+
+        /// <summary>
+        /// قسم كامل: عنوانه، ثم بنوده في «جزئي»، ثم مجموعه في «كلي». يُعرض دائماً ولو بصفر — القائمة
+        /// تُعرَّف ببنيتها لا بأرصدتها، وحذف قسم لأنه صفر يخفي عن القارئ أنه صفر أصلاً.
+        /// </summary>
+        public static IEnumerable<Line> Group(string title, List<Line> items, string totalLabel = null, int level = 1)
+        {
+            yield return new Line { Statement = Repeat(level) + title };
+
+            foreach (var item in items)
+                yield return new Line { Statement = Repeat(level + 1) + item.Statement, Partial = item.Partial };
+
+            yield return new Line
+            {
+                Statement = Repeat(level + 1) + (totalLabel ?? $"إجمالي {title}"),
+                Total = items.Sum(i => i.Partial ?? 0)
+            };
         }
 
-        /// <summary>سطر نتيجة بين الأقسام (مجمل الربح، الربح التشغيلي، صافي الربح).</summary>
-        public static Line Result(string label, decimal amount) => new() { Name = label, Amount = amount };
+        public static decimal Sum(List<Line> items) => items.Sum(i => i.Partial ?? 0);
 
-        /// <summary>الحسابات الورقية ذات الحركة التي يبدأ كودها بأحد البادئات.</summary>
-        public static List<Line> Under(IEnumerable<TrialBalanceLine> balance, AccountType type, bool creditNatured,
-            Func<string, bool> matches)
-        {
-            return balance
+        // ===== قراءة الأرصدة =====
+
+        /// <summary>الحسابات الورقية ذات الرصيد الختامي — لقوائم اللحظة (المركز المالي).</summary>
+        public static List<Line> Closing(IEnumerable<TrialBalanceLine> balance, AccountType type, bool creditNatured,
+            Func<string, bool> matches) =>
+            Read(balance, type, matches, l => creditNatured ? l.ClosingCredit - l.ClosingDebit : l.ClosingDebit - l.ClosingCredit);
+
+        /// <summary>الحسابات الورقية ذات حركة الفترة — لقوائم الفترة (الدخل والتدفقات).</summary>
+        public static List<Line> Period(IEnumerable<TrialBalanceLine> balance, AccountType type, bool creditNatured,
+            Func<string, bool> matches) =>
+            Read(balance, type, matches, l => creditNatured ? l.PeriodCredit - l.PeriodDebit : l.PeriodDebit - l.PeriodCredit);
+
+        private static List<Line> Read(IEnumerable<TrialBalanceLine> balance, AccountType type,
+            Func<string, bool> matches, Func<TrialBalanceLine, decimal> amount) =>
+            balance
                 .Where(l => l.IsLeaf && l.Type == type && matches(l.Code))
-                .Select(l => new Line
-                {
-                    Code = l.Code,
-                    Name = l.Name,
-                    Amount = creditNatured ? l.ClosingCredit - l.ClosingDebit : l.ClosingDebit - l.ClosingCredit
-                })
-                .Where(l => l.Amount != 0)
+                .Select(l => new Line { Statement = l.Name, Partial = amount(l) })
                 .ToList();
-        }
-
-        /// <summary>مثلها لكن بحركة الفترة لا بالرصيد الختامي — قائمة الدخل فترة لا لحظة.</summary>
-        public static List<Line> PeriodUnder(IEnumerable<TrialBalanceLine> balance, AccountType type, bool creditNatured,
-            Func<string, bool> matches)
-        {
-            return balance
-                .Where(l => l.IsLeaf && l.Type == type && matches(l.Code))
-                .Select(l => new Line
-                {
-                    Code = l.Code,
-                    Name = l.Name,
-                    Amount = creditNatured ? l.PeriodCredit - l.PeriodDebit : l.PeriodDebit - l.PeriodCredit
-                })
-                .Where(l => l.Amount != 0)
-                .ToList();
-        }
 
         public static Func<string, bool> StartsWith(params string[] prefixes) =>
-            code => prefixes.Any(p => code != null && code.StartsWith(p, StringComparison.Ordinal));
+            code => prefixes.Any(p => !string.IsNullOrEmpty(p) && code != null && code.StartsWith(p, StringComparison.Ordinal));
 
         public static Func<string, bool> StartsWithBut(string prefix, string excluded) =>
             code => code != null && code.StartsWith(prefix, StringComparison.Ordinal) &&
                     (string.IsNullOrWhiteSpace(excluded) || !code.StartsWith(excluded, StringComparison.Ordinal));
+
+        // ===== الأعمدة =====
+
+        public static List<GridColumn> Columns() => new()
+        {
+            new() { Header = "البيان", Binding = nameof(Line.Statement), Width = 320, IsStarWidth = true },
+            new() { Header = "جزئي",   Binding = nameof(Line.Partial), Width = 150, Align = ColumnAlign.Center, Format = "N2" },
+            new() { Header = "كلي",    Binding = nameof(Line.Total),   Width = 150, Align = ColumnAlign.Center, Format = "N2" },
+        };
+
+        private static string Repeat(int level) => string.Concat(Enumerable.Repeat(Indent, Math.Max(0, level)));
     }
 }
