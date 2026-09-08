@@ -5,9 +5,13 @@
 
     <!-- L3 — رموز مكوّن الحوار. لون الهيدر نفسه ليس هنا — يُحسب وقت التشغيل عبر VariantToBrushConverter من StatusVariant. -->
 
-    <SolidColorBrush x:Key="C.Dialog.Footer.Bg"     Color="{DynamicResource SurfaceDefault.Color}"/>
+    <SolidColorBrush x:Key="C.Dialog.Footer.Bg"     Color="{DynamicResource SurfaceOverlay.Color}"/>
     <SolidColorBrush x:Key="C.Dialog.Footer.Border" Color="{DynamicResource OutlineDefault.Color}"/>
 
+
+    <!-- هامش شفاف حول بطاقة الحوار يتّسع للظل. النافذة أوسع/أطول به من البطاقة المرئية، فكل حساب
+         عرضٍ أو ارتفاع يطرحه — راجع AppDialogWindow.CardWidth. -->
+    <Thickness x:Key="C.Dialog.Gutter">16</Thickness>
 
     <sys:Double x:Key="C.Dialog.Width.Sm">420</sys:Double>
     <sys:Double x:Key="C.Dialog.Width.Md">560</sys:Double>

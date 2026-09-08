@@ -25,7 +25,39 @@ namespace PrimeERP.UI.Components.Feedback
             // تنمو النافذة بكل سطر يُضاف حتى يهبط الفوتر تحت حافة الشاشة فيغيب زر الحفظ.
             const double Chrome = 150;   // الرأس والفوتر
             MaxHeight = SystemParameters.WorkArea.Height * 0.92;
-            contentScroll.MaxHeight = MaxHeight - Chrome;
+            contentScroll.MaxHeight = MaxHeight - VerticalGutter - Chrome;
+            CardWidth = (double)FindResource("C.Dialog.Width.Sm");
+
+            card.SizeChanged += (_, __) => ClipCorners();
+        }
+
+        private double HorizontalGutter => shell.Margin.Left + shell.Margin.Right;
+        private double VerticalGutter   => shell.Margin.Top + shell.Margin.Bottom;
+
+        /// <summary>
+        /// عرض البطاقة المرئية — لا عرض النافذة. النافذة أوسع منها بهامش الظل من الجانبين، فيُضاف الهامش
+        /// هنا مرة واحدة بدل أن يتذكّره كل نداء. ضبط Width مباشرةً يُنتج بطاقةً أضيق ممّا طُلب.
+        /// </summary>
+        public double CardWidth
+        {
+            get => (double.IsNaN(Width) ? ActualWidth : Width) - HorizontalGutter;
+            set { Width = value + HorizontalGutter; MinWidth = Width; }
+        }
+
+        /// <summary>ارتفاع البطاقة المرئية — يُلغي SizeToContent لأن الطلب صريح.</summary>
+        public double CardHeight
+        {
+            set { SizeToContent = SizeToContent.Manual; Height = value + VerticalGutter; }
+        }
+
+        /// <summary>
+        /// Border لا يقصّ أبناءه باستدارته، فالهيدر الملوّن يربّع الزاويتين العلويتين والفوتر السفليتين.
+        /// القصّ يُحسب من استدارة البطاقة نفسها فيتبع هوية التصميم النشطة بلا رقم مكرّر.
+        /// </summary>
+        private void ClipCorners()
+        {
+            var radius = Math.Max(0, shell.CornerRadius.TopLeft - shell.BorderThickness.Left);
+            card.Clip = new RectangleGeometry(new Rect(card.RenderSize), radius, radius);
         }
 
         protected string HeaderTitle

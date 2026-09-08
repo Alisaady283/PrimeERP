@@ -1,4 +1,5 @@
 using System;
+using PrimeERP.UI.Components.Feedback;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -45,7 +46,7 @@ namespace PrimeERP.Tests.Composition
                     try
                     {
                         window = System.Windows.Application.Current.Windows.OfType<Window>().Last();
-                        width = window.Width;
+                        width = ((AppDialogWindow)window).CardWidth;
 
                         var numerics = Descendants<AppNumericBox>(window).ToList();
                         var net = Descendants<AppTextBox>(window).First(t => t.IsReadOnly);

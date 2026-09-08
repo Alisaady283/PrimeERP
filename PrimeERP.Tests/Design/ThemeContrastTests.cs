@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Design;
@@ -90,8 +91,21 @@ namespace PrimeERP.Tests.Design
 
             Assert.NotEmpty(windows);
 
+            // النافذة الشفافة لا تُلغي أبيض WPF بل تكشف ما خلفها، فأي سطح تدهنه داخلها يجب أن يأتي من
+            // الثيم لا من لون حرفي. ونافذة شفافة بلا سطح إطلاقاً (مضيف التنبيهات مثلاً) سليمة كما هي.
+            bool Declares(string text)
+            {
+                if (!text[..Math.Min(text.Length, 1200)].Contains("Background=")) return false;
+                if (!text.Contains("AllowsTransparency=\"True\"")) return true;
+
+                return Regex.Matches(text, "Background=\"([^\"]+)\"")
+                    .Select(m => m.Groups[1].Value)
+                    .Where(value => value != "Transparent")
+                    .All(value => value.StartsWith("{DynamicResource "));
+            }
+
             var missing = windows
-                .Where(x => !x.Text[..Math.Min(x.Text.Length, 1200)].Contains("Background="))
+                .Where(x => !Declares(x.Text))
                 .Select(x => System.IO.Path.GetFileName(x.Path))
                 .ToList();
 

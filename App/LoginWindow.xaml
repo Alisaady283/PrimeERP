@@ -25,7 +25,7 @@
         <SolidColorBrush x:Key="SurfaceDefault" Color="{DynamicResource P.Color.White}"/>
     </Window.Resources>
 
-    <Border Margin="18" Background="{DynamicResource LoginBg}"
+    <Border Margin="{DynamicResource C.Dialog.Gutter}" Background="{DynamicResource LoginBg}"
             CornerRadius="{DynamicResource P.Radius.Lg}"
             BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"
             Effect="{DynamicResource ShadowLg}">

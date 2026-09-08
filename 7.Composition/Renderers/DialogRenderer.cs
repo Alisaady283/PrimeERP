@@ -23,9 +23,8 @@ namespace PrimeERP.Composition.Renderers
     {
         public bool Saved;
 
-        // عرض النافذة مُثبَّت في XAML على C.Dialog.Width.Sm (420) — كافٍ لحوار حقول مسطّحة، يقصّ أي محتوى
-        // أعرض (صف سطور مستند/شبكة متعددة الأعمدة). width هنا قيمة محلية تتغلّب على DynamicResource تلقائياً،
-        // بلا لمس XAML.
+        // العرض الافتراضي C.Dialog.Width.Sm (420) كافٍ لحوار حقول مسطّحة، ويقصّ أي محتوى أعرض (صف سطور
+        // مستند/شبكة متعددة الأعمدة). CardWidth لا Width: الأخيرة تشمل هامش الظل فتُنتج بطاقة أضيق.
         public ComposedDialogWindow(string title, FrameworkElement body, FrameworkElement footer, double? width = null)
         {
             Title = title;
@@ -33,7 +32,7 @@ namespace PrimeERP.Composition.Renderers
             HeaderVariant = StatusVariant.Brand;
             Body = body;
             Footer = footer;
-            if (width.HasValue) { Width = width.Value; MinWidth = width.Value; }
+            if (width.HasValue) CardWidth = width.Value;
             MinHeight = 320;
         }
 

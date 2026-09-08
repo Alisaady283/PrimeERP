@@ -1,4 +1,5 @@
 using System;
+using PrimeERP.UI.Components.Feedback;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -135,7 +136,7 @@ namespace PrimeERP.Tests.Composition
                     try
                     {
                         window = System.Windows.Application.Current.Windows.OfType<Window>().Last();
-                        windowWidth = window.Width;
+                        windowWidth = ((AppDialogWindow)window).CardWidth;
 
                         FindVisualChild<AppDatePicker>(window).SelectedDate = DateTime.Today;
                         FindVisualChild<AppTextBox>(window).Text = "قيد اختباري";

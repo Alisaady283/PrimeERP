@@ -38,8 +38,8 @@ namespace PrimeERP.UI.Components.Pickers
 
             ResizeMode = ResizeMode.CanResize;
             SizeToContent = SizeToContent.Manual;
-            Width = (double)FindResource("C.Dialog.Width.Sm");
-            Height = 540;
+            CardWidth = (double)FindResource("C.Dialog.Width.Sm");
+            CardHeight = 540;
 
             _geometryKey = "PickerTreeWindow:" + title;
             PickerWindowGeometry.TryRestore(_geometryKey, this);
