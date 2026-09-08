@@ -5,6 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <!-- الاختبارات تُصيّر نوافذ WPF فعلاً، فتُعلن ذلك بدل أن ترث الإطار عرضاً عبر ProjectReference.
+         بلا الإعلان لا يعرف الاستعادة أن System.IO.Packaging يوفّرها الإطار، فتُبقي النسخة الموروثة
+         8.0.0 المصابة بثغرتين (GHSA-f32c-w444-8ppv وGHSA-qj66-m88j-hmgj) بدلاً من تقليمها. -->
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
 
   <ItemGroup>
