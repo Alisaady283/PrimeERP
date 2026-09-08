@@ -74,6 +74,40 @@ namespace PrimeERP.Tests.Design
             });
         }
 
+        /// <summary>
+        /// النمط الضمني TargetType="Window" يطابق النوع بالضبط لا المشتقّ منه، فنافذةٌ مشتقّة بلا خلفية
+        /// معلنة تقع على أبيض WPF الافتراضي في الوضعين — وهو ما جعل جسم الحوار أبيض تحت الثيم الداكن.
+        /// </summary>
+        [Fact]
+        public void EveryWindow_DeclaresItsOwnBackground()
+        {
+            var windows = System.IO.Directory
+                .GetFiles(RepositoryRoot(), "*.xaml", System.IO.SearchOption.AllDirectories)
+                .Where(f => !f.Contains(@"\obj\") && !f.Contains(@"in\"))
+                .Select(f => (Path: f, Text: System.IO.File.ReadAllText(f)))
+                .Where(x => x.Text.TrimStart().StartsWith("<Window"))
+                .ToList();
+
+            Assert.NotEmpty(windows);
+
+            var missing = windows
+                .Where(x => !x.Text[..Math.Min(x.Text.Length, 1200)].Contains("Background="))
+                .Select(x => System.IO.Path.GetFileName(x.Path))
+                .ToList();
+
+            Assert.True(missing.Count == 0,
+                "نوافذ بلا خلفية معلنة فتقع على أبيض WPF: " + string.Join("، ", missing));
+        }
+
+        private static string RepositoryRoot()
+        {
+            var directory = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
+            while (directory != null && !System.IO.File.Exists(System.IO.Path.Combine(directory.FullName, "PrimeERP.csproj")))
+                directory = directory.Parent;
+
+            return directory?.FullName ?? AppContext.BaseDirectory;
+        }
+
         private static Color Colour(string key) =>
             ((SolidColorBrush)System.Windows.Application.Current.FindResource(key)).Color;
 

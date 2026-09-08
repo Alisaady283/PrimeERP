@@ -772,6 +772,8 @@ namespace PrimeERP.Modules
             {
                 Key = "OpeningBalances", TitleKey = "Str.Module.OpeningBalances", PermissionPrefix = "Journal",
                 ViewModelType = typeof(OpeningBalancesViewModel),
+                // قيد افتتاحي واحد للمنشأة — التعديل عليه بصلاحيته لا بإضافة قيد ثانٍ.
+                SingleRecord = true,
                 Columns = new()
                 {
                     new() { Header = LocalizationService.Get("Str.EntryNo"), Binding = nameof(JournalEntryDto.EntryNo), Width = 130 },

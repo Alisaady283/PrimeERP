@@ -50,6 +50,10 @@ namespace PrimeERP.Composition.Definitions
         /// <summary>إجراءات إضافية على السجل المحدَّد بجانب تعديل/حذف.</summary>
         public List<RowAction> RowActions { get; init; }
 
+        /// <summary>سجلّ واحد لا أكثر — الأرصدة الافتتاحية قيدٌ واحد للمنشأة، فزرّ الإضافة يُعطَّل بعده
+        /// ويبقى التعديل والحذف بصلاحياتهما. القيد على الشاشة لا على الخدمة: النمط واحد لكل شاشة.</summary>
+        public bool SingleRecord { get; init; }
+
         /// <summary>في أي وضع تظهر هذه الوحدة — الافتراضي: الوضعان معاً.</summary>
         public FlowScope FlowScope { get; init; } = FlowScope.Both;
     }

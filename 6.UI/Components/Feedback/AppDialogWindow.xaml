@@ -6,6 +6,7 @@
         WindowStyle="None"
         FlowDirection="RightToLeft"
         SizeToContent="Height"
+        Background="{DynamicResource SurfaceDefault}"
         Width="{DynamicResource C.Dialog.Width.Sm}"
         PreviewKeyDown="AppDialogWindow_PreviewKeyDown">
     <Grid>

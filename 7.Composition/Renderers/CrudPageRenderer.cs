@@ -33,9 +33,16 @@ namespace PrimeERP.Composition.Renderers
             // هنا ظهر فعلياً كنص مكرر حرفياً عند أول تشغيل حقيقي (راجع توقف 10). PageHeader هنا لاستضافة زر
             // الإضافة فقط.
             var header = new PageHeader();
+            // سجلّ واحد: الإضافة تُعطَّل بعد أوّله — التعديل والحذف يبقيان بصلاحياتهما لمن يملكها.
+            ICommand addCommand = definition.SingleRecord
+                ? new PrimeERP.UI.ViewModels.RelayCommand(
+                    _ => vm.AddCommand.Execute(null),
+                    _ => ((System.Collections.IEnumerable)vm.Items).Cast<object>().Any() == false)
+                : (ICommand)vm.AddCommand;
+
             var actions = new List<ToolbarAction>
             {
-                ToolbarAction.New((ICommand)vm.AddCommand, $"{definition.PermissionPrefix}.Create"),
+                ToolbarAction.New(addCommand, $"{definition.PermissionPrefix}.Create"),
                 ToolbarAction.Edit((ICommand)vm.EditCommand, $"{definition.PermissionPrefix}.Edit"),
                 ToolbarAction.Delete((ICommand)vm.DeleteCommand, $"{definition.PermissionPrefix}.Delete"),
                 ToolbarAction.Refresh((ICommand)vm.RefreshCommand),
