@@ -9,6 +9,7 @@ namespace PrimeERP.Application.DTOs.Cheques
         public int      Id            { get; set; }
         public string   ChequeNo      { get; set; }
         public string   DirectionName { get; set; }
+        public int?     PartyId       { get; set; }
         public string   PartyName     { get; set; }
         public decimal  Amount        { get; set; }
         public DateTime IssueDate     { get; set; }
@@ -50,7 +51,6 @@ namespace PrimeERP.Application.DTOs.Cheques
     {
         public int       Id      { get; set; }
         public DateTime  DocDate { get; set; } = DateTime.Today;
-        public int?      PartyId { get; set; }
         public string    Notes   { get; set; }
         public List<CreateChequeLineDto> Lines { get; set; } = new();
     }

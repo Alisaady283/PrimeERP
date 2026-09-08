@@ -98,7 +98,6 @@ namespace PrimeERP.Modules
                     HeaderFields = new()
                     {
                         new() { Key = nameof(CreateChequeDocumentDto.DocDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
-                        new() { Key = nameof(CreateChequeDocumentDto.PartyId), LabelKey = partyLabelKey, Kind = FieldKind.Picker, PickerType = partyPickerType },
                         new() { Key = nameof(CreateChequeDocumentDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     },
                     LineFields = new()

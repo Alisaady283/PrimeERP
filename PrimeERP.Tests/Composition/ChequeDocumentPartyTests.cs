@@ -1,0 +1,161 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
+using System.Windows.Threading;
+using Microsoft.Extensions.DependencyInjection;
+using PrimeERP.Application.DTOs.Cheques;
+using PrimeERP.Application.DTOs.Parties;
+using PrimeERP.Application.Services.Cheques;
+using PrimeERP.Application.Services.Parties;
+using PrimeERP.Composition.Definitions;
+using PrimeERP.Composition.Registry;
+using PrimeERP.Composition.Renderers;
+using PrimeERP.Platform.Design;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.UI.Components.Actions;
+using PrimeERP.UI.Components.Inputs;
+using PrimeERP.UI.Services;
+using Xunit;
+
+namespace PrimeERP.Tests.Composition
+{
+    /// <summary>
+    /// مستند الشيكات دفعةُ إدخال لا طرفاً واحداً: كل شيك لطرفه على سطره. الطرف كان مكرَّراً رأساً وسطراً
+    /// من عهد الشيك الواحد، والخدمة تتراجع للرأس — فشيكان لطرفين في مستند واحد كانا يقعان على طرف الرأس.
+    /// </summary>
+    [Collection("WpfApplication")]
+    public class ChequeDocumentPartyTests : IDisposable
+    {
+        private readonly TestDatabaseFixture _db = new();
+        private readonly RecordingToastService _toasts = new();
+        private readonly IServiceProvider _services;
+
+        public ChequeDocumentPartyTests()
+        {
+            AppSession.DevMode = true;
+            // رسالة الرفض تصل للاختبار بدل أن تُبتلَع في الواجهة.
+            _services = TestDatabaseFixture.BuildServices(s => s.AddSingleton<IToastService>(_toasts));
+        }
+
+        public void Dispose() => _db.Dispose();
+
+        private class RecordingToastService : IToastService
+        {
+            public List<string> Errors { get; } = new();
+            public void Success(string message, int durationMs = 3000) { }
+            public void Error(string message) => Errors.Add(message);
+            public void Warning(string message, int durationMs = 4000) { }
+            public void Info(string message, int durationMs = 3000) { }
+        }
+
+        [Fact]
+        public void Header_CarriesNoParty_AndEachLineKeepsItsOwn()
+        {
+            var customers = _services.GetRequiredService<ICustomerService>();
+            var first = customers.Create(new CreateCustomerDto { Name = "عميل الشيك الأول" }).Value;
+            var second = customers.Create(new CreateCustomerDto { Name = "عميل الشيك الثاني" }).Value;
+
+            WpfApplicationFixture.Run(() =>
+            {
+                UIServices.Initialize(_services);
+                _services.GetRequiredService<IIdentityService>().Apply("Default");
+
+                var def = _services.GetRequiredService<IModuleRegistry>().Get("ChequeReceipts").DocumentDialog;
+
+                // الرأس لا يعرض طرفاً — التاريخ والبيان فقط.
+                Assert.DoesNotContain(def.HeaderFields, f => f.Key == nameof(CreateChequeLineDto.PartyId));
+                Assert.Contains(def.LineFields, f => f.Key == nameof(CreateChequeLineDto.PartyId) && f.Kind == FieldKind.Picker);
+
+                Exception thrown = null;
+                Window window = null;
+
+                Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                {
+                    try
+                    {
+                        window = System.Windows.Application.Current.Windows.OfType<Window>().Last();
+
+                        FindVisualChild<AppDatePicker>(window).SelectedDate = DateTime.Today;
+
+                        // القائمة في السطر تُحمَّل فعلاً: عميلان مضافان أعلاه يجب أن يظهرا فيها.
+                        var parties = FindAll<AppComboBox>(window).ToList();
+                        Assert.NotEmpty(parties);
+                        Assert.True(parties[0].ItemsSource != null, "قائمة الطرف في السطر فارغة");
+
+                        var texts = FindAll<AppTextBox>(window).ToList();
+                        var numbers = FindAll<AppNumericBox>(window).ToList();
+
+                        FillRow(texts, numbers, parties, row: 0, chequeNo: "CH-1", amount: 500m, partyId: first.Id);
+
+                        ClickButton(window, "Str.Save");
+                    }
+                    catch (Exception ex) { thrown = ex; window?.Close(); }
+                }));
+
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+                timer.Tick += (_, __) => { timer.Stop(); window?.Close(); };
+                timer.Start();
+
+                bool saved;
+                try { saved = DocumentRenderer.ShowAndSave(def, _services, _toasts); }
+                catch (Exception ex) { thrown = ex; saved = false; }
+
+                Assert.Null(thrown);
+                Assert.True(saved, "لم يُحفظ مستند الشيكات: " + string.Join(" / ", _toasts.Errors));
+            });
+
+            var cheque = _services.GetRequiredService<IChequeService>()
+                .GetPaged(1, 20).Value.Items.Single(c => c.ChequeNo == "CH-1");
+
+            Assert.Equal("عميل الشيك الأول", cheque.PartyName);
+            Assert.Equal(first.Id, cheque.PartyId);
+            Assert.NotEqual(second.Id, cheque.PartyId);
+        }
+
+        private static void FillRow(List<AppTextBox> texts, List<AppNumericBox> numbers, List<AppComboBox> parties,
+                                    int row, string chequeNo, decimal amount, int partyId)
+        {
+            // ترتيب السطر كما هو معلَن: رقم الشيك، البنك، المبلغ، الطرف، الاستحقاق، ملاحظات.
+            texts.First(t => string.IsNullOrEmpty(t.Text)).Text = chequeNo;
+            numbers[row].Value = amount;
+
+            var combo = parties[row];
+            var item = ((System.Collections.IEnumerable)combo.ItemsSource).Cast<object>()
+                .First(i => (int)i.GetType().GetProperty("Id").GetValue(i) == partyId);
+            combo.SelectedItem = item;
+        }
+
+        private static void ClickButton(DependencyObject root, string localizationKey)
+        {
+            var text = PrimeERP.Platform.Localization.LocalizationService.Get(localizationKey);
+            var button = FindAll<AppButton>(root).First(b => b.Text == text);
+            FindVisualChild<Button>(button).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        }
+
+        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typed) return typed;
+                var nested = FindVisualChild<T>(child);
+                if (nested != null) return nested;
+            }
+            return null;
+        }
+
+        private static IEnumerable<T> FindAll<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typed) yield return typed;
+                foreach (var nested in FindAll<T>(child)) yield return nested;
+            }
+        }
+    }
+}

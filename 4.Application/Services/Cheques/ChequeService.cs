@@ -215,7 +215,7 @@ namespace PrimeERP.Application.Services.Cheques
         private ChequeDto ToDto(Cheque c) => new()
         {
             Id = c.Id, ChequeNo = c.ChequeNo, Amount = c.Amount, IssueDate = c.IssueDate, DueDate = c.DueDate,
-            BankName = c.BankName, Notes = c.Notes,
+            BankName = c.BankName, Notes = c.Notes, PartyId = c.PartyId,
             DirectionName = c.Direction == ChequeDirection.Incoming ? "وارد" : "صادر",
             StatusName = StatusName(c.Status),
             PartyName = PartyNameOf(c),
@@ -255,7 +255,7 @@ namespace PrimeERP.Application.Services.Cheques
                     var cheque = new Cheque
                     {
                         ChequeNo = line.ChequeNo, Direction = direction, PartyKind = partyKind,
-                        PartyId = line.PartyId ?? dto.PartyId, Amount = line.Amount,
+                        PartyId = line.PartyId, Amount = line.Amount,
                         IssueDate = dto.DocDate, DueDate = line.DueDate ?? dto.DocDate,
                         BankName = line.BankName, Status = status, Notes = line.Notes, CreatedBy = AppSession.Username
                     };

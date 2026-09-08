@@ -49,7 +49,8 @@ namespace PrimeERP.Application.Services.Cheques
                 Lines = { new CreateChequeLineDto
                 {
                     LineNo = 1, ChequeNo = cheque.Value.ChequeNo, BankName = cheque.Value.BankName,
-                    Amount = cheque.Value.Amount, DueDate = cheque.Value.DueDate, Notes = cheque.Value.Notes
+                    Amount = cheque.Value.Amount, PartyId = cheque.Value.PartyId,
+                    DueDate = cheque.Value.DueDate, Notes = cheque.Value.Notes
                 } }
             });
         }

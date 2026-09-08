@@ -97,7 +97,7 @@ namespace PrimeERP.Composition.Renderers
                     {
                         Key = lf.Key, LabelKey = "", Kind = lf.Kind, IsRequired = lf.IsRequired,
                         PickerType = lf.PickerType, PickerLeafOnly = lf.PickerLeafOnly,
-                        PickerValueField = lf.Kind == FieldKind.Picker ? "Code" : "Id"
+                        PickerValueField = PickerValueFieldOf(def.LineDtoType, lf)
                     };
                     var control = DialogRenderer.BuildField(fieldDef);
 
@@ -105,13 +105,13 @@ namespace PrimeERP.Composition.Renderers
                         DialogRenderer.LoadPickerItems((AppComboBox)control, fieldDef, services);
 
                     if (lineItem == null && lf.Kind == FieldKind.Date)
-                        DialogRenderer.SetControlValue(control, fieldDef, DateTime.Today);
+                        DialogRenderer.SetControlValue(control, fieldDef, NewRowDate);
 
                     if (lineItem != null)
                     {
                         var value = lineItem.GetType().GetProperty(lf.Key)?.GetValue(lineItem);
                         if (lf.Kind == FieldKind.Picker && value != null)
-                            DialogRenderer.SelectPickerItem((AppComboBox)control, value, "Code");
+                            DialogRenderer.SelectPickerItem((AppComboBox)control, value, PickerValueFieldOf(def.LineDtoType, lf));
                         else
                             DialogRenderer.SetControlValue(control, fieldDef, value);
                     }
@@ -256,7 +256,13 @@ namespace PrimeERP.Composition.Renderers
             Recalculate();
         }
 
-        // فارغ = كل حقوله بلا قيمة فعلية (نص فارغ/صفر/بلا اختيار).
+        /// <summary>
+        /// التاريخ الذي يُملأ به حقل تاريخٍ على صفٍّ جديد. تقرؤه التعبئة و IsBlankRow معاً فلا يفترقان:
+        /// قيمةٌ وضعها المُصيِّر ليست إدخالاً من المستخدم.
+        /// </summary>
+        private static DateTime NewRowDate => DateTime.Today;
+
+        // فارغ = كل حقوله بلا قيمة فعلية (نص فارغ/صفر/بلا اختيار/تاريخ لم يلمسه أحد).
         private static bool IsBlankRow(EditorRow row, DocumentDialogDefinition def)
         {
             foreach (var lf in def.LineFields)
@@ -265,6 +271,9 @@ namespace PrimeERP.Composition.Renderers
                 if (value == null) continue;
                 if (value is string text && string.IsNullOrWhiteSpace(text)) continue;
                 if (value is decimal number && number == 0) continue;
+                // مستند سطوره تحمل تاريخاً (استحقاق الشيك) كان يفتح بصفّين "غير فارغين" لأن المُصيِّر ملأ
+                // تاريخهما — فيُرسَل صفٌّ لم يُلمَس وتردّ الخدمة الحفظ كله بـ"رقم الشيك مطلوب".
+                if (value is DateTime date && date == NewRowDate) continue;
                 return false;
             }
             return true;
@@ -276,13 +285,29 @@ namespace PrimeERP.Composition.Renderers
             return key != null && DialogRenderer.GetControlValue(row.Controls[key], FieldKind.Picker) == null;
         }
 
+        /// <summary>
+        /// القائمة تُرجع ما تطلبه خانة الـDTO لا ما يفترضه المُصيِّر: خانة نصية تأخذ الكود ورقمية تأخذ
+        /// المُعرِّف. كان السطر يفرض "Code" على كل قائمة — وهو صحيح للصنف والحساب والموظف لأن خاناتها نصّية،
+        /// وخاطئ لقائمة الطرف في مستند الشيكات (PartyId رقم) فكان الحفظ يسقط بمحاولة تحويل كود العميل لرقم.
+        /// </summary>
+        private static string PickerValueFieldOf(Type lineDtoType, LineFieldDefinition field)
+        {
+            if (field.Kind != FieldKind.Picker) return "Id";
+
+            var property = lineDtoType.GetProperty(field.Key);
+            if (property == null) return "Code";
+
+            var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+            return type == typeof(string) ? "Code" : "Id";
+        }
+
         private static void SetRowValue(EditorRow row, DocumentDialogDefinition def, string key, object value)
         {
             var field = def.LineFields.FirstOrDefault(f => f.Key == key);
             if (field == null || !row.Controls.TryGetValue(key, out var control)) return;
 
             if (field.Kind == FieldKind.Picker)
-                DialogRenderer.SelectPickerItem((AppComboBox)control, value, "Code");
+                DialogRenderer.SelectPickerItem((AppComboBox)control, value, PickerValueFieldOf(def.LineDtoType, field));
             else
                 DialogRenderer.SetControlValue(control, new FieldDefinition { Key = key, LabelKey = "", Kind = field.Kind }, value);
         }
