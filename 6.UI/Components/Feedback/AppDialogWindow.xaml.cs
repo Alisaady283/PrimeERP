@@ -85,11 +85,32 @@ namespace PrimeERP.UI.Components.Feedback
 
         private static readonly VariantToBrushConverter VariantConverter = new();
 
-        /// <summary>يلوّن الهيدر بالكامل حسب مفردات الحالة المقفلة (StatusVariant) — لا نص حر.</summary>
+        /// <summary>
+        /// اللون في الرأس إشارةُ حالة لا زينة: العلامة التجارية ليست حالة، فنموذج الأعمال يأخذ رأساً
+        /// محايداً من سطح الثيم (درجة عن جسم البطاقة، صعوداً في الداكن ونزولاً في الفاتح). أما الحالات —
+        /// تأكيد حذف، تحذير، نجاح — فتُلوَّن بتدرّجها الخفيف ونصّها المقروء عليه.
+        /// </summary>
         protected StatusVariant HeaderVariant
         {
-            set => headerBorder.Background = (Brush)VariantConverter.Convert(value, typeof(Brush), "Solid", CultureInfo.CurrentCulture);
+            set
+            {
+                var isPlain = value == StatusVariant.Brand;
+
+                headerBorder.Background = isPlain
+                    ? (Brush)FindResource("C.Dialog.Header.Bg")
+                    : Variant(value, "Soft");
+
+                var foreground = isPlain ? (Brush)FindResource("TextPrimary") : Variant(value, "SoftText");
+                txtHeaderTitle.Foreground = foreground;
+                txtHeaderSubtitle.Foreground = foreground;
+                headerIcon.Stroke = foreground;
+                closeIcon.Stroke = foreground;
+                headerIconBackdrop.Background = foreground;
+            }
         }
+
+        private static Brush Variant(StatusVariant variant, string part) =>
+            (Brush)VariantConverter.Convert(variant, typeof(Brush), part, CultureInfo.CurrentCulture);
 
         protected object Body
         {

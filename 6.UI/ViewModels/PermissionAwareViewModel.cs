@@ -20,15 +20,20 @@ namespace PrimeERP.UI.ViewModels.Base
 
         protected bool Can(string key) => Permissions.Can(key);
 
-        protected ICommand GuardedCommand(Action action, string permissionKey) =>
+        /// <summary>
+        /// المفتاح دالةٌ لا نصّاً عمداً: هذه الأوامر تُبنى داخل مُنشئ القاعدة، وبادئة الصلاحية خاصية
+        /// افتراضية يضبط الوريث حقلها بعد عودة base(...) — فنصٌّ يُحسب هنا يتجمّد بلا بادئة ولا يملكه
+        /// أحد، فيبقى الزرّ معطَّلاً للأبد. الحساب عند التقييم يلحق البادئة دائماً.
+        /// </summary>
+        protected ICommand GuardedCommand(Action action, Func<string> permissionKey) =>
             new RelayCommand(
-                () => { if (Can(permissionKey)) action(); },
-                () => Can(permissionKey));
+                () => { if (Can(permissionKey())) action(); },
+                () => Can(permissionKey()));
 
-        protected ICommand GuardedCommand(Action<object> action, string permissionKey) =>
+        protected ICommand GuardedCommand(Action<object> action, Func<string> permissionKey) =>
             new RelayCommand(
-                param => { if (Can(permissionKey)) action(param); },
-                param => Can(permissionKey));
+                param => { if (Can(permissionKey())) action(param); },
+                param => Can(permissionKey()));
 
         /// <summary>يخفي أعمدة الجدول التي لا يملك المستخدم صلاحية عرضها — المفتاح Header نص العمود كما ظهر في الـ XAML.</summary>
         protected void ApplyColumnPermissions(DataGrid grid, Dictionary<string, string> columnPermissionMap)

@@ -27,6 +27,7 @@ namespace PrimeERP.Tests.Design
             ("SurfaceDefault",    "TextPrimary"),
             ("SurfaceRaised",     "TextPrimary"),
             ("SurfaceOverlay",    "TextPrimary"),
+            ("SurfaceHeader",     "TextPrimary"),
             ("C.Input.Bg",        "C.Input.Fg"),
             ("ToolbarBg",         "TextPrimary"),
             ("NavSurface",        "NavText"),

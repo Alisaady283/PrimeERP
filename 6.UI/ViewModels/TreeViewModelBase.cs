@@ -38,7 +38,7 @@ namespace PrimeERP.UI.ViewModels
         protected TreeViewModelBase(IPermissionService permissions, IToastService toast, IDialogService dialogs) : base(permissions, toast)
         {
             Dialogs = dialogs;
-            AddCommand = GuardedCommand(() => AddRequested?.Invoke(), $"{PermissionPrefix}.Create");
+            AddCommand = GuardedCommand(() => AddRequested?.Invoke(), () => $"{PermissionPrefix}.Create");
             EditCommand = new RelayCommand(
                 () => { if (SelectedNode?.Data is TDto d) EditRequested?.Invoke(d); },
                 () => SelectedNode?.Data is TDto && Can($"{PermissionPrefix}.Edit"));

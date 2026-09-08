@@ -24,6 +24,9 @@
     <SolidColorBrush x:Key="SurfaceRaised"     Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="SurfaceOverlay"    Color="{DynamicResource P.Color.White}"/>
     <SolidColorBrush x:Key="SurfaceSunken"     Color="{DynamicResource P.Color.Neutral.100}"/>
+    <!-- رأس الحوار: يفصل نفسه عن جسم البطاقة بدرجة واحدة. في الفاتح البطاقة بيضاء فالفرق نزول خفيف،
+         وفي الداكن صعود — راجع Semantic.Dark. -->
+    <SolidColorBrush x:Key="SurfaceHeader"     Color="{DynamicResource P.Color.Neutral.50}"/>
 
     <!-- ===== الحدود (Outlines) — 3 قوى + تركيز ===== -->
     <SolidColorBrush x:Key="OutlineSubtle"  Color="{DynamicResource P.Color.Neutral.100}"/>

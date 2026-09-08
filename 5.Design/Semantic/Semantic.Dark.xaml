@@ -17,8 +17,11 @@
     <SolidColorBrush x:Key="SurfaceBackground" Color="{DynamicResource P.Color.Nav.950}"/>  <!-- خلفية النافذة -->
     <SolidColorBrush x:Key="SurfaceDefault"    Color="{DynamicResource P.Color.Nav.900}"/>  <!-- خلفية الصفحة -->
     <SolidColorBrush x:Key="SurfaceRaised"     Color="{DynamicResource P.Color.Nav.800}"/>  <!-- البطاقات والجداول -->
-    <SolidColorBrush x:Key="SurfaceOverlay"    Color="{DynamicResource P.Color.Nav.700}"/>  <!-- الحوارات: أفتح من الصفحة درجةً محسوسة، فالظل الأسود لا يفصل على أرضية داكنة -->
+    <!-- الحوار ورأسه على سلّم NeutralDark لا Nav: الأخير للشريط الجانبي، والأول سلّم الارتفاع الداكن
+         حيث تزيد الإضاءة مع الارتفاع. الظل الأسود لا يفصل على أرضية داكنة، فالارتفاع هو ما يفصل. -->
+    <SolidColorBrush x:Key="SurfaceOverlay"    Color="{DynamicResource P.Color.NeutralDark.800}"/>  <!-- الحوارات والقوائم المنسدلة -->
     <SolidColorBrush x:Key="SurfaceSunken"     Color="{DynamicResource P.Color.Nav.950}"/>  <!-- الحقول المعطَّلة -->
+    <SolidColorBrush x:Key="SurfaceHeader"     Color="{DynamicResource P.Color.NeutralDark.700}"/>  <!-- رأس الحوار: درجة فوق البطاقة -->
 
     <!-- ===== الحدود (Outlines) — 3 قوى + تركيز ===== -->
     <SolidColorBrush x:Key="OutlineSubtle"  Color="{DynamicResource P.Color.Nav.800}"/>  <!-- فواصل الصفوف -->

@@ -6,6 +6,9 @@
 
     <Style x:Key="DialogHeaderStyle" TargetType="Border">
         <Setter Property="Padding" Value="20,16"/>
+        <Setter Property="Background" Value="{DynamicResource C.Dialog.Header.Bg}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource C.Dialog.Header.Border}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
     </Style>
 
     <Style x:Key="DialogHeaderIconWrapStyle" TargetType="Border">
@@ -16,8 +19,7 @@
 
     <Style x:Key="DialogHeaderIconBackdropStyle" TargetType="Border">
         <Setter Property="CornerRadius" Value="17"/>
-        <Setter Property="Background" Value="{DynamicResource TextOnBrand}"/>
-        <Setter Property="Opacity" Value="0.2"/>
+        <Setter Property="Opacity" Value="0.15"/>
     </Style>
 
     <Style x:Key="DialogHeaderIconStyle" TargetType="Path">
@@ -26,7 +28,6 @@
         <Setter Property="Height" Value="16"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Stroke" Value="{DynamicResource TextOnBrand}"/>
         <Setter Property="StrokeThickness" Value="2"/>
         <Setter Property="StrokeStartLineCap" Value="Round"/>
         <Setter Property="StrokeEndLineCap" Value="Round"/>
@@ -36,12 +37,10 @@
     <Style x:Key="DialogHeaderTitleStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.500}"/>
         <Setter Property="FontWeight" Value="{DynamicResource P.Font.Weight.Bold}"/>
-        <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
     </Style>
 
     <Style x:Key="DialogHeaderSubtitleStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.200}"/>
-        <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
         <Setter Property="Opacity" Value="0.85"/>
         <Setter Property="Margin" Value="0,2,0,0"/>
     </Style>
@@ -58,7 +57,6 @@
         <Setter Property="Stretch" Value="Uniform"/>
         <Setter Property="Width" Value="12"/>
         <Setter Property="Height" Value="12"/>
-        <Setter Property="Stroke" Value="{DynamicResource TextOnBrand}"/>
         <Setter Property="StrokeThickness" Value="2"/>
     </Style>
 

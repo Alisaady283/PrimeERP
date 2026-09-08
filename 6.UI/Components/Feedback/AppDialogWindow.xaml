@@ -40,7 +40,7 @@
 
                 <Border x:Name="headerIconWrap" Grid.Column="0" Style="{StaticResource DialogHeaderIconWrapStyle}" Visibility="Collapsed">
                     <Grid>
-                        <Border Style="{StaticResource DialogHeaderIconBackdropStyle}"/>
+                        <Border x:Name="headerIconBackdrop" Style="{StaticResource DialogHeaderIconBackdropStyle}"/>
                         <Path x:Name="headerIcon" Style="{StaticResource DialogHeaderIconStyle}"/>
                     </Grid>
                 </Border>
@@ -52,7 +52,7 @@
 
                 <Button x:Name="btnClose" Grid.Column="2" Style="{StaticResource DialogCloseButtonStyle}"
                         Click="btnClose_Click">
-                    <Path Data="{StaticResource IconClose}" Style="{StaticResource DialogCloseIconStyle}"/>
+                    <Path x:Name="closeIcon" Data="{StaticResource IconClose}" Style="{StaticResource DialogCloseIconStyle}"/>
                 </Button>
             </Grid>
         </Border>
