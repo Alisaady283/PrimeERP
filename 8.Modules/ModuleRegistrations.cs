@@ -158,16 +158,7 @@ namespace PrimeERP.Modules
                 TitleKey = "Str.Module.Journals",
                 // القيد يُنشأ مسودة، والكشوف والتقارير تقرأ المرحَّل وحده — فبلا هذا الزر لا يظهر القيد
                 // اليدوي في أي مكان بينما تظهر قيود السندات (تُرحَّل تلقائياً عند إنشائها).
-                RowActions = new()
-                {
-                    new()
-                    {
-                        Label = "ترحيل", Variant = "primary", PermissionKey = PermissionKeys.Journal.Post,
-                        AppliesTo = item => item.GetType().GetProperty("IsPosted")?.GetValue(item) is false,
-                        Execute = (services, item) => services.GetRequiredService<IJournalService>()
-                            .Post((int)item.GetType().GetProperty("Id").GetValue(item))
-                    }
-                },
+                RowActions = JournalRowActions(),
                 PermissionPrefix = "Journal",
                 ViewModelType = typeof(JournalsViewModel),
                 Columns = new()
@@ -782,16 +773,7 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Debit"), Binding = nameof(JournalEntryDto.TotalDebit), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
                     new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(JournalEntryDto.StatusText), Width = 100, Align = ColumnAlign.Center },
                 },
-                RowActions = new()
-                {
-                    new()
-                    {
-                        Label = "ترحيل", Variant = "primary", PermissionKey = PermissionKeys.Journal.Post,
-                        AppliesTo = item => item.GetType().GetProperty("IsPosted")?.GetValue(item) is false,
-                        Execute = (services, item) => services.GetRequiredService<IJournalService>()
-                            .Post((int)item.GetType().GetProperty("Id").GetValue(item))
-                    }
-                },
+                RowActions = JournalRowActions(),
                 DocumentDialog = new DocumentDialogDefinition
                 {
                     PrintTitle = "قيد أرصدة افتتاحية",
@@ -817,6 +799,31 @@ namespace PrimeERP.Modules
 
             registry.Register(new ModuleDefinition { Key = "Settings", TitleKey = "Str.Module.Settings", PermissionPrefix = "Settings", LayoutKind = LayoutKind.Settings });
         }
+
+        /// <summary>
+        /// إجراءا القيد: يُرحَّل غير المرحَّل، ويُلغى ترحيل المرحَّل بصلاحيته. الشاشتان (القيود والأرصدة
+        /// الافتتاحية) تستوردانهما من هنا فلا يفترقان. بلا إلغاء الترحيل كان القيد المرحَّل مغلقاً نهائياً:
+        /// الخدمة تملك Unpost والصلاحية تُمنَح، لكن لا شيء في الشاشة يستدعيها.
+        /// </summary>
+        private static List<RowAction> JournalRowActions() => new()
+        {
+            new()
+            {
+                Label = "ترحيل", Variant = "primary", PermissionKey = PermissionKeys.Journal.Post,
+                AppliesTo = item => IsPosted(item) is false,
+                Execute = (services, item) => services.GetRequiredService<IJournalService>().Post(IdOf(item))
+            },
+            new()
+            {
+                Label = "إلغاء الترحيل", Variant = "secondary", PermissionKey = PermissionKeys.Journal.Unpost,
+                AppliesTo = item => IsPosted(item) is true,
+                Execute = (services, item) => services.GetRequiredService<IJournalService>().Unpost(IdOf(item))
+            }
+        };
+
+        private static bool? IsPosted(object item) => item.GetType().GetProperty("IsPosted")?.GetValue(item) as bool?;
+
+        private static int IdOf(object item) => (int)item.GetType().GetProperty("Id").GetValue(item);
 
         private static void RegisterLookup(IModuleRegistry registry, string moduleKey, string titleKey, string addKey, string editKey, Type viewModelType)
         {

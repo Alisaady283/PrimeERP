@@ -79,10 +79,10 @@ namespace PrimeERP.Application.Services.Accounting
             var balanced = Balance(dto);
             if (balanced.IsFailure) return balanced;
 
-            return _journals.Update(balanced.Value);
+            return _journals.UpdateOwned(balanced.Value, SourceKey);
         }
 
-        public Result Delete(int id) => _journals.Delete(id);
+        public Result Delete(int id) => _journals.DeleteOwned(id, SourceKey);
 
         /// <summary>
         /// التوازن شرط لا تسوية: القيد غير المتزن يُرفض ويُعرَض فرقه. كان الفرق يُرحَّل تلقائياً لحقوق

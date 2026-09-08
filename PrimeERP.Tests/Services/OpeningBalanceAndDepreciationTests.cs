@@ -52,6 +52,54 @@ namespace PrimeERP.Tests.Services
             Assert.Contains("5,000.00", unbalanced.ErrorMessage);
         }
 
+
+        [Fact]
+        public void PostedOpeningBalances_AreEditableAndDeletable_AfterUnpostingWithThePermission()
+        {
+            var equity = Leaf("31", "رأس مال للتعديل");
+            _settings.Set(SettingKeys.Accounts.RetainedEarnings, equity);
+            var cash = Leaf("1204", "صندوق للتعديل");
+
+            var openings = _db.Services.GetRequiredService<IOpeningBalanceService>();
+            var journals = _db.Services.GetRequiredService<IJournalService>();
+
+            var created = openings.Create(new CreateJournalDto
+            {
+                Description = "أرصدة افتتاحية",
+                Lines =
+                {
+                    new CreateJournalLineDto { LineNo = 1, AccountCode = cash,   Debit  = 5000 },
+                    new CreateJournalLineDto { LineNo = 2, AccountCode = equity, Credit = 5000 }
+                }
+            });
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+
+            // يُنشأ مرحَّلاً، فهو مغلق على التعديل والحذف — هذا هو المقصود، لا عطل.
+            Assert.True(journals.GetById(created.Value.Id).Value.IsPosted, "القيد الافتتاحي يُنشأ مرحَّلاً");
+            // السلوك لا النص: قواميس النصوص قد تكون محمَّلة أو لا حسب ما سبقه من اختبارات في المجموعة.
+            var refused = journals.Delete(created.Value.Id);
+            Assert.True(refused.IsFailure, "المرحَّل يجب أن يُرفض حذفه");
+            Assert.NotNull(journals.GetById(created.Value.Id).Value);
+
+            // إلغاء الترحيل يفتحه لمن يملك صلاحيته، والتعديل يمرّ من مستنده هو لا من شاشة القيود.
+            var unposted = journals.Unpost(created.Value.Id);
+            Assert.True(unposted.IsSuccess, "إلغاء الترحيل: " + unposted.ErrorMessage);
+
+            var edited = openings.Update(new CreateJournalDto
+            {
+                Id = created.Value.Id, Description = "أرصدة افتتاحية معدَّلة",
+                Lines =
+                {
+                    new CreateJournalLineDto { LineNo = 1, AccountCode = cash,   Debit  = 7000 },
+                    new CreateJournalLineDto { LineNo = 2, AccountCode = equity, Credit = 7000 }
+                }
+            });
+            Assert.True(edited.IsSuccess, edited.ErrorMessage);
+            Assert.Equal(7000m, journals.GetById(created.Value.Id).Value.TotalDebit);
+
+            var deleted = openings.Delete(created.Value.Id);
+            Assert.True(deleted.IsSuccess, "الحذف: " + deleted.ErrorMessage);
+        }
         [Fact]
         public void BalancedOpeningBalances_TakeTheirDateFromTheStartSetting_AndReachTheTrialBalance()
         {

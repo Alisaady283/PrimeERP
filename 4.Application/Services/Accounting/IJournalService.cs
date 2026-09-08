@@ -26,6 +26,12 @@ namespace PrimeERP.Application.Services.Accounting
         // ===== التعديل والحذف =====
         Result Update(CreateJournalDto dto);
         Result Delete(int id);
+
+        /// <summary>تعديل/حذف قيدٍ من المستند الذي يملكه — يمرّر المستند مصدره. شاشة القيود تستعمل
+        /// Update/Delete أعلاه ولا تملك إلا اليدوي. الاسم مستقلّ لا معامل اختياري: محرِّر المستندات يجد
+        /// Update(Dto) بالانعكاس، وزيادة معامل ولو اختيارياً تُفقده المطابقة.</summary>
+        Result UpdateOwned(CreateJournalDto dto, string ownerSource);
+        Result DeleteOwned(int id, string ownerSource);
         Result Delete(DbConnection conn, DbTransaction tx, int id);
 
         // ===== الترحيل =====

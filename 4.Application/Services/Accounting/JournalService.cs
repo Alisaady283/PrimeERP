@@ -146,7 +146,9 @@ namespace PrimeERP.Application.Services.Accounting
 
         // ===================== التعديل والحذف =====================
 
-        public Result Update(CreateJournalDto dto)
+        public Result Update(CreateJournalDto dto) => UpdateOwned(dto, null);
+
+        public Result UpdateOwned(CreateJournalDto dto, string ownerSource)
         {
             if (!Can("Edit")) return FailDenied();
 
@@ -157,7 +159,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (existing.IsPosted)
                 return Result.Fail(Msg("PostedCannotEdit"), ErrorCode.ValidationFailed);
 
-            var editable = EnsureManualSource(existing.Source, "تعديل");
+            var editable = EnsureOwnedSource(existing.Source, ownerSource, "تعديل");
             if (editable.IsFailure) return editable;
 
             var shape = ValidateShape(dto);
@@ -197,7 +199,9 @@ namespace PrimeERP.Application.Services.Accounting
             return Result.Ok();
         }
 
-        public Result Delete(int id)
+        public Result Delete(int id) => DeleteOwned(id, null);
+
+        public Result DeleteOwned(int id, string ownerSource)
         {
             if (!Can("Delete")) return FailDenied();
 
@@ -208,7 +212,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (entry.IsPosted)
                 return Result.Fail(Msg("PostedCannotDelete"), ErrorCode.ValidationFailed);
 
-            var deletable = EnsureManualSource(entry.Source, "حذف");
+            var deletable = EnsureOwnedSource(entry.Source, ownerSource, "حذف");
             if (deletable.IsFailure) return deletable;
 
             if (!_fiscalPeriods.IsOpen(ParseDate(entry.EntryDate)))
@@ -639,10 +643,20 @@ namespace PrimeERP.Application.Services.Accounting
         // وصار الرقمان مختلفين بلا أثر يشرح لماذا.
         private static readonly string[] ManualSources = { "Manual", "يدوي", "" };
 
-        private static Result EnsureManualSource(string source, string action) =>
-            ManualSources.Contains(source ?? "")
+        /// <summary>
+        /// القيد يُعدَّل من الشاشة التي تملك مصدره: اليدوي من شاشة القيود، والافتتاحي من مستنده هو. قيدٌ وليد
+        /// سندٍ لا شاشة تملكه فيُعدَّل بتعديل سنده. كان الشرط "يدوي فقط" مطلقاً، فرفض الأرصدة الافتتاحية
+        /// حتى وهي تُعدَّل من مستندها بالرسالة التي تصف الحالة المسموحة نفسها.
+        /// </summary>
+        private static Result EnsureOwnedSource(string entrySource, string ownerSource, string action)
+        {
+            var source = entrySource ?? "";
+            var owned = ownerSource == null ? ManualSources.Contains(source) : source == ownerSource;
+
+            return owned
                 ? Result.Ok()
-                : Result.Fail($"لا يمكن {action} قيد مصدره «{source}» من شاشة القيود — تمّ من المستند نفسه", ErrorCode.ValidationFailed);
+                : Result.Fail($"لا يمكن {action} قيد مصدره «{entrySource}» من هنا — تمّ من المستند نفسه", ErrorCode.ValidationFailed);
+        }
 
         private string SourceText(string source) => Msg($"Source.{NormalizeSource(source)}");
 
