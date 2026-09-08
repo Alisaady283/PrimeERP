@@ -123,7 +123,7 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
-        public void IllegalTransitionIsRejected_AndFinalStatesHaveNoTransitionsLeft()
+        public void IllegalTransitionIsRejected_AndAFinalStateStillHasAWayBack()
         {
             var cheque = SeedIncomingCheque(out var treasury);
             var service = _db.Services.GetRequiredService<IChequeService>();
@@ -132,8 +132,9 @@ namespace PrimeERP.Tests.Services
             var illegal = service.Move(new MoveChequeDto { ChequeId = cheque.Id, ToStatus = (int)ChequeStatus.Bounced });
             Assert.False(illegal.IsSuccess);
 
+            // محصَّل: لا حالة بلا رجعة — الحركة قد تكون خطأً فتُعاد بحركة مضادة تُسجَّل بقيدها.
             service.Move(new MoveChequeDto { ChequeId = cheque.Id, ToStatus = (int)ChequeStatus.Collected, TreasuryId = treasury.Id });
-            Assert.Empty(service.GetAllowedTransitions(cheque.Id).Value);
+            Assert.Contains(ChequeStatus.InHand, service.GetAllowedTransitions(cheque.Id).Value);
         }
 
 
@@ -145,7 +146,7 @@ namespace PrimeERP.Tests.Services
 
             // لم يتحرّك بعد: تصحيح الإدخال مسموح.
             var edited = service.UpdateUnmoved(cheque.Id,
-                new CreateChequeLineDto { ChequeNo = "CHQ-EDITED", Amount = 750m, BankName = "بنك آخر" },
+                new CreateChequeLineDto { ChequeNo = "CHQ-EDITED", Amount = 750m, BankName = "بنك آخر", PartyId = cheque.PartyId },
                 DateTime.Today);
             Assert.True(edited.IsSuccess, edited.ErrorMessage);
 
@@ -158,9 +159,10 @@ namespace PrimeERP.Tests.Services
             { ChequeId = cheque.Id, ToStatus = (int)ChequeStatus.Deposited, TreasuryId = treasury.Id }).IsSuccess);
 
             var refused = service.UpdateUnmoved(cheque.Id,
-                new CreateChequeLineDto { ChequeNo = "CHQ-AGAIN", Amount = 900m }, DateTime.Today);
+                new CreateChequeLineDto { ChequeNo = "CHQ-AGAIN", Amount = 900m, BankName = "بنك آخر", PartyId = cheque.PartyId },
+                DateTime.Today);
             Assert.True(refused.IsFailure);
-            Assert.Contains("تحرّك", refused.ErrorMessage);
+            Assert.Contains("أعِده", refused.ErrorMessage);
             Assert.True(service.DeleteUnmoved(cheque.Id).IsFailure);
         }
         private ChequeDetailDto SeedIncomingCheque(out TreasuryDto treasury)

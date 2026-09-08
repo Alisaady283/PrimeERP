@@ -490,12 +490,20 @@ namespace PrimeERP.Composition.Renderers
             }
 
             var linesList = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(def.LineDtoType));
+            var lineFieldDefs = def.LineFields
+                .Select(lf => new FieldDefinition { Key = lf.Key, LabelKey = lf.Header, Kind = lf.Kind, IsRequired = lf.IsRequired })
+                .ToList();
+            var rowsValid = true;
             int lineNo = 1;
             foreach (var row in rows)
             {
                 // المحرِّر يفتح بصفّين فارغين افتراضياً — إرسالهما للخدمة يفشل الحفظ كله برسالة "الصنف غير موجود"
                 // على صف لم يلمسه المستخدم أصلاً. الصف الفارغ يُتجاهَل، والفراغ الكامل يُرفض برسالة واضحة أدناه.
                 if (IsBlankRow(row, def)) continue;
+
+                // الإلزام على السطر كان مُعلَناً وغير مفحوص: التحقق يمرّ على الرأس وحده، فيُحفظ شيك بلا
+                // طرف ولا بنك رغم أن حقليهما مُعلَنان مطلوبان. نفس المُتحقِّق يفحص السطر الآن.
+                if (!FieldValidation.Validate(lineFieldDefs, row.Controls)) rowsValid = false;
 
                 var lineDto = Activator.CreateInstance(def.LineDtoType);
                 var lineDtoType = lineDto.GetType();
@@ -520,6 +528,8 @@ namespace PrimeERP.Composition.Renderers
 
                 linesList.Add(lineDto);
             }
+            // كل الصفوف تُفحص قبل الخروج، فيرى المستخدم كل نواقصه دفعةً لا واحداً بعد واحد.
+            if (!rowsValid) return false;
             if (linesList.Count == 0) { toast.Error("المستند يحتاج سطراً واحداً على الأقل"); return false; }
 
             def.DtoType.GetProperty(def.LinesPropertyName).SetValue(dto, linesList);

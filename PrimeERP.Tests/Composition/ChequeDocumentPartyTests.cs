@@ -20,6 +20,11 @@ using PrimeERP.UI.Components.Actions;
 using PrimeERP.UI.Components.Inputs;
 using PrimeERP.UI.Services;
 using Xunit;
+using PrimeERP.Application.DTOs.Accounting;
+using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.DTOs.Treasury;
+using PrimeERP.Application.Services.Treasury;
+using PrimeERP.Data.Repositories;
 
 namespace PrimeERP.Tests.Composition
 {
@@ -55,6 +60,15 @@ namespace PrimeERP.Tests.Composition
         [Fact]
         public void Header_CarriesNoParty_AndEachLineKeepsItsOwn()
         {
+            // بنك في النظام: حقل البنك في السطر قائمةٌ مطلوبة، فبلا بنك لا يُحفظ المستند.
+            var accounts = _services.GetRequiredService<IAccountService>();
+            var accountRepo = _services.GetRequiredService<IAccountRepository>();
+            var bankAccount = accounts.Create(new CreateAccountDto
+            { ParentId = accountRepo.GetByCode("1204").Id, Name = "حساب بنك الشيكات", SkipAutoLink = true }).Value.Code;
+            var bank = _services.GetRequiredService<ITreasuryService>().Create(new CreateTreasuryDto
+            { Name = "بنك الاختبار", AccountCode = bankAccount, IsBank = true });
+            Assert.True(bank.IsSuccess, bank.ErrorMessage);
+
             var customers = _services.GetRequiredService<ICustomerService>();
             var first = customers.Create(new CreateCustomerDto { Name = "عميل الشيك الأول" }).Value;
             var second = customers.Create(new CreateCustomerDto { Name = "عميل الشيك الثاني" }).Value;
@@ -85,6 +99,10 @@ namespace PrimeERP.Tests.Composition
                         var combos = FindAll<AppComboBox>(window).ToList();
                         var texts = FindAll<AppTextBox>(window).ToList();
                         var numbers = FindAll<AppNumericBox>(window).ToList();
+
+                        // ترتيب السطر: البنك ثم الطرف.
+                        var bankCombo = combos[0];
+                        bankCombo.SelectedItem = ((System.Collections.IEnumerable)bankCombo.ItemsSource).Cast<object>().First();
 
                         var party = combos[1];
                         Assert.True(party.ItemsSource != null, "قائمة الطرف في السطر فارغة");

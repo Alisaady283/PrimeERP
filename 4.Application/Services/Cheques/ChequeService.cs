@@ -15,6 +15,7 @@ using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Application.Validation;
 
 namespace PrimeERP.Application.Services.Cheques
 {
@@ -58,17 +59,22 @@ namespace PrimeERP.Application.Services.Cheques
         protected override string StringPrefix => "Str.Cheque";
         protected override string EntityName => "Cheque";
 
-        // الانتقالات المسموحة — الوارد يسار، الصادر يمين. أي انتقال خارجها مرفوض بلا استثناء.
+        // الانتقالات المسموحة — الوارد يسار، الصادر يمين. ولا حالة بلا رجعة: الحركة قد تكون خطأً، فيعيدها
+        // من يملك الصلاحية بحركة مضادة تُسجَّل بقيدها المقابل — تصحيحٌ مقروء في السجل لا محوٌ له.
         private static readonly Dictionary<ChequeStatus, ChequeStatus[]> Allowed = new()
         {
             [ChequeStatus.InHand]    = new[] { ChequeStatus.Deposited, ChequeStatus.Collected, ChequeStatus.Returned },
-            [ChequeStatus.Deposited] = new[] { ChequeStatus.Collected, ChequeStatus.Bounced },
-            [ChequeStatus.Bounced]   = new[] { ChequeStatus.Deposited, ChequeStatus.Returned },
-            [ChequeStatus.Collected] = Array.Empty<ChequeStatus>(),
-            [ChequeStatus.Returned]  = Array.Empty<ChequeStatus>(),
+            [ChequeStatus.Deposited] = new[] { ChequeStatus.Collected, ChequeStatus.Bounced, ChequeStatus.InHand },
+            [ChequeStatus.Bounced]   = new[] { ChequeStatus.Deposited, ChequeStatus.Returned, ChequeStatus.InHand },
+            [ChequeStatus.Collected] = new[] { ChequeStatus.Deposited, ChequeStatus.InHand },
+            [ChequeStatus.Returned]  = new[] { ChequeStatus.InHand },
             [ChequeStatus.Issued]    = new[] { ChequeStatus.Paid, ChequeStatus.Bounced },
-            [ChequeStatus.Paid]      = Array.Empty<ChequeStatus>(),
+            [ChequeStatus.Paid]      = new[] { ChequeStatus.Issued },
         };
+
+        // حالة الشيك عند إنشائه — إليها يعود بعد إلغاء حركة خاطئة، وعندها يقبل التعديل.
+        private static ChequeStatus InitialStatus(ChequeDirection direction) =>
+            direction == ChequeDirection.Incoming ? ChequeStatus.InHand : ChequeStatus.Issued;
 
         public Result<PagedResult<ChequeDto>> GetPaged(int page, int pageSize, ChequeFilter filter = null)
         {
@@ -90,19 +96,17 @@ namespace PrimeERP.Application.Services.Cheques
             var cheque = _repo.GetById(id);
             if (cheque == null) return Result.Fail<ChequeDetailDto>("الشيك غير موجود", ErrorCode.NotFound);
 
-            var dto = ToDto(cheque);
-            return Result.Ok(new ChequeDetailDto
+            // ToDto يبني التفصيلة مباشرة — نسخُ الحقول حقلاً حقلاً هنا كان يُسقط ما يُضاف لاحقاً (أسقط PartyId).
+            var dto = ToDto<ChequeDetailDto>(cheque);
+            dto.Status = cheque.Status;
+            dto.Direction = cheque.Direction;
+            dto.Movements = _repo.GetMovements(id).Select(m => new ChequeMovementDto
             {
-                Id = dto.Id, ChequeNo = dto.ChequeNo, DirectionName = dto.DirectionName, PartyName = dto.PartyName,
-                Amount = dto.Amount, IssueDate = dto.IssueDate, DueDate = dto.DueDate, BankName = dto.BankName,
-                StatusName = dto.StatusName, TreasuryName = dto.TreasuryName, Notes = dto.Notes,
-                Status = cheque.Status, Direction = cheque.Direction,
-                Movements = _repo.GetMovements(id).Select(m => new ChequeMovementDto
-                {
-                    MovementDate = m.MovementDate, FromStatusName = StatusName(m.FromStatus), ToStatusName = StatusName(m.ToStatus),
-                    Notes = m.Notes, CreatedBy = m.CreatedBy
-                }).ToList()
-            });
+                MovementDate = m.MovementDate, FromStatusName = StatusName(m.FromStatus), ToStatusName = StatusName(m.ToStatus),
+                Notes = m.Notes, CreatedBy = m.CreatedBy
+            }).ToList();
+
+            return Result.Ok(dto);
         }
 
         public Result<List<ChequeStatus>> GetAllowedTransitions(int id)
@@ -216,7 +220,10 @@ namespace PrimeERP.Application.Services.Cheques
                 : _suppliers.GetById(cheque.PartyId.Value)?.AccountCode;
         }
 
-        private ChequeDto ToDto(Cheque c) => new()
+        private ChequeDto ToDto(Cheque c) => ToDto<ChequeDto>(c);
+
+        /// <summary>مصدر واحد لحقول الشيك: القائمة والتفصيلة تُبنيان منه، فلا يسقط حقل من إحداهما.</summary>
+        private T ToDto<T>(Cheque c) where T : ChequeDto, new() => new()
         {
             Id = c.Id, ChequeNo = c.ChequeNo, Amount = c.Amount, IssueDate = c.IssueDate, DueDate = c.DueDate,
             BankName = c.BankName, Notes = c.Notes, PartyId = c.PartyId,
@@ -244,8 +251,8 @@ namespace PrimeERP.Application.Services.Cheques
 
             foreach (var line in dto.Lines)
             {
-                if (string.IsNullOrWhiteSpace(line.ChequeNo)) return Result.Fail<ChequeDocumentResultDto>("رقم الشيك مطلوب", ErrorCode.ValidationFailed);
-                if (line.Amount <= 0) return Result.Fail<ChequeDocumentResultDto>($"مبلغ الشيك {line.ChequeNo} يجب أن يكون أكبر من صفر", ErrorCode.ValidationFailed);
+                var valid = Check(LineRules, line);
+                if (valid.IsFailure) return Result.Fail<ChequeDocumentResultDto>(valid.ErrorMessage, valid.ErrorCode);
             }
 
             var status = direction == ChequeDirection.Incoming ? ChequeStatus.InHand : ChequeStatus.Issued;
@@ -279,17 +286,17 @@ namespace PrimeERP.Application.Services.Cheques
         }
 
         /// <summary>
-        /// الشيك ورقة تجارية: ما دام في يدنا بحالته الأولى فتصحيحه تصحيحُ إدخال. أما وقد أُودع أو حُصِّل أو
-        /// ارتدّ فله قيود وحركات مقابلة، ويُصحَّح بحركة لا بالكتابة فوقه — وإلا تناقض السجل مع الدفاتر.
+        /// الحالة الراهنة لا تاريخ الحركات: ما دام الشيك بحالته الأولى فتصحيحه تصحيحُ إدخال، ولو كان قد
+        /// تحرّك وأُعيد — فقيود الحركتين تلاشت آثارها. أما وهو مُودَع أو محصَّل أو مرتدّ فله قيدٌ قائم،
+        /// فيُعاد أولاً بحركة مضادة (وهي متاحة من كل حالة) ثم يُصحَّح — وإلا تناقض السجل مع الدفاتر.
         /// </summary>
-        private Result EnsureUnmoved(Cheque cheque, string action)
-        {
-            var moved = _repo.GetMovements(cheque.Id).Any(m => m.FromStatus != m.ToStatus);
+        private static Result EnsureAtInitialStatus(Cheque cheque, string action) =>
+            cheque.Status == InitialStatus(cheque.Direction)
+                ? Result.Ok()
+                : Result.Fail($"لا يمكن {action} شيك تحرّك — أعِده أولاً إلى {StatusName(InitialStatus(cheque.Direction))} بحركة مضادة", ErrorCode.ValidationFailed);
 
-            return moved
-                ? Result.Fail($"لا يمكن {action} شيك تحرّك — صحّحه بحركة مقابلة (إيداع/تحصيل/ارتداد)", ErrorCode.ValidationFailed)
-                : Result.Ok();
-        }
+        // التحقق من طبقة التحقق لا من شروط مكتوبة هنا — Check يترجم نتيجتها إلى Result كأي خدمة أخرى.
+        private static readonly ChequeLineValidator LineRules = new();
 
         public Result UpdateUnmoved(int id, CreateChequeLineDto line, DateTime docDate)
         {
@@ -298,11 +305,11 @@ namespace PrimeERP.Application.Services.Cheques
             var cheque = _repo.GetById(id);
             if (cheque == null) return Result.Fail("الشيك غير موجود", ErrorCode.NotFound);
 
-            var editable = EnsureUnmoved(cheque, "تعديل");
+            var editable = EnsureAtInitialStatus(cheque, "تعديل");
             if (editable.IsFailure) return editable;
 
-            if (string.IsNullOrWhiteSpace(line.ChequeNo)) return Result.Fail("رقم الشيك مطلوب", ErrorCode.ValidationFailed);
-            if (line.Amount <= 0) return Result.Fail("مبلغ الشيك يجب أن يكون أكبر من صفر", ErrorCode.ValidationFailed);
+            var valid = Check(LineRules, line);
+            if (valid.IsFailure) return valid;
 
             cheque.ChequeNo = line.ChequeNo;
             cheque.PartyId  = line.PartyId;
@@ -324,7 +331,7 @@ namespace PrimeERP.Application.Services.Cheques
             var cheque = _repo.GetById(id);
             if (cheque == null) return Result.Fail("الشيك غير موجود", ErrorCode.NotFound);
 
-            var deletable = EnsureUnmoved(cheque, "حذف");
+            var deletable = EnsureAtInitialStatus(cheque, "حذف");
             if (deletable.IsFailure) return deletable;
 
             Db.RunTransaction((conn, tx) =>

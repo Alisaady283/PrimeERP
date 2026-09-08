@@ -105,9 +105,9 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateChequeLineDto.ChequeNo), Header = "رقم الشيك", Kind = FieldKind.Text, Width = 130, IsRequired = true },
                         // البنك من قائمة البنوك لا كتابةً — والخانة تحمل الاسم فتقرؤه القوائم والتقارير كما هي.
                         new() { Key = nameof(CreateChequeLineDto.BankName), Header = "اسم البنك", Kind = FieldKind.Picker, Width = 170,
-                                PickerType = "Bank", PickerValueField = "Display" },
+                                IsRequired = true, PickerType = "Bank", PickerValueField = "Display" },
                         new() { Key = nameof(CreateChequeLineDto.Amount), Header = LocalizationService.Get("Str.Amount"), Kind = FieldKind.Number, Width = 120, IsRequired = true },
-                        new() { Key = nameof(CreateChequeLineDto.PartyId), Header = partyLabelKey == "Str.Customer" ? "العميل" : "المورد", Kind = FieldKind.Picker, Width = 190, PickerType = partyPickerType },
+                        new() { Key = nameof(CreateChequeLineDto.PartyId), Header = partyLabelKey == "Str.Customer" ? "العميل" : "المورد", Kind = FieldKind.Picker, Width = 190, IsRequired = true, PickerType = partyPickerType },
                         new() { Key = nameof(CreateChequeLineDto.DueDate), Header = "الاستحقاق", Kind = FieldKind.Date, Width = 130 },
                         new() { Key = nameof(CreateChequeLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 150 },
                     }
