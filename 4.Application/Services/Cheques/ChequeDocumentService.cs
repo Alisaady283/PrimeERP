@@ -57,11 +57,16 @@ namespace PrimeERP.Application.Services.Cheques
 
         public Result<ChequeDocumentResultDto> Create(CreateChequeDocumentDto dto) => _cheques.CreateBatch(dto, _direction);
 
-        public Result Update(CreateChequeDocumentDto dto) =>
-            Result.Fail("الشيك يُعدَّل بحركاته (إيداع/تحصيل/ارتداد) لا بتعديل مستند الاستلام", ErrorCode.ValidationFailed);
+        // المستند يحمل شيكاً واحداً في وضع التعديل (GetById أعلاه) — الخدمة تحرس شرط "لم يتحرّك".
+        public Result Update(CreateChequeDocumentDto dto)
+        {
+            var line = dto.Lines?.FirstOrDefault();
+            return line == null
+                ? Result.Fail("المستند بلا سطر شيك", ErrorCode.ValidationFailed)
+                : _cheques.UpdateUnmoved(dto.Id, line, dto.DocDate);
+        }
 
-        public Result Delete(int id) =>
-            Result.Fail("الشيك يُلغى بحركة (ارتداد/رد) لا بالحذف", ErrorCode.ValidationFailed);
+        public Result Delete(int id) => _cheques.DeleteUnmoved(id);
     }
 
     public class ChequeReceiptDocumentService : ChequeDocumentServiceBase, IChequeReceiptDocumentService

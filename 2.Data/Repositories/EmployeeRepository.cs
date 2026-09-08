@@ -91,13 +91,13 @@ namespace PrimeERP.Data.Repositories
                 .LikeAny(searchText, "Name", "Code")
                 .Eq("DepartmentId", departmentId);
 
-            var column = sortColumn switch { "Code" => "Code", "HireDate" => "HireDate", "CreatedAt" => "CreatedAt", _ => "Name" };
+            var column = sortColumn switch { "Name" => "Name", "HireDate" => "HireDate", "CreatedAt" => "CreatedAt", _ => "Code" };
             var direction = sortDescending ? "DESC" : "ASC";
 
             var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM Employees {where.Sql}", where.Parameters));
 
             var pageSql = $@"SELECT * FROM Employees {where.Sql}
-                              ORDER BY {column} {direction}, Id {direction}
+                              {OrderBuilder.By(column, sortDescending)}
                               {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
 
             return (Query(pageSql, null, null, where.Parameters), total);

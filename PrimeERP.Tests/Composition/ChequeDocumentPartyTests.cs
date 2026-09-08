@@ -81,15 +81,18 @@ namespace PrimeERP.Tests.Composition
 
                         FindVisualChild<AppDatePicker>(window).SelectedDate = DateTime.Today;
 
-                        // القائمة في السطر تُحمَّل فعلاً: عميلان مضافان أعلاه يجب أن يظهرا فيها.
-                        var parties = FindAll<AppComboBox>(window).ToList();
-                        Assert.NotEmpty(parties);
-                        Assert.True(parties[0].ItemsSource != null, "قائمة الطرف في السطر فارغة");
-
+                        // كل سطر يحمل قائمتين بترتيب إعلانه: البنك ثم الطرف.
+                        var combos = FindAll<AppComboBox>(window).ToList();
                         var texts = FindAll<AppTextBox>(window).ToList();
                         var numbers = FindAll<AppNumericBox>(window).ToList();
 
-                        FillRow(texts, numbers, parties, row: 0, chequeNo: "CH-1", amount: 500m, partyId: first.Id);
+                        var party = combos[1];
+                        Assert.True(party.ItemsSource != null, "قائمة الطرف في السطر فارغة");
+
+                        texts[0].Text = "CH-1";
+                        numbers[0].Value = 500m;
+                        party.SelectedItem = ((System.Collections.IEnumerable)party.ItemsSource).Cast<object>()
+                            .First(i => (int)i.GetType().GetProperty("Id").GetValue(i) == first.Id);
 
                         ClickButton(window, "Str.Save");
                     }
@@ -114,19 +117,6 @@ namespace PrimeERP.Tests.Composition
             Assert.Equal("عميل الشيك الأول", cheque.PartyName);
             Assert.Equal(first.Id, cheque.PartyId);
             Assert.NotEqual(second.Id, cheque.PartyId);
-        }
-
-        private static void FillRow(List<AppTextBox> texts, List<AppNumericBox> numbers, List<AppComboBox> parties,
-                                    int row, string chequeNo, decimal amount, int partyId)
-        {
-            // ترتيب السطر كما هو معلَن: رقم الشيك، البنك، المبلغ، الطرف، الاستحقاق، ملاحظات.
-            texts.First(t => string.IsNullOrEmpty(t.Text)).Text = chequeNo;
-            numbers[row].Value = amount;
-
-            var combo = parties[row];
-            var item = ((System.Collections.IEnumerable)combo.ItemsSource).Cast<object>()
-                .First(i => (int)i.GetType().GetProperty("Id").GetValue(i) == partyId);
-            combo.SelectedItem = item;
         }
 
         private static void ClickButton(DependencyObject root, string localizationKey)

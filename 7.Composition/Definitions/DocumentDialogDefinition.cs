@@ -14,6 +14,10 @@ namespace PrimeERP.Composition.Definitions
         public bool IsRequired { get; init; }
         public string PickerType { get; init; }
         public bool PickerLeafOnly { get; init; }
+
+        /// <summary>ما تُرجعه القائمة للخانة. فارغ = يُستنتَج من نوع خانة الـDTO (نصّية Code، رقمية Id) —
+        /// يُعلَن صراحةً حين تحمل خانةٌ نصّية اسماً لا كوداً، كاسم بنك الشيك.</summary>
+        public string PickerValueField { get; init; }
     }
 
     // مستند رأس+سطور (قيد يومية، وفواتير لاحقاً) — DtoType واحد لكل من الإنشاء والتعديل (يطابق شكل
@@ -41,6 +45,16 @@ namespace PrimeERP.Composition.Definitions
 
     /// <summary>حساب صافي السطر حيّاً أثناء الإدخال — المفاتيح فقط، والمعادلة من DocumentTotals نفسها
     /// التي يرحّل بها الحفظ، فلا تُكتب مرتين ولا يختلف ما يراه المستخدم عمّا يُخزَّن.</summary>
+    /// <summary>
+    /// إجماليات حيّة أسفل السطور: مجموع كل مفتاح بعنوان عموده. MustBalance مفتاحان يجب أن يتساوى
+    /// مجموعاهما — يظهر الفرق بلون التحذير ما لم يكن صفراً، فيرى المُدخِل اختلال القيد قبل الحفظ لا بعده.
+    /// </summary>
+    public class LineTotalsDefinition
+    {
+        public required List<string> Keys { get; init; }
+        public string[] MustBalance { get; init; }
+    }
+
     public class LineMathDefinition
     {
         public required string QtyKey { get; init; }
@@ -74,6 +88,9 @@ namespace PrimeERP.Composition.Definitions
 
         /// <summary>فارغ = بلا حساب حيّ.</summary>
         public LineMathDefinition LineMath { get; init; }
+
+        /// <summary>فارغ = بلا شريط إجماليات أسفل السطور.</summary>
+        public LineTotalsDefinition LineTotals { get; init; }
 
         public string DocumentKind { get; init; }
         public List<PullSource> PullSources { get; init; } = new();

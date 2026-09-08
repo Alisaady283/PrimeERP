@@ -190,6 +190,12 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateJournalLineDto.Debit), Header = LocalizationService.Get("Str.Debit"), Kind = FieldKind.Number, Width = 110 },
                         new() { Key = nameof(CreateJournalLineDto.Credit), Header = LocalizationService.Get("Str.Credit"), Kind = FieldKind.Number, Width = 110 },
                         new() { Key = nameof(CreateJournalLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 180 },
+                    },
+                    // القيد لا يُحفظ غير متزن — فليَرَ المُدخِل الفرق وهو يكتب لا بعد الرفض.
+                    LineTotals = new()
+                    {
+                        Keys = new() { nameof(CreateJournalLineDto.Debit), nameof(CreateJournalLineDto.Credit) },
+                        MustBalance = new[] { nameof(CreateJournalLineDto.Debit), nameof(CreateJournalLineDto.Credit) }
                     }
                 }
             });
@@ -785,7 +791,9 @@ namespace PrimeERP.Modules
                     {
                         // التاريخ من إعداد بدء العمل لا من كتابة المستخدم — الخدمة تفرضه عند الحفظ.
                         new() { Key = nameof(CreateJournalDto.EntryDate), LabelKey = "Str.StartDate", Kind = FieldKind.Date, IsReadOnly = true },
-                        new() { Key = nameof(CreateJournalDto.Description), LabelKey = "Str.Description", Kind = FieldKind.Text, IsRequired = true, MaxLength = 300 },
+                        // البيان تفرضه الخدمة — يُعرَض عند الفتح ولا يُكتب.
+                        new() { Key = nameof(CreateJournalDto.Description), LabelKey = "Str.Description", Kind = FieldKind.Text, IsReadOnly = true,
+                                DefaultValue = PrimeERP.Application.Services.Accounting.OpeningBalanceService.FixedDescription },
                     },
                     LineFields = new()
                     {
@@ -793,6 +801,12 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateJournalLineDto.Debit), Header = LocalizationService.Get("Str.Debit"), Kind = FieldKind.Number, Width = 120 },
                         new() { Key = nameof(CreateJournalLineDto.Credit), Header = LocalizationService.Get("Str.Credit"), Kind = FieldKind.Number, Width = 120 },
                         new() { Key = nameof(CreateJournalLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
+                    },
+                    // القيد لا يُحفظ غير متزن — فليَرَ المُدخِل الفرق وهو يكتب لا بعد الرفض.
+                    LineTotals = new()
+                    {
+                        Keys = new() { nameof(CreateJournalLineDto.Debit), nameof(CreateJournalLineDto.Credit) },
+                        MustBalance = new[] { nameof(CreateJournalLineDto.Debit), nameof(CreateJournalLineDto.Credit) }
                     }
                 }
             });

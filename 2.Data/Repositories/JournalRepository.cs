@@ -111,7 +111,8 @@ namespace PrimeERP.Data.Repositories
 
             var sql = $@"SELECT e.EntryDate, e.EntryNo, e.Description, l.Debit, l.Credit
                          FROM JournalEntryLines l JOIN JournalEntries e ON e.Id = l.EntryId
-                         {where.Sql} ORDER BY e.EntryDate, e.Id, l.LineNo";
+                         {where.Sql}
+                         {OrderBuilder.By("e.EntryDate", false, "l.LineNo", "e.EntryNo", "e.CreatedAt", "e.Id")}";
 
             return QueryAs(r => (
                 r["EntryDate"].ToString(), r["EntryNo"].ToString(),
@@ -194,7 +195,7 @@ namespace PrimeERP.Data.Repositories
             var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM JournalEntries e {where.Sql}", where.Parameters));
 
             var pageSql = $@"SELECT e.* FROM JournalEntries e {where.Sql}
-                              ORDER BY {column} {direction}, e.Id {direction}
+                              {OrderBuilder.By(column, sortDescending, "e.Id", "e.EntryNo", "e.CreatedAt")}
                               {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
 
             return (Query(pageSql, null, null, where.Parameters), total);

@@ -25,6 +25,10 @@ namespace PrimeERP.Application.Services.Cheques
         Result<List<ChequeStatus>> GetAllowedTransitions(int id);
         Result Move(MoveChequeDto dto);
         Result<ChequeDocumentResultDto> CreateBatch(CreateChequeDocumentDto dto, ChequeDirection direction);
+
+        /// <summary>تعديل/حذف شيك لم يُحرَّك بعد. الشيك المُحرَّك يُصحَّح بحركة مقابلة لا بالكتابة فوقه.</summary>
+        Result UpdateUnmoved(int id, CreateChequeLineDto line, DateTime docDate);
+        Result DeleteUnmoved(int id);
         Result<List<ChequeDto>> GetOpenForParty(int partyId, DateTime from, DateTime to);
     }
 
@@ -272,6 +276,65 @@ namespace PrimeERP.Application.Services.Cheques
 
             Audit.Log(EntityName, ids.FirstOrDefault(), AuditAction.Insert, newValue: new { Count = ids.Count, Direction = direction });
             return Result.Ok(new ChequeDocumentResultDto { ChequeIds = ids });
+        }
+
+        /// <summary>
+        /// الشيك ورقة تجارية: ما دام في يدنا بحالته الأولى فتصحيحه تصحيحُ إدخال. أما وقد أُودع أو حُصِّل أو
+        /// ارتدّ فله قيود وحركات مقابلة، ويُصحَّح بحركة لا بالكتابة فوقه — وإلا تناقض السجل مع الدفاتر.
+        /// </summary>
+        private Result EnsureUnmoved(Cheque cheque, string action)
+        {
+            var moved = _repo.GetMovements(cheque.Id).Any(m => m.FromStatus != m.ToStatus);
+
+            return moved
+                ? Result.Fail($"لا يمكن {action} شيك تحرّك — صحّحه بحركة مقابلة (إيداع/تحصيل/ارتداد)", ErrorCode.ValidationFailed)
+                : Result.Ok();
+        }
+
+        public Result UpdateUnmoved(int id, CreateChequeLineDto line, DateTime docDate)
+        {
+            if (!Can("Edit")) return FailDenied();
+
+            var cheque = _repo.GetById(id);
+            if (cheque == null) return Result.Fail("الشيك غير موجود", ErrorCode.NotFound);
+
+            var editable = EnsureUnmoved(cheque, "تعديل");
+            if (editable.IsFailure) return editable;
+
+            if (string.IsNullOrWhiteSpace(line.ChequeNo)) return Result.Fail("رقم الشيك مطلوب", ErrorCode.ValidationFailed);
+            if (line.Amount <= 0) return Result.Fail("مبلغ الشيك يجب أن يكون أكبر من صفر", ErrorCode.ValidationFailed);
+
+            cheque.ChequeNo = line.ChequeNo;
+            cheque.PartyId  = line.PartyId;
+            cheque.Amount   = line.Amount;
+            cheque.IssueDate = docDate;
+            cheque.DueDate  = line.DueDate ?? docDate;
+            cheque.BankName = line.BankName;
+            cheque.Notes    = line.Notes;
+
+            Db.RunTransaction((conn, tx) => _repo.Update(conn, tx, cheque));
+            Audit.Log(EntityName, id, AuditAction.Update, newValue: cheque);
+            return Result.Ok();
+        }
+
+        public Result DeleteUnmoved(int id)
+        {
+            if (!Can("Delete")) return FailDenied();
+
+            var cheque = _repo.GetById(id);
+            if (cheque == null) return Result.Fail("الشيك غير موجود", ErrorCode.NotFound);
+
+            var deletable = EnsureUnmoved(cheque, "حذف");
+            if (deletable.IsFailure) return deletable;
+
+            Db.RunTransaction((conn, tx) =>
+            {
+                _repo.DeleteMovements(conn, tx, id);
+                _repo.Delete(conn, tx, id);
+            });
+
+            Audit.Log(EntityName, id, AuditAction.Delete, oldValue: cheque);
+            return Result.Ok();
         }
 
         public Result<List<ChequeDto>> GetOpenForParty(int partyId, DateTime from, DateTime to)

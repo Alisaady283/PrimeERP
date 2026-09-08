@@ -466,6 +466,15 @@ namespace PrimeERP.Composition.Renderers
 
                 combo.ItemsSource = items.Select(t => new PickerRow { Id = t.Id, Code = t.Code, Display = t.Name }).ToList();
             }
+            else if (field.PickerType == "Bank")
+            {
+                // البنوك خزائن من نوع بنك — لا قائمة بنوك مستقلة في النظام.
+                var result = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>().GetAll();
+                if (result.IsSuccess)
+                    combo.ItemsSource = result.Value
+                        .Where(t => t.Kind == PrimeERP.Domain.Enums.TreasuryKind.Bank)
+                        .Select(t => new PickerRow { Id = t.Id, Code = t.Code, Display = t.Name }).ToList();
+            }
             else if (field.PickerType == "TreasuryKind")
             {
                 combo.ItemsSource = new List<PickerRow>

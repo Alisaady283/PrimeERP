@@ -81,13 +81,13 @@ namespace PrimeERP.Data.Repositories
                 .Eq("IsActive", isActive)
                 .Eq("CategoryId", categoryId);
 
-            var column = sortColumn switch { "Code" => "Code", "PurchaseDate" => "PurchaseDate", "CreatedAt" => "CreatedAt", _ => "Name" };
+            var column = sortColumn switch { "Name" => "Name", "PurchaseDate" => "PurchaseDate", "CreatedAt" => "CreatedAt", _ => "Code" };
             var direction = sortDescending ? "DESC" : "ASC";
 
             var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM Assets {where.Sql}", where.Parameters));
 
             var pageSql = $@"SELECT * FROM Assets {where.Sql}
-                              ORDER BY {column} {direction}, Id {direction}
+                              {OrderBuilder.By(column, sortDescending)}
                               {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
 
             return (Query(pageSql, null, null, where.Parameters), total);

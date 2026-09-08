@@ -20,6 +20,9 @@ namespace PrimeERP.Data.Repositories
         List<Cheque> GetOpenForParty(int partyId, DateTime from, DateTime to);
         int Insert(DbConnection conn, DbTransaction tx, Cheque c);
         void SetStatus(DbConnection conn, DbTransaction tx, int id, ChequeStatus status, int? treasuryId);
+        void Update(DbConnection conn, DbTransaction tx, Cheque c);
+        void Delete(DbConnection conn, DbTransaction tx, int id);
+        void DeleteMovements(DbConnection conn, DbTransaction tx, int chequeId);
         void InsertMovement(DbConnection conn, DbTransaction tx, ChequeMovement m);
     }
 
@@ -105,7 +108,7 @@ namespace PrimeERP.Data.Repositories
             if (status != null) where.Eq("Status", (int)status.Value);
 
             var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM Cheques {where.Sql}", where.Parameters));
-            var sql = $@"SELECT * FROM Cheques {where.Sql} ORDER BY DueDate DESC, Id DESC
+            var sql = $@"SELECT * FROM Cheques {where.Sql} {OrderBuilder.By("DueDate", true, "ChequeNo", "CreatedAt")}
                          {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
             return (Query(sql, null, null, where.Parameters), total);
         }
@@ -131,6 +134,20 @@ namespace PrimeERP.Data.Repositories
         public void SetStatus(DbConnection conn, DbTransaction tx, int id, ChequeStatus status, int? treasuryId) =>
             Exec("UPDATE Cheques SET Status = @status, TreasuryId = @treasury, UpdatedAt = @now WHERE Id = @id", conn, tx,
                 ("@status", (int)status), ("@treasury", (object)treasuryId ?? DBNull.Value), ("@now", DateTime.Now), ("@id", id));
+
+        public void Update(DbConnection conn, DbTransaction tx, Cheque c) =>
+            Exec(@"UPDATE Cheques SET ChequeNo = @no, PartyId = @party, Amount = @amount, IssueDate = @issue,
+                          DueDate = @due, BankName = @bank, Notes = @notes, UpdatedAt = @now
+                   WHERE Id = @id", conn, tx,
+                ("@no", c.ChequeNo), ("@party", (object)c.PartyId ?? DBNull.Value), ("@amount", c.Amount),
+                ("@issue", c.IssueDate), ("@due", c.DueDate), ("@bank", c.BankName ?? ""), ("@notes", c.Notes ?? ""),
+                ("@now", DateTime.Now), ("@id", c.Id));
+
+        public void Delete(DbConnection conn, DbTransaction tx, int id) =>
+            Exec("DELETE FROM Cheques WHERE Id = @id", conn, tx, ("@id", id));
+
+        public void DeleteMovements(DbConnection conn, DbTransaction tx, int chequeId) =>
+            Exec("DELETE FROM ChequeMovements WHERE ChequeId = @id", conn, tx, ("@id", chequeId));
 
         public void InsertMovement(DbConnection conn, DbTransaction tx, ChequeMovement m) =>
             Exec(@"INSERT INTO ChequeMovements (ChequeId, MovementDate, FromStatus, ToStatus, TreasuryId, JournalEntryId, Notes, CreatedBy)

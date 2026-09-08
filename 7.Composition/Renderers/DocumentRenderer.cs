@@ -76,10 +76,14 @@ namespace PrimeERP.Composition.Renderers
             var rows = new List<EditorRow>();
             var linesHost = new StackPanel();
 
+            // الإجماليات تتبع كل تغيير: إضافة صف، حذفه، أو تعديل رقم فيه. تُسنَد بعد بناء الشريط أدناه.
+            Action refreshTotals = () => { };
+
             void RemoveRow(EditorRow entry)
             {
                 linesHost.Children.Remove(entry.Row);
                 rows.Remove(entry);
+                refreshTotals();
             }
 
             EditorRow AddRow(object lineItem)
@@ -135,6 +139,16 @@ namespace PrimeERP.Composition.Renderers
 
                 WireLineMath(def, rowControls);
 
+                foreach (var key in def.LineTotals?.Keys ?? new List<string>())
+                {
+                    if (!rowControls.TryGetValue(key, out var totalled) || totalled is not AppNumericBox box) continue;
+
+                    DependencyPropertyDescriptor.FromProperty(AppNumericBox.ValueProperty, typeof(AppNumericBox))
+                        .AddValueChanged(box, (_, _) => refreshTotals());
+                }
+
+                refreshTotals();
+
                 var entry = new EditorRow { Row = rowGrid, Controls = rowControls };
                 removeBtn.Click += (_, __) => RemoveRow(entry);
 
@@ -177,6 +191,14 @@ namespace PrimeERP.Composition.Renderers
             linesSection.Children.Add(lineHeaderRow);
             linesSection.Children.Add(linesHost);
             linesSection.Children.Add(addLineBtn);
+
+            if (def.LineTotals != null)
+            {
+                var (totalsBar, refresh) = BuildTotalsBar(def, rows);
+                linesSection.Children.Add(totalsBar);
+                refreshTotals = refresh;
+                refresh();
+            }
 
             var body = new StackPanel();
             var pullBar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
@@ -227,6 +249,68 @@ namespace PrimeERP.Composition.Renderers
             };
 
             return editor;
+        }
+
+        /// <summary>
+        /// شريط الإجماليات أسفل السطور: مجموع كل مفتاح بعنوان عموده، ويظهر الفرق بلون التحذير متى اختلّ
+        /// التوازن. يقرأ الخانات المعروضة نفسها، فما يراه المُدخِل هو ما يُرسَل للخدمة.
+        /// </summary>
+        private static (FrameworkElement Bar, Action Refresh) BuildTotalsBar(DocumentDialogDefinition def, List<EditorRow> rows)
+        {
+            var bar = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            var values = new Dictionary<string, TextBlock>();
+
+            TextBlock AddCell(string caption, out TextBlock valueBlock)
+            {
+                var label = new TextBlock { Text = caption + ": ", VerticalAlignment = VerticalAlignment.Center };
+                label.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondary");
+
+                valueBlock = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 20, 0) };
+                valueBlock.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
+                valueBlock.SetResourceReference(TextBlock.FontWeightProperty, "P.Font.Weight.Bold");
+
+                bar.Children.Add(label);
+                bar.Children.Add(valueBlock);
+                return label;
+            }
+
+            foreach (var key in def.LineTotals.Keys)
+            {
+                var caption = def.LineFields.FirstOrDefault(f => f.Key == key)?.Header ?? key;
+                AddCell(caption, out var cell);
+                values[key] = cell;
+            }
+
+            TextBlock differenceLabel = null, difference = null;
+            if (def.LineTotals.MustBalance is { Length: 2 })
+                differenceLabel = AddCell("الفرق", out difference);
+
+            decimal SumOf(string key) => rows
+                .Select(r => r.Controls.TryGetValue(key, out var c) && c is AppNumericBox box ? box.Value : 0m)
+                .Sum();
+
+            void Refresh()
+            {
+                foreach (var (key, cell) in values) cell.Text = SumOf(key).ToString("N2");
+
+                if (difference == null) return;
+
+                var gap = SumOf(def.LineTotals.MustBalance[0]) - SumOf(def.LineTotals.MustBalance[1]);
+                difference.Text = Math.Abs(gap).ToString("N2");
+
+                // الصفر ليس تحذيراً — اللون يفرّق بين قيدٍ متزن وآخر ينقصه مبلغ.
+                var brush = gap == 0m ? "TextSecondary" : "Danger";
+                difference.SetResourceReference(TextBlock.ForegroundProperty, brush);
+                differenceLabel.SetResourceReference(TextBlock.ForegroundProperty, brush);
+            }
+
+            return (bar, Refresh);
         }
 
         /// <summary>يربط صافي السطر بمدخلاته: أي تغيير في الكمية أو السعر أو النِّسَب يعيد الحساب فوراً
@@ -293,6 +377,7 @@ namespace PrimeERP.Composition.Renderers
         private static string PickerValueFieldOf(Type lineDtoType, LineFieldDefinition field)
         {
             if (field.Kind != FieldKind.Picker) return "Id";
+            if (field.PickerValueField != null) return field.PickerValueField;
 
             var property = lineDtoType.GetProperty(field.Key);
             if (property == null) return "Code";

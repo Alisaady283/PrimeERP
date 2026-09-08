@@ -62,7 +62,7 @@ namespace PrimeERP.Data.Repositories
             var direction = sortDescending ? "DESC" : "ASC";
 
             var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM Payrolls {where.Sql}", where.Parameters));
-            var pageSql = $@"SELECT * FROM Payrolls {where.Sql} ORDER BY {column} {direction}, Id {direction}
+            var pageSql = $@"SELECT * FROM Payrolls {where.Sql} {OrderBuilder.By(column, sortDescending, "PayrollNo", "CreatedAt")}
                               {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
             return (Query(pageSql, null, null, where.Parameters), total);
         }

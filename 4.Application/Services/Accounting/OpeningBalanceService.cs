@@ -26,6 +26,10 @@ namespace PrimeERP.Application.Services.Accounting
     {
         private const string SourceKey = "OpeningBalance";
 
+        /// <summary>بيان القيد الافتتاحي ثابت: قيدٌ واحد للمنشأة لا معنى لبيانٍ يكتبه المستخدم فيه.
+        /// تفرضه الخدمة والشاشة تعرضه للقراءة — فالقيمة واحدة أياً كان مصدر الاستدعاء.</summary>
+        public const string FixedDescription = "رصيد أول المدة";
+
         private readonly IJournalService _journals;
         private readonly ISettingsService _settingsService;
 
@@ -92,6 +96,7 @@ namespace PrimeERP.Application.Services.Accounting
         private Result<CreateJournalDto> Balance(CreateJournalDto dto)
         {
             dto.Source = SourceKey;
+            dto.Description = FixedDescription;
             dto.Lines = dto.Lines?.Where(l => !string.IsNullOrWhiteSpace(l.AccountCode)).ToList() ?? new List<CreateJournalLineDto>();
 
             if (dto.Lines.Count == 0)

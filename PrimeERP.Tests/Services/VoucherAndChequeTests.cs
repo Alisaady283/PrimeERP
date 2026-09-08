@@ -136,21 +136,50 @@ namespace PrimeERP.Tests.Services
             Assert.Empty(service.GetAllowedTransitions(cheque.Id).Value);
         }
 
+
+        [Fact]
+        public void ChequeIsEditableWhileUnmoved_AndClosedOnceItMoves()
+        {
+            var cheque = SeedIncomingCheque(out var treasury);
+            var service = _db.Services.GetRequiredService<IChequeService>();
+
+            // لم يتحرّك بعد: تصحيح الإدخال مسموح.
+            var edited = service.UpdateUnmoved(cheque.Id,
+                new CreateChequeLineDto { ChequeNo = "CHQ-EDITED", Amount = 750m, BankName = "بنك آخر" },
+                DateTime.Today);
+            Assert.True(edited.IsSuccess, edited.ErrorMessage);
+
+            var after = service.GetById(cheque.Id).Value;
+            Assert.Equal("CHQ-EDITED", after.ChequeNo);
+            Assert.Equal(750m, after.Amount);
+
+            // تحرّك: صار له قيد مقابل، فيُصحَّح بحركة لا بالكتابة فوقه.
+            Assert.True(service.Move(new MoveChequeDto
+            { ChequeId = cheque.Id, ToStatus = (int)ChequeStatus.Deposited, TreasuryId = treasury.Id }).IsSuccess);
+
+            var refused = service.UpdateUnmoved(cheque.Id,
+                new CreateChequeLineDto { ChequeNo = "CHQ-AGAIN", Amount = 900m }, DateTime.Today);
+            Assert.True(refused.IsFailure);
+            Assert.Contains("تحرّك", refused.ErrorMessage);
+            Assert.True(service.DeleteUnmoved(cheque.Id).IsFailure);
+        }
         private ChequeDetailDto SeedIncomingCheque(out TreasuryDto treasury)
         {
             treasury = SeedTreasury();
             var customer = SeedCustomer();
+            var chequeNo = $"CHQ-{Guid.NewGuid():N}"[..12];
 
             var voucher = _db.Services.GetRequiredService<IReceiptVoucherService>().Create(new CreateVoucherDto
             {
                 VoucherDate = DateTime.Today, PartyId = customer.Id, TreasuryId = treasury.Id,
                 Amount = 500, Method = (int)PaymentMethod.Cheque,
-                ChequeNo = $"CHQ-{Guid.NewGuid():N}"[..12], ChequeDueDate = DateTime.Today.AddDays(30), ChequeBank = "بنك الاختبار"
+                ChequeNo = chequeNo, ChequeDueDate = DateTime.Today.AddDays(30), ChequeBank = "بنك الاختبار"
             });
             Assert.True(voucher.IsSuccess, voucher.ErrorMessage);
 
-            var cheques = _db.Services.GetRequiredService<IChequeService>().GetPaged(1, 50);
-            var created = cheques.Value.Items.First();
+            // بالرقم لا بأول عنصر: القائمة مرتَّبة، وأولها يتبدّل مع كل شيك يزرعه اختبار آخر في نفس القاعدة.
+            var cheques = _db.Services.GetRequiredService<IChequeService>().GetPaged(1, 200);
+            var created = cheques.Value.Items.Single(c => c.ChequeNo == chequeNo);
             return _db.Services.GetRequiredService<IChequeService>().GetById(created.Id).Value;
         }
     }
