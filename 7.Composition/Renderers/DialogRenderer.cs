@@ -463,7 +463,7 @@ namespace PrimeERP.Composition.Renderers
                      or "FooterAggregate" or "BuilderFilterKind" or "ToolbarAction"
                      or "BuilderSection" or "BuilderModule" or "AnyModule")
             {
-                combo.ItemsSource = BuilderPickers.Rows(field.PickerType, services);
+                combo.ItemsSource = BuilderPickers.Rows(field.PickerType, services, filterValue);
             }
             // "Table:<مفتاح الوحدة>:<عمود العرض>" — قائمةٌ عامّة تقرأ جدولها من الوصف، فلا يحتاج جدولٌ
             // جديد فرعاً مكتوباً هنا. الفروع أدناه للجداول المكتوبة تبقى كما هي.

@@ -172,9 +172,11 @@ namespace PrimeERP.Composition.Renderers
             return root;
         }
 
-        private static FrameworkElement BuildFilterControls(System.Collections.Generic.List<FilterDefinition> filters, dynamic vm, IServiceProvider services)
+        private static FrameworkElement BuildFilterControls(List<FilterDefinition> filters, dynamic vm, IServiceProvider services)
         {
             var panel = new StackPanel { Orientation = Orientation.Horizontal };
+            var combos = new Dictionary<string, PrimeERP.UI.Components.Inputs.AppComboBox>();
+
             foreach (var filter in filters)
             {
                 var combo = new PrimeERP.UI.Components.Inputs.AppComboBox
@@ -186,22 +188,41 @@ namespace PrimeERP.Composition.Renderers
 
                 // القائمة من نفس آلية قوائم الحقول (LoadPickerItems) لا فرعٍ ثانٍ — فأي نوع قائمة يعمل
                 // في حقلٍ يعمل في فلتر، بلا كتابة هنا لكل نوع.
-                DialogRenderer.LoadPickerItems(combo, new FieldDefinition
-                {
-                    Key = filter.Key, LabelKey = filter.LabelKey, Kind = FieldKind.Picker,
-                    PickerType = filter.PickerType, PickerCategoryModuleKey = filter.PickerCategoryModuleKey
-                }, services);
+                DialogRenderer.LoadPickerItems(combo, Field(filter), services);
 
+                var captured = filter;
                 combo.SelectionChanged += (_, __) =>
                 {
-                    DialogRenderer.WriteValue((object)vm.Filter, filter.Key, combo.SelectedValue);
+                    DialogRenderer.WriteValue((object)vm.Filter, captured.Key, combo.SelectedValue);
                     vm.SearchCommand.Execute(null);
                 };
 
+                combos[filter.Key] = combo;
                 panel.Children.Add(combo);
             }
+
+            // فلترٌ يحكم فلتراً — نفس ApplyPickerFilters في الحوار: اختيار القسم يُعيد ملء قائمة صفحاته.
+            foreach (var filter in filters.Where(f => !string.IsNullOrEmpty(f.PickerFilterField)))
+            {
+                if (!combos.TryGetValue(filter.PickerFilterField, out var source)) continue;
+                if (!combos.TryGetValue(filter.Key, out var target)) continue;
+
+                var captured = filter;
+                source.SelectionChanged += (_, __) =>
+                {
+                    target.SelectedItem = null;
+                    DialogRenderer.LoadPickerItems(target, Field(captured), services, source.SelectedValue);
+                };
+            }
+
             return panel;
         }
+
+        private static FieldDefinition Field(FilterDefinition filter) => new()
+        {
+            Key = filter.Key, LabelKey = filter.LabelKey, Kind = FieldKind.Picker,
+            PickerType = filter.PickerType, PickerCategoryModuleKey = filter.PickerCategoryModuleKey
+        };
 
         /// <summary>الطباعة والتصدير من ListOutput — القائمة والتقرير يستوردان نفس القطعة.</summary>
         /// <summary>

@@ -13,6 +13,9 @@ namespace PrimeERP.Composition.Definitions
         // Kind.Combo مع PickerType="Category" فقط مدعوم حالياً (يخدم أغلب حالات فلترة MasterList).
         public string PickerType { get; init; }
         public string PickerCategoryModuleKey { get; init; }
+
+        // مفتاح فلترٍ آخر يحكم هذه القائمة: كلما تغيّر أُعيد ملؤها بقيمته (القسم يحكم الصفحة).
+        public string PickerFilterField { get; init; }
         public double Width { get; init; } = 180;
     }
 }

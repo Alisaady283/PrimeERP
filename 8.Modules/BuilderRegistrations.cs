@@ -69,7 +69,9 @@ namespace PrimeERP.Modules
             {
                 new() { Header = LocalizationService.Get("Str.Builder.Key"), Binding = nameof(BuilderModule.Key), Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Title"), Binding = nameof(BuilderModule.Title), Width = 220, IsStarWidth = true },
-                new() { Header = LocalizationService.Get("Str.Builder.Kind"), Binding = nameof(BuilderModule.Kind), Width = 100, Align = ColumnAlign.Center },
+                new() { Header = LocalizationService.Get("Str.Builder.Sections"), Binding = "SectionName", Width = 140 },
+                new() { Header = LocalizationService.Get("Str.Builder.Kind"), Binding = "KindName", Width = 100, Align = ColumnAlign.Center },
+                new() { Header = LocalizationService.Get("Str.Builder.Order"), Binding = nameof(BuilderModule.SortOrder), Width = 80, Align = ColumnAlign.Center },
                 new() { Header = LocalizationService.Get("Str.Builder.Table"), Binding = nameof(BuilderModule.TableName), Width = 160 },
             },
             Dialog = Dialog<BuilderModulesService>("Str.Builder.Module", new()
@@ -99,11 +101,12 @@ namespace PrimeERP.Modules
             Filters = new()
             {
                 new() { Key = nameof(DynamicFilter.SectionId), LabelKey = "Str.Builder.Sections", PickerType = "BuilderSection" },
-                new() { Key = nameof(DynamicFilter.ModuleId), LabelKey = "Str.Builder.Modules", PickerType = "BuilderModule" },
+                new() { Key = nameof(DynamicFilter.ModuleId), LabelKey = "Str.Builder.Modules", PickerType = "BuilderModule",
+                        PickerFilterField = nameof(DynamicFilter.SectionId) },
             },
             Columns = new()
             {
-                new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = nameof(BuilderColumn.ModuleId), Width = 120 },
+                new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = "ModuleName", Width = 160 },
                 new() { Header = LocalizationService.Get("Str.Builder.Header"), Binding = nameof(BuilderColumn.Header), Width = 200, IsStarWidth = true },
                 new() { Header = "العمود", Binding = nameof(BuilderColumn.Name), Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Kind"), Binding = nameof(BuilderColumn.DataType), Width = 110, Align = ColumnAlign.Center },
@@ -144,11 +147,12 @@ namespace PrimeERP.Modules
             Filters = new()
             {
                 new() { Key = nameof(DynamicFilter.SectionId), LabelKey = "Str.Builder.Sections", PickerType = "BuilderSection" },
-                new() { Key = nameof(DynamicFilter.ModuleId), LabelKey = "Str.Builder.Modules", PickerType = "BuilderModule" },
+                new() { Key = nameof(DynamicFilter.ModuleId), LabelKey = "Str.Builder.Modules", PickerType = "BuilderModule",
+                        PickerFilterField = nameof(DynamicFilter.SectionId) },
             },
             Columns = new()
             {
-                new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = nameof(BuilderAction.ModuleId), Width = 120 },
+                new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = "ModuleName", Width = 160 },
                 new() { Header = LocalizationService.Get("Str.Builder.Button"), Binding = nameof(BuilderAction.ActionKey), Width = 200, IsStarWidth = true },
                 new() { Header = LocalizationService.Get("Str.Builder.OnRow"), Binding = nameof(BuilderAction.OnTable), Width = 100, Align = ColumnAlign.Center },
             },
@@ -169,11 +173,12 @@ namespace PrimeERP.Modules
             Filters = new()
             {
                 new() { Key = nameof(DynamicFilter.SectionId), LabelKey = "Str.Builder.Sections", PickerType = "BuilderSection" },
-                new() { Key = nameof(DynamicFilter.ModuleId), LabelKey = "Str.Builder.Modules", PickerType = "BuilderModule" },
+                new() { Key = nameof(DynamicFilter.ModuleId), LabelKey = "Str.Builder.Modules", PickerType = "BuilderModule",
+                        PickerFilterField = nameof(DynamicFilter.SectionId) },
             },
             Columns = new()
             {
-                new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = nameof(BuilderFilter.ModuleId), Width = 120 },
+                new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = "ModuleName", Width = 160 },
                 new() { Header = LocalizationService.Get("Str.Builder.Filter"), Binding = nameof(BuilderFilter.Label), Width = 200, IsStarWidth = true },
                 new() { Header = LocalizationService.Get("Str.Builder.Kind"), Binding = nameof(BuilderFilter.Kind), Width = 110, Align = ColumnAlign.Center },
             },

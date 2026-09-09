@@ -15,6 +15,9 @@ namespace PrimeERP.Data.Repositories
 
         List<BuilderSection> Sections();
         List<BuilderModule>  Modules();
+        /// <summary>كل مفاتيح الصفحات بما فيها المحذوفة — البذر لا يُعيد ما حذفه المستخدم.</summary>
+        List<string> ModuleKeys();
+
         List<BuilderColumn>  Columns(int moduleId = 0);
         List<BuilderAction>  Actions(int moduleId = 0);
         List<BuilderFilter>  Filters(int moduleId = 0);
@@ -54,7 +57,7 @@ namespace PrimeERP.Data.Repositories
                 .Text("Key", 60, required: true, unique: true).Text("Title", 160, required: true)
                 .Int("Kind", nullable: false, defaultValue: 0).Int("SectionId", nullable: false, defaultValue: 0)
                 .Text("TableName", 60).Text("LineTable", 60).Text("SourceKey", 60).Text("CopiedFrom", 60)
-                .Int("SortOrder", nullable: false, defaultValue: 0).Bool("IsActive", true)
+                .Int("SortOrder", nullable: false, defaultValue: 0).Bool("IsActive", true).Bool("IsCoded")
                 .Audit().SoftDelete().Index("SectionId").Create();
 
             SchemaBuilder.Table("BuilderColumns").Id()
@@ -88,6 +91,8 @@ namespace PrimeERP.Data.Repositories
 
         public List<BuilderModule> Modules() => QueryAs(MapModule,
             $"SELECT * FROM BuilderModules WHERE IsDeleted = @d {OrderBuilder.By("SortOrder", false, "Title")}", null, null, ("@d", false));
+
+        public List<string> ModuleKeys() => QueryAs(r => Str(r, "Key"), "SELECT Key FROM BuilderModules");
 
         public List<BuilderColumn> Columns(int moduleId = 0) => Children(MapColumn, "BuilderColumns", moduleId);
         public List<BuilderAction> Actions(int moduleId = 0) => Children(MapAction, "BuilderActions", moduleId);
@@ -128,12 +133,12 @@ namespace PrimeERP.Data.Repositories
         {
             if (m.Id == 0)
                 return InsertGetId(@"INSERT INTO BuilderModules (Key, Title, Kind, SectionId, TableName, LineTable, SourceKey,
-                                            CopiedFrom, SortOrder, IsActive, CreatedAt, CreatedBy)
-                                     VALUES (@k,@t,@kind,@sec,@tbl,@line,@src,@copy,@o,@a,@now,@by)",
+                                            CopiedFrom, SortOrder, IsActive, IsCoded, CreatedAt, CreatedBy)
+                                     VALUES (@k,@t,@kind,@sec,@tbl,@line,@src,@copy,@o,@a,@coded,@now,@by)",
                     null, null, ModuleParams(m).Append(("@by", (object)(m.CreatedBy ?? ""))).ToArray());
 
             Exec(@"UPDATE BuilderModules SET Key=@k, Title=@t, Kind=@kind, SectionId=@sec, TableName=@tbl,
-                          LineTable=@line, SourceKey=@src, CopiedFrom=@copy, SortOrder=@o, IsActive=@a, UpdatedAt=@now
+                          LineTable=@line, SourceKey=@src, CopiedFrom=@copy, SortOrder=@o, IsActive=@a, IsCoded=@coded, UpdatedAt=@now
                    WHERE Id=@id", null, null, ModuleParams(m).Append(("@id", (object)m.Id)).ToArray());
             return m.Id;
         }
@@ -142,7 +147,8 @@ namespace PrimeERP.Data.Repositories
         {
             ("@k", m.Key), ("@t", m.Title), ("@kind", (int)m.Kind), ("@sec", m.SectionId),
             ("@tbl", m.TableName ?? ""), ("@line", m.LineTable ?? ""), ("@src", m.SourceKey ?? ""),
-            ("@copy", m.CopiedFrom ?? ""), ("@o", m.SortOrder), ("@a", m.IsActive), ("@now", System.DateTime.Now)
+            ("@copy", m.CopiedFrom ?? ""), ("@o", m.SortOrder), ("@a", m.IsActive), ("@coded", m.IsCoded),
+        ("@now", System.DateTime.Now)
         };
 
         public void ReplaceColumns(int moduleId, List<BuilderColumn> columns)
@@ -185,8 +191,7 @@ namespace PrimeERP.Data.Repositories
             foreach (var table in new[] { "BuilderColumns", "BuilderActions", "BuilderFilters" })
                 Exec($"DELETE FROM {table} WHERE ModuleId = @m", null, null, ("@m", moduleId));
 
-            Exec("UPDATE BuilderModules SET IsDeleted = @d, DeletedAt = @now WHERE Id = @m",
-                null, null, ("@d", true), ("@now", System.DateTime.Now), ("@m", moduleId));
+            SoftDelete(moduleId);
         }
 
         // ===================== الجدول المبنيّ =====================
@@ -241,7 +246,7 @@ namespace PrimeERP.Data.Repositories
             Kind = (BuilderKind)Int(r, "Kind"), SectionId = Int(r, "SectionId"),
             TableName = Str(r, "TableName"), LineTable = Str(r, "LineTable"),
             SourceKey = Str(r, "SourceKey"), CopiedFrom = Str(r, "CopiedFrom"),
-            SortOrder = Int(r, "SortOrder"), IsActive = Bool(r, "IsActive")
+            SortOrder = Int(r, "SortOrder"), IsActive = Bool(r, "IsActive"), IsCoded = Bool(r, "IsCoded")
         };
 
         private static BuilderColumn MapColumn(System.Data.DataRow r) => new()

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Enums;
 using System.Linq;
 
 namespace PrimeERP.Application.Services.Builder
@@ -9,6 +10,10 @@ namespace PrimeERP.Application.Services.Builder
     /// وصفُ ما بناه المستخدم كما تقرؤه الطبقات العليا. المُصيِّرات وتسجيل الوحدات تستهلك هذه لا المستودع
     /// مباشرةً — نفس القيد الذي يمنع أي شاشة من استدعاء مستودع، ويفحصه check.sh.
     /// </summary>
+    /// <summary>صفحة مكتوبة كما تُقرأ من تسجيلها — تُبذَر صفّاً في الوصف فتظهر وتُرتَّب وتُحذَف كالمبنيّة.</summary>
+    public record CodedPage(string SectionKey, string Key, string Title, BuilderKind Kind,
+        List<BuilderColumn> Columns, List<BuilderAction> Actions, List<BuilderFilter> Filters);
+
     public interface IBuilderCatalog
     {
         List<BuilderSection> Sections();
@@ -26,6 +31,9 @@ namespace PrimeERP.Application.Services.Builder
         /// <summary>يبذر أقسام الكود غير المحميّة مرّةً فتصير قابلةً للتعديل — آمن للتكرار.</summary>
         void SeedSections(IEnumerable<(string Key, string Title, string IconKey, string[] Modules)> coded,
                           IReadOnlyCollection<string> protectedKeys);
+
+        /// <summary>يبذر صفحات الكود بأعمدتها وأزرارها وفلاترها مرّةً — ولا يُعيد ما حذفه المستخدم.</summary>
+        void SeedModules(IEnumerable<CodedPage> pages);
     }
 
     public class BuilderCatalog : IBuilderCatalog
@@ -62,6 +70,29 @@ namespace PrimeERP.Application.Services.Builder
                     Key = section.Key, Title = section.Title, IconKey = section.IconKey,
                     SortOrder = order, Modules = string.Join(",", section.Modules)
                 });
+            }
+        }
+
+        public void SeedModules(IEnumerable<CodedPage> pages)
+        {
+            var sections = _repo.Sections().ToDictionary(s => s.Key, s => s.Id);
+            var existing = _repo.ModuleKeys().ToHashSet();
+
+            var order = 0;
+            foreach (var page in pages)
+            {
+                order += 10;
+                if (existing.Contains(page.Key) || !sections.TryGetValue(page.SectionKey, out var sectionId)) continue;
+
+                var id = _repo.SaveModule(new BuilderModule
+                {
+                    Key = page.Key, Title = page.Title, Kind = page.Kind,
+                    SectionId = sectionId, SortOrder = order, IsActive = true, IsCoded = true
+                });
+
+                _repo.ReplaceColumns(id, page.Columns);
+                _repo.ReplaceActions(id, page.Actions);
+                _repo.ReplaceFilters(id, page.Filters);
             }
         }
     }

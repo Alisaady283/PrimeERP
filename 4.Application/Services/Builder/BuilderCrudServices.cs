@@ -144,12 +144,30 @@ namespace PrimeERP.Application.Services.Builder
         public BuilderModulesService(IBuilderRepository repo, IPermissionService p, ISettingsProvider s, ILocalizationService l, IAuditLogger a)
             : base(repo, p, s, l, a) { }
 
+        private Dictionary<int, string> _sections;
+
         protected override string EntityName => "BuilderModules";
         protected override List<BuilderModule> All() => Repo.Modules();
 
-        protected override List<BuilderModule> Narrow(List<BuilderModule> items, DynamicFilter filter) =>
-            filter?.SectionId == null ? items : items.Where(m => m.SectionId == filter.SectionId).ToList();
+        protected override List<BuilderModule> Narrow(List<BuilderModule> items, DynamicFilter filter)
+        {
+            _sections = null;
+            return filter?.SectionId == null ? items : items.Where(m => m.SectionId == filter.SectionId).ToList();
+        }
+
         protected override void Erase(int id) => Repo.DeleteModule(id);
+
+        /// <summary>الشبكة تعرض الاسم لا المعرِّف — القسم من صفّه، والنوع من نصوصه.</summary>
+        protected override IDictionary<string, object> ToDto(BuilderModule entity)
+        {
+            var row = base.ToDto(entity);
+
+            _sections ??= Repo.Sections().ToDictionary(s => s.Id, s => s.Title);
+            row["SectionName"] = _sections.TryGetValue(entity.SectionId, out var title) ? title : null;
+            row["KindName"] = Msg($"Kind.{entity.Kind}");
+
+            return row;
+        }
 
         protected override int Write(IDictionary<string, object> v)
         {
@@ -159,7 +177,9 @@ namespace PrimeERP.Application.Services.Builder
                 Kind = (BuilderKind)Int(v, "Kind"), SectionId = Int(v, "SectionId"),
                 TableName = Text(v, "TableName"), LineTable = Text(v, "LineTable"),
                 SourceKey = Text(v, "SourceKey"), CopiedFrom = Text(v, "CopiedFrom"),
-                SortOrder = Int(v, "SortOrder"), IsActive = Bool(v, "IsActive"), CreatedBy = CurrentUser
+                SortOrder = Int(v, "SortOrder"), IsActive = Bool(v, "IsActive"), CreatedBy = CurrentUser,
+                // «مبذورة من الكود» صفةُ منشأٍ لا حقلَ حوار — تُقرأ من الصفّ المحفوظ فلا يمحوها تعديلٌ للاسم.
+                IsCoded = Repo.Modules().FirstOrDefault(m => m.Id == Int(v, "Id"))?.IsCoded ?? false
             });
 
             // نسخة من صفحة: أعمدتها وأزرارها وفلاترها تُنسخ كما هي ثم تُعدَّل — نسخٌ لا بناء.
@@ -190,10 +210,25 @@ namespace PrimeERP.Application.Services.Builder
         protected abstract TEntity From(IDictionary<string, object> values);
         protected abstract int ModuleOf(TEntity item);
 
+        private Dictionary<int, string> _modules;
+
         protected override List<TEntity> All() => Of(0);
+
+        /// <summary>الشبكة تعرض اسم الصفحة لا معرِّفها.</summary>
+        protected override IDictionary<string, object> ToDto(TEntity entity)
+        {
+            var row = base.ToDto(entity);
+
+            _modules ??= Repo.Modules().ToDictionary(m => m.Id, m => m.Title);
+            row["ModuleName"] = _modules.TryGetValue(ModuleOf(entity), out var title) ? title : null;
+
+            return row;
+        }
 
         protected override List<TEntity> Narrow(List<TEntity> items, DynamicFilter filter)
         {
+            _modules = null;
+
             if (filter?.ModuleId != null) return items.Where(x => ModuleOf(x) == filter.ModuleId).ToList();
 
             if (filter?.SectionId == null) return items;

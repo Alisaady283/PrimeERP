@@ -31,6 +31,9 @@ namespace PrimeERP.Domain.Entities
         public string          CopiedFrom { get; set; }   // نسخة من صفحة قائمة
         public int             SortOrder  { get; set; }
         public bool            IsActive   { get; set; } = true;
+
+        /// <summary>مبذورة من صفحات الكود: تُعرَض وتُرتَّب وتُحذَف، ولا تُسجَّل ولا يُنشأ لها جدول.</summary>
+        public bool            IsCoded    { get; set; }
     }
 
     /// <summary>عمود في جدول الوحدة: تعريف تخزينه وعرضه معاً. المحسوب لا يُخزَّن بل يُجمَّع عند القراءة.</summary>

@@ -83,6 +83,11 @@
 | ✅ الترحيل يتبع النوع — `EnsureBuiltTable` في كل إقلاع | `SchemaBuilder` (آمنة للتكرار) |
 | ✅ ٥٧ مفتاح نصّ | `Strings.{ar,en}.xaml` · `LocalizationService` |
 | ✅ `TestDatabaseFixture` يستورد `EnsureDatabaseReady` بترتيب الإنتاج | حذف ٣٩ سطر تكرار |
+| ✅ بذر صفحات الكود (`SeedModules` + `CodedPage`) — كل صفحة مكتوبة تصير صفّاً بأعمدتها وأزرارها وفلاترها | تُقرأ من `ModuleDefinition` نفسه — عكسُ `BuilderModuleLoader.Columns` |
+| ✅ `BuilderModule.IsCoded` — المبذورة تُعرَض وتُرتَّب وتُحذَف، ولا تُسجَّل ثانيةً ولا يُنشأ لها جدول | حارسٌ واحد في حلقة التسجيل |
+| ✅ `FilterDefinition.PickerFilterField` — فلترٌ يحكم فلتراً (القسم ← صفحاته) | مفهوم `ApplyPickerFilters` في الحوار، لا آلية ثانية |
+| ✅ الشبكة تعرض الأسماء لا المعرِّفات (`SectionName`/`ModuleName`/`KindName`) | `ToDto` في خدمتَي الأساس |
+| ✅ الشريط الجانبي يقرأ صفوف القسم — فحذف صفحة من الوصف يخفيها فعلاً | `MainWindow.BuildNavGroups` |
 
 ## ٦. المتبقّي
 
@@ -91,6 +96,7 @@
 | شاشة اختيار الأقسام للتصدير | تُبنى على `TreeCheckListRenderer` — سلوك «الكل محدَّد ثم إلغاء» موجود يعمل في صلاحيات الأدوار |
 | نصوص `ToolbarAction.Catalogue` عربية في الكتالوج لا في `Strings.xaml` | دينٌ مسجَّل — نقلها يمسّ كل زرّ في النظام، خارج نطاق الوحدة |
 | تجربة فعلية: بناء قسم وصفحة وجدول وحفظ سجل | بعد خضرة الاختبارات |
+| فلتر نوع الحساب في الشجرة | `TreeRenderer` لا يقرأ `Filters` بعد — عائقٌ مطروح، بانتظار القرار |
 
 ## ٧. الإجمالي
 

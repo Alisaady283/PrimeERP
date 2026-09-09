@@ -35,7 +35,11 @@ namespace PrimeERP.Modules
             // أقسام الكود غير المحميّة تصير صفوفاً تُعدَّل — نسخٌ من الخريطة لا بناء.
             repo.SeedSections(NavigationMap.Coded, NavigationMap.Protected);
 
-            foreach (var module in repo.Modules().Where(m => m.IsActive))
+            // وصفحاتها كذلك: كل صفحة مكتوبة تصير صفّاً بأعمدتها وأزرارها وفلاترها — تُقرأ من تسجيلها
+            // نفسه لا تُكتب هنا. المبذور مؤشَّر IsCoded فلا يُسجَّل ثانيةً فوق أصله ولا يُنشأ له جدول.
+            repo.SeedModules(Coded(repo, registry));
+
+            foreach (var module in repo.Modules().Where(m => m.IsActive && !m.IsCoded))
             {
                 var columns = repo.Columns(module.Id);
 
@@ -49,6 +53,56 @@ namespace PrimeERP.Modules
                 registry.Register(Build(module, columns, repo.Actions(module.Id), repo.Filters(module.Id)));
             }
         }
+
+        /// <summary>صفحات الكود كما تصفها تسجيلاتها: القسم من الخريطة، والنوع من حوارها، والقطع من إعلانها.</summary>
+        private static List<CodedPage> Coded(IBuilderCatalog repo, IModuleRegistry registry)
+        {
+            var pages = new List<CodedPage>();
+
+            // ترتيب القسم ثم ترتيب مفاتيحه فيه — فترتيب الشريط الجانبي يبقى كما هو بعد البذر.
+            foreach (var section in repo.Sections().OrderBy(s => s.SortOrder))
+                foreach (var key in (section.Modules ?? "")
+                             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    var module = registry.Get(key);
+                    if (module == null) continue;
+
+                    pages.Add(new CodedPage(section.Key, module.Key, LocalizationService.Get(module.TitleKey),
+                        KindOf(module), CodedColumns(module), CodedActions(module), CodedFilters(module)));
+                }
+
+            return pages;
+        }
+
+        private static BuilderKind KindOf(ModuleDefinition m) =>
+            m.LayoutKind == LayoutKind.Report ? BuilderKind.Report
+            : m.DocumentDialog != null        ? BuilderKind.Movement
+                                              : BuilderKind.Record;
+
+        /// <summary>عكسُ Columns أدناه: الشكل المُعلَن يعود وصفاً، فما يُعرَض هو ما يُحرَّر.</summary>
+        private static List<BuilderColumn> CodedColumns(ModuleDefinition m) =>
+            (m.Columns ?? new List<GridColumn>()).Select((c, i) => new BuilderColumn
+            {
+                Name = c.Binding, Header = c.Header, Width = c.Width, SortOrder = (i + 1) * 10,
+                DataType = c.Format == "yyyy-MM-dd" ? BuilderDataType.Date
+                         : c.Format == "N2"         ? BuilderDataType.Money
+                                                    : BuilderDataType.Text,
+                Footer = c.Footer == FooterAggregate.None ? null : c.Footer.ToString(),
+                ShowInGrid = c.IsVisible, ShowInForm = false
+            }).ToList();
+
+        /// <summary>بلا تأشير = كل أزرار الكتالوج، وهو ما يقرؤه ActionToolbar فعلاً — فيُبذَر كما هو.</summary>
+        private static List<BuilderAction> CodedActions(ModuleDefinition m) =>
+            (m.EnabledActions ?? ToolbarAction.Catalogue.Keys.ToArray())
+                .Select((key, i) => new BuilderAction { ActionKey = key, SortOrder = (i + 1) * 10 })
+                .ToList();
+
+        private static List<BuilderFilter> CodedFilters(ModuleDefinition m) =>
+            (m.Filters ?? new List<FilterDefinition>()).Select((f, i) => new BuilderFilter
+            {
+                Key = f.Key, Label = LocalizationService.Get(f.LabelKey), Kind = f.Kind.ToString(),
+                RefModule = f.PickerType, SortOrder = (i + 1) * 10
+            }).ToList();
 
         private static ModuleDefinition Build(BuilderModule module, List<BuilderColumn> columns,
             List<BuilderAction> actions, List<BuilderFilter> filters)

@@ -77,11 +77,16 @@ namespace PrimeERP.App
             var modules = builder.Modules().Where(m => m.IsActive).ToList();
             var built = builder.Sections()
                 .OrderBy(section => section.SortOrder)
-                .Select(section => (section.Key, section.Title, section.IconKey ?? "IconSettings",
-                    // وحدات القسم: المبذورة من الكود في عموده، وما بُني تحته — قائمة واحدة.
-                    (section.Modules ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                        .Concat(modules.Where(m => m.SectionId == section.Id).Select(m => m.Key))
-                        .Distinct().ToArray()))
+                .Select(section =>
+                {
+                    // صفوف القسم هي مصدره بعد بذر صفحات الكود: ترتيبها ترتيبه، وحذف صفحةٍ منها يخفيها
+                    // فعلاً. نصّ العمود احتياطٌ لقسمٍ لم يُبذَر بعد، فلا يختفي قسم لو تعثّر البذر.
+                    var rows = modules.Where(m => m.SectionId == section.Id).Select(m => m.Key).ToArray();
+
+                    return (section.Key, section.Title, section.IconKey ?? "IconSettings",
+                        rows.Length > 0 ? rows
+                            : (section.Modules ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                })
                 .Where(g => g.Item4.Length > 0)
                 .ToList();
 
