@@ -1,0 +1,67 @@
+{
+ "TrialBalance": {
+  "start": 116,
+  "end": 145,
+  "lines": 30
+ },
+ "CustomerBalances": {
+  "start": 156,
+  "end": 165,
+  "lines": 10
+ },
+ "SupplierBalances": {
+  "start": 176,
+  "end": 185,
+  "lines": 10
+ },
+ "StockBalances": {
+  "start": 196,
+  "end": 268,
+  "lines": 73
+ },
+ "CustomerStatement": {
+  "start": 283,
+  "end": 289,
+  "lines": 7
+ },
+ "SupplierStatement": {
+  "start": 299,
+  "end": 306,
+  "lines": 8
+ },
+ "AccountStatement": {
+  "start": 317,
+  "end": 327,
+  "lines": 11
+ },
+ "ItemCard": {
+  "start": 340,
+  "end": 372,
+  "lines": 33
+ },
+ "IncomeStatement": {
+  "start": 386,
+  "end": 404,
+  "lines": 19
+ },
+ "BalanceSheet": {
+  "start": 415,
+  "end": 432,
+  "lines": 18
+ },
+ "CashFlow": {
+  "start": 448,
+  "end": 466,
+  "lines": 19
+ },
+ "StockReport": {
+  "start": 481,
+  "end": 520,
+  "lines": 40
+ },
+ "SalesReport": {
+  "start": 536,
+  "end": 561,
+  "lines": 26
+ }
+}

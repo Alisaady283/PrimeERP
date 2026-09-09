@@ -20,11 +20,12 @@ using PrimeERP.Modules;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Xunit;
+using PrimeERP.Composition.Renderers;
 
 namespace PrimeERP.Tests.Services
 {
-    // يستدعي ReportDefinition.Generate مباشرة (بلا واجهة) لكل تقرير من الثمانية المتبقية — أسرع من اختبار
-    // ReportRenderer الكامل لكل واحد، ويثبت نفس الشيء (لا استثناء، صفوف منطقية، الإجماليات متوازنة أينما ينطبق).
+    // ينفّذ التقرير بالمسار نفسه الذي تنفّذه به الشاشة (ReportRenderer.Run) بلا تصيير — أسرع، ويثبت
+    // نفس الشيء: الخدمة تُحلّ، والوسائط تُربَط بأسماء البارامترات، والصفوف والإجماليات تصل.
     public class ReportsGenerateTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -89,7 +90,7 @@ namespace PrimeERP.Tests.Services
         public void CustomerStatement_ReturnsInvoiceLine()
         {
             var def = _registry.Get("CustomerStatement").Report;
-            var result = def.Generate(_db.Services, Params(("CustomerId", _customerId), ("From", DateTime.Today.AddDays(-1)), ("To", DateTime.Today.AddDays(1))));
+            var result = ReportRenderer.Run(def, _db.Services, Params(("CustomerId", _customerId), ("From", DateTime.Today.AddDays(-1)), ("To", DateTime.Today.AddDays(1))));
             Assert.True(result.IsSuccess, result.ErrorMessage);
         }
 
@@ -97,7 +98,7 @@ namespace PrimeERP.Tests.Services
         public void SupplierStatement_ReturnsInvoiceLine()
         {
             var def = _registry.Get("SupplierStatement").Report;
-            var result = def.Generate(_db.Services, Params(("SupplierId", _supplierId), ("From", DateTime.Today.AddDays(-1)), ("To", DateTime.Today.AddDays(1))));
+            var result = ReportRenderer.Run(def, _db.Services, Params(("SupplierId", _supplierId), ("From", DateTime.Today.AddDays(-1)), ("To", DateTime.Today.AddDays(1))));
             Assert.True(result.IsSuccess, result.ErrorMessage);
         }
 
@@ -108,7 +109,7 @@ namespace PrimeERP.Tests.Services
             var productId = products.GetPaged(1, 10).Value.Items.First(p => p.Code == _productCode).Id;
 
             var def = _registry.Get("ItemCard").Report;
-            var result = def.Generate(_db.Services, Params(("ProductId", productId)));
+            var result = ReportRenderer.Run(def, _db.Services, Params(("ProductId", productId)));
             Assert.True(result.IsSuccess, result.ErrorMessage);
             Assert.True(result.Value.Rows.Cast<object>().Count() >= 3); // seed + sale + purchase
         }
@@ -117,7 +118,7 @@ namespace PrimeERP.Tests.Services
         public void IncomeStatement_HasRevenueAndExpenseWithNetIncome()
         {
             var def = _registry.Get("IncomeStatement").Report;
-            var result = def.Generate(_db.Services, Params(("From", DateTime.Today.AddDays(-1)), ("To", DateTime.Today.AddDays(1))));
+            var result = ReportRenderer.Run(def, _db.Services, Params(("From", DateTime.Today.AddDays(-1)), ("To", DateTime.Today.AddDays(1))));
             Assert.True(result.IsSuccess, result.ErrorMessage);
             Assert.True(result.Value.Totals.ContainsKey("Net"));
         }
@@ -126,7 +127,7 @@ namespace PrimeERP.Tests.Services
         public void BalanceSheet_HasAssetsLiabilitiesEquity()
         {
             var def = _registry.Get("BalanceSheet").Report;
-            var result = def.Generate(_db.Services, Params(("AsOf", DateTime.Today.AddDays(1))));
+            var result = ReportRenderer.Run(def, _db.Services, Params(("AsOf", DateTime.Today.AddDays(1))));
             Assert.True(result.IsSuccess, result.ErrorMessage);
             Assert.True(result.Value.Totals.ContainsKey("Assets"));
         }
@@ -135,7 +136,7 @@ namespace PrimeERP.Tests.Services
         public void CashFlow_ShowsCashMovement()
         {
             var def = _registry.Get("CashFlow").Report;
-            var result = def.Generate(_db.Services, Params(("From", DateTime.Today.AddDays(-1)), ("To", DateTime.Today.AddDays(1))));
+            var result = ReportRenderer.Run(def, _db.Services, Params(("From", DateTime.Today.AddDays(-1)), ("To", DateTime.Today.AddDays(1))));
             Assert.True(result.IsSuccess, result.ErrorMessage);
         }
 
@@ -143,7 +144,7 @@ namespace PrimeERP.Tests.Services
         public void StockReport_ListsMovements()
         {
             var def = _registry.Get("StockReport").Report;
-            var result = def.Generate(_db.Services, Params(("From", DateTime.Today.AddDays(-1)), ("To", DateTime.Today.AddDays(1))));
+            var result = ReportRenderer.Run(def, _db.Services, Params(("From", DateTime.Today.AddDays(-1)), ("To", DateTime.Today.AddDays(1))));
             Assert.True(result.IsSuccess, result.ErrorMessage);
             Assert.True(result.Value.Rows.Cast<object>().Count() >= 3);
         }
@@ -152,7 +153,7 @@ namespace PrimeERP.Tests.Services
         public void SalesReport_ShowsInvoiceInRange()
         {
             var def = _registry.Get("SalesReport").Report;
-            var result = def.Generate(_db.Services, Params(("From", DateTime.Today.AddDays(-1)), ("To", DateTime.Today.AddDays(1))));
+            var result = ReportRenderer.Run(def, _db.Services, Params(("From", DateTime.Today.AddDays(-1)), ("To", DateTime.Today.AddDays(1))));
             Assert.True(result.IsSuccess, result.ErrorMessage);
             Assert.Single(result.Value.Rows.Cast<object>());
         }

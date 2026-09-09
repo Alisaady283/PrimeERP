@@ -12,18 +12,12 @@ using F = PrimeERP.Application.Reporting.FinancialStatementFactory;
 
 namespace PrimeERP.Application.Reporting
 {
-    /// <summary>صفوف قائمة مالية وإجمالياتها — بلا عرض: الأعمدة والعنوان يبقيان في إعلان التقرير.</summary>
-    public class StatementResult
-    {
-        public List<F.Line> Rows { get; init; } = new();
-        public Dictionary<string, string> Totals { get; init; } = new();
-    }
-
     public interface IFinancialStatementService
     {
-        Result<StatementResult> IncomeStatement(DateTime from, DateTime to);
-        Result<StatementResult> BalanceSheet(DateTime asOf);
-        Result<StatementResult> CashFlow(DateTime from, DateTime to);
+        Result<ReportData> TrialBalance(DateTime from, DateTime to);
+        Result<ReportData> IncomeStatement(DateTime from, DateTime to);
+        Result<ReportData> BalanceSheet(DateTime asOf);
+        Result<ReportData> CashFlow(DateTime from, DateTime to);
     }
 
     /// <summary>
@@ -41,13 +35,38 @@ namespace PrimeERP.Application.Reporting
             _settingsService = settingsService;
         }
 
-        private static Result<StatementResult> Ok(List<F.Line> rows, Dictionary<string, string> totals) =>
-            Result.Ok(new StatementResult { Rows = rows, Totals = totals });
+        private static Result<ReportData> Ok(List<F.Line> rows, Dictionary<string, string> totals) =>
+            Result.Ok(new ReportData { Rows = rows, Totals = totals });
 
-        public Result<StatementResult> IncomeStatement(DateTime from, DateTime to)
+        public Result<ReportData> TrialBalance(DateTime from, DateTime to)
         {
             var result = _journal.GetTrialBalance(from, to, includeZero: true);
-            if (!result.IsSuccess) return Result.Fail<StatementResult>(result.ErrorMessage);
+            if (!result.IsSuccess) return Result.Fail<ReportData>(result.ErrorMessage);
+
+            var rows = result.Value.Select(l => new TrialBalanceRow
+            {
+                Code = l.Code, Name = l.Name,
+                OpeningDebit = l.OpeningDebit, OpeningCredit = l.OpeningCredit,
+                PeriodDebit  = l.PeriodDebit,  PeriodCredit  = l.PeriodCredit,
+                ClosingDebit = l.ClosingDebit, ClosingCredit = l.ClosingCredit
+            }).ToList();
+
+            return Result.Ok(new ReportData
+            {
+                Rows = rows,
+                Totals = new()
+                {
+                    ["Opening"] = $"افتتاحي: {rows.Sum(r => r.OpeningDebit):N2} / {rows.Sum(r => r.OpeningCredit):N2}",
+                    ["Period"]  = $"الفترة: {rows.Sum(r => r.PeriodDebit):N2} / {rows.Sum(r => r.PeriodCredit):N2}",
+                    ["Closing"] = $"ختامي: {rows.Sum(r => r.ClosingDebit):N2} / {rows.Sum(r => r.ClosingCredit):N2}",
+                }
+            });
+        }
+
+        public Result<ReportData> IncomeStatement(DateTime from, DateTime to)
+        {
+            var result = _journal.GetTrialBalance(from, to, includeZero: true);
+            if (!result.IsSuccess) return Result.Fail<ReportData>(result.ErrorMessage);
 
             // بالوظيفة كما في IFRS 18، وبشكل القائمة الرسمي: البنود في «جزئي» والمجاميع
             // في «كلي»، فتُقرأ نزولاً حتى صافي الربح.
@@ -82,12 +101,12 @@ namespace PrimeERP.Application.Reporting
             });
         }
 
-        public Result<StatementResult> BalanceSheet(DateTime asOf)
+        public Result<ReportData> BalanceSheet(DateTime asOf)
         {
             // DateTime.MinValue كـfrom يُفجِّر حساب "الرصيد الافتتاحي" داخل GetTrialBalance (طرح يوم
             // منها يفيض حسابياً) — بداية عملية واسعة بما يكفي عملياً بدلاً منها.
             var result = _journal.GetTrialBalance(new DateTime(1900, 1, 1), asOf, includeZero: true);
-            if (!result.IsSuccess) return Result.Fail<StatementResult>(result.ErrorMessage);
+            if (!result.IsSuccess) return Result.Fail<ReportData>(result.ErrorMessage);
 
             // مصنَّف كما يوجب IAS 1، وبشكل القائمة الرسمي: الأصول ثم مصادر تمويلها، كل
             // مجموعة بإجمالها الجزئي ثم إجمالها الكلي.
@@ -122,11 +141,11 @@ namespace PrimeERP.Application.Reporting
             });
         }
 
-        public Result<StatementResult> CashFlow(DateTime from, DateTime to)
+        public Result<ReportData> CashFlow(DateTime from, DateTime to)
         {
 
             var balance = _journal.GetTrialBalance(from, to, includeZero: true);
-            if (!balance.IsSuccess) return Result.Fail<StatementResult>(balance.ErrorMessage);
+            if (!balance.IsSuccess) return Result.Fail<ReportData>(balance.ErrorMessage);
 
             // النقدية: الصناديق والبنوك.
             bool IsCash(string code) => F.StartsWith("1203", "1204")(code);

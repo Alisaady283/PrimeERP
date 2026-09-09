@@ -1,0 +1,329 @@
+TrialBalance
+                    Generate = (services, p) =>
+                    {
+                        var journal = services.GetRequiredService<IJournalService>();
+                        var from = (DateTime)(p["From"] ?? DateTime.Today.AddMonths(-1));
+                        var to = (DateTime)(p["To"] ?? DateTime.Today);
+
+                        var result = journal.GetTrialBalance(from, to, includeZero: true);
+                        if (!result.IsSuccess) return Result.Fail<ReportResult>(result.ErrorMessage);
+
+                        var rows = result.Value.Select(l => new TrialBalanceRow
+                        {
+                            Code = l.Code, Name = l.Name,
+                            OpeningDebit = l.OpeningDebit, OpeningCredit = l.OpeningCredit,
+                            PeriodDebit  = l.PeriodDebit,  PeriodCredit  = l.PeriodCredit,
+                            ClosingDebit = l.ClosingDebit, ClosingCredit = l.ClosingCredit
+                        }).ToList();
+
+                        return Result.Ok(new ReportResult
+                        {
+                            Title = LocalizationService.Get("Str.Module.TrialBalance"),
+                            Columns = TrialBalanceColumns(),
+                            Rows = rows,
+                            Totals = new()
+                            {
+                                ["Opening"] = $"افتتاحي: {rows.Sum(r => r.OpeningDebit):N2} / {rows.Sum(r => r.OpeningCredit):N2}",
+                                ["Period"]  = $"الفترة: {rows.Sum(r => r.PeriodDebit):N2} / {rows.Sum(r => r.PeriodCredit):N2}",
+                                ["Closing"] = $"ختامي: {rows.Sum(r => r.ClosingDebit):N2} / {rows.Sum(r => r.ClosingCredit):N2}",
+                            }
+                        });
+                    }
+@@@@
+CustomerBalances
+                    Generate = (services, p) =>
+                    {
+                        var result = services.GetRequiredService<ICustomerService>().GetPaged(1, 5000);
+                        if (!result.IsSuccess) return Result.Fail<ReportResult>(result.ErrorMessage);
+
+                        return BalanceReportFactory.Build(services, p,
+                            result.Value.Items.Select(c => (c.Code, c.Name, c.AccountCode)).ToList(),
+                            debitIsCharge: true,
+                            LocalizationService.Get("Str.Module.CustomerBalances"), "المبيعات", "المقبوضات");
+                    }
+@@@@
+SupplierBalances
+                    Generate = (services, p) =>
+                    {
+                        var result = services.GetRequiredService<ISupplierService>().GetPaged(1, 5000);
+                        if (!result.IsSuccess) return Result.Fail<ReportResult>(result.ErrorMessage);
+
+                        return BalanceReportFactory.Build(services, p,
+                            result.Value.Items.Select(x => (x.Code, x.Name, x.AccountCode)).ToList(),
+                            debitIsCharge: false,
+                            LocalizationService.Get("Str.Module.SupplierBalances"), "المشتريات", "المدفوعات");
+                    }
+@@@@
+StockBalances
+                    Generate = (services, p) =>
+                    {
+                        var from = (DateTime)(p["From"] ?? DateTime.Today.AddMonths(-1));
+                        var to = (DateTime)(p["To"] ?? DateTime.Today);
+
+                        var stock = services.GetRequiredService<IStockService>();
+                        var products = services.GetRequiredService<IProductService>().GetPaged(1, 5000);
+                        if (!products.IsSuccess) return Result.Fail<ReportResult>(products.ErrorMessage);
+
+                        var warehouses = services.GetRequiredService<IWarehouseService>().GetAll(true);
+                        if (!warehouses.IsSuccess) return Result.Fail<ReportResult>(warehouses.ErrorMessage);
+
+                        // كل الحركات منذ البداية: ما قبل الفترة رصيدٌ أول المدة، وما فيها وارد ومنصرف.
+                        var history = stock.GetMovements(new DateTime(1900, 1, 1), to, null, int.MaxValue);
+                        if (!history.IsSuccess) return Result.Fail<ReportResult>(history.ErrorMessage);
+
+                        var productNames = products.Value.Items.ToDictionary(x => x.Id, x => (x.Code, x.Name));
+                        var warehouseNames = warehouses.Value.ToDictionary(w => w.Id, w => w.Name);
+
+                        var rows = history.Value
+                            .GroupBy(m => (m.ProductId, m.WarehouseId))
+                            .Select(g =>
+                            {
+                                decimal Signed(Domain.Entities.StockMovement m) =>
+                                    m.MovementType == MovementType.Out ? -m.Qty : m.Qty;
+
+                                var before = g.Where(m => m.MovementDate < from).Sum(Signed);
+                                var inside = g.Where(m => m.MovementDate >= from && m.MovementDate <= to).ToList();
+                                var received = inside.Where(m => Signed(m) > 0).Sum(Signed);
+                                var issued = -inside.Where(m => Signed(m) < 0).Sum(Signed);
+
+                                var product = productNames.TryGetValue(g.Key.ProductId, out var pn) ? pn : ("", "");
+                                return new StockBalanceRow
+                                {
+                                    ProductCode = product.Item1,
+                                    ProductName = product.Item2,
+                                    WarehouseName = warehouseNames.TryGetValue(g.Key.WarehouseId, out var wn) ? wn : "",
+                                    Opening = before,
+                                    In = received,
+                                    Out = issued,
+                                    Closing = before + received - issued,
+                                };
+                            })
+                            .Where(r => r.Opening != 0 || r.In != 0 || r.Out != 0 || r.Closing != 0)
+                            .OrderBy(r => r.ProductCode)
+                            .ToList();
+
+                        GridColumn Qty(string header, string binding) => new()
+                        { Header = header, Binding = binding, Width = 120, Align = ColumnAlign.Center, Format = "N2" };
+
+                        return Result.Ok(new ReportResult
+                        {
+                            Title = LocalizationService.Get("Str.Module.StockBalances"),
+                            Columns = new()
+                            {
+                                new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(StockBalanceRow.ProductCode), Width = 110 },
+                                new() { Header = LocalizationService.Get("Str.Product"), Binding = nameof(StockBalanceRow.ProductName), Width = 220, IsStarWidth = true },
+                                new() { Header = LocalizationService.Get("Str.Warehouse"), Binding = nameof(StockBalanceRow.WarehouseName), Width = 150 },
+                                Qty("رصيد أول المدة", nameof(StockBalanceRow.Opening)),
+                                Qty("الوارد", nameof(StockBalanceRow.In)),
+                                Qty("المنصرف", nameof(StockBalanceRow.Out)),
+                                Qty("رصيد آخر المدة", nameof(StockBalanceRow.Closing)),
+                            },
+                            Rows = rows,
+                            Totals = new()
+                            {
+                                ["Opening"] = $"أول المدة: {rows.Sum(r => r.Opening):N2}",
+                                ["In"] = $"الوارد: {rows.Sum(r => r.In):N2}",
+                                ["Out"] = $"المنصرف: {rows.Sum(r => r.Out):N2}",
+                                ["Closing"] = $"آخر المدة: {rows.Sum(r => r.Closing):N2}",
+                            }
+                        });
+                    }
+@@@@
+CustomerStatement
+                    Generate = (services, p) => BuildStatement(services.GetRequiredService<ICustomerService>().GetStatement,
+                        "Str.Module.CustomerStatement", p)
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+@@@@
+SupplierStatement
+                    Generate = (services, p) => BuildStatement(
+                        (id, from, to) => services.GetRequiredService<ISupplierService>().GetStatement(id, from, to),
+                        "Str.Module.SupplierStatement", p, "SupplierId")
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+@@@@
+AccountStatement
+                    Generate = (services, p) =>
+                    {
+                        var accountId = p.TryGetValue("AccountId", out var av) && av is int aid ? aid : 0;
+                        if (accountId == 0) return Result.Fail<ReportResult>("اختر حساباً");
+
+                        var accountResult = services.GetRequiredService<IAccountService>().GetById(accountId);
+                        if (!accountResult.IsSuccess) return Result.Fail<ReportResult>(accountResult.ErrorMessage);
+
+                        return BuildStatement((_, from, to) => services.GetRequiredService<IAccountService>().GetStatement(accountResult.Value.Code, from, to),
+                            "Str.Module.AccountStatement", p, "AccountId");
+                    }
+@@@@
+ItemCard
+                    Generate = (services, p) =>
+                    {
+                        var productId = p.TryGetValue("ProductId", out var pv) && pv is int pid ? pid : 0;
+                        if (productId == 0) return Result.Fail<ReportResult>("اختر صنفاً");
+
+                        var productResult = services.GetRequiredService<IProductService>().GetById(productId);
+                        if (!productResult.IsSuccess) return Result.Fail<ReportResult>("الصنف غير موجود");
+                        var product = productResult.Value;
+
+                        var history = services.GetRequiredService<IStockService>().GetHistory(product.Id, null);
+                        if (!history.IsSuccess) return Result.Fail<ReportResult>(history.ErrorMessage);
+
+                        var rows = history.Value.Select(m => new ItemCardRow
+                        {
+                            Date = m.MovementDate.ToString("yyyy-MM-dd"), MovementType = m.MovementType.ToString(),
+                            Qty = m.Qty, UnitCost = m.UnitCost, BalanceAfter = m.BalanceAfter, SourceDoc = m.SourceDocNo
+                        }).ToList();
+
+                        return Result.Ok(new ReportResult
+                        {
+                            Title = $"{LocalizationService.Get("Str.Module.ItemCard")} — {product.Name}",
+                            Columns = new()
+                            {
+                                new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(ItemCardRow.Date), Width = 100 },
+                                new() { Header = LocalizationService.Get("Str.MovementType"), Binding = nameof(ItemCardRow.MovementType), Width = 90 },
+                                new() { Header = LocalizationService.Get("Str.Qty"), Binding = nameof(ItemCardRow.Qty), Width = 90, Align = ColumnAlign.Center, Format = "N2" },
+                                new() { Header = LocalizationService.Get("Str.UnitCost"), Binding = nameof(ItemCardRow.UnitCost), Width = 100, Align = ColumnAlign.Center, Format = "N2" },
+                                new() { Header = LocalizationService.Get("Str.RunningBalance"), Binding = nameof(ItemCardRow.BalanceAfter), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                                new() { Header = LocalizationService.Get("Str.SourceDoc"), Binding = nameof(ItemCardRow.SourceDoc), Width = 140, IsStarWidth = true },
+                            },
+                            Rows = rows
+                        });
+                    }
+@@@@
+IncomeStatement
+                    Generate = (services, p) =>
+                    {
+                        var statements = services.GetRequiredService<IFinancialStatementService>();
+                        var from = (DateTime)(p["From"] ?? DateTime.Today.AddMonths(-1));
+                        var to = (DateTime)(p["To"] ?? DateTime.Today);
+
+                        var result = statements.IncomeStatement(from, to);
+                        if (!result.IsSuccess) return Result.Fail<ReportResult>(result.ErrorMessage);
+
+                        return Result.Ok(new ReportResult
+                        {
+                            Title = LocalizationService.Get("Str.Module.IncomeStatement"),
+                            Columns = FinancialStatementColumns.Build(),
+                            RowKind = F.RowKind,
+                            AlternatingRows = false,
+                            Rows = result.Value.Rows,
+                            Totals = result.Value.Totals
+                        });
+                    }
+@@@@
+BalanceSheet
+                    Generate = (services, p) =>
+                    {
+                        var statements = services.GetRequiredService<IFinancialStatementService>();
+                        var asOf = (DateTime)(p["AsOf"] ?? DateTime.Today);
+
+                        var result = statements.BalanceSheet(asOf);
+                        if (!result.IsSuccess) return Result.Fail<ReportResult>(result.ErrorMessage);
+
+                        return Result.Ok(new ReportResult
+                        {
+                            Title = LocalizationService.Get("Str.Module.BalanceSheet"),
+                            Columns = FinancialStatementColumns.Build(),
+                            RowKind = F.RowKind,
+                            AlternatingRows = false,
+                            Rows = result.Value.Rows,
+                            Totals = result.Value.Totals
+                        });
+                    }
+@@@@
+CashFlow
+                    Generate = (services, p) =>
+                    {
+                        var statements = services.GetRequiredService<IFinancialStatementService>();
+                        var from = (DateTime)(p["From"] ?? DateTime.Today.AddMonths(-1));
+                        var to = (DateTime)(p["To"] ?? DateTime.Today);
+
+                        var result = statements.CashFlow(from, to);
+                        if (!result.IsSuccess) return Result.Fail<ReportResult>(result.ErrorMessage);
+
+                        return Result.Ok(new ReportResult
+                        {
+                            Title = LocalizationService.Get("Str.Module.CashFlow"),
+                            Columns = FinancialStatementColumns.Build(),
+                            RowKind = F.RowKind,
+                            AlternatingRows = false,
+                            Rows = result.Value.Rows,
+                            Totals = result.Value.Totals
+                        });
+                    }
+@@@@
+StockReport
+                    Generate = (services, p) =>
+                    {
+                        var from = (DateTime)(p["From"] ?? DateTime.Today.AddMonths(-1));
+                        var to = (DateTime)(p["To"] ?? DateTime.Today);
+                        int? warehouseId = p.TryGetValue("WarehouseId", out var w) && w is int wi ? wi : null;
+
+                        var movements = services.GetRequiredService<IStockService>().GetMovements(from, to, warehouseId);
+                        if (!movements.IsSuccess) return Result.Fail<ReportResult>(movements.ErrorMessage);
+
+                        var products = services.GetRequiredService<IProductService>();
+                        var warehouses = services.GetRequiredService<IWarehouseService>().GetAll();
+                        var warehouseNames = warehouses.IsSuccess ? warehouses.Value.ToDictionary(x => x.Id, x => x.Name) : new();
+
+                        var rows = movements.Value.Select(m =>
+                        {
+                            var product = products.GetById(m.ProductId);
+                            return new StockMovementRow
+                            {
+                                Date = m.MovementDate.ToString("yyyy-MM-dd"), ProductCode = product.IsSuccess ? product.Value.Code : null,
+                                ProductName = product.IsSuccess ? product.Value.Name : null,
+                                WarehouseName = warehouseNames.TryGetValue(m.WarehouseId, out var wn) ? wn : "-",
+                                MovementType = m.MovementType.ToString(), Qty = m.Qty, BalanceAfter = m.BalanceAfter
+                            };
+                        }).ToList();
+
+                        return Result.Ok(new ReportResult
+                        {
+                            Title = LocalizationService.Get("Str.Module.StockReport"),
+                            Columns = new()
+                            {
+                                new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(StockMovementRow.Date), Width = 100 },
+                                new() { Header = LocalizationService.Get("Str.Product"), Binding = nameof(StockMovementRow.ProductName), Width = 200, IsStarWidth = true },
+                                new() { Header = LocalizationService.Get("Str.Warehouse"), Binding = nameof(StockMovementRow.WarehouseName), Width = 140 },
+                                new() { Header = LocalizationService.Get("Str.MovementType"), Binding = nameof(StockMovementRow.MovementType), Width = 90 },
+                                new() { Header = LocalizationService.Get("Str.Qty"), Binding = nameof(StockMovementRow.Qty), Width = 90, Align = ColumnAlign.Center, Format = "N2" },
+                                new() { Header = LocalizationService.Get("Str.RunningBalance"), Binding = nameof(StockMovementRow.BalanceAfter), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                            },
+                            Rows = rows
+                        });
+                    }
+@@@@
+SalesReport
+                    Generate = (services, p) =>
+                    {
+                        var from = (DateTime)(p["From"] ?? DateTime.Today.AddMonths(-1));
+                        var to = (DateTime)(p["To"] ?? DateTime.Today);
+
+                        var result = services.GetRequiredService<ISalesInvoiceService>().GetPaged(1, 5000);
+                        if (!result.IsSuccess) return Result.Fail<ReportResult>(result.ErrorMessage);
+
+                        var rows = result.Value.Items.Where(i => i.InvoiceDate.Date >= from.Date && i.InvoiceDate.Date <= to.Date)
+                            .Select(i => new SalesReportRow { InvoiceNo = i.InvoiceNo, Date = i.InvoiceDate.ToString("yyyy-MM-dd"), PartyName = i.CustomerName, NetTotal = i.NetTotal })
+                            .ToList();
+
+                        return Result.Ok(new ReportResult
+                        {
+                            Title = LocalizationService.Get("Str.Module.SalesReport"),
+                            Columns = new()
+                            {
+                                new() { Header = LocalizationService.Get("Str.InvoiceNo"), Binding = nameof(SalesReportRow.InvoiceNo), Width = 110 },
+                                new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(SalesReportRow.Date), Width = 100 },
+                                new() { Header = LocalizationService.Get("Str.Customer"), Binding = nameof(SalesReportRow.PartyName), Width = 220, IsStarWidth = true },
+                                new() { Header = LocalizationService.Get("Str.NetTotal"), Binding = nameof(SalesReportRow.NetTotal), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
+                            },
+                            Rows = rows,
+                            Totals = new() { ["Total"] = $"{LocalizationService.Get("Str.Total")}: {rows.Sum(r => r.NetTotal):N2}" }
+                        });
+                    }

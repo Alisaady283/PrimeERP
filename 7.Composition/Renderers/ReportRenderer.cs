@@ -9,6 +9,7 @@ using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Components.Layout;
 using PrimeERP.UI.Services;
+using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Composition.Renderers
 {
@@ -50,7 +51,8 @@ namespace PrimeERP.Composition.Renderers
             var totalsText = new TextBlock { Margin = new Thickness(24, 8, 24, 8), FontWeight = FontWeights.SemiBold };
 
             // نتيجة آخر تشغيل — أزرار الطباعة والتصدير تعمل عليها، ومعطَّلة قبل أول تشغيل.
-            ReportResult current = null;
+            PrimeERP.Application.Reporting.ReportData current = null;
+            string currentTitle = null;
             List<object> Rows() => ((System.Collections.IEnumerable)current.Rows).Cast<object>().ToList();
 
             var view = $"{definition.PermissionPrefix}.View";
@@ -59,11 +61,11 @@ namespace PrimeERP.Composition.Renderers
                 ButtonsSource = new List<PrimeERP.UI.Components.Actions.ToolbarAction>
                 {
                     PrimeERP.UI.Components.Actions.ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(
-                        _ => ListOutput.Print(services, current.Title, current.Columns, Rows()),
+                        _ => ListOutput.Print(services, currentTitle, report.Columns, Rows()),
                         _ => current != null), view, "طباعة التقرير"),
 
                     PrimeERP.UI.Components.Actions.ToolbarAction.Export(new PrimeERP.UI.ViewModels.RelayCommand(
-                        _ => ListOutput.Export(services, current.Title, current.Columns, Rows()),
+                        _ => ListOutput.Export(services, currentTitle, report.Columns, Rows()),
                         _ => current != null), view, "تصدير التقرير"),
                 }
             };
@@ -74,16 +76,25 @@ namespace PrimeERP.Composition.Renderers
                 foreach (var p in report.Parameters)
                     paramValues[p.Key] = DialogRenderer.GetControlValue(controls[p.Key], p.Kind);
 
-                var result = report.Generate(services, paramValues);
+                var result = Run(report, services, paramValues);
                 if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
 
                 current = result.Value;
-                resultGrid.RowHighlightSelector = result.Value.RowKind;
-                resultGrid.UseAlternatingRows = result.Value.AlternatingRows;
-                resultGrid.ColumnsSource = result.Value.Columns;
-                resultGrid.ItemsSource = result.Value.Rows;
-                totalsText.Text = result.Value.Totals is { Count: > 0 }
-                    ? string.Join("   |   ", result.Value.Totals.Values)
+                currentTitle = LocalizationService.Get(report.TitleKey);
+
+                // عنوان يُكمِّله التقرير نفسه (اسم الصنف في بطاقة الصنف مثلاً) — مفتاحٌ في الإجماليات
+                // يُرفَع للعنوان بدل أن يبني كل تقرير عنوانه بكود.
+                if (report.TitleOverrideTotalKey != null &&
+                    current.Totals.TryGetValue(report.TitleOverrideTotalKey, out var suffix))
+                    currentTitle = $"{currentTitle} — {suffix}";
+
+                resultGrid.RowHighlightSelector = report.RowKind;
+                resultGrid.UseAlternatingRows = report.AlternatingRows;
+                resultGrid.ColumnsSource = report.Columns;
+                resultGrid.ItemsSource = current.Rows;
+                totalsText.Text = current.Totals is { Count: > 0 }
+                    ? string.Join("   |   ", current.Totals
+                        .Where(t => t.Key != report.TitleOverrideTotalKey).Select(t => t.Value))
                     : "";
             }
 
@@ -107,6 +118,38 @@ namespace PrimeERP.Composition.Renderers
             root.Loaded += (_, __) => RunReport();
 
             return root;
+        }
+
+        /// <summary>
+        /// ينفّذ التقرير المُعلَن: يحلّ خدمته، ويربط وسائط دالته بقيم بارامتراته بالاسم والترتيب، ثم
+        /// يستدعيها. لا كود لكل تقرير — طريقة واحدة يستوردها الثلاثة عشر وما يُبنى بعدها.
+        /// </summary>
+        public static Result<PrimeERP.Application.Reporting.ReportData> Run(
+            ReportDefinition report, IServiceProvider services, Dictionary<string, object> parameters)
+        {
+            var service = services.GetRequiredService(report.ServiceType);
+            var method = report.ServiceType.GetMethod(report.Method);
+
+            if (method == null)
+                return Result.Fail<PrimeERP.Application.Reporting.ReportData>(
+                    $"الخدمة {report.ServiceType.Name} بلا {report.Method}");
+
+            var signature = method.GetParameters();
+            var args = new object[signature.Length];
+
+            for (var i = 0; i < signature.Length; i++)
+            {
+                var key = i < report.Arguments.Length ? report.Arguments[i] : signature[i].Name;
+                parameters.TryGetValue(key, out var value);
+
+                var target = Nullable.GetUnderlyingType(signature[i].ParameterType) ?? signature[i].ParameterType;
+                args[i] = value == null
+                    ? (signature[i].ParameterType.IsValueType && Nullable.GetUnderlyingType(signature[i].ParameterType) == null
+                        ? Activator.CreateInstance(signature[i].ParameterType) : null)
+                    : Convert.ChangeType(value, target);
+            }
+
+            return (Result<PrimeERP.Application.Reporting.ReportData>)method.Invoke(service, args);
         }
     }
 }

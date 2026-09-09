@@ -45,8 +45,19 @@ namespace PrimeERP.Composition.Definitions
         public required string PermissionKey { get; init; }
         public List<ParameterDefinition> Parameters { get; init; } = new();
 
-        // المولِّد الفعلي — تنفيذ التقرير نفسه (استعلام/تجميع)، لا حاجة لآلية Reflection على اسم دالة خدمة؛
-        // كل تقرير سطور قليلة تستدعي خدمة موجودة فعلاً (JournalService.GetTrialBalance، إلخ).
-        public required Func<IServiceProvider, Dictionary<string, object>, PrimeERP.Domain.Results.Result<ReportResult>> Generate { get; init; }
+        /// <summary>
+        /// المصدر: خدمةٌ ودالةٌ فيها ووسائطها بأسماء البارامترات أعلاه بترتيب التوقيع. كانت هنا دالة
+        /// Generate تقبل كوداً، فسكن منطقُ الأعمال طبقةَ التسجيل — أي تعريفٍ يقبل كوداً سيمتلئ كوداً.
+        /// الدالة تُرجع Result&lt;ReportData&gt;: صفوفاً وإجماليات، بلا عرض.
+        /// </summary>
+        public required Type ServiceType { get; init; }
+        public required string Method { get; init; }
+        public string[] Arguments { get; init; } = System.Array.Empty<string>();
+
+        /// <summary>العرض: يبقى هنا لأنه تخطيط شاشة لا منطق.</summary>
+        public required List<GridColumn> Columns { get; init; }
+        public string TitleOverrideTotalKey { get; init; }
+        public Func<object, string> RowKind { get; init; }
+        public bool AlternatingRows { get; init; } = true;
     }
 }

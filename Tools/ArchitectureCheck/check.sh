@@ -352,6 +352,25 @@ echo "  التعليقات TEMPORARY المسجَّلة حالياً:"
 grep -rn "// TEMPORARY" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|^\./.claude/" | sed 's/^/       /'
 
 # ============================================================
+section "5.5 — منطق أعمال في طبقة التسجيل (8.Modules)"
+# ============================================================
+
+# 8.Modules تسجيلٌ إعلاني لا منطق: أي حساب أو تصنيف أو تجميع فيها يعني أن المنطق سكن الطبقة الخطأ.
+# اكتُشف فعلياً في تقارير القوائم المالية — ٧٨ سطر حساب داخل دوال Generate، لأن التعريف كان يقبل دالة.
+# الاستثناءات: البذور (بيانات تجريبية) والصلاحيات (تُولَّد من الوحدات لا تُحسب).
+n=$(grep -rnE '\.(Sum|GroupBy|Average|Aggregate)\(' --include="*.cs" 8.Modules 2>/dev/null     | grep -vE 'DemoDataSeeder|PermissionModuleRegistrations' | wc -l)
+if [ "$n" -gt 0 ]; then
+  fail "منطق حساب/تجميع في 8.Modules ($n موضع) — مكانه خدمةٌ في 4.Application:"
+  grep -rnE '\.(Sum|GroupBy|Average|Aggregate)\(' --include="*.cs" 8.Modules 2>/dev/null     | grep -vE 'DemoDataSeeder|PermissionModuleRegistrations' | head -8 | sed 's/^/       /'
+else pass; fi
+
+# تعريفٌ يقبل دالةً يمتلئ كوداً — لا Func في تعريفات التقارير والوحدات عدا ما هو عرضٌ صريح (RowKind).
+n=$(grep -rnE 'Generate\s*=' --include="*.cs" 8.Modules 2>/dev/null | wc -l)
+if [ "$n" -gt 0 ]; then
+  fail "دالة Generate في تسجيل تقرير ($n موضع) — التقرير يُعلَن بخدمته ودالتها لا بكود:"
+else pass; fi
+
+# ============================================================
 section "6 — قيم بصرية حرفية (6.UI/7.Composition)"
 # ============================================================
 
