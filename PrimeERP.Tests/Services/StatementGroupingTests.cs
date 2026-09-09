@@ -7,7 +7,7 @@ using PrimeERP.Domain.Enums;
 using PrimeERP.Modules;
 using PrimeERP.Platform.Permissions;
 using Xunit;
-using F = PrimeERP.Modules.FinancialStatementFactory;
+using F = PrimeERP.Application.Reporting.FinancialStatementFactory;
 
 namespace PrimeERP.Tests.Services
 {

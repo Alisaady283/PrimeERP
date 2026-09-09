@@ -95,6 +95,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<INumberSequenceService, NumberSequenceService>();
             services.AddSingleton<IAccountService, AccountService>();
             services.AddSingleton<IJournalService, JournalService>();
+            services.AddSingleton<PrimeERP.Application.Reporting.IFinancialStatementService, PrimeERP.Application.Reporting.FinancialStatementService>();
             services.AddSingleton<IFiscalPeriodService, FiscalPeriodService>();
             services.AddSingleton<ICustomerService, CustomerService>();
             services.AddSingleton<ISupplierService, SupplierService>();

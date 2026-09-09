@@ -3,15 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Domain.Enums;
-using PrimeERP.Platform.Localization;
-using PrimeERP.UI.Components.Display;
 
-namespace PrimeERP.Modules
+namespace PrimeERP.Application.Reporting
 {
     /// <summary>
     /// القوائم المالية بشكلها الرسمي: البيان، جزئي، كلي. البنود تُكتب في «جزئي» والمجاميع في «كلي»،
     /// والتدرّج بالإزاحة — فتُقرأ كقائمة محاسبية لا كجدول أرصدة. قطعة واحدة تستوردها قائمة الدخل
-    /// والمركز المالي والتدفقات، فلا يبقى لكلٍّ تخطيطه.
+    /// والمركز المالي والتدفقات، فلا يبقى لكلٍّ تخطيطه. تسكن طبقة التطبيق لأنها منطق محاسبي — تصنيفُ
+    /// الحسابات بطبيعتها المدينة/الدائنة وتجميعُها عند مستوى القراءة — لا تخطيطَ شاشة.
     /// </summary>
     public static class FinancialStatementFactory
     {
@@ -97,15 +96,6 @@ namespace PrimeERP.Modules
         public static Func<string, bool> StartsWithBut(string prefix, string excluded) =>
             code => code != null && code.StartsWith(prefix, StringComparison.Ordinal) &&
                     (string.IsNullOrWhiteSpace(excluded) || !code.StartsWith(excluded, StringComparison.Ordinal));
-
-        // ===== الأعمدة =====
-
-        public static List<GridColumn> Columns() => new()
-        {
-            new() { Header = "البيان", Binding = nameof(Line.Statement), Width = 320, IsStarWidth = true },
-            new() { Header = "جزئي",   Binding = nameof(Line.Partial), Width = 150, Align = ColumnAlign.Center, Format = "N2" },
-            new() { Header = "كلي",    Binding = nameof(Line.Total),   Width = 150, Align = ColumnAlign.Center, Format = "N2" },
-        };
 
         private static string Repeat(int level) => string.Concat(Enumerable.Repeat(Indent, Math.Max(0, level)));
     }
