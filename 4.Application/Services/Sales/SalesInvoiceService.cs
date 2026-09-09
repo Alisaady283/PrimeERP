@@ -22,7 +22,7 @@ namespace PrimeERP.Application.Services.Sales
     // الفاتورة تُرحَّل ذرّياً عند الإنشاء (سطور + حركة مخزون صادرة لكل سطر + قيد يومية مُرحَّل) داخل معاملة
     // واحدة — بلا حالة "مسودة" منفصلة (النطاق الحالي لا يعرض زر ترحيل مستقل في الواجهة بعد؛ راجع Journal
     // التي لها نفس الفجوة). Update/Delete مرفوضتان دائماً بعد الإنشاء، بنفس منطق Journal.PostedCannotEdit.
-    public class SalesInvoiceService : ISalesInvoiceService
+    public class SalesInvoiceService : ServiceBase, ISalesInvoiceService
     {
         private readonly ISalesInvoiceRepository _invoices;
         private readonly IProductRepository _products;
@@ -31,23 +31,24 @@ namespace PrimeERP.Application.Services.Sales
         private readonly IStockService _stock;
         private readonly IJournalService _journal;
         private readonly INumberSequenceService _numbers;
-        private readonly IPermissionService _permissions;
-        private readonly ISettingsProvider _settings;
-        private readonly IAuditLogger _audit;
 
         public SalesInvoiceService(ISalesInvoiceRepository invoices, IProductRepository products, ICustomerService customers,
             IWarehouseService warehouses, IStockService stock, IJournalService journal, INumberSequenceService numbers,
-            IPermissionService permissions, ISettingsProvider settings, IAuditLogger audit)
+            IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+            : base(permissions, settings, localization, audit)
         {
             _invoices = invoices; _products = products; _customers = customers; _warehouses = warehouses;
-            _stock = stock; _journal = journal; _numbers = numbers; _permissions = permissions; _settings = settings; _audit = audit;
+            _stock = stock; _journal = journal; _numbers = numbers;
         }
 
-        private bool Can(string action) => _permissions.Can($"Sales.{action}");
+        protected override string PermissionPrefix => "Sales";
+        protected override string StringPrefix => "Str.SalesInvoice";
+        protected override string EntityName => "SalesInvoices";
+
 
         public Result<PagedResult<SalesInvoiceDto>> GetPaged(int page, int pageSize, SalesInvoiceFilter filter = null)
         {
-            if (!Can("View")) return Result.Fail<PagedResult<SalesInvoiceDto>>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<PagedResult<SalesInvoiceDto>>();
             filter ??= new SalesInvoiceFilter();
 
             var (items, total) = _invoices.GetPaged(page, pageSize, filter.SearchText, filter.CustomerId, filter.SortBy, filter.SortDescending);
@@ -56,7 +57,7 @@ namespace PrimeERP.Application.Services.Sales
 
         public Result<SalesInvoiceDetailDto> GetById(int id)
         {
-            if (!Can("View")) return Result.Fail<SalesInvoiceDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<SalesInvoiceDetailDto>();
 
             var invoice = _invoices.GetById(id);
             if (invoice == null) return Result.Fail<SalesInvoiceDetailDto>("الفاتورة غير موجودة", ErrorCode.NotFound);
@@ -84,7 +85,7 @@ namespace PrimeERP.Application.Services.Sales
 
         public Result<SalesInvoiceDetailDto> Create(CreateSalesInvoiceDto dto)
         {
-            if (!Can("Create")) return Result.Fail<SalesInvoiceDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("Create")) return FailDenied<SalesInvoiceDetailDto>();
             if (dto.Lines == null || dto.Lines.Count == 0) return Result.Fail<SalesInvoiceDetailDto>("الفاتورة تحتاج سطراً واحداً على الأقل", ErrorCode.ValidationFailed);
 
             var customer = _customers.GetById(dto.CustomerId);
@@ -119,11 +120,11 @@ namespace PrimeERP.Application.Services.Sales
             var netTotal = resolvedLines.Sum(x => x.Line.NetAmount);
             var totalCost = resolvedLines.Sum(x => x.Line.Qty * x.UnitCost);
 
-            var salesAccount = _settings.Get(SettingKeys.Accounts.Sales, "");
-            var vatAccount = _settings.Get(SettingKeys.Accounts.VATOutput, "");
-            var withholdingAccount = _settings.Get(SettingKeys.Accounts.WithholdingReceivable, "");
-            var cogsAccount = _settings.Get(SettingKeys.Accounts.COGS, "");
-            var inventoryAccount = _settings.Get(SettingKeys.Accounts.Inventory, "");
+            var salesAccount = Settings.Get(SettingKeys.Accounts.Sales, "");
+            var vatAccount = Settings.Get(SettingKeys.Accounts.VATOutput, "");
+            var withholdingAccount = Settings.Get(SettingKeys.Accounts.WithholdingReceivable, "");
+            var cogsAccount = Settings.Get(SettingKeys.Accounts.COGS, "");
+            var inventoryAccount = Settings.Get(SettingKeys.Accounts.Inventory, "");
             if (string.IsNullOrWhiteSpace(salesAccount) || string.IsNullOrWhiteSpace(cogsAccount) || string.IsNullOrWhiteSpace(inventoryAccount))
                 return Result.Fail<SalesInvoiceDetailDto>("حسابات المبيعات/التكلفة/المخزون غير مضبوطة في الإعدادات", ErrorCode.ValidationFailed);
             if (vatAmount > 0 && string.IsNullOrWhiteSpace(vatAccount))
@@ -134,7 +135,7 @@ namespace PrimeERP.Application.Services.Sales
             int invoiceId;
             try
             {
-                var simplifiedFlow = _settings.Get(SettingKeys.Documents.SimplifiedFlow, true);
+                var simplifiedFlow = Settings.Get(SettingKeys.Documents.SimplifiedFlow, true);
                 invoiceId = Db.RunTransaction((conn, tx) =>
                 {
                     var invoiceNo = _numbers.Next(conn, tx, "SalesInvoice");
@@ -188,7 +189,7 @@ namespace PrimeERP.Application.Services.Sales
                 return Result.Fail<SalesInvoiceDetailDto>(ex.Message, ErrorCode.ValidationFailed);
             }
 
-            _audit.Log("SalesInvoices", invoiceId, AuditAction.Insert, newValue: new { CustomerId = dto.CustomerId, NetTotal = netTotal });
+            Audit.Log("SalesInvoices", invoiceId, AuditAction.Insert, newValue: new { CustomerId = dto.CustomerId, NetTotal = netTotal });
 
             // رصيد العميل عمود مخزَّن (Customer.Balance) لا يُعاد حسابه تلقائياً عند ترحيل قيد — بعد التزام
             // المعاملة أعلاه فقط (RecalculateBalance يفتح اتصالاً جديداً، يحتاج القيد ملتزَماً ليراه). فشلها

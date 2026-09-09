@@ -633,71 +633,11 @@ namespace PrimeERP.Modules
                 }
             });
 
-            registry.Register(new ModuleDefinition
-            {
-                Key = "StockIn", TitleKey = "Str.Module.StockIn", PermissionPrefix = "Inventory", ViewModelType = typeof(StockInViewModel),
-                FlowScope = FlowScope.SimplifiedOnly,
-                Columns = new()
-                {
-                    new() { Header = LocalizationService.Get("Str.DocNo"), Binding = nameof(StockAdjustmentDto.DocNo), Width = 110 },
-                    new() { Header = LocalizationService.Get("Str.InvoiceDate"), Binding = nameof(StockAdjustmentDto.MovementDate), Width = 110, Format = "yyyy-MM-dd" },
-                    new() { Header = LocalizationService.Get("Str.Warehouse"), Binding = nameof(StockAdjustmentDto.WarehouseName), Width = 200, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Qty"), Binding = nameof(StockAdjustmentDto.TotalQty), Width = 100, Align = ColumnAlign.Center, Format = "N2" },
-                },
-                DocumentDialog = new DocumentDialogDefinition
-                {
-                    PrintTitle = "إذن إضافة مخزني",
-                    TitleKey = "Str.StockIn.Add", TitleEditKey = "Str.StockIn.Edit",
-                    ServiceType = typeof(IStockInService), DtoType = typeof(CreateStockAdjustmentDto), LineDtoType = typeof(CreateStockAdjustmentLineDto),
-                    LinesPropertyName = nameof(CreateStockAdjustmentDto.Lines),
-                    HeaderFields = new()
-                    {
-                        new() { Key = nameof(CreateStockAdjustmentDto.MovementDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
-                        new() { Key = nameof(CreateStockAdjustmentDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
-                        new() { Key = nameof(CreateStockAdjustmentDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
-                    },
-                    LineFields = new()
-                    {
-                        new() { Key = nameof(CreateStockAdjustmentLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
-                        new() { Key = nameof(CreateStockAdjustmentLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
-                        new() { Key = nameof(CreateStockAdjustmentLineDto.UnitCost), Header = LocalizationService.Get("Str.UnitCost"), Kind = FieldKind.Number, Width = 100 },
-                        new() { Key = nameof(CreateStockAdjustmentLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
-                    }
-                }
-            });
+            StockDocumentFactory.Register(registry, "StockIn", "Str.Module.StockIn", typeof(StockInViewModel), typeof(IStockInService),
+                FlowScope.SimplifiedOnly, printTitle: "إذن إضافة مخزني", addTitleKey: "Str.StockIn.Add", editTitleKey: "Str.StockIn.Edit");
 
-            registry.Register(new ModuleDefinition
-            {
-                Key = "StockOut", TitleKey = "Str.Module.StockOut", PermissionPrefix = "Inventory", ViewModelType = typeof(StockOutViewModel),
-                FlowScope = FlowScope.SimplifiedOnly,
-                Columns = new()
-                {
-                    new() { Header = LocalizationService.Get("Str.DocNo"), Binding = nameof(StockAdjustmentDto.DocNo), Width = 110 },
-                    new() { Header = LocalizationService.Get("Str.InvoiceDate"), Binding = nameof(StockAdjustmentDto.MovementDate), Width = 110, Format = "yyyy-MM-dd" },
-                    new() { Header = LocalizationService.Get("Str.Warehouse"), Binding = nameof(StockAdjustmentDto.WarehouseName), Width = 200, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Qty"), Binding = nameof(StockAdjustmentDto.TotalQty), Width = 100, Align = ColumnAlign.Center, Format = "N2" },
-                },
-                DocumentDialog = new DocumentDialogDefinition
-                {
-                    PrintTitle = "إذن صرف مخزني",
-                    TitleKey = "Str.StockOut.Add", TitleEditKey = "Str.StockOut.Edit",
-                    ServiceType = typeof(IStockOutService), DtoType = typeof(CreateStockAdjustmentDto), LineDtoType = typeof(CreateStockAdjustmentLineDto),
-                    LinesPropertyName = nameof(CreateStockAdjustmentDto.Lines),
-                    HeaderFields = new()
-                    {
-                        new() { Key = nameof(CreateStockAdjustmentDto.MovementDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
-                        new() { Key = nameof(CreateStockAdjustmentDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
-                        new() { Key = nameof(CreateStockAdjustmentDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
-                    },
-                    LineFields = new()
-                    {
-                        new() { Key = nameof(CreateStockAdjustmentLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
-                        new() { Key = nameof(CreateStockAdjustmentLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
-                        new() { Key = nameof(CreateStockAdjustmentLineDto.UnitCost), Header = LocalizationService.Get("Str.UnitCost"), Kind = FieldKind.Number, Width = 100 },
-                        new() { Key = nameof(CreateStockAdjustmentLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
-                    }
-                }
-            });
+            StockDocumentFactory.Register(registry, "StockOut", "Str.Module.StockOut", typeof(StockOutViewModel), typeof(IStockOutService),
+                FlowScope.SimplifiedOnly, printTitle: "إذن صرف مخزني", addTitleKey: "Str.StockOut.Add", editTitleKey: "Str.StockOut.Edit");
 
             registry.Register(new ModuleDefinition
             {

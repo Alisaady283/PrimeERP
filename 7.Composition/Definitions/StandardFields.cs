@@ -17,6 +17,14 @@ namespace PrimeERP.Composition.Definitions
             new() { Key = "UpdatedAt", LabelKey = "Str.UpdatedAt", Kind = FieldKind.ReadOnly, DisplayFormat = "yyyy-MM-dd HH:mm" },
         };
 
+        /// <summary>مدى التاريخ: بارامترا كل تقرير مؤرَّخ. كانا مكتوبين بنصّهما في تسع تقارير، فتغيير
+        /// المدى الافتراضي كان يعني تعديل تسعة مواضع.</summary>
+        public static List<ParameterDefinition> DateRange(int monthsBack = 1) => new()
+        {
+            new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = System.DateTime.Today.AddMonths(-monthsBack) },
+            new() { Key = "To",   LabelKey = "Str.DateTo",   Kind = FieldKind.Date, DefaultValue = System.DateTime.Today },
+        };
+
         public static List<GridColumn> AuditColumns() => new()
         {
             new() { Header = LocalizationService.Get("Str.Status"), Binding = "StatusText" },

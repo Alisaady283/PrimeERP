@@ -21,7 +21,7 @@ namespace PrimeERP.Application.Services.Purchasing
 {
     // نسخة طبق الأصل من SalesInvoiceService — الفرق: Debit Inventory (لا COGS، الشراء يُرسمَل في المخزون
     // مباشرة بسعر الشراء)، Debit VATInput (لا VATOutput)، Credit المورد (لا Debit العميل)، حركة مخزون In (لا Out).
-    public class PurchaseInvoiceService : IPurchaseInvoiceService
+    public class PurchaseInvoiceService : ServiceBase, IPurchaseInvoiceService
     {
         private readonly IPurchaseInvoiceRepository _invoices;
         private readonly IProductRepository _products;
@@ -29,23 +29,24 @@ namespace PrimeERP.Application.Services.Purchasing
         private readonly IStockService _stock;
         private readonly IJournalService _journal;
         private readonly INumberSequenceService _numbers;
-        private readonly IPermissionService _permissions;
-        private readonly ISettingsProvider _settings;
-        private readonly IAuditLogger _audit;
 
         public PurchaseInvoiceService(IPurchaseInvoiceRepository invoices, IProductRepository products, ISupplierService suppliers,
             IStockService stock, IJournalService journal, INumberSequenceService numbers,
-            IPermissionService permissions, ISettingsProvider settings, IAuditLogger audit)
+            IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+            : base(permissions, settings, localization, audit)
         {
             _invoices = invoices; _products = products; _suppliers = suppliers;
-            _stock = stock; _journal = journal; _numbers = numbers; _permissions = permissions; _settings = settings; _audit = audit;
+            _stock = stock; _journal = journal; _numbers = numbers;
         }
 
-        private bool Can(string action) => _permissions.Can($"Purchases.{action}");
+        protected override string PermissionPrefix => "Purchases";
+        protected override string StringPrefix => "Str.PurchaseInvoice";
+        protected override string EntityName => "PurchaseInvoices";
+
 
         public Result<PagedResult<PurchaseInvoiceDto>> GetPaged(int page, int pageSize, PurchaseInvoiceFilter filter = null)
         {
-            if (!Can("View")) return Result.Fail<PagedResult<PurchaseInvoiceDto>>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<PagedResult<PurchaseInvoiceDto>>();
             filter ??= new PurchaseInvoiceFilter();
 
             var (items, total) = _invoices.GetPaged(page, pageSize, filter.SearchText, filter.SupplierId, filter.SortBy, filter.SortDescending);
@@ -54,7 +55,7 @@ namespace PrimeERP.Application.Services.Purchasing
 
         public Result<PurchaseInvoiceDetailDto> GetById(int id)
         {
-            if (!Can("View")) return Result.Fail<PurchaseInvoiceDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<PurchaseInvoiceDetailDto>();
 
             var invoice = _invoices.GetById(id);
             if (invoice == null) return Result.Fail<PurchaseInvoiceDetailDto>("الفاتورة غير موجودة", ErrorCode.NotFound);
@@ -82,7 +83,7 @@ namespace PrimeERP.Application.Services.Purchasing
 
         public Result<PurchaseInvoiceDetailDto> Create(CreatePurchaseInvoiceDto dto)
         {
-            if (!Can("Create")) return Result.Fail<PurchaseInvoiceDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("Create")) return FailDenied<PurchaseInvoiceDetailDto>();
             if (dto.Lines == null || dto.Lines.Count == 0) return Result.Fail<PurchaseInvoiceDetailDto>("الفاتورة تحتاج سطراً واحداً على الأقل", ErrorCode.ValidationFailed);
 
             var supplier = _suppliers.GetById(dto.SupplierId);
@@ -116,9 +117,9 @@ namespace PrimeERP.Application.Services.Purchasing
             var withholdingAmount = resolvedLines.Sum(x => x.WithholdingAmount);
             var netTotal = resolvedLines.Sum(x => x.NetAmount);
 
-            var inventoryAccount = _settings.Get(SettingKeys.Accounts.Inventory, "");
-            var vatAccount = _settings.Get(SettingKeys.Accounts.VATInput, "");
-            var withholdingAccount = _settings.Get(SettingKeys.Accounts.WithholdingPayable, "");
+            var inventoryAccount = Settings.Get(SettingKeys.Accounts.Inventory, "");
+            var vatAccount = Settings.Get(SettingKeys.Accounts.VATInput, "");
+            var withholdingAccount = Settings.Get(SettingKeys.Accounts.WithholdingPayable, "");
             if (string.IsNullOrWhiteSpace(inventoryAccount))
                 return Result.Fail<PurchaseInvoiceDetailDto>("حساب المخزون غير مضبوط في الإعدادات", ErrorCode.ValidationFailed);
             if (vatAmount > 0 && string.IsNullOrWhiteSpace(vatAccount))
@@ -129,7 +130,7 @@ namespace PrimeERP.Application.Services.Purchasing
             int invoiceId;
             try
             {
-                var simplifiedFlow = _settings.Get(SettingKeys.Documents.SimplifiedFlow, true);
+                var simplifiedFlow = Settings.Get(SettingKeys.Documents.SimplifiedFlow, true);
                 invoiceId = Db.RunTransaction((conn, tx) =>
                 {
                     var invoiceNo = _numbers.Next(conn, tx, "PurchaseInvoice");
@@ -181,7 +182,7 @@ namespace PrimeERP.Application.Services.Purchasing
                 return Result.Fail<PurchaseInvoiceDetailDto>(ex.Message, ErrorCode.ValidationFailed);
             }
 
-            _audit.Log("PurchaseInvoices", invoiceId, AuditAction.Insert, newValue: new { SupplierId = dto.SupplierId, NetTotal = netTotal });
+            Audit.Log("PurchaseInvoices", invoiceId, AuditAction.Insert, newValue: new { SupplierId = dto.SupplierId, NetTotal = netTotal });
 
             // نفس ملاحظة SalesInvoiceService — Supplier.Balance عمود مخزَّن، يُعاد حسابه بعد التزام المعاملة فقط.
             _suppliers.RecalculateBalance(dto.SupplierId);

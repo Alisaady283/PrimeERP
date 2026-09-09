@@ -21,7 +21,7 @@ namespace PrimeERP.Application.Services.Sales
 {
     // عكس SalesInvoiceService حرفياً: Credit العميل (تخفيض مديونيته)، Debit المبيعات (عكس الإيراد)، Debit
     // VATOutput (عكس الضريبة المُحصَّلة)، Credit COGS/Debit Inventory (البضاعة ترجع للمخزون). حركة مخزون In.
-    public class SalesReturnService : ISalesReturnService
+    public class SalesReturnService : ServiceBase, ISalesReturnService
     {
         private readonly ISalesReturnRepository _returns;
         private readonly IProductRepository _products;
@@ -29,23 +29,24 @@ namespace PrimeERP.Application.Services.Sales
         private readonly IStockService _stock;
         private readonly IJournalService _journal;
         private readonly INumberSequenceService _numbers;
-        private readonly IPermissionService _permissions;
-        private readonly ISettingsProvider _settings;
-        private readonly IAuditLogger _audit;
 
         public SalesReturnService(ISalesReturnRepository returns, IProductRepository products, ICustomerService customers,
             IStockService stock, IJournalService journal, INumberSequenceService numbers,
-            IPermissionService permissions, ISettingsProvider settings, IAuditLogger audit)
+            IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+            : base(permissions, settings, localization, audit)
         {
             _returns = returns; _products = products; _customers = customers;
-            _stock = stock; _journal = journal; _numbers = numbers; _permissions = permissions; _settings = settings; _audit = audit;
+            _stock = stock; _journal = journal; _numbers = numbers;
         }
 
-        private bool Can(string action) => _permissions.Can($"Sales.{action}");
+        protected override string PermissionPrefix => "Sales";
+        protected override string StringPrefix => "Str.SalesReturn";
+        protected override string EntityName => "SalesReturns";
+
 
         public Result<PagedResult<SalesReturnDto>> GetPaged(int page, int pageSize, SalesReturnFilter filter = null)
         {
-            if (!Can("View")) return Result.Fail<PagedResult<SalesReturnDto>>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<PagedResult<SalesReturnDto>>();
             filter ??= new SalesReturnFilter();
 
             var (items, total) = _returns.GetPaged(page, pageSize, filter.SearchText, filter.CustomerId, filter.SortBy, filter.SortDescending);
@@ -54,7 +55,7 @@ namespace PrimeERP.Application.Services.Sales
 
         public Result<SalesReturnDetailDto> GetById(int id)
         {
-            if (!Can("View")) return Result.Fail<SalesReturnDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<SalesReturnDetailDto>();
 
             var ret = _returns.GetById(id);
             if (ret == null) return Result.Fail<SalesReturnDetailDto>("المرتجع غير موجود", ErrorCode.NotFound);
@@ -80,7 +81,7 @@ namespace PrimeERP.Application.Services.Sales
 
         public Result<SalesReturnDetailDto> Create(CreateSalesReturnDto dto)
         {
-            if (!Can("Create")) return Result.Fail<SalesReturnDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("Create")) return FailDenied<SalesReturnDetailDto>();
             if (dto.Lines == null || dto.Lines.Count == 0) return Result.Fail<SalesReturnDetailDto>("المرتجع يحتاج سطراً واحداً على الأقل", ErrorCode.ValidationFailed);
 
             var customer = _customers.GetById(dto.CustomerId);
@@ -115,11 +116,11 @@ namespace PrimeERP.Application.Services.Sales
             var netTotal = resolvedLines.Sum(x => x.Line.NetAmount);
             var totalCost = resolvedLines.Sum(x => x.Line.Qty * x.UnitCost);
 
-            var salesAccount = _settings.Get(SettingKeys.Accounts.Sales, "");
-            var vatAccount = _settings.Get(SettingKeys.Accounts.VATOutput, "");
-            var withholdingAccount = _settings.Get(SettingKeys.Accounts.WithholdingReceivable, "");
-            var cogsAccount = _settings.Get(SettingKeys.Accounts.COGS, "");
-            var inventoryAccount = _settings.Get(SettingKeys.Accounts.Inventory, "");
+            var salesAccount = Settings.Get(SettingKeys.Accounts.Sales, "");
+            var vatAccount = Settings.Get(SettingKeys.Accounts.VATOutput, "");
+            var withholdingAccount = Settings.Get(SettingKeys.Accounts.WithholdingReceivable, "");
+            var cogsAccount = Settings.Get(SettingKeys.Accounts.COGS, "");
+            var inventoryAccount = Settings.Get(SettingKeys.Accounts.Inventory, "");
             if (string.IsNullOrWhiteSpace(salesAccount) || string.IsNullOrWhiteSpace(cogsAccount) || string.IsNullOrWhiteSpace(inventoryAccount))
                 return Result.Fail<SalesReturnDetailDto>("حسابات المبيعات/التكلفة/المخزون غير مضبوطة في الإعدادات", ErrorCode.ValidationFailed);
             if (vatAmount > 0 && string.IsNullOrWhiteSpace(vatAccount))
@@ -128,7 +129,7 @@ namespace PrimeERP.Application.Services.Sales
             int returnId;
             try
             {
-                var simplifiedFlow = _settings.Get(SettingKeys.Documents.SimplifiedFlow, true);
+                var simplifiedFlow = Settings.Get(SettingKeys.Documents.SimplifiedFlow, true);
                 returnId = Db.RunTransaction((conn, tx) =>
                 {
                     var returnNo = _numbers.Next(conn, tx, "SalesReturn");
@@ -180,7 +181,7 @@ namespace PrimeERP.Application.Services.Sales
                 return Result.Fail<SalesReturnDetailDto>(ex.Message, ErrorCode.ValidationFailed);
             }
 
-            _audit.Log("SalesReturns", returnId, AuditAction.Insert, newValue: new { CustomerId = dto.CustomerId, NetTotal = netTotal });
+            Audit.Log("SalesReturns", returnId, AuditAction.Insert, newValue: new { CustomerId = dto.CustomerId, NetTotal = netTotal });
             _customers.RecalculateBalance(dto.CustomerId);
 
             return GetById(returnId);

@@ -12,32 +12,34 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Application.Services.HR
 {
     // بنفس بنية SalesInvoiceService — قيد واحد بسيط: Debit مصروف الرواتب، Credit الصندوق (سداد نقدي مباشر،
     // بلا حساب "رواتب مستحقة" وسيط — نطاق مُبسَّط عمداً).
-    public class PayrollService : IPayrollService
+    public class PayrollService : ServiceBase, IPayrollService
     {
         private readonly IPayrollRepository _payrolls;
         private readonly IEmployeeRepository _employees;
         private readonly IJournalService _journal;
         private readonly INumberSequenceService _numbers;
-        private readonly IPermissionService _permissions;
-        private readonly ISettingsProvider _settings;
-        private readonly IAuditLogger _audit;
 
         public PayrollService(IPayrollRepository payrolls, IEmployeeRepository employees, IJournalService journal,
-            INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings, IAuditLogger audit)
+            INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+            : base(permissions, settings, localization, audit)
         {
-            _payrolls = payrolls; _employees = employees; _journal = journal; _numbers = numbers; _permissions = permissions; _settings = settings; _audit = audit;
+            _payrolls = payrolls; _employees = employees; _journal = journal; _numbers = numbers;
         }
 
-        private bool Can(string action) => _permissions.Can($"HR.{action}");
+        protected override string PermissionPrefix => "HR";
+        protected override string StringPrefix => "Str.Payroll";
+        protected override string EntityName => "Payrolls";
+
 
         public Result<PagedResult<PayrollDto>> GetPaged(int page, int pageSize, PayrollFilter filter = null)
         {
-            if (!Can("View")) return Result.Fail<PagedResult<PayrollDto>>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<PagedResult<PayrollDto>>();
             filter ??= new PayrollFilter();
 
             var (items, total) = _payrolls.GetPaged(page, pageSize, filter.SearchText, filter.SortBy, filter.SortDescending);
@@ -46,7 +48,7 @@ namespace PrimeERP.Application.Services.HR
 
         public Result<PayrollDetailDto> GetById(int id)
         {
-            if (!Can("View")) return Result.Fail<PayrollDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<PayrollDetailDto>();
 
             var payroll = _payrolls.GetById(id);
             if (payroll == null) return Result.Fail<PayrollDetailDto>("مسير الرواتب غير موجود", ErrorCode.NotFound);
@@ -64,7 +66,7 @@ namespace PrimeERP.Application.Services.HR
 
         public Result<PayrollDetailDto> Create(CreatePayrollDto dto)
         {
-            if (!Can("PaySalary")) return Result.Fail<PayrollDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("PaySalary")) return FailDenied<PayrollDetailDto>();
             if (dto.Lines == null || dto.Lines.Count == 0) return Result.Fail<PayrollDetailDto>("المسير يحتاج سطراً واحداً على الأقل", ErrorCode.ValidationFailed);
 
             var resolvedLines = new List<PayrollLine>();
@@ -82,8 +84,8 @@ namespace PrimeERP.Application.Services.HR
             var totalDeductions = resolvedLines.Sum(l => l.Deductions);
             var netTotal = resolvedLines.Sum(l => l.NetSalary);
 
-            var salariesAccount = _settings.Get(SettingKeys.Accounts.Salaries, "");
-            var cashAccount = _settings.Get(SettingKeys.Accounts.Cash, "");
+            var salariesAccount = Settings.Get(SettingKeys.Accounts.Salaries, "");
+            var cashAccount = Settings.Get(SettingKeys.Accounts.Cash, "");
             if (string.IsNullOrWhiteSpace(salariesAccount) || string.IsNullOrWhiteSpace(cashAccount))
                 return Result.Fail<PayrollDetailDto>("حساب الرواتب أو الصندوق غير مضبوط في الإعدادات", ErrorCode.ValidationFailed);
 
@@ -128,7 +130,7 @@ namespace PrimeERP.Application.Services.HR
                 return Result.Fail<PayrollDetailDto>(ex.Message, ErrorCode.ValidationFailed);
             }
 
-            _audit.Log("Payrolls", payrollId, AuditAction.Insert, newValue: new { NetTotal = netTotal, LineCount = resolvedLines.Count });
+            Audit.Log("Payrolls", payrollId, AuditAction.Insert, newValue: new { NetTotal = netTotal, LineCount = resolvedLines.Count });
             return GetById(payrollId);
         }
 

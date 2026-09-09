@@ -74,12 +74,6 @@ namespace PrimeERP.Modules
             });
         }
 
-        public static List<ParameterDefinition> Period() => new()
-        {
-            new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = DateTime.Today.AddMonths(-1) },
-            new() { Key = "To",   LabelKey = "Str.DateTo",   Kind = FieldKind.Date, DefaultValue = DateTime.Today },
-        };
-
         private static List<GridColumn> Columns(string chargeLabel, string settleLabel)
         {
             GridColumn Money(string header, string binding) => new()

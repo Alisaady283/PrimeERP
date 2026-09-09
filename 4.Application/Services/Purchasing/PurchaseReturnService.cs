@@ -21,7 +21,7 @@ namespace PrimeERP.Application.Services.Purchasing
 {
     // عكس PurchaseInvoiceService: Debit المورد (تخفيض مديونيته)، Credit Inventory/Credit VATInput (عكس ما
     // سُجِّل عند الشراء). حركة مخزون Out (تتحقق من كفاية الرصيد تلقائياً — لا يمكن إرجاع أكثر مما بالمخزون).
-    public class PurchaseReturnService : IPurchaseReturnService
+    public class PurchaseReturnService : ServiceBase, IPurchaseReturnService
     {
         private readonly IPurchaseReturnRepository _returns;
         private readonly IProductRepository _products;
@@ -29,23 +29,24 @@ namespace PrimeERP.Application.Services.Purchasing
         private readonly IStockService _stock;
         private readonly IJournalService _journal;
         private readonly INumberSequenceService _numbers;
-        private readonly IPermissionService _permissions;
-        private readonly ISettingsProvider _settings;
-        private readonly IAuditLogger _audit;
 
         public PurchaseReturnService(IPurchaseReturnRepository returns, IProductRepository products, ISupplierService suppliers,
             IStockService stock, IJournalService journal, INumberSequenceService numbers,
-            IPermissionService permissions, ISettingsProvider settings, IAuditLogger audit)
+            IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+            : base(permissions, settings, localization, audit)
         {
             _returns = returns; _products = products; _suppliers = suppliers;
-            _stock = stock; _journal = journal; _numbers = numbers; _permissions = permissions; _settings = settings; _audit = audit;
+            _stock = stock; _journal = journal; _numbers = numbers;
         }
 
-        private bool Can(string action) => _permissions.Can($"Purchases.{action}");
+        protected override string PermissionPrefix => "Purchases";
+        protected override string StringPrefix => "Str.PurchaseReturn";
+        protected override string EntityName => "PurchaseReturns";
+
 
         public Result<PagedResult<PurchaseReturnDto>> GetPaged(int page, int pageSize, PurchaseReturnFilter filter = null)
         {
-            if (!Can("View")) return Result.Fail<PagedResult<PurchaseReturnDto>>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<PagedResult<PurchaseReturnDto>>();
             filter ??= new PurchaseReturnFilter();
 
             var (items, total) = _returns.GetPaged(page, pageSize, filter.SearchText, filter.SupplierId, filter.SortBy, filter.SortDescending);
@@ -54,7 +55,7 @@ namespace PrimeERP.Application.Services.Purchasing
 
         public Result<PurchaseReturnDetailDto> GetById(int id)
         {
-            if (!Can("View")) return Result.Fail<PurchaseReturnDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<PurchaseReturnDetailDto>();
 
             var ret = _returns.GetById(id);
             if (ret == null) return Result.Fail<PurchaseReturnDetailDto>("المرتجع غير موجود", ErrorCode.NotFound);
@@ -80,7 +81,7 @@ namespace PrimeERP.Application.Services.Purchasing
 
         public Result<PurchaseReturnDetailDto> Create(CreatePurchaseReturnDto dto)
         {
-            if (!Can("Create")) return Result.Fail<PurchaseReturnDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("Create")) return FailDenied<PurchaseReturnDetailDto>();
             if (dto.Lines == null || dto.Lines.Count == 0) return Result.Fail<PurchaseReturnDetailDto>("المرتجع يحتاج سطراً واحداً على الأقل", ErrorCode.ValidationFailed);
 
             var supplier = _suppliers.GetById(dto.SupplierId);
@@ -114,9 +115,9 @@ namespace PrimeERP.Application.Services.Purchasing
             var withholdingAmount = resolvedLines.Sum(x => x.WithholdingAmount);
             var netTotal = resolvedLines.Sum(x => x.NetAmount);
 
-            var inventoryAccount = _settings.Get(SettingKeys.Accounts.Inventory, "");
-            var vatAccount = _settings.Get(SettingKeys.Accounts.VATInput, "");
-            var withholdingAccount = _settings.Get(SettingKeys.Accounts.WithholdingPayable, "");
+            var inventoryAccount = Settings.Get(SettingKeys.Accounts.Inventory, "");
+            var vatAccount = Settings.Get(SettingKeys.Accounts.VATInput, "");
+            var withholdingAccount = Settings.Get(SettingKeys.Accounts.WithholdingPayable, "");
             if (string.IsNullOrWhiteSpace(inventoryAccount))
                 return Result.Fail<PurchaseReturnDetailDto>("حساب المخزون غير مضبوط في الإعدادات", ErrorCode.ValidationFailed);
             if (vatAmount > 0 && string.IsNullOrWhiteSpace(vatAccount))
@@ -125,7 +126,7 @@ namespace PrimeERP.Application.Services.Purchasing
             int returnId;
             try
             {
-                var simplifiedFlow = _settings.Get(SettingKeys.Documents.SimplifiedFlow, true);
+                var simplifiedFlow = Settings.Get(SettingKeys.Documents.SimplifiedFlow, true);
                 returnId = Db.RunTransaction((conn, tx) =>
                 {
                     var returnNo = _numbers.Next(conn, tx, "PurchaseReturn");
@@ -175,7 +176,7 @@ namespace PrimeERP.Application.Services.Purchasing
                 return Result.Fail<PurchaseReturnDetailDto>(ex.Message, ErrorCode.ValidationFailed);
             }
 
-            _audit.Log("PurchaseReturns", returnId, AuditAction.Insert, newValue: new { SupplierId = dto.SupplierId, NetTotal = netTotal });
+            Audit.Log("PurchaseReturns", returnId, AuditAction.Insert, newValue: new { SupplierId = dto.SupplierId, NetTotal = netTotal });
             _suppliers.RecalculateBalance(dto.SupplierId);
 
             return GetById(returnId);

@@ -109,11 +109,10 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "TrialBalance", TitleKey = "Str.Module.TrialBalance", PermissionKey = "Reports.View",
-                    Parameters = new()
-                    {
-                        new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = DateTime.Today.AddMonths(-1) },
-                        new() { Key = "To", LabelKey = "Str.DateTo", Kind = FieldKind.Date, DefaultValue = DateTime.Today },
-                    },
+                    Parameters =
+                    [
+                        ..StandardFields.DateRange(),
+                    ],
                     Generate = (services, p) =>
                     {
                         var journal = services.GetRequiredService<IJournalService>();
@@ -153,7 +152,7 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "CustomerBalances", TitleKey = "Str.Module.CustomerBalances", PermissionKey = "Reports.View",
-                    Parameters = BalanceReportFactory.Period(),
+                    Parameters = StandardFields.DateRange(),
                     Generate = (services, p) =>
                     {
                         var result = services.GetRequiredService<ICustomerService>().GetPaged(1, 5000);
@@ -173,7 +172,7 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "SupplierBalances", TitleKey = "Str.Module.SupplierBalances", PermissionKey = "Reports.View",
-                    Parameters = BalanceReportFactory.Period(),
+                    Parameters = StandardFields.DateRange(),
                     Generate = (services, p) =>
                     {
                         var result = services.GetRequiredService<ISupplierService>().GetPaged(1, 5000);
@@ -193,7 +192,7 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "StockBalances", TitleKey = "Str.Module.StockBalances", PermissionKey = "Reports.View",
-                    Parameters = BalanceReportFactory.Period(),
+                    Parameters = StandardFields.DateRange(),
                     Generate = (services, p) =>
                     {
                         var from = (DateTime)(p["From"] ?? DateTime.Today.AddMonths(-1));
@@ -276,12 +275,11 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "CustomerStatement", TitleKey = "Str.Module.CustomerStatement", PermissionKey = "Reports.View",
-                    Parameters = new()
-                    {
+                    Parameters =
+                    [
                         new() { Key = "CustomerId", LabelKey = "Str.Customer", Kind = FieldKind.Picker, PickerType = "Customer" },
-                        new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = DateTime.Today.AddMonths(-1) },
-                        new() { Key = "To", LabelKey = "Str.DateTo", Kind = FieldKind.Date, DefaultValue = DateTime.Today },
-                    },
+                        ..StandardFields.DateRange(),
+                    ],
                     Generate = (services, p) => BuildStatement(services.GetRequiredService<ICustomerService>().GetStatement,
                         "Str.Module.CustomerStatement", p)
                 }
@@ -293,12 +291,11 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "SupplierStatement", TitleKey = "Str.Module.SupplierStatement", PermissionKey = "Reports.View",
-                    Parameters = new()
-                    {
+                    Parameters =
+                    [
                         new() { Key = "SupplierId", LabelKey = "Str.Supplier", Kind = FieldKind.Picker, PickerType = "Supplier" },
-                        new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = DateTime.Today.AddMonths(-1) },
-                        new() { Key = "To", LabelKey = "Str.DateTo", Kind = FieldKind.Date, DefaultValue = DateTime.Today },
-                    },
+                        ..StandardFields.DateRange(),
+                    ],
                     Generate = (services, p) => BuildStatement(
                         (id, from, to) => services.GetRequiredService<ISupplierService>().GetStatement(id, from, to),
                         "Str.Module.SupplierStatement", p, "SupplierId")
@@ -311,13 +308,12 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "AccountStatement", TitleKey = "Str.Module.AccountStatement", PermissionKey = "Reports.View",
-                    Parameters = new()
-                    {
+                    Parameters =
+                    [
                         // الكشف يخصّ حساباً يقبل قيوداً — الحسابات التجميعية لا حركة لها بذاتها.
                         new() { Key = "AccountId", LabelKey = "Str.Account", Kind = FieldKind.Picker, PickerType = "Account", PickerLeafOnly = true },
-                        new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = DateTime.Today.AddMonths(-1) },
-                        new() { Key = "To", LabelKey = "Str.DateTo", Kind = FieldKind.Date, DefaultValue = DateTime.Today },
-                    },
+                        ..StandardFields.DateRange(),
+                    ],
                     Generate = (services, p) =>
                     {
                         var accountId = p.TryGetValue("AccountId", out var av) && av is int aid ? aid : 0;
@@ -383,11 +379,10 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "IncomeStatement", TitleKey = "Str.Module.IncomeStatement", PermissionKey = "Reports.View",
-                    Parameters = new()
-                    {
-                        new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = DateTime.Today.AddMonths(-1) },
-                        new() { Key = "To", LabelKey = "Str.DateTo", Kind = FieldKind.Date, DefaultValue = DateTime.Today },
-                    },
+                    Parameters =
+                    [
+                        ..StandardFields.DateRange(),
+                    ],
                     Generate = (services, p) =>
                     {
                         var journal = services.GetRequiredService<IJournalService>();
@@ -508,11 +503,10 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "CashFlow", TitleKey = "Str.Module.CashFlow", PermissionKey = "Reports.View",
-                    Parameters = new()
-                    {
-                        new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = DateTime.Today.AddMonths(-1) },
-                        new() { Key = "To", LabelKey = "Str.DateTo", Kind = FieldKind.Date, DefaultValue = DateTime.Today },
-                    },
+                    Parameters =
+                    [
+                        ..StandardFields.DateRange(),
+                    ],
                     // قائمة تدفقات لا كشف صندوق: الحركة مصنَّفة بنشاطها من نوع الحساب المقابل، ثم
                     // النقدية أول المدة + صافي التغيّر = النقدية آخر المدة — وهو ما يجعلها تُطابق الميزانية.
                     Generate = (services, p) =>
@@ -583,12 +577,11 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "StockReport", TitleKey = "Str.Module.StockReport", PermissionKey = "Reports.View",
-                    Parameters = new()
-                    {
-                        new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = DateTime.Today.AddMonths(-1) },
-                        new() { Key = "To", LabelKey = "Str.DateTo", Kind = FieldKind.Date, DefaultValue = DateTime.Today },
+                    Parameters =
+                    [
+                        ..StandardFields.DateRange(),
                         new() { Key = "WarehouseId", LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse" },
-                    },
+                    ],
                     Generate = (services, p) =>
                     {
                         var from = (DateTime)(p["From"] ?? DateTime.Today.AddMonths(-1));
@@ -638,11 +631,10 @@ namespace PrimeERP.Modules
                 Report = new ReportDefinition
                 {
                     Key = "SalesReport", TitleKey = "Str.Module.SalesReport", PermissionKey = "Reports.View",
-                    Parameters = new()
-                    {
-                        new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = DateTime.Today.AddMonths(-1) },
-                        new() { Key = "To", LabelKey = "Str.DateTo", Kind = FieldKind.Date, DefaultValue = DateTime.Today },
-                    },
+                    Parameters =
+                    [
+                        ..StandardFields.DateRange(),
+                    ],
                     // فلترة التاريخ في الذاكرة — لا معامل تاريخ في SalesInvoiceFilter بعد (نطاق مُبسَّط، حجم
                     // البيانات المتوقَّع في هذه المرحلة صغير).
                     Generate = (services, p) =>

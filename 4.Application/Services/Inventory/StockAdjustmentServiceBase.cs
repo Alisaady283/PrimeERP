@@ -10,38 +10,44 @@ using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Permissions;
 using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Platform.Settings;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Application.Services.Inventory
 {
     // أساس مشترك لـStockInService/StockOutService — الفرق الوحيد فعلياً MovementType واسم السلسلة الرقمية
     // ("StockIn"/"StockOut")؛ بلا ترحيل محاسبي (تسويات مخزون بحتة، نطاق مُبسَّط عمداً — راجع تعليق سابق).
-    public abstract class StockAdjustmentServiceBase<TRepo> where TRepo : IStockInRepository
+    public abstract class StockAdjustmentServiceBase<TRepo> : ServiceBase where TRepo : IStockInRepository
     {
         protected readonly TRepo Repo;
         private readonly IProductRepository _products;
         private readonly IWarehouseService _warehouses;
         private readonly IStockService _stock;
         private readonly INumberSequenceService _numbers;
-        private readonly IPermissionService _permissions;
-        private readonly IAuditLogger _audit;
         private readonly IDocumentLinkService _links;
         private readonly MovementType _direction;
         private readonly string _sequenceKey, _permissionAction, _entityName;
 
         protected StockAdjustmentServiceBase(TRepo repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links,
+            INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
+            ILocalizationService localization, IAuditLogger audit, IDocumentLinkService links,
             MovementType direction, string sequenceKey, string permissionAction, string entityName)
+            : base(permissions, settings, localization, audit)
         {
             Repo = repo; _products = products; _warehouses = warehouses; _stock = stock; _numbers = numbers;
-            _permissions = permissions; _audit = audit; _links = links; _direction = direction;
+            _links = links; _direction = direction;
             _sequenceKey = sequenceKey; _permissionAction = permissionAction; _entityName = entityName;
         }
 
-        private bool Can() => _permissions.Can($"Inventory.{_permissionAction}");
+        protected override string PermissionPrefix => "Inventory";
+        protected override string StringPrefix => "Str.Stock";
+        protected override string EntityName => _entityName;
+
+        private bool Can() => Permissions.Can($"Inventory.{_permissionAction}");
 
         public Result<PagedResult<StockAdjustmentDto>> GetPaged(int page, int pageSize, StockAdjustmentFilter filter = null)
         {
-            if (!Can()) return Result.Fail<PagedResult<StockAdjustmentDto>>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can()) return FailDenied<PagedResult<StockAdjustmentDto>>();
             filter ??= new StockAdjustmentFilter();
 
             var (items, total) = Repo.GetPaged(page, pageSize, filter.SearchText, filter.SortBy, filter.SortDescending);
@@ -50,7 +56,7 @@ namespace PrimeERP.Application.Services.Inventory
 
         public Result<StockAdjustmentDetailDto> GetById(int id)
         {
-            if (!Can()) return Result.Fail<StockAdjustmentDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can()) return FailDenied<StockAdjustmentDetailDto>();
 
             var doc = Repo.GetById(id);
             if (doc == null) return Result.Fail<StockAdjustmentDetailDto>("المستند غير موجود", ErrorCode.NotFound);
@@ -67,7 +73,7 @@ namespace PrimeERP.Application.Services.Inventory
 
         public Result<StockAdjustmentDetailDto> Create(CreateStockAdjustmentDto dto)
         {
-            if (!Can()) return Result.Fail<StockAdjustmentDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can()) return FailDenied<StockAdjustmentDetailDto>();
             if (dto.Lines == null || dto.Lines.Count == 0) return Result.Fail<StockAdjustmentDetailDto>("المستند يحتاج سطراً واحداً على الأقل", ErrorCode.ValidationFailed);
 
             var resolvedLines = new List<StockAdjustmentLine>();
@@ -124,7 +130,7 @@ namespace PrimeERP.Application.Services.Inventory
                 return Result.Fail<StockAdjustmentDetailDto>(ex.Message, ErrorCode.ValidationFailed);
             }
 
-            _audit.Log(_entityName, docId, AuditAction.Insert, newValue: new { dto.WarehouseId, LineCount = resolvedLines.Count });
+            Audit.Log(_entityName, docId, AuditAction.Insert, newValue: new { dto.WarehouseId, LineCount = resolvedLines.Count });
             return GetById(docId);
         }
 
@@ -143,42 +149,48 @@ namespace PrimeERP.Application.Services.Inventory
     public class StockInService : StockAdjustmentServiceBase<IStockInRepository>, IStockInService
     {
         public StockInService(IStockInRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
-            : base(repo, products, warehouses, stock, numbers, permissions, audit, links, MovementType.In, "StockIn", "StockIn", "StockIn") { }
+            INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
+            ILocalizationService localization, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, warehouses, stock, numbers, permissions, settings, localization, audit, links, MovementType.In, "StockIn", "StockIn", "StockIn") { }
     }
 
     public class StockOutService : StockAdjustmentServiceBase<IStockOutRepository>, IStockOutService
     {
         public StockOutService(IStockOutRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
-            : base(repo, products, warehouses, stock, numbers, permissions, audit, links, MovementType.Out, "StockOut", "StockOut", "StockOut") { }
+            INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
+            ILocalizationService localization, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, warehouses, stock, numbers, permissions, settings, localization, audit, links, MovementType.Out, "StockOut", "StockOut", "StockOut") { }
     }
 
     public class GoodsReceiptService : StockAdjustmentServiceBase<IGoodsReceiptRepository>, IGoodsReceiptService
     {
         public GoodsReceiptService(IGoodsReceiptRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
-            : base(repo, products, warehouses, stock, numbers, permissions, audit, links, MovementType.In, "GoodsReceipt", "GoodsReceipt", "GoodsReceipt") { }
+            INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
+            ILocalizationService localization, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, warehouses, stock, numbers, permissions, settings, localization, audit, links, MovementType.In, "GoodsReceipt", "GoodsReceipt", "GoodsReceipt") { }
     }
 
     public class GoodsIssueService : StockAdjustmentServiceBase<IGoodsIssueRepository>, IGoodsIssueService
     {
         public GoodsIssueService(IGoodsIssueRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
-            : base(repo, products, warehouses, stock, numbers, permissions, audit, links, MovementType.Out, "GoodsIssue", "GoodsIssue", "GoodsIssue") { }
+            INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
+            ILocalizationService localization, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, warehouses, stock, numbers, permissions, settings, localization, audit, links, MovementType.Out, "GoodsIssue", "GoodsIssue", "GoodsIssue") { }
     }
 
     public class DeliveryNoteService : StockAdjustmentServiceBase<IDeliveryNoteRepository>, IDeliveryNoteService
     {
         public DeliveryNoteService(IDeliveryNoteRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
-            : base(repo, products, warehouses, stock, numbers, permissions, audit, links, MovementType.Out, "DeliveryNote", "DeliveryNote", "DeliveryNote") { }
+            INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
+            ILocalizationService localization, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, warehouses, stock, numbers, permissions, settings, localization, audit, links, MovementType.Out, "DeliveryNote", "DeliveryNote", "DeliveryNote") { }
     }
 
     public class SalesReceiptService : StockAdjustmentServiceBase<ISalesReceiptRepository>, ISalesReceiptService
     {
         public SalesReceiptService(ISalesReceiptRepository repo, IProductRepository products, IWarehouseService warehouses, IStockService stock,
-            INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
-            : base(repo, products, warehouses, stock, numbers, permissions, audit, links, MovementType.In, "SalesReceipt", "SalesReceipt", "SalesReceipt") { }
+            INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
+            ILocalizationService localization, IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, warehouses, stock, numbers, permissions, settings, localization, audit, links, MovementType.In, "SalesReceipt", "SalesReceipt", "SalesReceipt") { }
     }
 }

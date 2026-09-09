@@ -8,6 +8,8 @@ using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Permissions;
 using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Platform.Settings;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Application.Services.Documents
 {
@@ -26,30 +28,31 @@ namespace PrimeERP.Application.Services.Documents
     public interface ISalesOrderService : ICycleDocumentService { }
 
     // نسخة CycleDocument من StockAdjustmentServiceBase: بلا ترحيل وبلا أثر مخزني، وطرف اختياري بدل مخزن.
-    public abstract class CycleDocumentServiceBase<TRepo> : ICycleDocumentService where TRepo : ICycleDocumentRepository
+    public abstract class CycleDocumentServiceBase<TRepo> : ServiceBase, ICycleDocumentService where TRepo : ICycleDocumentRepository
     {
         protected readonly TRepo Repo;
         private readonly IProductRepository _products;
         private readonly INumberSequenceService _numbers;
-        private readonly IPermissionService _permissions;
-        private readonly IAuditLogger _audit;
         private readonly IDocumentLinkService _links;
         private readonly string _sequenceKey, _permissionPrefix, _entityName;
         private readonly bool _partyRequired;
 
         protected CycleDocumentServiceBase(TRepo repo, IProductRepository products, INumberSequenceService numbers,
-            IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links, string sequenceKey,
-            string permissionPrefix, string entityName, bool partyRequired)
+            IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
+            IDocumentLinkService links, string sequenceKey, string permissionPrefix, string entityName, bool partyRequired)
+            : base(permissions, settings, localization, audit)
         {
-            Repo = repo; _products = products; _numbers = numbers; _permissions = permissions; _audit = audit; _links = links;
+            Repo = repo; _products = products; _numbers = numbers; _links = links;
             _sequenceKey = sequenceKey; _permissionPrefix = permissionPrefix; _entityName = entityName; _partyRequired = partyRequired;
         }
 
-        private bool Can(string action) => _permissions.Can($"{_permissionPrefix}.{action}");
+        protected override string PermissionPrefix => _permissionPrefix;
+        protected override string StringPrefix => "Str.Document";
+        protected override string EntityName => _entityName;
 
         public Result<PagedResult<CycleDocumentDto>> GetPaged(int page, int pageSize, CycleDocumentFilter filter = null)
         {
-            if (!Can("View")) return Result.Fail<PagedResult<CycleDocumentDto>>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<PagedResult<CycleDocumentDto>>();
             filter ??= new CycleDocumentFilter();
 
             var (items, total) = Repo.GetPaged(page, pageSize, filter.SearchText, filter.SortBy, filter.SortDescending);
@@ -59,7 +62,7 @@ namespace PrimeERP.Application.Services.Documents
 
         public Result<CycleDocumentDetailDto> GetById(int id)
         {
-            if (!Can("View")) return Result.Fail<CycleDocumentDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("View")) return FailDenied<CycleDocumentDetailDto>();
 
             var doc = Repo.GetById(id);
             if (doc == null) return Result.Fail<CycleDocumentDetailDto>("المستند غير موجود", ErrorCode.NotFound);
@@ -79,7 +82,7 @@ namespace PrimeERP.Application.Services.Documents
 
         public Result<CycleDocumentDetailDto> Create(CreateCycleDocumentDto dto)
         {
-            if (!Can("Create")) return Result.Fail<CycleDocumentDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("Create")) return FailDenied<CycleDocumentDetailDto>();
             if (dto.Lines == null || dto.Lines.Count == 0)
                 return Result.Fail<CycleDocumentDetailDto>("المستند يحتاج سطراً واحداً على الأقل", ErrorCode.ValidationFailed);
             if (_partyRequired && dto.PartyId == null)
@@ -139,13 +142,13 @@ namespace PrimeERP.Application.Services.Documents
                 return id;
             });
 
-            _audit.Log(_entityName, docId, AuditAction.Insert, newValue: new { dto.PartyId, LineCount = resolved.Count });
+            Audit.Log(_entityName, docId, AuditAction.Insert, newValue: new { dto.PartyId, LineCount = resolved.Count });
             return GetById(docId);
         }
 
         public Result Update(CreateCycleDocumentDto dto)
         {
-            if (!Can("Edit")) return Result.Fail("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("Edit")) return FailDenied();
             if (Repo.GetById(dto.Id) == null) return Result.Fail("المستند غير موجود", ErrorCode.NotFound);
 
             DeleteWithLinks(dto.Id);
@@ -155,11 +158,11 @@ namespace PrimeERP.Application.Services.Documents
 
         public Result Delete(int id)
         {
-            if (!Can("Delete")) return Result.Fail("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can("Delete")) return FailDenied();
             if (Repo.GetById(id) == null) return Result.Fail("المستند غير موجود", ErrorCode.NotFound);
 
             DeleteWithLinks(id);
-            _audit.Log(_entityName, id, AuditAction.Delete);
+            Audit.Log(_entityName, id, AuditAction.Delete);
             return Result.Ok();
         }
 
@@ -184,28 +187,32 @@ namespace PrimeERP.Application.Services.Documents
     public class PurchaseRequestService : CycleDocumentServiceBase<IPurchaseRequestRepository>, IPurchaseRequestService
     {
         public PurchaseRequestService(IPurchaseRequestRepository repo, IProductRepository products, INumberSequenceService numbers,
-            IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
-            : base(repo, products, numbers, permissions, audit, links, "PurchaseRequest", "Purchases", "PurchaseRequest", partyRequired: false) { }
+            IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
+            IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, numbers, permissions, settings, localization, audit, links, "PurchaseRequest", "Purchases", "PurchaseRequest", partyRequired: false) { }
     }
 
     public class PurchaseOrderService : CycleDocumentServiceBase<IPurchaseOrderRepository>, IPurchaseOrderService
     {
         public PurchaseOrderService(IPurchaseOrderRepository repo, IProductRepository products, INumberSequenceService numbers,
-            IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
-            : base(repo, products, numbers, permissions, audit, links, "PurchaseOrder", "Purchases", "PurchaseOrder", partyRequired: true) { }
+            IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
+            IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, numbers, permissions, settings, localization, audit, links, "PurchaseOrder", "Purchases", "PurchaseOrder", partyRequired: true) { }
     }
 
     public class QuotationService : CycleDocumentServiceBase<IQuotationRepository>, IQuotationService
     {
         public QuotationService(IQuotationRepository repo, IProductRepository products, INumberSequenceService numbers,
-            IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
-            : base(repo, products, numbers, permissions, audit, links, "Quotation", "Sales", "Quotation", partyRequired: false) { }
+            IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
+            IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, numbers, permissions, settings, localization, audit, links, "Quotation", "Sales", "Quotation", partyRequired: false) { }
     }
 
     public class SalesOrderService : CycleDocumentServiceBase<ISalesOrderRepository>, ISalesOrderService
     {
         public SalesOrderService(ISalesOrderRepository repo, IProductRepository products, INumberSequenceService numbers,
-            IPermissionService permissions, IAuditLogger audit, IDocumentLinkService links)
-            : base(repo, products, numbers, permissions, audit, links, "SalesOrder", "Sales", "SalesOrder", partyRequired: true) { }
+            IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
+            IAuditLogger audit, IDocumentLinkService links)
+            : base(repo, products, numbers, permissions, settings, localization, audit, links, "SalesOrder", "Sales", "SalesOrder", partyRequired: true) { }
     }
 }

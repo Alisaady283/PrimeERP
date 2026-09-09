@@ -9,33 +9,38 @@ using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Permissions;
 using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Platform.Localization;
+using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.Inventory
 {
     // كل سطر = حركتا مخزون (Out من المصدر، In للهدف) بنفس المعاملة — بلا ترحيل محاسبي (نقل داخلي، لا قيمة
     // مالية جديدة). يُعيد استخدام IStockService.RecordMovement مباشرة، لا Transfer(product,...) ذات المنتج
     // الواحد (تلك تخدم نداءً برمجياً مباشراً، هنا مستند متعدد السطور).
-    public class StockTransferService : IStockTransferService
+    public class StockTransferService : ServiceBase, IStockTransferService
     {
         private readonly IStockTransferRepository _repo;
         private readonly IProductRepository _products;
         private readonly IWarehouseService _warehouses;
         private readonly IStockService _stock;
         private readonly INumberSequenceService _numbers;
-        private readonly IPermissionService _permissions;
-        private readonly IAuditLogger _audit;
 
         public StockTransferService(IStockTransferRepository repo, IProductRepository products, IWarehouseService warehouses,
-            IStockService stock, INumberSequenceService numbers, IPermissionService permissions, IAuditLogger audit)
+            IStockService stock, INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+            : base(permissions, settings, localization, audit)
         {
-            _repo = repo; _products = products; _warehouses = warehouses; _stock = stock; _numbers = numbers; _permissions = permissions; _audit = audit;
+            _repo = repo; _products = products; _warehouses = warehouses; _stock = stock; _numbers = numbers;
         }
 
-        private bool Can() => _permissions.Can("Inventory.Transfer");
+        protected override string PermissionPrefix => "Inventory";
+        protected override string StringPrefix => "Str.StockTransfer";
+        protected override string EntityName => "StockTransfers";
+
+        private bool Can() => Permissions.Can("Inventory.Transfer");
 
         public Result<PagedResult<StockTransferDto>> GetPaged(int page, int pageSize, StockTransferFilter filter = null)
         {
-            if (!Can()) return Result.Fail<PagedResult<StockTransferDto>>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can()) return FailDenied<PagedResult<StockTransferDto>>();
             filter ??= new StockTransferFilter();
 
             var (items, total) = _repo.GetPaged(page, pageSize, filter.SearchText, filter.SortBy, filter.SortDescending);
@@ -44,7 +49,7 @@ namespace PrimeERP.Application.Services.Inventory
 
         public Result<StockTransferDetailDto> GetById(int id)
         {
-            if (!Can()) return Result.Fail<StockTransferDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can()) return FailDenied<StockTransferDetailDto>();
 
             var doc = _repo.GetById(id);
             if (doc == null) return Result.Fail<StockTransferDetailDto>("المستند غير موجود", ErrorCode.NotFound);
@@ -61,7 +66,7 @@ namespace PrimeERP.Application.Services.Inventory
 
         public Result<StockTransferDetailDto> Create(CreateStockTransferDto dto)
         {
-            if (!Can()) return Result.Fail<StockTransferDetailDto>("لا صلاحية", ErrorCode.Unauthorized);
+            if (!Can()) return FailDenied<StockTransferDetailDto>();
             if (dto.Lines == null || dto.Lines.Count == 0) return Result.Fail<StockTransferDetailDto>("المستند يحتاج سطراً واحداً على الأقل", ErrorCode.ValidationFailed);
             if (dto.FromWarehouseId == dto.ToWarehouseId) return Result.Fail<StockTransferDetailDto>("المخزن المصدر والهدف لا يمكن أن يكونا نفس المخزن", ErrorCode.ValidationFailed);
 
@@ -103,7 +108,7 @@ namespace PrimeERP.Application.Services.Inventory
                 return Result.Fail<StockTransferDetailDto>(ex.Message, ErrorCode.ValidationFailed);
             }
 
-            _audit.Log("StockTransfer", docId, AuditAction.Insert, newValue: new { dto.FromWarehouseId, dto.ToWarehouseId, LineCount = resolvedLines.Count });
+            Audit.Log("StockTransfer", docId, AuditAction.Insert, newValue: new { dto.FromWarehouseId, dto.ToWarehouseId, LineCount = resolvedLines.Count });
             return GetById(docId);
         }
 
