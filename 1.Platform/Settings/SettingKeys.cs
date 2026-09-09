@@ -124,6 +124,9 @@ namespace PrimeERP.Platform.Settings
             public const string PageSize          = "UI.PageSize";
             public const string SidebarCollapsed  = "UI.SidebarCollapsed";
 
+            /// <summary>بيان النسخة: مفاتيح الوحدات المسموحة مفصولة بفاصلة. فارغ = النظام كاملاً.</summary>
+            public const string Manifest          = "UI.Manifest";
+
             /// <summary>مفتاح حزمة الهوية الحالية (اسم مجلد تحت Resources/Design/Identity — "Default"/"Corporate") — يقرأه IIdentityService.Initialize عند الإقلاع.</summary>
             public const string Identity          = "UI.Identity";
 

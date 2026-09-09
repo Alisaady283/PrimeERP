@@ -104,13 +104,12 @@ namespace PrimeERP.Composition.Renderers
         {
             if (!FieldValidation.Validate(dialog.Fields, fields)) return false;
 
-            var service = services.GetRequiredService(dialog.ServiceType);
+            var service = Resolve.Service(dialog, services);
 
             if (isEdit)
             {
                 var updateDto = Activator.CreateInstance(dialog.UpdateDtoType);
-                var idValue = editItem.GetType().GetProperty("Id")?.GetValue(editItem);
-                dialog.UpdateDtoType.GetProperty("Id")?.SetValue(updateDto, idValue);
+                WriteValue(updateDto, "Id", ReadValue(editItem, "Id"));
                 ApplyFields(dialog.Fields, fields, updateDto, editOnly: true);
                 ApplyFixedValues(dialog, updateDto);
 
@@ -137,20 +136,45 @@ namespace PrimeERP.Composition.Renderers
             return true;
         }
 
+        /// <summary>
+        /// قراءة قيمة حقل من صفّ: خاصيةً على كيان، أو مفتاحاً في قاموس. الوحدات المبنيّة صفوفها قواميس
+        /// (لا نوع مُصرَّف لجدولٍ يُنشأ وقت التشغيل)، والوحدات المكتوبة كيانات — ونقطةُ القراءة واحدة.
+        /// </summary>
+        internal static object ReadValue(object source, string key)
+        {
+            if (source == null) return null;
+            if (source is IDictionary<string, object> row) return row.TryGetValue(key, out var value) ? value : null;
+
+            return source.GetType().GetProperty(key)?.GetValue(source);
+        }
+
+        /// <summary>نظيرة ReadValue للكتابة — الكيان بخاصيته، والقاموس بمفتاحه.</summary>
+        internal static void WriteValue(object target, string key, object value)
+        {
+            if (target is IDictionary<string, object> row) { row[key] = value; return; }
+
+            target.GetType().GetProperty(key)?.SetValue(target, value);
+        }
+
         internal static void ApplyFields(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> fields, object dto, bool editOnly)
         {
+            var row = dto as IDictionary<string, object>;
             var dtoType = dto.GetType();
+
             foreach (var field in fieldDefs)
             {
                 if (editOnly && field.IsReadOnlyOnEdit) continue;
-                var prop = dtoType.GetProperty(field.Key);
-                if (prop == null || !prop.CanWrite) continue;
+
+                var prop = row == null ? dtoType.GetProperty(field.Key) : null;
+                if (row == null && (prop == null || !prop.CanWrite)) continue;
 
                 var value = GetControlValue(fields[field.Key], field.Kind);
                 if (value == null) continue;
                 // كلمة مرور فارغة = "بلا تغيير" (وضع التعديل بلا حقل خاص يحمل القيمة الحالية أصلاً) — لا تُكتَب فوق الهاش الحالي.
                 if (field.Kind == FieldKind.Password && string.IsNullOrEmpty((string)value)) continue;
-                prop.SetValue(dto, Convert.ChangeType(value, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType));
+
+                if (row != null) row[field.Key] = value;
+                else prop.SetValue(dto, Convert.ChangeType(value, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType));
             }
         }
 
@@ -181,13 +205,13 @@ namespace PrimeERP.Composition.Renderers
                     // في وضع الإضافة: القيمة الافتراضية المُعلَنة على الحقل أولاً (طريقة الدفع "نقداً" مثلاً)،
                     // وإلا الافتراضي المُمرَّر من الشاشة. بلا هذا يبدأ الحقل فارغاً فلا يرشِّح شيئاً.
                     var presetId = isEdit
-                        ? editItem.GetType().GetProperty(field.Key)?.GetValue(editItem) as int?
+                        ? ReadValue(editItem, field.Key) is { } raw && int.TryParse(raw.ToString(), out var id) ? id : (int?)null
                         : field.DefaultValue as int? ?? addModeDefaultPickerId;
                     if (presetId != null) SelectPickerItem((AppComboBox)control, presetId.Value);
                 }
                 else if (isEdit)
                 {
-                    SetControlValue(control, field, editItem.GetType().GetProperty(field.Key)?.GetValue(editItem));
+                    SetControlValue(control, field, ReadValue(editItem, field.Key));
                 }
                 else if (field.DefaultValue != null)
                 {
@@ -433,6 +457,28 @@ namespace PrimeERP.Composition.Renderers
             {
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Security.IRoleService>().GetAll();
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Select(r => new PickerRow { Id = r.Id, Code = null, Display = r.NameAr }).ToList();
+            }
+            // قوائم معالج البناء: تعدادات النظام وكتالوج أزراره — تُختار ولا تُكتب.
+            else if (field.PickerType is "BuilderKind" or "BuilderDataType" or "BuilderAggregate"
+                     or "FooterAggregate" or "BuilderFilterKind" or "ToolbarAction"
+                     or "BuilderSection" or "BuilderModule" or "AnyModule")
+            {
+                combo.ItemsSource = BuilderPickers.Rows(field.PickerType, services);
+            }
+            // "Table:<مفتاح الوحدة>:<عمود العرض>" — قائمةٌ عامّة تقرأ جدولها من الوصف، فلا يحتاج جدولٌ
+            // جديد فرعاً مكتوباً هنا. الفروع أدناه للجداول المكتوبة تبقى كما هي.
+            else if (field.PickerType?.StartsWith("Table:") == true)
+            {
+                var parts = field.PickerType.Split(':');
+                var moduleKey = parts.Length > 1 ? parts[1] : null;
+                var display = parts.Length > 2 && !string.IsNullOrWhiteSpace(parts[2]) ? parts[2] : "Name";
+
+                var builder = services.GetRequiredService<PrimeERP.Application.Services.Builder.IBuilderCatalog>();
+                var target = builder.Modules().FirstOrDefault(m => m.Key == moduleKey);
+                if (target == null || string.IsNullOrWhiteSpace(target.TableName)) return;
+
+                combo.ItemsSource = builder.PickerRows(target.TableName, display)
+                    .Select(r => new PickerRow { Id = r.Id, Code = r.Id.ToString(), Display = r.Display }).ToList();
             }
             else if (field.PickerType == "Customer")
             {

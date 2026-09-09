@@ -70,6 +70,9 @@ namespace PrimeERP.Composition.Definitions
         public required string TitleKey { get; init; }
         public required string TitleEditKey { get; init; }
         public required Type ServiceType { get; init; }
+
+        /// <summary>مصنعٌ يبني الخدمة بدل حلّها بالنوع. فارغ = بالنوع.</summary>
+        public Func<IServiceProvider, object> ServiceFactory { get; init; }
         public required Type DtoType { get; init; }
         public required Type LineDtoType { get; init; }
         public required string LinesPropertyName { get; init; }

@@ -22,7 +22,7 @@ namespace PrimeERP.Tests.Composition
         public void EveryRegisteredModule_AppearsInExactlyOneNavigationGroup()
         {
             var registry = _db.Services.GetRequiredService<IModuleRegistry>();
-            var grouped = PrimeERP.Composition.Registry.NavigationMap.Groups.SelectMany(g => g.Keys).ToList();
+            var grouped = PrimeERP.Composition.Registry.NavigationMap.Groups().SelectMany(g => g.Keys).ToList();
 
             var missing = registry.All().Select(m => m.Key).Where(k => !grouped.Contains(k)).ToList();
             Assert.True(missing.Count == 0, "وحدات مسجَّلة ولا تظهر في الشريط الجانبي: " + string.Join(", ", missing));

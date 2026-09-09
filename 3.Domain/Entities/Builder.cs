@@ -10,6 +10,9 @@ namespace PrimeERP.Domain.Entities
         public string Title    { get; set; }
         public string IconKey  { get; set; }
         public int    SortOrder { get; set; }
+
+        /// <summary>مفاتيح وحدات القسم مفصولةً بفاصلة — تُبذَر من خريطة الكود ثم تُعدَّل.</summary>
+        public string Modules  { get; set; }
     }
 
     /// <summary>

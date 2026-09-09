@@ -28,6 +28,9 @@ namespace PrimeERP.Data.Repositories
 
         /// <summary>يُنشئ جدول الوحدة (ورأس/سطور للحركة) من أعمدتها — يُستدعى عند الحفظ وعند كل إقلاع.</summary>
         void EnsureBuiltTable(BuilderModule module, List<BuilderColumn> columns);
+
+        /// <summary>صفوف قائمة من جدول مبنيّ: المُعرِّف وعمود العرض — تستهلكها القائمة العامّة "Table:".</summary>
+        List<(int Id, string Display)> PickerRows(string table, string displayColumn);
     }
 
     /// <summary>
@@ -44,7 +47,7 @@ namespace PrimeERP.Data.Repositories
         {
             SchemaBuilder.Table("BuilderSections").Id()
                 .Text("Key", 60, required: true, unique: true).Text("Title", 120, required: true)
-                .Text("IconKey", 60).Int("SortOrder", nullable: false, defaultValue: 0)
+                .Text("IconKey", 60).Int("SortOrder", nullable: false, defaultValue: 0).Text("Modules", 2000)
                 .Audit().SoftDelete().Create();
 
             SchemaBuilder.Table("BuilderModules").Id()
@@ -97,20 +100,26 @@ namespace PrimeERP.Data.Repositories
                 null, null, where.Parameters);
         }
 
+        public List<(int Id, string Display)> PickerRows(string table, string displayColumn) =>
+            QueryAs(r => (System.Convert.ToInt32(r["Id"]), r[displayColumn]?.ToString()),
+                $"SELECT Id, {displayColumn} FROM {table} WHERE IsDeleted = @d {OrderBuilder.By(displayColumn, false)}",
+                null, null, ("@d", false));
+
         // ===================== الكتابة =====================
 
         public int SaveSection(BuilderSection s)
         {
             var p = new (string, object)[]
             {
-                ("@k", s.Key), ("@t", s.Title), ("@i", s.IconKey ?? ""), ("@o", s.SortOrder), ("@now", System.DateTime.Now)
+                ("@k", s.Key), ("@t", s.Title), ("@i", s.IconKey ?? ""), ("@o", s.SortOrder),
+                ("@m", s.Modules ?? ""), ("@now", System.DateTime.Now)
             };
 
             if (s.Id == 0)
-                return InsertGetId("INSERT INTO BuilderSections (Key, Title, IconKey, SortOrder, CreatedAt, CreatedBy) VALUES (@k,@t,@i,@o,@now,@by)",
+                return InsertGetId("INSERT INTO BuilderSections (Key, Title, IconKey, SortOrder, Modules, CreatedAt, CreatedBy) VALUES (@k,@t,@i,@o,@m,@now,@by)",
                     null, null, p.Append(("@by", (object)(s.CreatedBy ?? ""))).ToArray());
 
-            Exec("UPDATE BuilderSections SET Key=@k, Title=@t, IconKey=@i, SortOrder=@o, UpdatedAt=@now WHERE Id=@id",
+            Exec("UPDATE BuilderSections SET Key=@k, Title=@t, IconKey=@i, SortOrder=@o, Modules=@m, UpdatedAt=@now WHERE Id=@id",
                 null, null, p.Append(("@id", (object)s.Id)).ToArray());
             return s.Id;
         }
@@ -223,7 +232,7 @@ namespace PrimeERP.Data.Repositories
         private static BuilderSection MapSection(System.Data.DataRow r) => new()
         {
             Id = Int(r, "Id"), Key = Str(r, "Key"), Title = Str(r, "Title"),
-            IconKey = Str(r, "IconKey"), SortOrder = Int(r, "SortOrder")
+            IconKey = Str(r, "IconKey"), SortOrder = Int(r, "SortOrder"), Modules = Str(r, "Modules")
         };
 
         private static BuilderModule MapModule(System.Data.DataRow r) => new()

@@ -8,7 +8,18 @@ namespace PrimeERP.Composition.Registry
     {
         private readonly Dictionary<string, ModuleDefinition> _modules = new();
 
-        public void Register(ModuleDefinition module) => _modules[module.Key] = module;
+        /// <summary>
+        /// بيان النسخة: مفاتيح الوحدات المسموحة. فارغ = النظام كاملاً، وهو الحال الافتراضي. يُضبَط عند
+        /// الإقلاع من الإعدادات، فتُتجاهَل كل وحدة خارجه — نسخةٌ مخصّصة بلا بناءٍ ثانٍ.
+        /// </summary>
+        public IReadOnlyCollection<string> Manifest { get; set; }
+
+        public void Register(ModuleDefinition module)
+        {
+            if (Manifest != null && !Manifest.Contains(module.Key)) return;
+
+            _modules[module.Key] = module;
+        }
 
         public ModuleDefinition Get(string key) => _modules.TryGetValue(key, out var m) ? m : null;
 

@@ -65,6 +65,13 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IJobTitleRepository, JobTitleRepository>();
             services.AddSingleton<IUnitRepository, UnitRepository>();
             services.AddSingleton<IWarehouseRepository, WarehouseRepository>();
+            services.AddSingleton<IBuilderRepository, BuilderRepository>();
+            services.AddSingleton<PrimeERP.Application.Services.Builder.IBuilderCatalog, PrimeERP.Application.Services.Builder.BuilderCatalog>();
+            services.AddSingleton<PrimeERP.Application.Services.Builder.BuilderSectionsService>();
+            services.AddSingleton<PrimeERP.Application.Services.Builder.BuilderModulesService>();
+            services.AddSingleton<PrimeERP.Application.Services.Builder.BuilderColumnsService>();
+            services.AddSingleton<PrimeERP.Application.Services.Builder.BuilderActionsService>();
+            services.AddSingleton<PrimeERP.Application.Services.Builder.BuilderFiltersService>();
             services.AddSingleton<IStockMovementRepository, StockMovementRepository>();
             services.AddSingleton<IDocumentLinkRepository, DocumentLinkRepository>();
             services.AddSingleton<ITreasuryRepository, TreasuryRepository>();
@@ -99,6 +106,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<PrimeERP.Application.Reporting.IStockReportService, PrimeERP.Application.Reporting.StockReportService>();
             services.AddSingleton<PrimeERP.Application.Reporting.IPartyReportService, PrimeERP.Application.Reporting.PartyReportService>();
             services.AddSingleton<PrimeERP.Application.Reporting.ISalesReportService, PrimeERP.Application.Reporting.SalesReportService>();
+            services.AddSingleton<PrimeERP.Application.Reporting.IBuilderReportService, PrimeERP.Application.Reporting.BuilderReportService>();
             services.AddSingleton<IFiscalPeriodService, FiscalPeriodService>();
             services.AddSingleton<ICustomerService, CustomerService>();
             services.AddSingleton<ISupplierService, SupplierService>();
@@ -226,12 +234,26 @@ namespace PrimeERP.App.Bootstrap
         /// لحلّ IModuleRegistry، لا IServiceCollection وقت التسجيل).</summary>
         public static IServiceProvider RegisterModules(this IServiceProvider services)
         {
+            // بيان النسخة قبل أي تسجيل: الوحدات خارجه لا تُسجَّل أصلاً، فلا تظهر في سايدبار ولا صلاحيات.
+            var manifest = services.GetRequiredService<ISettingsService>().Get(SettingKeys.UI.Manifest, "");
+            if (!string.IsNullOrWhiteSpace(manifest))
+                services.GetRequiredService<IModuleRegistry>().Manifest =
+                    manifest.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet();
+
             ModuleRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             ReportRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             PermissionModuleRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             CycleVoucherRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             CycleDocumentRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             TreasuryRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
+
+            // ما بناه المستخدم يُسجَّل بعد المكتوب فيظهر معه بلا تمييز.
+            BuilderRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
+            BuilderModuleLoader.RegisterAll(services.GetRequiredService<IModuleRegistry>(), services);
+
+            // بذر الصلاحيات بعد التسجيل لا قبله: مفاتيح الوحدات المبنيّة وشاشات البناء تُولَّد أثناء
+            // التسجيل، فبذرٌ سابق له لا يراها ولا يمنحها لدور مدير النظام — فتختفي شاشاتها بلا سبب ظاهر.
+            PermissionDb.SeedDefaults();
 
             // PrintService لا تفتح نوافذ بنفسها — تُحقن واجهتها المرئية هنا (نفس نمط IDocumentExporter).
             services.GetRequiredService<IPrintService>().DialogHost = services.GetRequiredService<IPrintDialogHost>();
@@ -253,6 +275,7 @@ namespace PrimeERP.App.Bootstrap
             SettingSeeder.Seed();
 
             services.GetRequiredService<IBackupRepository>().CreateTable();
+            services.GetRequiredService<IBuilderRepository>().CreateTables();
 
             var accounts = services.GetRequiredService<IAccountRepository>();
             accounts.CreateTable();
@@ -306,7 +329,6 @@ namespace PrimeERP.App.Bootstrap
             // UserPermissions + بذر دور SystemAdmin ومستخدم admin) كانت مبنية بالكامل منذ وقت طويل بلا أي
             // استدعاء فعلي من مسار حي — Login/الصلاحيات الحقيقية لم يكونا ممكنَين إطلاقاً قبل هذا السطر.
             PermissionDb.CreateTables();
-            PermissionDb.SeedDefaults();
 
             MigrationRunner.RunPending();
 

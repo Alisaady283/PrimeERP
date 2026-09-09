@@ -72,7 +72,20 @@ namespace PrimeERP.App
 
         private List<NavItem> BuildNavGroups()
         {
-            var groups = NavigationMap.Groups;
+            // الأقسام من الوصف عبر خدمته — لا مستودع من طبقة عرض.
+            var builder = _services.GetRequiredService<PrimeERP.Application.Services.Builder.IBuilderCatalog>();
+            var modules = builder.Modules().Where(m => m.IsActive).ToList();
+            var built = builder.Sections()
+                .OrderBy(section => section.SortOrder)
+                .Select(section => (section.Key, section.Title, section.IconKey ?? "IconSettings",
+                    // وحدات القسم: المبذورة من الكود في عموده، وما بُني تحته — قائمة واحدة.
+                    (section.Modules ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Concat(modules.Where(m => m.SectionId == section.Id).Select(m => m.Key))
+                        .Distinct().ToArray()))
+                .Where(g => g.Item4.Length > 0)
+                .ToList();
+
+            var groups = NavigationMap.Groups(built);
 
             var simplified = _services.GetRequiredService<ISettingsService>().Get(SettingKeys.Documents.SimplifiedFlow, true);
             var visible = _registry.VisibleFor(simplified).Select(m => m.Key).ToHashSet();

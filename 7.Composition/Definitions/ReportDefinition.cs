@@ -54,6 +54,10 @@ namespace PrimeERP.Composition.Definitions
         public required string Method { get; init; }
         public string[] Arguments { get; init; } = System.Array.Empty<string>();
 
+        /// <summary>وسائط ثابتة بلا عنصر مرئي — نفس مفهوم DialogDefinition.FixedValues. يستعملها التقرير
+        /// المبنيّ ليمرّر مفتاح وحدته للخدمة العامّة.</summary>
+        public Dictionary<string, object> FixedArguments { get; init; }
+
         /// <summary>العرض: يبقى هنا لأنه تخطيط شاشة لا منطق.</summary>
         public required List<GridColumn> Columns { get; init; }
         public string TitleOverrideTotalKey { get; init; }

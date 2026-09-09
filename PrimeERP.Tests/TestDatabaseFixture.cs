@@ -45,59 +45,8 @@ namespace PrimeERP.Tests
 
             Services = BuildServices();
 
-            SettingRepository.CreateTable();
-            SettingSeeder.Seed();
-            Services.GetRequiredService<IBackupRepository>().CreateTable();
-            var accounts = Services.GetRequiredService<IAccountRepository>();
-            accounts.CreateTable();
-            accounts.SeedDefaults();
-            Services.GetRequiredService<IJournalRepository>().CreateTable();
-            Services.GetRequiredService<IFiscalPeriodRepository>().CreateTable();
-            var numberSequences = Services.GetRequiredService<INumberSequenceRepository>();
-            numberSequences.CreateTable();
-            NumberSequenceSeeder.Seed(numberSequences);
-            Services.GetRequiredService<ICustomerRepository>().CreateTable();
-            Services.GetRequiredService<ISupplierRepository>().CreateTable();
-            Services.GetRequiredService<ICategoryRepository>().CreateTable();
-            Services.GetRequiredService<IProductRepository>().CreateTable();
-            Services.GetRequiredService<IAssetRepository>().CreateTable();
-            Services.GetRequiredService<IEmployeeRepository>().CreateTable();
-            Services.GetRequiredService<IDepartmentRepository>().CreateTable();
-            Services.GetRequiredService<IJobTitleRepository>().CreateTable();
-            Services.GetRequiredService<IUnitRepository>().CreateTable();
-            Services.GetRequiredService<IWarehouseRepository>().CreateTable();
-            Services.GetRequiredService<IStockMovementRepository>().CreateTable();
-            Services.GetRequiredService<ISalesInvoiceRepository>().CreateTable();
-            Services.GetRequiredService<IPurchaseInvoiceRepository>().CreateTable();
-            Services.GetRequiredService<ISalesReturnRepository>().CreateTable();
-            Services.GetRequiredService<IPurchaseReturnRepository>().CreateTable();
-            Services.GetRequiredService<IStockInRepository>().CreateTable();
-            Services.GetRequiredService<IStockOutRepository>().CreateTable();
-            Services.GetRequiredService<IPurchaseRequestRepository>().CreateTable();
-            Services.GetRequiredService<IPurchaseOrderRepository>().CreateTable();
-            Services.GetRequiredService<IQuotationRepository>().CreateTable();
-            Services.GetRequiredService<ISalesOrderRepository>().CreateTable();
-            Services.GetRequiredService<IGoodsReceiptRepository>().CreateTable();
-            Services.GetRequiredService<IGoodsIssueRepository>().CreateTable();
-            Services.GetRequiredService<IDeliveryNoteRepository>().CreateTable();
-            Services.GetRequiredService<ISalesReceiptRepository>().CreateTable();
-            Services.GetRequiredService<IStockTransferRepository>().CreateTable();
-            Services.GetRequiredService<IPayrollRepository>().CreateTable();
-            Services.GetRequiredService<IDocumentLinkRepository>().CreateTable();
-            Services.GetRequiredService<ITreasuryRepository>().CreateTable();
-            Services.GetRequiredService<IVoucherRepository>().CreateTable();
-            Services.GetRequiredService<IChequeRepository>().CreateTable();
-
-            // CreateTables فقط، لا SeedDefaults — الأخيرة تلف ~80 صلاحية (Permissions+RolePermissions) عبر
-            // استعلامات فردية غير مُجمَّعة بمعاملة واحدة؛ رخيصة في الإنتاج (مرة واحدة فقط، تتحقق من عدم
-            // التكرار فتتخطى كل شيء من التشغيلة الثانية) لكنها مكلفة هنا لأن كل TestDatabaseFixture يبني
-            // قاعدة SQLite جديدة فارغة فتُنفَّذ كاملة من الصفر في كل مرة — تراكم هذا عبر عشرات فئات الاختبار
-            // تسبَّب فعلياً في تعليق/تعطُّل مضيف الاختبار على التشغيلة الكاملة (⚠️ توقف 11، ARCHITECTURE.md).
-            // لا اختبار حالي يحتاج بيانات مزروعة فعلية (الكل عبر AppSession.DevMode=true) — الجداول فقط
-            // تكفي لسلامة القيود الأجنبية إن استُهلكت لاحقاً.
-            PermissionDb.CreateTables();
-
-            MigrationRunner.RunPending();
+            // القاعدة جاهزة داخل BuildServices بترتيب الإنتاج — كانت قائمة إنشاء الجداول منسوخة هنا في
+            // ٣٩ سطراً، فكل جدول جديد يحتاج إضافته في موضعين.
         }
 
         /// <summary>يبني حاوية DI جديدة بنفس تسجيل الإنتاج — configureOverrides يُستدعى بعده مباشرة، فأي تسجيل فيه (Fake/Mock) يفوز عند الحلّ (آخر تسجيل لنفس النوع هو الفائز في Microsoft.Extensions.DependencyInjection).</summary>
@@ -113,6 +62,10 @@ namespace PrimeERP.Tests
             configureOverrides?.Invoke(services);
 
             var provider = services.BuildServiceProvider();
+
+            // ترتيب الإنتاج بالضبط (App.xaml.cs): القاعدة تُهيَّأ ثم تُسجَّل الوحدات — لأن الوحدات المبنيّة
+            // تُقرأ من جداول الوصف عند التسجيل. كان الترتيب هنا معكوساً فانحرف الاختبار عن الإقلاع الفعلي.
+            provider.EnsureDatabaseReady();
             provider.RegisterModules();
             return provider;
         }

@@ -27,7 +27,7 @@ namespace PrimeERP.Composition.Renderers
     {
         public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services)
         {
-            dynamic vm = services.GetRequiredService(definition.ViewModelType);
+            dynamic vm = Resolve.ViewModel(definition, services);
 
             // بلا Title — AppShell.TopBar يعرض عنوان الصفحة تلقائياً من NavItem المختار (breadcrumb)؛ تكراره
             // هنا ظهر فعلياً كنص مكرر حرفياً عند أول تشغيل حقيقي (راجع توقف 10). PageHeader هنا لاستضافة زر
@@ -89,7 +89,7 @@ namespace PrimeERP.Composition.Renderers
                 actions.Add(ToolbarAction.Build(captured.Label, captured.Label, null, captured.Variant, command, captured.PermissionKey, null, captured.Label));
             }
 
-            header.ActionsContent = new ActionToolbar { ButtonsSource = actions };
+            header.ActionsContent = new ActionToolbar { ButtonsSource = Enabled(definition, actions) };
 
             var filterBar = new FilterBar { SearchPlaceholder = LocalizationService.Get("Str.Search") };
             BindingOperations.SetBinding(filterBar, FilterBar.ResultCountProperty, new Binding("TotalCount"));
@@ -99,7 +99,7 @@ namespace PrimeERP.Composition.Renderers
                 filterBar.FiltersContent = BuildFilterControls(definition.Filters, vm, services);
 
             if (documentActions != null)
-                filterBar.ActionsContent = new ActionToolbar { ButtonsSource = documentActions };
+                filterBar.ActionsContent = new ActionToolbar { ButtonsSource = Enabled(definition, documentActions) };
 
             // ShowPagination=false — ترقيم AppDataGrid الداخلي جانب العميل (يُقسِّم القائمة الكاملة محلياً)
             // يتعارض مع الترقيم الحقيقي من طرف الخادم هنا (كل صفحة تُجلَب من GetPaged عند الطلب فقط، لا
@@ -184,24 +184,17 @@ namespace PrimeERP.Composition.Renderers
                     Margin = new Thickness(0, 0, 8, 0)
                 };
 
-                if (filter.PickerType == "Category")
+                // القائمة من نفس آلية قوائم الحقول (LoadPickerItems) لا فرعٍ ثانٍ — فأي نوع قائمة يعمل
+                // في حقلٍ يعمل في فلتر، بلا كتابة هنا لكل نوع.
+                DialogRenderer.LoadPickerItems(combo, new FieldDefinition
                 {
-                    var categoryService = services.GetRequiredService<PrimeERP.Application.Services.Common.ICategoryService>();
-                    var result = categoryService.GetAll(filter.PickerCategoryModuleKey);
-                    if (result.IsSuccess)
-                        combo.ItemsSource = result.Value.Select(c => new { c.Id, Display = c.Name }).ToList();
-                }
-                else if (filter.PickerType == "Department")
-                {
-                    var result = services.GetRequiredService<PrimeERP.Application.Services.HR.IDepartmentService>().GetAll();
-                    if (result.IsSuccess)
-                        combo.ItemsSource = result.Value.Select(d => new { d.Id, Display = d.Name }).ToList();
-                }
+                    Key = filter.Key, LabelKey = filter.LabelKey, Kind = FieldKind.Picker,
+                    PickerType = filter.PickerType, PickerCategoryModuleKey = filter.PickerCategoryModuleKey
+                }, services);
 
                 combo.SelectionChanged += (_, __) =>
                 {
-                    object filterObj = vm.Filter;
-                    filterObj.GetType().GetProperty(filter.Key)?.SetValue(filterObj, combo.SelectedValue);
+                    DialogRenderer.WriteValue((object)vm.Filter, filter.Key, combo.SelectedValue);
                     vm.SearchCommand.Execute(null);
                 };
 
@@ -211,6 +204,19 @@ namespace PrimeERP.Composition.Renderers
         }
 
         /// <summary>الطباعة والتصدير من ListOutput — القائمة والتقرير يستوردان نفس القطعة.</summary>
+        /// <summary>
+        /// ترشيح أزرار الكتالوج بما أعلنته الوحدة. مفتاح الطباعة والتصدير مُفرَّد بنصّه ("print:طباعة
+        /// المستند") فيُقارَن جذره. فارغ = الكل، فلا تتأثر أي وحدة مكتوبة.
+        /// </summary>
+        private static List<ToolbarAction> Enabled(ModuleDefinition definition, List<ToolbarAction> actions)
+        {
+            if (definition.EnabledActions == null || actions == null) return actions;
+
+            return actions
+                .Where(a => a.Separator || definition.EnabledActions.Contains(a.Key?.Split(':')[0]))
+                .ToList();
+        }
+
         private static void PrintList(ModuleDefinition definition, IServiceProvider services, dynamic vm) =>
             ListOutput.Print(services, LocalizationService.Get(definition.TitleKey), definition.Columns, Rows(vm));
 

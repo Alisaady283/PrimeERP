@@ -221,9 +221,25 @@ namespace PrimeERP.Platform.Permissions
         }
 
         /// <summary>يجمع كل مفاتيح الصلاحيات المعرّفة عبر كل الوحدات — يُستخدم لزرع جدول Permissions تلقائياً.</summary>
+        /// <summary>
+        /// مفاتيح الوحدات المبنيّة — تُسجَّل عند الإقلاع فتظهر في شجرة الصلاحيات مع المكتوبة بلا تمييز.
+        /// شجرة الشاشة تُبنى من All() آلياً، فلا تعديل في شاشة الصلاحيات نفسها.
+        /// </summary>
+        private static readonly List<string> Built = new();
+
+        /// <summary>يُستدعى مرّة عند الإقلاع لكل وحدة مبنيّة: View/Create/Edit/Delete.</summary>
+        public static void RegisterBuilt(string moduleKey)
+        {
+            foreach (var action in new[] { "View", "Create", "Edit", "Delete" })
+            {
+                var key = $"{moduleKey}.{action}";
+                if (!Built.Contains(key)) Built.Add(key);
+            }
+        }
+
         public static List<string> All()
         {
-            var keys = new List<string>();
+            var keys = new List<string>(Built);
 
             foreach (var nested in typeof(PermissionKeys).GetNestedTypes(BindingFlags.Public | BindingFlags.Static))
             {

@@ -16,8 +16,16 @@ namespace PrimeERP.Data.Core
     {
         private static readonly List<Migration> _migrations = new();
 
+        /// <summary>
+        /// الترحيل يُسجَّل باسمه: تسجيلٌ ثانٍ بالاسم نفسه يستبدل الأول ولا يُضاعفه. القائمة ساكنة تعيش
+        /// عمر العملية، وتهيئة القاعدة قد تُستدعى أكثر من مرّة فيها — فالإلحاق الأعمى كان يُدرِج الاسم
+        /// مرّتين في نفس RunPending ويكسر قيد التفرّد في __Migrations.
+        /// </summary>
         public static void Register(string name, Action apply)
-            => _migrations.Add(new Migration { Name = name, Apply = apply });
+        {
+            _migrations.RemoveAll(m => m.Name == name);
+            _migrations.Add(new Migration { Name = name, Apply = apply });
+        }
 
         private static void EnsureMigrationsTable()
         {

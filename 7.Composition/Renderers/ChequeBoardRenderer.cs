@@ -29,7 +29,7 @@ namespace PrimeERP.Composition.Renderers
     {
         public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services)
         {
-            dynamic vm = services.GetRequiredService(definition.ViewModelType);
+            dynamic vm = Resolve.ViewModel(definition, services);
             var cheques = services.GetRequiredService<IChequeService>();
             var toast = services.GetRequiredService<IToastService>();
 

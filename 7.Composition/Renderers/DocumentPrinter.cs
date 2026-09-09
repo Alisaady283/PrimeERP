@@ -107,7 +107,7 @@ namespace PrimeERP.Composition.Renderers
             if (id == null) { toast.Error("المستند بلا معرّف"); return; }
 
             var settings = services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>();
-            var service = services.GetRequiredService(def.ServiceType);
+            var service = Resolve.Service(def, services);
             var getById = DialogRenderer.FindMethod(def.ServiceType, "GetById", typeof(int));
             if (getById == null) { toast.Error($"الخدمة {def.ServiceType.Name} بلا GetById(int)"); return; }
 

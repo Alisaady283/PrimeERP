@@ -22,6 +22,18 @@ namespace PrimeERP.Composition.Definitions
         /// LayoutKind.Report (ReportRenderer لا يستهلكها).</summary>
         public Type ViewModelType { get; init; }
 
+        /// <summary>
+        /// مصنعٌ يبني نموذج العرض بدل حلّه بالنوع. فارغ = بالنوع كما تفعل كل وحدة مكتوبة. تحتاجه الوحدات
+        /// المبنيّة: كلها تحمل النوع نفسه، فالنسخة وحدها تعرف جدولها.
+        /// </summary>
+        public Func<IServiceProvider, object> ViewModelFactory { get; init; }
+
+        /// <summary>
+        /// مفاتيح أزرار الكتالوج التي تظهر على هذه الشاشة (new/edit/delete/refresh/print/export…).
+        /// فارغ = كلها، وهو حال كل وحدة مكتوبة. المعالج يعرضها كلها محدَّدة ويحفظ ما بقي مؤشَّراً.
+        /// </summary>
+        public string[] EnabledActions { get; init; }
+
         /// <summary>أعمدة الشبكة (LayoutKind.Grid) — أو أعمدة لوحة التفاصيل (LayoutKind.TreeSplit)، نفس القائمة
         /// بلا نوع مواز: DetailColumns في TreeRenderer تُبنى من هذه القائمة نفسها، Binding بالاسم يعمل مطابقاً
         /// على الحالتين (خاصية على TDto). غير مطلوبة لـ LayoutKind.Report.</summary>

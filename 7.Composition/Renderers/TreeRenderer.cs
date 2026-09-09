@@ -28,7 +28,7 @@ namespace PrimeERP.Composition.Renderers
             if (definition.TreeOptions == null)
                 throw new InvalidOperationException($"الوحدة '{definition.Key}' بتخطيط {definition.LayoutKind} بلا TreeOptions.");
 
-            dynamic vm = services.GetRequiredService(definition.ViewModelType);
+            dynamic vm = Resolve.ViewModel(definition, services);
             var options = definition.TreeOptions;
 
             var header = new PageHeader();

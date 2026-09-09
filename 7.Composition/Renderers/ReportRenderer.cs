@@ -134,6 +134,9 @@ namespace PrimeERP.Composition.Renderers
                 return Result.Fail<PrimeERP.Application.Reporting.ReportData>(
                     $"الخدمة {report.ServiceType.Name} بلا {report.Method}");
 
+            if (report.FixedArguments != null)
+                foreach (var fixedArgument in report.FixedArguments) parameters[fixedArgument.Key] = fixedArgument.Value;
+
             var signature = method.GetParameters();
             var args = new object[signature.Length];
 

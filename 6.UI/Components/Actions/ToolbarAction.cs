@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -25,43 +26,77 @@ namespace PrimeERP.UI.Components.Actions
         private static Geometry Icon_(string key) =>
             string.IsNullOrEmpty(key) ? null : System.Windows.Application.Current?.TryFindResource(key) as Geometry;
 
+        /// <summary>
+        /// كتالوج الأزرار القياسية: مفتاحٌ ← اسمه وأيقونته وشكله واختصاره وتلميحه. مصدرٌ واحد تقرأ منه
+        /// المصانع أدناه، ويقرأ منه معالج البناء ليعرض ما يملكه النظام — فأي زرّ يُضاف هنا يظهر في
+        /// المعالج بلا تعديل ثانٍ، ولا تتكرّر قيمه في موضعين.
+        /// </summary>
+        public static readonly IReadOnlyDictionary<string, (string Text, string IconKey, string Variant, string Shortcut, string Tooltip)> Catalogue =
+            new Dictionary<string, (string, string, string, string, string)>
+            {
+                ["new"]         = ("جديد",        "IconAdd",         "primary",   "Ctrl+N", "إضافة عنصر جديد"),
+                ["edit"]        = ("تعديل",       "IconEdit",        "secondary", "Ctrl+E", "تعديل العنصر المحدد"),
+                ["delete"]      = ("حذف",         "IconDelete",      "danger",    "Delete", "حذف العنصر المحدد"),
+                ["save"]        = ("حفظ",         "IconSave",        "primary",   "Ctrl+S", "حفظ التغييرات"),
+                ["cancel"]      = ("إلغاء",       "IconCancel",      "ghost",     null,     "إلغاء العملية"),
+                ["print"]       = ("طباعة",       "IconPrint",       "secondary", null,     "طباعة"),
+                ["export"]      = ("تصدير",       "IconExport",      "secondary", null,     "تصدير"),
+                ["refresh"]     = ("تحديث",       "IconRefresh",     "ghost",     "F5",     "تحديث البيانات"),
+                ["post"]        = ("ترحيل",       "IconCheck",       "success",   null,     "ترحيل المستند"),
+                ["unpost"]      = ("إلغاء ترحيل", "IconCancel",      "warning",   null,     "إلغاء ترحيل المستند"),
+                ["expandAll"]   = ("توسيع الكل",  "IconChevronDown", "ghost",     null,     "توسيع كل العقد"),
+                ["collapseAll"] = ("طي الكل",     "IconChevronUp",   "ghost",     null,     "طي كل العقد"),
+            };
+
+        /// <summary>
+        /// يبني زراً من الكتالوج. text غير الفارغ يُخصّص الاسم ويُفرِّد المفتاح — صفحة المستندات فيها
+        /// زرّا طباعة (تقرير ومستند)، ولولا التفريد لتصادما في قائمة "المزيد" وفي الاختصارات.
+        /// </summary>
+        private static ToolbarAction FromCatalogue(string key, ICommand command, string permissionKey, string text = null)
+        {
+            var spec = Catalogue[key];
+            return Build(text == null ? key : $"{key}:{text}", text ?? spec.Text, spec.IconKey, spec.Variant,
+                command, permissionKey, spec.Shortcut, text ?? spec.Tooltip);
+        }
+
         public static ToolbarAction SeparatorItem() => new() { Separator = true };
 
+
         public static ToolbarAction New(ICommand command, string permissionKey = null) =>
-            Build("new", "جديد", "IconAdd", "primary", command, permissionKey, "Ctrl+N", "إضافة عنصر جديد");
+            FromCatalogue("new", command, permissionKey);
 
         public static ToolbarAction Edit(ICommand command, string permissionKey = null) =>
-            Build("edit", "تعديل", "IconEdit", "secondary", command, permissionKey, "Ctrl+E", "تعديل العنصر المحدد");
+            FromCatalogue("edit", command, permissionKey);
 
         public static ToolbarAction Delete(ICommand command, string permissionKey = null) =>
-            Build("delete", "حذف", "IconDelete", "danger", command, permissionKey, "Delete", "حذف العنصر المحدد");
+            FromCatalogue("delete", command, permissionKey);
 
         public static ToolbarAction Save(ICommand command, string permissionKey = null) =>
-            Build("save", "حفظ", "IconSave", "primary", command, permissionKey, "Ctrl+S", "حفظ التغييرات");
+            FromCatalogue("save", command, permissionKey);
 
         public static ToolbarAction Cancel(ICommand command, string permissionKey = null) =>
-            Build("cancel", "إلغاء", "IconCancel", "ghost", command, permissionKey, null, "إلغاء العملية");
+            FromCatalogue("cancel", command, permissionKey);
 
-        public static ToolbarAction Print(ICommand command, string permissionKey = null, string text = "طباعة") =>
-            Build("print:" + text, text, "IconPrint", "secondary", command, permissionKey, null, text);
+        public static ToolbarAction Print(ICommand command, string permissionKey = null, string text = null) =>
+            FromCatalogue("print", command, permissionKey, text);
 
-        public static ToolbarAction Export(ICommand command, string permissionKey = null, string text = "تصدير") =>
-            Build("export:" + text, text, "IconExport", "secondary", command, permissionKey, null, text);
+        public static ToolbarAction Export(ICommand command, string permissionKey = null, string text = null) =>
+            FromCatalogue("export", command, permissionKey, text);
 
         public static ToolbarAction Refresh(ICommand command, string permissionKey = null) =>
-            Build("refresh", "تحديث", "IconRefresh", "ghost", command, permissionKey, "F5", "تحديث البيانات");
+            FromCatalogue("refresh", command, permissionKey);
 
         public static ToolbarAction Post(ICommand command, string permissionKey = null) =>
-            Build("post", "ترحيل", "IconCheck", "success", command, permissionKey, null, "ترحيل المستند");
+            FromCatalogue("post", command, permissionKey);
 
         public static ToolbarAction Unpost(ICommand command, string permissionKey = null) =>
-            Build("unpost", "إلغاء ترحيل", "IconCancel", "warning", command, permissionKey, null, "إلغاء ترحيل المستند");
+            FromCatalogue("unpost", command, permissionKey);
 
         public static ToolbarAction ExpandAll(ICommand command) =>
-            Build("expandAll", "توسيع الكل", "IconChevronDown", "ghost", command, null, null, "توسيع كل العقد");
+            FromCatalogue("expandAll", command, null);
 
         public static ToolbarAction CollapseAll(ICommand command) =>
-            Build("collapseAll", "طي الكل", "IconChevronUp", "ghost", command, null, null, "طي كل العقد");
+            FromCatalogue("collapseAll", command, null);
 
         public static ToolbarAction Build(string key, string text, string iconKey, string variant,
                                            ICommand command, string permissionKey, string shortcut, string tooltip) => new()

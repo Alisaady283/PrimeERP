@@ -72,6 +72,9 @@ namespace PrimeERP.Composition.Definitions
         public int GridColumns { get; init; } = 2;
         public required List<FieldDefinition> Fields { get; init; }
         public required Type ServiceType { get; init; }
+
+        /// <summary>مصنعٌ يبني الخدمة بدل حلّها بالنوع. فارغ = بالنوع.</summary>
+        public Func<IServiceProvider, object> ServiceFactory { get; init; }
         public required Type CreateDtoType { get; init; }
         public required Type UpdateDtoType { get; init; }
 

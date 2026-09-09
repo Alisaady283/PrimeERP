@@ -58,77 +58,39 @@
 
 ## ٥. المنفَّذ
 
-| # | البند | التحويلة |
-|---|---|---|
-| ✅ | الكيانات والتعدادات: `BuilderSection` · `BuilderModule` · `BuilderColumn` · `BuilderAction` · `BuilderFilter` · `BuilderKind` · `BuilderDataType` · `BuilderAggregate` | `cf57407` |
-| ✅ | `BuilderRepository` — وصفٌ يُقرأ ويُكتب، و`EnsureBuiltTable` يُنشئ الجدول بـ`SchemaBuilder` نفسه | `cf57407` |
-| ✅ | **تمهيد**: التقرير صار إعلاناً (خدمة + دالة + وسائط + أعمدة) — الوحدة تستورد الطريقة السليمة لا المكسورة | `fe33c99` |
-| ✅ | **تمهيد**: المنطق المحاسبي عاد لطبقته، وحارسان يمنعان عودته | `83917b5` · `fe33c99` |
+| البند | ما يستورده |
+|---|---|
+| ✅ الكيانات والتعدادات والمستودع (`BuilderSection/Module/Column/Action/Filter` · `BuilderKind/DataType/Aggregate`) | `SchemaBuilder` · `RepositoryBase` · `WhereBuilder` · `OrderBuilder` |
+| ✅ `Resolve` — حلّ نموذج العرض والخدمة بالمصنع أو بالنوع | وحّد ٧ استدعاءات مكرّرة |
+| ✅ `ReadValue`/`WriteValue` — قيمة الحقل من كيان أو قاموس | نقطة واحدة، أصلحت ٣ حلقات مكسورة في الدورة |
+| ✅ `ViewModelFactory`/`ServiceFactory` على التعريفات | نقطة تمديد، ١٠ أسطر |
+| ✅ `NavigationMap.Groups` مصدراً يدمج الكود والوصف | الأقسام المبنيّة |
+| ✅ `PermissionKeys.RegisterBuilt` | آلية `All()` القائمة — شجرة الصلاحيات تعرضها بلا تعديل |
+| ✅ فرع `Table:` + `PickerRows` | امتداد `LoadPickerItems` لا قائمة ثانية |
+| ✅ `DynamicRepository` — العمود المحسوب استعلامٌ فرعي | `RepositoryBase` · `WhereBuilder` · `OrderBuilder` |
+| ✅ `DynamicEntityService` | `ServiceBase` · `Check` · `BuilderRowValidator` |
+| ✅ `BuilderRowValidator` | `IValidator<>` · `Rules.For<T>().Custom` |
+| ✅ `DynamicViewModel` — نموذج واحد للجدول المبنيّ وشاشات الوصف عبر `IRowService` | `CrudViewModelBase` |
+| ✅ خدمات الوصف الخمس | `CrudServiceBase` (القراءة منه، والكتابة تبقى كما يقرّر توثيقه) |
+| ✅ `BuilderModuleLoader` — وصف ← تعريف ← تسجيل، بالنوع: تقرير/سجل/حركة | `ModuleDefinition` · `PageRenderer` |
+| ✅ شاشات الوحدة الخمس | `CrudPageRenderer` — إعلانات بلا XAML |
+| ✅ `ToolbarAction.Catalogue` — كتالوج واحد تقرأ منه المصانع والمعالج | حذف تكرار القيم في ١٢ مصنعاً |
+| ✅ `EnabledActions` — ترشيح أزرار الكتالوج بالإعلان | لا زرّ يُبنى، الموجود يُرشَّح |
+| ✅ نوع الحركة: رأس وسطور وإجماليات | `DocumentDialog` · `LineTotals` |
+| ✅ `BuilderReportService` | `ReportData` · `ReportRenderer.Run` — الطريقة الواحدة |
+| ✅ `ReportDefinition.FixedArguments` | مفهوم `DialogDefinition.FixedValues` |
+| ✅ بيان النسخة في `ModuleRegistry.Manifest` | ترشيح عند التسجيل، لا بناء ثانٍ |
+| ✅ الترحيل يتبع النوع — `EnsureBuiltTable` في كل إقلاع | `SchemaBuilder` (آمنة للتكرار) |
+| ✅ ٥٧ مفتاح نصّ | `Strings.{ar,en}.xaml` · `LocalizationService` |
+| ✅ `TestDatabaseFixture` يستورد `EnsureDatabaseReady` بترتيب الإنتاج | حذف ٣٩ سطر تكرار |
 
----
+## ٦. المتبقّي
 
-## ٦. المتبقّي — وخريطة النسخ لكل بند
-
-> **لا يُكتب بند من الصفر.** لكلٍّ مصدرٌ يُنسخ ويُعدَّل فيه الفرق.
-
-### ١. قائمة `Table:` عامّة — ~٢٠ سطراً
-- **انسخ**: فرع `field.PickerType == "Customer"` في `7.Composition/Renderers/DialogRenderer.cs` (سطر ~٤٣٧).
-- **الفرق**: بدل خدمة العملاء، يقرأ `BuilderRepository` اسم الجدول وعمود العرض من الوصف، ويستعلم `SELECT Id, <العرض> FROM <الجدول>`.
-- **يستورد**: `IBuilderRepository` · `PickerRow`.
-- **لماذا**: `LoadPickerItems` اليوم ١٧ فرعاً بأسماء مكتوبة، فلا مكان لجدول جديد.
-
-### ٢. `ServiceFactory` / `ViewModelFactory` — ~١٠ أسطر
-- **انسخ**: نمط `Func<IServiceProvider, object>` من `RowAction.Execute` في `7.Composition/Definitions/RowAction.cs`.
-- **الفرق**: خاصيتان على `ModuleDefinition`، تُستعملان في `CrudPageRenderer` سطر ٣٠ و`TrySave` حيث `GetRequiredService(definition.ViewModelType)` و`(def.ServiceType)`؛ فارغ = بالنوع كما اليوم.
-- **لماذا**: كل شاشة مبنيّة تحمل النوع نفسه فلا تعرف جدولها.
-
-### ٣. مصدر الأقسام — ~٤٠ سطراً
-- **انسخ**: `7.Composition/Registry/NavigationMap.cs` كاملاً (٢٠ سطراً) + `MainWindow.BuildNavGroups` (سطر ٧٣).
-- **الفرق**: `Groups` تصير دالةً تدمج المصفوفة الثابتة مع `BuilderRepository.Sections()`؛ `BuildNavGroups` تستدعيها بدل قراءة الحقل.
-- **يستورد**: `NavItem` كما هو.
-
-### ٤. توليد مفاتيح الصلاحيات — ~٣٠ سطراً
-- **انسخ**: `PermissionKeys.All()` في `1.Platform/Permissions/PermissionKeys.cs` (سطر ٢٢٤).
-- **الفرق**: بعد قراءة الكلاسات الثابتة بالانعكاس، تُضاف `<Key>.View/Create/Edit/Delete` لكل وحدة مبنيّة.
-- **يستورد**: `PermissionModuleRegistrations.SyncModules` يعمل كما هو — الشجرة تُبنى من `All()` آلياً فتظهر الوحدة الجديدة بلا تعديل شاشة الصلاحيات.
-
-### ٥. الثلاثي الديناميكي — ~٢٨٠ سطراً
-- **انسخ ثلاثة ملفات صغيرة نظيفة**:
-  - `2.Data/Repositories/WarehouseRepository.cs` (٥٤ سطراً) ← `DynamicRepository`
-  - `4.Application/Services/Inventory/WarehouseService.cs` (٧٣ سطراً) ← `DynamicEntityService`
-  - `6.UI/ViewModels/WarehousesViewModel.cs` (٣٥ سطراً) ← `DynamicViewModel`
-- **الفرق في المستودع**: اسم الجدول والأعمدة من الوصف لا ثابتان؛ `Map` يُرجع `Dictionary<string,object>` بدل كيان؛ العمود المحسوب استعلامٌ فرعي `(SELECT SUM(<AggColumn>) FROM <AggFrom> WHERE <AggMatch> = t.Id)`.
-- **الفرق في الخدمة**: ترث `ServiceBase` وتُعلن `PermissionPrefix` من الوصف؛ التحقق من `Rules.For<>` مبنيّاً من `IsRequired`/`MaxLength`/`IsUnique`.
-- **الفرق في نموذج العرض**: يرث `CrudViewModelBase<Dictionary<string,object>, ...>`.
-- **يستورد**: `WhereBuilder` · `OrderBuilder` · `SchemaBuilder` · `ServiceBase` · `CrudViewModelBase` — بلا تعديل.
-
-### ٦. `BuilderModuleLoader` — ~١٢٠ سطراً
-- **انسخ**: `RegisterLookup` في `8.Modules/ModuleRegistrations.cs` — يبني `ModuleDefinition` كاملاً في ١٧ سطراً.
-- **الفرق**: الأعمدة والحقول والأزرار والفلاتر من `BuilderRepository` بدل أن تكون مكتوبة؛ و`ServiceFactory`/`ViewModelFactory` (بند ٢) تحملان الوصف للنسخة.
-- **يُستدعى**: من `DependencyInjection` بعد `ModuleRegistrations.RegisterAll` مباشرةً — سطر واحد.
-
-### ٧. شاشات الوحدة الستّ — ~٢٥٠ سطراً
-- **انسخ**: `RegisterLookup` للشاشات البسيطة (الأقسام، الصفحات، الأعمدة المحسوبة)، و`StockDocumentFactory` لشاشة الجدول والأعمدة (رأس + سطور).
-- **الفرق**: `ServiceType` = خدمة الوصف، والحقول تصف جداول الوصف.
-- **شاشة الأزرار**: انسخ `TreeCheckListRenderer` (`RolePermissions`) — تأشيرٌ بالكل محدَّد ثم مزامنة عند الحفظ، وهو **سلوكك المطلوب حرفياً** وموجود يعمل.
-- **معاينة النوع**: `VisibleWhenField`/`PickerFilterField` القائمان يكفيان — القائمة تتبع الاختيار كما تتبع الخزائنُ طريقةَ الدفع في السندات.
-
-### ٨. التقرير المبنيّ — ~٤٠ سطراً
-- **انسخ**: `Register` في `8.Modules/ReportRegistrations.cs` (سطر ٨٠).
-- **الفرق**: `ServiceType` = `IDynamicReportService`، ودالةٌ واحدة تقرأ الجدول بفلاتره وتجميعاته.
-- **يستورد**: `ReportData` · `ReportRenderer.Run` — الطريقة الواحدة بلا مسار ثانٍ.
-
-### ٩. زر النسخة المخصّصة — ~١٠٠ سطر
-- **انسخ**: `IModuleRegistry.VisibleFor` في `7.Composition/Registry/ModuleRegistry.cs` (الترشيح) + `BackupService` (التعبئة).
-- **الفرق**: بيانٌ (`manifest`) بمفاتيح الأقسام والوحدات المسموحة، يقرؤه السجلّ عند الإقلاع فيتجاهل ما عداه.
-- **الشاشة**: انسخ `TreeCheckListRenderer` مرّة أخرى — اختيار الأقسام تأشيرٌ لا أكثر.
-- **صريح**: البيان يعمل دائماً؛ ملفّ `.exe` مستقلّ يحتاج `dotnet publish` أي وجود الـSDK.
-
-### ١٠. الترحيلات — ~٥٠ سطراً
-- **انسخ**: `MigrationRunner.Register` في `2.Data/Core/MigrationRunner.cs` (سطر ١٩).
-- **الفرق**: ترحيلٌ واحد يمرّ على `BuilderRepository.Modules()` ويستدعي `EnsureBuiltTable` لكلٍّ — يتبع النوع كما هو مقرَّر: التقرير بلا جدول فلا شيء.
-
----
+| البند | الحالة |
+|---|---|
+| شاشة اختيار الأقسام للتصدير | تُبنى على `TreeCheckListRenderer` — سلوك «الكل محدَّد ثم إلغاء» موجود يعمل في صلاحيات الأدوار |
+| نصوص `ToolbarAction.Catalogue` عربية في الكتالوج لا في `Strings.xaml` | دينٌ مسجَّل — نقلها يمسّ كل زرّ في النظام، خارج نطاق الوحدة |
+| تجربة فعلية: بناء قسم وصفحة وجدول وحفظ سجل | بعد خضرة الاختبارات |
 
 ## ٧. الإجمالي
 

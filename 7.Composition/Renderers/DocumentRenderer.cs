@@ -60,7 +60,7 @@ namespace PrimeERP.Composition.Renderers
             if (isEdit)
             {
                 var id = (int)editItem.GetType().GetProperty("Id").GetValue(editItem);
-                var service0 = services.GetRequiredService(def.ServiceType);
+                var service0 = Resolve.Service(def, services);
                 var getById = DialogRenderer.FindMethod(def.ServiceType, "GetById", typeof(int));
                 if (getById == null) { toast.Error($"الخدمة {def.ServiceType.Name} بلا GetById(int)"); return null; }
 
@@ -478,7 +478,7 @@ namespace PrimeERP.Composition.Renderers
         {
             if (!FieldValidation.Validate(def.HeaderFields, headerControls)) return false;
 
-            var service = services.GetRequiredService(def.ServiceType);
+            var service = Resolve.Service(def, services);
 
             var dto = Activator.CreateInstance(def.DtoType);
             DialogRenderer.ApplyFields(def.HeaderFields, headerControls, dto, editOnly: isEdit);
