@@ -161,12 +161,15 @@ namespace PrimeERP.Application.Services.Documents
             if (!Can("Delete")) return FailDenied();
             if (Repo.GetById(id) == null) return Result.Fail("المستند غير موجود", ErrorCode.NotFound);
 
+            // السحب يمنع الحذف: مستندٌ لاحق يقوم عليه، فحذفه يترك الأخير بلا أصل.
+            if (_links.GetPulledBySource(_entityName, id).Count > 0)
+                return Result.Fail("سُحب من هذا المستند — احذف ما سُحب إليه أولاً", ErrorCode.ValidationFailed);
+
             DeleteWithLinks(id);
             Audit.Log(_entityName, id, AuditAction.Delete);
             return Result.Ok();
         }
 
-        // حذف المستند وتحرير ما سحبه ذرّياً — بعدها يعود المتبقي على المصدر تلقائياً لأنه محسوب لا مخزَّن.
         private void DeleteWithLinks(int id) => Db.RunTransaction((conn, tx) =>
         {
             _links.RemovePull(_entityName, id, conn, tx);

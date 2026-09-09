@@ -67,6 +67,9 @@ namespace PrimeERP.Application.Services.Inventory
             return Result.Ok();
         }
 
+        public void RemoveMovements(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId) =>
+            _movements.DeleteBySource(conn, tx, sourceDocType, sourceDocId);
+
         public Result Transfer(int productId, int fromWarehouseId, int toWarehouseId, decimal qty, string notes = null)
         {
             if (!Can("Transfer")) return FailDenied();

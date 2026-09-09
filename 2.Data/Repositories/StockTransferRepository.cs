@@ -43,6 +43,12 @@ namespace PrimeERP.Data.Repositories
             Qty = Convert.ToDecimal(row["Qty"]), Notes = row["Notes"] == DBNull.Value ? null : row["Notes"].ToString(),
         };
 
+        // الحذف من RepositoryBase — هنا إعلان جدول السطور ومفتاحه فقط.
+        protected override string LineTable => "StockTransferLines";
+        protected override string LineForeignKey => "DocumentId";
+
+        public void DeleteDocument(DbConnection conn, DbTransaction tx, int id) => HardDelete(id, conn, tx);
+
         public override StockTransferDocument GetById(int id, DbConnection conn = null, DbTransaction tx = null) =>
             QueryOne("SELECT * FROM StockTransferDocuments WHERE Id = @id", conn, tx, ("@id", id));
 

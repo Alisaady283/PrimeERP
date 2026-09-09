@@ -7,6 +7,7 @@ namespace PrimeERP.Data.Repositories
     public interface ISalesReturnRepository
     {
         void CreateTable();
+        void DeleteDocument(DbConnection conn, DbTransaction tx, int id);
         SalesReturn GetById(int id, DbConnection conn = null, DbTransaction tx = null);
         List<SalesReturnLine> GetLines(int returnId, DbConnection conn = null, DbTransaction tx = null);
         (List<SalesReturn> Items, int Total) GetPaged(int page, int pageSize, string searchText, int? customerId, string sortColumn, bool sortDescending);

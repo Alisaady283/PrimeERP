@@ -7,6 +7,7 @@ namespace PrimeERP.Data.Repositories
     public interface IPurchaseInvoiceRepository
     {
         void CreateTable();
+        void DeleteDocument(DbConnection conn, DbTransaction tx, int id);
         PurchaseInvoice GetById(int id, DbConnection conn = null, DbTransaction tx = null);
         List<PurchaseInvoiceLine> GetLines(int invoiceId, DbConnection conn = null, DbTransaction tx = null);
         (List<PurchaseInvoice> Items, int Total) GetPaged(int page, int pageSize, string searchText, int? supplierId, string sortColumn, bool sortDescending);

@@ -7,6 +7,7 @@ namespace PrimeERP.Data.Repositories
     public interface IPayrollRepository
     {
         void CreateTable();
+        void DeleteDocument(DbConnection conn, DbTransaction tx, int id);
         Payroll GetById(int id, DbConnection conn = null, DbTransaction tx = null);
         List<PayrollLine> GetLines(int payrollId, DbConnection conn = null, DbTransaction tx = null);
         (List<Payroll> Items, int Total) GetPaged(int page, int pageSize, string searchText, string sortColumn, bool sortDescending);

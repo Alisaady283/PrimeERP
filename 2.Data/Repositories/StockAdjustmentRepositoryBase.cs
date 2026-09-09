@@ -48,6 +48,11 @@ namespace PrimeERP.Data.Repositories
             Notes = row["Notes"] == DBNull.Value ? null : row["Notes"].ToString(),
         };
 
+        // الحذف من RepositoryBase — الأساس يُعلن مرّة، فترثه الأذون الستّة.
+        protected override string LineTable => _lineTable;
+
+        public void DeleteDocument(DbConnection conn, DbTransaction tx, int id) => HardDelete(id, conn, tx);
+
         public override StockAdjustment GetById(int id, DbConnection conn = null, DbTransaction tx = null) =>
             QueryOne($"SELECT * FROM {_headerTable} WHERE Id = @id", conn, tx, ("@id", id));
 

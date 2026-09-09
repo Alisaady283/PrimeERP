@@ -101,6 +101,12 @@ namespace PrimeERP.Data.Repositories
             Notes       = row["Notes"] == DBNull.Value ? null : row["Notes"].ToString(),
         };
 
+        // الحذف من RepositoryBase — هنا إعلان جدول السطور ومفتاحه فقط.
+        protected override string LineTable => "SalesInvoiceLines";
+        protected override string LineForeignKey => "InvoiceId";
+
+        public void DeleteDocument(DbConnection conn, DbTransaction tx, int id) => HardDelete(id, conn, tx);
+
         public override SalesInvoice GetById(int id, DbConnection conn = null, DbTransaction tx = null) =>
             QueryOne("SELECT * FROM SalesInvoices WHERE Id = @id", conn, tx, ("@id", id));
 

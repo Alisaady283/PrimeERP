@@ -22,6 +22,9 @@ namespace PrimeERP.Application.Services.Inventory
         Result RecordMovement(DbConnection conn, DbTransaction tx, int productId, int warehouseId, Domain.Enums.MovementType type,
             decimal qty, decimal unitCost, string sourceDocType, int? sourceDocId, string sourceDocNo, DateTime? date = null, string notes = null);
 
+        /// <summary>يمحو أثر مستندٍ من المخزون عند حذفه — المستند يمرّر نوعه ورقمه.</summary>
+        void RemoveMovements(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId);
+
         Result Transfer(int productId, int fromWarehouseId, int toWarehouseId, decimal qty, string notes = null);
     }
 }

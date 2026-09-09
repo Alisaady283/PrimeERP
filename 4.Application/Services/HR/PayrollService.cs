@@ -136,7 +136,23 @@ namespace PrimeERP.Application.Services.HR
 
         public Result Update(CreatePayrollDto dto) => Result.Fail("مسير الرواتب مُرحَّل فور إنشائه — لا يمكن تعديله", ErrorCode.ValidationFailed);
 
-        public Result Delete(int id) => Result.Fail("مسير الرواتب مُرحَّل فور إنشائه — لا يمكن حذفه", ErrorCode.ValidationFailed);
+        /// <summary>حذف المسير وقيده — لا أثر مخزني له.</summary>
+        public Result Delete(int id)
+        {
+            if (!Can("Delete")) return FailDenied();
+
+            var payroll = _payrolls.GetById(id);
+            if (payroll == null) return Result.Fail("المسير غير موجود", ErrorCode.NotFound);
+
+            Db.RunTransaction((conn, tx) =>
+            {
+                if (payroll.JournalEntryId != null) _journal.Delete(conn, tx, payroll.JournalEntryId.Value);
+                _payrolls.DeleteDocument(conn, tx, id);
+            });
+
+            Audit.Log(EntityName, id, AuditAction.Delete);
+            return Result.Ok();
+        }
 
         private static PayrollDto ToDto(Payroll p) => new()
         {

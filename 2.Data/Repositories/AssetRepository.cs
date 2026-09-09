@@ -125,7 +125,6 @@ namespace PrimeERP.Data.Repositories
                 ("@now", DateTime.Now), ("@updatedBy", a.UpdatedBy), ("@id", a.Id));
 
         public void Delete(int id, string deletedBy, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec("UPDATE Assets SET IsDeleted = @d, DeletedAt = @now, DeletedBy = @by WHERE Id = @id",
-                conn, tx, ("@d", true), ("@now", DateTime.Now), ("@by", deletedBy), ("@id", id));
+            SoftDelete(id, deletedBy, conn, tx);
     }
 }

@@ -38,6 +38,30 @@ namespace PrimeERP.Data.Repositories.Base
 
         protected static object Scalar(string sql, params (string, object)[] p) => Db.Scalar(sql, Db.Params(p));
 
+        // ===================== الحذف =====================
+
+        /// <summary>
+        /// جدول سطور المستند ومفتاحه فيه. يُعلنهما مستودع المستند، وفارغ = سجلٌّ بلا سطور. المنطق
+        /// والحواجز تبقى في الخدمة — هذا ينفّذ فقط.
+        /// </summary>
+        protected virtual string LineTable => null;
+        protected virtual string LineForeignKey => "DocumentId";
+
+        /// <summary>حذف ناعم: السجل يبقى ويُخفى — كل استعلامات القراءة ترشّح IsDeleted.</summary>
+        protected void SoftDelete(int id, string deletedBy = null, DbConnection conn = null, DbTransaction tx = null) =>
+            Exec($"UPDATE {TableName} SET IsDeleted = @deleted, DeletedAt = @at, DeletedBy = @by WHERE Id = @id",
+                conn, tx, ("@deleted", true), ("@at", DateTime.Now), ("@by", deletedBy ?? ""), ("@id", id));
+
+        /// <summary>حذف صلب: السجل وسطوره إن كان له سطور — في معاملة المستدعي.</summary>
+        protected void HardDelete(int id, DbConnection conn = null, DbTransaction tx = null)
+        {
+            if (LineTable != null)
+                Exec($"DELETE FROM {LineTable} WHERE {LineForeignKey} = @id", conn, tx, ("@id", id));
+
+            Exec($"DELETE FROM {TableName} WHERE Id = @id", conn, tx, ("@id", id));
+        }
+
+
         /// <summary>
         /// نفس Query أعلاه لكن لنوع سطر آخر غير T — لِـ Repository يدير أكثر من كيان مرتبط (مثال: JournalRepository
         /// يدير JournalEntry+JournalLine معاً، FiscalPeriodRepository يدير FiscalYear+FiscalPeriod معاً).

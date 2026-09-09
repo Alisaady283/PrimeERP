@@ -8,6 +8,9 @@ namespace PrimeERP.Data.Repositories
     {
         void CreateTable();
         int Insert(StockMovement m, DbConnection conn = null, DbTransaction tx = null);
+
+        /// <summary>يمحو أثر مستندٍ من المخزون — الحركة تحمل مصدرها، فحذفه استعلامٌ واحد.</summary>
+        void DeleteBySource(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId);
         decimal GetBalance(int productId, int? warehouseId, DbConnection conn = null, DbTransaction tx = null);
         List<StockMovement> GetHistory(int productId, int? warehouseId, int maxResults);
 

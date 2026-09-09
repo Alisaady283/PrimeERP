@@ -187,8 +187,7 @@ namespace PrimeERP.Data.Repositories
 
         /// <summary>حذف منطقي (IsDeleted=true).</summary>
         public void Delete(int id, string deletedBy, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec("UPDATE Customers SET IsDeleted = @d, DeletedAt = @now, DeletedBy = @by WHERE Id = @id",
-                conn, tx, ("@d", true), ("@now", DateTime.Now), ("@by", deletedBy), ("@id", id));
+            SoftDelete(id, deletedBy, conn, tx);
 
         public void SetBalance(int id, decimal balance, DbConnection conn = null, DbTransaction tx = null) =>
             Exec("UPDATE Customers SET Balance = @b, UpdatedAt = @now WHERE Id = @id",

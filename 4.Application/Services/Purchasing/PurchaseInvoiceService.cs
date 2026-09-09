@@ -192,7 +192,27 @@ namespace PrimeERP.Application.Services.Purchasing
 
         public Result Update(CreatePurchaseInvoiceDto dto) => Result.Fail("الفاتورة مُرحَّلة فور إنشائها — لا يمكن تعديلها", ErrorCode.ValidationFailed);
 
-        public Result Delete(int id) => Result.Fail("الفاتورة مُرحَّلة فور إنشائها — لا يمكن حذفها", ErrorCode.ValidationFailed);
+        /// <summary>
+        /// نفس تسلسل السند: صلاحية ثم معاملة تحذف القيد وأثر المخزون والمستند معاً — فلا يبقى قيدٌ
+        /// ولا حركةٌ بلا مستندها. الصلاحية هي البوابة، والحواجز المحاسبية تبقى حيث كانت.
+        /// </summary>
+        public Result Delete(int id)
+        {
+            if (!Can("Delete")) return FailDenied();
+
+            var document = _invoices.GetById(id);
+            if (document == null) return Result.Fail("الفاتورة غير موجودة", ErrorCode.NotFound);
+
+            Db.RunTransaction((conn, tx) =>
+            {
+                if (document.JournalEntryId != null) _journal.Delete(conn, tx, document.JournalEntryId.Value);
+                _stock.RemoveMovements(conn, tx, "PurchaseInvoice", id);
+                _invoices.DeleteDocument(conn, tx, id);
+            });
+
+            Audit.Log(EntityName, id, AuditAction.Delete);
+            return Result.Ok();
+        }
 
         private PurchaseInvoiceDto ToDto(PurchaseInvoice i) => new()
         {

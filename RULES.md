@@ -123,6 +123,8 @@ registry.Register(new ModuleDefinition
 | قاعدة تحقق | `4.Application/Validation/…` |
 | قاعدة محاسبية نقية | `3.Domain/Rules/…` |
 | استعلام، ترتيب، ترشيح | `2.Data/Repositories` + `Query/{WhereBuilder,OrderBuilder}` |
+| جملة الحذف (ناعم أو صلب) | `2.Data/Repositories/Base/RepositoryBase` — `SoftDelete` / `HardDelete` |
+| حواجز الحذف (مرحَّل، سُحب منه، له أبناء) | خدمة الكيان في `4.Application` |
 | صلاحية | `1.Platform/Permissions/PermissionKeys.cs` |
 | حقول شاشة أو أعمدتها | `8.Modules/*Registrations.cs` |
 | سلوك كل الشاشات معاً | المُصيِّر في `7.Composition/Renderers` |

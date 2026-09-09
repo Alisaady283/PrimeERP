@@ -352,6 +352,18 @@ echo "  التعليقات TEMPORARY المسجَّلة حالياً:"
 grep -rn "// TEMPORARY" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|^\./.claude/" | sed 's/^/       /'
 
 # ============================================================
+section "5.4 — الحذف بلا مصدر واحد"
+# ============================================================
+
+# الحذف الناعم جملةٌ واحدة لكل الجداول — مصدرها RepositoryBase.SoftDelete. كتابتها في مستودع تعني
+# نسخةً سادسة عشرة من نفس السطر، وهو ما كان عليه الحال قبل التوحيد.
+n=$(grep -rn "UPDATE .* SET IsDeleted = @" --include="*.cs" 2.Data/Repositories 2>/dev/null     | grep -v "Base/RepositoryBase.cs" | grep -v "DynamicRepository" | wc -l)
+if [ "$n" -gt 0 ]; then
+  fail "حذف ناعم مكتوب خارج RepositoryBase ($n موضع) — استعمل SoftDelete:"
+  grep -rn "UPDATE .* SET IsDeleted = @" --include="*.cs" 2.Data/Repositories 2>/dev/null     | grep -v "Base/RepositoryBase.cs" | grep -v "DynamicRepository" | head -5 | sed 's/^/       /'
+else pass; fi
+
+# ============================================================
 section "5.5 — منطق أعمال في طبقة التسجيل (8.Modules)"
 # ============================================================
 

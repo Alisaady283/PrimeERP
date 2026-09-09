@@ -97,11 +97,9 @@ namespace PrimeERP.Data.Repositories
 
         public void DeleteDocument(int id) => Db.RunTransaction((conn, tx) => DeleteDocument(conn, tx, id));
 
-        public void DeleteDocument(DbConnection conn, DbTransaction tx, int id)
-        {
-            Exec($"DELETE FROM {_lineTable} WHERE DocumentId = @id", conn, tx, ("@id", id));
-            Exec($"DELETE FROM {_headerTable} WHERE Id = @id", conn, tx, ("@id", id));
-        }
+        protected override string LineTable => _lineTable;
+
+        public void DeleteDocument(DbConnection conn, DbTransaction tx, int id) => HardDelete(id, conn, tx);
     }
 
     public class PurchaseRequestRepository : CycleDocumentRepositoryBase, IPurchaseRequestRepository

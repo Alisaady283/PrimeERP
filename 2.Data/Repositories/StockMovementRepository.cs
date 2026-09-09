@@ -54,6 +54,10 @@ namespace PrimeERP.Data.Repositories
                 ("@sourceNo", m.SourceDocNo), ("@notes", m.Notes ?? ""), ("@createdBy", m.CreatedBy));
 
         // In(+)/Adjustment(±Qty نفسها)/Out(-) — Transfer لا تُخزَّن كنوع صريح، بل حركتا In/Out منفصلتان (راجع StockService.Transfer).
+        public void DeleteBySource(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId) =>
+            Exec("DELETE FROM StockMovements WHERE SourceDocType = @type AND SourceDocId = @id",
+                conn, tx, ("@type", sourceDocType), ("@id", sourceDocId));
+
         public decimal GetBalance(int productId, int? warehouseId, DbConnection conn = null, DbTransaction tx = null)
         {
             var sql = $@"SELECT COALESCE(SUM(CASE MovementType WHEN {(int)MovementType.Out} THEN -Qty ELSE Qty END), 0) AS Balance

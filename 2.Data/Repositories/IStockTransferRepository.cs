@@ -7,6 +7,7 @@ namespace PrimeERP.Data.Repositories
     public interface IStockTransferRepository
     {
         void CreateTable();
+        void DeleteDocument(DbConnection conn, DbTransaction tx, int id);
         StockTransferDocument GetById(int id, DbConnection conn = null, DbTransaction tx = null);
         List<StockTransferLine> GetLines(int documentId, DbConnection conn = null, DbTransaction tx = null);
         (List<StockTransferDocument> Items, int Total) GetPaged(int page, int pageSize, string searchText, string sortColumn, bool sortDescending);

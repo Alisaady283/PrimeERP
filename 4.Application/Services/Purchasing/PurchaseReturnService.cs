@@ -184,7 +184,27 @@ namespace PrimeERP.Application.Services.Purchasing
 
         public Result Update(CreatePurchaseReturnDto dto) => Result.Fail("المرتجع مُرحَّل فور إنشائه — لا يمكن تعديله", ErrorCode.ValidationFailed);
 
-        public Result Delete(int id) => Result.Fail("المرتجع مُرحَّل فور إنشائه — لا يمكن حذفه", ErrorCode.ValidationFailed);
+        /// <summary>
+        /// نفس تسلسل السند: صلاحية ثم معاملة تحذف القيد وأثر المخزون والمستند معاً — فلا يبقى قيدٌ
+        /// ولا حركةٌ بلا مستندها. الصلاحية هي البوابة، والحواجز المحاسبية تبقى حيث كانت.
+        /// </summary>
+        public Result Delete(int id)
+        {
+            if (!Can("Delete")) return FailDenied();
+
+            var document = _returns.GetById(id);
+            if (document == null) return Result.Fail("المرتجع غير موجود", ErrorCode.NotFound);
+
+            Db.RunTransaction((conn, tx) =>
+            {
+                if (document.JournalEntryId != null) _journal.Delete(conn, tx, document.JournalEntryId.Value);
+                _stock.RemoveMovements(conn, tx, "PurchaseReturn", id);
+                _returns.DeleteDocument(conn, tx, id);
+            });
+
+            Audit.Log(EntityName, id, AuditAction.Delete);
+            return Result.Ok();
+        }
 
         private PurchaseReturnDto ToDto(PurchaseReturn r) => new()
         {

@@ -114,7 +114,21 @@ namespace PrimeERP.Application.Services.Inventory
 
         public Result Update(CreateStockTransferDto dto) => Result.Fail("المستند مُرحَّل فور إنشائه — لا يمكن تعديله", ErrorCode.ValidationFailed);
 
-        public Result Delete(int id) => Result.Fail("المستند مُرحَّل فور إنشائه — لا يمكن حذفه", ErrorCode.ValidationFailed);
+        /// <summary>حذف التحويل وأثره المخزني — حركتان (صادر ووارد) يمحوهما مصدرٌ واحد.</summary>
+        public Result Delete(int id)
+        {
+            if (!Can("Delete")) return FailDenied();
+            if (_repo.GetById(id) == null) return Result.Fail("المستند غير موجود", ErrorCode.NotFound);
+
+            Db.RunTransaction((conn, tx) =>
+            {
+                _stock.RemoveMovements(conn, tx, EntityName, id);
+                _repo.DeleteDocument(conn, tx, id);
+            });
+
+            Audit.Log(EntityName, id, AuditAction.Delete);
+            return Result.Ok();
+        }
 
         private StockTransferDto ToDto(StockTransferDocument d)
         {
