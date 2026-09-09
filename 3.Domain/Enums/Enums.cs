@@ -151,4 +151,38 @@ namespace PrimeERP.Domain.Enums
         /// <summary>نسخة أمان تلقائية قبل عملية استعادة — تحمي من استعادة فاشلة تُفقد البيانات الحالية.</summary>
         PreRestore = 3
     }
+
+    /// <summary>
+    /// نوع الوحدة المبنيّة — أول سؤال في المعالج، ويحكم كل ما بعده: التقرير بلا جدول يقرأ من غيره،
+    /// والسجلّ جدولٌ بحوار حقول، والحركة جدولٌ برأس وسطور. الترحيل والصلاحيات تتبع النوع.
+    /// </summary>
+    public enum BuilderKind
+    {
+        Report   = 0,
+        Record   = 1,
+        Movement = 2
+    }
+
+    /// <summary>نوع بيانات عمود مبنيّ — يُترجَم إلى عمود في القاعدة وإلى حقل في الفورم معاً.</summary>
+    public enum BuilderDataType
+    {
+        Text     = 0,
+        Number   = 1,
+        Money    = 2,
+        Date     = 3,
+        Bool     = 4,
+        LongText = 5,
+        Reference = 6
+    }
+
+    /// <summary>تجميع العمود المحسوب من جدول مرتبط — يُقرأ ولا يُخزَّن.</summary>
+    public enum BuilderAggregate
+    {
+        None  = 0,
+        Sum   = 1,
+        Count = 2,
+        Avg   = 3,
+        Min   = 4,
+        Max   = 5
+    }
 }
