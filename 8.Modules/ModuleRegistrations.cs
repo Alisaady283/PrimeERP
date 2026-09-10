@@ -113,6 +113,11 @@ namespace PrimeERP.Modules
                 PermissionPrefix = "Accounts",
                 ViewModelType = typeof(AccountsViewModel),
                 LayoutKind = LayoutKind.TreeSplit,
+                // فلتر نوع الحساب: نفس شريط فلاتر القائمة، والترشيح في AccountService.GetPaged أصلاً.
+                Filters = new()
+                {
+                    new() { Key = nameof(AccountTreeFilter.TypeFilter), LabelKey = "Str.AccountType", PickerType = "AccountType" },
+                },
                 TreeOptions = new TreeLayoutOptions
                 {
                     IdField = nameof(AccountDto.Id),

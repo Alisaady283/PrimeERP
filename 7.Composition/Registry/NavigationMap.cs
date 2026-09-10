@@ -21,7 +21,7 @@ namespace PrimeERP.Composition.Registry
             ("HR", "الموارد", "IconHR", new[] { "Employees", "Departments", "JobTitles", "Payroll" }),
             ("Reports", "التقارير", "IconReports", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "AccountStatement", "CustomerStatement", "SupplierStatement", "ItemCard", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport" }),
             ("Settings", "الإعدادات", "IconSettings", new[] { "Settings", "Users", "Roles", "RolePermissions", "UserPermissions" }),
-            ("Builder", "وحدة البناء", "IconSettings", new[] { "BuilderSections", "BuilderModules", "BuilderColumns", "BuilderActions", "BuilderFilters" }),
+            ("Builder", "وحدة البناء", "IconSettings", new[] { "BuilderSections", "BuilderModules", "BuilderColumns", "BuilderActions", "BuilderFilters", "BuilderExport" }),
         };
 
         /// <summary>أقسامٌ لا تُبذَر ولا تُعدَّل: بها شجرة الحسابات والإعدادات ووحدة البناء نفسها.</summary>
@@ -31,14 +31,14 @@ namespace PrimeERP.Composition.Registry
         /// المحميّ من الكود، والباقي من الوصف. جدولٌ فارغ = الكود كاملاً — فلا يختفي الشريط أبداً مهما
         /// أخفق البذر.
         /// </summary>
-        public static (string Text, string IconKey, string[] Keys)[] Groups(
+        public static (string Key, string Text, string IconKey, string[] Keys)[] Groups(
             IReadOnlyList<(string Key, string Title, string IconKey, string[] ModuleKeys)> built = null)
         {
             if (built == null || built.Count == 0)
-                return Coded.Select(c => (c.Text, c.IconKey, c.Modules)).ToArray();
+                return Coded.Select(c => (c.Key, c.Text, c.IconKey, c.Modules)).ToArray();
 
-            return Coded.Where(c => Protected.Contains(c.Key)).Select(c => (c.Text, c.IconKey, c.Modules))
-                .Concat(built.Select(b => (b.Title, b.IconKey, b.ModuleKeys)))
+            return Coded.Where(c => Protected.Contains(c.Key)).Select(c => (c.Key, c.Text, c.IconKey, c.Modules))
+                .Concat(built.Select(b => (b.Key, b.Title, b.IconKey, b.ModuleKeys)))
                 .ToArray();
         }
     }

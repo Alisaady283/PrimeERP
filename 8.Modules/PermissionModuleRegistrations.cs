@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
@@ -44,9 +45,9 @@ namespace PrimeERP.Modules
                             .Where(n => n.CheckState == NodeCheckState.Checked)
                             .Select(n => n.Id);
                         services.GetRequiredService<IPermissionAdminService>().SetRolePermissions(roleId, keys);
-                        return Result.Ok();
+                        return Task.FromResult(Result.Ok());
                     },
-                    ApplyRules = roots => SyncModules(roots, NodeCheckState.Checked),
+                    ApplyRules = (roots, _) => SyncModules(roots, NodeCheckState.Checked),
                     Actions = new List<TreeCheckListAction>
                     {
                         new()
@@ -112,9 +113,9 @@ namespace PrimeERP.Modules
                                 _ => PermissionState.Inherited
                             });
                         }
-                        return Result.Ok();
+                        return Task.FromResult(Result.Ok());
                     },
-                    ApplyRules = roots => SyncModules(roots, NodeCheckState.Granted),
+                    ApplyRules = (roots, _) => SyncModules(roots, NodeCheckState.Granted),
                     Actions = new List<TreeCheckListAction>
                     {
                         new()

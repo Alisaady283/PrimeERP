@@ -57,6 +57,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IFiscalPeriodRepository, FiscalPeriodRepository>();
             services.AddSingleton<INumberSequenceRepository, NumberSequenceRepository>();
             services.AddSingleton<IBackupRepository, BackupRepository>();
+            services.AddSingleton<IEditionRepository, EditionRepository>();
             services.AddSingleton<ICategoryRepository, CategoryRepository>();
             services.AddSingleton<IProductRepository, ProductRepository>();
             services.AddSingleton<IAssetRepository, AssetRepository>();
@@ -111,6 +112,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<ICustomerService, CustomerService>();
             services.AddSingleton<ISupplierService, SupplierService>();
             services.AddSingleton<IBackupService, BackupService>();
+            services.AddSingleton<PrimeERP.Application.Services.IProgramEditionService, PrimeERP.Application.Services.ProgramEditionService>();
             services.AddSingleton<IPrintService, PrintService>();
             services.AddSingleton<ICategoryService, CategoryService>();
             services.AddSingleton<IProductService, ProductService>();

@@ -57,7 +57,9 @@ namespace PrimeERP.Application.Services.Builder
         public void SeedSections(IEnumerable<(string Key, string Title, string IconKey, string[] Modules)> coded,
                                  IReadOnlyCollection<string> protectedKeys)
         {
-            var existing = _repo.Sections().Select(s => s.Key).ToHashSet();
+            // المفاتيح كلها بما فيها المحذوفة — كالصفحات تماماً، وإلا عاد القسم الذي حذفه المستخدم
+            // عند كل إقلاع بينما صفحاته تحترم حذفها.
+            var existing = _repo.SectionKeys().ToHashSet();
 
             var order = 0;
             foreach (var section in coded)

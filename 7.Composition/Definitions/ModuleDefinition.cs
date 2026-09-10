@@ -10,7 +10,9 @@ namespace PrimeERP.Composition.Definitions
     /// الجاهزة (PageHeader/FilterBar/AppDataGrid/AppPagination) بلا XAML جديد لكل كيان. الأعمدة نفس
     /// GridColumn المستخدَمة أصلاً في AppDataGrid (6.UI) — لا نوع مواز.
     /// </summary>
-    public class ModuleDefinition
+    /// <remarks>سجلٌّ لا صنف: وصفُ البناء يعلو على الصفحة المكتوبة بـ<c>with</c> — نسخةٌ يتغيّر فيها
+    /// حقلٌ واحد. نسخةٌ يدوية لكل حقل كانت ستتعفّن مع أول حقل جديد.</remarks>
+    public record ModuleDefinition
     {
         public required string Key { get; init; }
         public required string TitleKey { get; init; }

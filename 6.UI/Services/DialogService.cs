@@ -73,12 +73,9 @@ namespace PrimeERP.UI.Services
             public void Report(double percent, string message) =>
                 _dialog.Dispatcher.Invoke(() => _dialog.SetProgress(percent, message));
 
-            public void Close() =>
-                _dialog.Dispatcher.Invoke(() =>
-                {
-                    _dialog.DialogResult = true;
-                    _dialog.Close();
-                });
+            // النافذة تُعرَض بـShow لا ShowDialog، وضبط DialogResult عليها يرمي استثناءً في WPF —
+            // فالإغلاق إغلاقٌ مباشر. الإغلاق المكرَّر (Close ثم Dispose) لا يضرّ: نافذة مغلقة تتجاهله.
+            public void Close() => _dialog.Dispatcher.Invoke(_dialog.Close);
 
             public void Dispose() => Close();
         }

@@ -15,7 +15,8 @@ namespace PrimeERP.Data.Repositories
 
         List<BuilderSection> Sections();
         List<BuilderModule>  Modules();
-        /// <summary>كل مفاتيح الصفحات بما فيها المحذوفة — البذر لا يُعيد ما حذفه المستخدم.</summary>
+        /// <summary>كل مفاتيح الأقسام والصفحات بما فيها المحذوفة — البذر لا يُعيد ما حذفه المستخدم.</summary>
+        List<string> SectionKeys();
         List<string> ModuleKeys();
 
         List<BuilderColumn>  Columns(int moduleId = 0);
@@ -68,7 +69,7 @@ namespace PrimeERP.Data.Repositories
                 .Int("Aggregate", nullable: false, defaultValue: 0)
                 .Text("AggFrom", 60).Text("AggColumn", 60).Text("AggMatch", 60)
                 .Bool("ShowInGrid", true).Bool("ShowInForm", true).Bool("IsLine")
-                .Decimal("Width", 8, 2, 140).Text("Footer", 20)
+                .Decimal("Width", 8, 2, 140).Decimal("WidthPercent", 6, 2, 0).Text("Footer", 20)
                 .Int("SortOrder", nullable: false, defaultValue: 0)
                 .Audit().SoftDelete().Index("ModuleId").Create();
 
@@ -92,7 +93,8 @@ namespace PrimeERP.Data.Repositories
         public List<BuilderModule> Modules() => QueryAs(MapModule,
             $"SELECT * FROM BuilderModules WHERE IsDeleted = @d {OrderBuilder.By("SortOrder", false, "Title")}", null, null, ("@d", false));
 
-        public List<string> ModuleKeys() => QueryAs(r => Str(r, "Key"), "SELECT Key FROM BuilderModules");
+        public List<string> SectionKeys() => QueryAs(r => Str(r, "Key"), "SELECT Key FROM BuilderSections");
+        public List<string> ModuleKeys()  => QueryAs(r => Str(r, "Key"), "SELECT Key FROM BuilderModules");
 
         public List<BuilderColumn> Columns(int moduleId = 0) => Children(MapColumn, "BuilderColumns", moduleId);
         public List<BuilderAction> Actions(int moduleId = 0) => Children(MapAction, "BuilderActions", moduleId);
@@ -157,15 +159,16 @@ namespace PrimeERP.Data.Repositories
             foreach (var c in columns)
                 Exec(@"INSERT INTO BuilderColumns (ModuleId, Name, Header, DataType, IsRequired, IsUnique, MaxLength,
                               RefModule, RefDisplay, Aggregate, AggFrom, AggColumn, AggMatch,
-                              ShowInGrid, ShowInForm, IsLine, Width, Footer, SortOrder, CreatedAt)
-                       VALUES (@m,@n,@h,@dt,@req,@uni,@len,@rm,@rd,@agg,@af,@ac,@am,@sg,@sf,@il,@w,@f,@o,@now)",
+                              ShowInGrid, ShowInForm, IsLine, Width, WidthPercent, Footer, SortOrder, CreatedAt)
+                       VALUES (@m,@n,@h,@dt,@req,@uni,@len,@rm,@rd,@agg,@af,@ac,@am,@sg,@sf,@il,@w,@wp,@f,@o,@now)",
                     null, null,
                     ("@m", moduleId), ("@n", c.Name), ("@h", c.Header), ("@dt", (int)c.DataType),
                     ("@req", c.IsRequired), ("@uni", c.IsUnique), ("@len", (object)c.MaxLength ?? System.DBNull.Value),
                     ("@rm", c.RefModule ?? ""), ("@rd", c.RefDisplay ?? ""), ("@agg", (int)c.Aggregate),
                     ("@af", c.AggFrom ?? ""), ("@ac", c.AggColumn ?? ""), ("@am", c.AggMatch ?? ""),
                     ("@sg", c.ShowInGrid), ("@sf", c.ShowInForm), ("@il", c.IsLine),
-                    ("@w", c.Width), ("@f", c.Footer ?? ""), ("@o", c.SortOrder), ("@now", System.DateTime.Now));
+                    ("@w", c.Width), ("@wp", c.WidthPercent), ("@f", c.Footer ?? ""),
+                    ("@o", c.SortOrder), ("@now", System.DateTime.Now));
         }
 
         public void ReplaceActions(int moduleId, List<BuilderAction> actions)
@@ -258,7 +261,8 @@ namespace PrimeERP.Data.Repositories
             Aggregate = (BuilderAggregate)Int(r, "Aggregate"),
             AggFrom = Str(r, "AggFrom"), AggColumn = Str(r, "AggColumn"), AggMatch = Str(r, "AggMatch"),
             ShowInGrid = Bool(r, "ShowInGrid"), ShowInForm = Bool(r, "ShowInForm"), IsLine = Bool(r, "IsLine"),
-            Width = System.Convert.ToDouble(r["Width"]), Footer = Str(r, "Footer"), SortOrder = Int(r, "SortOrder")
+            Width = System.Convert.ToDouble(r["Width"]), WidthPercent = System.Convert.ToDouble(r["WidthPercent"]),
+            Footer = Str(r, "Footer"), SortOrder = Int(r, "SortOrder")
         };
 
         private static BuilderAction MapAction(System.Data.DataRow r) => new()

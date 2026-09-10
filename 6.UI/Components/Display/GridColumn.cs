@@ -11,7 +11,9 @@ namespace PrimeERP.UI.Components.Display
     public enum GridSelectionMode { Single, Multiple }
 
     /// <summary>تعريف عمود AppDataGrid — يُبنى من كود C# لا من XAML، فيسمح بمنطق الصلاحيات والإجماليات موحّداً لكل الشبكات.</summary>
-    public class GridColumn
+    /// <remarks>سجلٌّ لا صنف: وصفُ البناء يعلو عليه بـ<c>with</c>، فيأخذ العمود عنوانه وعرضه من صفّه
+    /// ويحتفظ بما لا يصفه الوصف — قالب الخلية والمحاذاة والعرض النجمي.</remarks>
+    public record GridColumn
     {
         public string Header { get; set; }
 

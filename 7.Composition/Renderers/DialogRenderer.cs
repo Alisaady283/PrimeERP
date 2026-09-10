@@ -153,7 +153,22 @@ namespace PrimeERP.Composition.Renderers
         {
             if (target is IDictionary<string, object> row) { row[key] = value; return; }
 
-            target.GetType().GetProperty(key)?.SetValue(target, value);
+            var property = target.GetType().GetProperty(key);
+            if (property == null || !property.CanWrite) return;
+
+            property.SetValue(target, Coerce(value, property.PropertyType));
+        }
+
+        /// <summary>قيمة القطعة إلى نوع الخاصية — نقطة التحويل الوحيدة: القوائم تُرجع رقماً، والخاصية قد
+        /// تكون تعداداً أو قابلة للإفراغ، وConvert.ChangeType وحدها تسقط على التعداد.</summary>
+        internal static object Coerce(object value, Type targetType)
+        {
+            if (value == null) return null;
+
+            var type = Nullable.GetUnderlyingType(targetType) ?? targetType;
+            if (type.IsInstanceOfType(value)) return value;
+
+            return type.IsEnum ? Enum.ToObject(type, value) : Convert.ChangeType(value, type);
         }
 
         internal static void ApplyFields(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> fields, object dto, bool editOnly)
@@ -174,7 +189,7 @@ namespace PrimeERP.Composition.Renderers
                 if (field.Kind == FieldKind.Password && string.IsNullOrEmpty((string)value)) continue;
 
                 if (row != null) row[field.Key] = value;
-                else prop.SetValue(dto, Convert.ChangeType(value, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType));
+                else prop.SetValue(dto, Coerce(value, prop.PropertyType));
             }
         }
 
@@ -254,6 +269,17 @@ namespace PrimeERP.Composition.Renderers
             }
         }
 
+        /// <summary>حدث تغيّر القيمة لأي قطعة إدخال — موضعٌ واحد يعرف حدثَ كل نوع، يستورده الحوار وشريط الفلاتر.</summary>
+        internal static void OnChanged(FrameworkElement control, Action handler)
+        {
+            switch (control)
+            {
+                case AppComboBox combo:   combo.SelectionChanged += (_, __) => handler(); break;
+                case AppCheckBox check:   check.CheckedChanged   += (_, __) => handler(); break;
+                case AppDatePicker date:  date.SelectedDateChanged += (_, __) => handler(); break;
+            }
+        }
+
         /// <summary>يعيد تعبئة أي قائمة مرتبطة بحقل حاكم كلما تغيّر — بلا كود خاص في كل شاشة.</summary>
         internal static void ApplyPickerFilters(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> controls, IServiceProvider services)
         {
@@ -273,8 +299,7 @@ namespace PrimeERP.Composition.Renderers
                     LoadPickerItems(combo, captured, services, GetControlValue(source, sourceField.Kind));
                 }
 
-                if (source is AppComboBox sourceCombo) sourceCombo.SelectionChanged += (_, __) => Reload();
-                else if (source is AppCheckBox sourceCheck) sourceCheck.CheckedChanged += (_, __) => Reload();
+                OnChanged(source, Reload);
 
                 Reload();
             }
@@ -461,7 +486,7 @@ namespace PrimeERP.Composition.Renderers
             // قوائم معالج البناء: تعدادات النظام وكتالوج أزراره — تُختار ولا تُكتب.
             else if (field.PickerType is "BuilderKind" or "BuilderDataType" or "BuilderAggregate"
                      or "FooterAggregate" or "BuilderFilterKind" or "ToolbarAction"
-                     or "BuilderSection" or "BuilderModule" or "AnyModule")
+                     or "BuilderSection" or "BuilderModule" or "AnyModule" or "AccountType")
             {
                 combo.ItemsSource = BuilderPickers.Rows(field.PickerType, services, filterValue);
             }

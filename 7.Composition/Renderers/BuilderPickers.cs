@@ -12,14 +12,15 @@ using PrimeERP.Application.Services.Builder;
 namespace PrimeERP.Composition.Renderers
 {
     /// <summary>
-    /// قوائم معالج البناء: تعدادات النظام وكتالوج أزراره وما هو مبنيّ. كلها تُقرأ من النظام نفسه لا
-    /// تُكتب — فأي زرّ يُضاف للكتالوج يظهر في المعالج بلا تعديل هنا.
+    /// قوائم تعدادات النظام وكتالوج أزراره وما هو مبنيّ. كلها تُقرأ من النظام نفسه لا تُكتب — فأي
+    /// زرّ يُضاف للكتالوج أو قيمة تُضاف لتعداد تظهر في القوائم بلا تعديل هنا.
     /// </summary>
     internal static class BuilderPickers
     {
         internal static List<DialogRenderer.PickerRow> Rows(string pickerType, IServiceProvider services,
             object filterValue = null) => pickerType switch
         {
+            "AccountType"       => Enum<AccountType>("Str.AccountType"),
             "BuilderKind"       => Enum<BuilderKind>("Str.Builder.Kind"),
             "BuilderDataType"   => Enum<BuilderDataType>("Str.Builder.Type"),
             "BuilderAggregate"  => Enum<BuilderAggregate>("Str.Builder.Agg"),

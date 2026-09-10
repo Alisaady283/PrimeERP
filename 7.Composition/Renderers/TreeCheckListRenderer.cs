@@ -54,15 +54,16 @@ namespace PrimeERP.Composition.Renderers
             {
                 var sourceId = SelectedSourceId();
                 nodes = sourceId > 0 ? def.BuildTree(services, sourceId) : new List<TreeNodeViewModel>();
-                def.ApplyRules?.Invoke(nodes);
+                def.ApplyRules?.Invoke(nodes, null);
                 tree.ItemsSource = nodes;
                 RefreshSummary();
             }
 
             sourcePicker.SelectionChanged += (_, __) => LoadTree();
-            tree.CheckStateChanged += (_, __) =>
+            // العقدة التي تغيّرت تصل للقاعدة: بلا معرفتها لا يعرف القسم أنه هو من نُقر فيورّث صفحاته.
+            tree.CheckStateChanged += (_, changed) =>
             {
-                def.ApplyRules?.Invoke(nodes);
+                def.ApplyRules?.Invoke(nodes, changed);
                 RefreshSummary();
             };
 
@@ -76,19 +77,26 @@ namespace PrimeERP.Composition.Renderers
                 {
                     if (SelectedSourceId() == 0) return;
                     action.Run(services, SelectedSourceId(), nodes);
-                    def.ApplyRules?.Invoke(nodes);
+                    def.ApplyRules?.Invoke(nodes, null);
                     RefreshSummary();
                 };
                 actions.Children.Add(button);
             }
 
-            var saveButton = new Btn { Text = LocalizationService.Get("Str.Save"), Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
-            saveButton.Click += (_, __) =>
+            var saveButton = new Btn { Text = LocalizationService.Get(def.SaveTextKey), Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
+            saveButton.Click += async (_, __) =>
             {
                 if (SelectedSourceId() == 0) return;
-                var result = def.Save(services, SelectedSourceId(), nodes);
-                if (result.IsSuccess) toast.Success(LocalizationService.Get("Str.Success"));
-                else toast.Error(result.ErrorMessage);
+
+                // الزرّ يُعطَّل أثناء العمل: الحفظ قد يطول، ونقرةٌ ثانية تبدأ العملية مرّتين على نفس المسار.
+                saveButton.IsEnabled = false;
+                try
+                {
+                    var result = await def.Save(services, SelectedSourceId(), nodes);
+                    if (result.IsSuccess) toast.Success(LocalizationService.Get("Str.Success"));
+                    else toast.Error(result.ErrorMessage);
+                }
+                finally { saveButton.IsEnabled = true; }
             };
             actions.Children.Add(saveButton);
             header.ActionsContent = actions;

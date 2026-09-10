@@ -43,10 +43,14 @@ namespace PrimeERP.Composition.Renderers
                 ToolbarAction.ExpandAll((ICommand)vm.ExpandAllCommand),
                 ToolbarAction.CollapseAll((ICommand)vm.CollapseAllCommand),
             };
-            header.ActionsContent = new ActionToolbar { ButtonsSource = actions };
+            header.ActionsContent = new ActionToolbar { ButtonsSource = ToolbarActions.Enabled(definition, actions) };
 
             var filterBar = new FilterBar { SearchPlaceholder = LocalizationService.Get("Str.Search") };
             filterBar.Search += (_, text) => vm.SearchText = text;
+
+            // نفس شريط فلاتر صفحة القائمة — الشجرة تستورده ولا تبني لنفسها فلتراً آخر.
+            if (definition.Filters is { Count: > 0 })
+                filterBar.FiltersContent = FilterControls.Build(definition.Filters, vm, services);
 
             var tree = new AppTreeView();
             BindingOperations.SetBinding(tree, AppTreeView.ItemsSourceProperty, new Binding("RootNodes"));

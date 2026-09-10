@@ -278,8 +278,32 @@ namespace PrimeERP.Application.Services.Builder
             Aggregate = (BuilderAggregate)Int(v, "Aggregate"),
             AggFrom = Text(v, "AggFrom"), AggColumn = Text(v, "AggColumn"), AggMatch = Text(v, "AggMatch"),
             ShowInGrid = Bool(v, "ShowInGrid"), ShowInForm = Bool(v, "ShowInForm"), IsLine = Bool(v, "IsLine"),
-            Width = Num(v, "Width"), Footer = Text(v, "Footer"), SortOrder = Int(v, "SortOrder")
+            Width = Num(v, "Width"), WidthPercent = Num(v, "WidthPercent"),
+            Footer = Text(v, "Footer"), SortOrder = Int(v, "SortOrder")
         };
+
+        private Dictionary<int, double> _shares;
+
+        /// <summary>النسبة الظاهرة هي التي يُطبّقها المُحمِّل — من ColumnWidths، فلا يختلف المعروض عن المطبَّق.</summary>
+        protected override IDictionary<string, object> ToDto(BuilderColumn entity)
+        {
+            var row = base.ToDto(entity);
+
+            _shares ??= Repo.Columns(0).Where(c => c.ShowInGrid && !c.IsLine)
+                .GroupBy(c => c.ModuleId)
+                .SelectMany(module => ColumnWidths.Shares(module.ToList()))
+                .ToDictionary(share => share.Key, share => System.Math.Round(share.Value, 1));
+
+            row["WidthPercent"] = _shares.TryGetValue(entity.Id, out var percent) ? percent : 0d;
+
+            return row;
+        }
+
+        protected override List<BuilderColumn> Narrow(List<BuilderColumn> items, DynamicFilter filter)
+        {
+            _shares = null;
+            return base.Narrow(items, filter);
+        }
     }
 
     public class BuilderActionsService : BuilderChildService<BuilderAction>

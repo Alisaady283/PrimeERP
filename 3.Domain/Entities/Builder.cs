@@ -59,6 +59,10 @@ namespace PrimeERP.Domain.Entities
         public bool            ShowInForm  { get; set; } = true;
         public bool            IsLine      { get; set; }   // سطر لا رأس (الحركة)
         public double          Width       { get; set; } = 140;
+
+        /// <summary>نسبة العمود من عرض الجدول. أكبر من صفر في أي عمود يجعل الجدول كلَّه نسبيّاً،
+        /// فيبقى تناسبه واحداً على أي عرض شاشة وفي أي نسخة. صفر = العرض بالبكسل كما هو.</summary>
+        public double          WidthPercent { get; set; }
         public string          Footer      { get; set; }   // None / Sum / Count / Average — نصّ لأن التعداد في 6.UI
         public int             SortOrder   { get; set; }
     }

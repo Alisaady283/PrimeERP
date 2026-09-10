@@ -89,17 +89,17 @@ namespace PrimeERP.Composition.Renderers
                 actions.Add(ToolbarAction.Build(captured.Label, captured.Label, null, captured.Variant, command, captured.PermissionKey, null, captured.Label));
             }
 
-            header.ActionsContent = new ActionToolbar { ButtonsSource = Enabled(definition, actions) };
+            header.ActionsContent = new ActionToolbar { ButtonsSource = ToolbarActions.Enabled(definition, actions) };
 
             var filterBar = new FilterBar { SearchPlaceholder = LocalizationService.Get("Str.Search") };
             BindingOperations.SetBinding(filterBar, FilterBar.ResultCountProperty, new Binding("TotalCount"));
             filterBar.Search += (_, text) => { vm.SearchText = text; vm.SearchCommand.Execute(null); };
 
             if (definition.Filters is { Count: > 0 })
-                filterBar.FiltersContent = BuildFilterControls(definition.Filters, vm, services);
+                filterBar.FiltersContent = FilterControls.Build(definition.Filters, vm, services);
 
             if (documentActions != null)
-                filterBar.ActionsContent = new ActionToolbar { ButtonsSource = Enabled(definition, documentActions) };
+                filterBar.ActionsContent = new ActionToolbar { ButtonsSource = ToolbarActions.Enabled(definition, documentActions) };
 
             // ShowPagination=false — ترقيم AppDataGrid الداخلي جانب العميل (يُقسِّم القائمة الكاملة محلياً)
             // يتعارض مع الترقيم الحقيقي من طرف الخادم هنا (كل صفحة تُجلَب من GetPaged عند الطلب فقط، لا
@@ -172,72 +172,7 @@ namespace PrimeERP.Composition.Renderers
             return root;
         }
 
-        private static FrameworkElement BuildFilterControls(List<FilterDefinition> filters, dynamic vm, IServiceProvider services)
-        {
-            var panel = new StackPanel { Orientation = Orientation.Horizontal };
-            var combos = new Dictionary<string, PrimeERP.UI.Components.Inputs.AppComboBox>();
-
-            foreach (var filter in filters)
-            {
-                var combo = new PrimeERP.UI.Components.Inputs.AppComboBox
-                {
-                    Placeholder = LocalizationService.Get(filter.LabelKey), Width = filter.Width,
-                    DisplayMemberPath = "Display", SelectedValuePath = "Id", AllowClear = true,
-                    Margin = new Thickness(0, 0, 8, 0)
-                };
-
-                // القائمة من نفس آلية قوائم الحقول (LoadPickerItems) لا فرعٍ ثانٍ — فأي نوع قائمة يعمل
-                // في حقلٍ يعمل في فلتر، بلا كتابة هنا لكل نوع.
-                DialogRenderer.LoadPickerItems(combo, Field(filter), services);
-
-                var captured = filter;
-                combo.SelectionChanged += (_, __) =>
-                {
-                    DialogRenderer.WriteValue((object)vm.Filter, captured.Key, combo.SelectedValue);
-                    vm.SearchCommand.Execute(null);
-                };
-
-                combos[filter.Key] = combo;
-                panel.Children.Add(combo);
-            }
-
-            // فلترٌ يحكم فلتراً — نفس ApplyPickerFilters في الحوار: اختيار القسم يُعيد ملء قائمة صفحاته.
-            foreach (var filter in filters.Where(f => !string.IsNullOrEmpty(f.PickerFilterField)))
-            {
-                if (!combos.TryGetValue(filter.PickerFilterField, out var source)) continue;
-                if (!combos.TryGetValue(filter.Key, out var target)) continue;
-
-                var captured = filter;
-                source.SelectionChanged += (_, __) =>
-                {
-                    target.SelectedItem = null;
-                    DialogRenderer.LoadPickerItems(target, Field(captured), services, source.SelectedValue);
-                };
-            }
-
-            return panel;
-        }
-
-        private static FieldDefinition Field(FilterDefinition filter) => new()
-        {
-            Key = filter.Key, LabelKey = filter.LabelKey, Kind = FieldKind.Picker,
-            PickerType = filter.PickerType, PickerCategoryModuleKey = filter.PickerCategoryModuleKey
-        };
-
         /// <summary>الطباعة والتصدير من ListOutput — القائمة والتقرير يستوردان نفس القطعة.</summary>
-        /// <summary>
-        /// ترشيح أزرار الكتالوج بما أعلنته الوحدة. مفتاح الطباعة والتصدير مُفرَّد بنصّه ("print:طباعة
-        /// المستند") فيُقارَن جذره. فارغ = الكل، فلا تتأثر أي وحدة مكتوبة.
-        /// </summary>
-        private static List<ToolbarAction> Enabled(ModuleDefinition definition, List<ToolbarAction> actions)
-        {
-            if (definition.EnabledActions == null || actions == null) return actions;
-
-            return actions
-                .Where(a => a.Separator || definition.EnabledActions.Contains(a.Key?.Split(':')[0]))
-                .ToList();
-        }
-
         private static void PrintList(ModuleDefinition definition, IServiceProvider services, dynamic vm) =>
             ListOutput.Print(services, LocalizationService.Get(definition.TitleKey), definition.Columns, Rows(vm));
 
