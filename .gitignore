@@ -5,3 +5,6 @@ PrimeERP.Tests/obj/
 *.user
 *_wpftmp.csproj
 .vs/
+
+# إعدادات أدوات المطوّر المحلّية — ليست من البرنامج
+.claude/
