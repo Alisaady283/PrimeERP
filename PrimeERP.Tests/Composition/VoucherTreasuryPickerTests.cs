@@ -44,10 +44,12 @@ namespace PrimeERP.Tests.Composition
                     accounts.Create(new CreateAccountDto
                     { ParentId = accounts.GetByCode(parentCode).Value.Id, Name = name, IsLeaf = true, SkipAutoLink = true }).Value.Code;
 
+                // أسماء مميّزة: النظام يبذر «الصندوق الرئيسي» و«البنك الرئيسي» عند أول تشغيل، فاسمٌ
+                // مطابق لهما يجعل الاختبار يقيس البذرة لا ما أنشأه.
                 var cash = treasuries.Create(new CreateTreasuryDto
-                { Name = "الصندوق الرئيسي", IsBank = false, AccountCode = LeafUnder("1201", "صندوق"), IsActive = true });
+                { Name = "صندوق الاختبار", IsBank = false, AccountCode = LeafUnder("1201", "صندوق"), IsActive = true });
                 var bank = treasuries.Create(new CreateTreasuryDto
-                { Name = "بنك مصر", IsBank = true, AccountCode = LeafUnder("1201", "بنك"), BankName = "بنك مصر", IsActive = true });
+                { Name = "بنك الاختبار", IsBank = true, AccountCode = LeafUnder("1201", "بنك"), BankName = "بنك مصر", IsActive = true });
                 Assert.True(cash.IsSuccess, cash.ErrorMessage);
                 Assert.True(bank.IsSuccess, bank.ErrorMessage);
 
@@ -81,17 +83,23 @@ namespace PrimeERP.Tests.Composition
                 Assert.True(thrown == null, thrown?.ToString());
                 Assert.NotNull(treasury);
 
-                // نقداً — الافتراضي
-                Assert.Equal(new[] { "الصندوق الرئيسي" }, Names(treasury));
+                // القائمة تحوي المبذور أيضاً — المحكّ أن نوعها يتبع طريقة الدفع، لا أن تكون سطراً واحداً.
+                void AssertShows(string present, string absent)
+                {
+                    Assert.Contains(present, Names(treasury));
+                    Assert.DoesNotContain(absent, Names(treasury));
+                }
+
+                AssertShows("صندوق الاختبار", "بنك الاختبار");   // نقداً — الافتراضي
 
                 Select(method, (int)PrimeERP.Domain.Enums.PaymentMethod.Bank);
-                Assert.Equal(new[] { "بنك مصر" }, Names(treasury));
+                AssertShows("بنك الاختبار", "صندوق الاختبار");
 
                 Select(method, (int)PrimeERP.Domain.Enums.PaymentMethod.Cheque);
-                Assert.Equal(new[] { "بنك مصر" }, Names(treasury));
+                AssertShows("بنك الاختبار", "صندوق الاختبار");
 
                 Select(method, (int)PrimeERP.Domain.Enums.PaymentMethod.Cash);
-                Assert.Equal(new[] { "الصندوق الرئيسي" }, Names(treasury));
+                AssertShows("صندوق الاختبار", "بنك الاختبار");
             });
         }
 

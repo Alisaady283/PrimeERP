@@ -53,6 +53,8 @@
 | ٥ | الخدمة | `4.Application/Services/<القسم>` | ترث `ServiceBase` وتُعلن `PermissionPrefix`/`StringPrefix`/`EntityName` |
 | ٦ | التسجيل | `App/Bootstrap/DependencyInjection.cs` | سطر واحد |
 
+**العملية الطويلة**: كل ما يتجاوز ثانية (نسخ، نسخة احتياطية، تصدير ضخم) يرفع تقدّمه بـ`IProgress<T>` ولا يعرف الواجهة؛ المُصيِّر يُشغّله بـ`Task.Run` ويعرض `ShowProgress`. حوار بلا نسبة محسوبة مرفوض.
+
 **ما تأتي به الوراثة** — لا يُكتب أيٌّ منه يدوياً:
 
 - `Can("Create")` و`FailDenied()` → الصلاحية ورسالتها المترجَمة
@@ -124,6 +126,8 @@ registry.Register(new ModuleDefinition
 | قاعدة محاسبية نقية | `3.Domain/Rules/…` |
 | استعلام، ترتيب، ترشيح | `2.Data/Repositories` + `Query/{WhereBuilder,OrderBuilder}` |
 | جملة الحذف (ناعم أو صلب) | `2.Data/Repositories/Base/RepositoryBase` — `SoftDelete` / `HardDelete` |
+| كتابة إعداد (ولو في قاعدة أخرى) | `1.Platform/Settings/SettingRepository` — `Upsert` |
+| تجميد الواجهة في عملية طويلة | `IDialogService.ShowProgress` + `Task.Run` + `IProgress<T>` |
 | حواجز الحذف (مرحَّل، سُحب منه، له أبناء) | خدمة الكيان في `4.Application` |
 | صلاحية | `1.Platform/Permissions/PermissionKeys.cs` |
 | حقول شاشة أو أعمدتها | `8.Modules/*Registrations.cs` |

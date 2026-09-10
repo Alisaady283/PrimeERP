@@ -53,7 +53,7 @@ namespace PrimeERP.Tests.Composition
             foreach (var node in PermissionTreeFactory.KeyNodes(nodes))
                 if (node.Id == "Sales.Print") node.CheckState = NodeCheckState.Checked;
 
-            Assert.True(screen.Save(_db.Services, roleId, nodes).IsSuccess);
+            Assert.True(screen.Save(_db.Services, roleId, nodes).Result.IsSuccess);
 
             var permissions = _db.Services.GetRequiredService<IPermissionService>();
             permissions.LoadForUser(userId);
@@ -79,7 +79,7 @@ namespace PrimeERP.Tests.Composition
                 if (node.Id == "Journal.View" || node.Id.StartsWith("Sales."))
                     node.CheckState = NodeCheckState.Checked;
 
-            Assert.True(screen.Save(_db.Services, roleId, nodes).IsSuccess);
+            Assert.True(screen.Save(_db.Services, roleId, nodes).Result.IsSuccess);
 
             // ١) تُقرأ عند إعادة فتح الشاشة
             var reopened = PermissionTreeFactory.KeyNodes(screen.BuildTree(_db.Services, roleId))

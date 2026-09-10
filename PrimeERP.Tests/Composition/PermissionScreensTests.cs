@@ -74,7 +74,7 @@ namespace PrimeERP.Tests.Composition
             keyNodes.First(n => n.Id == "Customers.View").CheckState = NodeCheckState.Unchecked;
             keyNodes.First(n => n.Id == "Customers.Delete").CheckState = NodeCheckState.Checked;
 
-            Assert.True(def.Save(_db.Services, roleId, nodes).IsSuccess);
+            Assert.True(def.Save(_db.Services, roleId, nodes).Result.IsSuccess);
 
             var saved = PermissionDb.GetRolePermissions(roleId);
             Assert.Contains("Customers.Delete", saved);
@@ -101,7 +101,7 @@ namespace PrimeERP.Tests.Composition
             keyNodes.First(n => n.Id == "Suppliers.View").CheckState = NodeCheckState.Revoked;
             keyNodes.First(n => n.Id == "Products.Create").CheckState = NodeCheckState.Granted;
 
-            Assert.True(def.Save(_db.Services, userId, nodes).IsSuccess);
+            Assert.True(def.Save(_db.Services, userId, nodes).Result.IsSuccess);
 
             var admin = _db.Services.GetRequiredService<IPermissionAdminService>();
             Assert.Equal(PermissionState.Revoked, admin.GetState(userId, "Suppliers.View"));
