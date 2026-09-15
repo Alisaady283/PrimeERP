@@ -71,11 +71,7 @@ namespace PrimeERP.Application.Services.Accounting
             var balanced = Balance(dto);
             if (balanced.IsFailure) return Result.Fail<JournalEntryDto>(balanced.ErrorMessage, balanced.ErrorCode);
 
-            var created = _journals.Create(balanced.Value);
-            if (created.IsFailure) return created;
-
-            var posted = _journals.Post(created.Value.Id);
-            return posted.IsSuccess ? created : Result.Fail<JournalEntryDto>(posted.ErrorMessage, posted.ErrorCode);
+            return _journals.Create(balanced.Value);
         }
 
         public Result Update(CreateJournalDto dto)

@@ -31,8 +31,11 @@ namespace PrimeERP.Data.Repositories
                 .Int("JobTitleId")
                 .DateCol("HireDate", nullable: false)
                 .DateCol("TerminationDate")
-                .Decimal("BasicSalary")
+                .Decimal("BasicSalary").Decimal("FixedAllowances")
+                .Bool("IsInsured").DateCol("InsuranceStartDate").Decimal("InsuranceAmount")
+                .Text("TaxNumber", 40).Decimal("TaxAmount")
                 .Int("AccountId")
+                .Text("AccountCode", 40)
                 .Text("BankAccount", 60)
                 .Int("Status", nullable: false, defaultValue: (int)EmployeeStatus.Active)
                 .Text("Notes")
@@ -57,7 +60,14 @@ namespace PrimeERP.Data.Repositories
             HireDate        = Convert.ToDateTime(row["HireDate"]),
             TerminationDate = row["TerminationDate"] == DBNull.Value ? null : Convert.ToDateTime(row["TerminationDate"]),
             BasicSalary     = Convert.ToDecimal(row["BasicSalary"]),
+            FixedAllowances = Convert.ToDecimal(row["FixedAllowances"]),
+            IsInsured       = Convert.ToBoolean(row["IsInsured"]),
+            InsuranceStartDate = row["InsuranceStartDate"] == DBNull.Value ? null : Convert.ToDateTime(row["InsuranceStartDate"]),
+            InsuranceAmount = Convert.ToDecimal(row["InsuranceAmount"]),
+            TaxNumber       = row["TaxNumber"] == DBNull.Value ? null : row["TaxNumber"].ToString(),
+            TaxAmount       = Convert.ToDecimal(row["TaxAmount"]),
             AccountId       = row["AccountId"] == DBNull.Value ? null : Convert.ToInt32(row["AccountId"]),
+            AccountCode     = row["AccountCode"] == DBNull.Value ? null : row["AccountCode"].ToString(),
             BankAccount     = row["BankAccount"] == DBNull.Value ? null : row["BankAccount"].ToString(),
             Status          = (EmployeeStatus)Convert.ToInt32(row["Status"]),
             Notes           = row["Notes"] == DBNull.Value ? null : row["Notes"].ToString(),
@@ -92,38 +102,36 @@ namespace PrimeERP.Data.Repositories
                 .Eq("DepartmentId", departmentId);
 
             var column = sortColumn switch { "Name" => "Name", "HireDate" => "HireDate", "CreatedAt" => "CreatedAt", _ => "Code" };
-            var direction = sortDescending ? "DESC" : "ASC";
-
-            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM Employees {where.Sql}", where.Parameters));
-
-            var pageSql = $@"SELECT * FROM Employees {where.Sql}
-                              {OrderBuilder.By(column, sortDescending)}
-                              {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
-
-            return (Query(pageSql, null, null, where.Parameters), total);
+            return Page(where, page, pageSize, OrderBuilder.By(column, sortDescending));
         }
 
         private const string InsertSql = @"
             INSERT INTO Employees
                 (Code, Name, NameEn, NationalId, Phone, Email, Address, DepartmentId, JobTitleId, HireDate,
-                 TerminationDate, BasicSalary, AccountId, BankAccount, Status, Notes, CreatedBy)
+                 TerminationDate, BasicSalary, FixedAllowances, IsInsured, InsuranceStartDate, InsuranceAmount,
+                 TaxNumber, TaxAmount, AccountId, AccountCode, BankAccount, Status, Notes, CreatedBy)
             VALUES
                 (@code, @name, @nameEn, @nationalId, @phone, @email, @address, @departmentId, @jobTitleId, @hireDate,
-                 @terminationDate, @basicSalary, @accountId, @bankAccount, @status, @notes, @createdBy)";
+                 @terminationDate, @basicSalary, @fixedAllow, @insured, @insStart, @insAmount,
+                 @taxNo, @taxAmount, @accountId, @accountCode, @bankAccount, @status, @notes, @createdBy)";
 
         public int Insert(Employee e, DbConnection conn = null, DbTransaction tx = null) =>
             InsertGetId(InsertSql, conn, tx,
                 ("@code", e.Code), ("@name", e.Name), ("@nameEn", e.NameEn), ("@nationalId", e.NationalId),
                 ("@phone", e.Phone), ("@email", e.Email), ("@address", e.Address), ("@departmentId", e.DepartmentId),
                 ("@jobTitleId", e.JobTitleId), ("@hireDate", e.HireDate), ("@terminationDate", e.TerminationDate),
-                ("@basicSalary", e.BasicSalary), ("@accountId", e.AccountId), ("@bankAccount", e.BankAccount),
+                ("@basicSalary", e.BasicSalary), ("@fixedAllow", e.FixedAllowances), ("@insured", e.IsInsured),
+                ("@insStart", e.InsuranceStartDate), ("@insAmount", e.InsuranceAmount), ("@taxNo", e.TaxNumber), ("@taxAmount", e.TaxAmount),
+                ("@accountId", e.AccountId), ("@accountCode", e.AccountCode), ("@bankAccount", e.BankAccount),
                 ("@status", (int)e.Status), ("@notes", e.Notes ?? ""), ("@createdBy", e.CreatedBy));
 
         private const string UpdateSql = @"
             UPDATE Employees SET
                 Name = @name, NameEn = @nameEn, NationalId = @nationalId, Phone = @phone, Email = @email, Address = @address,
                 DepartmentId = @departmentId, JobTitleId = @jobTitleId, HireDate = @hireDate, TerminationDate = @terminationDate,
-                BasicSalary = @basicSalary, AccountId = @accountId, BankAccount = @bankAccount, Status = @status,
+                BasicSalary = @basicSalary, FixedAllowances = @fixedAllow, IsInsured = @insured,
+                InsuranceStartDate = @insStart, InsuranceAmount = @insAmount, TaxNumber = @taxNo, TaxAmount = @taxAmount,
+                AccountId = @accountId, AccountCode = @accountCode, BankAccount = @bankAccount, Status = @status,
                 Notes = @notes, UpdatedAt = @now, UpdatedBy = @updatedBy
             WHERE Id = @id";
 
@@ -132,8 +140,24 @@ namespace PrimeERP.Data.Repositories
                 ("@name", e.Name), ("@nameEn", e.NameEn), ("@nationalId", e.NationalId), ("@phone", e.Phone),
                 ("@email", e.Email), ("@address", e.Address), ("@departmentId", e.DepartmentId), ("@jobTitleId", e.JobTitleId),
                 ("@hireDate", e.HireDate), ("@terminationDate", e.TerminationDate), ("@basicSalary", e.BasicSalary),
-                ("@accountId", e.AccountId), ("@bankAccount", e.BankAccount), ("@status", (int)e.Status), ("@notes", e.Notes ?? ""),
+                ("@fixedAllow", e.FixedAllowances), ("@insured", e.IsInsured), ("@insStart", e.InsuranceStartDate),
+                ("@insAmount", e.InsuranceAmount), ("@taxNo", e.TaxNumber), ("@taxAmount", e.TaxAmount),
+                ("@accountId", e.AccountId), ("@accountCode", e.AccountCode), ("@bankAccount", e.BankAccount), ("@status", (int)e.Status), ("@notes", e.Notes ?? ""),
                 ("@now", DateTime.Now), ("@updatedBy", e.UpdatedBy), ("@id", e.Id));
+
+        public Employee GetByAccountCode(string accountCode, DbConnection conn = null, DbTransaction tx = null) =>
+            QueryOne("SELECT * FROM Employees WHERE AccountCode = @a AND IsDeleted = @d", conn, tx,
+                ("@a", accountCode), ("@d", false));
+
+        public void UpdateNameByAccountCode(DbConnection conn, DbTransaction tx, string accountCode, string name) =>
+            Exec("UPDATE Employees SET Name = @name, UpdatedAt = @now WHERE AccountCode = @code",
+                conn, tx, ("@name", name), ("@now", DateTime.Now), ("@code", accountCode));
+
+        public List<Employee> GetAll(bool activeOnly = true) =>
+            Query($"SELECT * FROM Employees WHERE IsDeleted = @d {(activeOnly ? "AND Status = @s" : "")} ORDER BY Code",
+                null, null, activeOnly
+                    ? new (string, object)[] { ("@d", false), ("@s", (int)EmployeeStatus.Active) }
+                    : new (string, object)[] { ("@d", false) });
 
         public void Delete(int id, string deletedBy, DbConnection conn = null, DbTransaction tx = null) =>
             SoftDelete(id, deletedBy, conn, tx);

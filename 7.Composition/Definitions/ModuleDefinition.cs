@@ -68,6 +68,9 @@ namespace PrimeERP.Composition.Definitions
         /// ويبقى التعديل والحذف بصلاحياتهما. القيد على الشاشة لا على الخدمة: النمط واحد لكل شاشة.</summary>
         public bool SingleRecord { get; init; }
 
+        /// <summary>ترتيب الصفوف بسهمين يتبادلان مواضعها — بدل كتابة رقم الترتيب بيد المستخدم.</summary>
+        public bool Reorderable { get; init; }
+
         /// <summary>في أي وضع تظهر هذه الوحدة — الافتراضي: الوضعان معاً.</summary>
         public FlowScope FlowScope { get; init; } = FlowScope.Both;
     }

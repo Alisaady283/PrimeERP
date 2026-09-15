@@ -53,7 +53,9 @@ namespace PrimeERP.Composition.Renderers
             void LoadTree()
             {
                 var sourceId = SelectedSourceId();
-                nodes = sourceId > 0 ? def.BuildTree(services, sourceId) : new List<TreeNodeViewModel>();
+                // الوصف يقرّر ما يُعرض بلا مصدر مختار — شاشة إنشاء البرنامج تعرض الشجرة كاملةً،
+                // وشاشات الصلاحيات تُرجع فارغاً لأن لا دور بعد.
+                nodes = def.BuildTree(services, sourceId) ?? new List<TreeNodeViewModel>();
                 def.ApplyRules?.Invoke(nodes, null);
                 tree.ItemsSource = nodes;
                 RefreshSummary();
@@ -73,12 +75,33 @@ namespace PrimeERP.Composition.Renderers
             foreach (var action in def.Actions)
             {
                 var button = new Btn { Text = LocalizationService.Get(action.TextKey), Variant = action.Variant, Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
-                button.Click += (_, __) =>
+                button.Click += async (_, __) =>
                 {
-                    if (SelectedSourceId() == 0) return;
-                    action.Run(services, SelectedSourceId(), nodes);
+                    // الحارس مُعلَن لا مفروض: ما يحتاج مصدراً يُرفض برسالة، وما لا يحتاجه يمضي.
+                    if (action.RequiresSource && SelectedSourceId() == 0)
+                    {
+                        toast.Info(LocalizationService.Get(def.SourceLabelKey) + " مطلوب أولاً");
+                        return;
+                    }
+
+                    if (action.RunAsync != null)
+                    {
+                        button.IsEnabled = false;
+                        try
+                        {
+                            var outcome = await action.RunAsync(services, SelectedSourceId(), nodes);
+                            if (outcome.IsSuccess) toast.Success(LocalizationService.Get("Str.Success"));
+                            else toast.Error(outcome.ErrorMessage);
+                        }
+                        finally { button.IsEnabled = true; }
+                    }
+                    else action.Run(services, SelectedSourceId(), nodes);
+
                     def.ApplyRules?.Invoke(nodes, null);
                     RefreshSummary();
+
+                    // إجراءٌ قد يُضيف مصدراً (عميلاً جديداً) — فالقائمة تُعاد قراءتها بعده لا تبقى قديمة.
+                    sourcePicker.ItemsSource = def.SourceItems(services);
                 };
                 actions.Children.Add(button);
             }
@@ -86,7 +109,12 @@ namespace PrimeERP.Composition.Renderers
             var saveButton = new Btn { Text = LocalizationService.Get(def.SaveTextKey), Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
             saveButton.Click += async (_, __) =>
             {
-                if (SelectedSourceId() == 0) return;
+                // الحفظ يخصّ مصدراً بعينه دائماً — والرفض يُقال ولا يُصمَت عنه.
+                if (SelectedSourceId() == 0)
+                {
+                    toast.Info(LocalizationService.Get(def.SourceLabelKey) + " مطلوب أولاً");
+                    return;
+                }
 
                 // الزرّ يُعطَّل أثناء العمل: الحفظ قد يطول، ونقرةٌ ثانية تبدأ العملية مرّتين على نفس المسار.
                 saveButton.IsEnabled = false;
@@ -106,6 +134,18 @@ namespace PrimeERP.Composition.Renderers
 
             var top = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(24, 8, 24, 0) };
             top.Children.Add(sourcePicker);
+
+            if (def.SourceNote != null)
+            {
+                var note = new AppTextBox
+                {
+                    Label = LocalizationService.Get("Str.Builder.Serial"),
+                    Width = 240, IsReadOnly = true, Margin = new Thickness(12, 0, 0, 0)
+                };
+
+                top.Children.Add(note);
+                sourcePicker.SelectionChanged += (_, __) => note.Text = def.SourceNote(services, SelectedSourceId());
+            }
 
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -127,12 +167,15 @@ namespace PrimeERP.Composition.Renderers
 
             root.Loaded += (_, __) =>
             {
-                var first = (def.SourceItems(services)).FirstOrDefault();
+                var first = def.SourceItems(services).FirstOrDefault();
+
+                // مصدرٌ موجود يُختار فيُحمّل باختياره؛ وبلا مصادر تُحمَّل الشجرة كما يقرّرها الوصف —
+                // وإلّا بقيت الصفحة فارغة إلى أن يوجد أوّل مصدر، وهي أوّل ما يراه المستخدم.
                 if (first != null)
-                {
-                    sourcePicker.SelectedItem = ((List<SourceOption>)sourcePicker.ItemsSource).FirstOrDefault(o => o.Id == first.Id);
+                    sourcePicker.SelectedItem = ((List<SourceOption>)sourcePicker.ItemsSource)
+                        .FirstOrDefault(o => o.Id == first.Id);
+                else
                     LoadTree();
-                }
             };
 
             return root;

@@ -57,18 +57,42 @@ namespace PrimeERP.Platform.Settings
             public const string Customers        = "Accounts.Customers";
             public const string Suppliers        = "Accounts.Suppliers";
             public const string Inventory        = "Accounts.Inventory";
+
+            /// <summary>الطرف الدائن لأرصدة الأصناف الافتتاحية وتسويات المخزون — يختاره المستخدم من الإعدادات.</summary>
+            public const string OpeningAdjustments = "Accounts.OpeningAdjustments";
             public const string DepreciationExpense     = "Accounts.DepreciationExpense";
             public const string AccumulatedDepreciation = "Accounts.AccumulatedDepreciation";
+
+            /// <summary>تكلفة الأصول الثابتة (1101001) — الطرف المدين في قيد الاقتناء وفي زيادة إعادة التقييم.
+            /// أبوه «صافي الأصول الثابتة» (1101) هو جذر الشجرة المقفلة: هو ومجمّع الإهلاك وكل ما تحتهما
+            /// يُدار من صفحة الأصول وحدها — راجع AccountService.IsAssetManaged.</summary>
+            public const string FixedAssets   = "Accounts.FixedAssets";
+
+            /// <summary>أرباح رأسمالية — بندٌ غير تشغيلي تحت «إيرادات أخرى» (42) في قائمة الدخل.</summary>
+            public const string CapitalGains  = "Accounts.CapitalGains";
+
+            /// <summary>خسائر رأسمالية — بندٌ غير تشغيلي تحت «مصروفات أخرى» (52) في قائمة الدخل.</summary>
+            public const string CapitalLosses = "Accounts.CapitalLosses";
             public const string Cash             = "Accounts.Cash";
 
             /// <summary>مفاتيح الأصول المرتبطة بكيانات: قيمتها كود حساب <b>تجميعي</b> يعيش أبناؤه ككيانات
             /// (عميل/مورد/خزينة/بنك). ضبطها على حساب ورقي يُعطّل الربط بصمت — لذلك تُرفَض عند الحفظ.</summary>
-            public static readonly string[] LinkedRoots = { Customers, Suppliers, Cash, Bank };
+            /// <summary>سلف الموظفين (1205) — تجميعيّ يسكنه الموظفون، لكلٍّ ورقةٌ باسمه تحمل رصيد سلفته.</summary>
+            public const string EmployeeAdvances = "Accounts.EmployeeAdvances";
+
+            public static readonly string[] LinkedRoots = { Customers, Suppliers, Cash, Bank, FixedAssets, EmployeeAdvances };
             public const string Bank             = "Accounts.Bank";
             public const string Sales            = "Accounts.Sales";
             public const string SalesReturns     = "Accounts.SalesReturns";
             public const string COGS             = "Accounts.COGS";
-            public const string Salaries         = "Accounts.Salaries";
+
+            // حسابات المسير. الترحيل إثباتُ استحقاق لا صرف: مدينان بالمصروف، ودائنون بما استُحقّ ولم
+            // يُصرف بعد. والصرف الفعلي يقع لاحقاً بسند صرف يخصم المستحقّ من الخزينة.
+            public const string SalaryExpense      = "Accounts.SalaryExpense";
+            public const string AllowanceExpense   = "Accounts.AllowanceExpense";
+            public const string SalariesPayable    = "Accounts.SalariesPayable";
+            public const string InsurancePayable   = "Accounts.InsurancePayable";
+            public const string TaxPayable         = "Accounts.TaxPayable";
             public const string RetainedEarnings = "Accounts.RetainedEarnings";
             public const string VATInput         = "Accounts.VATInput";
             public const string VATOutput        = "Accounts.VATOutput";
@@ -141,6 +165,20 @@ namespace PrimeERP.Platform.Settings
             public const string RetentionCount          = "Backup.RetentionCount";
         }
 
+        /// <summary>ترخيص هذه النسخة — يكتبه المنصِّب عند التفعيل، ويقرؤه التحديث.</summary>
+        public static class License
+        {
+            public const string Serial   = "License.Serial";
+            public const string Customer = "License.Customer";
+        }
+
+        /// <summary>إعدادات المطوّر: عنوان الخادم وتوكنه ورقم الإصدار — لا تُنسخ إلى نسخة العميل.</summary>
+        public static class Developer
+        {
+            public const string ServerUrl  = "Developer.ServerUrl";
+            public const string AdminToken = "Developer.AdminToken";
+        }
+
         public static class Security
         {
             public const string PasswordMinLength        = "Security.PasswordMinLength";
@@ -180,14 +218,23 @@ namespace PrimeERP.Platform.Settings
             new(Accounts.Customers,        "1202", "string", "Accounts", IsSystem: true),
             new(Accounts.Suppliers,        "2101", "string", "Accounts", IsSystem: true),
             new(Accounts.Inventory,        "1201", "string", "Accounts", IsSystem: true),
+            new(Accounts.OpeningAdjustments, "",   "string", "Accounts", IsSystem: true),
             new(Accounts.DepreciationExpense,     "", "string", "Accounts", IsSystem: true),
             new(Accounts.AccumulatedDepreciation, "", "string", "Accounts", IsSystem: true),
+            new(Accounts.FixedAssets,             "", "string", "Accounts", IsSystem: true),
+            new(Accounts.CapitalGains,            "", "string", "Accounts", IsSystem: true),
+            new(Accounts.CapitalLosses,           "", "string", "Accounts", IsSystem: true),
             new(Accounts.Cash,             "1204", "string", "Accounts", IsSystem: true),
+            new(Accounts.EmployeeAdvances, "1205", "string", "Accounts", IsSystem: true),
+            new(Accounts.SalaryExpense,    "5101", "string", "Accounts", IsSystem: true),
+            new(Accounts.AllowanceExpense, "5102", "string", "Accounts", IsSystem: true),
+            new(Accounts.SalariesPayable,  "2102", "string", "Accounts", IsSystem: true),
+            new(Accounts.InsurancePayable, "2103", "string", "Accounts", IsSystem: true),
+            new(Accounts.TaxPayable,       "2104", "string", "Accounts", IsSystem: true),
             new(Accounts.Bank,             "1203", "string", "Accounts", IsSystem: true),
             new(Accounts.Sales,            "41",   "string", "Accounts", IsSystem: true),
-            new(Accounts.SalesReturns,     "42",   "string", "Accounts", IsSystem: true),
+            new(Accounts.SalesReturns,     "",     "string", "Accounts", IsSystem: true),
             new(Accounts.COGS,             "51",   "string", "Accounts", IsSystem: true),
-            new(Accounts.Salaries,         "52",   "string", "Accounts", IsSystem: true),
             new(Accounts.RetainedEarnings, "32",   "string", "Accounts", IsSystem: true),
             new(Accounts.VATInput,         "",     "string", "Accounts", IsSystem: true),
             new(Accounts.VATOutput,        "",     "string", "Accounts", IsSystem: true),
@@ -224,6 +271,12 @@ namespace PrimeERP.Platform.Settings
             new(Backup.AutoBackupPath,          "",      "string", "Backup"),
             new(Backup.AutoBackupIntervalHours, "24",    "int",    "Backup"),
             new(Backup.RetentionCount,          "10",    "int",    "Backup"),
+
+            new(License.Serial,   "", "string", "License", IsSystem: true),
+            new(License.Customer, "", "string", "License", IsSystem: true),
+
+            new(Developer.ServerUrl,  "https://primelogic-eg.com/erp", "string", "Developer", IsSystem: true),
+            new(Developer.AdminToken, "",                              "string", "Developer", IsSystem: true),
 
             new(Security.PasswordMinLength,     "8",     "int",  "Security", IsSystem: true),
             new(Security.SessionTimeoutMinutes, "60",    "int",  "Security"),

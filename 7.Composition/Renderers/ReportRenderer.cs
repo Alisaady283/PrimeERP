@@ -48,7 +48,6 @@ namespace PrimeERP.Composition.Renderers
             paramPanel.Children.Add(runButton);
 
             var resultGrid = new AppDataGrid { ShowRowActions = false };
-            var totalsText = new TextBlock { Margin = new Thickness(24, 8, 24, 8), FontWeight = FontWeights.SemiBold };
 
             // نتيجة آخر تشغيل — أزرار الطباعة والتصدير تعمل عليها، ومعطَّلة قبل أول تشغيل.
             PrimeERP.Application.Reporting.ReportData current = null;
@@ -92,7 +91,7 @@ namespace PrimeERP.Composition.Renderers
                 resultGrid.UseAlternatingRows = report.AlternatingRows;
                 resultGrid.ColumnsSource = report.Columns;
                 resultGrid.ItemsSource = current.Rows;
-                totalsText.Text = current.Totals is { Count: > 0 }
+                resultGrid.SummaryText = current.Totals is { Count: > 0 }
                     ? string.Join("   |   ", current.Totals
                         .Where(t => t.Key != report.TitleOverrideTotalKey).Select(t => t.Value))
                     : "";
@@ -104,16 +103,13 @@ namespace PrimeERP.Composition.Renderers
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             Grid.SetRow(header, 0);
             Grid.SetRow(paramPanel, 1);
             Grid.SetRow(resultGrid, 2);
-            Grid.SetRow(totalsText, 3);
             root.Children.Add(header);
             root.Children.Add(paramPanel);
             root.Children.Add(resultGrid);
-            root.Children.Add(totalsText);
 
             root.Loaded += (_, __) => RunReport();
 

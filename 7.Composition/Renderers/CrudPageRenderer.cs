@@ -29,6 +29,11 @@ namespace PrimeERP.Composition.Renderers
         {
             dynamic vm = Resolve.ViewModel(definition, services);
 
+            // حجم الصفحة من الإعدادات وحدها — لا رقم في نموذج العرض ولا في شريط الترقيم.
+            var configured = services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>()
+                .Get(PrimeERP.Platform.Settings.SettingKeys.UI.PageSize, 25);
+            if (configured > 0 && vm.PageSize < 1000) vm.PageSize = configured;
+
             // بلا Title — AppShell.TopBar يعرض عنوان الصفحة تلقائياً من NavItem المختار (breadcrumb)؛ تكراره
             // هنا ظهر فعلياً كنص مكرر حرفياً عند أول تشغيل حقيقي (راجع توقف 10). PageHeader هنا لاستضافة زر
             // الإضافة فقط.
@@ -47,6 +52,13 @@ namespace PrimeERP.Composition.Renderers
                 ToolbarAction.Delete((ICommand)vm.DeleteCommand, $"{definition.PermissionPrefix}.Delete"),
                 ToolbarAction.Refresh((ICommand)vm.RefreshCommand),
             };
+
+            if (definition.Reorderable)
+            {
+                var edit = $"{definition.PermissionPrefix}.Edit";
+                actions.Insert(3, ToolbarAction.MoveUp((ICommand)vm.MoveUpCommand, edit));
+                actions.Insert(4, ToolbarAction.MoveDown((ICommand)vm.MoveDownCommand, edit));
+            }
 
             // المستوى الأول: القائمة كتقرير — طباعة وتصدير، بلا حاجة لتحديد سجل.
             var view = $"{definition.PermissionPrefix}.View";
@@ -74,7 +86,7 @@ namespace PrimeERP.Composition.Renderers
                     _ =>
                     {
                         var item = vm.SelectedItem as object;
-                        if (item == null) return;
+                        if (item == null && captured.RequiresSelection) return;
 
                         var outcome = captured.Execute(services, item);
                         var toastService = services.GetRequiredService<IToastService>();
@@ -84,7 +96,8 @@ namespace PrimeERP.Composition.Renderers
                         toastService.Success(LocalizationService.Get("Str.Success"));
                         vm.RefreshCommand.Execute(null);
                     },
-                    _ => vm.SelectedItem != null && (captured.AppliesTo?.Invoke(vm.SelectedItem as object) ?? true));
+                    _ => (!captured.RequiresSelection || vm.SelectedItem != null)
+                         && (captured.AppliesTo?.Invoke(vm.SelectedItem as object) ?? true));
 
                 actions.Add(ToolbarAction.Build(captured.Label, captured.Label, null, captured.Variant, command, captured.PermissionKey, null, captured.Label));
             }
@@ -107,7 +120,8 @@ namespace PrimeERP.Composition.Renderers
             // فعلياً عند أول تشغيل حقيقي (تسجيل دخول + AppShell) — راجع توقف 10 في ARCHITECTURE.md.
             // بطاقة الجدول تبدأ من رأسه لا من شريط الإجراءات فوقه — الشريط هيكل، والجدول بيانات.
             var grid = new AppDataGrid
-            { ColumnsSource = definition.Columns, ShowRowActions = true, ShowPagination = false, Margin = new Thickness(0, 12, 0, 0) };
+            // بلا عمود إجراءات: تعديل وحذف في الشريط، فعمودٌ ثالث لهما تكرارٌ يأكل عرضاً ويزيد ضجيجاً.
+            { ColumnsSource = definition.Columns, ShowRowActions = false, ShowPagination = false, Margin = new Thickness(0, 12, 0, 0) };
             BindingOperations.SetBinding(grid, AppDataGrid.ItemsSourceProperty, new Binding("Items"));
             BindingOperations.SetBinding(grid, AppDataGrid.SelectedItemProperty, new Binding("SelectedItem") { Mode = BindingMode.TwoWay });
             BindingOperations.SetBinding(grid, AppDataGrid.IsLoadingProperty, new Binding("IsLoading"));

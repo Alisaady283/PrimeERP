@@ -9,6 +9,7 @@ namespace PrimeERP.Data.Repositories
         void CreateTable();
         void EnsureRow(string key);
         void EnsureRow(string key, string prefix);
+        void EnsureRow(string key, string prefix, int padding, bool resetYearly);
         void EnsureRow(DbConnection conn, DbTransaction tx, string key);
         NumberSequenceRow GetRow(string key);
         NumberSequenceRow GetRow(DbConnection conn, DbTransaction tx, string key);

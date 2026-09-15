@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using PrimeERP.Application.DTOs.Common;
@@ -70,6 +71,7 @@ namespace PrimeERP.Application.Services
                 if (copied.IsFailure) return Result.Fail(copied.ErrorMessage);
 
                 progress?.Report(new EditionProgress(FilesShare + DatabaseShare, Msg("WritingManifest")));
+                ClearCustomerData(copied.Value.FilePath);
                 WriteEditionSettings(copied.Value.FilePath, edition);
                 PointAtDatabase(Path.Combine(target, "appsettings.json"), copied.Value.FilePath);
 
@@ -82,6 +84,50 @@ namespace PrimeERP.Application.Services
             {
                 return Result.Fail(ex.Message, ErrorCode.Unexpected);
             }
+        }
+
+        /// <summary>
+        /// النسخة تُسلَّم فارغةً من بياناتي: يبقى ما يصف البرنامج (ما بُني، والمستخدمون والصلاحيات
+        /// والإعدادات والتسلسلات)، ويُمحى كل ما عداه — حساباتٌ وحركاتٌ وأطراف. وجدولٌ يُضاف لاحقاً
+        /// يُمحى بحكم القاعدة لا بتعديلٍ هنا.
+        /// </summary>
+        private static readonly string[] Kept =
+        {
+            "BuilderSections", "BuilderModules", "BuilderColumns", "BuilderActions", "BuilderFilters",
+            "Users", "Roles", "RolePermissions", "UserPermissions", "AppSettings", "NumberSequences",
+            "Licenses", "sqlite_sequence"
+        };
+
+        private void ClearCustomerData(string databasePath)
+        {
+            using var connection = _edition.Open(databasePath);
+
+            var tables = new List<string>();
+            using (var read = connection.CreateCommand())
+            {
+                read.CommandText = "SELECT name FROM sqlite_master WHERE type = 'table'";
+                using var reader = read.ExecuteReader();
+                while (reader.Read()) tables.Add(reader.GetString(0));
+            }
+
+            foreach (var table in tables.Where(t => !Kept.Contains(t)))
+            {
+                using var delete = connection.CreateCommand();
+                delete.CommandText = $"DELETE FROM \"{table}\"";
+                delete.ExecuteNonQuery();
+            }
+
+            // إعدادات المطوّر لا تُسلَّم: عنوان الخادم وتوكنه لي لا للعميل.
+            using (var developer = connection.CreateCommand())
+            {
+                developer.CommandText = "DELETE FROM AppSettings WHERE Key LIKE 'Developer.%'";
+                developer.ExecuteNonQuery();
+            }
+
+            // التسلسلات تبدأ من واحد عند العميل — أرقام مستنداتي لا تُورَّث.
+            using var reset = connection.CreateCommand();
+            reset.CommandText = "UPDATE NumberSequences SET NextNumber = 1, LastYear = 0";
+            reset.ExecuteNonQuery();
         }
 
         /// <summary>

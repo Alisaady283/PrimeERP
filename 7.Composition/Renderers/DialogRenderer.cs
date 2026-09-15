@@ -68,7 +68,9 @@ namespace PrimeERP.Composition.Renderers
             bool isEdit = editItem != null;
             var fields = BuildAndPopulateFields(dialog.Fields, services, editItem, isEdit, addModeDefaultPickerId);
             var width = ComputeDialogWidth(dialog.GridColumns);
-            var grid = BuildGrid(dialog.Fields, dialog.GridColumns, fields, width);
+            // الشبكة تتمدّد ولا تُجبَر على عرض البطاقة: مساحة المحتوى أضيق منها بالحدّ (٢) وحشو التمرير
+            // (٤٠)، وإجبارها يدفع العمود الأخير خارج القصّ — فيظهر نصف حقل. العرض تحكمه البطاقة وحدها.
+            var grid = BuildGrid(dialog.Fields, dialog.GridColumns, fields, null);
 
             foreach (var field in dialog.Fields.Where(f => f.Kind == FieldKind.Picker && f.PickerType == "Category"))
                 WireCategoryPickerAddOption((AppComboBox)fields[field.Key], field, services, toast);
@@ -140,6 +142,22 @@ namespace PrimeERP.Composition.Renderers
         /// قراءة قيمة حقل من صفّ: خاصيةً على كيان، أو مفتاحاً في قاموس. الوحدات المبنيّة صفوفها قواميس
         /// (لا نوع مُصرَّف لجدولٍ يُنشأ وقت التشغيل)، والوحدات المكتوبة كيانات — ونقطةُ القراءة واحدة.
         /// </summary>
+        /// <summary>
+        /// قيمة الحقل كما تُطابَق في القائمة — بحقل المطابقة المُعلَن (<c>PickerValueField</c>) لا بـ"Id"
+        /// دائماً، كما تفعل <see cref="ApplyPickerFilters"/> عند إعادة التعبئة.
+        ///
+        /// "Id" يُقرأ رقماً، والتعداد رقمَه (صفوف التعداد تُبنى بـConvert.ToInt32 — راجع BuilderPickers.Enum)
+        /// فقراءةٌ نصّية لا تطابق شيئاً. وما عداه (Code/Display) نصٌّ كما هو — تحويله رقماً كان يفرّغ
+        /// حقل الحساب وحقل البنك عند فتح التعديل.
+        /// </summary>
+        private static object PickerValue(object value, string valueField) => value switch
+        {
+            null                      => null,
+            Enum e                    => Convert.ToInt32(e),
+            _ when valueField == "Id" => int.TryParse(value.ToString(), out var id) ? id : (int?)null,
+            _                         => value
+        };
+
         internal static object ReadValue(object source, string key)
         {
             if (source == null) return null;
@@ -219,10 +237,11 @@ namespace PrimeERP.Composition.Renderers
                     LoadPickerItems((AppComboBox)control, field, services);
                     // في وضع الإضافة: القيمة الافتراضية المُعلَنة على الحقل أولاً (طريقة الدفع "نقداً" مثلاً)،
                     // وإلا الافتراضي المُمرَّر من الشاشة. بلا هذا يبدأ الحقل فارغاً فلا يرشِّح شيئاً.
-                    var presetId = isEdit
-                        ? ReadValue(editItem, field.Key) is { } raw && int.TryParse(raw.ToString(), out var id) ? id : (int?)null
+                    var preset = isEdit
+                        ? PickerValue(ReadValue(editItem, field.Key), field.PickerValueField)
                         : field.DefaultValue as int? ?? addModeDefaultPickerId;
-                    if (presetId != null) SelectPickerItem((AppComboBox)control, presetId.Value);
+
+                    if (preset != null) SelectPickerItem((AppComboBox)control, preset, field.PickerValueField);
                 }
                 else if (isEdit)
                 {
@@ -293,15 +312,22 @@ namespace PrimeERP.Composition.Renderers
                 var sourceField = fieldDefs.First(f => f.Key == field.PickerFilterField);
                 var captured = field;
 
-                void Reload()
+                // التعبئة الأولى تحفظ الاختيار المحمَّل من السجل: فتحُ التعديل يملأ الحقول ثم يصل هنا،
+                // وتفريغٌ غير مشروط كان يمسح ما مُلئ. أمّا تغيّر الحقل الحاكم فيُفرّغ التابع فعلاً —
+                // اختيارٌ لا ينتمي للقائمة الجديدة خطأ.
+                void Reload(bool keepSelection)
                 {
-                    combo.SelectedItem = null;
+                    var selected = combo.SelectedValue;
+
                     LoadPickerItems(combo, captured, services, GetControlValue(source, sourceField.Kind));
+
+                    if (keepSelection && selected != null) SelectPickerItem(combo, selected, captured.PickerValueField);
+                    else combo.SelectedItem = null;
                 }
 
-                OnChanged(source, Reload);
+                OnChanged(source, () => Reload(keepSelection: false));
 
-                Reload();
+                Reload(keepSelection: true);
             }
         }
 
@@ -483,13 +509,6 @@ namespace PrimeERP.Composition.Renderers
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Security.IRoleService>().GetAll();
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Select(r => new PickerRow { Id = r.Id, Code = null, Display = r.NameAr }).ToList();
             }
-            // قوائم معالج البناء: تعدادات النظام وكتالوج أزراره — تُختار ولا تُكتب.
-            else if (field.PickerType is "BuilderKind" or "BuilderDataType" or "BuilderAggregate"
-                     or "FooterAggregate" or "BuilderFilterKind" or "ToolbarAction"
-                     or "BuilderSection" or "BuilderModule" or "AnyModule" or "AccountType")
-            {
-                combo.ItemsSource = BuilderPickers.Rows(field.PickerType, services, filterValue);
-            }
             // "Table:<مفتاح الوحدة>:<عمود العرض>" — قائمةٌ عامّة تقرأ جدولها من الوصف، فلا يحتاج جدولٌ
             // جديد فرعاً مكتوباً هنا. الفروع أدناه للجداول المكتوبة تبقى كما هي.
             else if (field.PickerType?.StartsWith("Table:") == true)
@@ -515,6 +534,11 @@ namespace PrimeERP.Composition.Renderers
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Parties.ISupplierService>().GetPaged(1, 5000);
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(s => new PickerRow { Id = s.Id, Code = s.Code, Display = $"{s.Code} - {s.Name}" }).ToList();
             }
+            else if (field.PickerType == "Asset")
+            {
+                var result = services.GetRequiredService<PrimeERP.Application.Services.Assets.IAssetService>().GetPaged(1, 5000);
+                if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(a => new PickerRow { Id = a.Id, Code = a.Code, Display = $"{a.Code} - {a.Name}" }).ToList();
+            }
             else if (field.PickerType == "Product")
             {
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Inventory.IProductService>().GetPaged(1, 5000);
@@ -536,6 +560,28 @@ namespace PrimeERP.Composition.Renderers
                 }
 
                 combo.ItemsSource = items.Select(t => new PickerRow { Id = t.Id, Code = t.Code, Display = t.Name }).ToList();
+            }
+            else if (field.PickerType == "AssetFunding")
+            {
+                // القائمة تتبع طريقة الاقتناء: مورد يعرض الموردين، وخزينة أو بنك يعرضان خزائن نوعهما —
+                // نفس قوائم النظام لا قائمة رابعة.
+                if (!int.TryParse(filterValue?.ToString(), out var method) || method <= 0) return;
+
+                if ((PrimeERP.Domain.Enums.AssetAcquisition)method == PrimeERP.Domain.Enums.AssetAcquisition.Supplier)
+                {
+                    var suppliers = services.GetRequiredService<PrimeERP.Application.Services.Parties.ISupplierService>().GetPaged(1, 5000);
+                    if (suppliers.IsSuccess)
+                        combo.ItemsSource = suppliers.Value.Items
+                            .Select(s => new PickerRow { Id = s.Id, Code = s.Code, Display = $"{s.Code} - {s.Name}" }).ToList();
+
+                    return;
+                }
+
+                var treasuries = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>().GetAll();
+                if (treasuries.IsSuccess)
+                    combo.ItemsSource = treasuries.Value
+                        .Where(t => t.Kind == (PrimeERP.Domain.Enums.TreasuryKind)method)
+                        .Select(t => new PickerRow { Id = t.Id, Code = t.Code, Display = t.Name }).ToList();
             }
             else if (field.PickerType == "Bank")
             {
@@ -574,7 +620,6 @@ namespace PrimeERP.Composition.Renderers
                 {
                     new() { Id = (int)PrimeERP.Domain.Enums.PaymentMethod.Cash,   Display = "نقدي" },
                     new() { Id = (int)PrimeERP.Domain.Enums.PaymentMethod.Bank,   Display = "تحويل بنكي" },
-                    new() { Id = (int)PrimeERP.Domain.Enums.PaymentMethod.Cheque, Display = "شيك" },
                 };
             }
             else if (field.PickerType == "Warehouse")
@@ -586,6 +631,13 @@ namespace PrimeERP.Composition.Renderers
             {
                 var result = services.GetRequiredService<PrimeERP.Application.Services.HR.IEmployeeService>().GetPaged(1, 5000);
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(e => new PickerRow { Id = e.Id, Code = e.Code, Display = $"{e.Code} - {e.Name}" }).ToList();
+            }
+            // وما لم يُطابق فرعاً هنا تعرفه BuilderPickers: تعدادات النظام وكتالوج أزراره وقوائم الوصف.
+            // كانت تُستدعى بقائمة أسماء مكتوبة بخطّ اليد، فكل تعدادٍ جديد يُنسى فتظهر قائمته فارغة.
+            else
+            {
+                var rows = BuilderPickers.Rows(field.PickerType, services, filterValue);
+                if (rows != null) combo.ItemsSource = rows;
             }
         }
 

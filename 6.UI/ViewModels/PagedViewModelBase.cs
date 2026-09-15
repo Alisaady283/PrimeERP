@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using PrimeERP.Domain.Results;
@@ -82,6 +84,19 @@ namespace PrimeERP.UI.ViewModels.Base
 
         /// <summary>الخطاف الوحيد المطلوب من الوارث — استدعاء IXService.GetPaged الفعلي.</summary>
         protected abstract Result<PagedResult<TDto>> FetchPage(int page, int pageSize, TFilter filter);
+
+        /// <summary>قائمةٌ مرجعية تُقرأ كاملةً: البحث في الذاكرة، والصفحة واحدة معلَنة لا مزوَّرة.</summary>
+        protected Result<PagedResult<TDto>> AllRows(Result<List<TDto>> source, params Func<TDto, string>[] searched)
+        {
+            if (!source.IsSuccess) return Result.Fail<PagedResult<TDto>>(source.ErrorMessage);
+
+            var items = string.IsNullOrWhiteSpace(SearchText)
+                ? source.Value
+                : source.Value.Where(row => searched.Any(field =>
+                    (field(row) ?? "").Contains(SearchText, StringComparison.OrdinalIgnoreCase))).ToList();
+
+            return Result.Ok(new PagedResult<TDto> { Items = items, Page = 1, PageSize = items.Count, TotalCount = items.Count });
+        }
 
         public Task LoadAsync() => GoToPageAsync(1);
 

@@ -18,18 +18,8 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "Treasuries";
 
-        protected override Result<PagedResult<TreasuryDto>> FetchPage(int page, int pageSize, TreasuryFilter filter)
-        {
-            var result = _treasuries.GetAll();
-            if (!result.IsSuccess) return Result.Fail<PagedResult<TreasuryDto>>(result.ErrorMessage);
-
-            var items = result.Value;
-            if (!string.IsNullOrWhiteSpace(SearchText))
-                items = items.Where(t => t.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
-                                      || (t.Code ?? "").Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
-
-            return Result.Ok(new PagedResult<TreasuryDto> { Items = items, Page = 1, PageSize = items.Count, TotalCount = items.Count });
-        }
+        protected override Result<PagedResult<TreasuryDto>> FetchPage(int page, int pageSize, TreasuryFilter filter) =>
+            AllRows(_treasuries.GetAll(), t => t.Name, t => t.Code);
 
         protected override int IdOf(TreasuryDto item) => item.Id;
         protected override Result DeleteItem(int id) => _treasuries.Delete(id);

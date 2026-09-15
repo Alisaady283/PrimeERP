@@ -16,5 +16,6 @@ namespace PrimeERP.Data.Repositories
         int Insert(Asset a, DbConnection conn = null, DbTransaction tx = null);
         void Update(Asset a, DbConnection conn = null, DbTransaction tx = null);
         void Delete(int id, string deletedBy, DbConnection conn = null, DbTransaction tx = null);
+        void SetJournalEntryId(DbConnection conn, DbTransaction tx, int id, int journalEntryId);
     }
 }

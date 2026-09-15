@@ -79,6 +79,9 @@ namespace PrimeERP.Tests.Composition
                         FindVisualChild<AppDatePicker>(window).SelectedDate = DateTime.Today;
                         FindVisualChild<AppTextBox>(window).Text = "قيد من الصفحة الحقيقية";
 
+                        // المستند يبدأ بسطرٍ واحد، والقيد يحتاج طرفين — فيُضاف الثاني كما يفعل المستخدم.
+                        ClickButton(window, "Str.AddLine");
+
                         var combos = FindAllVisualChildren<AppComboBox>(window).ToList();
                         SelectByCode(combos[0], cashCode);
                         SelectByCode(combos[1], salesCode);
@@ -140,6 +143,9 @@ namespace PrimeERP.Tests.Composition
 
                         FindVisualChild<AppDatePicker>(window).SelectedDate = DateTime.Today;
                         FindVisualChild<AppTextBox>(window).Text = "قيد اختباري";
+
+                        // المستند يبدأ بسطرٍ واحد، والقيد يحتاج طرفين — فيُضاف الثاني كما يفعل المستخدم.
+                        ClickButton(window, "Str.AddLine");
 
                         var combos = FindAllVisualChildren<AppComboBox>(window).ToList();
                         SelectByCode(combos[0], cashCode);
@@ -211,6 +217,7 @@ namespace PrimeERP.Tests.Composition
                 Exception thrown = null;
                 Window window = null;
                 int lineRowsFoundOnOpen = 0;
+                string[] accountsShownOnOpen = null;
 
                 Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                 {
@@ -218,7 +225,11 @@ namespace PrimeERP.Tests.Composition
                     {
                         window = System.Windows.Application.Current.Windows.OfType<Window>().Last();
 
-                        lineRowsFoundOnOpen = FindAllVisualChildren<AppComboBox>(window).Count();
+                        var combos = FindAllVisualChildren<AppComboBox>(window).ToList();
+                        lineRowsFoundOnOpen = combos.Count;
+
+                        // السطر يظهر بحسابه لا فارغاً: عدّ الصفوف وحده لا يكشف قائمةً حُمّلت بلا تحديد.
+                        accountsShownOnOpen = combos.Select(c => c.SelectedValue as string).ToArray();
 
                         FindVisualChild<AppTextBox>(window).Text = "بعد التعديل";
                         ClickButton(window, "Str.Save");
@@ -237,6 +248,7 @@ namespace PrimeERP.Tests.Composition
                 Assert.Null(thrown);
                 Assert.True(saved);
                 Assert.Equal(2, lineRowsFoundOnOpen);
+                Assert.Equal(new[] { cashCode, salesCode }, accountsShownOnOpen);
 
                 var updated = journal.GetById(created.Value.Id).Value;
                 Assert.Equal("بعد التعديل", updated.Description);

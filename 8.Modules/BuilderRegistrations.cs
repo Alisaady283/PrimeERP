@@ -46,7 +46,7 @@ namespace PrimeERP.Modules
 
         private static void Section(IModuleRegistry registry) => registry.Register(new ModuleDefinition
         {
-            Key = "BuilderSections", TitleKey = "Str.Builder.Sections", PermissionPrefix = "BuilderSections",
+            Key = "BuilderSections", Reorderable = true, TitleKey = "Str.Builder.Sections", PermissionPrefix = "BuilderSections",
             ViewModelFactory = s => Vm<BuilderSectionsService>(s, "BuilderSections"),
             Columns = new()
             {
@@ -59,13 +59,12 @@ namespace PrimeERP.Modules
                 new() { Key = nameof(BuilderSection.Key), LabelKey = "Str.Builder.Key", Kind = FieldKind.Text, IsRequired = true, MaxLength = 60 },
                 new() { Key = nameof(BuilderSection.Title), LabelKey = "Str.Builder.Title", Kind = FieldKind.Text, IsRequired = true, MaxLength = 120 },
                 new() { Key = nameof(BuilderSection.IconKey), LabelKey = "Str.Builder.Icon", Kind = FieldKind.Text, MaxLength = 60 },
-                new() { Key = nameof(BuilderSection.SortOrder), LabelKey = "Str.Builder.Order", Kind = FieldKind.Number },
             })
         });
 
         private static void Module(IModuleRegistry registry) => registry.Register(new ModuleDefinition
         {
-            Key = "BuilderModules", TitleKey = "Str.Builder.Modules", PermissionPrefix = "BuilderModules",
+            Key = "BuilderModules", Reorderable = true, TitleKey = "Str.Builder.Modules", PermissionPrefix = "BuilderModules",
             ViewModelFactory = s => Vm<BuilderModulesService>(s, "BuilderModules"),
             // القسم يُختار أولاً: لا صفحة بلا قسم، ولا زرّ ولا فلتر ولا عمود بلا صفحة.
             Filters = new()
@@ -96,14 +95,13 @@ namespace PrimeERP.Modules
                 new() { Key = nameof(BuilderModule.SourceKey), LabelKey = "Str.Builder.ReadsFrom", Kind = FieldKind.Picker, PickerType = "BuilderModule",
                         VisibleWhenField = nameof(BuilderModule.Kind), VisibleWhenValue = (int)Domain.Enums.BuilderKind.Report },
                 new() { Key = nameof(BuilderModule.CopiedFrom), LabelKey = "Str.Builder.CopyOf", Kind = FieldKind.Picker, PickerType = "AnyModule" },
-                new() { Key = nameof(BuilderModule.SortOrder), LabelKey = "Str.Builder.Order", Kind = FieldKind.Number },
                 new() { Key = nameof(BuilderModule.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
             })
         });
 
         private static void Column(IModuleRegistry registry) => registry.Register(new ModuleDefinition
         {
-            Key = "BuilderColumns", TitleKey = "Str.Builder.Columns", PermissionPrefix = "BuilderColumns",
+            Key = "BuilderColumns", Reorderable = true, TitleKey = "Str.Builder.Columns", PermissionPrefix = "BuilderColumns",
             ViewModelFactory = s => Vm<BuilderColumnsService>(s, "BuilderColumns"),
             Filters = new()
             {
@@ -113,9 +111,10 @@ namespace PrimeERP.Modules
             },
             Columns = new()
             {
-                new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = "ModuleName", Width = 160 },
+                new() { Header = LocalizationService.Get("Str.Builder.ColumnName"), Binding = nameof(BuilderColumn.Name), Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Header"), Binding = nameof(BuilderColumn.Header), Width = 200, IsStarWidth = true },
-                new() { Header = "العمود", Binding = nameof(BuilderColumn.Name), Width = 140 },
+                new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = "ModuleName", Width = 160 },
+                new() { Header = LocalizationService.Get("Str.Builder.Sections"), Binding = "SectionName", Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Kind"), Binding = nameof(BuilderColumn.DataType), Width = 110, Align = ColumnAlign.Center },
                 new() { Header = LocalizationService.Get("Str.Builder.WidthPercent"), Binding = nameof(BuilderColumn.WidthPercent), Width = 90, Align = ColumnAlign.Center, Format = "N1" },
                 new() { Header = LocalizationService.Get("Str.Builder.Footer"), Binding = nameof(BuilderColumn.Footer), Width = 90, Align = ColumnAlign.Center },
@@ -145,13 +144,12 @@ namespace PrimeERP.Modules
                 new() { Key = nameof(BuilderColumn.IsLine), LabelKey = "Str.Builder.IsLine", Kind = FieldKind.Check },
                 new() { Key = nameof(BuilderColumn.Width), LabelKey = "Str.Builder.Width", Kind = FieldKind.Number, DefaultValue = 140m },
                 new() { Key = nameof(BuilderColumn.WidthPercent), LabelKey = "Str.Builder.WidthPercent", Kind = FieldKind.Number },
-                new() { Key = nameof(BuilderColumn.SortOrder), LabelKey = "Str.Builder.Order", Kind = FieldKind.Number },
             })
         });
 
         private static void Action(IModuleRegistry registry) => registry.Register(new ModuleDefinition
         {
-            Key = "BuilderActions", TitleKey = "Str.Builder.Actions", PermissionPrefix = "BuilderActions",
+            Key = "BuilderActions", Reorderable = true, TitleKey = "Str.Builder.Actions", PermissionPrefix = "BuilderActions",
             ViewModelFactory = s => Vm<BuilderActionsService>(s, "BuilderActions"),
             Filters = new()
             {
@@ -161,8 +159,9 @@ namespace PrimeERP.Modules
             },
             Columns = new()
             {
-                new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = "ModuleName", Width = 160 },
                 new() { Header = LocalizationService.Get("Str.Builder.Button"), Binding = nameof(BuilderAction.ActionKey), Width = 200, IsStarWidth = true },
+                new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = "ModuleName", Width = 160 },
+                new() { Header = LocalizationService.Get("Str.Builder.Sections"), Binding = "SectionName", Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.OnRow"), Binding = nameof(BuilderAction.OnTable), Width = 100, Align = ColumnAlign.Center },
             },
             Dialog = Dialog<BuilderActionsService>("Str.Builder.Action", new()
@@ -171,13 +170,12 @@ namespace PrimeERP.Modules
                 // الزرّ يُختار من كتالوج النظام لا يُكتب.
                 new() { Key = nameof(BuilderAction.ActionKey), LabelKey = "Str.Builder.Button", Kind = FieldKind.Picker, IsRequired = true, PickerType = "ToolbarAction" },
                 new() { Key = nameof(BuilderAction.OnTable), LabelKey = "Str.Builder.OnRow", Kind = FieldKind.Check },
-                new() { Key = nameof(BuilderAction.SortOrder), LabelKey = "Str.Builder.Order", Kind = FieldKind.Number },
             })
         });
 
         private static void Filter(IModuleRegistry registry) => registry.Register(new ModuleDefinition
         {
-            Key = "BuilderFilters", TitleKey = "Str.Builder.Filters", PermissionPrefix = "BuilderFilters",
+            Key = "BuilderFilters", Reorderable = true, TitleKey = "Str.Builder.Filters", PermissionPrefix = "BuilderFilters",
             ViewModelFactory = s => Vm<BuilderFiltersService>(s, "BuilderFilters"),
             Filters = new()
             {
@@ -187,8 +185,10 @@ namespace PrimeERP.Modules
             },
             Columns = new()
             {
-                new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = "ModuleName", Width = 160 },
+                new() { Header = LocalizationService.Get("Str.Builder.Key"), Binding = nameof(BuilderFilter.Key), Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Filter"), Binding = nameof(BuilderFilter.Label), Width = 200, IsStarWidth = true },
+                new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = "ModuleName", Width = 160 },
+                new() { Header = LocalizationService.Get("Str.Builder.Sections"), Binding = "SectionName", Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Kind"), Binding = nameof(BuilderFilter.Kind), Width = 110, Align = ColumnAlign.Center },
             },
             Dialog = Dialog<BuilderFiltersService>("Str.Builder.Filter", new()
@@ -198,7 +198,6 @@ namespace PrimeERP.Modules
                 new() { Key = nameof(BuilderFilter.Label), LabelKey = "Str.Builder.Header", Kind = FieldKind.Text, MaxLength = 120 },
                 new() { Key = nameof(BuilderFilter.Kind), LabelKey = "Str.Builder.Kind", Kind = FieldKind.Picker, PickerType = "BuilderFilterKind" },
                 new() { Key = nameof(BuilderFilter.RefModule), LabelKey = "Str.Builder.FromTable", Kind = FieldKind.Picker, PickerType = "BuilderModule" },
-                new() { Key = nameof(BuilderFilter.SortOrder), LabelKey = "Str.Builder.Order", Kind = FieldKind.Number },
             })
         });
 
@@ -213,24 +212,100 @@ namespace PrimeERP.Modules
             TreeCheckList = new TreeCheckListDefinition
             {
                 TitleKey = "Str.Builder.Export",
-                SourceLabelKey = "Str.Builder.Mode",
+                SourceLabelKey = "Str.Builder.Customer",
                 Mode = TreeCheckMode.TwoState,
                 SaveTextKey = "Str.Builder.CreateProgram",
-                SourceItems = _ => new List<SourceOption>
-                {
-                    new() { Id = 1, Display = LocalizationService.Get("Str.Builder.Simplified") },
-                    new() { Id = 2, Display = LocalizationService.Get("Str.Builder.FullCycle") },
-                },
-                BuildTree = (services, mode) => EditionTree(services, mode == 1),
+                // المصدر عميلٌ لا وضعٌ: الوضع صار صفةً على ترخيصه، وشجرته تُبنى بما اختير له.
+                SourceItems = services => services.GetRequiredService<ILicenseService>().GetAll().Value
+                    .Select(l => new SourceOption
+                    {
+                        Id = l.Id,
+                        Display = string.IsNullOrWhiteSpace(l.Location) ? l.CustomerName : $"{l.CustomerName} — {l.Location}"
+                    }).ToList(),
+                SourceNote = (services, id) => Licensed(services, id)?.Serial ?? "",
+                BuildTree = (services, id) => LicenseTree(services, id),
                 ApplyRules = Inherit,
-                Save = (services, mode, nodes) => CreateEdition(services, mode == 1, nodes),
+                Save = (services, id, nodes) => CreateEdition(services, id, nodes),
                 Actions = new List<TreeCheckListAction>
                 {
-                    new() { TextKey = "Str.SelectAll", Run = (_, __, nodes) => SetAll(nodes, NodeCheckState.Checked) },
-                    new() { TextKey = "Str.ClearAll",  Run = (_, __, nodes) => SetAll(nodes, NodeCheckState.Unchecked) },
+                    new() { TextKey = "Str.Builder.NewSerial", Variant = "primary", RequiresSource = false, Run = (services, _, __) => NewSerial(services) },
+                    new() { TextKey = "Str.Builder.Installer", RunAsync = (services, id, _) => CustomerInstaller(services, id) },
+                    new() { TextKey = "Str.SelectAll", RequiresSource = false, Run = (_, __, nodes) => SetAll(nodes, NodeCheckState.Checked) },
+                    new() { TextKey = "Str.ClearAll",  RequiresSource = false, Run = (_, __, nodes) => SetAll(nodes, NodeCheckState.Unchecked) },
                 }
             }
         });
+
+        private static LicenseDto Licensed(IServiceProvider services, int id) =>
+            id <= 0 ? null : services.GetRequiredService<ILicenseService>().GetById(id).Value;
+
+        /// <summary>شجرة العميل: صفحات وضعه، مؤشَّرٌ منها ما سبق أن اختير له — والترخيص الجديد بالكل.</summary>
+        private static List<TreeNodeViewModel> LicenseTree(IServiceProvider services, int licenseId)
+        {
+            var license = Licensed(services, licenseId);
+
+            // بلا عميلٍ مختار تُعرَض الشجرة كاملةً كما كانت: الصفحة تقول ما يمكن منحه، والبناء وحده يطلب عميلاً.
+            if (license == null) return EditionTree(services, simplified: false);
+
+            var roots = EditionTree(services, license.Simplified);
+            if (license.ModuleKeys.Count == 0) return roots;
+
+            foreach (var page in roots.SelectMany(section => section.Children).Where(p => p.IsCheckEnabled))
+                page.CheckState = license.ModuleKeys.Contains(page.Id) ? NodeCheckState.Checked : NodeCheckState.Unchecked;
+
+            Inherit(roots, null);
+            return roots;
+        }
+
+        /// <summary>
+        /// منصِّب العميل: الملف الصغير نفسه يُنزَّل من الخادم، ويُكتب سريال العميل بجواره فلا يُمليه أحد.
+        /// نفس بوّابة الشبكة ونفس حوار التقدّم — بلا آلية ثالثة.
+        /// </summary>
+        private static async Task<Result> CustomerInstaller(IServiceProvider services, int licenseId)
+        {
+            var license = Licensed(services, licenseId);
+            if (license == null) return Result.Fail("اختر العميل أولاً", ErrorCode.ValidationFailed);
+
+            var folder = FolderOutput.Pick(LocalizationService.Get("Str.Builder.ChooseFolder"));
+            if (string.IsNullOrWhiteSpace(folder)) return Result.Fail("لم يُختَر مجلد", ErrorCode.ValidationFailed);
+
+            var server = services.GetRequiredService<Platform.Settings.ISettingsProvider>()
+                .Get(Platform.Settings.SettingKeys.Developer.ServerUrl, "").TrimEnd('/');
+
+            if (string.IsNullOrWhiteSpace(server))
+                return Result.Fail("اضبط عنوان خادم التراخيص من الإعدادات", ErrorCode.ValidationFailed);
+
+            var target = System.IO.Path.Combine(folder, "PrimeERP.Setup.exe");
+            var http = services.GetRequiredService<Platform.Net.IHttpGateway>();
+
+            using var handle = services.GetRequiredService<UI.Services.IDialogService>()
+                .ShowProgress(LocalizationService.Get("Str.Builder.Installer"), license.CustomerName);
+
+            var progress = new Progress<double>(percent => handle.Report(percent, LocalizationService.Get("Str.Builder.Installer")));
+
+            var (ok, error) = await http.DownloadAsync($"{server}/package/PrimeERP.Setup.exe", target, progress);
+            if (!ok) return Result.Fail($"تعذّر تنزيل المنصِّب: {error}", ErrorCode.Unexpected);
+
+            // السريال بجوار المنصِّب: يقرؤه عند فتحه فلا يكتبه العميل ولا يخطئ فيه.
+            await System.IO.File.WriteAllTextAsync(System.IO.Path.Combine(folder, "serial.txt"), license.Serial);
+
+            return Result.Ok();
+        }
+
+        /// <summary>سريالٌ جديد بنموذجٍ صغير — نفس آلية أي حوار إضافة، بلا نافذة مكتوبة.</summary>
+        private static void NewSerial(IServiceProvider services) =>
+            DialogRenderer.ShowAndSave(new DialogDefinition
+            {
+                TitleKey = "Str.Builder.NewSerial", TitleEditKey = "Str.Builder.NewSerial", GridColumns = 1,
+                ServiceType = typeof(ILicenseService),
+                CreateDtoType = typeof(CreateLicenseDto), UpdateDtoType = typeof(CreateLicenseDto),
+                Fields = new List<FieldDefinition>
+                {
+                    new() { Key = nameof(CreateLicenseDto.CustomerName), LabelKey = "Str.Builder.Customer", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                    new() { Key = nameof(CreateLicenseDto.Location), LabelKey = "Str.Builder.Location", Kind = FieldKind.Text, MaxLength = 200 },
+                    new() { Key = nameof(CreateLicenseDto.Simplified), LabelKey = "Str.Builder.Simplified", Kind = FieldKind.Check },
+                }
+            }, services, services.GetRequiredService<UI.Services.IToastService>());
 
         /// <summary>نفس أقسام الشريط الجانبي وصفحاته الظاهرة في الوضع المختار — لا قائمة ثانية تُكتب.</summary>
         private static List<TreeNodeViewModel> EditionTree(IServiceProvider services, bool simplified)
@@ -304,17 +379,22 @@ namespace PrimeERP.Modules
         /// المسار أولاً، ثم حوار التقدّم القائم بينما العمل يجري خارج خيط الواجهة — النسخ آلاف الملفات،
         /// وتشغيله على الخيط يُجمّد النافذة. Progress يعيد كل تقرير إلى خيط الواجهة بنفسه.
         /// </summary>
-        private static async Task<Result> CreateEdition(IServiceProvider services, bool simplified,
+        private static async Task<Result> CreateEdition(IServiceProvider services, int licenseId,
             List<TreeNodeViewModel> roots)
         {
+            var license = Licensed(services, licenseId);
+            if (license == null) return Result.Fail("اختر العميل أولاً", ErrorCode.ValidationFailed);
+
+            var keys = roots.SelectMany(section => section.Children)
+                .Where(page => page.CheckState == NodeCheckState.Checked)
+                .Select(page => page.Id).ToList();
+
             var folder = FolderOutput.Pick(LocalizationService.Get("Str.Builder.ChooseFolder"));
 
             var edition = new CreateEditionDto
             {
-                ModuleKeys = roots.SelectMany(section => section.Children)
-                    .Where(page => page.CheckState == NodeCheckState.Checked)
-                    .Select(page => page.Id).ToList(),
-                Simplified = simplified,
+                ModuleKeys = keys,
+                Simplified = license.Simplified,
                 TargetFolder = folder
             };
 
@@ -324,8 +404,17 @@ namespace PrimeERP.Modules
                               LocalizationService.Get("Str.Builder.Creating"));
 
             var progress = new Progress<EditionProgress>(step => handle.Report(step.Percent, step.Stage));
+            var licenses = services.GetRequiredService<ILicenseService>();
 
-            return await Task.Run(() => service.Create(edition, progress));
+            // الحفظ على الترخيص يمرّ بالشبكة، فمكانه خارج خيط الواجهة داخل نفس المهمة — وإلا جمّد
+            // النافذة قبل أن يظهر مربّع التقدّم أصلاً.
+            return await Task.Run(() =>
+            {
+                var saved = licenses.SaveManifest(licenseId, keys);
+                if (saved.IsFailure) return saved;
+
+                return service.Create(edition, progress);
+            });
         }
 
         // ===================== المشترك =====================

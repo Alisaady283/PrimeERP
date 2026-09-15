@@ -19,23 +19,15 @@ namespace PrimeERP.Modules
 
             Register(registry, "PurchaseOrder", "Str.Module.PurchaseOrder", typeof(PurchaseOrderViewModel), typeof(IPurchaseOrderService),
                 "Purchases", "Str.Supplier", "Supplier", partyRequired: true, showPrices: true,
-                pullSources: new() { Pull("PurchaseRequest", "سحب من طلب شراء", "Purchases.Create") });
+                pullSources: CycleFlow.IntoPurchaseOrder());
 
             Register(registry, "Quotation", "Str.Module.Quotation", typeof(QuotationViewModel), typeof(IQuotationService),
                 "Sales", "Str.Customer", "Customer", partyRequired: false, showPrices: true, pullSources: new());
 
             Register(registry, "SalesOrder", "Str.Module.SalesOrder", typeof(SalesOrderViewModel), typeof(ISalesOrderService),
                 "Sales", "Str.Customer", "Customer", partyRequired: true, showPrices: true,
-                pullSources: new() { Pull("Quotation", "سحب من عرض سعر", "Sales.Create") });
+                pullSources: CycleFlow.IntoSalesOrder());
         }
-
-        private static PullSource Pull(string sourceKind, string label, string permissionKey) => new()
-        {
-            SourceKind = sourceKind,
-            Label = label,
-            PermissionKey = permissionKey,
-            MatchFields = new List<string> { nameof(CreateCycleDocumentDto.PartyId) },
-        };
 
         private static void Register(IModuleRegistry registry, string key, string title, Type viewModel, Type service,
             string permissionPrefix, string partyLabelKey, string partyPickerType, bool partyRequired, bool showPrices,
@@ -61,6 +53,8 @@ namespace PrimeERP.Modules
 
             if (showPrices)
                 columns.Add(new() { Header = LocalizationService.Get("Str.Total"), Binding = nameof(CycleDocumentDto.Total), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum });
+
+            columns.Add(new() { Header = LocalizationService.Get("Str.Notes"), Binding = nameof(CycleDocumentDto.Notes), Width = 220, IsStarWidth = true });
 
             registry.Register(new ModuleDefinition
             {

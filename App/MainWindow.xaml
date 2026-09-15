@@ -13,5 +13,6 @@
     <shell:AppShell x:Name="shell"
                      NavigationRequested="Shell_NavigationRequested"
                      ThemeToggled="Shell_ThemeToggled"
+                     UpdateRequested="Shell_UpdateRequested"
                      LogoutRequested="Shell_LogoutRequested"/>
 </Window>

@@ -120,9 +120,9 @@ namespace PrimeERP.UI.Components.Inputs
         {
             var c = (AppTextBox)d;
             var readOnly = (bool)e.NewValue;
+            // للقراءة لا يعني ممنوعاً من التحديد: الحقل يبقى قابلاً للتركيز فيُحدَّد ويُنسخ (السريال مثلاً).
             c.txt.IsReadOnly = readOnly;
-            c.txt.Focusable = !readOnly;
-            c.txt.Cursor = readOnly ? Cursors.Arrow : Cursors.IBeam;
+            c.txt.IsReadOnlyCaretVisible = readOnly;
         }
 
         private static void OnMaxLengthChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

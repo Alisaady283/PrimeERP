@@ -95,9 +95,6 @@ namespace PrimeERP.Tests.Composition
                 Select(method, (int)PrimeERP.Domain.Enums.PaymentMethod.Bank);
                 AssertShows("بنك الاختبار", "صندوق الاختبار");
 
-                Select(method, (int)PrimeERP.Domain.Enums.PaymentMethod.Cheque);
-                AssertShows("بنك الاختبار", "صندوق الاختبار");
-
                 Select(method, (int)PrimeERP.Domain.Enums.PaymentMethod.Cash);
                 AssertShows("صندوق الاختبار", "بنك الاختبار");
             });

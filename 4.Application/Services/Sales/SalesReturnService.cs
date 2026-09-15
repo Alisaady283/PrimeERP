@@ -30,13 +30,16 @@ namespace PrimeERP.Application.Services.Sales
         private readonly IJournalService _journal;
         private readonly INumberSequenceService _numbers;
 
+        private readonly PrimeERP.Application.Services.Documents.IDocumentLinkService _links;
+
         public SalesReturnService(ISalesReturnRepository returns, IProductRepository products, ICustomerService customers,
             IStockService stock, IJournalService journal, INumberSequenceService numbers,
+            PrimeERP.Application.Services.Documents.IDocumentLinkService links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
             : base(permissions, settings, localization, audit)
         {
             _returns = returns; _products = products; _customers = customers;
-            _stock = stock; _journal = journal; _numbers = numbers;
+            _stock = stock; _journal = journal; _numbers = numbers; _links = links;
         }
 
         protected override string PermissionPrefix => "Sales";
@@ -105,8 +108,12 @@ namespace PrimeERP.Application.Services.Sales
                     VatPercent = l.VatPercent, VatAmount = amounts.Vat,
                     WithholdingPercent = l.WithholdingPercent, WithholdingAmount = amounts.Withholding,
                     LineTotal = amounts.Gross, NetAmount = amounts.Net, Notes = l.Notes
-                }, product.CostPrice));
+                }, 0m));
             }
+
+            // المتبقّي على المصدر يُفحص قبل أي كتابة — الواجهة تمنع الخطأ، والخدمة تمنع الالتفاف عليها.
+            var pullCheck = _links.ValidatePulls(dto.Lines.Select(l => ((PrimeERP.Application.DTOs.Documents.IPullableLine)l, l.Qty)));
+            if (pullCheck.IsFailure) return Result.Fail<SalesReturnDetailDto>(pullCheck.ErrorMessage, pullCheck.ErrorCode);
 
             var subTotal = resolvedLines.Sum(x => x.Line.LineTotal);
             var discountAmount = resolvedLines.Sum(x => x.Line.DiscountAmount);
@@ -114,9 +121,12 @@ namespace PrimeERP.Application.Services.Sales
             var vatAmount = resolvedLines.Sum(x => x.Line.VatAmount);
             var withholdingAmount = resolvedLines.Sum(x => x.Line.WithholdingAmount);
             var netTotal = resolvedLines.Sum(x => x.Line.NetAmount);
-            var totalCost = resolvedLines.Sum(x => x.Line.Qty * x.UnitCost);
 
             var salesAccount = Settings.Get(SettingKeys.Accounts.Sales, "");
+
+            // المرتجع عكس المبيعات: يُرحَّل على حساب المرتجعات المقابل إن ضُبط، وإلا عكساً على المبيعات نفسه.
+            var returnsAccount = Settings.Get(SettingKeys.Accounts.SalesReturns, "");
+            if (string.IsNullOrWhiteSpace(returnsAccount)) returnsAccount = salesAccount;
             var vatAccount = Settings.Get(SettingKeys.Accounts.VATOutput, "");
             var withholdingAccount = Settings.Get(SettingKeys.Accounts.WithholdingReceivable, "");
             var cogsAccount = Settings.Get(SettingKeys.Accounts.COGS, "");
@@ -127,6 +137,7 @@ namespace PrimeERP.Application.Services.Sales
                 return Result.Fail<SalesReturnDetailDto>("حساب ضريبة المخرجات (VATOutput) غير مضبوط في الإعدادات", ErrorCode.ValidationFailed);
 
             int returnId;
+            decimal totalCost = 0;   // تُملأ داخل المعاملة بتكلفة صرف المرتجَع أصلاً، ويُبنى عليها قيد المخزون
             try
             {
                 var simplifiedFlow = Settings.Get(SettingKeys.Documents.SimplifiedFlow, true);
@@ -140,9 +151,23 @@ namespace PrimeERP.Application.Services.Sales
                     };
                     var id = _returns.InsertHeader(conn, tx, ret);
 
-                    foreach (var (line, unitCost) in resolvedLines)
+                    var inserted = new List<(PrimeERP.Application.DTOs.Documents.IPullableLine Line, int TargetLineId, decimal Qty)>();
+                    for (int i = 0; i < resolvedLines.Count; i++)
                     {
-                        _returns.InsertLine(conn, tx, id, line);
+                        var line = resolvedLines[i].Line;
+                        var source = dto.Lines[i];
+
+                        // المرتجع يعود بتكلفة صرفه الأصلي، مقروءةً من حركة الفاتورة التي سُحب منها. وبلا
+                        // سحبٍ (مرتجعٌ مُدخَل يدوياً) يعود بمتوسط اللحظة — فلا يلوّث الرصيد بسعر بيع.
+                        var unitCost =
+                            (source.SourceLineId > 0
+                                ? _stock.SourceUnitCost(conn, tx, "SalesInvoice", source.SourceId, line.ProductId)
+                                : null)
+                            ?? _stock.CurrentUnitCost(conn, tx, line.ProductId);
+
+                        totalCost += line.Qty * unitCost;
+
+                        inserted.Add((source, _returns.InsertLine(conn, tx, id, line), line.Qty));
                         // الوضع المبسّط: المرتجع تحرّك المخزون بنفسها (لا موظف مخزن ولا أذون). الوضع الشامل:
                         // إذن الصرف/الاستلام هو من يحرّك المخزون، والمرتجع تُسحب منه — فتحريكها هنا يخصم مرتين.
                         var moveResult = simplifiedFlow
@@ -152,9 +177,11 @@ namespace PrimeERP.Application.Services.Sales
                         if (!moveResult.IsSuccess) throw new InvalidOperationException(moveResult.ErrorMessage);
                     }
 
+                    _links.RecordPulls(conn, tx, EntityName, id, inserted);
+
                     var journalLines = new List<CreateJournalLineDto>
                     {
-                        new() { LineNo = 1, AccountCode = salesAccount, Debit = taxableAmount },
+                        new() { LineNo = 1, AccountCode = returnsAccount, Debit = taxableAmount },
                         new() { LineNo = 2, AccountCode = customer.Value.AccountCode, Credit = netTotal },
                     };
                     if (vatAmount > 0) journalLines.Add(new() { LineNo = 3, AccountCode = vatAccount, Debit = vatAmount });
@@ -200,10 +227,16 @@ namespace PrimeERP.Application.Services.Sales
             var document = _returns.GetById(id);
             if (document == null) return Result.Fail("المرتجع غير موجود", ErrorCode.NotFound);
 
+            // السحب يمنع الحذف: مستندٌ لاحق يقوم عليه، فحذفه يترك الأخير بلا أصل.
+            if (_links.GetPulledBySource(EntityName, id).Count > 0)
+                return Result.Fail("سُحب من هذا المستند — احذف ما سُحب إليه أولاً", ErrorCode.ValidationFailed);
+
             Db.RunTransaction((conn, tx) =>
             {
                 if (document.JournalEntryId != null) _journal.Delete(conn, tx, document.JournalEntryId.Value);
                 _stock.RemoveMovements(conn, tx, "SalesReturn", id);
+                // روابط ما سحبه هذا المستند تُزال معه، وإلّا بقيت تحرس مصدراً عن مستندٍ لم يعد موجوداً.
+                _links.RemovePull(EntityName, id, conn, tx);
                 _returns.DeleteDocument(conn, tx, id);
             });
 

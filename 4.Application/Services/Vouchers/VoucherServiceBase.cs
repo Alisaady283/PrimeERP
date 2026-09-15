@@ -43,16 +43,18 @@ namespace PrimeERP.Application.Services.Vouchers
         private readonly IJournalService _journals;
         private readonly INumberSequenceService _numbers;
         private readonly ISettingsService _settingsService;
+        private readonly PrimeERP.Application.Services.Accounting.IAccountService _accounts;
         private readonly VoucherKind _kind;
 
         protected VoucherServiceBase(IVoucherRepository repo, IChequeRepository cheques, ITreasuryService treasuries,
             ICustomerService customers, ISupplierService suppliers, IJournalService journals, INumberSequenceService numbers,
-            ISettingsService settingsService, IPermissionService permissions, ISettingsProvider settings,
+            ISettingsService settingsService, PrimeERP.Application.Services.Accounting.IAccountService accounts,
+            IPermissionService permissions, ISettingsProvider settings,
             ILocalizationService localization, IAuditLogger audit, VoucherKind kind)
             : base(permissions, settings, localization, audit)
         {
             _repo = repo; _cheques = cheques; _treasuries = treasuries; _customers = customers; _suppliers = suppliers;
-            _journals = journals; _numbers = numbers; _settingsService = settingsService; _kind = kind;
+            _journals = journals; _numbers = numbers; _settingsService = settingsService; _accounts = accounts; _kind = kind;
         }
 
         private bool IsReceipt => _kind == VoucherKind.Receipt;
@@ -101,8 +103,6 @@ namespace PrimeERP.Application.Services.Vouchers
             if (treasury.IsFailure) return Result.Fail<VoucherDetailDto>("الخزينة غير موجودة", ErrorCode.ValidationFailed);
 
             var method = (PaymentMethod)dto.Method;
-            if (method == PaymentMethod.Cheque && string.IsNullOrWhiteSpace(dto.ChequeNo))
-                return Result.Fail<VoucherDetailDto>("رقم الشيك مطلوب", ErrorCode.ValidationFailed);
 
             var allocated = (dto.Allocations ?? new()).Sum(a => a.Amount);
             if (allocated > dto.Amount)
@@ -112,9 +112,12 @@ namespace PrimeERP.Application.Services.Vouchers
             if (string.IsNullOrWhiteSpace(partyAccount))
                 return Result.Fail<VoucherDetailDto>("لا حساب مرتبط بالطرف المختار", ErrorCode.ValidationFailed);
 
-            var cashAccount = ResolveCashAccount(treasury.Value.AccountCode, treasury.Value.Kind, method);
-            if (method != PaymentMethod.Cheque && string.IsNullOrWhiteSpace(cashAccount))
+            var cashAccount = treasury.Value.AccountCode;
+            if (string.IsNullOrWhiteSpace(cashAccount))
                 return Result.Fail<VoucherDetailDto>("لا حساب مرتبط بالخزينة المختارة — اربطها بحسابها من شاشة الخزائن", ErrorCode.ValidationFailed);
+
+            var funds = EnsureFunds(cashAccount, dto.Amount);
+            if (funds.IsFailure) return Result.Fail<VoucherDetailDto>(funds.ErrorMessage, funds.ErrorCode);
 
             int voucherId;
             try
@@ -138,9 +141,8 @@ namespace PrimeERP.Application.Services.Vouchers
                         });
 
                     voucher.Id = id;
-                    var entryId = method == PaymentMethod.Cheque ? (int?)null : PostEntry(conn, tx, voucher, cashAccount, partyAccount);
-                    var chequeId = method == PaymentMethod.Cheque ? CreateCheque(conn, tx, dto, id, entryId, treasury.Value.Name) : (int?)null;
-                    _repo.SetLinks(conn, tx, id, entryId, chequeId);
+                    var entryId = PostEntry(conn, tx, voucher, cashAccount, partyAccount);
+                    _repo.SetLinks(conn, tx, id, entryId, null);
 
                     return id;
                 });
@@ -171,10 +173,20 @@ namespace PrimeERP.Application.Services.Vouchers
 
             var voucher = _repo.GetById(id);
             if (voucher == null || voucher.Kind != _kind) return Result.Fail("السند غير موجود", ErrorCode.NotFound);
-            if (voucher.ChequeId != null) return Result.Fail("السند مرتبط بشيك — عالج الشيك أولاً", ErrorCode.ValidationFailed);
+            if (voucher.JournalEntryId != null)
+            {
+                var funds = _journals.EnsureRemovable(voucher.JournalEntryId.Value);
+                if (funds.IsFailure) return funds;
+            }
 
             Db.RunTransaction((conn, tx) =>
             {
+                if (voucher.ChequeId != null)
+                {
+                    _cheques.DeleteMovements(conn, tx, voucher.ChequeId.Value);
+                    _cheques.Delete(conn, tx, voucher.ChequeId.Value);
+                }
+
                 if (voucher.JournalEntryId != null) _journals.Delete(conn, tx, voucher.JournalEntryId.Value);
                 _repo.Delete(conn, tx, id);
             });
@@ -206,26 +218,6 @@ namespace PrimeERP.Application.Services.Vouchers
             return created.Value.Id;
         }
 
-        private int CreateCheque(DbConnection conn, DbTransaction tx, CreateVoucherDto dto, int voucherId, int? entryId, string treasuryName)
-        {
-            var cheque = new Cheque
-            {
-                ChequeNo = dto.ChequeNo, Direction = IsReceipt ? ChequeDirection.Incoming : ChequeDirection.Outgoing,
-                PartyKind = PartyOf, PartyId = dto.PartyId, Amount = dto.Amount,
-                IssueDate = dto.VoucherDate, DueDate = dto.ChequeDueDate ?? dto.VoucherDate,
-                BankName = string.IsNullOrWhiteSpace(dto.ChequeBank) ? treasuryName : dto.ChequeBank, Status = IsReceipt ? ChequeStatus.InHand : ChequeStatus.Issued,
-                TreasuryId = dto.TreasuryId, VoucherId = voucherId, CreatedBy = AppSession.Username
-            };
-            var chequeId = _cheques.Insert(conn, tx, cheque);
-
-            _cheques.InsertMovement(conn, tx, new ChequeMovement
-            {
-                ChequeId = chequeId, MovementDate = dto.VoucherDate, FromStatus = cheque.Status, ToStatus = cheque.Status,
-                TreasuryId = dto.TreasuryId, JournalEntryId = entryId, Notes = "إنشاء من السند", CreatedBy = AppSession.Username
-            });
-
-            return chequeId;
-        }
 
         private string ResolvePartyAccount(int partyId)
         {
@@ -239,16 +231,26 @@ namespace PrimeERP.Application.Services.Vouchers
             return supplier.IsSuccess ? supplier.Value.AccountCode : null;
         }
 
-        // الشيك بلا قيد إطلاقاً حتى يُسدَّد من البنك — القيد يقع وقتها عبر حركة الشيك (ChequeService)،
-        // وحتى ذلك الحين يظهر بكشف حساب الطرف كقيمة استعلامية لا تمسّ الرصيد.
-        private string ResolveCashAccount(string treasuryAccount, TreasuryKind treasuryKind, PaymentMethod method)
+        /// <summary>
+        /// الخزينة والبنك لا يقبلان سالباً — كالمخزن تماماً: لا يُصرف ما ليس فيهما. يُفحص قبل أي كتابة،
+        /// فمعاملتان متتاليتان تُسلسَلان وترى الثانية أثر الأولى ملتزماً فتُرفض لو لم يبقَ ما يكفي.
+        ///
+        /// القبض لا يُفحص (يزيد الرصيد).
+        /// ورصيد حساب الخزينة مدينٌ بطبعه: مدين ناقص دائن، فالصرف يُنقصه.
+        /// </summary>
+        private Result EnsureFunds(string cashAccount, decimal amount)
         {
-            if (method == PaymentMethod.Cheque) return null;
+            if (IsReceipt || string.IsNullOrWhiteSpace(cashAccount)) return Result.Ok();
 
-            // بلا احتياطي على الإعداد: Accounts.Cash/Bank أصلان تجميعيان لا يقبلان ترحيلاً، وكل خزينة
-            // تملك حسابها الورقي بحكم إنشائها.
-            return treasuryAccount;
+            var account = _accounts.GetByCode(cashAccount);
+            if (account.IsFailure) return Result.Fail(account.ErrorMessage, account.ErrorCode);
+
+            if (account.Value.Balance < amount)
+                return Result.Fail($"رصيد «{account.Value.Name}» لا يكفي", ErrorCode.ValidationFailed);
+
+            return Result.Ok();
         }
+
 
         private VoucherDto ToDto(Voucher v) => new()
         {
@@ -278,19 +280,21 @@ namespace PrimeERP.Application.Services.Vouchers
     {
         public ReceiptVoucherService(IVoucherRepository repo, IChequeRepository cheques, ITreasuryService treasuries,
             ICustomerService customers, ISupplierService suppliers, IJournalService journals, INumberSequenceService numbers,
-            ISettingsService settingsService, IPermissionService permissions, ISettingsProvider settings,
+            ISettingsService settingsService, PrimeERP.Application.Services.Accounting.IAccountService accounts,
+            IPermissionService permissions, ISettingsProvider settings,
             ILocalizationService localization, IAuditLogger audit)
-            : base(repo, cheques, treasuries, customers, suppliers, journals, numbers, settingsService, permissions,
-                   settings, localization, audit, VoucherKind.Receipt) { }
+            : base(repo, cheques, treasuries, customers, suppliers, journals, numbers, settingsService, accounts,
+                   permissions, settings, localization, audit, VoucherKind.Receipt) { }
     }
 
     public class PaymentVoucherService : VoucherServiceBase, IPaymentVoucherService
     {
         public PaymentVoucherService(IVoucherRepository repo, IChequeRepository cheques, ITreasuryService treasuries,
             ICustomerService customers, ISupplierService suppliers, IJournalService journals, INumberSequenceService numbers,
-            ISettingsService settingsService, IPermissionService permissions, ISettingsProvider settings,
+            ISettingsService settingsService, PrimeERP.Application.Services.Accounting.IAccountService accounts,
+            IPermissionService permissions, ISettingsProvider settings,
             ILocalizationService localization, IAuditLogger audit)
-            : base(repo, cheques, treasuries, customers, suppliers, journals, numbers, settingsService, permissions,
-                   settings, localization, audit, VoucherKind.Payment) { }
+            : base(repo, cheques, treasuries, customers, suppliers, journals, numbers, settingsService, accounts,
+                   permissions, settings, localization, audit, VoucherKind.Payment) { }
     }
 }

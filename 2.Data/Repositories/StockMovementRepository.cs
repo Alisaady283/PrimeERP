@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Data;
 using System.Data.Common;
 using PrimeERP.Data.Core;
@@ -54,10 +55,10 @@ namespace PrimeERP.Data.Repositories
                 ("@sourceNo", m.SourceDocNo), ("@notes", m.Notes ?? ""), ("@createdBy", m.CreatedBy));
 
         // In(+)/Adjustment(±Qty نفسها)/Out(-) — Transfer لا تُخزَّن كنوع صريح، بل حركتا In/Out منفصلتان (راجع StockService.Transfer).
-        public void DeleteBySource(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId) =>
-            Exec("DELETE FROM StockMovements WHERE SourceDocType = @type AND SourceDocId = @id",
-                conn, tx, ("@type", sourceDocType), ("@id", sourceDocId));
-
+        public void DeleteBySource(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId) =>
+            Exec("DELETE FROM StockMovements WHERE SourceDocType = @type AND SourceDocId = @id",
+                conn, tx, ("@type", sourceDocType), ("@id", sourceDocId));
+
         public decimal GetBalance(int productId, int? warehouseId, DbConnection conn = null, DbTransaction tx = null)
         {
             var sql = $@"SELECT COALESCE(SUM(CASE MovementType WHEN {(int)MovementType.Out} THEN -Qty ELSE Qty END), 0) AS Balance
@@ -85,6 +86,18 @@ namespace PrimeERP.Data.Repositories
             Query($@"SELECT * FROM StockMovements WHERE ProductId = @p {(warehouseId != null ? "AND WarehouseId = @w" : "")}
                      ORDER BY Id DESC LIMIT {maxResults}",
                 null, null, warehouseId != null ? new (string, object)[] { ("@p", productId), ("@w", warehouseId.Value) } : new (string, object)[] { ("@p", productId) });
+
+        public List<StockMovement> GetForCosting(int productId, DbConnection conn = null, DbTransaction tx = null) =>
+            Query("SELECT * FROM StockMovements WHERE ProductId = @p ORDER BY MovementDate, Id",
+                conn, tx, ("@p", productId));
+
+        public decimal? GetSourceUnitCost(string sourceDocType, int sourceDocId, int productId,
+            DbConnection conn = null, DbTransaction tx = null) =>
+            Query(@"SELECT * FROM StockMovements
+                    WHERE SourceDocType = @type AND SourceDocId = @id AND ProductId = @p
+                    ORDER BY Id LIMIT 1",
+                conn, tx, ("@type", sourceDocType), ("@id", sourceDocId), ("@p", productId))
+            .FirstOrDefault()?.UnitCost;
 
         protected override StockMovement Map(DataRow row) => new()
         {

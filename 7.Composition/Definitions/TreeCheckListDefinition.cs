@@ -16,6 +16,9 @@ namespace PrimeERP.Composition.Definitions
         /// <summary>عناصر المصدر أعلى الشاشة (الأدوار أو المستخدمون).</summary>
         public Func<IServiceProvider, List<SourceOption>> SourceItems { get; init; }
 
+        /// <summary>نصٌّ يرافق المصدر المختار ويُنسخ — سريال العميل في شاشة إنشاء البرنامج. فارغ = بلا نص.</summary>
+        public Func<IServiceProvider, int, string> SourceNote { get; init; }
+
         /// <summary>يبني الشجرة بحالتها الحالية للمصدر المختار.</summary>
         public Func<IServiceProvider, int, List<TreeNodeViewModel>> BuildTree { get; init; }
 
@@ -46,6 +49,12 @@ namespace PrimeERP.Composition.Definitions
     {
         public string TextKey { get; init; }
         public string Variant { get; init; } = "secondary";
+
+        /// <summary>إجراءٌ على المصدر المختار (تأشير صلاحيات دور) — أم مستقلٌّ عنه (إنشاء عميل جديد)؟</summary>
+        public bool RequiresSource { get; init; } = true;
+
+        /// <summary>إجراءٌ يطول (تنزيل، بناء) — يُنتظَر ونتيجته تُقال، كما يفعل الحفظ. فارغ = Run الفوري.</summary>
+        public Func<IServiceProvider, int, List<TreeNodeViewModel>, Task<Result>> RunAsync { get; init; }
 
         /// <summary>يستقبل (services, sourceId, nodes) ويعدّل حالات العقد مباشرة.</summary>
         public Action<IServiceProvider, int, List<TreeNodeViewModel>> Run { get; init; }

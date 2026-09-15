@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using PrimeERP.Data.Query;
 using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Data.Repositories.Base
@@ -49,7 +50,11 @@ namespace PrimeERP.Data.Repositories.Base
 
         /// <summary>حذف ناعم: السجل يبقى ويُخفى — كل استعلامات القراءة ترشّح IsDeleted.</summary>
         protected void SoftDelete(int id, string deletedBy = null, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec($"UPDATE {TableName} SET IsDeleted = @deleted, DeletedAt = @at, DeletedBy = @by WHERE Id = @id",
+            SoftDelete(TableName, id, deletedBy, conn, tx);
+
+        /// <summary>جدولٌ ثانٍ يديره نفس المستودع — نفس الجملة بلا نسخةٍ منها.</summary>
+        protected void SoftDelete(string table, int id, string deletedBy = null, DbConnection conn = null, DbTransaction tx = null) =>
+            Exec($"UPDATE {table} SET IsDeleted = @deleted, DeletedAt = @at, DeletedBy = @by WHERE Id = @id",
                 conn, tx, ("@deleted", true), ("@at", DateTime.Now), ("@by", deletedBy ?? ""), ("@id", id));
 
         /// <summary>حذف صلب: السجل وسطوره إن كان له سطور — في معاملة المستدعي.</summary>
@@ -73,6 +78,29 @@ namespace PrimeERP.Data.Repositories.Base
 
         protected static TOther QueryOneAs<TOther>(Func<DataRow, TOther> map, string sql, DbConnection conn = null, DbTransaction tx = null, params (string, object)[] p) =>
             QueryAs(map, sql, conn, tx, p).FirstOrDefault();
+
+        /// <summary>صفحةٌ واحدة وعددٌ كامل — العدّ والقطع هنا وحدهما، والمستودع يصف شرطه وترتيبه فقط.</summary>
+        protected (List<T> Items, int Total) Page(WhereBuilder where, int page, int pageSize, string order,
+            string from = null, string select = null, DbConnection conn = null, DbTransaction tx = null)
+        {
+            var table = from ?? TableName;
+            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM {table} {where.Sql}", where.Parameters));
+
+            var sql = $@"{select ?? $"SELECT * FROM {table}"} {where.Sql} {order}
+                         {Core.DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
+
+            return (Query(sql, conn, tx, where.Parameters), total);
+        }
+
+        /// <summary>أوائل الصفوف لبحثٍ سريع — نفس القطع بلا عدّ.</summary>
+        protected List<T> Top(WhereBuilder where, string order, int max,
+            string from = null, DbConnection conn = null, DbTransaction tx = null) =>
+            Query($"SELECT * FROM {from ?? TableName} {where.Sql} {order} {Core.DbFactory.Current.LimitClause(0, max)}",
+                conn, tx, where.Parameters);
+
+        /// <summary>عمود الفرز المطلوب إن كان مسموحاً، وإلا الافتراضي — فلا يصل نصٌّ غير مُعلَن إلى SQL.</summary>
+        protected static string SortOf(string requested, string fallback, params string[] allowed) =>
+            allowed.Contains(requested) ? requested : fallback;
 
         public virtual List<T> GetAll(DbConnection conn = null, DbTransaction tx = null) =>
             Query($"SELECT * FROM {TableName}", conn, tx);

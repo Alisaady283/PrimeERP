@@ -135,7 +135,17 @@ namespace PrimeERP.Platform.Permissions
         {
             public const string View     = "Inventory.View";
             public const string StockIn  = "Inventory.StockIn";
+
+            /// <summary>أرصدة الأصناف الافتتاحية — تُمنح لفئةٍ محدَّدة، فيظهر زرّها لها وحدها.</summary>
+            public const string OpeningStock = "Inventory.OpeningStock";
             public const string StockOut = "Inventory.StockOut";
+
+            // أذون الدورة الشاملة الأربعة — بوّابة كلٍّ منها مفتاحه وحده، كما لإذنَي الوضع المبسّط أعلاه.
+            // غيابها كان يرفض كل فعل فيها: Can يختبر العضوية، ومفتاحٌ لا وجود له لا يُمنح لأحد.
+            public const string GoodsReceipt = "Inventory.GoodsReceipt";
+            public const string GoodsIssue   = "Inventory.GoodsIssue";
+            public const string DeliveryNote = "Inventory.DeliveryNote";
+            public const string SalesReceipt = "Inventory.SalesReceipt";
             public const string Transfer = "Inventory.Transfer";
             public const string Export   = "Inventory.Export";
             public const string Print    = "Inventory.Print";

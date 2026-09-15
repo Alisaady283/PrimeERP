@@ -23,7 +23,7 @@ namespace PrimeERP.Application.Services
         {
             _repo.EnsureRow(key);
             var row = _repo.GetRow(key);
-            return Format(row.Prefix, DateTime.Now.Year, row.NextNumber, row.Padding);
+            return Format(row.Prefix, DateTime.Now.Year, row.NextNumber, row.Padding, row.ResetYearly);
         }
 
         public string Next(string key)
@@ -46,10 +46,12 @@ namespace PrimeERP.Application.Services
 
             _repo.UpdateNext(conn, tx, key, number + 1, year);
 
-            return Format(row.Prefix, year, number, row.Padding);
+            return Format(row.Prefix, year, number, row.Padding, row.ResetYearly);
         }
 
-        private static string Format(string prefix, int year, int number, int padding) =>
-            $"{prefix}-{year}-{number.ToString("D" + padding)}";
+        /// <summary>المستند يحمل سنته لأنه يُصفَّر بها؛ والسجلّ الذي لا يُصفَّر سريالٌ متصل بلا سنة.</summary>
+        private static string Format(string prefix, int year, int number, int padding, bool yearly) =>
+            yearly ? $"{prefix}-{year}-{number.ToString("D" + padding)}"
+                   : $"{prefix}{number.ToString("D" + padding)}";
     }
 }

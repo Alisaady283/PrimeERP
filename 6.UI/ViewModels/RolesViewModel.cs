@@ -17,17 +17,8 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "Users";
 
-        protected override Result<PagedResult<RoleDto>> FetchPage(int page, int pageSize, RoleFilter filter)
-        {
-            var result = _roles.GetAll();
-            if (!result.IsSuccess) return Result.Fail<PagedResult<RoleDto>>(result.ErrorMessage);
-
-            var items = result.Value;
-            if (!string.IsNullOrWhiteSpace(SearchText))
-                items = items.Where(r => r.NameAr.Contains(SearchText, System.StringComparison.OrdinalIgnoreCase)).ToList();
-
-            return Result.Ok(new PagedResult<RoleDto> { Items = items, Page = 1, PageSize = items.Count, TotalCount = items.Count });
-        }
+        protected override Result<PagedResult<RoleDto>> FetchPage(int page, int pageSize, RoleFilter filter) =>
+            AllRows(_roles.GetAll(), r => r.NameAr);
 
         protected override int IdOf(RoleDto item) => item.Id;
         protected override Result DeleteItem(int id) => _roles.Delete(id);

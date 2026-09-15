@@ -25,10 +25,17 @@ namespace PrimeERP.Data.Repositories
 
         int  SaveSection(BuilderSection section);
         int  SaveModule(BuilderModule module);
+        int  SaveColumn(int moduleId, BuilderColumn column);
+        int  SaveAction(int moduleId, BuilderAction action);
+        int  SaveFilter(int moduleId, BuilderFilter filter);
+        void DeleteColumn(int id);
+        void DeleteAction(int id);
+        void DeleteFilter(int id);
         void ReplaceColumns(int moduleId, List<BuilderColumn> columns);
         void ReplaceActions(int moduleId, List<BuilderAction> actions);
         void ReplaceFilters(int moduleId, List<BuilderFilter> filters);
         void DeleteModule(int moduleId);
+        void DeleteSection(int sectionId);
 
         /// <summary>يُنشئ جدول الوحدة (ورأس/سطور للحركة) من أعمدتها — يُستدعى عند الحفظ وعند كل إقلاع.</summary>
         void EnsureBuiltTable(BuilderModule module, List<BuilderColumn> columns);
@@ -156,36 +163,66 @@ namespace PrimeERP.Data.Repositories
         public void ReplaceColumns(int moduleId, List<BuilderColumn> columns)
         {
             Exec("DELETE FROM BuilderColumns WHERE ModuleId = @m", null, null, ("@m", moduleId));
-            foreach (var c in columns)
-                Exec(@"INSERT INTO BuilderColumns (ModuleId, Name, Header, DataType, IsRequired, IsUnique, MaxLength,
-                              RefModule, RefDisplay, Aggregate, AggFrom, AggColumn, AggMatch,
-                              ShowInGrid, ShowInForm, IsLine, Width, WidthPercent, Footer, SortOrder, CreatedAt)
-                       VALUES (@m,@n,@h,@dt,@req,@uni,@len,@rm,@rd,@agg,@af,@ac,@am,@sg,@sf,@il,@w,@wp,@f,@o,@now)",
-                    null, null,
-                    ("@m", moduleId), ("@n", c.Name), ("@h", c.Header), ("@dt", (int)c.DataType),
-                    ("@req", c.IsRequired), ("@uni", c.IsUnique), ("@len", (object)c.MaxLength ?? System.DBNull.Value),
-                    ("@rm", c.RefModule ?? ""), ("@rd", c.RefDisplay ?? ""), ("@agg", (int)c.Aggregate),
-                    ("@af", c.AggFrom ?? ""), ("@ac", c.AggColumn ?? ""), ("@am", c.AggMatch ?? ""),
-                    ("@sg", c.ShowInGrid), ("@sf", c.ShowInForm), ("@il", c.IsLine),
-                    ("@w", c.Width), ("@wp", c.WidthPercent), ("@f", c.Footer ?? ""),
-                    ("@o", c.SortOrder), ("@now", System.DateTime.Now));
+            foreach (var c in columns) { c.Id = 0; SaveColumn(moduleId, c); }
         }
 
         public void ReplaceActions(int moduleId, List<BuilderAction> actions)
         {
             Exec("DELETE FROM BuilderActions WHERE ModuleId = @m", null, null, ("@m", moduleId));
-            foreach (var a in actions)
-                Exec("INSERT INTO BuilderActions (ModuleId, ActionKey, OnTable, SortOrder, CreatedAt) VALUES (@m,@k,@t,@o,@now)",
-                    null, null, ("@m", moduleId), ("@k", a.ActionKey), ("@t", a.OnTable), ("@o", a.SortOrder), ("@now", System.DateTime.Now));
+            foreach (var a in actions) { a.Id = 0; SaveAction(moduleId, a); }
         }
 
         public void ReplaceFilters(int moduleId, List<BuilderFilter> filters)
         {
             Exec("DELETE FROM BuilderFilters WHERE ModuleId = @m", null, null, ("@m", moduleId));
-            foreach (var f in filters)
-                Exec("INSERT INTO BuilderFilters (ModuleId, Key, Label, Kind, RefModule, SortOrder, CreatedAt) VALUES (@m,@k,@l,@kind,@r,@o,@now)",
-                    null, null, ("@m", moduleId), ("@k", f.Key), ("@l", f.Label ?? ""), ("@kind", f.Kind ?? "Combo"),
-                    ("@r", f.RefModule ?? ""), ("@o", f.SortOrder), ("@now", System.DateTime.Now));
+            foreach (var f in filters) { f.Id = 0; SaveFilter(moduleId, f); }
+        }
+
+        public int SaveColumn(int moduleId, BuilderColumn c) => Save("BuilderColumns", c.Id, new (string, object)[]
+        {
+            ("ModuleId", moduleId), ("Name", c.Name), ("Header", c.Header), ("DataType", (int)c.DataType),
+            ("IsRequired", c.IsRequired), ("IsUnique", c.IsUnique), ("MaxLength", (object)c.MaxLength ?? System.DBNull.Value),
+            ("RefModule", c.RefModule ?? ""), ("RefDisplay", c.RefDisplay ?? ""), ("Aggregate", (int)c.Aggregate),
+            ("AggFrom", c.AggFrom ?? ""), ("AggColumn", c.AggColumn ?? ""), ("AggMatch", c.AggMatch ?? ""),
+            ("ShowInGrid", c.ShowInGrid), ("ShowInForm", c.ShowInForm), ("IsLine", c.IsLine),
+            ("Width", c.Width), ("WidthPercent", c.WidthPercent), ("Footer", c.Footer ?? ""), ("SortOrder", c.SortOrder)
+        });
+
+        public int SaveAction(int moduleId, BuilderAction a) => Save("BuilderActions", a.Id, new (string, object)[]
+        {
+            ("ModuleId", moduleId), ("ActionKey", a.ActionKey), ("OnTable", a.OnTable), ("SortOrder", a.SortOrder)
+        });
+
+        public int SaveFilter(int moduleId, BuilderFilter f) => Save("BuilderFilters", f.Id, new (string, object)[]
+        {
+            ("ModuleId", moduleId), ("Key", f.Key), ("Label", f.Label ?? ""), ("Kind", f.Kind ?? "Combo"),
+            ("RefModule", f.RefModule ?? ""), ("SortOrder", f.SortOrder)
+        });
+
+        public void DeleteSection(int sectionId) => SoftDelete("BuilderSections", sectionId);
+
+        public void DeleteColumn(int id) => Remove("BuilderColumns", id);
+        public void DeleteAction(int id) => Remove("BuilderActions", id);
+        public void DeleteFilter(int id) => Remove("BuilderFilters", id);
+
+        private void Remove(string table, int id) =>
+            Exec($"DELETE FROM {table} WHERE Id = @id", null, null, ("@id", id));
+
+        private int Save(string table, int id, (string Column, object Value)[] fields)
+        {
+            var parameters = fields.Select(f => ("@" + f.Column, f.Value))
+                .Append(("@now", (object)System.DateTime.Now)).ToArray();
+
+            if (id == 0)
+                return InsertGetId(
+                    $"INSERT INTO {table} ({string.Join(", ", fields.Select(f => f.Column))}, CreatedAt) " +
+                    $"VALUES ({string.Join(", ", fields.Select(f => "@" + f.Column))}, @now)",
+                    null, null, parameters);
+
+            Exec($"UPDATE {table} SET {string.Join(", ", fields.Select(f => $"{f.Column}=@{f.Column}"))}, UpdatedAt=@now WHERE Id=@id",
+                null, null, parameters.Append(("@id", (object)id)).ToArray());
+
+            return id;
         }
 
         public void DeleteModule(int moduleId)

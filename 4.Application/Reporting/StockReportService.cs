@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.Services.Inventory;
+using PrimeERP.Domain.Rules;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 
@@ -118,14 +119,40 @@ namespace PrimeERP.Application.Reporting
             var productResult = _products.GetById(productId);
             if (!productResult.IsSuccess) return Result.Fail<ReportData>("الصنف غير موجود");
 
-            var history = _stock.GetHistory(productResult.Value.Id, null);
+            // السجلّ كاملاً وتصاعدياً: الرصيد الجاري لا يُبنى على حركاتٍ مبتورة ولا مقلوبة الترتيب.
+            var history = _stock.GetCostingHistory(productResult.Value.Id);
             if (!history.IsSuccess) return Result.Fail<ReportData>(history.ErrorMessage);
 
-            var rows = history.Value.Select(m => new ItemCardRow
+            var balance = new InventoryCosting.Balance(0, 0);
+            var rows = new List<ItemCardRow>();
+
+            foreach (var movement in history.Value)
             {
-                Date = m.MovementDate.ToString("yyyy-MM-dd"), MovementType = m.MovementType.ToString(),
-                Qty = m.Qty, UnitCost = m.UnitCost, BalanceAfter = m.BalanceAfter, SourceDoc = m.SourceDocNo
-            }).ToList();
+                var entry = new InventoryCosting.Entry(movement.MovementType, movement.Qty, movement.UnitCost);
+                var incoming = InventoryCosting.IsIncoming(entry);
+                var qty = movement.Qty < 0 ? -movement.Qty : movement.Qty;
+
+                balance = InventoryCosting.Apply(balance, entry, out var value);
+
+                rows.Add(new ItemCardRow
+                {
+                    Date = movement.MovementDate.ToString("yyyy-MM-dd"),
+                    MovementType = movement.MovementType.ToString(),
+                    SourceDoc = movement.SourceDocNo,
+
+                    InQty  = incoming ? qty : 0,
+                    InPrice = incoming ? InventoryCosting.UnitCostOf(value, qty) : 0,
+                    InValue = incoming ? value : 0,
+
+                    OutQty  = incoming ? 0 : qty,
+                    OutPrice = incoming ? 0 : InventoryCosting.UnitCostOf(value, qty),
+                    OutValue = incoming ? 0 : value,
+
+                    BalanceQty = balance.Qty,
+                    BalancePrice = balance.UnitCost,
+                    BalanceValue = balance.Value
+                });
+            }
 
             return Result.Ok(new ReportData
             {

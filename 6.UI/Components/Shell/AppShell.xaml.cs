@@ -56,6 +56,7 @@ namespace PrimeERP.UI.Components.Shell
         public event EventHandler LogoutRequested;
         public event EventHandler ThemeToggled;
         public event EventHandler LanguageToggled;
+        public event EventHandler UpdateRequested;
 
         /// <summary>يُمرَّر مباشرة لـ AppTopBar.ActionsContent — واجهة موحّدة على مستوى AppShell.</summary>
         public object TopBarActionsContent { get => topBar.ActionsContent; set => topBar.ActionsContent = value; }
@@ -74,6 +75,7 @@ namespace PrimeERP.UI.Components.Shell
             topBar.LogoutRequested          += (s, e) => LogoutRequested?.Invoke(this, e);
             topBar.ThemeToggled             += (s, e) => ThemeToggled?.Invoke(this, e);
             topBar.LanguageToggled          += (s, e) => LanguageToggled?.Invoke(this, e);
+            topBar.UpdateRequested          += (s, e) => UpdateRequested?.Invoke(this, e);
         }
 
         private static void OnNavItemsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

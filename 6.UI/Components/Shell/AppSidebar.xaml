@@ -133,7 +133,10 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <Border x:Name="root" Width="240" HorizontalAlignment="Left" Background="{DynamicResource NavSurface}" ClipToBounds="True">
+    <!-- بلا محاذاة أفقية: الشريط يملأ عموده ويمتدّ بطول النافذة كاملةً، فلا تبقى فجوة بلون النافذة
+         بجانبه ولا ينقطع سطحه قبل أسفلها. -->
+    <Border x:Name="root" Width="240" VerticalAlignment="Stretch"
+            Background="{DynamicResource NavSurface}" ClipToBounds="True">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -141,16 +144,17 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0">
-                <ContentPresenter x:Name="logoPresenter" Margin="16,16,16,12"/>
-                <Border Height="1" Background="{DynamicResource NavHover}" Margin="12,0,12,6"/>
-            </StackPanel>
+            <Grid Grid.Row="0" Height="61">
+                <ContentPresenter x:Name="logoPresenter" Margin="16,0" VerticalAlignment="Center"/>
+                <Border Height="1" VerticalAlignment="Bottom" Background="{DynamicResource NavHover}"/>
+            </Grid>
 
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl x:Name="itemsHost" Margin="0,4"/>
             </ScrollViewer>
 
-            <Border Grid.Row="2" BorderBrush="{DynamicResource NavHover}" BorderThickness="0,1,0,0">
+            <Border Grid.Row="2" x:Name="footerBorder" Visibility="Collapsed"
+                    BorderBrush="{DynamicResource NavHover}" BorderThickness="0,1,0,0">
                 <ContentPresenter x:Name="footerPresenter" Margin="16,14"/>
             </Border>
         </Grid>

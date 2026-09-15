@@ -18,6 +18,9 @@ namespace PrimeERP.Application.DTOs.HR
         public decimal  BasicSalary    { get; set; }
         public string   Notes          { get; set; }
         public bool     IsActive       { get; set; }
+        /// <summary>كود حساب سلفته في الشجرة — يُنشأ معه، ورصيده سلفته المستحقّة عليه.</summary>
+        public string   AccountCode    { get; set; }
+
         public string   StatusText     { get; set; }
         public DateTime CreatedAt      { get; set; }
         public DateTime UpdatedAt      { get; set; }
@@ -36,6 +39,14 @@ namespace PrimeERP.Application.DTOs.HR
         public string   Email        { get; set; }
         public DateTime HireDate     { get; set; } = DateTime.Today;
         public decimal  BasicSalary  { get; set; }
+        public string   NationalId   { get; set; }
+        public string   Address      { get; set; }
+        public decimal  FixedAllowances { get; set; }
+        public bool     IsInsured    { get; set; }
+        public DateTime? InsuranceStartDate { get; set; }
+        public decimal  InsuranceAmount { get; set; }
+        public string   TaxNumber    { get; set; }
+        public decimal  TaxAmount    { get; set; }
         public string   Notes        { get; set; }
         public bool     IsActive     { get; set; } = true;
     }

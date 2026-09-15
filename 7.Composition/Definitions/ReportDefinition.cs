@@ -7,7 +7,7 @@ namespace PrimeERP.Composition.Definitions
 {
     // معيار واحد في لوحة تشغيل التقرير — يُبنى بنفس آلية FieldDefinition (DialogRenderer.BuildField/
     // LoadPickerItems/GetControlValue)، لا نظام مستقل.
-    public class ParameterDefinition
+    public record ParameterDefinition
     {
         public required string Key { get; init; }
         public required string LabelKey { get; init; }
@@ -38,7 +38,7 @@ namespace PrimeERP.Composition.Definitions
         public DateTime GeneratedAt { get; init; } = DateTime.Now;
     }
 
-    public class ReportDefinition
+    public record ReportDefinition
     {
         public required string Key { get; init; }
         public required string TitleKey { get; init; }

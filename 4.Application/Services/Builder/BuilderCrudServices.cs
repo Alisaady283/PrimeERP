@@ -47,7 +47,7 @@ namespace PrimeERP.Application.Services.Builder
 
         protected abstract List<TEntity> All();
         protected abstract int Write(IDictionary<string, object> values);
-        protected abstract void Erase(int id);
+        protected abstract Result Erase(int id);
 
         // ===== ما يطلبه الأساس للقراءة =====
 
@@ -55,12 +55,19 @@ namespace PrimeERP.Application.Services.Builder
 
         protected override (List<TEntity> Items, int Total) FindPaged(int page, int pageSize, DynamicFilter filter)
         {
-            var items = Match(Narrow(All(), filter), filter?.SearchText);
-            return (items, items.Count);
+            var items = Match(Narrow(Sort(All()), filter), filter?.SearchText);
+            if (pageSize <= 0) return (items, items.Count);
+
+            return (items.Skip((page < 1 ? 0 : page - 1) * pageSize).Take(pageSize).ToList(), items.Count);
         }
 
         /// <summary>ترشيح بالقسم أو الصفحة — كلٌّ يقرّر ما ينطبق عليه، والافتراضي بلا ترشيح.</summary>
         protected virtual List<TEntity> Narrow(List<TEntity> items, DynamicFilter filter) => items;
+
+        protected virtual List<TEntity> Sort(List<TEntity> items) => items;
+
+        protected Dictionary<int, int> SectionOrder() =>
+            Repo.Sections().ToDictionary(section => section.Id, section => section.SortOrder);
 
         protected override List<TEntity> FindSearch(string term, int maxResults) =>
             Match(All(), term).Take(maxResults).ToList();
@@ -111,10 +118,19 @@ namespace PrimeERP.Application.Services.Builder
         {
             if (!Can("Delete")) return FailDenied();
 
-            Erase(id);
+            var erased = Erase(id);
+            if (!erased.IsSuccess) return erased;
+
             Audit.Log(EntityName, id, AuditAction.Delete);
 
             return Result.Ok();
+        }
+
+        /// <summary>ترتيبٌ مذكور يُحترَم، وغيابه يعني آخر القائمة — فالسهمان وحدهما ما يُعيد الترتيب.</summary>
+        protected static int Order(IDictionary<string, object> v, IEnumerable<int> siblings)
+        {
+            var written = Int(v, "SortOrder");
+            return written > 0 ? written : siblings.DefaultIfEmpty(0).Max() + 10;
         }
 
         protected static int    Int(IDictionary<string, object> v, string key) => v.TryGetValue(key, out var r) && r != null ? Convert.ToInt32(r) : 0;
@@ -130,12 +146,24 @@ namespace PrimeERP.Application.Services.Builder
 
         protected override string EntityName => "BuilderSections";
         protected override List<BuilderSection> All() => Repo.Sections();
-        protected override void Erase(int id) { }
+
+        /// <summary>قسمٌ به صفحات لا يُحذف — الصفحة تطلب قسماً، فلا يُترك يتيم.</summary>
+        protected override Result Erase(int id)
+        {
+            if (Repo.Modules().Any(m => m.SectionId == id))
+                return Fail(Msg("SectionHasModules"), ErrorCode.ValidationFailed);
+
+            Repo.DeleteSection(id);
+            return Result.Ok();
+        }
 
         protected override int Write(IDictionary<string, object> v) => Repo.SaveSection(new BuilderSection
         {
+            SortOrder = Order(v, Repo.Sections().Select(s => s.SortOrder)),
             Id = Int(v, "Id"), Key = Text(v, "Key"), Title = Text(v, "Title"),
-            IconKey = Text(v, "IconKey"), SortOrder = Int(v, "SortOrder"), CreatedBy = CurrentUser
+            IconKey = Text(v, "IconKey"), CreatedBy = CurrentUser,
+            // عمود الصفحات احتياطُ قاعدةٍ لم تُبذَر — يُقرأ من الصفّ المحفوظ فلا يمحوه تعديلٌ للاسم.
+            Modules = Repo.Sections().FirstOrDefault(s => s.Id == Int(v, "Id"))?.Modules
         });
     }
 
@@ -149,13 +177,27 @@ namespace PrimeERP.Application.Services.Builder
         protected override string EntityName => "BuilderModules";
         protected override List<BuilderModule> All() => Repo.Modules();
 
+        protected override List<BuilderModule> Sort(List<BuilderModule> items)
+        {
+            var sections = SectionOrder();
+
+            return items
+                .OrderBy(m => sections.TryGetValue(m.SectionId, out var order) ? order : int.MaxValue)
+                .ThenBy(m => m.SortOrder)
+                .ToList();
+        }
+
         protected override List<BuilderModule> Narrow(List<BuilderModule> items, DynamicFilter filter)
         {
             _sections = null;
             return filter?.SectionId == null ? items : items.Where(m => m.SectionId == filter.SectionId).ToList();
         }
 
-        protected override void Erase(int id) => Repo.DeleteModule(id);
+        protected override Result Erase(int id)
+        {
+            Repo.DeleteModule(id);
+            return Result.Ok();
+        }
 
         /// <summary>الشبكة تعرض الاسم لا المعرِّف — القسم من صفّه، والنوع من نصوصه.</summary>
         protected override IDictionary<string, object> ToDto(BuilderModule entity)
@@ -173,11 +215,12 @@ namespace PrimeERP.Application.Services.Builder
         {
             var id = Repo.SaveModule(new BuilderModule
             {
+                SortOrder = Order(v, Repo.Modules().Where(m => m.SectionId == Int(v, "SectionId")).Select(m => m.SortOrder)),
                 Id = Int(v, "Id"), Key = Text(v, "Key"), Title = Text(v, "Title"),
                 Kind = (BuilderKind)Int(v, "Kind"), SectionId = Int(v, "SectionId"),
                 TableName = Text(v, "TableName"), LineTable = Text(v, "LineTable"),
                 SourceKey = Text(v, "SourceKey"), CopiedFrom = Text(v, "CopiedFrom"),
-                SortOrder = Int(v, "SortOrder"), IsActive = Bool(v, "IsActive"), CreatedBy = CurrentUser,
+                IsActive = Bool(v, "IsActive"), CreatedBy = CurrentUser,
                 // «مبذورة من الكود» صفةُ منشأٍ لا حقلَ حوار — تُقرأ من الصفّ المحفوظ فلا يمحوها تعديلٌ للاسم.
                 IsCoded = Repo.Modules().FirstOrDefault(m => m.Id == Int(v, "Id"))?.IsCoded ?? false
             });
@@ -206,28 +249,57 @@ namespace PrimeERP.Application.Services.Builder
             : base(repo, p, s, l, a) { }
 
         protected abstract List<TEntity> Of(int moduleId);
-        protected abstract void Replace(int moduleId, List<TEntity> items);
         protected abstract TEntity From(IDictionary<string, object> values);
         protected abstract int ModuleOf(TEntity item);
+        protected abstract int Save(int moduleId, TEntity item);
+        protected abstract void Remove(int id);
 
         private Dictionary<int, string> _modules;
+        private Dictionary<int, string> _sections;
 
         protected override List<TEntity> All() => Of(0);
 
-        /// <summary>الشبكة تعرض اسم الصفحة لا معرِّفها.</summary>
+        /// <summary>الشبكة تعرض اسم الصفحة وقسمها لا معرِّفاتهما — كشاشة الصفحات.</summary>
         protected override IDictionary<string, object> ToDto(TEntity entity)
         {
             var row = base.ToDto(entity);
 
-            _modules ??= Repo.Modules().ToDictionary(m => m.Id, m => m.Title);
+            if (_modules == null)
+            {
+                var sections = Repo.Sections().ToDictionary(s => s.Id, s => s.Title);
+                var modules = Repo.Modules();
+
+                _modules = modules.ToDictionary(m => m.Id, m => m.Title);
+                _sections = modules.ToDictionary(m => m.Id,
+                    m => sections.TryGetValue(m.SectionId, out var section) ? section : null);
+            }
+
             row["ModuleName"] = _modules.TryGetValue(ModuleOf(entity), out var title) ? title : null;
+            row["SectionName"] = _sections.TryGetValue(ModuleOf(entity), out var owner) ? owner : null;
 
             return row;
+        }
+
+        protected override List<TEntity> Sort(List<TEntity> items)
+        {
+            var sections = SectionOrder();
+            var modules = Repo.Modules().ToDictionary(m => m.Id,
+                m => (Section: sections.TryGetValue(m.SectionId, out var order) ? order : int.MaxValue, Page: m.SortOrder));
+
+            (int Section, int Page) Place(TEntity item) =>
+                modules.TryGetValue(ModuleOf(item), out var place) ? place : (int.MaxValue, int.MaxValue);
+
+            return items
+                .OrderBy(item => Place(item).Section)
+                .ThenBy(item => Place(item).Page)
+                .ThenBy(OrderOf)
+                .ToList();
         }
 
         protected override List<TEntity> Narrow(List<TEntity> items, DynamicFilter filter)
         {
             _modules = null;
+            _sections = null;
 
             if (filter?.ModuleId != null) return items.Where(x => ModuleOf(x) == filter.ModuleId).ToList();
 
@@ -237,26 +309,21 @@ namespace PrimeERP.Application.Services.Builder
             return items.Where(x => inSection.Contains(ModuleOf(x))).ToList();
         }
 
-        protected override void Erase(int id)
+        protected override Result Erase(int id)
         {
-            var item = All().FirstOrDefault(x => x.Id == id);
-            if (item == null) return;
-
-            var module = ModuleOf(item);
-            Replace(module, Of(module).Where(x => x.Id != id).ToList());
+            Remove(id);
+            return Result.Ok();
         }
 
         protected override int Write(IDictionary<string, object> v)
         {
+            v["SortOrder"] = Order(v, Of(Int(v, "ModuleId")).Select(OrderOf));
+
             var incoming = From(v);
-            var module = ModuleOf(incoming);
-
-            var current = Of(module).Where(x => x.Id != incoming.Id).ToList();
-            current.Add(incoming);
-            Replace(module, current);
-
-            return Of(module).LastOrDefault()?.Id ?? 0;
+            return Save(ModuleOf(incoming), incoming);
         }
+
+        private int OrderOf(TEntity item) => Convert.ToInt32(base.ToDto(item)["SortOrder"] ?? 0);
     }
 
     public class BuilderColumnsService : BuilderChildService<BuilderColumn>
@@ -266,7 +333,8 @@ namespace PrimeERP.Application.Services.Builder
 
         protected override string EntityName => "BuilderColumns";
         protected override List<BuilderColumn> Of(int moduleId) => Repo.Columns(moduleId);
-        protected override void Replace(int moduleId, List<BuilderColumn> items) => Repo.ReplaceColumns(moduleId, items);
+        protected override int Save(int moduleId, BuilderColumn item) => Repo.SaveColumn(moduleId, item);
+        protected override void Remove(int id) => Repo.DeleteColumn(id);
         protected override int ModuleOf(BuilderColumn item) => item.ModuleId;
 
         protected override BuilderColumn From(IDictionary<string, object> v) => new()
@@ -313,7 +381,8 @@ namespace PrimeERP.Application.Services.Builder
 
         protected override string EntityName => "BuilderActions";
         protected override List<BuilderAction> Of(int moduleId) => Repo.Actions(moduleId);
-        protected override void Replace(int moduleId, List<BuilderAction> items) => Repo.ReplaceActions(moduleId, items);
+        protected override int Save(int moduleId, BuilderAction item) => Repo.SaveAction(moduleId, item);
+        protected override void Remove(int id) => Repo.DeleteAction(id);
         protected override int ModuleOf(BuilderAction item) => item.ModuleId;
 
         protected override BuilderAction From(IDictionary<string, object> v) => new()
@@ -330,7 +399,8 @@ namespace PrimeERP.Application.Services.Builder
 
         protected override string EntityName => "BuilderFilters";
         protected override List<BuilderFilter> Of(int moduleId) => Repo.Filters(moduleId);
-        protected override void Replace(int moduleId, List<BuilderFilter> items) => Repo.ReplaceFilters(moduleId, items);
+        protected override int Save(int moduleId, BuilderFilter item) => Repo.SaveFilter(moduleId, item);
+        protected override void Remove(int id) => Repo.DeleteFilter(id);
         protected override int ModuleOf(BuilderFilter item) => item.ModuleId;
 
         protected override BuilderFilter From(IDictionary<string, object> v) => new()

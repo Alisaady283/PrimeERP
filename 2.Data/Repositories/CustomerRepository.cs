@@ -134,15 +134,7 @@ namespace PrimeERP.Data.Repositories
             {
                 "Name" => "Name", "Balance" => "Balance", "CreditLimit" => "CreditLimit", "CreatedAt" => "CreatedAt", _ => "Code"
             };
-            var direction = sortDescending ? "DESC" : "ASC";
-
-            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM Customers {where.Sql}", where.Parameters));
-
-            var pageSql = $@"SELECT * FROM Customers {where.Sql}
-                              {OrderBuilder.By(column, sortDescending)}
-                              {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
-
-            return (Query(pageSql, null, null, where.Parameters), total);
+            return Page(where, page, pageSize, OrderBuilder.By(column, sortDescending));
         }
 
         // ===== كتابة =====

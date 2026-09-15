@@ -226,8 +226,9 @@ else pass; fi
 section "3 — حدود التصميم"
 # ============================================================
 
-# قيمة حرفية Hex خارج 5.Design (الاستثناءات الموثَّقة: ExportTheme.cs, PrintTheme.xaml — ثوابت ورق/تصدير مستقلة عمداً)
-n=$(grep -rlE "#[0-9A-Fa-f]{6}" --include="*.xaml" --include="*.cs" . 2>/dev/null | grep -v "^\./5.Design" | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|^\./.claude/")
+# قيمة حرفية Hex خارج 5.Design (الاستثناءات الموثَّقة: ExportTheme.cs, PrintTheme.xaml — ثوابت ورق/تصدير مستقلة عمداً).
+# والمنصِّب برنامجٌ مستقل يُنزَّل وحده قبل وجود البرنامج، فلا يحمل 5.Design ولا يقرأ منها.
+n=$(grep -rlE "#[0-9A-Fa-f]{6}" --include="*.xaml" --include="*.cs" . 2>/dev/null | grep -v "^\./5.Design" | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|PrimeERP.Setup\|^\./.claude/")
 if [ -n "$n" ]; then
   fail "قيمة Hex حرفية خارج 5.Design:"
   echo "$n" | sed 's/^/       /'
@@ -333,17 +334,22 @@ fi
 section "5 — المؤقت"
 # ============================================================
 
-# TEMPORARY بلا رقم بند
-n=$(grep -rn "TEMPORARY" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|^\./.claude/" | grep -v "TEMPORARY.*R[0-9]")
+# TEMPORARY غير مسجَّل في دين ARCHITECTURE.md التقني — القاعدة في RULES.md § القواعد الأربع:
+# المؤقّت يُحذَف فور اكتشافه، واستثناؤه الوحيد مؤقّتٌ مذكورٌ باسمه في جدول الدين.
+n=""
+for f in $(grep -rl "// TEMPORARY" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|^\./.claude/"); do
+  stem=$(basename "$f"); stem=${stem%.cs}; stem=${stem%.xaml}
+  grep -q "$stem" ARCHITECTURE.md || n="$n       $f"$'\n'
+done
 if [ -n "$n" ]; then
-  fail "// TEMPORARY بلا رقم بند صريح:"
-  echo "$n" | sed 's/^/       /'
+  fail "// TEMPORARY غير مسجَّل في جدول الدين التقني بـ ARCHITECTURE.md:"
+  printf '%s' "$n"
 else pass; fi
 
-# TODO بلا رقم بند
-n=$(grep -rn "// TODO" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|^\./.claude/" | grep -v "TODO.*R[0-9]")
+# TODO بلا بند
+n=$(grep -rn "// TODO" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|^\./.claude/")
 if [ -n "$n" ]; then
-  warn "// TODO بلا رقم بند صريح ($( echo "$n" | wc -l) موضعاً) — يُفضَّل ربطها ببند أو حذفها"
+  warn "// TODO ($( echo "$n" | wc -l) موضعاً) — يُربَط ببند أو يُحذف"
 fi
 
 # سجل كل TEMPORARY الموجودة حالياً (للمرجعية، ليست فشلاً)
@@ -361,6 +367,25 @@ n=$(grep -rn "UPDATE .* SET IsDeleted = @" --include="*.cs" 2.Data/Repositories 
 if [ "$n" -gt 0 ]; then
   fail "حذف ناعم مكتوب خارج RepositoryBase ($n موضع) — استعمل SoftDelete:"
   grep -rn "UPDATE .* SET IsDeleted = @" --include="*.cs" 2.Data/Repositories 2>/dev/null     | grep -v "Base/RepositoryBase.cs" | grep -v "DynamicRepository" | head -5 | sed 's/^/       /'
+else pass; fi
+
+# ============================================================
+section "5.4b — تدفّق البيانات بلا مصدر واحد"
+# ============================================================
+
+# العدّ والقطع جملةٌ واحدة لكل المستودعات — مصدرها RepositoryBase.Page. كتابتها في مستودع تعني
+# ترقيماً موازياً، وهو ما جعل شاشات وحدة البناء تُرجع القائمة كاملةً وتُهنّج عند الفتح.
+n=$(grep -rn "LimitClause(Math" --include="*.cs" 2.Data 2>/dev/null | grep -v "Base/RepositoryBase.cs" | wc -l)
+if [ "$n" -gt 0 ]; then
+  fail "ترقيم مكتوب خارج RepositoryBase.Page ($n موضع):"
+  grep -rn "LimitClause(Math" --include="*.cs" 2.Data 2>/dev/null | grep -v "Base/RepositoryBase.cs" | head -5 | sed 's/^/       /'
+else pass; fi
+
+# قائمةٌ مرجعية تُعلن نفسها بـ AllRows في PagedViewModelBase — لا بتزوير TotalCount في كل نموذج عرض.
+n=$(grep -rn "PageSize = items.Count" --include="*.cs" 6.UI 4.Application 2>/dev/null | grep -v "PagedViewModelBase.cs" | wc -l)
+if [ "$n" -gt 0 ]; then
+  fail "صفحةٌ مزوَّرة خارج AllRows ($n موضع):"
+  grep -rn "PageSize = items.Count" --include="*.cs" 6.UI 4.Application 2>/dev/null | grep -v "PagedViewModelBase.cs" | head -5 | sed 's/^/       /'
 else pass; fi
 
 # ============================================================

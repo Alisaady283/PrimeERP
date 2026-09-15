@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -13,7 +14,7 @@ namespace PrimeERP.UI.Components.Display
 
         public static readonly DependencyProperty PageSizeProperty =
             DependencyProperty.Register(nameof(PageSize), typeof(int), typeof(AppPagination),
-                new FrameworkPropertyMetadata(15, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnDataChanged));
+                new FrameworkPropertyMetadata(15, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPageSizeChanged));
 
         public static readonly DependencyProperty CurrentPageProperty =
             DependencyProperty.Register(nameof(CurrentPage), typeof(int), typeof(AppPagination),
@@ -50,13 +51,21 @@ namespace PrimeERP.UI.Components.Display
         private static void OnPageSizesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
             ((AppPagination)d).PopulatePageSizes();
 
+        /// <summary>الرقم المعروض هو الحجم المستعمل — القائمة تتبع الخاصية ولا تتخلّف عنها.</summary>
+        private static void OnPageSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var pagination = (AppPagination)d;
+            pagination.PopulatePageSizes();
+            pagination.Render();
+        }
+
         private void PopulatePageSizes()
         {
             if (cmbPageSize == null) return;
 
             _suppressEvents = true;
             cmbPageSize.Items.Clear();
-            foreach (var size in PageSizes ?? new[] { 15 })
+            foreach (var size in (PageSizes ?? new[] { 15 }).Append(PageSize).Distinct().OrderBy(size => size))
                 cmbPageSize.Items.Add(size);
             cmbPageSize.SelectedItem = PageSize;
             _suppressEvents = false;

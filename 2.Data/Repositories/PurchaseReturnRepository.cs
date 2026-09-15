@@ -112,13 +112,7 @@ namespace PrimeERP.Data.Repositories
         {
             var where = new WhereBuilder().LikeAny(searchText, "ReturnNo").Eq("SupplierId", supplierId);
             var column = sortColumn switch { "ReturnNo" => "ReturnNo", "NetTotal" => "NetTotal", _ => "ReturnDate" };
-            var direction = sortDescending ? "DESC" : "ASC";
-
-            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM PurchaseReturns {where.Sql}", where.Parameters));
-            var pageSql = $@"SELECT * FROM PurchaseReturns {where.Sql} {OrderBuilder.By(column, sortDescending, "ReturnNo", "CreatedAt")}
-                              {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
-
-            return (Query(pageSql, null, null, where.Parameters), total);
+            return Page(where, page, pageSize, OrderBuilder.By(column, sortDescending, "ReturnNo", "CreatedAt"));
         }
 
         public int InsertHeader(DbConnection conn, DbTransaction tx, PurchaseReturn ret) =>
@@ -128,8 +122,8 @@ namespace PrimeERP.Data.Repositories
                 ("@no", ret.ReturnNo), ("@date", ret.ReturnDate), ("@supp", ret.SupplierId), ("@wh", ret.WarehouseId),
                 ("@sub", ret.SubTotal), ("@disc", ret.DiscountAmount), ("@tax", ret.VatAmount), ("@wht", ret.WithholdingAmount), ("@net", ret.NetTotal), ("@notes", ret.Notes ?? ""), ("@by", ret.CreatedBy));
 
-        public void InsertLine(DbConnection conn, DbTransaction tx, int returnId, PurchaseReturnLine line) =>
-            Exec(@"INSERT INTO PurchaseReturnLines (ReturnId, LineNo, ProductId, ProductCode, ProductName, Qty, UnitPrice, DiscountPercent, DiscountAmount, VatPercent, VatAmount, WithholdingPercent, WithholdingAmount, LineTotal, NetAmount, Notes)
+        public int InsertLine(DbConnection conn, DbTransaction tx, int returnId, PurchaseReturnLine line) =>
+            InsertGetId(@"INSERT INTO PurchaseReturnLines (ReturnId, LineNo, ProductId, ProductCode, ProductName, Qty, UnitPrice, DiscountPercent, DiscountAmount, VatPercent, VatAmount, WithholdingPercent, WithholdingAmount, LineTotal, NetAmount, Notes)
                   VALUES (@rid, @lno, @pid, @pcode, @pname, @qty, @price, @discPct, @disc, @taxPct, @tax, @whtPct, @wht, @total, @net, @notes)",
                 conn, tx,
                 ("@rid", returnId), ("@lno", line.LineNo), ("@pid", line.ProductId), ("@pcode", line.ProductCode), ("@pname", line.ProductName ?? ""),

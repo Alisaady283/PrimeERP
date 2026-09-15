@@ -28,6 +28,52 @@ namespace PrimeERP.Tests.Composition
         private TreeCheckListDefinition RoleScreen() =>
             _db.Services.GetRequiredService<IModuleRegistry>().Get("RolePermissions").TreeCheckList;
 
+        /// <summary>
+        /// أذون الدورة الأربعة بدورٍ حقيقي لا بوضع التطوير. كانت بوّابتها تسأل عن مفاتيح غير مُعرَّفة في
+        /// PermissionKeys، فتُرفض عند كل دور مهما مُنح — وهو ما ظهر للمستخدم «ليس لديك الصلاحية».
+        /// </summary>
+        [Theory]
+        [InlineData("GoodsReceipt")]
+        [InlineData("GoodsIssue")]
+        [InlineData("DeliveryNote")]
+        [InlineData("SalesReceipt")]
+        public void AStockVoucher_OpensForARoleGrantedIt(string moduleKey)
+        {
+            var roleId = PermissionDb.InsertRole($"Keeper{moduleKey}", "أمين مخزن");
+            var userId = PermissionDb.InsertUser($"keeper{moduleKey}", "p", "أمين", roleId, true);
+
+            // يُمنَح ما تعرضه شاشة الأدوار فعلاً لا ما نكتبه نحن: مفتاحٌ غائب عن PermissionKeys لا يظهر
+            // فيها فلا يستطيع أحدٌ منحه — وهو جوهر العطب. منحُه نصّاً هنا كان سيُخفيه.
+            PermissionDb.ReplaceRolePermissions(roleId,
+                PermissionKeys.All().Where(key => key.StartsWith("Inventory.")).ToList());
+            _db.Services.GetRequiredService<IPermissionService>().LoadForUser(userId);
+
+            var serviceType = _db.Services.GetRequiredService<IModuleRegistry>()
+                .Get(moduleKey).DocumentDialog.ServiceType;
+            var service = (dynamic)_db.Services.GetRequiredService(serviceType);
+
+            var result = service.GetPaged(1, 20, null);
+
+            Assert.True(result.IsSuccess, $"{moduleKey}: {result.ErrorMessage}");
+            Assert.NotEqual(PrimeERP.Domain.Results.ErrorCode.Unauthorized, result.ErrorCode);
+        }
+
+        /// <summary>المفتاح يظهر في شجرة الأدوار — بلا ظهوره لا سبيل لمنحه من الشاشة.</summary>
+        [Theory]
+        [InlineData("Inventory.GoodsReceipt")]
+        [InlineData("Inventory.GoodsIssue")]
+        [InlineData("Inventory.DeliveryNote")]
+        [InlineData("Inventory.SalesReceipt")]
+        public void AStockVoucherKey_AppearsInTheRoleScreen(string key)
+        {
+            var roleId = PermissionDb.InsertRole($"Empty{key}", "فارغ");
+
+            var ids = PermissionTreeFactory.KeyNodes(RoleScreen().BuildTree(_db.Services, roleId))
+                .Select(node => node.Id).ToList();
+
+            Assert.Contains(key, ids);
+        }
+
         [Fact]
         public void ARoleWithPermissions_OpensWithThemChecked()
         {

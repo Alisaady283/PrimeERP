@@ -113,15 +113,7 @@ namespace PrimeERP.Data.Repositories
                 .Eq("CategoryId", categoryId);
 
             var column = sortColumn switch { "Name" => "Name", "SalePrice" => "SalePrice", "CreatedAt" => "CreatedAt", _ => "Code" };
-            var direction = sortDescending ? "DESC" : "ASC";
-
-            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM Products {where.Sql}", where.Parameters));
-
-            var pageSql = $@"SELECT * FROM Products {where.Sql}
-                              {OrderBuilder.By(column, sortDescending)}
-                              {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
-
-            return (Query(pageSql, null, null, where.Parameters), total);
+            return Page(where, page, pageSize, OrderBuilder.By(column, sortDescending));
         }
 
         private const string InsertSql = @"

@@ -95,9 +95,14 @@ namespace PrimeERP.Data.Repositories
             return result != null && Convert.ToBoolean(result);
         }
 
-        /// <summary>هل يوجد لهذا الحساب أي سطر قيد؟ تستخدمه خدمة الحسابات قبل السماح بحذف حساب.</summary>
-        public bool HasLinesForAccount(string accountCode) =>
-            Convert.ToInt64(Scalar("SELECT COUNT(*) FROM JournalEntryLines WHERE AccountCode = @c", ("@c", accountCode))) > 0;
+        /// <summary>
+        /// هل يوجد لهذا الحساب أي سطر قيد؟ تستخدمه خدمة الحسابات قبل السماح بحذف حساب.
+        /// exceptEntryId يستثني قيد المستند المالك نفسه — يُعكَس مع حذفه فلا يصحّ أن يمنعه.
+        /// </summary>
+        public bool HasLinesForAccount(string accountCode, int? exceptEntryId = null) =>
+            Convert.ToInt64(Scalar(
+                "SELECT COUNT(*) FROM JournalEntryLines WHERE AccountCode = @c AND (@e IS NULL OR EntryId <> @e)",
+                ("@c", accountCode), ("@e", exceptEntryId))) > 0;
 
         /// <summary>سطور القيود المرحّلة فقط لحساب مُعيّن (اختيارياً بين تاريخين) — تستخدمه AccountService لحساب الرصيد وكشف الحساب.</summary>
         public List<(string EntryDate, string EntryNo, string Description, decimal Debit, decimal Credit)> GetPostedLinesForAccount(
@@ -190,15 +195,8 @@ namespace PrimeERP.Data.Repositories
                 "CreatedAt"   => "e.CreatedAt",
                 _             => "e.EntryDate"
             };
-            var direction = sortDescending ? "DESC" : "ASC";
-
-            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM JournalEntries e {where.Sql}", where.Parameters));
-
-            var pageSql = $@"SELECT e.* FROM JournalEntries e {where.Sql}
-                              {OrderBuilder.By(column, sortDescending, "e.Id", "e.EntryNo", "e.CreatedAt")}
-                              {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
-
-            return (Query(pageSql, null, null, where.Parameters), total);
+            return Page(where, page, pageSize, OrderBuilder.By(column, sortDescending, "e.Id", "e.EntryNo", "e.CreatedAt"),
+                from: "JournalEntries e", select: "SELECT e.* FROM JournalEntries e");
         }
 
         // ===== كتابة — تأخذ (conn, tx) من الخدمة، لا تفتح معاملة هنا =====

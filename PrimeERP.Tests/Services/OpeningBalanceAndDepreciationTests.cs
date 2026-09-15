@@ -27,9 +27,46 @@ namespace PrimeERP.Tests.Services
 
         public void Dispose() => _db.Dispose();
 
+        /// <summary>فئة أصولٍ بحسابها التجميعي — الأصل ورقةٌ تحتها، فلا يُنشأ بلا فئة.</summary>
+        private int AssetCategory(string name = "فئة اختبار")
+        {
+            var created = _db.Services.GetRequiredService<PrimeERP.Application.Services.Common.ICategoryService>()
+                .Create(new PrimeERP.Application.DTOs.Common.CreateCategoryDto { Name = name, ModuleKey = "AssetCategories" });
+
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+            return created.Value.Id;
+        }
+
         private string Leaf(string parentCode, string name) =>
             _accounts.Create(new CreateAccountDto
             { ParentId = _accounts.GetByCode(parentCode).Value.Id, Name = name, SkipAutoLink = true }).Value.Code;
+
+
+        /// <summary>خزينةٌ مموَّلة: الاقتناء النقدي يصرف منها فعلاً، وصندوقٌ فارغ يرفضه حارس الرصيد.</summary>
+        private PrimeERP.Domain.Results.Result<PrimeERP.Application.DTOs.Treasury.TreasuryDto> FundedTreasury(string name, decimal amount = 500000)
+        {
+            var treasury = _db.Services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>()
+                .Create(new PrimeERP.Application.DTOs.Treasury.CreateTreasuryDto
+                { Name = name, IsBank = false, AccountCode = Leaf("1204", name), IsActive = true });
+
+            Assert.True(treasury.IsSuccess, treasury.ErrorMessage);
+
+            Fund(treasury.Value.AccountCode, name, amount);
+            return treasury;
+        }
+
+        /// <summary>يضع رصيداً في حسابٍ نقديّ قائم — لِما يُنشأ خارج FundedTreasury (صندوق البذرة مثلاً).</summary>
+        private void Fund(string accountCode, string name, decimal amount = 500000) =>
+            _db.Services.GetRequiredService<PrimeERP.Application.Services.Accounting.IJournalService>()
+                .Create(new CreateJournalDto
+                {
+                    EntryDate = DateTime.Today.AddYears(-2), Description = "تمويل " + name,
+                    Lines =
+                    {
+                        new CreateJournalLineDto { LineNo = 1, AccountCode = accountCode, Debit = amount },
+                        new CreateJournalLineDto { LineNo = 2, AccountCode = Leaf("31", "رأس مال " + name), Credit = amount }
+                    }
+                });
 
         [Fact]
         public void UnbalancedOpeningBalances_AreRefused_NotSilentlyPostedToEquity()
@@ -128,32 +165,359 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
-        public void Depreciation_PostsOneEntry_AndReducesTheAssetValue()
+        public void Depreciation_PostsAMonthlyEntryPerAsset_AndIsReversible()
         {
-            _settings.Set(SettingKeys.Accounts.DepreciationExpense, Leaf("51", "مصروف إهلاك"));
-            _settings.Set(SettingKeys.Accounts.AccumulatedDepreciation, Leaf("1101", "مجمع الإهلاك"));
+            // الاقتناء صار معاملةً تُرحَّل: مدين الأصول الثابتة / دائن الخزينة — فالأصل لا يُحفَظ بلا مموّل.
+            var treasury = FundedTreasury("صندوق الأصول");
 
             var assets = _db.Services.GetRequiredService<IAssetService>();
             var asset = assets.Create(new CreateAssetDto
             {
-                Name = "سيارة", PurchaseDate = DateTime.Today.AddMonths(-12), PurchaseCost = 120000,
-                CurrentValue = 120000, UsefulLifeYears = 10, SalvageValue = 0, IsActive = true
+                Name = "سيارة", CategoryId = AssetCategory("سيارات"),
+                PurchaseDate = DateTime.Today.AddMonths(-12), PurchaseCost = 120000,
+                UsefulLifeYears = 10, SalvageValue = 0, IsActive = true,
+                AcquisitionMethod = PrimeERP.Domain.Enums.AssetAcquisition.Cash, FundingId = treasury.Value.Id
             });
             Assert.True(asset.IsSuccess, asset.ErrorMessage);
 
             var depreciation = _db.Services.GetRequiredService<IAssetDepreciationService>();
             Assert.Equal(1000, depreciation.MonthlyAmount(asset.Value.Id).Value);
 
+            // قيدٌ لكل شهرٍ بتاريخه، **من شهر الشراء نفسه**: شراءٌ قبل اثني عشر شهراً يُنتج ثلاثة عشر
+            // قسطاً (شهر الاقتناء يُحتسَب كاملاً) — فيقرأ كشف الحساب الإهلاك موزّعاً على شهوره.
             var run = depreciation.RunFor(DateTime.Today);
             Assert.True(run.IsSuccess, run.ErrorMessage);
-            Assert.Equal(1, run.Value);
+            Assert.Equal(13, run.Value);
 
             var after = assets.GetById(asset.Value.Id).Value;
-            Assert.Equal(12000, after.AccumulatedDepreciation);
-            Assert.Equal(108000, after.CurrentValue);
+            Assert.Equal(13000, after.AccumulatedDepreciation);
+            Assert.Equal(107000, after.CurrentValue);
 
             // تشغيلة ثانية بلا شهور جديدة لا تنتج قيداً.
             Assert.Equal(0, depreciation.RunFor(DateTime.Today).Value);
+
+            // والحذف يعكس كل قيودها ويُعيد الأصل إلى حاله بالضبط — لا بحسابٍ عكسيّ يقدّر.
+            // كل قسطٍ سجلٌّ مستقلّ بقيده — ثلاثة عشر صفّاً تُحذَف كلٌّ بمفرده، وحذفها يعيد الأصل.
+            var logged = depreciation.GetPaged(1, 100).Value.Items;
+            Assert.Equal(13, logged.Count);
+            Assert.Equal(13000, logged.Sum(c => c.Amount));
+
+            foreach (var charge in logged) Assert.True(depreciation.Delete(charge.Id).IsSuccess);
+
+            var restored = assets.GetById(asset.Value.Id).Value;
+            Assert.Equal(0, restored.AccumulatedDepreciation);
+            Assert.Equal(120000, restored.CurrentValue);
+            Assert.Empty(depreciation.GetPaged(1, 100).Value.Items);
+        }
+
+        /// <summary>الأصل يُضاف ويُعدَّل ويُحذَف كأي سجلّ — والحذف يعكس قيد اقتنائه.</summary>
+        [Fact]
+        public void Asset_IsAdded_Edited_AndDeleted()
+        {
+            var treasury = FundedTreasury("صندوق");
+
+            var assets = _db.Services.GetRequiredService<IAssetService>();
+
+            var created = assets.Create(new CreateAssetDto
+            {
+                Name = "جهاز", CategoryId = AssetCategory("أجهزة"),
+                PurchaseDate = DateTime.Today.AddMonths(-2), PurchaseCost = 9000,
+                UsefulLifeYears = 3, SalvageValue = 0, IsActive = true,
+                AcquisitionMethod = PrimeERP.Domain.Enums.AssetAcquisition.Cash, FundingId = treasury.Value.Id
+            });
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+
+            // التعديل يقرأ المموّل من السجل المحفوظ — لا يُطالب المستخدم بإعادة اختياره.
+            var loaded = assets.GetById(created.Value.Id).Value;
+            Assert.Equal(PrimeERP.Domain.Enums.AssetAcquisition.Cash, loaded.AcquisitionMethod);
+            Assert.Equal(treasury.Value.Id, loaded.FundingId);
+
+            var edited = assets.Update(new UpdateAssetDto
+            {
+                Id = loaded.Id, Name = "جهاز معدَّل", CategoryId = loaded.CategoryId,
+                PurchaseDate = loaded.PurchaseDate, PurchaseCost = loaded.PurchaseCost,
+                UsefulLifeYears = loaded.UsefulLifeYears, SalvageValue = loaded.SalvageValue,
+                Location = loaded.Location, Notes = loaded.Notes, IsActive = loaded.IsActive,
+                AcquisitionMethod = loaded.AcquisitionMethod, FundingId = loaded.FundingId
+            });
+            Assert.True(edited.IsSuccess, edited.ErrorMessage);
+            Assert.Equal("جهاز معدَّل", assets.GetById(loaded.Id).Value.Name);
+
+            var removed = assets.Delete(loaded.Id);
+            Assert.True(removed.IsSuccess, removed.ErrorMessage);
+            Assert.True(assets.GetById(loaded.Id).IsFailure);
+        }
+
+        /// <summary>
+        /// قيد الاقتناء وحده لا يمنع الحذف — فهو قيد الأصل نفسه يُعكَس معه، كما يعكس السند قيده. أمّا
+        /// قسطُ إهلاكٍ مرحَّل فأثرٌ يسبقه في الدفاتر، فيمنعه.
+        /// </summary>
+        [Fact]
+        public void Asset_WithOnlyItsAcquisitionEntry_IsDeletable_ButNotAfterDepreciation()
+        {
+            var treasury = FundedTreasury("صندوق");
+
+            var assets = _db.Services.GetRequiredService<IAssetService>();
+            var category = AssetCategory("فئة الحذف");
+
+            CreateAssetDto New(string name) => new()
+            {
+                Name = name, CategoryId = category,
+                PurchaseDate = DateTime.Today.AddMonths(-3), PurchaseCost = 6000,
+                UsefulLifeYears = 5, SalvageValue = 0, IsActive = true,
+                AcquisitionMethod = PrimeERP.Domain.Enums.AssetAcquisition.Cash, FundingId = treasury.Value.Id
+            };
+
+            // أصلٌ عليه قيد اقتنائه وحده — يُحذَف.
+            var plain = assets.Create(New("أصل بقيد اقتنائه"));
+            Assert.True(plain.IsSuccess, plain.ErrorMessage);
+            Assert.True(assets.Delete(plain.Value.Id).IsSuccess);
+
+            // وأصلٌ أُهلك — لا يُحذَف.
+            var depreciated = assets.Create(New("أصل مُهلَك"));
+            Assert.True(depreciated.IsSuccess, depreciated.ErrorMessage);
+
+            var run = _db.Services.GetRequiredService<IAssetDepreciationService>().RunFor(DateTime.Today);
+            Assert.True(run.IsSuccess, run.ErrorMessage);
+            Assert.True(run.Value > 0);
+
+            Assert.True(assets.Delete(depreciated.Value.Id).IsFailure);
+        }
+
+        /// <summary>
+        /// بيع الأصل يُقفل حسابيه معاً ويقبض ثمنه ويُقيّد فرقه: أصلٌ بـ12000 أُهلك منه 1300 بيع بـ11500
+        /// ← الخزينة 11500 مدينة، ومجمّعه 1300 مديناً، وحسابه 12000 دائناً، والربح 800 دائناً.
+        /// والأصل يُستبعَد لا يُحذَف: يخرج من الإهلاك ويعود بحذف بيعه.
+        /// </summary>
+        [Fact]
+        public void SellingAnAsset_ClosesItsTwoAccounts_PostsTheGain_AndRetiresItWithoutDeleting()
+        {
+            var treasury = FundedTreasury("صندوق البيع");
+
+            var assets = _db.Services.GetRequiredService<IAssetService>();
+            var created = assets.Create(new CreateAssetDto
+            {
+                Name = "رافعة", CategoryId = AssetCategory("معدات"),
+                PurchaseDate = DateTime.Today.AddMonths(-12), PurchaseCost = 12000,
+                UsefulLifeYears = 10, SalvageValue = 0, IsActive = true,
+                AcquisitionMethod = PrimeERP.Domain.Enums.AssetAcquisition.Cash, FundingId = treasury.Value.Id
+            });
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+
+            var depreciation = _db.Services.GetRequiredService<IAssetDepreciationService>();
+            Assert.True(depreciation.RunFor(DateTime.Today).IsSuccess);
+
+            var beforeSale = assets.GetById(created.Value.Id).Value;
+            Assert.Equal(1300, beforeSale.AccumulatedDepreciation);
+
+            var disposals = _db.Services.GetRequiredService<IAssetDisposalService>();
+            var sold = disposals.Create(new CreateAssetDisposalDto
+            {
+                AssetId = created.Value.Id, DisposalDate = DateTime.Today,
+                TreasuryId = treasury.Value.Id, SalePrice = 11500
+            });
+            Assert.True(sold.IsSuccess, sold.ErrorMessage);
+            Assert.Equal(10700, sold.Value.BookValue);
+            Assert.Equal(800, sold.Value.GainOrLoss);
+
+            var journals = _db.Services.GetRequiredService<IJournalService>();
+            var entry = journals.GetById(sold.Value.JournalEntryId.Value).Value;
+
+            Assert.Equal(4, entry.Lines.Count);
+            Assert.Equal(12800, entry.TotalDebit);
+            Assert.Equal(12800, entry.TotalCredit);
+            Assert.Contains(entry.Lines, l => l.AccountCode == treasury.Value.AccountCode && l.Debit == 11500);
+            Assert.Contains(entry.Lines, l => l.Debit == 1300);
+            Assert.Contains(entry.Lines, l => l.Credit == 12000);
+            Assert.Contains(entry.Lines, l => l.AccountCode == _settings.Get<string>(SettingKeys.Accounts.CapitalGains, "") && l.Credit == 800);
+
+            // مُستبعَد: لا يُهلَك بعدها، ولا يُباع مرّتين، وما زال موجوداً لم يُحذَف.
+            Assert.False(assets.GetById(created.Value.Id).Value.IsActive);
+            Assert.Equal(0, depreciation.RunFor(DateTime.Today.AddMonths(2)).Value);
+            Assert.True(disposals.Create(new CreateAssetDisposalDto
+            { AssetId = created.Value.Id, DisposalDate = DateTime.Today, TreasuryId = treasury.Value.Id, SalePrice = 100 }).IsFailure);
+
+            // وحذف البيع يعكس قيده ويُعيد الأصل عاملاً.
+            Assert.True(disposals.Delete(sold.Value.Id).IsSuccess);
+            Assert.True(assets.GetById(created.Value.Id).Value.IsActive);
+            Assert.True(journals.GetById(sold.Value.JournalEntryId.Value).IsFailure);
+        }
+
+        /// <summary>
+        /// إعادة التقييم تُرحَّل على حساب الأصل نفسه مقابل الأرباح/الخسائر الرأسمالية — كانت تُرحَّل على
+        /// جذر الأصول الثابتة، وهو تجميعيّ يحمل الفئات فيرفضه القيد: «الحساب تجميعيّ لا يقبل القيود».
+        /// </summary>
+        [Fact]
+        public void Revaluation_PostsToTheAssetsOwnAccount_AgainstCapitalGainsOrLosses()
+        {
+            var treasury = FundedTreasury("صندوق التقييم");
+
+            var assets = _db.Services.GetRequiredService<IAssetService>();
+            var created = assets.Create(new CreateAssetDto
+            {
+                Name = "مبنى", CategoryId = AssetCategory("مبانٍ"),
+                PurchaseDate = DateTime.Today, PurchaseCost = 10000,
+                UsefulLifeYears = 10, SalvageValue = 0, IsActive = true,
+                AcquisitionMethod = PrimeERP.Domain.Enums.AssetAcquisition.Cash, FundingId = treasury.Value.Id
+            });
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+
+            var revaluations = _db.Services.GetRequiredService<IAssetRevaluationService>();
+            var up = revaluations.Create(new CreateAssetRevaluationDto
+            { AssetId = created.Value.Id, RevaluationDate = DateTime.Today, NewValue = 12000 });
+            Assert.True(up.IsSuccess, up.ErrorMessage);
+
+            var journals = _db.Services.GetRequiredService<IJournalService>();
+            var entry = journals.GetById(up.Value.JournalEntryId.Value).Value;
+
+            var gains = _settings.Get<string>(SettingKeys.Accounts.CapitalGains, "");
+            var own = assets.GetById(created.Value.Id).Value;
+
+            Assert.Equal(2000, entry.TotalDebit);
+            Assert.Equal(2000, entry.TotalCredit);
+            Assert.Contains(entry.Lines, l => l.Debit == 2000 && l.AccountCode != gains);
+            Assert.Contains(entry.Lines, l => l.Credit == 2000 && l.AccountCode == gains);
+
+            // والنقص يعكس الطرفين: خسائر رأسمالية مدينة وحساب الأصل دائن.
+            var down = revaluations.Create(new CreateAssetRevaluationDto
+            { AssetId = created.Value.Id, RevaluationDate = DateTime.Today, NewValue = 9000 });
+            Assert.True(down.IsSuccess, down.ErrorMessage);
+
+            var losses = _settings.Get<string>(SettingKeys.Accounts.CapitalLosses, "");
+            var second = journals.GetById(down.Value.JournalEntryId.Value).Value;
+
+            Assert.Equal(3000, second.TotalDebit);
+            Assert.Contains(second.Lines, l => l.Debit == 3000 && l.AccountCode == losses);
+            Assert.Equal(9000, assets.GetById(created.Value.Id).Value.RevaluedValue);
+        }
+
+        /// <summary>
+        /// السيناريو الحيّ: أصلٌ بفئةٍ قائمة يموّله «الصندوق الرئيسي» المبذور. صفُّه فقد حسابه (سبق
+        /// حراسة EnsureAccount) فكان الطرف الدائن يسقط: «القيد غير متزن 35000 و0» ثم يُحفَظ الأصل بلا
+        /// قيده. الآن يُرفَض برسالةٍ صريحة، وتسوية الإقلاع تُعيد الربط فيمرّ القيد متزناً.
+        /// </summary>
+        [Fact]
+        public void AnAssetFundedByTheSeededMainCashBox_FailsWhileItsAccountIsMissing_AndPassesAfterTheRepair()
+        {
+            var treasuries = _db.Services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>();
+            var repo = _db.Services.GetRequiredService<PrimeERP.Data.Repositories.ITreasuryRepository>();
+            var assets = _db.Services.GetRequiredService<IAssetService>();
+
+            var mainCash = treasuries.GetAll().Value
+                .Single(t => t.Kind == PrimeERP.Domain.Enums.TreasuryKind.Cash);
+
+            // نفس حالة القاعدة الحيّة بالضبط: الحساب في الشجرة والصفّ لا يشير إليه.
+            var row = repo.GetById(mainCash.Id);
+            var lostCode = row.AccountCode;
+            row.AccountCode = "";
+            repo.Update(row);
+
+            CreateAssetDto New() => new()
+            {
+                Name = "أصل من الصندوق الرئيسي", CategoryId = AssetCategory("فئة قائمة"),
+                PurchaseDate = DateTime.Today, PurchaseCost = 35000,
+                UsefulLifeYears = 5, SalvageValue = 0, IsActive = true,
+                AcquisitionMethod = PrimeERP.Domain.Enums.AssetAcquisition.Cash, FundingId = mainCash.Id
+            };
+
+            var refused = assets.Create(New());
+            Assert.True(refused.IsFailure);
+            Assert.Empty(assets.GetPaged(1, 100).Value.Items);
+
+            Assert.True(treasuries.RepairMissingAccounts().IsSuccess);
+            Fund(lostCode, "صندوق البذرة");
+            Assert.Equal(lostCode, treasuries.GetById(mainCash.Id).Value.AccountCode);
+
+            var created = assets.Create(New());
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+
+            // والقيد متزن بطرفَيه: الأصل مديناً والصندوق دائناً.
+            var entry = _db.Services.GetRequiredService<IJournalService>()
+                .GetPaged(1, 100, new PrimeERP.Application.DTOs.Accounting.JournalFilter { Source = "Assets" })
+                .Value.Items.Single();
+
+            Assert.Equal(35000, entry.TotalDebit);
+            Assert.Equal(35000, entry.TotalCredit);
+        }
+
+        /// <summary>
+        /// فشلُ قيد الاقتناء يتراجع بالأصل كلّه — لا يبقى سجلٌّ بلا قيد. كان يُحفَظ لأن الخدمة تُعيد
+        /// نتيجةً فاشلة من داخل المعاملة بهدوء، و<c>DbHelper.RunTransaction</c> لا يتراجع إلا باستثناء.
+        /// </summary>
+        [Fact]
+        public void Asset_IsNotSaved_WhenItsAcquisitionEntryFails()
+        {
+            // بلا تمويل عمداً: الحساب الذي عليه قيدٌ مُرحَّل لا يقبل ابناً، والاختبار يحتاجه أباً.
+            var treasuryAccount = Leaf("1204", "صندوق بفرع");
+            var treasury = _db.Services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>()
+                .Create(new PrimeERP.Application.DTOs.Treasury.CreateTreasuryDto
+                { Name = "صندوق بفرع", IsBank = false, AccountCode = treasuryAccount, IsActive = true });
+
+            var assets = _db.Services.GetRequiredService<IAssetService>();
+            var category = AssetCategory("فئة التراجع");
+
+            // حساب الخزينة يصير أباً بمجرد إنشاء ابنٍ تحته، والأب لا يقبل ترحيلاً — فيفشل الطرف الدائن
+            // داخل المعاملة بالضبط كما يفشل أي طرفٍ غير صالح.
+            Leaf(treasuryAccount, "فرع");
+
+            var failed = assets.Create(new CreateAssetDto
+            {
+                Name = "أصل لا يُحفَظ", CategoryId = category,
+                PurchaseDate = DateTime.Today, PurchaseCost = 35000,
+                UsefulLifeYears = 5, SalvageValue = 0, IsActive = true,
+                AcquisitionMethod = PrimeERP.Domain.Enums.AssetAcquisition.Cash, FundingId = treasury.Value.Id
+            });
+
+            Assert.True(failed.IsFailure);
+            Assert.Empty(assets.GetPaged(1, 100).Value.Items);
+        }
+
+        /// <summary>
+        /// كل أصلٍ يُهلَك من شهر شرائه هو — وشهر الاقتناء يُحتسَب كاملاً: ثلاثةٌ اشتُريت قبل سبعة أشهر
+        /// ← ثمانية أقساط لكلٍّ، وواحدٌ قبل شهر ← قسطان. والسقف عمرُ الأصل: مَن مضى عليه ضعف عمره لا
+        /// يتجاوز (التكلفة − الخردة).
+        /// </summary>
+        [Fact]
+        public void Depreciation_CountsMonthsPerAsset_AndStopsAtTheUsefulLife()
+        {
+            var treasury = FundedTreasury("صندوق");
+
+            var assets = _db.Services.GetRequiredService<IAssetService>();
+
+            var category = AssetCategory("فئة الأصول");
+
+            void Add(string name, int monthsAgo, int life) => Assert.True(assets.Create(new CreateAssetDto
+            {
+                Name = name, CategoryId = category,
+                PurchaseDate = DateTime.Today.AddMonths(-monthsAgo), PurchaseCost = 12000,
+                UsefulLifeYears = life, SalvageValue = 0, IsActive = true,
+                AcquisitionMethod = PrimeERP.Domain.Enums.AssetAcquisition.Cash, FundingId = treasury.Value.Id
+            }).IsSuccess);
+
+            Add("أصل أ", 7, 5);
+            Add("أصل ب", 7, 5);
+            Add("أصل ج", 7, 5);
+            Add("أصل د", 1, 5);
+            Add("أصل منتهٍ", 120, 5);   // مضى ضعف عمره — يُهلَك بالكامل ولا يتجاوز
+
+            var depreciation = _db.Services.GetRequiredService<IAssetDepreciationService>();
+            var run = depreciation.RunFor(DateTime.Today);
+            Assert.True(run.IsSuccess, run.ErrorMessage);
+
+            // ثلاثةٌ × ثمانية أشهر + واحدٌ × شهرين + المنتهي × ستين شهراً (عمرُه سقفُه).
+            Assert.Equal((3 * 8) + 2 + 60, run.Value);
+
+            var finished = assets.GetPaged(1, 50).Value.Items.Single(a => a.Name == "أصل منتهٍ");
+            Assert.Equal(12000, finished.AccumulatedDepreciation);
+            Assert.Equal(0, finished.CurrentValue);
+
+            // وبعد سنةٍ أخرى تستمرّ الأصول التي بقي لها عمر (٤ أصول × ١٢ شهراً)، أمّا المنتهي فلا
+            // يُنتج شيئاً ولا يتجاوز تكلفته مهما أُعيدت التشغيلة — هذا هو السقف.
+            Assert.Equal(4 * 12, depreciation.RunFor(DateTime.Today.AddMonths(12)).Value);
+
+            var stillFinished = assets.GetPaged(1, 50).Value.Items.Single(a => a.Name == "أصل منتهٍ");
+            Assert.Equal(12000, stillFinished.AccumulatedDepreciation);
+            Assert.Equal(0, stillFinished.CurrentValue);
         }
     }
 }

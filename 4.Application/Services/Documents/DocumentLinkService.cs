@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using PrimeERP.Application.DTOs.Documents;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Domain.Entities;
@@ -26,6 +27,14 @@ namespace PrimeERP.Application.Services.Documents
         Dictionary<int, decimal> GetPulledBySource(string sourceType, int sourceId);
         Result ValidatePull(string sourceType, int sourceId, int sourceLineId, decimal qty, string sourceNo);
         Result RecordPull(IEnumerable<DocumentLink> links, DbConnection conn = null, DbTransaction tx = null);
+
+        /// <summary>يتحقّق من متبقّي كل سطر مسحوب قبل أي كتابة — تستوردها كل عائلة مستندات بدل تكرار الحلقة.
+        /// السطر غير المسحوب (SourceLineId ≤ 0) يمرّ بلا فحص.</summary>
+        Result ValidatePulls(IEnumerable<(IPullableLine Line, decimal Qty)> lines);
+
+        /// <summary>يبني روابط السطور المسحوبة وحدها ثم يسجّلها — يُستدعى داخل معاملة المستند بعد إدراج سطوره.</summary>
+        Result RecordPulls(DbConnection conn, DbTransaction tx, string targetType, int targetId,
+            IEnumerable<(IPullableLine Line, int TargetLineId, decimal Qty)> lines);
         Result RemovePull(string targetType, int targetId, DbConnection conn = null, DbTransaction tx = null);
         Result<List<ChainNode>> GetChain(string docType, int docId);
     }
@@ -81,6 +90,29 @@ namespace PrimeERP.Application.Services.Documents
             }
             return Result.Ok();
         }
+
+        public Result ValidatePulls(IEnumerable<(IPullableLine Line, decimal Qty)> lines)
+        {
+            foreach (var (line, qty) in lines)
+            {
+                if (line == null || line.SourceLineId <= 0) continue;
+
+                var check = ValidatePull(line.SourceType, line.SourceId, line.SourceLineId, qty, line.SourceNo);
+                if (check.IsFailure) return check;
+            }
+            return Result.Ok();
+        }
+
+        public Result RecordPulls(DbConnection conn, DbTransaction tx, string targetType, int targetId,
+            IEnumerable<(IPullableLine Line, int TargetLineId, decimal Qty)> lines) =>
+            RecordPull(lines
+                .Where(x => x.Line != null && x.Line.SourceLineId > 0)
+                .Select(x => new DocumentLink
+                {
+                    SourceType = x.Line.SourceType, SourceId = x.Line.SourceId, SourceNo = x.Line.SourceNo,
+                    SourceLineId = x.Line.SourceLineId, TargetType = targetType, TargetId = targetId,
+                    TargetLineId = x.TargetLineId, PulledQty = x.Qty
+                }), conn, tx);
 
         public Result RemovePull(string targetType, int targetId, DbConnection conn = null, DbTransaction tx = null)
         {

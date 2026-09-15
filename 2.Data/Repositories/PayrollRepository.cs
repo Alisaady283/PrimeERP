@@ -20,11 +20,14 @@ namespace PrimeERP.Data.Repositories
                 .Id().Text("PayrollNo", 30, required: true, unique: true)
                 .DateCol("PeriodStart", nullable: false).DateCol("PeriodEnd", nullable: false).DateCol("PaymentDate", nullable: false)
                 .Decimal("TotalBasic").Decimal("TotalAllowances").Decimal("TotalDeductions").Decimal("NetTotal")
-                .Bool("IsPosted", defaultValue: true).Int("JournalEntryId").Text("Notes").Audit().Create();
+                // المسير يُنشأ مسوّدةً ويُرحَّل بزرّه — كان الافتراضيّ true حين كان يُرحَّل فور إنشائه.
+                .Bool("IsPosted", defaultValue: false).Int("JournalEntryId").Text("Notes").Audit().Create();
 
             SchemaBuilder.Table("PayrollLines")
                 .Id().Int("PayrollId", nullable: false).Int("EmployeeId", nullable: false).Text("EmployeeName", 200)
-                .Decimal("BasicSalary").Decimal("Allowances").Decimal("Deductions").Decimal("NetSalary").Text("Notes")
+                .Decimal("BasicSalary").Decimal("Allowances").Decimal("Overtime")
+                .Decimal("Deductions").Decimal("Advances").Decimal("Insurance").Decimal("Tax")
+                .Decimal("NetSalary").Text("Notes")
                 .ForeignKey("PayrollId", "Payrolls", "Id").Index("PayrollId").Create();
         }
 
@@ -45,7 +48,10 @@ namespace PrimeERP.Data.Repositories
             Id = Convert.ToInt32(row["Id"]), PayrollId = Convert.ToInt32(row["PayrollId"]), EmployeeId = Convert.ToInt32(row["EmployeeId"]),
             EmployeeName = row["EmployeeName"] == DBNull.Value ? null : row["EmployeeName"].ToString(),
             BasicSalary = Convert.ToDecimal(row["BasicSalary"]), Allowances = Convert.ToDecimal(row["Allowances"]),
-            Deductions = Convert.ToDecimal(row["Deductions"]), NetSalary = Convert.ToDecimal(row["NetSalary"]),
+            Overtime = Convert.ToDecimal(row["Overtime"]),
+            Deductions = Convert.ToDecimal(row["Deductions"]), Advances = Convert.ToDecimal(row["Advances"]),
+            Insurance = Convert.ToDecimal(row["Insurance"]), Tax = Convert.ToDecimal(row["Tax"]),
+            NetSalary = Convert.ToDecimal(row["NetSalary"]),
             Notes = row["Notes"] == DBNull.Value ? null : row["Notes"].ToString(),
         };
 
@@ -65,28 +71,30 @@ namespace PrimeERP.Data.Repositories
         {
             var where = new WhereBuilder().LikeAny(searchText, "PayrollNo");
             var column = sortColumn == "PayrollNo" ? "PayrollNo" : "PaymentDate";
-            var direction = sortDescending ? "DESC" : "ASC";
-
-            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM Payrolls {where.Sql}", where.Parameters));
-            var pageSql = $@"SELECT * FROM Payrolls {where.Sql} {OrderBuilder.By(column, sortDescending, "PayrollNo", "CreatedAt")}
-                              {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
-            return (Query(pageSql, null, null, where.Parameters), total);
+            return Page(where, page, pageSize, OrderBuilder.By(column, sortDescending, "PayrollNo", "CreatedAt"));
         }
 
         public int InsertHeader(DbConnection conn, DbTransaction tx, Payroll payroll) =>
-            InsertGetId(@"INSERT INTO Payrolls (PayrollNo, PeriodStart, PeriodEnd, PaymentDate, TotalBasic, TotalAllowances, TotalDeductions, NetTotal, Notes, CreatedBy)
-                          VALUES (@no, @start, @end, @pay, @basic, @allow, @ded, @net, @notes, @by)",
+            InsertGetId(@"INSERT INTO Payrolls (PayrollNo, PeriodStart, PeriodEnd, PaymentDate, TotalBasic, TotalAllowances, TotalDeductions, NetTotal, IsPosted, Notes, CreatedBy)
+                          VALUES (@no, @start, @end, @pay, @basic, @allow, @ded, @net, @posted, @notes, @by)",
                 conn, tx, ("@no", payroll.PayrollNo), ("@start", payroll.PeriodStart), ("@end", payroll.PeriodEnd), ("@pay", payroll.PaymentDate),
                 ("@basic", payroll.TotalBasic), ("@allow", payroll.TotalAllowances), ("@ded", payroll.TotalDeductions), ("@net", payroll.NetTotal),
-                ("@notes", payroll.Notes ?? ""), ("@by", payroll.CreatedBy));
+                ("@posted", payroll.IsPosted), ("@notes", payroll.Notes ?? ""), ("@by", payroll.CreatedBy));
 
         public void InsertLine(DbConnection conn, DbTransaction tx, int payrollId, PayrollLine line) =>
-            Exec(@"INSERT INTO PayrollLines (PayrollId, EmployeeId, EmployeeName, BasicSalary, Allowances, Deductions, NetSalary, Notes)
-                  VALUES (@pid, @eid, @ename, @basic, @allow, @ded, @net, @notes)",
-                conn, tx, ("@pid", payrollId), ("@eid", line.EmployeeId), ("@ename", line.EmployeeName ?? ""), ("@basic", line.BasicSalary),
-                ("@allow", line.Allowances), ("@ded", line.Deductions), ("@net", line.NetSalary), ("@notes", line.Notes ?? ""));
+            Exec(@"INSERT INTO PayrollLines
+                      (PayrollId, EmployeeId, EmployeeName, BasicSalary, Allowances, Overtime,
+                       Deductions, Advances, Insurance, Tax, NetSalary, Notes)
+                  VALUES (@pid, @eid, @ename, @basic, @allow, @over, @ded, @adv, @ins, @tax, @net, @notes)",
+                conn, tx, ("@pid", payrollId), ("@eid", line.EmployeeId), ("@ename", line.EmployeeName ?? ""),
+                ("@basic", line.BasicSalary), ("@allow", line.Allowances), ("@over", line.Overtime),
+                ("@ded", line.Deductions), ("@adv", line.Advances), ("@ins", line.Insurance), ("@tax", line.Tax),
+                ("@net", line.NetSalary), ("@notes", line.Notes ?? ""));
 
-        public void SetJournalEntryId(DbConnection conn, DbTransaction tx, int payrollId, int journalEntryId) =>
+        public void SetJournalEntryId(DbConnection conn, DbTransaction tx, int payrollId, int? journalEntryId) =>
             Exec("UPDATE Payrolls SET JournalEntryId = @jid WHERE Id = @id", conn, tx, ("@jid", journalEntryId), ("@id", payrollId));
+
+        public void SetPosted(DbConnection conn, DbTransaction tx, int payrollId, bool posted) =>
+            Exec("UPDATE Payrolls SET IsPosted = @p WHERE Id = @id", conn, tx, ("@p", posted), ("@id", payrollId));
     }
 }

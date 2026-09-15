@@ -15,6 +15,10 @@ namespace PrimeERP.Data.Seeders
             EnsureFromSetting(numberSequences, "Customer", SettingKeys.Documents.CustomerPrefix, "C");
             EnsureFromSetting(numberSequences, "Supplier", SettingKeys.Documents.SupplierPrefix, "S");
             EnsureFromSetting(numberSequences, "Product",  SettingKeys.Documents.ProductPrefix,  "P");
+
+            // سجلٌّ لا مستند: سريال متصل قصير بلا سنة.
+            numberSequences.EnsureRow("Treasury",  "TR", padding: 4, resetYearly: false);
+            numberSequences.EnsureRow("Warehouse", "WH", padding: 4, resetYearly: false);
         }
 
         private static void EnsureFromSetting(INumberSequenceRepository numberSequences, string key, string settingKey, string fallbackPrefix)

@@ -46,6 +46,8 @@ namespace PrimeERP.UI.Components.Actions
                 ["unpost"]      = ("إلغاء ترحيل", "IconCancel",      "warning",   null,     "إلغاء ترحيل المستند"),
                 ["expandAll"]   = ("توسيع الكل",  "IconChevronDown", "ghost",     null,     "توسيع كل العقد"),
                 ["collapseAll"] = ("طي الكل",     "IconChevronUp",   "ghost",     null,     "طي كل العقد"),
+                ["moveUp"]      = ("لأعلى",       "IconChevronUp",   "secondary", null,     "تبديل الترتيب مع ما قبله"),
+                ["moveDown"]    = ("لأسفل",       "IconChevronDown", "secondary", null,     "تبديل الترتيب مع ما بعده"),
             };
 
         /// <summary>
@@ -97,6 +99,12 @@ namespace PrimeERP.UI.Components.Actions
 
         public static ToolbarAction CollapseAll(ICommand command) =>
             FromCatalogue("collapseAll", command, null);
+
+        public static ToolbarAction MoveUp(ICommand command, string permissionKey = null) =>
+            FromCatalogue("moveUp", command, permissionKey);
+
+        public static ToolbarAction MoveDown(ICommand command, string permissionKey = null) =>
+            FromCatalogue("moveDown", command, permissionKey);
 
         public static ToolbarAction Build(string key, string text, string iconKey, string variant,
                                            ICommand command, string permissionKey, string shortcut, string tooltip) => new()

@@ -10,5 +10,8 @@ namespace PrimeERP.Application.Services.Assets
         Result<AssetDto> Create(CreateAssetDto dto);
         Result Update(UpdateAssetDto dto);
         Result Delete(int id);
+
+        /// <summary>يُرحّل قيد اقتناءٍ غائب لأصلٍ سبق وجود الترحيل — تستعمله تسوية الإقلاع.</summary>
+        Result PostMissingAcquisition(PrimeERP.Domain.Entities.Asset asset);
     }
 }

@@ -12,7 +12,7 @@ namespace PrimeERP.Data.Repositories
         JournalEntry GetByEntryNo(string entryNo);
         List<JournalLine> GetLines(int entryId, DbConnection conn = null, DbTransaction tx = null);
         bool IsPosted(int entryId);
-        bool HasLinesForAccount(string accountCode);
+        bool HasLinesForAccount(string accountCode, int? exceptEntryId = null);
         List<(string EntryDate, string EntryNo, string Description, decimal Debit, decimal Credit)> GetPostedLinesForAccount(
             string accountCode, DateTime? from, DateTime? to, DbConnection conn = null, DbTransaction tx = null);
         (int TotalEntries, decimal TotalDebit, decimal TotalCredit) GetSummary();

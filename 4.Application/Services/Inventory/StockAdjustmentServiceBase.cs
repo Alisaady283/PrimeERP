@@ -17,7 +17,13 @@ namespace PrimeERP.Application.Services.Inventory
 {
     // أساس مشترك لـStockInService/StockOutService — الفرق الوحيد فعلياً MovementType واسم السلسلة الرقمية
     // ("StockIn"/"StockOut")؛ بلا ترحيل محاسبي (تسويات مخزون بحتة، نطاق مُبسَّط عمداً — راجع تعليق سابق).
-    public abstract class StockAdjustmentServiceBase<TRepo> : ServiceBase where TRepo : IStockInRepository
+    /// <summary>خدمةٌ بوّابتها مفتاحٌ واحد مُعلَن — يقرؤه حارس التغطية في ModuleCompletenessTests.</summary>
+    public interface IPermissionGated
+    {
+        string PermissionKey { get; }
+    }
+
+    public abstract class StockAdjustmentServiceBase<TRepo> : ServiceBase, IPermissionGated where TRepo : IStockInRepository
     {
         protected readonly TRepo Repo;
         private readonly IProductRepository _products;
@@ -43,7 +49,11 @@ namespace PrimeERP.Application.Services.Inventory
         protected override string StringPrefix => "Str.Stock";
         protected override string EntityName => _entityName;
 
-        private bool Can() => Permissions.Can($"Inventory.{_permissionAction}");
+        /// <summary>بوّابة الإذن كاملةً — مُعلَنة لا مبنيّةً داخل الشرط، ليقرأها حارس التغطية فيتحقّق
+        /// من وجودها في PermissionKeys. مفتاحٌ غير مُعرَّف يُرفض دائماً بلا رسالة تكشف السبب.</summary>
+        public string PermissionKey => $"{PermissionPrefix}.{_permissionAction}";
+
+        private bool Can() => Permissions.Can(PermissionKey);
 
         public Result<PagedResult<StockAdjustmentDto>> GetPaged(int page, int pageSize, StockAdjustmentFilter filter = null)
         {
@@ -104,7 +114,7 @@ namespace PrimeERP.Application.Services.Inventory
                     var doc = new StockAdjustment { DocNo = docNo, MovementDate = dto.MovementDate, WarehouseId = dto.WarehouseId, Notes = dto.Notes, CreatedBy = AppSession.Username };
                     var id = Repo.InsertHeader(conn, tx, doc);
 
-                    var links = new List<DocumentLink>();
+                    var inserted = new List<(PrimeERP.Application.DTOs.Documents.IPullableLine Line, int TargetLineId, decimal Qty)>();
                     for (int i = 0; i < resolvedLines.Count; i++)
                     {
                         var line = resolvedLines[i];
@@ -112,15 +122,9 @@ namespace PrimeERP.Application.Services.Inventory
                         var moveResult = _stock.RecordMovement(conn, tx, line.ProductId, dto.WarehouseId, _direction, line.Qty, line.UnitCost, _entityName, id, docNo, dto.MovementDate);
                         if (!moveResult.IsSuccess) throw new InvalidOperationException(moveResult.ErrorMessage);
 
-                        if (pulls[i].SourceLineId <= 0) continue;
-                        links.Add(new DocumentLink
-                        {
-                            SourceType = pulls[i].SourceType, SourceId = pulls[i].SourceId, SourceNo = pulls[i].SourceNo,
-                            SourceLineId = pulls[i].SourceLineId, TargetType = _entityName, TargetId = id,
-                            TargetLineId = lineId, PulledQty = line.Qty
-                        });
+                        inserted.Add((pulls[i], lineId, line.Qty));
                     }
-                    _links.RecordPull(links, conn, tx);
+                    _links.RecordPulls(conn, tx, _entityName, id, inserted);
 
                     return id;
                 });

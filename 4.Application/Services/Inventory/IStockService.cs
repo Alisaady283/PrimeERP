@@ -26,5 +26,22 @@ namespace PrimeERP.Application.Services.Inventory
         void RemoveMovements(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId);
 
         Result Transfer(int productId, int fromWarehouseId, int toWarehouseId, decimal qty, string notes = null);
+
+        /// <summary>
+        /// تكلفة صرف سطورٍ بالمتوسط المرجَّح — إجمالاً لكل سطر، بالترتيب المُعطى. الرصيد يتحرّك مع كل
+        /// سطر، فسطران لنفس الصنف في مستندٍ واحد يُسعَّر ثانيهما بمتوسط ما بقي بعد أوّلهما.
+        /// </summary>
+        Result<List<decimal>> GetIssueCosts(DbConnection conn, DbTransaction tx,
+            List<(int ProductId, decimal Qty)> lines);
+
+        /// <summary>تكلفة وحدة الصنف كما سُجّلت في حركة مستندٍ بعينه — يعرف بها المرتجع تكلفة أصله.</summary>
+        decimal? SourceUnitCost(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId, int productId);
+
+        /// <summary>متوسط تكلفة الصنف الآن — ملاذُ ما لا أصل له، فلا يدخل المخزون بسعر بيع.</summary>
+        decimal CurrentUnitCost(DbConnection conn, DbTransaction tx, int productId);
+
+        /// <summary>كل حركات الصنف بترتيب ورودها وبلا حدّ عدد — مادّة الرصيد الجاري في تقرير حركة الصنف.
+        /// GetHistory لا تصلح له: مرتَّبةٌ تنازلياً ومحدودةٌ بعددٍ أقصى، فالرصيد الجاري فيها مقلوبٌ ومبتور.</summary>
+        Result<List<Domain.Entities.StockMovement>> GetCostingHistory(int productId);
     }
 }

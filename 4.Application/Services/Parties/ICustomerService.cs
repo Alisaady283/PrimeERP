@@ -9,8 +9,8 @@ namespace PrimeERP.Application.Services.Parties
 {
     /// <summary>
     /// المالك الوحيد لمنطق العملاء — Repository تحته CRUD صرف فقط. كل حساب عميل يُنشأ/يُحدَّث/يُحذف عبر
-    /// IAccountService حصراً (لا CustomerRepository يلمس جدول Accounts إطلاقاً). راجع MIGRATION_INVENTORY.md
-    /// لتوثيق حل التبعية الدائرية مع AccountService (CreateAccountDto.SkipAutoLink).
+    /// IAccountService حصراً (لا CustomerRepository يلمس جدول Accounts إطلاقاً). والتبعية الدائرية مع
+    /// AccountService تُحلّ بـ CreateAccountDto.SkipAutoLink.
     /// </summary>
     public interface ICustomerService
     {

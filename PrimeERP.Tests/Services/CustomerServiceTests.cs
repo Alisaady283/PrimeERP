@@ -196,7 +196,8 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Create_WithLeafParentAccount_Fails()
         {
-            var leafAccount = _accounts.Create(new CreateAccountDto { ParentId = _accountRepo.GetByCode("1201").Id, Name = "حساب ورقي", IsLeaf = true });
+            // خارج شجرتَي الأصول والمخزون المقفلتين — المقصود أبٌ ورقيّ لا شجرةٌ تُدار من صفحتها.
+            var leafAccount = _accounts.Create(new CreateAccountDto { ParentId = _accountRepo.GetByCode("52").Id, Name = "حساب ورقي", IsLeaf = true });
             Assert.True(leafAccount.IsSuccess, leafAccount.ErrorMessage);
 
             _settings.Set(SettingKeys.Accounts.Customers, leafAccount.Value.Code);

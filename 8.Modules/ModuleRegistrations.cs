@@ -163,7 +163,7 @@ namespace PrimeERP.Modules
                 TitleKey = "Str.Module.Journals",
                 // القيد يُنشأ مسودة، والكشوف والتقارير تقرأ المرحَّل وحده — فبلا هذا الزر لا يظهر القيد
                 // اليدوي في أي مكان بينما تظهر قيود السندات (تُرحَّل تلقائياً عند إنشائها).
-                RowActions = JournalRowActions(),
+                // بلا ترحيل ولا إلغاء ترحيل: القيد يُنشأ مُرحَّلاً، وحُرّاس الرصيد والفترة هي التحقق.
                 PermissionPrefix = "Journal",
                 ViewModelType = typeof(JournalsViewModel),
                 Columns = new()
@@ -342,17 +342,6 @@ namespace PrimeERP.Modules
             {
                 Key = "Assets",
                 TitleKey = "Str.Module.Assets",
-                // الإهلاك معاملة كغيرها: تشغيلة واحدة تُنتج قيداً بكل الأصول المستحقّة حتى تاريخه.
-                RowActions = new()
-                {
-                    new()
-                    {
-                        Label = "احتساب الإهلاك", Variant = "primary", PermissionKey = "Assets.Edit",
-                        Execute = (services, _) => services
-                            .GetRequiredService<PrimeERP.Application.Services.Assets.IAssetDepreciationService>()
-                            .RunFor(DateTime.Today)
-                    }
-                },
                 PermissionPrefix = "Assets",
                 ViewModelType = typeof(AssetsViewModel),
                 Columns = new()
@@ -361,7 +350,8 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetDto.Name), Width = 200, IsStarWidth = true },
                     new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(AssetDto.CategoryName), Width = 140 },
                     new() { Header = LocalizationService.Get("Str.PurchaseDate"), Binding = nameof(AssetDto.PurchaseDate), Width = 110, Format = "yyyy-MM-dd" },
-                    new() { Header = LocalizationService.Get("Str.CurrentValue"), Binding = nameof(AssetDto.CurrentValue), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.Cost"), Binding = nameof(AssetDto.PurchaseCost), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.BookValue"), Binding = nameof(AssetDto.CurrentValue), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
                 },
                 Filters = new()
                 {
@@ -381,12 +371,146 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateAssetDto.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "AssetCategories" },
                         new() { Key = nameof(CreateAssetDto.PurchaseDate), LabelKey = "Str.PurchaseDate", Kind = FieldKind.Date },
                         new() { Key = nameof(CreateAssetDto.PurchaseCost), LabelKey = "Str.PurchaseCost", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
-                        new() { Key = nameof(CreateAssetDto.UsefulLifeYears), LabelKey = "العمر الإنتاجي (سنوات)", Kind = FieldKind.Number, Min = 0, Max = 100 },
-                        new() { Key = nameof(CreateAssetDto.SalvageValue), LabelKey = "القيمة المتبقية", Kind = FieldKind.Number, Min = 0 },
-                        new() { Key = nameof(CreateAssetDto.CurrentValue), LabelKey = "Str.CurrentValue", Kind = FieldKind.Number },
+                        // الطريقة تحكم قائمة المموّل: خزينة أو بنك أو مورد — والقائمة تُعاد تعبئتها
+                        // باختيارها عبر PickerFilterField، وهي نفس آلية «الخزينة تتبع طريقة الدفع».
+                        new() { Key = nameof(CreateAssetDto.AcquisitionMethod), LabelKey = "Str.Asset.Acquisition", Kind = FieldKind.Picker, IsRequired = true, PickerType = "AssetAcquisition" },
+                        new() { Key = nameof(CreateAssetDto.FundingId), LabelKey = "Str.Asset.Funding", Kind = FieldKind.Picker, IsRequired = true, PickerType = "AssetFunding",
+                                PickerFilterField = nameof(CreateAssetDto.AcquisitionMethod) },
+                        new() { Key = nameof(CreateAssetDto.UsefulLifeYears), LabelKey = "Str.Asset.Life", Kind = FieldKind.Number, Min = 0, Max = 100 },
+                        // قيمة الخردة تقديرٌ يُدخَل — أساسُ القسط (التكلفة − الخردة). أمّا القيمة الدفترية
+                        // فمحسوبة (التكلفة − مجمّع الإهلاك) ولا تُدخَل: إدخالها يكسر معادلة الإهلاك.
+                        new() { Key = nameof(CreateAssetDto.SalvageValue), LabelKey = "Str.Asset.Salvage", Kind = FieldKind.Number, Min = 0 },
                         new() { Key = nameof(CreateAssetDto.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
                         new() { Key = nameof(CreateAssetDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }.Concat(StandardFields.DialogFields()).ToList()
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "AssetDepreciations",
+                TitleKey = "Str.Module.AssetDepreciations",
+                PermissionPrefix = "Assets",
+                ViewModelType = typeof(AssetDepreciationsViewModel),
+                // الزرّ يُنشئ أقساط كل الأصول المستحقّة دفعةً واحدة — إجراءٌ على الكل فلا يحتاج صفّاً.
+                RowActions = new()
+                {
+                    new()
+                    {
+                        Label = "احتساب الإهلاك", Variant = "primary", PermissionKey = "Assets.Create",
+                        RequiresSelection = false,
+                        Execute = (services, _) => services
+                            .GetRequiredService<PrimeERP.Application.Services.Assets.IAssetDepreciationService>()
+                            .RunFor(DateTime.Today)
+                    }
+                },
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(AssetDepreciationDto.PeriodDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetDepreciationDto.AssetCode), Width = 110, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetDepreciationDto.AssetName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Description"), Binding = nameof(AssetDepreciationDto.Notes), Width = 240 },
+                    new() { Header = LocalizationService.Get("Str.Amount"), Binding = nameof(AssetDepreciationDto.Amount), Width = 130, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                },
+                Filters = new()
+                {
+                    new() { Key = nameof(AssetDepreciationFilter.AssetId), LabelKey = "Str.Assets", PickerType = "Asset" },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Module.AssetDepreciations",
+                    TitleEditKey = "Str.Module.AssetDepreciations",
+                    GridColumns = 2,
+                    ServiceType = typeof(IAssetDepreciationService),
+                    CreateDtoType = typeof(CreateAssetDepreciationDto),
+                    UpdateDtoType = typeof(UpdateAssetDepreciationDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateAssetDepreciationDto.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
+                        new() { Key = nameof(CreateAssetDepreciationDto.PeriodDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreateAssetDepreciationDto.Amount), LabelKey = "Str.Amount", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
+                        new() { Key = nameof(CreateAssetDepreciationDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "AssetRevaluations",
+                TitleKey = "Str.Module.AssetRevaluations",
+                PermissionPrefix = "Assets",
+                ViewModelType = typeof(AssetRevaluationsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(AssetRevaluationDto.RevaluationDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetRevaluationDto.AssetCode), Width = 100, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetRevaluationDto.AssetName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Asset.OldValue"), Binding = nameof(AssetRevaluationDto.OldValue), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.NewValue"), Binding = nameof(AssetRevaluationDto.NewValue), Width = 140, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.Difference"), Binding = nameof(AssetRevaluationDto.Difference), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.RevaluationKind"), Binding = nameof(AssetRevaluationDto.KindText), Width = 90, Align = ColumnAlign.Center },
+                },
+                Filters = new()
+                {
+                    new() { Key = nameof(AssetRevaluationFilter.AssetId), LabelKey = "Str.Assets", PickerType = "Asset" },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Asset.Revaluation",
+                    TitleEditKey = "Str.Asset.Revaluation",
+                    GridColumns = 2,
+                    ServiceType = typeof(IAssetRevaluationService),
+                    CreateDtoType = typeof(CreateAssetRevaluationDto),
+                    UpdateDtoType = typeof(UpdateAssetRevaluationDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateAssetRevaluationDto.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
+                        new() { Key = nameof(CreateAssetRevaluationDto.RevaluationDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
+                        // القيمة قبل التقييم تُلتقَط من الأصل في الخدمة — لا تُدخَل، والنوع يُشتقّ من الفرق.
+                        new() { Key = nameof(CreateAssetRevaluationDto.NewValue), LabelKey = "Str.Asset.NewValue", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
+                        new() { Key = nameof(CreateAssetRevaluationDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "AssetDisposals",
+                TitleKey = "Str.Module.AssetDisposals",
+                PermissionPrefix = "Assets",
+                ViewModelType = typeof(AssetDisposalsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(AssetDisposalDto.DisposalDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetDisposalDto.AssetCode), Width = 100, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetDisposalDto.AssetName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Treasury"), Binding = nameof(AssetDisposalDto.TreasuryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Asset.SalePrice"), Binding = nameof(AssetDisposalDto.SalePrice), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.BookValue"), Binding = nameof(AssetDisposalDto.BookValue), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.GainOrLoss"), Binding = nameof(AssetDisposalDto.GainOrLoss), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.DisposalKind"), Binding = nameof(AssetDisposalDto.KindText), Width = 90, Align = ColumnAlign.Center },
+                },
+                Filters = new()
+                {
+                    new() { Key = nameof(AssetDisposalFilter.AssetId), LabelKey = "Str.Assets", PickerType = "Asset" },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Asset.Disposal",
+                    TitleEditKey = "Str.Asset.Disposal",
+                    GridColumns = 2,
+                    ServiceType = typeof(IAssetDisposalService),
+                    CreateDtoType = typeof(CreateAssetDisposalDto),
+                    UpdateDtoType = typeof(UpdateAssetDisposalDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateAssetDisposalDto.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
+                        new() { Key = nameof(CreateAssetDisposalDto.DisposalDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreateAssetDisposalDto.TreasuryId), LabelKey = "Str.Treasury", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Treasury" },
+                        // القيمة الدفترية والمجمّع يُلتقَطان من الأصل في الخدمة — والربح/الخسارة فرقٌ يُشتقّ.
+                        new() { Key = nameof(CreateAssetDisposalDto.SalePrice), LabelKey = "Str.Asset.SalePrice", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
+                        new() { Key = nameof(CreateAssetDisposalDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }
                 }
             });
 
@@ -496,6 +620,7 @@ namespace PrimeERP.Modules
                     TitleKey = "Str.SalesInvoices.Add", TitleEditKey = "Str.SalesInvoices.Edit",
                     ServiceType = typeof(ISalesInvoiceService), DtoType = typeof(CreateSalesInvoiceDto), LineDtoType = typeof(CreateSalesInvoiceLineDto),
                     LinesPropertyName = nameof(CreateSalesInvoiceDto.Lines),
+                    PullSources = CycleFlow.IntoSalesInvoice(),
                     HeaderFields = new()
                     {
                         new() { Key = nameof(CreateSalesInvoiceDto.InvoiceDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
@@ -537,6 +662,7 @@ namespace PrimeERP.Modules
                     TitleKey = "Str.PurchaseInvoices.Add", TitleEditKey = "Str.PurchaseInvoices.Edit",
                     ServiceType = typeof(IPurchaseInvoiceService), DtoType = typeof(CreatePurchaseInvoiceDto), LineDtoType = typeof(CreatePurchaseInvoiceLineDto),
                     LinesPropertyName = nameof(CreatePurchaseInvoiceDto.Lines),
+                    PullSources = CycleFlow.IntoPurchaseInvoice(),
                     HeaderFields = new()
                     {
                         new() { Key = nameof(CreatePurchaseInvoiceDto.InvoiceDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
@@ -577,6 +703,7 @@ namespace PrimeERP.Modules
                     TitleKey = "Str.SalesReturns.Add", TitleEditKey = "Str.SalesReturns.Edit",
                     ServiceType = typeof(ISalesReturnService), DtoType = typeof(CreateSalesReturnDto), LineDtoType = typeof(CreateSalesReturnLineDto),
                     LinesPropertyName = nameof(CreateSalesReturnDto.Lines),
+                    PullSources = CycleFlow.IntoSalesReturn(),
                     HeaderFields = new()
                     {
                         new() { Key = nameof(CreateSalesReturnDto.ReturnDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
@@ -617,6 +744,7 @@ namespace PrimeERP.Modules
                     TitleKey = "Str.PurchaseReturns.Add", TitleEditKey = "Str.PurchaseReturns.Edit",
                     ServiceType = typeof(IPurchaseReturnService), DtoType = typeof(CreatePurchaseReturnDto), LineDtoType = typeof(CreatePurchaseReturnLineDto),
                     LinesPropertyName = nameof(CreatePurchaseReturnDto.Lines),
+                    PullSources = CycleFlow.IntoPurchaseReturn(),
                     HeaderFields = new()
                     {
                         new() { Key = nameof(CreatePurchaseReturnDto.ReturnDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
@@ -684,7 +812,9 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.DocNo"), Binding = nameof(PayrollDto.PayrollNo), Width = 110 },
                     new() { Header = LocalizationService.Get("Str.PaymentDate"), Binding = nameof(PayrollDto.PaymentDate), Width = 110, Format = "yyyy-MM-dd" },
                     new() { Header = LocalizationService.Get("Str.NetTotal"), Binding = nameof(PayrollDto.NetTotal), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(PayrollDto.StatusText), Width = 100, Align = ColumnAlign.Center },
                 },
+                RowActions = PayrollRowActions(),
                 DocumentDialog = new DocumentDialogDefinition
                 {
                     PrintTitle = "كشف رواتب",
@@ -701,10 +831,15 @@ namespace PrimeERP.Modules
                     LineFields = new()
                     {
                         new() { Key = nameof(CreatePayrollLineDto.EmployeeCode), Header = LocalizationService.Get("Str.Employee"), Kind = FieldKind.Picker, Width = 200, IsRequired = true, PickerType = "Employee" },
-                        new() { Key = nameof(CreatePayrollLineDto.BasicSalary), Header = LocalizationService.Get("Str.BasicSalary"), Kind = FieldKind.Number, Width = 110, IsRequired = true },
-                        new() { Key = nameof(CreatePayrollLineDto.Allowances), Header = LocalizationService.Get("Str.Allowances"), Kind = FieldKind.Number, Width = 100 },
-                        new() { Key = nameof(CreatePayrollLineDto.Deductions), Header = LocalizationService.Get("Str.Deductions"), Kind = FieldKind.Number, Width = 100 },
-                        new() { Key = nameof(CreatePayrollLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 140 },
+                        new() { Key = nameof(CreatePayrollLineDto.BasicSalary), Header = LocalizationService.Get("Str.BasicSalary"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
+                        new() { Key = nameof(CreatePayrollLineDto.Allowances), Header = LocalizationService.Get("Str.Allowances"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Overtime), Header = "الإضافي", Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Deductions), Header = LocalizationService.Get("Str.Deductions"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Advances), Header = "السلف", Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Insurance), Header = "التأمينات", Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Tax), Header = "الضرائب", Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.NetSalary), Header = "صافي المبلغ", Kind = FieldKind.ReadOnly, Width = 110 },
+                        new() { Key = nameof(CreatePayrollLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 120 },
                     }
                 }
             });
@@ -724,7 +859,23 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Debit"), Binding = nameof(JournalEntryDto.TotalDebit), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
                     new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(JournalEntryDto.StatusText), Width = 100, Align = ColumnAlign.Center },
                 },
-                RowActions = JournalRowActions(),
+                // بلا ترحيل ولا إلغاء ترحيل: الرصيد الافتتاحي يُنشأ مُرحَّلاً، والتعديل والحذف مباشران عليه.
+                // وزرٌّ ثانٍ بجوار «جديد»: نفس النموذج بصنفٍ بدل الحساب — بصلاحيته وحدها.
+                RowActions = new()
+                {
+                    new()
+                    {
+                        Label = "أرصدة الأصناف الافتتاحية", Variant = "secondary",
+                        PermissionKey = PermissionKeys.Inventory.OpeningStock,
+                        RequiresSelection = false,
+                        Execute = (services, _) =>
+                        {
+                            PrimeERP.Composition.Renderers.DocumentRenderer.ShowAndSave(OpeningStockDialog(), services,
+                                services.GetRequiredService<PrimeERP.UI.Services.IToastService>());
+                            return PrimeERP.Domain.Results.Result.Ok();
+                        }
+                    }
+                },
                 DocumentDialog = new DocumentDialogDefinition
                 {
                     PrintTitle = "قيد أرصدة افتتاحية",
@@ -759,24 +910,52 @@ namespace PrimeERP.Modules
             registry.Register(new ModuleDefinition { Key = "Settings", TitleKey = "Str.Module.Settings", PermissionPrefix = "Settings", LayoutKind = LayoutKind.Settings });
         }
 
+        /// <summary>نسخةٌ من نموذج القيد الافتتاحي: الصنف بدل الحساب، والكمية والتكلفة، والرصيد يُحسب.</summary>
+        private static DocumentDialogDefinition OpeningStockDialog() => new()
+        {
+            TitleKey = "أرصدة الأصناف الافتتاحية", TitleEditKey = "أرصدة الأصناف الافتتاحية",
+            ServiceType = typeof(PrimeERP.Application.Services.Inventory.IOpeningStockService),
+            DtoType = typeof(CreateOpeningStockDto), LineDtoType = typeof(CreateOpeningStockLineDto),
+            LinesPropertyName = nameof(CreateOpeningStockDto.Lines), DocumentKind = "OpeningStock",
+            AllowPost = false,
+            HeaderFields = new()
+            {
+                new() { Key = nameof(CreateOpeningStockDto.Date), LabelKey = "Str.StartDate", Kind = FieldKind.Date, IsRequired = true },
+                new() { Key = nameof(CreateOpeningStockDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
+                new() { Key = nameof(CreateOpeningStockDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
+            },
+            LineFields = new()
+            {
+                new() { Key = nameof(CreateOpeningStockLineDto.ProductId), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 260, IsRequired = true, PickerType = "Product" },
+                new() { Key = nameof(CreateOpeningStockLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 120 },
+                new() { Key = nameof(CreateOpeningStockLineDto.UnitCost), Header = "سعر التكلفة", Kind = FieldKind.Number, Width = 120 },
+                new() { Key = nameof(CreateOpeningStockLineDto.Value), Header = LocalizationService.Get("Str.Balance"), Kind = FieldKind.ReadOnly, Width = 120 },
+                new() { Key = nameof(CreateOpeningStockLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
+            },
+            LineMath = new() { QtyKey = nameof(CreateOpeningStockLineDto.Qty), PriceKey = nameof(CreateOpeningStockLineDto.UnitCost), NetKey = nameof(CreateOpeningStockLineDto.Value) },
+            LineTotals = new() { Keys = new() { nameof(CreateOpeningStockLineDto.Value) } }
+        };
+
         /// <summary>
         /// إجراءا القيد: يُرحَّل غير المرحَّل، ويُلغى ترحيل المرحَّل بصلاحيته. الشاشتان (القيود والأرصدة
         /// الافتتاحية) تستوردانهما من هنا فلا يفترقان. بلا إلغاء الترحيل كان القيد المرحَّل مغلقاً نهائياً:
         /// الخدمة تملك Unpost والصلاحية تُمنَح، لكن لا شيء في الشاشة يستدعيها.
         /// </summary>
-        private static List<RowAction> JournalRowActions() => new()
+
+        /// <summary>ترحيل المسير وإلغاؤه — نفس شكل صفّ القيود، بخدمته وصلاحيته. إثبات استحقاقٍ لا صرف.</summary>
+        private static List<RowAction> PayrollRowActions() => new()
         {
             new()
             {
-                Label = "ترحيل", Variant = "primary", PermissionKey = PermissionKeys.Journal.Post,
+                Label = "ترحيل", Variant = "primary", PermissionKey = PermissionKeys.HR.PaySalary,
                 AppliesTo = item => IsPosted(item) is false,
-                Execute = (services, item) => services.GetRequiredService<IJournalService>().Post(IdOf(item))
+                Execute = (services, item) => services.GetRequiredService<IPayrollService>().Post(IdOf(item))
             },
             new()
             {
-                Label = "إلغاء الترحيل", Variant = "secondary", PermissionKey = PermissionKeys.Journal.Unpost,
+                Label = "إلغاء الترحيل", Variant = "secondary", PermissionKey = PermissionKeys.HR.PaySalary,
                 AppliesTo = item => IsPosted(item) is true,
-                Execute = (services, item) => services.GetRequiredService<IJournalService>().Unpost(IdOf(item))
+                Execute = (services, item) => services.GetRequiredService<IPayrollService>().Unpost(IdOf(item))
             }
         };
 

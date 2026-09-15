@@ -44,7 +44,7 @@ namespace PrimeERP.Application.DTOs.Sales
         public string  Notes       { get; set; }
     }
 
-    public class CreateSalesInvoiceLineDto
+    public class CreateSalesInvoiceLineDto : PrimeERP.Application.DTOs.Documents.IPullableLine
     {
         public int     LineNo      { get; set; }
         public string  ProductCode { get; set; }
@@ -54,6 +54,11 @@ namespace PrimeERP.Application.DTOs.Sales
         public decimal VatPercent  { get; set; }
         public decimal WithholdingPercent  { get; set; }
         public string  Notes       { get; set; }
+
+        public string  SourceType   { get; set; }
+        public int     SourceId     { get; set; }
+        public string  SourceNo     { get; set; }
+        public int     SourceLineId { get; set; }
     }
 
     // نوع واحد لكل من الإنشاء والتعديل مثل CreateJournalDto — Update مرفوضة دائماً هنا فعلياً (الفاتورة

@@ -36,7 +36,8 @@ namespace PrimeERP.UI.Components.Display
 
             path.Data = string.IsNullOrEmpty(Key) ? null : TryFindResource(Key) as Geometry;
             path.StrokeThickness = Resource("C.Icon.Stroke", 1.75);
-            path.Stroke = Brush ?? TryFindResource("C.Icon.Fg") as Brush;
+            if (Brush != null) path.Stroke = Brush;
+            else path.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "C.Icon.Fg");
 
             var size = Resource($"C.Icon.Size.{Size}", 18);
             path.Width = size;

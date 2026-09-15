@@ -8,9 +8,8 @@ namespace PrimeERP.Application.Services.Accounting
 {
     /// <summary>
     /// المالك الوحيد لمنطق قيود اليومية — Repository تحته CRUD صرف فقط. Create/Post/Unpost/Delete لها نسخة
-    /// (conn,tx) بجانب النسخة العادية — عمداً، حتى تُنفَّذ ذرّياً ضمن معاملة مستدعٍ آخر (FiscalPeriodService.
-    /// CloseYear/ReopenYear الآن، مستندات F.4 لاحقاً عبر بديل IPostable الذي يُبنى حينها ويستدعي هذه الخدمة
-    /// لا يكررها — راجع MIGRATION_INVENTORY.md).
+    /// (conn,tx) بجانب النسخة العادية، لتُنفَّذ ذرّياً ضمن معاملة مستدعٍ آخر (FiscalPeriodService.CloseYear/
+    /// ReopenYear).
     /// </summary>
     public interface IJournalService
     {
@@ -33,6 +32,11 @@ namespace PrimeERP.Application.Services.Accounting
         Result UpdateOwned(CreateJournalDto dto, string ownerSource);
         Result DeleteOwned(int id, string ownerSource);
         Result Delete(DbConnection conn, DbTransaction tx, int id);
+
+        /// <summary>الخزينة والبنك لا يقبلان سالباً: يُسأل قبل فتح المعاملة، فيُرفض العمل كلّه أو يمضي كلّه.</summary>
+        Result EnsureRemovable(int entryId);
+        Result EnsureAffordable(IEnumerable<CreateJournalLineDto> lines);
+        Result EnsureReplaceable(int entryId, IEnumerable<CreateJournalLineDto> lines);
 
         // ===== الترحيل =====
         Result Post(int id);

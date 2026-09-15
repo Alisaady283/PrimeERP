@@ -67,6 +67,16 @@ namespace PrimeERP.UI.Components.Display
         /// ترقيم من طرف الخادم (Service.GetPaged يُرجع صفحة واحدة فقط، لا القائمة كاملة). false يُخفي شريط
         /// الترقيم الداخلي فقط؛ لا يغيّر أي سلوك آخر — القطعة الأصلية والاستهلاكات الحالية (Gallery) بلا تأثير
         /// (الافتراضي true يطابق السلوك السابق حرفياً). أُضيفت عند اكتشاف الفعلي عبر CrudPageRenderer (R9).</summary>
+        public static readonly DependencyProperty SummaryTextProperty =
+            DependencyProperty.Register(nameof(SummaryText), typeof(string), typeof(AppDataGrid),
+                new PropertyMetadata(null, (d, e) =>
+                {
+                    var grid = (AppDataGrid)d;
+                    grid.summaryText.Text = (string)e.NewValue;
+                    grid.summaryText.Visibility = string.IsNullOrWhiteSpace((string)e.NewValue)
+                        ? Visibility.Collapsed : Visibility.Visible;
+                }));
+
         public static readonly DependencyProperty ShowPaginationProperty =
             DependencyProperty.Register(nameof(ShowPagination), typeof(bool), typeof(AppDataGrid),
                 new PropertyMetadata(true, OnShowPaginationChanged));
@@ -83,6 +93,7 @@ namespace PrimeERP.UI.Components.Display
         public int                     FrozenColumnCount { get => (int)GetValue(FrozenColumnCountProperty);                set => SetValue(FrozenColumnCountProperty, value); }
         public int                     PageSize          { get => (int)GetValue(PageSizeProperty);                        set => SetValue(PageSizeProperty, value); }
         public bool                    ShowPagination    { get => (bool)GetValue(ShowPaginationProperty);                  set => SetValue(ShowPaginationProperty, value); }
+        public string                  SummaryText       { get => (string)GetValue(SummaryTextProperty);                   set => SetValue(SummaryTextProperty, value); }
 
         /// <summary>يُستدعى لكل صف ليقرر تلوينه: "danger"/"warning"/null — مفيد لتنبيهات مثل تجاوز حد الائتمان أو نفاد المخزون.</summary>
         public Func<object, string> RowHighlightSelector { get; set; }
@@ -404,8 +415,10 @@ namespace PrimeERP.UI.Components.Display
             pathFactory.SetValue(Path.StretchProperty, Stretch.Uniform);
             pathFactory.SetValue(Path.WidthProperty, iconSize);
             pathFactory.SetValue(Path.HeightProperty, iconSize);
-            pathFactory.SetValue(Path.StrokeProperty, FindResource("C.Icon.Fg"));
-            pathFactory.SetValue(Path.StrokeThicknessProperty, FindResource("C.Icon.Stroke"));
+            // مرجعُ مورد لا نسخةٌ منه: الفرشاة في القاموس لونها DynamicResource، فأخذُها بـFindResource
+            // يلتقطها قبل أن يُحلّ لونها — فترسم بشفافية، فيظهر الزرّ بلا أيقونة.
+            pathFactory.SetResourceReference(Path.StrokeProperty, "C.Icon.Fg");
+            pathFactory.SetResourceReference(Path.StrokeThicknessProperty, "C.Icon.Stroke");
             pathFactory.SetValue(Path.StrokeLineJoinProperty, PenLineJoin.Round);
             pathFactory.SetValue(Path.StrokeStartLineCapProperty, PenLineCap.Round);
             pathFactory.SetValue(Path.StrokeEndLineCapProperty, PenLineCap.Round);
@@ -448,8 +461,9 @@ namespace PrimeERP.UI.Components.Display
         private void UpdateVisualState()
         {
             var isEmpty = _allItems.Count == 0;
+            // الجدول يبقى ظاهراً وإن خلا: رأسه يقول ما الأعمدة، ورسالة الفراغ تحته لا فوقه.
             emptyState.Visibility = !IsLoading && isEmpty ? Visibility.Visible : Visibility.Collapsed;
-            grid.Visibility = !isEmpty || IsLoading ? Visibility.Visible : Visibility.Collapsed;
+            grid.Visibility = Visibility.Visible;
         }
 
         private void Grid_LoadingRow(object sender, DataGridRowEventArgs e)

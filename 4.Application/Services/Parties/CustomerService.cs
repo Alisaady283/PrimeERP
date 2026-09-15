@@ -25,7 +25,7 @@ namespace PrimeERP.Application.Services.Parties
     /// المالك الوحيد لمنطق العملاء — Repository تحته CRUD صرف فقط. كل حساب يُنشأ/يُحدَّث/يُحذف عبر
     /// IAccountService حصراً (لا CustomerRepository يلمس جدول Accounts). CreateAccountDto.SkipAutoLink=true
     /// إلزامي في كل استدعاء IAccountService.Create من هنا — يقطع الحلقة اللانهائية مع AccountService.Create
-    /// (الذي يستدعي CreateFromAccount أدناه عند الربط التلقائي) — راجع MIGRATION_INVENTORY.md.
+    /// (الذي يستدعي CreateFromAccount أدناه عند الربط التلقائي).
     /// </summary>
     public class CustomerService : PartyServiceBase<Customer, CustomerDto, CustomerFilter>, ICustomerService
     {

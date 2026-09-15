@@ -39,6 +39,18 @@ namespace PrimeERP.Tests.Services
             var cash   = Leaf("1204", "صندوق");
 
             var journal = _db.Services.GetRequiredService<IJournalService>();
+
+            // الصندوق يُموَّل قبل الصرف منه: حارس الرصيد يرفض إنزاله تحت الصفر.
+            journal.Create(new CreateJournalDto
+            {
+                EntryDate = DateTime.Today.AddDays(-2), Description = "تمويل الصندوق",
+                Lines =
+                {
+                    new CreateJournalLineDto { LineNo = 1, AccountCode = cash, Debit = 5000 },
+                    new CreateJournalLineDto { LineNo = 2, AccountCode = Leaf("31", "رأس المال"), Credit = 5000 },
+                }
+            });
+
             var created = journal.Create(new CreateJournalDto
             {
                 EntryDate = DateTime.Today,
@@ -51,7 +63,6 @@ namespace PrimeERP.Tests.Services
                 }
             });
             Assert.True(created.IsSuccess, created.ErrorMessage);
-            Assert.True(journal.Post(created.Value.Id).IsSuccess);
 
             var balance = journal.GetTrialBalance(DateTime.Today.AddDays(-1), DateTime.Today, includeZero: true).Value;
             var currentAssets = F.Closing(balance, AccountType.Asset, false, F.StartsWith("12"));

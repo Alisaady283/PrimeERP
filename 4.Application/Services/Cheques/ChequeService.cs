@@ -132,6 +132,17 @@ namespace PrimeERP.Application.Services.Cheques
             if (AffectsLedger(target) && (string.IsNullOrWhiteSpace(debit) || string.IsNullOrWhiteSpace(credit)))
                 return Result.Fail("لا حساب مرتبط بالخزينة أو بالطرف — اربطهما بحسابيهما أولاً", ErrorCode.ValidationFailed);
 
+            // التحريك يُنشئ قيده، فيُسأل عنه قبل تنفيذه: لا يُصرف من بنكٍ أو خزينةٍ ما ليس فيهما.
+            if (AffectsLedger(target))
+            {
+                var funds = _journals.EnsureAffordable(new List<CreateJournalLineDto>
+                {
+                    new() { AccountCode = debit,  Debit = cheque.Amount, Credit = 0 },
+                    new() { AccountCode = credit, Debit = 0, Credit = cheque.Amount }
+                });
+                if (funds.IsFailure) return funds;
+            }
+
             try
             {
                 Db.RunTransaction((conn, tx) =>

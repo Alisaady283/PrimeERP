@@ -140,8 +140,6 @@ namespace PrimeERP.Tests.Composition
                     }
                 });
                 Assert.True(createResult.IsSuccess, createResult.ErrorMessage);
-                var postResult = journal.Post(createResult.Value.Id);
-                Assert.True(postResult.IsSuccess, postResult.ErrorMessage);
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
                 var definition = registry.Get("AccountStatement");

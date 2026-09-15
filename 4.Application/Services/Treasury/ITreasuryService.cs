@@ -13,5 +13,6 @@ namespace PrimeERP.Application.Services.Treasury
         Result Delete(int id);
         Result SeedDefaults();
         Result RepairLinkedRoots();
+        Result RepairMissingAccounts();
     }
 }

@@ -107,10 +107,7 @@ namespace PrimeERP.Data.Repositories
             if (direction != null) where.Eq("Direction", (int)direction.Value);
             if (status != null) where.Eq("Status", (int)status.Value);
 
-            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM Cheques {where.Sql}", where.Parameters));
-            var sql = $@"SELECT * FROM Cheques {where.Sql} {OrderBuilder.By("DueDate", true, "ChequeNo", "CreatedAt")}
-                         {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
-            return (Query(sql, null, null, where.Parameters), total);
+            return Page(where, page, pageSize, OrderBuilder.By("DueDate", true, "ChequeNo", "CreatedAt"));
         }
 
         // المعلّق = لم يُحصَّل/يُصرَف من البنك بعد — يظهر بالكشف كقيمة استعلامية فقط.

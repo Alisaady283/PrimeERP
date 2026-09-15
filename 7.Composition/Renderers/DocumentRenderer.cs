@@ -181,15 +181,23 @@ namespace PrimeERP.Composition.Renderers
             else
             {
                 AddRow(null);
-                AddRow(null);
             }
 
             var addLineBtn = new Btn { Text = LocalizationService.Get("Str.AddLine"), Variant = "secondary", Size = "sm", Margin = new Thickness(0, 4, 0, 0) };
             addLineBtn.Click += (_, __) => AddRow(null);
 
+            // الرأس خارج التمرير والسطور داخله: يبقى ظاهراً مهما طال المستند بدل أن يصعد معه.
+            var linesScroll = new ScrollViewer
+            {
+                Content = linesHost,
+                MaxHeight = 320,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+            };
+
             var linesSection = new StackPanel();
             linesSection.Children.Add(lineHeaderRow);
-            linesSection.Children.Add(linesHost);
+            linesSection.Children.Add(linesScroll);
             linesSection.Children.Add(addLineBtn);
 
             if (def.LineTotals != null)

@@ -14,6 +14,9 @@ namespace PrimeERP.Composition.Definitions
         /// <summary>هل ينطبق على هذا السجل تحديداً — سجل مرحَّل لا يُرحَّل ثانية مثلاً.</summary>
         public Func<object, bool> AppliesTo { get; init; }
 
+        /// <summary>إجراءٌ على الكل لا على سجلّ (احتساب إهلاك كل الأصول) — يعمل بلا صفٍّ محدَّد.</summary>
+        public bool RequiresSelection { get; init; } = true;
+
         public required Func<IServiceProvider, object, Result> Execute { get; init; }
     }
 }

@@ -19,9 +19,16 @@ namespace PrimeERP.Composition.Renderers
         {
             if (definition.EnabledActions == null || actions == null) return actions;
 
-            return actions
-                .Where(a => a.Separator || definition.EnabledActions.Contains(a.Key?.Split(':')[0]))
-                .ToList();
+            return actions.Where(a => a.Separator || Kept(definition, Root(a.Key))).ToList();
         }
+
+        /// <summary>
+        /// الترشيح يخصّ أزرار الكتالوج وحدها. إجراء الوحدة المُعلَن (احتساب الإهلاك، تحريك شيك) مفتاحه
+        /// اسمُه لا مفتاحُ كتالوج، ولا يُختار في وحدة البناء — فترشيحه بقائمة الكتالوج كان يُخفيه دائماً.
+        /// </summary>
+        private static bool Kept(ModuleDefinition definition, string key) =>
+            !ToolbarAction.Catalogue.ContainsKey(key) || definition.EnabledActions.Contains(key);
+
+        private static string Root(string key) => key?.Split(':')[0] ?? "";
     }
 }

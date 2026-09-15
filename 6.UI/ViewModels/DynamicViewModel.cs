@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Input;
 using PrimeERP.Application.Services.Builder;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
@@ -23,6 +25,40 @@ namespace PrimeERP.UI.ViewModels
         {
             _service = service;
             _permissionPrefix = permissionPrefix;
+
+            MoveUpCommand = new RelayCommand(_ => Swap(-1), _ => Neighbour(-1) != null);
+            MoveDownCommand = new RelayCommand(_ => Swap(1), _ => Neighbour(1) != null);
+        }
+
+        public ICommand MoveUpCommand { get; }
+        public ICommand MoveDownCommand { get; }
+
+        private IDictionary<string, object> Neighbour(int step)
+        {
+            if (SelectedItem == null) return null;
+
+            var index = Items.IndexOf(SelectedItem) + step;
+            return index >= 0 && index < Items.Count && Items[index].ContainsKey("SortOrder") ? Items[index] : null;
+        }
+
+        /// <summary>السهم يتبادل الترتيب مع جاره — لا يكتب المستخدم رقماً ولا يُعاد ترقيم القائمة كلها.</summary>
+        private async void Swap(int step)
+        {
+            var other = Neighbour(step);
+            if (other == null || !Can($"{_permissionPrefix}.Edit")) return;
+
+            var current = SelectedItem;
+            (current["SortOrder"], other["SortOrder"]) = (other["SortOrder"], current["SortOrder"]);
+
+            foreach (var row in new[] { current, other })
+            {
+                var saved = _service.Update(row);
+                if (!saved.IsSuccess) { Toast.Error(saved.ErrorMessage); return; }
+            }
+
+            var keep = IdOf(current);
+            await LoadAsync();
+            SelectedItem = Items.FirstOrDefault(row => IdOf(row) == keep);
         }
 
         protected override string PermissionPrefix => _permissionPrefix;

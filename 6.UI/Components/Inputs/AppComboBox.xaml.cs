@@ -191,6 +191,11 @@ namespace PrimeERP.UI.Components.Inputs
                 // فتُغلق بلا اختيار (أول نقرة تفشل والثانية تنجح).
                 if (popup.IsMouseOver) return;
 
+                // ونفسه بلوحة المفاتيح: السهم ينقل التركيز إلى القائمة، فكان الإغلاق يقع فور انتقاله
+                // فلا يجد Enter قائمةً يختار منها. الحراسة بالمِلْكية لا بالماوس: ما دام التركيز داخل
+                // القائمة فهي قيد الاستخدام.
+                if (popup.IsKeyboardFocusWithin) return;
+
                 popup.IsOpen = false;
                 if (!_suppressTextChanged)
                     txtSearch.Text = SelectedItem != null ? GetDisplay(SelectedItem) : "";
@@ -212,8 +217,13 @@ namespace PrimeERP.UI.Components.Inputs
         {
             if (e.Key == Key.Down && lst.Items.Count > 0)
             {
-                lst.Focus();
                 lst.SelectedIndex = 0;
+
+                // الحاوية نفسها هي ما يُركَّز لا الصندوق: تركيز الصندوق يجعل أول سهمٍ تالٍ ينتقل للعنصر
+                // الأول بدلاً من الثاني، فيبدو كأن سهماً ضاع.
+                if (lst.ItemContainerGenerator.ContainerFromIndex(0) is ListBoxItem first) first.Focus();
+                else lst.Focus();
+
                 e.Handled = true;
             }
             else if (e.Key == Key.Escape)
@@ -236,10 +246,18 @@ namespace PrimeERP.UI.Components.Inputs
 
         private void lst_KeyDown(object sender, KeyEventArgs e)
         {
+            // e.Handled لازمة: المفتاح غير المُعلَّم يتابع صعوده إلى الحوار الحاوي فيُفعِّل زرّه
+            // الافتراضي — اختيارٌ من القائمة يحفظ المستند.
             if (e.Key == Key.Enter && lst.SelectedItem != null)
+            {
                 SelectItem(lst.SelectedItem);
+                e.Handled = true;
+            }
             else if (e.Key == Key.Escape)
+            {
                 popup.IsOpen = false;
+                e.Handled = true;
+            }
         }
 
         private void SelectItem(object item)

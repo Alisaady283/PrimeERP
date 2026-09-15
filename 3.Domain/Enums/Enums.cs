@@ -86,11 +86,11 @@ namespace PrimeERP.Domain.Enums
         Settings   = 12
     }
 
+    /// <summary>طريقة التكلفة — المتوسط المرجَّح المتحرّك وحده، وهو ما تنفّذه InventoryCosting فعلاً.
+    /// القيمة 2 محفوظة كما هي فلا تتغيّر دلالة ما هو مخزَّن.</summary>
     public enum CostMethod
     {
-        FIFO            = 1,
-        WeightedAverage = 2,
-        Standard        = 3
+        WeightedAverage = 2
     }
 
     public enum TreasuryKind

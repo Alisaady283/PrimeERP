@@ -58,6 +58,12 @@ namespace PrimeERP.Domain.Contracts
 
         public string Text { get; set; }
 
+        /// <summary>أجزاء سطرٍ تُملأ نقاطاً حتى حافة الورقة — تُقاس بخطّها وقت البناء لا تُقدَّر.</summary>
+        public List<string> FillParts { get; set; }
+
+        /// <summary>حصّة كل جزء من عرض السطر — مجموعها واحد.</summary>
+        public List<double> FillShares { get; set; }
+
         /// <summary>لـ PrintSectionType.Parties — صناديق متجاورة (البائع/المشتري)، كل صندوق عنوان وأسطر.</summary>
         public List<PrintParty> Parties { get; set; }
 
@@ -102,5 +108,11 @@ namespace PrimeERP.Domain.Contracts
 
         /// <summary>صفر = جدول واحد؛ أكبر يقسّمه ويكرّر رأسه في كل صفحة.</summary>
         int LinesPerPage => 0;
+
+        /// <summary>إطارٌ يحيط بالمستند كلّه — سنداتُ القبض والصرف ورقةٌ مؤطَّرة تُقصّ، لا كشفاً ممتداً.</summary>
+        bool Framed => false;
+
+        /// <summary>نصف A4 عرضاً — السند نصف ورقةٍ تُقصّ، فلا يُطبع على صفحةٍ كاملة يتبدّد أكثرها.</summary>
+        bool HalfPage => false;
     }
 }

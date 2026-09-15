@@ -9,7 +9,7 @@ namespace PrimeERP.Data.Repositories
         void CreateTable();
         int Insert(StockMovement m, DbConnection conn = null, DbTransaction tx = null);
 
-        /// <summary>يمحو أثر مستندٍ من المخزون — الحركة تحمل مصدرها، فحذفه استعلامٌ واحد.</summary>
+        /// <summary>يمحو أثر مستندٍ من المخزون — الحركة تحمل مصدرها، فحذفه استعلامٌ واحد.</summary>
         void DeleteBySource(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId);
         decimal GetBalance(int productId, int? warehouseId, DbConnection conn = null, DbTransaction tx = null);
         List<StockMovement> GetHistory(int productId, int? warehouseId, int maxResults);
@@ -19,5 +19,13 @@ namespace PrimeERP.Data.Repositories
 
         /// <summary>كل الحركات بين تاريخين (بلا فلترة صنف) — تستخدمه StockReport.</summary>
         List<StockMovement> GetMovements(System.DateTime from, System.DateTime to, int? warehouseId, int maxResults);
+
+        /// <summary>كل حركات الصنف بترتيب ورودها — مادّة المتوسط المرجَّح. بلا حدٍّ لعددها: حركةٌ محذوفة
+        /// من الحساب تُفسده، والترتيب بالتاريخ ثم بالمعرّف قطعيٌّ ولو تطابق التاريخان.</summary>
+        List<StockMovement> GetForCosting(int productId, DbConnection conn = null, DbTransaction tx = null);
+
+        /// <summary>تكلفة وحدة الصنف في حركة مستندٍ بعينه — يعرف بها المرتجع تكلفة ما استُلم أو صُرف.</summary>
+        decimal? GetSourceUnitCost(string sourceDocType, int sourceDocId, int productId,
+            DbConnection conn = null, DbTransaction tx = null);
     }
 }

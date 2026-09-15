@@ -12,6 +12,7 @@ namespace PrimeERP.Application.DTOs.Documents
         public string   PartyName { get; set; }
         public decimal  TotalQty  { get; set; }
         public decimal  Total     { get; set; }
+        public string   Notes     { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 

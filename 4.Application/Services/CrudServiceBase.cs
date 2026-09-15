@@ -39,7 +39,14 @@ namespace PrimeERP.Application.Services
             if (!Can("View")) return FailDenied<PagedResult<TDto>>();
 
             var (items, total) = FindPaged(page, pageSize, filter);
-            return Ok(new PagedResult<TDto> { Items = items.Select(ToDto).ToList(), TotalCount = total, Page = page, PageSize = pageSize });
+
+            // خدمةٌ رقَّمت في SQL تُرجع صفحةً فتمرّ كما هي؛ وخدمةٌ أرجعت القائمة كاملةً تُقطَع هنا،
+            // فلا تُغرِق الشاشة ولا يُرجع التنقّلُ نفسَ الصفحة.
+            var rows = pageSize > 0 && items.Count > pageSize
+                ? items.Skip((page < 1 ? 0 : page - 1) * pageSize).Take(pageSize).ToList()
+                : items;
+
+            return Ok(new PagedResult<TDto> { Items = rows.Select(ToDto).ToList(), TotalCount = total, Page = page, PageSize = pageSize });
         }
 
         public virtual Result<List<TDto>> Search(string term, int maxResults = 50)

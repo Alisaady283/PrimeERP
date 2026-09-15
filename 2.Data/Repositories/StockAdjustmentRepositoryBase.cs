@@ -63,12 +63,7 @@ namespace PrimeERP.Data.Repositories
         {
             var where = new WhereBuilder().LikeAny(searchText, "DocNo");
             var column = sortColumn == "DocNo" ? "DocNo" : "MovementDate";
-            var direction = sortDescending ? "DESC" : "ASC";
-
-            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM {_headerTable} {where.Sql}", where.Parameters));
-            var pageSql = $@"SELECT * FROM {_headerTable} {where.Sql} {OrderBuilder.By(column, sortDescending, "DocNo", "CreatedAt")}
-                              {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
-            return (Query(pageSql, null, null, where.Parameters), total);
+            return Page(where, page, pageSize, OrderBuilder.By(column, sortDescending, "DocNo", "CreatedAt"));
         }
 
         public int InsertHeader(DbConnection conn, DbTransaction tx, StockAdjustment doc) =>

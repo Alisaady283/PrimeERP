@@ -24,7 +24,7 @@ namespace PrimeERP.Composition.Print
             public string BarcodeText { get; init; }
         }
 
-        public static IPrintable Trade(DocumentDialogDefinition definition, string title, object document, PaperOptions paper = null)
+        public static IPrintable Trade(DocumentDialogDefinition definition, string title, object document, PaperOptions paper = null, List<string> signatures = null)
         {
             var doc = new DocumentReader(document);
             var sections = new List<PrintSection>();
@@ -68,7 +68,7 @@ namespace PrimeERP.Composition.Print
                 Orientation = ColumnCount(definition) > 5 ? PrintOrientation.Landscape : PrintOrientation.Portrait,
                 Header = HeaderFields(definition, doc, party, number, docDate),
                 Footer = doc.NotesField(),
-                Signatures = TradeSignatures.ToList(),
+                Signatures = signatures ?? TradeSignatures.ToList(),
                 CopyLabels = paper?.CopyLabels ?? new(),
                 LinesPerPage = paper?.LinesPerPage ?? 0,
                 Sections = sections
@@ -132,6 +132,8 @@ namespace PrimeERP.Composition.Print
                 Orientation = PrintOrientation.Portrait,
                 Header = document.Header,
                 Signatures = document.Signatures,
+                Framed = document.Framed,
+                HalfPage = document.HalfPage,
                 Sections = sections
             };
         }
@@ -342,6 +344,9 @@ namespace PrimeERP.Composition.Print
             public List<string> CopyLabels { get; init; } = new();
             public int LinesPerPage { get; init; }
 
+            public bool Framed { get; init; }
+            public bool HalfPage { get; init; }
+
             public List<PrintSection> BuildSections() => Sections;
         }
     }
@@ -362,5 +367,9 @@ namespace PrimeERP.Composition.Print
         public Dictionary<string, string> Details { get; init; }
         public PrintSection Table { get; init; }
         public List<string> Signatures { get; init; } = new();
+
+        /// <summary>ورقةٌ مؤطَّرة بنصف A4 — السند يُقصّ ولا يُطبع على صفحةٍ كاملة.</summary>
+        public bool Framed { get; init; }
+        public bool HalfPage { get; init; }
     }
 }

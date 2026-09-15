@@ -17,8 +17,8 @@ namespace PrimeERP.Application.Services.Print
 {
     /// <summary>
     /// يبني مستندات الطباعة من IPrintable فقط — لا يعرف Account/JournalEntry ولا أي Model، ولا يفتح أي نافذة
-    /// بنفسه (DialogHost يتولّى العرض، نفس نمط IDialogService). كل قيمة بصرية من Resources/Print/PrintTheme.xaml
-    /// حصراً — لا Resources/Themes إطلاقاً (الورق لا يتبدّل فاتح/داكن). راجع DESIGN_SYSTEM.md § أين تعيش القيم البصرية.
+    /// بنفسه (DialogHost يتولّى العرض، نفس نمط IDialogService). كل قيمة بصرية من 5.Design/Surfaces/PrintTheme.xaml
+    /// حصراً، لا من موارد الشاشة — الورق لا يتبدّل فاتح/داكن.
     /// </summary>
     public class PrintService : IPrintService
     {
@@ -52,7 +52,7 @@ namespace PrimeERP.Application.Services.Print
 
             try
             {
-                var pageSize = PageSizeFor(document.Orientation);
+                var pageSize = PageSizeFor(document.Orientation, document.HalfPage);
                 var labels = document.CopyLabels is { Count: > 0 } ? document.CopyLabels : new List<string> { null };
 
                 // كل نسخة تُبنى كصفحاتها الخاصة وتُضاف لمستند واحد — نقل PageContent بين مستندين لا يعمل.
@@ -144,7 +144,7 @@ namespace PrimeERP.Application.Services.Print
                 flow.Blocks.Add(BuildKeyValues(document.HeaderFields));
 
             foreach (var section in document.BuildSections() ?? new List<PrintSection>())
-                foreach (var block in BuildSectionBlocks(section, document.LinesPerPage))
+                foreach (var block in BuildSectionBlocks(section, document.LinesPerPage, ContentWidthFor(document)))
                     flow.Blocks.Add(block);
 
             if (document.FooterFields is { Count: > 0 })
@@ -153,6 +153,66 @@ namespace PrimeERP.Application.Services.Print
             if (document.ShowSignatures && document.SignatureLabels is { Count: > 0 })
                 flow.Blocks.Add(BuildSignatures(document.SignatureLabels));
 
+            return document.Framed ? Frame(flow) : flow;
+        }
+
+        private static double ContentWidthFor(IPrintable document)
+        {
+            var margin = Res<double>("PageMargin");
+            var width = PageSizeFor(document.Orientation, document.HalfPage).Width - margin * 2;
+            if (document.Framed) width -= margin + 3;
+
+            return width - 12;
+        }
+
+        private string FillToEdge(List<string> parts, List<double> shares, double width)
+        {
+            const string gap = "  ";
+            var available = width - Measure(gap) * (parts.Count - 1);
+
+            var filled = new string[parts.Count];
+            var spent = 0d;
+
+            for (var index = 0; index < parts.Count; index++)
+            {
+                var target = index == parts.Count - 1 ? available - spent : available * shares[index];
+
+                filled[index] = Pad(parts[index], target);
+                spent += Measure(filled[index]);
+            }
+
+            return string.Join(gap, filled);
+        }
+
+        private string Pad(string text, double target)
+        {
+            var dots = (int)Math.Floor((target - Measure(text)) / Measure("."));
+
+            return dots <= 0 ? text : text + new string('.', dots);
+        }
+
+        private double Measure(string text) =>
+            new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.RightToLeft,
+                new Typeface(Res<FontFamily>("FontFamilyPrimary"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
+                Res<double>("FontSizeBase"), Brushes.Black, 1.0).WidthIncludingTrailingWhitespace;
+
+        /// <summary>FlowDocument لا يقبل حدّاً على نفسه، فتُنقل كتله إلى Section مؤطَّرة بداخله.</summary>
+        private FlowDocument Frame(FlowDocument flow)
+        {
+            var inner = new Section
+            {
+                BorderBrush = Res<Brush>("TextPrimary"),
+                BorderThickness = new Thickness(1.5),
+                Padding = new Thickness(Res<double>("PageMargin") / 2),
+            };
+
+            foreach (var block in flow.Blocks.ToList())
+            {
+                flow.Blocks.Remove(block);
+                inner.Blocks.Add(block);
+            }
+
+            flow.Blocks.Add(inner);
             return flow;
         }
 
@@ -230,7 +290,7 @@ namespace PrimeERP.Application.Services.Print
             })
             { Padding = new Thickness(2, 3, 8, 3) };
 
-        private IEnumerable<Block> BuildSectionBlocks(PrintSection section, int linesPerPage)
+        private IEnumerable<Block> BuildSectionBlocks(PrintSection section, int linesPerPage, double contentWidth)
         {
             switch (section.Type)
             {
@@ -244,7 +304,14 @@ namespace PrimeERP.Application.Services.Print
                     break;
 
                 case PrintSectionType.Text:
-                    yield return new Paragraph(new Run(section.Text)) { Margin = new Thickness(0, 4, 0, 4) };
+                    var filled = section.FillParts is { Count: > 0 };
+                    yield return new Paragraph(new Run(filled
+                        ? FillToEdge(section.FillParts, section.FillShares, contentWidth)
+                        : section.Text))
+                    {
+                        Margin = new Thickness(0, 2, 0, 2),
+                        TextAlignment = filled ? TextAlignment.Right : TextAlignment.Justify
+                    };
                     break;
 
                 case PrintSectionType.Spacer:
@@ -252,7 +319,7 @@ namespace PrimeERP.Application.Services.Print
                     break;
 
                 case PrintSectionType.Callout:
-                    yield return BuildCallout(section.Text, section.Variant ?? StatusVariant.Info);
+                    yield return BuildCallout(section.Text, section.Variant ?? StatusVariant.Info, boxed: section.Variant == StatusVariant.Neutral);
                     break;
 
                 case PrintSectionType.KeyValues:
@@ -314,8 +381,34 @@ namespace PrimeERP.Application.Services.Print
         }
 
         /// <summary>صندوق تحذير/معلومة بارز — الألوان الستة من PrintTheme فقط (Soft خلفية، SoftText نص، Solid حدّ)، نفس المجموعات الدلالية المستخدمة في الشاشة (Colors.xaml) وMلفات التصدير (ExportTheme)، بقيم ورق ثابتة.</summary>
-        private Block BuildCallout(string text, StatusVariant variant)
+        private Block BuildCallout(string text, StatusVariant variant, bool boxed = false)
         {
+            // الصندوق المحدود يقف يمين الورقة بعرض ثُلثها — موضع المبلغ المعروف في السندات.
+            if (boxed)
+            {
+                var table = new Table { Margin = new Thickness(0, 8, 0, 12) };
+                table.Columns.Add(new TableColumn { Width = new GridLength(2, GridUnitType.Star) });
+                table.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+
+                var row = new TableRow();
+                row.Cells.Add(new TableCell(new Paragraph()));
+                row.Cells.Add(new TableCell(new Paragraph(new Run(text))
+                {
+                    TextAlignment = TextAlignment.Center,
+                    FontSize = Res<double>("FontSizeLg"),
+                    FontWeight = Res<FontWeight>("FontWeightSemiBold"),
+                })
+                {
+                    BorderBrush = Res<Brush>("TextPrimary"),
+                    BorderThickness = new Thickness(1.5),
+                    Padding = new Thickness(10, 6, 10, 6),
+                });
+
+                table.RowGroups.Add(new TableRowGroup());
+                table.RowGroups[0].Rows.Add(row);
+                return table;
+            }
+
             return new Paragraph(new Run(text))
             {
                 Background = Res<Brush>($"{variant}Soft"),
@@ -453,8 +546,8 @@ namespace PrimeERP.Application.Services.Print
                     filler.ColumnSpan = span;
 
                     row.Cells.Add(filler);
-                    var label = NewCell(total.Label, Res<Brush>("TextSecondary"), total.IsBold, TextAlignment.Right);
-                    label.ColumnSpan = 2;
+                    var label = NewCell(total.Label, Res<Brush>("TextSecondary"), total.IsBold, TextAlignment.Right);
+                    label.ColumnSpan = 2;
                     row.Cells.Add(label);
                     row.Cells.Add(NewCell(total.Value, Res<Brush>("TextPrimary"), total.IsBold, TextAlignment.Center));
                     totalsGroup.Rows.Add(row);
@@ -468,7 +561,7 @@ namespace PrimeERP.Application.Services.Print
 
         private Block BuildSignatures(List<string> labels)
         {
-            var table = new Table { Margin = new Thickness(0, 40, 0, 0), CellSpacing = 0 };
+            var table = new Table { Margin = new Thickness(0, 18, 0, 0), CellSpacing = 0 };
             foreach (var _ in labels)
                 table.Columns.Add(new TableColumn());
 
@@ -482,7 +575,7 @@ namespace PrimeERP.Application.Services.Print
                     Padding = new Thickness(0, 6, 0, 0),
                     BorderBrush = Res<Brush>("OutlineDefault"),
                     BorderThickness = new Thickness(0, 1, 0, 0)
-                }) { Padding = new Thickness(20, 30, 20, 0) };
+                }) { Padding = new Thickness(20, 14, 20, 0) };
                 row.Cells.Add(cell);
             }
             group.Rows.Add(row);
@@ -575,12 +668,16 @@ namespace PrimeERP.Application.Services.Print
             return value.ToString();
         }
 
-        private static Size PageSizeFor(PrintOrientation orientation)
+        /// <summary>A4 عند 96 نقطة/بوصة. ونصفُه يقسم الارتفاع لا العرض — وإلّا ضاقت أسطر السند.</summary>
+        private static Size PageSizeFor(PrintOrientation orientation, bool halfPage = false)
         {
-            const double a4Width = 793.7, a4Height = 1122.5; // A4 عند 96 DPI
-            return orientation == PrintOrientation.Landscape
+            const double a4Width = 793.7, a4Height = 1122.5;
+
+            var size = orientation == PrintOrientation.Landscape
                 ? new Size(a4Height, a4Width)
                 : new Size(a4Width, a4Height);
+
+            return halfPage ? new Size(size.Width, size.Height / 2) : size;
         }
 
         /// <summary>يحوّل FlowDocument المُرقَّم إلى FixedDocument (تقنية VisualBrush القياسية في WPF)، مع تذييل "صفحة X من Y" حقيقي لكل صفحة فعلية.</summary>

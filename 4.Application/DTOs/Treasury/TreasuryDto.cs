@@ -12,6 +12,7 @@ namespace PrimeERP.Application.DTOs.Treasury
         public string       AccountCode   { get; set; }
         public string       BankName      { get; set; }
         public string       AccountNumber { get; set; }
+        public decimal      Balance       { get; set; }
         public string       Notes         { get; set; }
         public bool         IsActive      { get; set; }
     }

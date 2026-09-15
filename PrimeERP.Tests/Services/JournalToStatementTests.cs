@@ -24,7 +24,7 @@ namespace PrimeERP.Tests.Services
         public void Dispose() => _db.Dispose();
 
         [Fact]
-        public void AManualEntry_ReachesTheCustomerStatement_OnlyAfterPosting()
+        public void AManualEntry_ReachesTheCustomerStatement_AsSoonAsItIsCreated()
         {
             var accounts = _db.Services.GetRequiredService<IAccountService>();
             var journals = _db.Services.GetRequiredService<IJournalService>();
@@ -48,27 +48,21 @@ namespace PrimeERP.Tests.Services
             });
             Assert.True(entry.IsSuccess, entry.ErrorMessage);
 
+            // القيد يُنشأ مُرحَّلاً، فيصل الكشف فور إنشائه بلا خطوة ترحيلٍ ثانية.
             var customers = _db.Services.GetRequiredService<ICustomerService>();
-            Assert.DoesNotContain(customers.GetStatement(customer.Value.Id, DateTime.Today.AddDays(-1), DateTime.Today).Value,
-                l => l.Description == "قيد يدوي على العميل");
 
-            Assert.True(journals.Post(entry.Value.Id).IsSuccess);
-
-            var afterPosting = customers.GetStatement(customer.Value.Id, DateTime.Today.AddDays(-1), DateTime.Today).Value;
-            var line = afterPosting.Single(l => l.Description == "قيد يدوي على العميل");
+            var statement = customers.GetStatement(customer.Value.Id, DateTime.Today.AddDays(-1), DateTime.Today).Value;
+            var line = statement.Single(l => l.Description == "قيد يدوي على العميل");
             Assert.Equal(750, line.Debit);
         }
 
+        /// <summary>الشاشة بلا ترحيل ولا إلغاء ترحيل: القيد يُنشأ مُرحَّلاً، وحارس الرصيد والفترة هما التحقق.</summary>
         [Fact]
-        public void TheJournalsScreen_ExposesAPostingAction_ForDraftEntriesOnly()
+        public void TheJournalsScreen_ExposesNoPostingAction()
         {
             var definition = _db.Services.GetRequiredService<IModuleRegistry>().Get("Journals");
 
-            var post = definition.RowActions?.SingleOrDefault(a => a.Label == "ترحيل");
-            Assert.NotNull(post);
-
-            Assert.True(post.AppliesTo(new JournalEntryDto { IsPosted = false }));
-            Assert.False(post.AppliesTo(new JournalEntryDto { IsPosted = true }));
+            Assert.True(definition.RowActions == null || definition.RowActions.Count == 0);
         }
     }
 }

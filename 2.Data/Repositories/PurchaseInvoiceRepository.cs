@@ -119,13 +119,7 @@ namespace PrimeERP.Data.Repositories
                 .Eq("SupplierId", supplierId);
 
             var column = sortColumn switch { "InvoiceNo" => "InvoiceNo", "NetTotal" => "NetTotal", _ => "InvoiceDate" };
-            var direction = sortDescending ? "DESC" : "ASC";
-
-            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM PurchaseInvoices {where.Sql}", where.Parameters));
-            var pageSql = $@"SELECT * FROM PurchaseInvoices {where.Sql} {OrderBuilder.By(column, sortDescending, "InvoiceNo", "CreatedAt")}
-                              {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
-
-            return (Query(pageSql, null, null, where.Parameters), total);
+            return Page(where, page, pageSize, OrderBuilder.By(column, sortDescending, "InvoiceNo", "CreatedAt"));
         }
 
         public int InsertHeader(DbConnection conn, DbTransaction tx, PurchaseInvoice invoice) =>
@@ -136,8 +130,8 @@ namespace PrimeERP.Data.Repositories
                 ("@sub", invoice.SubTotal), ("@disc", invoice.DiscountAmount), ("@tax", invoice.VatAmount), ("@wht", invoice.WithholdingAmount), ("@net", invoice.NetTotal), ("@status", (int)invoice.Status),
                 ("@notes", invoice.Notes ?? ""), ("@by", invoice.CreatedBy));
 
-        public void InsertLine(DbConnection conn, DbTransaction tx, int invoiceId, PurchaseInvoiceLine line) =>
-            Exec(@"INSERT INTO PurchaseInvoiceLines (InvoiceId, LineNo, ProductId, ProductCode, ProductName, Qty, UnitPrice, DiscountPercent, DiscountAmount, VatPercent, VatAmount, WithholdingPercent, WithholdingAmount, LineTotal, NetAmount, Notes)
+        public int InsertLine(DbConnection conn, DbTransaction tx, int invoiceId, PurchaseInvoiceLine line) =>
+            InsertGetId(@"INSERT INTO PurchaseInvoiceLines (InvoiceId, LineNo, ProductId, ProductCode, ProductName, Qty, UnitPrice, DiscountPercent, DiscountAmount, VatPercent, VatAmount, WithholdingPercent, WithholdingAmount, LineTotal, NetAmount, Notes)
                   VALUES (@iid, @lno, @pid, @pcode, @pname, @qty, @price, @discPct, @disc, @taxPct, @tax, @whtPct, @wht, @total, @net, @notes)",
                 conn, tx,
                 ("@iid", invoiceId), ("@lno", line.LineNo), ("@pid", line.ProductId), ("@pcode", line.ProductCode), ("@pname", line.ProductName ?? ""),

@@ -124,21 +124,11 @@ namespace PrimeERP.Application.Services.Documents
                 };
 
                 var id = Repo.InsertHeader(conn, tx, doc);
-                var links = new List<DocumentLink>();
+                var inserted = new List<(IPullableLine Line, int TargetLineId, decimal Qty)>();
                 for (int i = 0; i < resolved.Count; i++)
-                {
-                    var lineId = Repo.InsertLine(conn, tx, id, resolved[i]);
-                    var pull = pulls[i];
-                    if (pull.SourceLineId <= 0) continue;
+                    inserted.Add((pulls[i], Repo.InsertLine(conn, tx, id, resolved[i]), resolved[i].Qty));
 
-                    links.Add(new DocumentLink
-                    {
-                        SourceType = pull.SourceType, SourceId = pull.SourceId, SourceNo = pull.SourceNo,
-                        SourceLineId = pull.SourceLineId, TargetType = _entityName, TargetId = id,
-                        TargetLineId = lineId, PulledQty = resolved[i].Qty
-                    });
-                }
-                _links.RecordPull(links, conn, tx);
+                _links.RecordPulls(conn, tx, _entityName, id, inserted);
                 return id;
             });
 
@@ -182,7 +172,8 @@ namespace PrimeERP.Application.Services.Documents
             return new CycleDocumentDto
             {
                 Id = d.Id, DocNo = d.DocNo, DocDate = d.DocDate, PartyId = d.PartyId,
-                TotalQty = lines.Sum(l => l.Qty), Total = lines.Sum(l => l.Qty * l.UnitPrice), CreatedAt = d.CreatedAt
+                TotalQty = lines.Sum(l => l.Qty), Total = lines.Sum(l => l.Qty * l.UnitPrice),
+                Notes = d.Notes, CreatedAt = d.CreatedAt
             };
         }
     }

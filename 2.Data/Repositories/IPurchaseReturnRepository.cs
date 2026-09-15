@@ -13,7 +13,7 @@ namespace PrimeERP.Data.Repositories
         (List<PurchaseReturn> Items, int Total) GetPaged(int page, int pageSize, string searchText, int? supplierId, string sortColumn, bool sortDescending);
 
         int InsertHeader(DbConnection conn, DbTransaction tx, PurchaseReturn ret);
-        void InsertLine(DbConnection conn, DbTransaction tx, int returnId, PurchaseReturnLine line);
+        int InsertLine(DbConnection conn, DbTransaction tx, int returnId, PurchaseReturnLine line);
         void SetJournalEntryId(DbConnection conn, DbTransaction tx, int returnId, int journalEntryId);
     }
 }

@@ -47,6 +47,14 @@ namespace PrimeERP.Modules
                 typeof(IPartyReportService), nameof(IPartyReportService.AccountStatement),
                 Account(), StatementColumns(), arguments: new[] { "AccountId", "From", "To" });
 
+            Register(registry, "Payslip", "Str.Module.Payslip",
+                typeof(IPayslipReportService), nameof(IPayslipReportService.Payslip),
+                new List<ParameterDefinition>
+                {
+                    new() { Key = "EmployeeId", LabelKey = "Str.Employee", Kind = FieldKind.Picker, PickerType = "Employee" },
+                }.Concat(StandardFields.DateRange()).ToList(),
+                PayslipColumns(), arguments: new[] { "EmployeeId", "From", "To" }, titleFromTotal: "Employee");
+
             Register(registry, "ItemCard", "Str.Module.ItemCard",
                 typeof(IStockReportService), nameof(IStockReportService.ItemCard),
                 new List<ParameterDefinition>
@@ -74,6 +82,15 @@ namespace PrimeERP.Modules
             Register(registry, "SalesReport", "Str.Module.SalesReport",
                 typeof(ISalesReportService), nameof(ISalesReportService.Invoices),
                 StandardFields.DateRange(), SalesReportColumns());
+
+            Register(registry, "AssetRegister", "Str.Module.AssetRegister",
+                typeof(IAssetReportService), nameof(IAssetReportService.Register),
+                AssetCategory(), AssetRegisterColumns(), arguments: new[] { "CategoryId" });
+
+            Register(registry, "AssetsByCategory", "Str.Module.AssetsByCategory",
+                typeof(IAssetReportService), nameof(IAssetReportService.ByCategory),
+                new List<ParameterDefinition>(), AssetCategoryColumns(),
+                arguments: System.Array.Empty<string>(), statement: true);
         }
 
         /// <summary>تسجيل تقرير: وحدةٌ بتخطيط تقرير وتعريفٍ يصف مصدره وأعمدته — بلا سطر خاص بكلٍّ.</summary>
@@ -91,11 +108,14 @@ namespace PrimeERP.Modules
                     Parameters = parameters,
                     Columns = columns,
                     // القوائم المالية تُقرأ نزولاً: عناوينها ومجاميعها مميَّزة، وبلا تبادل ألوان.
-                    RowKind = statement ? F.RowKind : null,
+                    RowKind = statement ? (key == "AssetsByCategory" ? AssetRowKind : F.RowKind) : null,
                     AlternatingRows = !statement,
                     TitleOverrideTotalKey = titleFromTotal
                 }
             });
+
+        /// <summary>عنوان الفئة ومجموعها يُميَّزان بصرياً كما في القوائم المالية.</summary>
+        private static readonly System.Func<object, string> AssetRowKind = row => (row as AssetRegisterRow)?.Kind;
 
         // ===================== البارامترات المتكرّرة =====================
 
@@ -114,6 +134,13 @@ namespace PrimeERP.Modules
             list.AddRange(StandardFields.DateRange());
             return list;
         }
+
+        /// <summary>فئة الأصل — نفس قائمة شاشة الأصول لا قائمةً ثانية.</summary>
+        private static List<ParameterDefinition> AssetCategory() => new()
+        {
+            new() { Key = "CategoryId", LabelKey = "Str.Category", Kind = FieldKind.Picker,
+                    PickerType = "Category", PickerCategoryModuleKey = "AssetCategories" }
+        };
 
         private static List<ParameterDefinition> Warehouse()
         {
@@ -179,14 +206,41 @@ namespace PrimeERP.Modules
             Money(LocalizationService.Get("Str.RunningBalance"), nameof(StatementRow.RunningBalance)),
         };
 
+        // ثلاث مجموعات بثلاثة أعمدة: وارد · منصرف · رصيد — كلٌّ بكمية وسعر وقيمة. السعر مشتقّ من
+        // القيمة على الكمية، والرصيد بالمتوسط المرجَّح المتحرّك.
+        // سطرٌ لكل مسير وبنودُه أعمدة — كسطر الفاتورة: الاستحقاقات ثم الاستقطاعات ثم الصافي.
+        private static List<GridColumn> PayslipColumns() => new()
+        {
+            new() { Header = "المسير", Binding = nameof(PayslipRow.PayrollNo), Width = 110 },
+            new() { Header = "الفترة", Binding = nameof(PayslipRow.Period), Width = 180, IsStarWidth = true },
+            Money("الأساسي", nameof(PayslipRow.BasicSalary)),
+            Money("البدلات", nameof(PayslipRow.Allowances)),
+            Money("الإضافي", nameof(PayslipRow.Overtime)),
+            Money("الاستحقاقات", nameof(PayslipRow.Gross)),
+            Money("الخصومات", nameof(PayslipRow.Deductions)),
+            Money("السلف", nameof(PayslipRow.Advances)),
+            Money("التأمينات", nameof(PayslipRow.Insurance)),
+            Money("الضرائب", nameof(PayslipRow.Tax)),
+            Money("الاستقطاعات", nameof(PayslipRow.Withheld)),
+            Money("صافي الراتب", nameof(PayslipRow.NetSalary)),
+        };
+
         private static List<GridColumn> ItemCardColumns() => new()
         {
-            new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(ItemCardRow.Date), Width = 100 },
-            new() { Header = LocalizationService.Get("Str.MovementType"), Binding = nameof(ItemCardRow.MovementType), Width = 90 },
-            Money(LocalizationService.Get("Str.Qty"), nameof(ItemCardRow.Qty)),
-            Money(LocalizationService.Get("Str.UnitCost"), nameof(ItemCardRow.UnitCost)),
-            Money(LocalizationService.Get("Str.RunningBalance"), nameof(ItemCardRow.BalanceAfter)),
-            new() { Header = LocalizationService.Get("Str.SourceDoc"), Binding = nameof(ItemCardRow.SourceDoc), Width = 140, IsStarWidth = true },
+            new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(ItemCardRow.Date), Width = 95 },
+            new() { Header = LocalizationService.Get("Str.SourceDoc"), Binding = nameof(ItemCardRow.SourceDoc), Width = 120, IsStarWidth = true },
+
+            Money("وارد: كمية", nameof(ItemCardRow.InQty)),
+            Money("وارد: سعر",  nameof(ItemCardRow.InPrice)),
+            Money("وارد: قيمة", nameof(ItemCardRow.InValue)),
+
+            Money("منصرف: كمية", nameof(ItemCardRow.OutQty)),
+            Money("منصرف: سعر",  nameof(ItemCardRow.OutPrice)),
+            Money("منصرف: قيمة", nameof(ItemCardRow.OutValue)),
+
+            Money("الرصيد: كمية", nameof(ItemCardRow.BalanceQty)),
+            Money("الرصيد: سعر",  nameof(ItemCardRow.BalancePrice)),
+            Money("الرصيد: قيمة", nameof(ItemCardRow.BalanceValue)),
         };
 
         private static List<GridColumn> StockMovementColumns() => new()
@@ -197,6 +251,28 @@ namespace PrimeERP.Modules
             new() { Header = LocalizationService.Get("Str.MovementType"), Binding = nameof(StockMovementRow.MovementType), Width = 90 },
             Money(LocalizationService.Get("Str.Qty"), nameof(StockMovementRow.Qty)),
             Money(LocalizationService.Get("Str.RunningBalance"), nameof(StockMovementRow.BalanceAfter)),
+        };
+
+        private static List<GridColumn> AssetRegisterColumns() => new()
+        {
+            new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetRegisterRow.Code), Width = 100 },
+            new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetRegisterRow.Name), Width = 200, IsStarWidth = true },
+            new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(AssetRegisterRow.CategoryName), Width = 140 },
+            new() { Header = LocalizationService.Get("Str.Asset.PurchaseDate"), Binding = nameof(AssetRegisterRow.PurchaseDate), Width = 105 },
+            Money(LocalizationService.Get("Str.Asset.Cost"), nameof(AssetRegisterRow.PurchaseCost)),
+            Money(LocalizationService.Get("Str.Asset.Revalued"), nameof(AssetRegisterRow.Revalued)),
+            Money(LocalizationService.Get("Str.Asset.Accumulated"), nameof(AssetRegisterRow.Accumulated)),
+            Money(LocalizationService.Get("Str.Asset.BookValue"), nameof(AssetRegisterRow.BookValue)),
+        };
+
+        /// <summary>المجمَّع بالفئة: عمودٌ واحد يحمل اسم الفئة أو اسم الأصل، والأرقام الأربعة بجانبه.</summary>
+        private static List<GridColumn> AssetCategoryColumns() => new()
+        {
+            new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(AssetRegisterRow.Name), Width = 300, IsStarWidth = true },
+            Money(LocalizationService.Get("Str.Asset.Cost"), nameof(AssetRegisterRow.PurchaseCost)),
+            Money(LocalizationService.Get("Str.Asset.Revalued"), nameof(AssetRegisterRow.Revalued)),
+            Money(LocalizationService.Get("Str.Asset.Accumulated"), nameof(AssetRegisterRow.Accumulated)),
+            Money(LocalizationService.Get("Str.Asset.BookValue"), nameof(AssetRegisterRow.BookValue)),
         };
 
         private static List<GridColumn> SalesReportColumns() => new()

@@ -98,12 +98,7 @@ namespace PrimeERP.Data.Repositories
         public (List<Voucher> Items, int Total) GetPaged(VoucherKind kind, int page, int pageSize, string searchText, bool sortDescending)
         {
             var where = new WhereBuilder().Eq("Kind", (int)kind).LikeAny(searchText, "VoucherNo", "Reference");
-            var direction = sortDescending ? "DESC" : "ASC";
-
-            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM Vouchers {where.Sql}", where.Parameters));
-            var sql = $@"SELECT * FROM Vouchers {where.Sql} {OrderBuilder.By("VoucherDate", sortDescending, "VoucherNo", "CreatedAt")}
-                         {DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
-            return (Query(sql, null, null, where.Parameters), total);
+            return Page(where, page, pageSize, OrderBuilder.By("VoucherDate", sortDescending, "VoucherNo", "CreatedAt"));
         }
 
         public int InsertHeader(DbConnection conn, DbTransaction tx, Voucher v) =>

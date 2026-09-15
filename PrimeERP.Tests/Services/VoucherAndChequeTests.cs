@@ -171,13 +171,20 @@ namespace PrimeERP.Tests.Services
             var customer = SeedCustomer();
             var chequeNo = $"CHQ-{Guid.NewGuid():N}"[..12];
 
-            var voucher = _db.Services.GetRequiredService<IReceiptVoucherService>().Create(new CreateVoucherDto
+            // الشيك يُنشأ من قسم الشيكات وحده — السند لم يعد يُنشئه بعد إزالة طريقة «شيك» منه.
+            var document = _db.Services.GetRequiredService<IChequeService>().CreateBatch(new CreateChequeDocumentDto
             {
-                VoucherDate = DateTime.Today, PartyId = customer.Id, TreasuryId = treasury.Id,
-                Amount = 500, Method = (int)PaymentMethod.Cheque,
-                ChequeNo = chequeNo, ChequeDueDate = DateTime.Today.AddDays(30), ChequeBank = "بنك الاختبار"
-            });
-            Assert.True(voucher.IsSuccess, voucher.ErrorMessage);
+                DocDate = DateTime.Today,
+                Lines =
+                {
+                    new CreateChequeLineDto
+                    {
+                        LineNo = 1, ChequeNo = chequeNo, BankName = "بنك الاختبار",
+                        Amount = 500, PartyId = customer.Id, DueDate = DateTime.Today.AddDays(30)
+                    }
+                }
+            }, ChequeDirection.Incoming);
+            Assert.True(document.IsSuccess, document.ErrorMessage);
 
             // بالرقم لا بأول عنصر: القائمة مرتَّبة، وأولها يتبدّل مع كل شيك يزرعه اختبار آخر في نفس القاعدة.
             var cheques = _db.Services.GetRequiredService<IChequeService>().GetPaged(1, 200);

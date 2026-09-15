@@ -43,8 +43,9 @@ namespace PrimeERP.Modules
             var supplierIds = SeedSuppliers(services);
             var (departmentIds, jobTitleIds) = SeedDepartmentsAndJobTitles(services);
             SeedEmployees(services, departmentIds, jobTitleIds);
-            SeedBrandsUnitsAssets(services);
+            // القيود قبل الأصول: اقتناء الأصل نقداً يصرف من الصندوق، وحارس الرصيد يرفض إنزاله تحت الصفر.
             SeedJournalEntries(services, accounts);
+            SeedBrandsUnitsAssets(services);
             SeedSalesInvoice(services, customerIds[0], warehouseIds[0], productCodes[0]);
             SeedPurchaseInvoice(services, supplierIds[0], warehouseIds[0], productCodes[1]);
         }
@@ -193,9 +194,15 @@ namespace PrimeERP.Modules
                 .ToList().ForEach(u => units.Create(new CreateUnitDto { Name = u.Item1, Symbol = u.Item2 }));
 
             var assetCategoryId = Unwrap(categories.Create(new CreateCategoryDto { Name = "أجهزة حاسوب", ModuleKey = "AssetCategories" }), "Create asset category").Id;
+
+            // الاقتناء معاملةٌ تُرحَّل: الأصل يحتاج مموّلاً كأي مشترى، فتُبذَر الخزائن قبله.
+            var assetTreasuries = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>();
+            assetTreasuries.SeedDefaults();
+            var assetFunding = assetTreasuries.GetAll().Value.First(t => t.Kind == PrimeERP.Domain.Enums.TreasuryKind.Cash).Id;
+
             var assets = services.GetRequiredService<IAssetService>();
-            assets.Create(new CreateAssetDto { Name = "سيرفر مكتبي", CategoryId = assetCategoryId, PurchaseDate = DateTime.Today.AddMonths(-6), PurchaseCost = 15000, CurrentValue = 13000, Location = "غرفة السيرفرات" });
-            assets.Create(new CreateAssetDto { Name = "طابعة مكتبية", CategoryId = assetCategoryId, PurchaseDate = DateTime.Today.AddMonths(-3), PurchaseCost = 4000, CurrentValue = 3600, Location = "الاستقبال" });
+            assets.Create(new CreateAssetDto { Name = "سيرفر مكتبي", CategoryId = assetCategoryId, PurchaseDate = DateTime.Today.AddMonths(-6), PurchaseCost = 15000, UsefulLifeYears = 5, SalvageValue = 1500, Location = "غرفة السيرفرات", AcquisitionMethod = PrimeERP.Domain.Enums.AssetAcquisition.Cash, FundingId = assetFunding });
+            assets.Create(new CreateAssetDto { Name = "طابعة مكتبية", CategoryId = assetCategoryId, PurchaseDate = DateTime.Today.AddMonths(-3), PurchaseCost = 4000, UsefulLifeYears = 4, SalvageValue = 400, Location = "الاستقبال", AcquisitionMethod = PrimeERP.Domain.Enums.AssetAcquisition.Cash, FundingId = assetFunding });
         }
 
         private static void SeedJournalEntries(IServiceProvider services, (string Sales, string COGS, string Inventory, string VATOutput, string VATInput) accounts)
@@ -217,8 +224,7 @@ namespace PrimeERP.Modules
                     EntryDate = DateTime.Today, Description = description, Source = nameof(JournalSource.Manual),
                     Lines = lines.Select((l, i) => new CreateJournalLineDto { LineNo = i + 1, AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit }).ToList()
                 };
-                var result = journal.Create(dto);
-                if (result.IsSuccess) journal.Post(result.Value.Id);
+                journal.Create(dto);
             }
 
             Post("إيداع رأس مال افتتاحي", (cash, 100000, 0), (capital, 0, 100000));

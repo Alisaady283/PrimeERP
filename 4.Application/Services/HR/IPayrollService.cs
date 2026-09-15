@@ -10,5 +10,9 @@ namespace PrimeERP.Application.Services.HR
         Result<PayrollDetailDto> Create(CreatePayrollDto dto);
         Result Update(CreatePayrollDto dto);
         Result Delete(int id);
+
+        /// <summary>إثبات استحقاق المسير في القيود — بلا مسٍّ للخزينة، فالصرف سندٌ لاحق.</summary>
+        Result Post(int id);
+        Result Unpost(int id);
     }
 }

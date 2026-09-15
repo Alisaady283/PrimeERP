@@ -77,6 +77,7 @@ namespace PrimeERP.Composition.Renderers
                     var name  = new TextBlock { Text = $"{line.ProductCode} - {line.ProductName}", VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
                     var info  = new TextBlock { Text = $"{line.OriginalQty:N2} / {line.PulledQty:N2}", VerticalAlignment = VerticalAlignment.Center };
                     var qty   = new AppNumericBox { Value = line.RemainingQty, Width = 100, Max = line.RemainingQty };
+                    name.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
                     info.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondary");
 
                     Place(grid, check, 0); Place(grid, name, 1); Place(grid, info, 2); Place(grid, qty, 3);

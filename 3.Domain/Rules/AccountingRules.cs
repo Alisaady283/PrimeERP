@@ -7,11 +7,15 @@ namespace PrimeERP.Domain.Rules
     /// <summary>قواعد تحقق محاسبية جاهزة — قطعة واحدة يعاد استخدامها في التحقق من الحسابات والقيود والفواتير والمخزون.</summary>
     public static class AccountingRules
     {
-        /// <summary>كود الحساب: أرقام فقط، 1 إلى 12 خانة (جذر مستوى 1 خانة واحدة في الترقيم الرسمي القصير).</summary>
+        /// <summary>
+        /// كود الحساب: أرقام فقط، وطولُه بسعة عموده في الجدول (30). كان مقيَّداً بـ12 وهو رقمٌ ثالث لا
+        /// يخالف العمود فقط بل يمنع العمق: عرض اللاحقة = مستوى الأب، فالمستوى السادس يحتاج 16 خانة.
+        /// القاعدة تتبع التخزين، فلا حدٌّ ثالث يُنسى عند تعميق الشجرة.
+        /// </summary>
         public static void AccountCodeFormat(ValidationResult result, string field, string code,
                                              string label = "كود الحساب")
         {
-            if (string.IsNullOrWhiteSpace(code) || !Regex.IsMatch(code, @"^\d{1,12}$"))
+            if (string.IsNullOrWhiteSpace(code) || !Regex.IsMatch(code, @"^\d{1,30}$"))
                 result.AddError(field, $"{label} يجب أن يتكوّن من أرقام فقط (1-12 خانة)");
         }
 

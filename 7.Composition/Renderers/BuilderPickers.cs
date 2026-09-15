@@ -21,6 +21,7 @@ namespace PrimeERP.Composition.Renderers
             object filterValue = null) => pickerType switch
         {
             "AccountType"       => Enum<AccountType>("Str.AccountType"),
+            "AssetAcquisition"  => Enum<AssetAcquisition>("Str.Asset"),
             "BuilderKind"       => Enum<BuilderKind>("Str.Builder.Kind"),
             "BuilderDataType"   => Enum<BuilderDataType>("Str.Builder.Type"),
             "BuilderAggregate"  => Enum<BuilderAggregate>("Str.Builder.Agg"),
@@ -40,7 +41,8 @@ namespace PrimeERP.Composition.Renderers
             "AnyModule"         => services.GetRequiredService<IModuleRegistry>().All()
                                      .Select((m, i) => new DialogRenderer.PickerRow
                                      { Id = i + 1, Code = m.Key, Display = LocalizationService.Get(m.TitleKey) }).ToList(),
-            _                   => new List<DialogRenderer.PickerRow>()
+            // null لا قائمة فارغة: «لا أعرف هذا النوع» غير «نوعٌ بلا صفوف» — والمُصيِّر يميّزهما.
+            _                   => null
         };
 
         private static object Section(object filterValue) =>

@@ -18,17 +18,8 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "Departments";
 
-        protected override Result<PagedResult<DepartmentDto>> FetchPage(int page, int pageSize, DepartmentFilter filter)
-        {
-            var result = _departments.GetAll();
-            if (!result.IsSuccess) return Result.Fail<PagedResult<DepartmentDto>>(result.ErrorMessage);
-
-            var items = result.Value;
-            if (!string.IsNullOrWhiteSpace(SearchText))
-                items = items.Where(d => d.Name.Contains(SearchText, System.StringComparison.OrdinalIgnoreCase)).ToList();
-
-            return Result.Ok(new PagedResult<DepartmentDto> { Items = items, Page = 1, PageSize = items.Count, TotalCount = items.Count });
-        }
+        protected override Result<PagedResult<DepartmentDto>> FetchPage(int page, int pageSize, DepartmentFilter filter) =>
+            AllRows(_departments.GetAll(), d => d.Name);
 
         protected override int IdOf(DepartmentDto item) => item.Id;
         protected override Result DeleteItem(int id) => _departments.Delete(id);

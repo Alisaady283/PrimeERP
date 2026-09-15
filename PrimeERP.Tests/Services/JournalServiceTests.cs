@@ -169,15 +169,15 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
-        public void Create_DoesNotChangeAnyAccountBalance()
+        public void Create_PostsTheEntry_AndMovesBalances()
         {
             var (cash, revenue) = CreateCashAndRevenue();
 
             var result = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 500m, 0m), (revenue, 0m, 500m)));
             Assert.True(result.IsSuccess);
 
-            Assert.Equal(0m, _accountRepo.GetByCode(cash).Balance);
-            Assert.Equal(0m, _accountRepo.GetByCode(revenue).Balance);
+            Assert.Equal(500m, _accountRepo.GetByCode(cash).Balance);
+            Assert.Equal(-500m, _accountRepo.GetByCode(revenue).Balance);
         }
 
         [Fact]
@@ -195,7 +195,7 @@ namespace PrimeERP.Tests.Services
         // ===================== التعديل =====================
 
         [Fact]
-        public void Update_Draft_Succeeds_AndReplacesLines()
+        public void Update_ReplacesLines_AndFollowsBalances()
         {
             var (cash, revenue) = CreateCashAndRevenue();
             var created = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 500m, 0m), (revenue, 0m, 500m)));
@@ -211,19 +211,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(2, reloaded.Value.Lines.Count);
         }
 
-        [Fact]
-        public void Update_Posted_Fails()
-        {
-            var (cash, revenue) = CreateCashAndRevenue();
-            var created = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 500m, 0m), (revenue, 0m, 500m)));
-            _service.Post(created.Value.Id);
-
-            var updateDto = BuildDto(new DateTime(2026, 1, 6), (cash, 700m, 0m), (revenue, 0m, 700m));
-            updateDto.Id = created.Value.Id;
-
-            var result = _service.Update(updateDto);
-            Assert.False(result.IsSuccess);
-        }
 
         [Fact]
         public void Update_NeverChangesEntryNo()
@@ -242,7 +229,7 @@ namespace PrimeERP.Tests.Services
         // ===================== الحذف =====================
 
         [Fact]
-        public void Delete_Draft_Succeeds()
+        public void Delete_RemovesTheEntry_AndRestoresBalances()
         {
             var (cash, revenue) = CreateCashAndRevenue();
             var created = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 500m, 0m), (revenue, 0m, 500m)));
@@ -253,28 +240,14 @@ namespace PrimeERP.Tests.Services
             Assert.Null(_journalRepo.GetById(created.Value.Id));
         }
 
-        [Fact]
-        public void Delete_Posted_Fails()
-        {
-            var (cash, revenue) = CreateCashAndRevenue();
-            var created = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 500m, 0m), (revenue, 0m, 500m)));
-            _service.Post(created.Value.Id);
-
-            var result = _service.Delete(created.Value.Id);
-
-            Assert.False(result.IsSuccess);
-        }
 
         // ===================== الترحيل =====================
 
         [Fact]
-        public void Post_UpdatesAllAccountBalancesCorrectly()
+        public void Creating_UpdatesAllAccountBalancesCorrectly()
         {
             var (cash, revenue) = CreateCashAndRevenue();
             var created = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 500m, 0m), (revenue, 0m, 500m)));
-
-            var result = _service.Post(created.Value.Id);
-            Assert.True(result.IsSuccess, result.ErrorMessage);
 
             Assert.Equal(500m, _accountRepo.GetByCode(cash).Balance);
             Assert.Equal(-500m, _accountRepo.GetByCode(revenue).Balance);
@@ -361,9 +334,9 @@ namespace PrimeERP.Tests.Services
             Assert.True(valid.IsSuccess);
             Assert.True(invalid.IsSuccess);
 
-            // نجعل الثاني غير قابل للترحيل بترحيله يدوياً مسبقاً — هذا الترحيل اليدوي نفسه يُحدِّث رصيد cash
-            // إلى 300 شرعياً (عملية منفصلة عن PostBatch)؛ ما نتحقق منه هو أن PostBatch لا يضيف فوقه شيئاً.
-            _service.Post(invalid.Value.Id);
+            // القيد يُنشأ مُرحَّلاً، فنصنع المسودّة بإلغاء ترحيل الأول: الثاني يبقى مُرحَّلاً فيفشل ترحيله
+            // ثانيةً، وما نتحقق منه أن فشل واحدٍ يمنع ترحيل الآخر ولا يمسّ رصيداً.
+            _service.Unpost(valid.Value.Id);
             var cashBalanceBeforeBatch = _accountRepo.GetByCode(cash).Balance;
 
             var result = _service.PostBatch(new() { valid.Value.Id, invalid.Value.Id });
@@ -414,7 +387,9 @@ namespace PrimeERP.Tests.Services
         public void TrialBalance_PostedOnlyTrue_ExcludesDrafts()
         {
             var (cash, revenue) = CreateCashAndRevenue();
-            _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 1000m, 0m), (revenue, 0m, 1000m))); // مسودة، بلا ترحيل
+            // القيد يُنشأ مُرحَّلاً، والمسودّة تُصنع بإلغاء ترحيله.
+            var entry = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 1000m, 0m), (revenue, 0m, 1000m)));
+            _service.Unpost(entry.Value.Id);
 
             var result = _service.GetTrialBalance(new DateTime(2026, 1, 1), new DateTime(2026, 1, 31), includeZero: true, postedOnly: true);
 
@@ -443,8 +418,6 @@ namespace PrimeERP.Tests.Services
         {
             var created = _service.Create(dto);
             Assert.True(created.IsSuccess, created.ErrorMessage);
-            var posted = _service.Post(created.Value.Id);
-            Assert.True(posted.IsSuccess, posted.ErrorMessage);
         }
 
         // ===================== الصلاحيات =====================

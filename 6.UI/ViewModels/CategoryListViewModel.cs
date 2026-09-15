@@ -30,17 +30,8 @@ namespace PrimeERP.UI.ViewModels
             PermissionPrefix = permissionPrefix;
         }
 
-        protected override Result<PagedResult<CategoryDto>> FetchPage(int page, int pageSize, CategoryFilter filter)
-        {
-            var result = _categories.GetAll(_moduleKey);
-            if (!result.IsSuccess) return Result.Fail<PagedResult<CategoryDto>>(result.ErrorMessage);
-
-            var items = result.Value;
-            if (!string.IsNullOrWhiteSpace(SearchText))
-                items = items.Where(c => c.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
-
-            return Result.Ok(new PagedResult<CategoryDto> { Items = items, Page = 1, PageSize = items.Count, TotalCount = items.Count });
-        }
+        protected override Result<PagedResult<CategoryDto>> FetchPage(int page, int pageSize, CategoryFilter filter) =>
+            AllRows(_categories.GetAll(_moduleKey), c => c.Name);
 
         protected override int IdOf(CategoryDto item) => item.Id;
         protected override Result DeleteItem(int id) => _categories.Delete(id);

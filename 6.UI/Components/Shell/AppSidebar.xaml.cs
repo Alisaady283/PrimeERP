@@ -49,17 +49,28 @@ namespace PrimeERP.UI.Components.Shell
             {
                 Text = "ERP",
                 FontSize = 12,
-                Margin = new Thickness(0, 2, 0, 0),
+                Margin = new Thickness(6, 0, 0, 3),
+                VerticalAlignment = VerticalAlignment.Bottom,
                 FlowDirection = FlowDirection.LeftToRight
             };
             suffix.SetResourceReference(TextBlock.ForegroundProperty, "NavIcon");
 
-            return new StackPanel { Children = { name, suffix } };
+            return new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                FlowDirection = FlowDirection.LeftToRight,
+                Children = { name, suffix }
+            };
         }
 
         public static readonly DependencyProperty FooterContentProperty =
             DependencyProperty.Register(nameof(FooterContent), typeof(object), typeof(AppSidebar),
-                new PropertyMetadata(null, (d, e) => ((AppSidebar)d).footerPresenter.Content = e.NewValue));
+                new PropertyMetadata(null, (d, e) =>
+                {
+                    var sidebar = (AppSidebar)d;
+                    sidebar.footerPresenter.Content = e.NewValue;
+                    sidebar.footerBorder.Visibility = e.NewValue == null ? Visibility.Collapsed : Visibility.Visible;
+                }));
 
         public List<NavItem> ItemsSource  { get => (List<NavItem>)GetValue(ItemsSourceProperty); set => SetValue(ItemsSourceProperty, value); }
         public string        SelectedKey  { get => (string)GetValue(SelectedKeyProperty);         set => SetValue(SelectedKeyProperty, value); }

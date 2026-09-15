@@ -82,5 +82,41 @@ namespace PrimeERP.Tests.Services
             var source = _service.GetChain("PurchaseOrder", 100).Value;
             Assert.Contains(source, c => c.DocType == "GoodsReceipt");
         }
+
+        /// <summary>
+        /// كل مستندٍ يسجّل روابطه يُزيلها عند حذفه. الخلل الذي دفع لكتابته: الفواتير والمرتجعات كانت
+        /// تسجّل ولا تُزيل، فبقيت روابط يتيمة تمنع حذف مصدرها بحجّة سحبٍ صار محذوفاً — رسالة تحرس عدماً.
+        /// </summary>
+        [Fact]
+        public void EveryServiceThatRecordsPulls_RemovesThemOnDelete()
+        {
+            var sources = System.IO.Directory
+                .GetFiles(RepositoryRoot(), "*.cs", System.IO.SearchOption.AllDirectories)
+                .Where(path => path.Contains(@"\4.Application\Services\"))
+                .Where(path => !path.Contains(@"\obj\") && !path.Contains(@"\bin\"))
+                .Select(path => (Name: System.IO.Path.GetFileName(path), Text: System.IO.File.ReadAllText(path)))
+                .Where(file => file.Text.Contains("RecordPulls(") || file.Text.Contains("RecordPull("))
+                .ToList();
+
+            Assert.NotEmpty(sources);
+
+            var leaking = sources
+                .Where(file => !file.Text.Contains("RemovePull("))
+                .Select(file => file.Name)
+                .ToList();
+
+            Assert.True(leaking.Count == 0,
+                "خدمات تسجّل روابط سحبٍ ولا تُزيلها عند الحذف — تترك روابط يتيمة تمنع حذف مصدرها: "
+                + string.Join("، ", leaking));
+        }
+
+        private static string RepositoryRoot()
+        {
+            var directory = new System.IO.DirectoryInfo(System.AppContext.BaseDirectory);
+            while (directory != null && !System.IO.File.Exists(System.IO.Path.Combine(directory.FullName, "PrimeERP.csproj")))
+                directory = directory.Parent;
+
+            return directory?.FullName ?? System.AppContext.BaseDirectory;
+        }
     }
 }

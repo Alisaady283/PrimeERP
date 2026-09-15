@@ -19,9 +19,8 @@ namespace PrimeERP.UI.Components.Pickers
             var config = DataSource.GetDisplayConfig();
             var results = items.Select(i => ToResultItem(i, config)).ToList();
 
-            // "تجاوز حد الائتمان" قرار أعمال (راجع MIGRATION_INVENTORY.md — فحص تسريب المنطق) — Customer.IsOverCreditLimit
-            // كخاصية محسوبة على الـ Model أُزيلت عمداً. لا يوجد بعد ICustomerService (المرحلة F.3) يوفّره كحقل DTO/
-            // StatusVariant جاهز، فالمقارنة هنا مؤقتة ومحصورة في هذه القطعة فقط حتى يُبنى ذلك.
+            // TEMPORARY — "تجاوز حد الائتمان" قرار أعمال تحسبه الخدمة في CustomerDto.IsOverCreditLimit، لكن
+            // DataSource هنا يُرجع الكيان لا الـDTO فتُعاد المقارنة محلياً. يزول بجعل المصدر يُرجع الـDTO.
             var window = new PickerGridWindow("اختيار عميل", config, results, allowQuickAdd: AllowQuickAdd)
             {
                 RowHighlight = raw => raw is Customer c && c.CreditLimit > 0 && c.Balance > c.CreditLimit ? "danger" : null

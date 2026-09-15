@@ -13,7 +13,7 @@ namespace PrimeERP.UI.Components.Shell
 
         private static string[] BuildUserMenu(bool darkMode) => new[]
         {
-            "الملف الشخصي", "تغيير كلمة المرور",
+            "الملف الشخصي", "تغيير كلمة المرور", "تحديث",
             darkMode ? NightModeLabel + "  ✓" : NightModeLabel,
             "اللغة", "تسجيل الخروج"
         };
@@ -79,6 +79,7 @@ namespace PrimeERP.UI.Components.Shell
         public event EventHandler ProfileClicked;
         public event EventHandler PasswordChangeRequested;
         public event EventHandler LogoutRequested;
+        public event EventHandler UpdateRequested;
         public event EventHandler ThemeToggled;
         public event EventHandler LanguageToggled;
 
@@ -122,6 +123,7 @@ namespace PrimeERP.UI.Components.Shell
                 case "الملف الشخصي":       ProfileClicked?.Invoke(this, EventArgs.Empty); break;
                 case "تغيير كلمة المرور":  PasswordChangeRequested?.Invoke(this, EventArgs.Empty); break;
                 case "اللغة":              LanguageToggled?.Invoke(this, EventArgs.Empty); break;
+                case "تحديث":              UpdateRequested?.Invoke(this, EventArgs.Empty); break;
                 case "تسجيل الخروج":       LogoutRequested?.Invoke(this, EventArgs.Empty); break;
             }
         }

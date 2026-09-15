@@ -30,13 +30,16 @@ namespace PrimeERP.Application.Services.Purchasing
         private readonly IJournalService _journal;
         private readonly INumberSequenceService _numbers;
 
+        private readonly PrimeERP.Application.Services.Documents.IDocumentLinkService _links;
+
         public PurchaseReturnService(IPurchaseReturnRepository returns, IProductRepository products, ISupplierService suppliers,
             IStockService stock, IJournalService journal, INumberSequenceService numbers,
+            PrimeERP.Application.Services.Documents.IDocumentLinkService links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
             : base(permissions, settings, localization, audit)
         {
             _returns = returns; _products = products; _suppliers = suppliers;
-            _stock = stock; _journal = journal; _numbers = numbers;
+            _stock = stock; _journal = journal; _numbers = numbers; _links = links;
         }
 
         protected override string PermissionPrefix => "Purchases";
@@ -108,6 +111,10 @@ namespace PrimeERP.Application.Services.Purchasing
                 });
             }
 
+            // المتبقّي على المصدر يُفحص قبل أي كتابة — الواجهة تمنع الخطأ، والخدمة تمنع الالتفاف عليها.
+            var pullCheck = _links.ValidatePulls(dto.Lines.Select(l => ((PrimeERP.Application.DTOs.Documents.IPullableLine)l, l.Qty)));
+            if (pullCheck.IsFailure) return Result.Fail<PurchaseReturnDetailDto>(pullCheck.ErrorMessage, pullCheck.ErrorCode);
+
             var subTotal = resolvedLines.Sum(x => x.LineTotal);
             var discountAmount = resolvedLines.Sum(x => x.DiscountAmount);
             var taxableAmount = subTotal - discountAmount;
@@ -137,9 +144,11 @@ namespace PrimeERP.Application.Services.Purchasing
                     };
                     var id = _returns.InsertHeader(conn, tx, ret);
 
-                    foreach (var line in resolvedLines)
+                    var inserted = new List<(PrimeERP.Application.DTOs.Documents.IPullableLine Line, int TargetLineId, decimal Qty)>();
+                    for (int i = 0; i < resolvedLines.Count; i++)
                     {
-                        _returns.InsertLine(conn, tx, id, line);
+                        var line = resolvedLines[i];
+                        inserted.Add((dto.Lines[i], _returns.InsertLine(conn, tx, id, line), line.Qty));
                         // الوضع المبسّط: المرتجع تحرّك المخزون بنفسها (لا موظف مخزن ولا أذون). الوضع الشامل:
                         // إذن الصرف/الاستلام هو من يحرّك المخزون، والمرتجع تُسحب منه — فتحريكها هنا يخصم مرتين.
                         var moveResult = simplifiedFlow
@@ -148,6 +157,8 @@ namespace PrimeERP.Application.Services.Purchasing
                             : Result.Ok();
                         if (!moveResult.IsSuccess) throw new InvalidOperationException(moveResult.ErrorMessage);
                     }
+
+                    _links.RecordPulls(conn, tx, EntityName, id, inserted);
 
                     var journalLines = new List<CreateJournalLineDto>
                     {
@@ -195,10 +206,16 @@ namespace PrimeERP.Application.Services.Purchasing
             var document = _returns.GetById(id);
             if (document == null) return Result.Fail("المرتجع غير موجود", ErrorCode.NotFound);
 
+            // السحب يمنع الحذف: مستندٌ لاحق يقوم عليه، فحذفه يترك الأخير بلا أصل.
+            if (_links.GetPulledBySource(EntityName, id).Count > 0)
+                return Result.Fail("سُحب من هذا المستند — احذف ما سُحب إليه أولاً", ErrorCode.ValidationFailed);
+
             Db.RunTransaction((conn, tx) =>
             {
                 if (document.JournalEntryId != null) _journal.Delete(conn, tx, document.JournalEntryId.Value);
                 _stock.RemoveMovements(conn, tx, "PurchaseReturn", id);
+                // روابط ما سحبه هذا المستند تُزال معه، وإلّا بقيت تحرس مصدراً عن مستندٍ لم يعد موجوداً.
+                _links.RemovePull(EntityName, id, conn, tx);
                 _returns.DeleteDocument(conn, tx, id);
             });
 

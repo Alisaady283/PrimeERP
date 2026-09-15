@@ -17,9 +17,9 @@ namespace PrimeERP.Composition.Registry
             ("Purchases", "المشتريات", "IconPurchases", new[] { "PurchaseRequest", "PurchaseOrder", "PurchaseInvoices", "PurchaseReturns", "Suppliers" }),
             ("Inventory", "المخزون", "IconWarehouse", new[] { "Products", "Categories", "Brands", "Units", "Warehouses", "StockIn", "StockOut", "StockTransfer", "GoodsReceipt", "GoodsIssue", "DeliveryNote", "SalesReceipt" }),
             ("Treasury", "الخزينة", "IconAccounts", new[] { "Treasuries", "Receipts", "Payments", "ChequeReceipts", "ChequeIssues", "Cheques" }),
-            ("Assets", "الأصول", "IconAssets", new[] { "Assets", "AssetCategories" }),
-            ("HR", "الموارد", "IconHR", new[] { "Employees", "Departments", "JobTitles", "Payroll" }),
-            ("Reports", "التقارير", "IconReports", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "AccountStatement", "CustomerStatement", "SupplierStatement", "ItemCard", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport" }),
+            ("Assets", "الأصول", "IconAssets", new[] { "Assets", "AssetCategories", "AssetRevaluations", "AssetDepreciations", "AssetDisposals" }),
+            ("HR", "الموارد", "IconHR", new[] { "Employees", "Departments", "JobTitles", "Attendances", "EmployeeAllowances", "EmployeeDeductions", "Payroll" }),
+            ("Reports", "التقارير", "IconReports", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "AccountStatement", "CustomerStatement", "SupplierStatement", "ItemCard", "Payslip", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport", "AssetRegister", "AssetsByCategory" }),
             ("Settings", "الإعدادات", "IconSettings", new[] { "Settings", "Users", "Roles", "RolePermissions", "UserPermissions" }),
             ("Builder", "وحدة البناء", "IconSettings", new[] { "BuilderSections", "BuilderModules", "BuilderColumns", "BuilderActions", "BuilderFilters", "BuilderExport" }),
         };

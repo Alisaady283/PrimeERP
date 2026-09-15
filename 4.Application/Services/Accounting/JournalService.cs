@@ -111,10 +111,21 @@ namespace PrimeERP.Application.Services.Accounting
             if (!_fiscalPeriods.IsOpen(dto.EntryDate))
                 return Result.Fail<JournalEntryDto>(Msg("PeriodClosed"), ErrorCode.ValidationFailed);
 
+            // القيد يُنشأ مُرحَّلاً فيحرّك الأرصدة فوراً — فيُسأل الحارس قبل كتابته لا بعدها.
+            var funds = EnsureAffordable(dto.Lines);
+            if (funds.IsFailure) return Result.Fail<JournalEntryDto>(funds.ErrorMessage, funds.ErrorCode);
+
             var prefix = Setting(SettingKeys.Documents.JournalPrefix, "JE");
             var entryNo = _numbers.Next(prefix);
 
-            var newId = Db.RunTransaction((conn, tx) => InsertEntryWithLines(conn, tx, entryNo, dto, accounts.Value));
+            // القيد يُنشأ مُرحَّلاً: الترحيل لم يعد قراراً بزرّ، فما لا يُرحَّل يبقى غائباً عن الميزان
+            // والكشوف وكأنه لم يُدخَل. وحُرّاس الرصيد تعمل على المرحَّل، فهذه هي طبقة التحقق.
+            var newId = Db.RunTransaction((conn, tx) =>
+            {
+                var id = InsertEntryWithLines(conn, tx, entryNo, dto, accounts.Value);
+                Post(conn, tx, id);
+                return id;
+            });
 
             Audit.Log(EntityName, newId, AuditAction.Insert, details: $"إنشاء قيد {entryNo} — {dto.Lines.Count} سطر");
 
@@ -122,10 +133,9 @@ namespace PrimeERP.Application.Services.Accounting
         }
 
         /// <summary>
-        /// بمعاملة خارجية — يخدم FiscalPeriodService.CloseYear حالياً، ومستندات F.4 لاحقاً (عبر بديل IPostable
-        /// الذي يُبنى في F.4 بعد وجود جداوله فعلياً — راجع MIGRATION_INVENTORY.md). بلا تحقق صلاحية (المستدعي
-        /// تحقق صلاحيته الخاصة) وبلا تحقق فترة مفتوحة عمداً: قيد الإقفال السنوي يُنشأ بتاريخ سنة أُقفلت فتراتها
-        /// بالفعل، فتحقق IsOpen سيرفضه دائماً — التحقق الحقيقي هنا هو صحة السطور/الحسابات فقط.
+        /// بمعاملة خارجية — يخدم FiscalPeriodService.CloseYear. بلا تحقق صلاحية (المستدعي تحقق صلاحيته)،
+        /// وبلا تحقق فترة مفتوحة عمداً: قيد الإقفال السنوي يُنشأ بتاريخ سنة أُقفلت فتراتها بالفعل، فتحقق
+        /// IsOpen سيرفضه دائماً — التحقق الحقيقي هنا صحة السطور والحسابات فقط.
         /// </summary>
         public Result<JournalEntryDto> Create(DbConnection conn, DbTransaction tx, CreateJournalDto dto)
         {
@@ -136,6 +146,11 @@ namespace PrimeERP.Application.Services.Accounting
             // جديداً عبر IAccountService.GetByCode، يُعلِّق/deadlock من داخل معاملة خارجية قائمة).
             var accounts = ValidateAccountsForTransaction(conn, tx, dto.Lines);
             if (!accounts.IsSuccess) return Result.Fail<JournalEntryDto>(accounts.ErrorMessage, accounts.ErrorCode);
+
+            // قيود المستندات تمرّ من هنا (فاتورة، سند، أصل، شيك، مسير) — فالحارس عليها كما على القيد اليدوي.
+            var funds = EnsureCashStaysPositive(
+                Effects(dto.Lines.Select(l => (l.AccountCode, l.Debit, l.Credit)), 1), conn, tx);
+            if (funds.IsFailure) return Result.Fail<JournalEntryDto>(funds.ErrorMessage, funds.ErrorCode);
 
             var prefix = Setting(SettingKeys.Documents.JournalPrefix, "JE");
             var entryNo = _numbers.Next(conn, tx, prefix);
@@ -156,11 +171,11 @@ namespace PrimeERP.Application.Services.Accounting
             if (existing == null)
                 return Result.Fail("القيد غير موجود", ErrorCode.NotFound);
 
-            if (existing.IsPosted)
-                return Result.Fail(Msg("PostedCannotEdit"), ErrorCode.ValidationFailed);
-
             var editable = EnsureOwnedSource(existing.Source, ownerSource, "تعديل");
             if (editable.IsFailure) return editable;
+
+            var funds = EnsureReplaceable(dto.Id, dto.Lines);
+            if (funds.IsFailure) return funds;
 
             var shape = ValidateShape(dto);
             if (!shape.IsSuccess) return shape;
@@ -179,6 +194,10 @@ namespace PrimeERP.Application.Services.Accounting
 
             Db.RunTransaction((conn, tx) =>
             {
+                // أرصدة الحسابات القديمة والجديدة معاً: سطرٌ يخرج من القيد يترك رصيده قائماً لولا إعادة حسابه.
+                var touched = _journal.GetLines(dto.Id, conn, tx).Select(l => l.AccountCode)
+                    .Concat(dto.Lines.Select(l => l.AccountCode)).Distinct().ToList();
+
                 _journal.DeleteLines(dto.Id, conn, tx);
 
                 int lineNo = 1;
@@ -193,6 +212,9 @@ namespace PrimeERP.Application.Services.Accounting
                 // EntryNo لا يتغيّر أبداً — فقط التاريخ/البيان/السطور/الإجماليات.
                 _journal.UpdateEntry(conn, tx, dto.Id, dto.EntryDate.ToString("yyyy-MM-dd"), dto.Description);
                 _journal.UpdateTotals(conn, tx, dto.Id, totalDebit, totalCredit);
+
+                foreach (var code in touched)
+                    _accounts.RecalculateBalance(conn, tx, code);
             });
 
             Audit.Log(EntityName, dto.Id, AuditAction.Update, details: $"تعديل قيد {existing.EntryNo}");
@@ -209,14 +231,14 @@ namespace PrimeERP.Application.Services.Accounting
             if (entry == null)
                 return Result.Fail("القيد غير موجود", ErrorCode.NotFound);
 
-            if (entry.IsPosted)
-                return Result.Fail(Msg("PostedCannotDelete"), ErrorCode.ValidationFailed);
-
             var deletable = EnsureOwnedSource(entry.Source, ownerSource, "حذف");
             if (deletable.IsFailure) return deletable;
 
             if (!_fiscalPeriods.IsOpen(ParseDate(entry.EntryDate)))
                 return Result.Fail(Msg("PeriodClosed"), ErrorCode.ValidationFailed);
+
+            var funds = EnsureRemovable(id);
+            if (funds.IsFailure) return funds;
 
             Db.RunTransaction((conn, tx) => Delete(conn, tx, id));
 
@@ -227,10 +249,78 @@ namespace PrimeERP.Application.Services.Accounting
         /// <summary>بمعاملة خارجية — يخدم FiscalPeriodService.ReopenYear (يحذف قيد الإقفال بعد إلغاء ترحيله). بلا تحقق: المستدعي تحقق الحالة بنفسه (year.IsClosed) قبل الوصول لهنا.</summary>
         public Result Delete(DbConnection conn, DbTransaction tx, int id)
         {
+            // الأسطر تُقرأ قبل حذفها: رصيد الحساب مخزَّن، فحذف قيدٍ مرحَّل بلا إعادة حسابٍ يترك الشجرة
+            // تعرض رصيداً لا قيدَ خلفه — نفس ما يفعله Unpost بالضبط.
+            var codes = _journal.GetLines(id, conn, tx).Select(l => l.AccountCode).Distinct().ToList();
+
             _journal.DeleteLines(id, conn, tx);
             _journal.DeleteHeader(id, conn, tx);
+
+            foreach (var code in codes)
+                _accounts.RecalculateBalance(conn, tx, code);
+
             return Result.Ok();
         }
+
+
+        // ===================== الحارس: لا رصيد خزينةٍ أو بنكٍ تحت الصفر =====================
+
+        /// <summary>القيد غير المرحَّل لا أثر له في رصيد، فحذفه وتعديله لا يُحرسان.</summary>
+        public Result EnsureRemovable(int entryId) =>
+            IsPosted(entryId)
+                ? EnsureCashStaysPositive(Effects(_journal.GetLines(entryId), -1))
+                : Result.Ok();
+
+        private bool IsPosted(int entryId) => _journal.GetById(entryId)?.IsPosted == true;
+
+        public Result EnsureAffordable(IEnumerable<CreateJournalLineDto> lines) =>
+            EnsureCashStaysPositive(Effects(lines.Select(l => (l.AccountCode, l.Debit, l.Credit)), 1));
+
+        public Result EnsureReplaceable(int entryId, IEnumerable<CreateJournalLineDto> lines) =>
+            IsPosted(entryId)
+                ? EnsureCashStaysPositive(
+                    Effects(_journal.GetLines(entryId), -1)
+                        .Concat(Effects(lines.Select(l => (l.AccountCode, l.Debit, l.Credit)), 1)))
+                : Result.Ok();
+
+        private static IEnumerable<(string Code, decimal Delta)> Effects(IEnumerable<JournalLine> lines, int sign) =>
+            Effects(lines.Select(l => (l.AccountCode, l.Debit, l.Credit)), sign);
+
+        private static IEnumerable<(string Code, decimal Delta)> Effects(
+            IEnumerable<(string Code, decimal Debit, decimal Credit)> lines, int sign) =>
+            lines.Select(l => (l.Code, sign * (l.Debit - l.Credit)));
+
+        /// <summary>ما تحت جذرَي النقدية والبنوك وحده يُحرس — المصروف والإيراد يتحركان في الاتجاهين بطبعهما.</summary>
+        private Result EnsureCashStaysPositive(IEnumerable<(string Code, decimal Delta)> effects,
+            DbConnection conn = null, DbTransaction tx = null)
+        {
+            var roots = new[] { Setting(SettingKeys.Accounts.Cash, ""), Setting(SettingKeys.Accounts.Bank, "") }
+                .Where(root => !string.IsNullOrWhiteSpace(root)).ToList();
+
+            foreach (var account in effects.GroupBy(e => e.Code))
+            {
+                var delta = account.Sum(e => e.Delta);
+                if (delta >= 0) continue;
+                if (!roots.Any(root => (account.Key ?? "").StartsWith(root, StringComparison.Ordinal))) continue;
+
+                // داخل معاملة قائمة يُحسب الرصيد بنفس (conn,tx): قراءةٌ باتصالٍ جديد تُعلِّق على SQLite.
+                var (name, balance) = conn == null ? StoredBalance(account.Key) : LiveBalance(account.Key, conn, tx);
+
+                if (balance + delta < 0)
+                    return Result.Fail($"رصيد «{name}» لا يكفي", ErrorCode.ValidationFailed);
+            }
+
+            return Result.Ok();
+        }
+
+        private (string Name, decimal Balance) StoredBalance(string code)
+        {
+            var account = _accounts.GetByCode(code);
+            return account.IsSuccess ? (account.Value.Name, account.Value.Balance) : (code, decimal.MaxValue);
+        }
+
+        private (string Name, decimal Balance) LiveBalance(string code, DbConnection conn, DbTransaction tx) =>
+            (code, _journal.GetPostedLinesForAccount(code, null, null, conn, tx).Sum(l => l.Debit - l.Credit));
 
         // ===================== الترحيل =====================
 
@@ -241,6 +331,10 @@ namespace PrimeERP.Application.Services.Accounting
             var entry = _journal.GetById(id);
             var (error, code) = ValidatePostable(entry);
             if (error != null) return Result.Fail(error, code);
+
+            var funds = EnsureAffordable(_journal.GetLines(id)
+                .Select(l => new CreateJournalLineDto { AccountCode = l.AccountCode, Debit = l.Debit, Credit = l.Credit }));
+            if (funds.IsFailure) return funds;
 
             var result = Db.RunTransaction((conn, tx) => Post(conn, tx, id));
             if (!result.IsSuccess) return result;

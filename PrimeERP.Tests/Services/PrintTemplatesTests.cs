@@ -54,10 +54,9 @@ namespace PrimeERP.Tests.Services
                     new() { LineNo = 2, AccountCode = creditCode, Debit = 0m,     Credit = amount }
                 }
             };
+            // القيد يُنشأ مُرحَّلاً — لا ترحيل ثانٍ.
             var created = _journal.Create(dto);
             Assert.True(created.IsSuccess, created.ErrorMessage);
-            var posted = _journal.Post(created.Value.Id);
-            Assert.True(posted.IsSuccess, posted.ErrorMessage);
             _accounts.RecalculateAllBalances();
         }
 

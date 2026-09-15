@@ -15,9 +15,6 @@ namespace PrimeERP.Composition.Renderers
     /// وصفحة المستند معاً.</summary>
     public static class DocumentPrinter
     {
-        private const string ReceiptNarrative = "استلمنا من السيد / السادة: {Party}";
-        private const string PaymentNarrative = "ادفعوا بموجب هذا الأمر إلى السيد / السادة: {Party}";
-
         /// <summary>النسخ وسطور الصفحة والشروط والباركود — كلها من الإعدادات، فلا قيمة ورقية في الكود.</summary>
         private static PrintDocuments.PaperOptions PaperFrom(PrimeERP.Platform.Settings.ISettingsProvider settings, object doc)
         {
@@ -34,38 +31,90 @@ namespace PrimeERP.Composition.Renderers
             };
         }
 
-        private static IPrintable VoucherDocument(PrimeERP.Application.DTOs.Vouchers.VoucherDetailDto voucher,
+        public static IPrintable VoucherDocument(PrimeERP.Application.DTOs.Vouchers.VoucherDetailDto voucher,
             bool isReceipt, PrimeERP.Platform.Settings.ISettingsProvider settings)
         {
-            var details = new System.Collections.Generic.Dictionary<string, string>
+            var isCheque = voucher.Method == PrimeERP.Domain.Enums.PaymentMethod.Cheque;
+            var words = PrimeERP.Domain.Helpers.ArabicNumberToWords.Convert(voucher.Amount,
+                settings.Get(PrimeERP.Platform.Settings.SettingKeys.Financial.CurrencyName, "جنيه"),
+                settings.Get(PrimeERP.Platform.Settings.SettingKeys.Financial.CurrencySubUnit, "قرش"));
+
+            var sections = new System.Collections.Generic.List<PrintSection>
             {
-                ["طريقة الدفع"] = voucher.MethodName,
-                ["الخزينة / البنك"] = voucher.TreasuryName,
-                ["وذلك عن"] = string.IsNullOrWhiteSpace(voucher.Notes) ? "………………" : voucher.Notes,
+                new() { Type = PrintSectionType.Callout, Text = $"{voucher.Amount:N2}", Variant = StatusVariant.Neutral },
+
+                Line("التاريخ", voucher.VoucherDate.ToString("yyyy-MM-dd")),
+                Line(isReceipt ? "استلمنا من السيد" : "صرفنا إلى السيد", voucher.PartyName),
+                Line("مبلغاً وقدره", $"{words} لا غير"),
+                Pair("نقداً / شيك رقم", isCheque ? voucher.Reference : null,
+                     "مسحوب على بنك", voucher.TreasuryName),
+                Line("وذلك عن", voucher.Notes),
             };
 
-            if (!string.IsNullOrWhiteSpace(voucher.Reference))
-                details[voucher.Method == PrimeERP.Domain.Enums.PaymentMethod.Cheque ? "رقم الشيك" : "المرجع"] = voucher.Reference;
-
-            return PrintDocuments.Narrative(new NarrativeDocument
+            return new VoucherPaper
             {
                 Title = isReceipt ? "سند قبض" : "سند صرف",
-                Number = voucher.VoucherNo,
-                Template = isReceipt ? ReceiptNarrative : PaymentNarrative,
-                Values = new() { ["Party"] = string.IsNullOrWhiteSpace(voucher.PartyName) ? "………………" : voucher.PartyName },
-                Amount = voucher.Amount,
-                Currency = settings.Get(PrimeERP.Platform.Settings.SettingKeys.Financial.CurrencyName, "جنيه"),
-                SubUnit = settings.Get(PrimeERP.Platform.Settings.SettingKeys.Financial.CurrencySubUnit, "قرش"),
-                Header = new()
-                {
-                    ["رقم السند"] = voucher.VoucherNo,
-                    ["التاريخ"] = voucher.VoucherDate.ToString("yyyy-MM-dd"),
-                },
-                Details = details,
+                Subtitle = voucher.VoucherNo,
+                Sections = sections,
                 Signatures = isReceipt
-                    ? new() { "المستلِم", "المحاسب", "المدير" }
-                    : new() { "المستلِم", "أمين الخزينة", "المحاسب", "المدير" }
-            });
+                    ? new() { "المحاسب", "الاعتماد" }
+                    : new() { "المستلِم", "المحاسب", "الاعتماد" }
+            };
+        }
+
+        /// <summary>توقيعات أذون المخزن.</summary>
+        public static System.Collections.Generic.List<string> StockSignatures(DocumentDialogDefinition def)
+        {
+            if (def.AffectsStock == StockEffect.None) return null;
+
+            return def.AffectsStock == StockEffect.Out
+                ? new System.Collections.Generic.List<string> { "المستلِم", "أمين المخزن", "الاعتماد" }
+                : new System.Collections.Generic.List<string> { "أمين المخزن", "الاعتماد" };
+        }
+
+        private static PrintSection Line(string label, string value) => new()
+        {
+            Type = PrintSectionType.Text,
+            FillParts = new System.Collections.Generic.List<string> { Written(label, value) },
+            FillShares = new System.Collections.Generic.List<double> { 1 },
+        };
+
+        /// <summary>وسمان في سطر: ثُلثان وثُلث.</summary>
+        private static PrintSection Pair(string firstLabel, string firstValue, string secondLabel, string secondValue) => new()
+        {
+            Type = PrintSectionType.Text,
+            FillParts = new System.Collections.Generic.List<string>
+            { Written(firstLabel, firstValue), Written(secondLabel, secondValue) },
+            FillShares = new System.Collections.Generic.List<double> { 2.0 / 3, 1.0 / 3 },
+        };
+
+        private static string Written(string label, string value) =>
+            $"{label} : {(string.IsNullOrWhiteSpace(value) ? "" : "...." + value + " ")}";
+
+        /// <summary>ورقة السند: مؤطَّرة بنصف A4.</summary>
+        private class VoucherPaper : IPrintable
+        {
+            public string Title { get; init; }
+            public string Subtitle { get; init; }
+            public System.Collections.Generic.List<PrintSection> Sections { get; init; }
+            public System.Collections.Generic.List<string> Signatures { get; init; }
+
+            public string DocumentTitle => Title;
+            public string DocumentSubtitle => Subtitle;
+            public PrintOrientation Orientation => PrintOrientation.Portrait;
+
+            public System.Collections.Generic.Dictionary<string, string> HeaderFields => null;
+            public System.Collections.Generic.Dictionary<string, string> FooterFields => null;
+
+            public bool ShowCompanyHeader => true;
+            public bool ShowPageNumbers => false;
+            public bool ShowSignatures => true;
+            public System.Collections.Generic.List<string> SignatureLabels => Signatures;
+
+            public bool Framed => true;
+            public bool HalfPage => true;
+
+            public System.Collections.Generic.List<PrintSection> BuildSections() => Sections;
         }
 
 
@@ -120,7 +169,8 @@ namespace PrimeERP.Composition.Renderers
 
             var printable = document is PrimeERP.Application.DTOs.Vouchers.VoucherDetailDto voucher
                 ? VoucherDocument(voucher, definition.Key == "Receipts", settings)
-                : PrintDocuments.Trade(def, title, document, PaperFrom(settings, doc: document));
+                : PrintDocuments.Trade(def, title, document, PaperFrom(settings, doc: document),
+                    StockSignatures(def));
 
             use(printable, toast);
         }

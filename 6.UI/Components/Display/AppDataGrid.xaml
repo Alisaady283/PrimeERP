@@ -8,6 +8,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- ===== Toolbar (Export) ===== -->
@@ -64,7 +65,7 @@
                           CanUserResizeRows="False"
                           CanUserSortColumns="True"
                           HeadersVisibility="Column"
-                          GridLinesVisibility="Horizontal"
+                          GridLinesVisibility="All"
                           SelectionUnit="FullRow"
                           RowHeight="{DynamicResource C.Grid.Row.Height}"
                           RowHeaderWidth="{DynamicResource C.Grid.RowHeader.Width}"
@@ -73,6 +74,7 @@
                           RowBackground="{DynamicResource C.Grid.Row.Bg}"
                           AlternatingRowBackground="{DynamicResource C.Grid.Row.AltBg}"
                           HorizontalGridLinesBrush="{DynamicResource C.Grid.Border}"
+                          VerticalGridLinesBrush="{DynamicResource C.Grid.Border}"
                           FontSize="{DynamicResource P.Font.Size.300}"
                           FontFamily="{DynamicResource P.Font.Family.Primary}"
                           Foreground="{DynamicResource C.Grid.Cell.Fg}"
@@ -149,7 +151,8 @@
                 </DataGrid>
             </Border>
 
-            <display:AppEmptyState x:Name="emptyState" Grid.Row="1" Visibility="Collapsed"/>
+            <display:AppEmptyState x:Name="emptyState" Grid.Row="1" Visibility="Collapsed"
+                                   Margin="{DynamicResource C.Grid.Empty.Margin}"/>
             <display:AppLoadingOverlay x:Name="loadingOverlay" Grid.Row="1"/>
         </Grid>
 
@@ -175,7 +178,14 @@
                       Foreground="{DynamicResource C.Grid.Footer.Fg}"/>
         </Border>
 
+        <!-- ===== Summary ===== -->
+        <TextBlock Grid.Row="3" x:Name="summaryText" Visibility="Collapsed"
+                   Margin="24,8,24,0" TextWrapping="Wrap"
+                   FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
+                   FontFamily="{DynamicResource P.Font.Family.Primary}"
+                   Foreground="{DynamicResource TextPrimary}"/>
+
         <!-- ===== Pagination ===== -->
-        <display:AppPagination Grid.Row="3" x:Name="pagination" Margin="0,10,0,0"/>
+        <display:AppPagination Grid.Row="4" x:Name="pagination" Margin="0,10,0,0"/>
     </Grid>
 </UserControl>

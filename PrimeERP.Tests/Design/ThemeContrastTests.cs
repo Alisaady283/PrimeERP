@@ -114,6 +114,75 @@ namespace PrimeERP.Tests.Design
                 "نوافذ بلا خلفية معلنة فتقع على أبيض WPF: " + string.Join("، ", missing));
         }
 
+        /// <summary>
+        /// النمط الضمني TargetType="TextBlock" يضبط الخطّ والحجم ولا يضبط اللون، فنصٌّ يُبنى بالكود بلا
+        /// Foreground يقع على أسود WPF الافتراضي: يُقرأ في الوضع الفاتح ويختفي في الداكن. الكسر الذي دفع
+        /// لكتابته: اسم الصنف في نافذة السحب — ومعه ثلاثة مثله في مُصيِّرات الشيكات والتقارير والإعدادات.
+        /// </summary>
+        [Fact]
+        public void EveryCodeBuiltTextBlock_DeclaresItsForeground()
+        {
+            var files = System.IO.Directory
+                .GetFiles(RepositoryRoot(), "*.cs", System.IO.SearchOption.AllDirectories)
+                .Where(f => f.Contains(@"\6.UI\") || f.Contains(@"\7.Composition\"))
+                .Where(f => !f.Contains(@"\obj\") && !f.Contains(@"\bin\"))
+                // DevTools مستثناة من بناء Release ولا تُعرض لمستخدم — راجع ARCHITECTURE.md § الدين التقني.
+                .Where(f => !f.Contains(@"\DevTools\"))
+                .ToList();
+
+            Assert.NotEmpty(files);
+
+            var missing = new List<string>();
+
+            foreach (var path in files)
+            {
+                var text = System.IO.File.ReadAllText(path);
+
+                foreach (Match match in Regex.Matches(text, @"new TextBlock\b"))
+                {
+                    if (DeclaresForeground(text, match.Index)) continue;
+
+                    var line = text[..match.Index].Count(c => c == '\n') + 1;
+                    missing.Add($"{System.IO.Path.GetFileName(path)}:{line}");
+                }
+            }
+
+            Assert.True(missing.Count == 0,
+                "نصوص تُبنى بالكود بلا Foreground فتقع على أسود WPF وتختفي في الوضع الداكن: "
+                + string.Join("، ", missing));
+        }
+
+        /// <summary>اللون معلنٌ إمّا داخل مُهيّئ الكائن، وإمّا بـ SetResourceReference على المتغيّر الذي
+        /// استقبله — وهو الوجه الوحيد الذي يتبدّل مع الوضع حيّاً.</summary>
+        private static bool DeclaresForeground(string text, int start)
+        {
+            var initializer = Initializer(text, start);
+            if (initializer.Contains("Foreground")) return true;
+
+            var name = Regex.Match(text[..start], @"(\w+)\s*=\s*$").Groups[1].Value;
+            return name.Length > 0 &&
+                   text.Contains($"{name}.SetResourceReference(TextBlock.ForegroundProperty");
+        }
+
+        /// <summary>نصّ مُهيّئ الكائن بين قوسيه المعقوفين، أو فراغٌ لو لم يكن للكائن مُهيّئ أصلاً.</summary>
+        private static string Initializer(string text, int start)
+        {
+            var open = text.IndexOf('{', start);
+            if (open < 0) return "";
+
+            // مُهيّئ الكائن يلي الاسم مباشرة؛ فاصلةٌ منقوطة قبل القوس تعني أن الجملة انتهت بلا مُهيّئ.
+            if (text[start..open].Contains(';')) return "";
+
+            var depth = 0;
+            for (var i = open; i < text.Length; i++)
+            {
+                if (text[i] == '{') depth++;
+                else if (text[i] == '}' && --depth == 0) return text[open..(i + 1)];
+            }
+
+            return "";
+        }
+
         private static string RepositoryRoot()
         {
             var directory = new System.IO.DirectoryInfo(AppContext.BaseDirectory);

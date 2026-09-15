@@ -14,6 +14,13 @@ namespace PrimeERP.Application.DTOs.HR
         public decimal  TotalAllowances { get; set; }
         public decimal  TotalDeductions { get; set; }
         public decimal  NetTotal        { get; set; }
+
+        /// <summary>مُرحَّل = أُثبت استحقاقه في القيود. الشرط الذي يُظهر زرّ الترحيل أو إلغاءه.</summary>
+        public bool     IsPosted        { get; set; }
+        public string   StatusText      { get; set; }
+        public string   Notes           { get; set; }
+        public Domain.Results.StatusVariant StatusVariant { get; set; }
+
         public DateTime CreatedAt       { get; set; }
     }
 
@@ -28,7 +35,11 @@ namespace PrimeERP.Application.DTOs.HR
         public string  EmployeeName { get; set; }
         public decimal BasicSalary  { get; set; }
         public decimal Allowances   { get; set; }
+        public decimal Overtime     { get; set; }
         public decimal Deductions   { get; set; }
+        public decimal Advances     { get; set; }
+        public decimal Insurance    { get; set; }
+        public decimal Tax          { get; set; }
         public decimal NetSalary    { get; set; }
         public string  Notes        { get; set; }
     }
@@ -39,9 +50,19 @@ namespace PrimeERP.Application.DTOs.HR
     {
         public int     LineNo       { get; set; }
         public string  EmployeeCode { get; set; }
+
         public decimal BasicSalary  { get; set; }
         public decimal Allowances   { get; set; }
+        public decimal Overtime     { get; set; }
+
         public decimal Deductions   { get; set; }
+        public decimal Advances     { get; set; }
+        public decimal Insurance    { get; set; }
+        public decimal Tax          { get; set; }
+
+        /// <summary>مشتقٌّ لا مُدخَل — تحسبه الخدمة ويُعرض للمراجعة.</summary>
+        public decimal NetSalary    { get; set; }
+
         public string  Notes        { get; set; }
     }
 

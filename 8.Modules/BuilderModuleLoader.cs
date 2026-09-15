@@ -78,11 +78,15 @@ namespace PrimeERP.Modules
             var coded = registry.Get(module.Key);
             if (coded == null) return;
 
+            var merged = Columns(columns, coded.Report?.Columns ?? coded.Columns);
+
             registry.Register(coded with
             {
-                Columns = Columns(columns, coded.Columns),
+                Columns = merged,
                 EnabledActions = actions.Select(a => a.ActionKey).ToArray(),
-                Filters = Filters(filters, built, coded)
+                Filters = coded.Report != null ? coded.Filters : Filters(filters, built, coded),
+                Report = coded.Report == null ? null
+                    : coded.Report with { Columns = merged, Parameters = Parameters(filters, coded.Report) }
             });
         }
 
@@ -90,18 +94,23 @@ namespace PrimeERP.Modules
         private static List<CodedPage> Coded(IBuilderCatalog repo, IModuleRegistry registry)
         {
             var pages = new List<CodedPage>();
+            var sections = repo.Sections().Select(section => section.Key).ToHashSet();
 
-            // ترتيب القسم ثم ترتيب مفاتيحه فيه — فترتيب الشريط الجانبي يبقى كما هو بعد البذر.
-            foreach (var section in repo.Sections().OrderBy(s => s.SortOrder))
-                foreach (var key in (section.Modules ?? "")
-                             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            // مفاتيح القسم من الخريطة لا من عمود الصفّ المبذور: صفحةٌ تُضاف بعد أول بذر تُبذَر في
+            // الإقلاع التالي فتصل وحدة البناء والنسخ. ولو قُرئ العمود لبقيت خارجهما إلى الأبد.
+            foreach (var (key, _, _, modules) in NavigationMap.Coded)
+            {
+                if (!sections.Contains(key)) continue;   // قسمٌ محميّ أو حذفه المستخدم
+
+                foreach (var moduleKey in modules)
                 {
-                    var module = registry.Get(key);
+                    var module = registry.Get(moduleKey);
                     if (module == null) continue;
 
-                    pages.Add(new CodedPage(section.Key, module.Key, LocalizationService.Get(module.TitleKey),
+                    pages.Add(new CodedPage(key, module.Key, LocalizationService.Get(module.TitleKey),
                         KindOf(module), CodedColumns(module), CodedActions(module), CodedFilters(module)));
                 }
+            }
 
             return pages;
         }
@@ -113,7 +122,7 @@ namespace PrimeERP.Modules
 
         /// <summary>عكسُ Columns أدناه: الشكل المُعلَن يعود وصفاً، فما يُعرَض هو ما يُحرَّر.</summary>
         private static List<BuilderColumn> CodedColumns(ModuleDefinition m) =>
-            (m.Columns ?? new List<GridColumn>()).Select((c, i) => new BuilderColumn
+            (m.Report?.Columns ?? m.Columns ?? new List<GridColumn>()).Select((c, i) => new BuilderColumn
             {
                 Name = c.Binding, Header = c.Header, Width = c.Width, SortOrder = (i + 1) * 10,
                 DataType = c.Format == "yyyy-MM-dd" ? BuilderDataType.Date
@@ -130,11 +139,29 @@ namespace PrimeERP.Modules
                 .ToList();
 
         private static List<BuilderFilter> CodedFilters(ModuleDefinition m) =>
-            (m.Filters ?? new List<FilterDefinition>()).Select((f, i) => new BuilderFilter
-            {
-                Key = f.Key, Label = LocalizationService.Get(f.LabelKey), Kind = f.Kind.ToString(),
-                RefModule = f.PickerType, SortOrder = (i + 1) * 10
-            }).ToList();
+            m.Report != null
+                ? m.Report.Parameters.Select((p, i) => new BuilderFilter
+                  {
+                      Key = p.Key, Label = LocalizationService.Get(p.LabelKey), Kind = p.Kind.ToString(),
+                      RefModule = p.PickerType, SortOrder = (i + 1) * 10
+                  }).ToList()
+                : (m.Filters ?? new List<FilterDefinition>()).Select((f, i) => new BuilderFilter
+                  {
+                      Key = f.Key, Label = LocalizationService.Get(f.LabelKey), Kind = f.Kind.ToString(),
+                      RefModule = f.PickerType, SortOrder = (i + 1) * 10
+                  }).ToList();
+
+        private static List<ParameterDefinition> Parameters(List<BuilderFilter> filters, ReportDefinition coded)
+        {
+            var written = coded.Parameters.ToDictionary(p => p.Key, p => p);
+
+            var ordered = filters.OrderBy(f => f.SortOrder)
+                .Where(f => written.ContainsKey(f.Key))
+                .Select(f => written[f.Key] with { LabelKey = f.Label })
+                .ToList();
+
+            return ordered.Concat(coded.Parameters.Where(p => ordered.All(o => o.Key != p.Key))).ToList();
+        }
 
         private static ModuleDefinition Build(BuilderModule module, List<BuilderColumn> columns,
             List<BuilderAction> actions, List<BuilderFilter> filters, HashSet<string> built)

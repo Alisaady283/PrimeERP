@@ -111,6 +111,33 @@ namespace PrimeERP.App
             SyncThemeIndicator();
         }
 
+        /// <summary>التحديث سؤالٌ ثم تنزيل: ما دام الإصدار نفسه لا يحدث شيء سوى إخبارٍ بذلك.</summary>
+        private async void Shell_UpdateRequested(object sender, EventArgs e)
+        {
+            var updates = _services.GetRequiredService<PrimeERP.Application.Services.IUpdateService>();
+            var dialogs = _services.GetRequiredService<PrimeERP.UI.Services.IDialogService>();
+            var toast = _services.GetRequiredService<PrimeERP.UI.Services.IToastService>();
+
+            var check = await updates.CheckAsync();
+            if (check.IsFailure) { toast.Error(check.ErrorMessage); return; }
+
+            if (!check.Value.Available)
+            {
+                toast.Info($"نسختك أحدث ما لدينا ({PrimeERP.Platform.AppInfo.Version})");
+                return;
+            }
+
+            if (!await dialogs.ConfirmAsync("تحديث", $"يوجد إصدار {check.Value.Version} — هل تريد تنزيله؟")) return;
+
+            using var handle = dialogs.ShowProgress("تحديث", $"تنزيل الإصدار {check.Value.Version}");
+            var progress = new Progress<double>(percent => handle.Report(percent, "تنزيل"));
+
+            var file = await updates.DownloadAsync(check.Value, progress);
+            if (file.IsFailure) { toast.Error(file.ErrorMessage); return; }
+
+            toast.Success($"نُزِّل الإصدار {check.Value.Version} — أغلق البرنامج وشغّل الحزمة");
+        }
+
         private void SyncThemeIndicator() =>
             shell.IsDarkMode = _services.GetRequiredService<IIdentityService>().CurrentMode
                                == PrimeERP.Platform.Design.ThemeMode.Dark;

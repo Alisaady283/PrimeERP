@@ -9,6 +9,8 @@ namespace PrimeERP.Application.DTOs.Common
         public string ModuleKey  { get; set; }
         public bool   IsActive   { get; set; }
         public string Notes      { get; set; }
+        public string AccountCode { get; set; }
+        public string DepreciationAccountCode { get; set; }
         public bool   HasChildren { get; set; }
     }
 

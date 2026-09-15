@@ -43,7 +43,7 @@ namespace PrimeERP.Application.DTOs.Purchasing
         public string  Notes       { get; set; }
     }
 
-    public class CreatePurchaseInvoiceLineDto
+    public class CreatePurchaseInvoiceLineDto : PrimeERP.Application.DTOs.Documents.IPullableLine
     {
         public int     LineNo      { get; set; }
         public string  ProductCode { get; set; }
@@ -53,6 +53,11 @@ namespace PrimeERP.Application.DTOs.Purchasing
         public decimal VatPercent  { get; set; }
         public decimal WithholdingPercent  { get; set; }
         public string  Notes       { get; set; }
+
+        public string  SourceType   { get; set; }
+        public int     SourceId     { get; set; }
+        public string  SourceNo     { get; set; }
+        public int     SourceLineId { get; set; }
     }
 
     public class CreatePurchaseInvoiceDto

@@ -102,7 +102,9 @@ namespace PrimeERP.Composition.Renderers
             var notes = new AppTextBox { Placeholder = LocalizationService.Get("Str.Notes") };
 
             var body = new StackPanel { Width = 380, Margin = new Thickness(4) };
-            body.Children.Add(new TextBlock { Text = $"شيك {cheque.ChequeNo} — {cheque.Amount:N2} — الحالة الحالية: {cheque.StatusName}", Margin = new Thickness(0, 0, 0, 12), TextWrapping = TextWrapping.Wrap });
+            var summary = new TextBlock { Text = $"شيك {cheque.ChequeNo} — {cheque.Amount:N2} — الحالة الحالية: {cheque.StatusName}", Margin = new Thickness(0, 0, 0, 12), TextWrapping = TextWrapping.Wrap };
+            summary.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
+            body.Children.Add(summary);
             body.Children.Add(statusPicker);
             body.Children.Add(treasuryPicker);
             body.Children.Add(datePicker);

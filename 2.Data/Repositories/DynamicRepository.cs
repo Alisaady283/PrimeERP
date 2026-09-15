@@ -49,14 +49,10 @@ namespace PrimeERP.Data.Repositories
             var searchable = Stored.Where(c => c.DataType == BuilderDataType.Text).Select(c => "t." + c.Name).ToArray();
             var where = new WhereBuilder().Eq("t.IsDeleted", false).LikeAny(searchText, searchable);
 
-            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM {_table} t {where.Sql}", where.Parameters));
-
             var column = Stored.Any(c => c.Name == sortColumn) ? "t." + sortColumn : DefaultSort();
-            var sql = $@"SELECT {Select()} FROM {_table} t {where.Sql}
-                         {OrderBuilder.By(column, sortDescending, "t.Id")}
-                         {Core.DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
 
-            return (Query(sql, null, null, where.Parameters), total);
+            return Page(where, page, pageSize, OrderBuilder.By(column, sortDescending, "t.Id"),
+                from: $"{_table} t", select: $"SELECT {Select()} FROM {_table} t");
         }
 
         /// <summary>يتبع قاعدة الترتيب: المؤرَّخ بتاريخه، وغيره بأول عمود نصّي.</summary>

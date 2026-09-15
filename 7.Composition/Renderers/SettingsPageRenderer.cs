@@ -176,6 +176,7 @@ namespace PrimeERP.Composition.Renderers
                     row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
                     var text = new TextBlock { Text = $"{System.IO.Path.GetFileName(b.FilePath)} — {b.CreatedAt:yyyy-MM-dd HH:mm}", VerticalAlignment = VerticalAlignment.Center };
+                    text.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
                     var restoreBtn = new Btn { Text = LocalizationService.Get("Str.Backup.Restore"), Variant = "secondary", Size = "sm" };
                     restoreBtn.Click += async (_, __) =>
                     {
@@ -227,12 +228,24 @@ namespace PrimeERP.Composition.Renderers
             [SettingKeys.Accounts.Customers] = "حساب العملاء", [SettingKeys.Accounts.Suppliers] = "حساب الموردين",
             [SettingKeys.Accounts.Inventory] = "حساب المخزون", [SettingKeys.Accounts.Cash] = "حساب الصندوق", [SettingKeys.Accounts.Bank] = "حساب البنك",
             [SettingKeys.Accounts.Sales] = "حساب المبيعات", [SettingKeys.Accounts.SalesReturns] = "حساب مرتجعات المبيعات",
-            [SettingKeys.Accounts.COGS] = "حساب تكلفة البضاعة المباعة", [SettingKeys.Accounts.Salaries] = "حساب الرواتب",
+            [SettingKeys.Accounts.COGS] = "حساب تكلفة البضاعة المباعة", 
             [SettingKeys.Accounts.RetainedEarnings] = "حساب الأرباح المحتجزة", [SettingKeys.Accounts.VATInput] = "حساب ضريبة المدخلات",
             [SettingKeys.Accounts.VATOutput] = "حساب ضريبة المخرجات",
             [SettingKeys.Accounts.DepreciationExpense] = "حساب مصروف الإهلاك",
             [SettingKeys.Accounts.AccumulatedDepreciation] = "حساب مجمع الإهلاك",
+            [SettingKeys.Accounts.FixedAssets] = "حساب الأصول الثابتة",
+            [SettingKeys.Accounts.CapitalGains] = "حساب الأرباح الرأسمالية",
+            [SettingKeys.Accounts.CapitalLosses] = "حساب الخسائر الرأسمالية",
+            [SettingKeys.Accounts.EmployeeAdvances] = "حساب سلف الموظفين",
+            [SettingKeys.Accounts.SalaryExpense] = "حساب مصروف الرواتب والأجور",
+            [SettingKeys.Accounts.AllowanceExpense] = "حساب مصروف البدلات",
+            [SettingKeys.Accounts.SalariesPayable] = "حساب الرواتب المستحقة",
+            [SettingKeys.Accounts.InsurancePayable] = "حساب التأمينات المستحقة",
+            [SettingKeys.Accounts.TaxPayable] = "حساب الضرائب المستحقة",
             [SettingKeys.Accounts.AutoLinkEnabled] = "تفعيل الربط التلقائي بالشجرة",
+            [SettingKeys.Accounts.OpeningAdjustments] = "حساب الأرصدة الافتتاحية والتسويات",
+            [SettingKeys.Accounts.WithholdingReceivable] = "حساب ضريبة الخصم والإضافة (مدينة)",
+            [SettingKeys.Accounts.WithholdingPayable] = "حساب ضريبة الخصم والإضافة (دائنة)",
 
             [SettingKeys.Print.ChequeOffsetX] = "معايرة الشيك أفقياً (سم)", [SettingKeys.Print.ChequeOffsetY] = "معايرة الشيك رأسياً (سم)",
             [SettingKeys.Print.CopyLabels] = "تسميات النسخ (مفصولة بفاصلة)", [SettingKeys.Print.LinesPerPage] = "سطور الجدول في الصفحة (0 = تلقائي)",
@@ -250,6 +263,8 @@ namespace PrimeERP.Composition.Renderers
 
             [SettingKeys.Backup.AutoBackupEnabled] = "تفعيل النسخ التلقائي", [SettingKeys.Backup.AutoBackupPath] = "مسار النسخ الاحتياطي",
             [SettingKeys.Backup.AutoBackupIntervalHours] = "الفاصل بالساعات", [SettingKeys.Backup.RetentionCount] = "عدد النسخ المحتفَظ بها",
+
+            [SettingKeys.Developer.ServerUrl] = "عنوان خادم التراخيص", [SettingKeys.Developer.AdminToken] = "توكن المطوّر",
 
             [SettingKeys.Security.PasswordMinLength] = "أقل طول لكلمة المرور", [SettingKeys.Security.SessionTimeoutMinutes] = "مهلة الجلسة (دقائق)",
             [SettingKeys.Security.RequirePasswordChange] = "إلزام تغيير كلمة المرور",

@@ -393,5 +393,78 @@ namespace PrimeERP.Tests.Services
                 AppSession.DevMode = true;
             }
         }
+
+        // ===================== شجرة الأصول مقفلة =====================
+
+        /// <summary>الحارس نائمٌ بلا إعداد، فكل اختبار هنا يضبط جذر التكلفة أولاً كما يفعل الإقلاع.</summary>
+        private IAccountRepository Accounts() => _db.Services.GetRequiredService<IAccountRepository>();
+
+        private void ConfigureAssetRoot() =>
+            _db.Services.GetRequiredService<ISettingsService>().Set(SettingKeys.Accounts.FixedAssets, "1101001");
+
+        [Theory]
+        [InlineData("1101")]     // صافي الأصول الثابتة — الجذر نفسه
+        [InlineData("1101001")]  // التكلفة
+        [InlineData("1101002")]  // مجمّع الإهلاك
+        public void Create_UnderAssetTree_FromTree_Fails(string parentCode)
+        {
+            ConfigureAssetRoot();
+
+            var result = _service.Create(new CreateAccountDto
+            { ParentId = Accounts().GetByCode(parentCode).Id, Name = "حساب من الشجرة", IsLeaf = true });
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ErrorCode.ValidationFailed, result.ErrorCode);
+        }
+
+        [Fact]
+        public void Create_UnderAssetTree_FromOwner_Succeeds()
+        {
+            ConfigureAssetRoot();
+
+            // حِمل المالك: خدمة الأصول وتسويتها تمرّران SkipAutoLink، والشجرة لا تمرّره.
+            var result = _service.Create(new CreateAccountDto
+            { ParentId = Accounts().GetByCode("1101001").Id, Name = "فئة أصول", IsLeaf = false, SkipAutoLink = true });
+
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+        }
+
+        [Fact]
+        public void Update_AssetAccount_Fails()
+        {
+            ConfigureAssetRoot();
+            var account = Accounts().GetByCode("1101001");
+
+            var result = _service.Update(new UpdateAccountDto { Id = account.Id, Name = "اسم جديد", IsActive = true });
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ErrorCode.ValidationFailed, result.ErrorCode);
+        }
+
+        [Fact]
+        public void Delete_AssetDescendant_Fails()
+        {
+            ConfigureAssetRoot();
+
+            var leaf = _service.Create(new CreateAccountDto
+            { ParentId = Accounts().GetByCode("1101001").Id, Name = "أصل", IsLeaf = true, SkipAutoLink = true });
+            Assert.True(leaf.IsSuccess, leaf.ErrorMessage);
+
+            var result = _service.Delete(Accounts().GetByCode(leaf.Value.Code).Id);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ErrorCode.ValidationFailed, result.ErrorCode);
+        }
+
+        [Fact]
+        public void Create_OutsideAssetTree_StillSucceeds()
+        {
+            ConfigureAssetRoot();
+
+            var result = _service.Create(new CreateAccountDto
+            { ParentId = CustomersRootId(), Name = "عميل عادي", IsLeaf = true });
+
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+        }
     }
 }

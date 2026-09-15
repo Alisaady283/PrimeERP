@@ -22,6 +22,8 @@ namespace PrimeERP.Data.Repositories
                 .Text("ModuleKey", 30, required: true)
                 .Bool("IsActive", defaultValue: true)
                 .Text("Notes")
+                .Text("AccountCode", 30)
+                .Text("DepAccountCode", 30)
                 .Audit()
                 .Index("ModuleKey")
                 .Index("ParentId")
@@ -37,12 +39,16 @@ namespace PrimeERP.Data.Repositories
 
         public int Insert(Category c, DbConnection conn = null, DbTransaction tx = null) =>
             InsertGetId(
-                "INSERT INTO Categories (Name, ParentId, ModuleKey, IsActive, Notes) VALUES (@name, @parent, @module, @active, @notes)",
-                conn, tx, ("@name", c.Name), ("@parent", c.ParentId), ("@module", c.ModuleKey), ("@active", c.IsActive), ("@notes", c.Notes ?? ""));
+                "INSERT INTO Categories (Name, ParentId, ModuleKey, IsActive, Notes, AccountCode, DepAccountCode) VALUES (@name, @parent, @module, @active, @notes, @account, @dep)",
+                conn, tx, ("@name", c.Name), ("@parent", c.ParentId), ("@module", c.ModuleKey), ("@active", c.IsActive),
+                ("@notes", c.Notes ?? ""), ("@account", c.AccountCode ?? ""), ("@dep", c.DepreciationAccountCode ?? ""));
 
         public void Update(Category c, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec("UPDATE Categories SET Name = @name, ParentId = @parent, IsActive = @active, Notes = @notes, UpdatedAt = @now WHERE Id = @id",
-                conn, tx, ("@name", c.Name), ("@parent", c.ParentId), ("@active", c.IsActive), ("@notes", c.Notes ?? ""), ("@now", DateTime.Now), ("@id", c.Id));
+            Exec(@"UPDATE Categories SET Name = @name, ParentId = @parent, IsActive = @active, Notes = @notes,
+                          AccountCode = @account, DepAccountCode = @dep, UpdatedAt = @now WHERE Id = @id",
+                conn, tx, ("@name", c.Name), ("@parent", c.ParentId), ("@active", c.IsActive), ("@notes", c.Notes ?? ""),
+                ("@account", c.AccountCode ?? ""), ("@dep", c.DepreciationAccountCode ?? ""),
+                ("@now", DateTime.Now), ("@id", c.Id));
 
         public void Delete(int id, DbConnection conn = null, DbTransaction tx = null) =>
             Exec("UPDATE Categories SET IsActive = @a WHERE Id = @id", conn, tx, ("@a", false), ("@id", id));
@@ -53,6 +59,8 @@ namespace PrimeERP.Data.Repositories
             Name      = row["Name"].ToString(),
             ParentId  = row["ParentId"] == DBNull.Value ? null : Convert.ToInt32(row["ParentId"]),
             ModuleKey = row["ModuleKey"].ToString(),
+            AccountCode = row["AccountCode"] == DBNull.Value ? null : row["AccountCode"].ToString(),
+            DepreciationAccountCode = row["DepAccountCode"] == DBNull.Value ? null : row["DepAccountCode"].ToString(),
             IsActive  = Convert.ToBoolean(row["IsActive"]),
             Notes     = row["Notes"] == DBNull.Value ? "" : row["Notes"].ToString(),
         };

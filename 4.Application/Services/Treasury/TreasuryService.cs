@@ -104,6 +104,39 @@ namespace PrimeERP.Application.Services.Treasury
             return Result.Ok();
         }
 
+        /// <summary>
+        /// خزينةٌ نشطة بلا حساب مرتبط تأخذ حسابها: يُتبنّى الموجود باسمها تحت جذرها إن وُجد، وإلا يُنشأ
+        /// بـ<see cref="EnsureAccount"/> نفسها. خزائن سبقت حراسة EnsureAccount حُفظت بلا حساب، فيسقط
+        /// طرفها الدائن من كل قيدٍ تموّله — قيدٌ غير متزن أو مستندٌ بلا قيد.
+        ///
+        /// مشروطةٌ بغياب الكود فتُعاد في كل إقلاع بلا أثر، وعلى النشطة وحدها: المعطَّلة لا تُختار في
+        /// قائمة، وقد تشارك اسمها خزينةً نشطة فتتبنّى حسابها.
+        /// </summary>
+        public Result RepairMissingAccounts()
+        {
+            foreach (var treasury in _repo.GetAll().Where(t => string.IsNullOrWhiteSpace(t.AccountCode)))
+            {
+                var isBank = treasury.Kind == TreasuryKind.Bank;
+                var root = _settingsProvider.Get(isBank ? SettingKeys.Accounts.Bank : SettingKeys.Accounts.Cash, isBank ? "1203" : "1204");
+
+                // بالاسم تحت جذرها، وبشرط ألّا يكون مملوكاً لخزينة أخرى — نفس حارس التملّك الذي يمنع
+                // CreateFromAccount من تكرار كيانٍ لحسابٍ مرتبط. اسمان متطابقان بلا هذا الشرط يجعلان
+                // خزينتين تتقاسمان حساباً واحداً.
+                var existing = _accounts.GetLeaves().Value?
+                    .FirstOrDefault(leaf => leaf.Name == treasury.Name
+                                         && (leaf.Code ?? "").StartsWith(root)
+                                         && _repo.GetByAccountCode(leaf.Code) == null);
+
+                var account = existing != null ? Result.Ok(existing.Code) : EnsureAccount(null, treasury.Name, isBank);
+                if (account.IsFailure) continue;
+
+                treasury.AccountCode = account.Value;
+                _repo.Update(treasury);
+            }
+
+            return Result.Ok();
+        }
+
         /// <summary>خزينة وبنك افتراضيان عند أول تشغيل — بلا هذا تبقى قوائم السندات فارغة فيبدو أنها لا تعمل.</summary>
         public Result SeedDefaults()
         {
@@ -172,12 +205,22 @@ namespace PrimeERP.Application.Services.Treasury
             return Result.Ok();
         }
 
-        private static TreasuryDto ToDto(Entity t) => new()
+        /// <summary>الرصيد من حساب الخزينة نفسه لا من عمودٍ ثانٍ — ما تعرضه الشجرة هو ما تعرضه الصفحة.</summary>
+        private TreasuryDto ToDto(Entity t) => new()
         {
             Id = t.Id, Code = t.Code, Name = t.Name, Kind = t.Kind,
             KindName = t.Kind == TreasuryKind.Bank ? "بنك" : "صندوق",
             AccountCode = t.AccountCode, BankName = t.BankName, AccountNumber = t.AccountNumber,
+            Balance = BalanceOf(t.AccountCode),
             Notes = t.Notes, IsActive = t.IsActive
         };
+
+        private decimal BalanceOf(string accountCode)
+        {
+            if (string.IsNullOrWhiteSpace(accountCode)) return 0m;
+
+            var account = _accounts.GetByCode(accountCode);
+            return account.IsSuccess ? account.Value.Balance : 0m;
+        }
     }
 }

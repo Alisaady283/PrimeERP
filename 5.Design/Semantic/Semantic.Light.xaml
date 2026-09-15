@@ -4,14 +4,9 @@
     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
     <!--
-        L2 — رموز دلالية (Semantic)، الوضع الفاتح. بديل Resources/Themes/Colors.xaml السابق — نفس المفاتيح
-        بالضبط (BrandDefault, TextPrimary...) بلا تغيير اسم واحد، لأن كل قطعة/نمط في المشروع (Views/Controls،
-        Resources/Themes/Components/*, Implicit.xaml) يستهلك هذه الأسماء مباشرة عبر DynamicResource — تغيير
-        الأسماء هنا كان سيتطلب تعديل عشرات ملفات القطع، وهذا خارج نطاق البند 1 (يقع ضمن ترحيل القطع، البند 5).
-        الفرق الجوهري عن الملف القديم: القيمة هنا DynamicResource لمفتاح P.Color.* من حزمة الهوية الحالية
-        (Identity/Default أو Identity/Corporate)، لا Hex حرفي مكرر — هذا هو إصلاح الانحراف رقم 2 (راجع
-        DESIGN_SYSTEM.md § نظام الرموز). Semantic.Dark.xaml يعيد تعريف كل مفتاح هنا بالضبط بلا استثناء —
-        أي نقص هناك = لون فاتح يظهر خطأً وسط الوضع الداكن.
+        L2 — رموز دلالية (Semantic)، الوضع الفاتح. كل قيمة DynamicResource لمفتاح P.Color.* من حزمة الهوية
+        الحالية، لا Hex حرفي — فتبديل الحزمة يبدّلها كلها. و Semantic.Dark.xaml يعيد تعريف كل مفتاح هنا بلا
+        استثناء: أي نقص هناك لونٌ فاتح يظهر خطأً وسط الوضع الداكن.
     -->
 
     <!-- ===== الأسطح (Surfaces) — 5 مستويات ===== -->

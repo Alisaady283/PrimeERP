@@ -13,6 +13,7 @@ namespace PrimeERP.Data.Repositories
         (List<Payroll> Items, int Total) GetPaged(int page, int pageSize, string searchText, string sortColumn, bool sortDescending);
         int InsertHeader(DbConnection conn, DbTransaction tx, Payroll payroll);
         void InsertLine(DbConnection conn, DbTransaction tx, int payrollId, PayrollLine line);
-        void SetJournalEntryId(DbConnection conn, DbTransaction tx, int payrollId, int journalEntryId);
+        void SetJournalEntryId(DbConnection conn, DbTransaction tx, int payrollId, int? journalEntryId);
+        void SetPosted(DbConnection conn, DbTransaction tx, int payrollId, bool posted);
     }
 }

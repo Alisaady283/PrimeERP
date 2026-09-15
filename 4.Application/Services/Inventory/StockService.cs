@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 using PrimeERP.Application.Services.Common;
+using PrimeERP.Domain.Rules;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
@@ -49,11 +51,14 @@ namespace PrimeERP.Application.Services.Inventory
         {
             if (type != MovementType.Adjustment && qty <= 0) return Fail("الكمية يجب أن تكون أكبر من صفر", ErrorCode.ValidationFailed);
 
+            // القراءة داخل معاملة المستند لا خارجها: معاملتان متتاليتان تُسلسَلان، فالثانية ترى أثر الأولى
+            // ملتزماً وتُرفض لو لم يبقَ ما يكفي — وهو تتابعٌ صحيح مهما تقارب وقتُ تسجيلهما.
             var currentBalance = _movements.GetBalance(productId, warehouseId, conn, tx);
-            if (type == MovementType.Out && currentBalance < qty)
-                return Fail("الرصيد المتاح غير كافٍ لإتمام هذه الحركة", ErrorCode.ValidationFailed);
-
             var signedQty = type == MovementType.Out ? -qty : qty;
+
+            // الحارس على كل ما يُنقص الرصيد لا على الصرف وحده: التسوية بكميةٍ سالبة تُنزله تحت الصفر أيضاً.
+            if (currentBalance + signedQty < 0)
+                return Fail("الرصيد المتاح غير كافٍ لإتمام هذه الحركة", ErrorCode.ValidationFailed);
 
             var movement = new StockMovement
             {
@@ -69,6 +74,48 @@ namespace PrimeERP.Application.Services.Inventory
 
         public void RemoveMovements(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId) =>
             _movements.DeleteBySource(conn, tx, sourceDocType, sourceDocId);
+
+        public decimal? SourceUnitCost(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId, int productId) =>
+            _movements.GetSourceUnitCost(sourceDocType, sourceDocId, productId, conn, tx);
+
+        public Result<List<StockMovement>> GetCostingHistory(int productId) =>
+            Result.Ok(_movements.GetForCosting(productId));
+
+        public decimal CurrentUnitCost(DbConnection conn, DbTransaction tx, int productId) =>
+            InventoryCosting.Replay(_movements.GetForCosting(productId, conn, tx)
+                .Select(m => new InventoryCosting.Entry(m.MovementType, m.Qty, m.UnitCost))).UnitCost;
+
+        /// <summary>
+        /// الطبقات تُشتقّ من سجلّ الحركات لا تُخزَّن — طابورٌ واحد لكل صنف عبر المخازن كلها. تُقرأ مرّةً
+        /// لكل صنف في المستند ثم تُستهلك سطراً سطراً، فلا استعلام لكل سطر ولا ازدواج في التسعير.
+        /// </summary>
+        public Result<List<decimal>> GetIssueCosts(DbConnection conn, DbTransaction tx,
+            List<(int ProductId, decimal Qty)> lines)
+        {
+            var balances = new Dictionary<int, InventoryCosting.Balance>();
+            var costs = new List<decimal>(lines.Count);
+
+            foreach (var (productId, qty) in lines)
+            {
+                if (!balances.TryGetValue(productId, out var balance))
+                {
+                    balance = InventoryCosting.Replay(_movements.GetForCosting(productId, conn, tx)
+                        .Select(m => new InventoryCosting.Entry(m.MovementType, m.Qty, m.UnitCost)));
+                    balances[productId] = balance;
+                }
+
+                if (!InventoryCosting.TryIssueCost(balance, qty, out var cost))
+                    return Fail<List<decimal>>("الرصيد المتاح غير كافٍ لإتمام هذه الحركة", ErrorCode.ValidationFailed);
+
+                // الرصيد يتحرّك مع السطر: سطران لنفس الصنف في مستندٍ واحد يُسعَّر ثانيهما بعد أوّلهما.
+                balances[productId] = InventoryCosting.Apply(balance,
+                    new InventoryCosting.Entry(MovementType.Out, qty, 0), out _);
+
+                costs.Add(cost);
+            }
+
+            return Result.Ok(costs);
+        }
 
         public Result Transfer(int productId, int fromWarehouseId, int toWarehouseId, decimal qty, string notes = null)
         {

@@ -145,6 +145,10 @@ namespace PrimeERP.Application.Services.Accounting
             if (parent == null)
                 return Result.Fail<AccountDto>("الحساب الأب غير موجود", ErrorCode.NotFound);
 
+            // SkipAutoLink يميّز المالك: خدمة الأصول وتسويتها تُنشئان مرآتهما بهذا الحمل، والشجرة لا تمرّره.
+            if (!dto.SkipAutoLink && IsAssetManaged(parent.Code))
+                return Result.Fail<AccountDto>(LocalizationService.Get("Str.Accounts.AssetManaged"), ErrorCode.ValidationFailed);
+
             // الحساب إمّا أب وإمّا يقبل قيوداً، والحالة تُشتقّ من البيانات لا من اختيار المستخدم:
             // قيود مسجَّلة عليه ⇒ يُرفض تفريعه؛ وإلا يتحوّل لأب تلقائياً بمجرد أول ابن (أدناه).
             if (parent.IsLeaf && _journal.HasLinesForAccount(parent.Code))
@@ -227,6 +231,8 @@ namespace PrimeERP.Application.Services.Accounting
             if (account == null)
                 return Result.Fail("الحساب غير موجود", ErrorCode.NotFound);
 
+            if (IsAssetManaged(account.Code)) return FailAssetManaged();
+
             if (IsSystemAccount(account.Code) && !Permissions.Can(PermissionKeys.Settings.System))
                 return Result.Fail(Localization.Get("Str.Settings.SystemPermissionDenied"), ErrorCode.Unauthorized);
 
@@ -272,6 +278,8 @@ namespace PrimeERP.Application.Services.Accounting
             var account = _accounts.GetById(id);
             if (account == null)
                 return Result.Fail("الحساب غير موجود", ErrorCode.NotFound);
+
+            if (IsAssetManaged(account.Code)) return FailAssetManaged();
 
             if (IsSystemAccount(account.Code))
                 return Result.Fail("لا يمكن حذف حساب نظامي", ErrorCode.ValidationFailed);
@@ -349,19 +357,34 @@ namespace PrimeERP.Application.Services.Accounting
         private decimal ComputeBalance(DbConnection conn, DbTransaction tx, string code) =>
             _journal.GetPostedLinesForAccount(code, null, null, conn, tx).Sum(l => l.Debit - l.Credit);
 
+        /// <summary>
+        /// الشجرة تجميعٌ للقيود: **الورقة** من أسطرها المرحَّلة، و**الأب مجموع أبنائه** — من الأعمق إلى
+        /// الجذر فيصل المجموع كاملاً. كانت تُعيد حساب الأوراق وحدها، فيبقى الأب على رقمٍ مخزَّن قديم
+        /// (صفراً غالباً) بينما أبناؤه بأرقام.
+        /// </summary>
         public Result RecalculateAllBalances()
         {
             if (!Can("Edit")) return FailDenied();
 
-            var leaves = _accounts.GetLeaves();
+            var all = _accounts.GetAll(includeInactive: true);
 
             Db.RunTransaction((conn, tx) =>
             {
-                foreach (var account in leaves)
-                    _accounts.UpdateBalance(account.Code, ComputeBalance(account.Code), conn, tx);
+                var balances = new Dictionary<string, decimal>();
+
+                foreach (var account in all.Where(a => a.IsLeaf))
+                    balances[account.Code] = ComputeBalance(conn, tx, account.Code);
+
+                foreach (var account in all.Where(a => !a.IsLeaf).OrderByDescending(a => a.Level))
+                    balances[account.Code] = all
+                        .Where(child => child.ParentCode == account.Code)
+                        .Sum(child => balances.TryGetValue(child.Code, out var balance) ? balance : 0m);
+
+                foreach (var pair in balances)
+                    _accounts.UpdateBalance(pair.Key, pair.Value, conn, tx);
             });
 
-            Audit.Log(EntityName, 0, AuditAction.Update, details: $"إعادة حساب كل الأرصدة ({leaves.Count} حساب)");
+            Audit.Log(EntityName, 0, AuditAction.Update, details: $"إعادة حساب كل الأرصدة ({all.Count} حساب)");
             return Result.Ok();
         }
 
@@ -491,6 +514,7 @@ namespace PrimeERP.Application.Services.Accounting
             (SettingKeys.Accounts.Suppliers, typeof(ISupplierService)),
             (SettingKeys.Accounts.Cash,      typeof(PrimeERP.Application.Services.Treasury.ITreasuryService)),
             (SettingKeys.Accounts.Bank,      typeof(PrimeERP.Application.Services.Treasury.ITreasuryService)),
+            (SettingKeys.Accounts.EmployeeAdvances, typeof(PrimeERP.Application.Services.HR.IEmployeeService)),
         };
 
         /// <summary>
@@ -587,6 +611,38 @@ namespace PrimeERP.Application.Services.Accounting
 
         private bool IsSystemAccount(string code) =>
             Settings.GetSection("Accounts").Values.Contains(code);
+
+        private (string Setting, string Root) _assetRoot;
+
+        /// <summary>جذر شجرة الأصول: أبو حساب التكلفة، أي «صافي الأصول الثابتة» الذي يضمّ التكلفة ومجمّع
+        /// الإهلاك معاً. يُشتقّ من الإعداد لا يُكتب حرفياً — الشجرة تختلف من عميل لآخر.</summary>
+        private string AssetRootCode()
+        {
+            var cost = Setting(SettingKeys.Accounts.FixedAssets, "");
+            if (string.IsNullOrWhiteSpace(cost)) return null;
+            if (_assetRoot.Setting == cost) return _assetRoot.Root;
+
+            var root = _accounts.GetByCode(cost)?.ParentCode;
+            if (string.IsNullOrWhiteSpace(root)) root = cost;
+
+            _assetRoot = (cost, root);
+            return root;
+        }
+
+        /// <summary>الحساب داخل شجرة الأصول. الأصل زوجٌ لا ورقة — حسابُ تكلفةٍ تحت فئته، ومجمّعُ إهلاكٍ تحت
+        /// مرآتها — فالشجرة لا تستطيع إنشاءه من طرفٍ واحد ولا حذفه بلا عكس قيده. يُدار من صفحة الأصول وحدها،
+        /// عبر حِمل (conn,tx) الذي لا يمرّ بهذا الحارس.</summary>
+        /// <summary>شجرتان تُدارهما صفحتاهما لا الشجرة: الأصول الثابتة، والمخزون الذي أصنافه أبناؤه.</summary>
+        private bool IsAssetManaged(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code)) return false;
+
+            var roots = new[] { AssetRootCode(), Setting(SettingKeys.Accounts.Inventory, "") };
+            return roots.Any(root => !string.IsNullOrWhiteSpace(root) && code.StartsWith(root, StringComparison.Ordinal));
+        }
+
+        private static Result FailAssetManaged() =>
+            Result.Fail(LocalizationService.Get("Str.Accounts.AssetManaged"), ErrorCode.ValidationFailed);
 
         private static List<Account> ApplyFlatFilter(List<Account> accounts, AccountTreeFilter filter)
         {

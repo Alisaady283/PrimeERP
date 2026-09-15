@@ -36,6 +36,7 @@ namespace PrimeERP.Tests.Composition
 
             WpfApplicationFixture.Run(() =>
             {
+                PrimeERP.UI.Services.UIServices.Initialize(_db.Services);
                 _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
@@ -68,10 +69,11 @@ namespace PrimeERP.Tests.Composition
         }
 
         [Fact]
-        public void Render_ShowRowActions_AddsEditDeleteColumnToInnerDataGrid()
+        public void Render_ShowsTheDeclaredColumnsOnly_WithoutARowActionsColumn()
         {
             WpfApplicationFixture.Run(() =>
             {
+                PrimeERP.UI.Services.UIServices.Initialize(_db.Services);
                 _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
@@ -89,7 +91,7 @@ namespace PrimeERP.Tests.Composition
                 var innerGrid = FindVisualChild<DataGrid>(appGrid);
                 Assert.NotNull(innerGrid);
 
-                Assert.Equal(definition.Columns.Count + 1, innerGrid.Columns.Count);
+                Assert.Equal(definition.Columns.Count, innerGrid.Columns.Count);
                 window.Close();
             });
         }

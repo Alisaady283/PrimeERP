@@ -35,18 +35,23 @@ namespace PrimeERP.Data.Repositories
         /// <summary>نفس EnsureRow أعلاه لكن ببادئة مخصَّصة مختلفة عن المفتاح — يستخدمها NumberSequenceSeeder (المفتاح "Customer" ثابت، البادئة "C-" من الإعدادات).</summary>
         public void EnsureRow(string key, string prefix) => EnsureRowCore(null, null, key, prefix);
 
+        /// <summary>سريال سجلٍّ لا مستند: خاناتٌ أقل وبلا تصفير سنوي، فيُقرأ رقماً متصلاً (TR0001).</summary>
+        public void EnsureRow(string key, string prefix, int padding, bool resetYearly) =>
+            EnsureRowCore(null, null, key, prefix, padding, resetYearly);
+
         /// <summary>نفس EnsureRow أعلاه لكن عبر (conn,tx) قائمة — يستخدمها NumberSequenceService.Next(conn,tx,...) عندما يُستدعى من داخل معاملة خدمة أخرى مفتوحة (JournalService.Create(conn,tx,...))؛ اتصال منفصل هنا يُعلِّق (deadlock) على SQLite.</summary>
         public void EnsureRow(DbConnection conn, DbTransaction tx, string key) => EnsureRowCore(conn, tx, key, key);
 
-        private void EnsureRowCore(DbConnection conn, DbTransaction tx, string key, string prefix)
+        private void EnsureRowCore(DbConnection conn, DbTransaction tx, string key, string prefix,
+            int padding = 5, bool resetYearly = true)
         {
             var exists = conn != null
                 ? QueryAs(r => true, "SELECT 1 FROM NumberSequences WHERE [Key] = @k LIMIT 1", conn, tx, ("@k", key)).Count > 0
                 : Convert.ToInt64(Scalar("SELECT COUNT(*) FROM NumberSequences WHERE [Key] = @k", ("@k", key))) > 0;
             if (exists) return;
 
-            Exec("INSERT INTO NumberSequences ([Key], Prefix, NextNumber, Padding, ResetYearly) VALUES (@k, @p, 1, 5, @r)",
-                conn, tx, ("@k", key), ("@p", prefix), ("@r", true));
+            Exec("INSERT INTO NumberSequences ([Key], Prefix, NextNumber, Padding, ResetYearly) VALUES (@k, @p, 1, @d, @r)",
+                conn, tx, ("@k", key), ("@p", prefix), ("@d", padding), ("@r", resetYearly));
         }
 
         public NumberSequenceRow GetRow(string key) =>

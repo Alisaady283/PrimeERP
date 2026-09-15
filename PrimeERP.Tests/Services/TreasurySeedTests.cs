@@ -104,6 +104,41 @@ namespace PrimeERP.Tests.Services
             Assert.DoesNotContain(treasuries.GetAll(includeInactive: true).Value, t => t.Name == "بنك بلا أصل");
         }
 
+        /// <summary>
+        /// خزينةٌ حُفظت بلا حساب (سبقت حراسة EnsureAccount) يسقط طرفها الدائن من كل قيدٍ تموّله: يظهر
+        /// «القيد غير متزن» ويُحفَظ المستند بلا قيده. تسوية الإقلاع تُعيد ربطها بحسابها القائم في
+        /// الشجرة — تبنٍّ بالاسم لا إنشاءُ حسابٍ ثانٍ بجواره.
+        /// </summary>
+        [Fact]
+        public void ATreasuryLeftWithoutItsAccount_IsRelinkedToTheExistingOne_NotGivenASecond()
+        {
+            var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
+            var accounts = _db.Services.GetRequiredService<IAccountService>();
+            var repo = _db.Services.GetRequiredService<PrimeERP.Data.Repositories.ITreasuryRepository>();
+
+            var created = treasuries.Create(new CreateTreasuryDto { Name = "الصندوق الرئيسي", IsBank = false, IsActive = true });
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+            var accountCode = created.Value.AccountCode;
+
+            // نفس حالة القاعدة الحيّة: الحساب قائم في الشجرة والصفّ لا يشير إليه.
+            var entity = repo.GetById(created.Value.Id);
+            entity.AccountCode = "";
+            repo.Update(entity);
+            Assert.True(string.IsNullOrWhiteSpace(treasuries.GetById(created.Value.Id).Value.AccountCode));
+
+            var leavesBefore = accounts.GetLeaves().Value.Count;
+
+            Assert.True(treasuries.RepairMissingAccounts().IsSuccess);
+
+            Assert.Equal(accountCode, treasuries.GetById(created.Value.Id).Value.AccountCode);
+            Assert.Equal(leavesBefore, accounts.GetLeaves().Value.Count);
+
+            // تُعاد بلا أثر — شرطها غياب الكود.
+            Assert.True(treasuries.RepairMissingAccounts().IsSuccess);
+            Assert.Equal(accountCode, treasuries.GetById(created.Value.Id).Value.AccountCode);
+            Assert.Equal(leavesBefore, accounts.GetLeaves().Value.Count);
+        }
+
         [Fact]
         public void DeletingATreasuryThenAddingAnother_DoesNotReuseTheFreedAccountCode()
         {
