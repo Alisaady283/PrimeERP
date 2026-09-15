@@ -1,0 +1,17 @@
+[Unit]
+Description=PrimeERP License API
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/PrimeERP/server
+Environment="PRIMEERP_DB=/home/ubuntu/primeerp-data/licenses.db"
+Environment="PRIMEERP_PACKAGES=/home/ubuntu/primeerp-data/packages"
+EnvironmentFile=/home/ubuntu/primeerp-data/api.env
+ExecStart=/home/ubuntu/PrimeERP/server/.venv/bin/gunicorn --workers 2 --bind unix:/run/primeerp-api/api.sock app:app
+RuntimeDirectory=primeerp-api
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
