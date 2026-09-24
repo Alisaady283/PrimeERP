@@ -31,9 +31,7 @@ using PrimeERP.UI.ViewModels;
 
 namespace PrimeERP.Modules
 {
-    /// <summary>يسجّل كل وحدة عمل فعلية في IModuleRegistry — إثبات شرط إغلاق R8: وحدتان بالتكوين، الثانية
-    /// (Suppliers) أقصر من الأولى (Customers) لأنها تعيد استخدام نفس التعريف بالكامل. Accounts (R9) تثبت
-    /// أن التكوين يمتد لوحدة هرمية (ParentId/Level) بلا أي تعديل في العقد.</summary>
+    /// <summary>يسجّل كل وحدة عمل فعلية</summary>
     public static class ModuleRegistrations
     {
         public static void RegisterAll(IModuleRegistry registry)
@@ -46,7 +44,7 @@ namespace PrimeERP.Modules
                 ViewModelType = typeof(CustomersViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(CustomerDto.Id), Width = 70, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(CustomerDto.Code), Width = 110, Align = ColumnAlign.Center },
                     new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(CustomerDto.Name), Width = 220, IsStarWidth = true },
                     new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(CustomerDto.CategoryName), Width = 140 },
                     new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(CustomerDto.Phone), Width = 130 },
@@ -81,7 +79,7 @@ namespace PrimeERP.Modules
                 ViewModelType = typeof(SuppliersViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(SupplierDto.Id), Width = 70, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(SupplierDto.Code), Width = 110, Align = ColumnAlign.Center },
                     new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(SupplierDto.Name), Width = 220, IsStarWidth = true },
                     new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(SupplierDto.CategoryName), Width = 140 },
                     new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(SupplierDto.Phone), Width = 130 },
@@ -113,7 +111,6 @@ namespace PrimeERP.Modules
                 PermissionPrefix = "Accounts",
                 ViewModelType = typeof(AccountsViewModel),
                 LayoutKind = LayoutKind.TreeSplit,
-                // فلتر نوع الحساب: نفس شريط فلاتر القائمة، والترشيح في AccountService.GetPaged أصلاً.
                 Filters = new()
                 {
                     new() { Key = nameof(AccountTreeFilter.TypeFilter), LabelKey = "Str.AccountType", PickerType = "AccountType" },
@@ -129,8 +126,6 @@ namespace PrimeERP.Modules
                     ExpandToLevel = 2,
                     LeafFlagField = nameof(AccountDto.IsLeaf),
                 },
-                // أعمدة لوحة التفاصيل (TreeSplit) — لا شبكة (Columns.Header فقط، لا Width/Align/Footer، غير
-                // مُستهلَكة هنا؛ TreeRenderer.BuildDetailsPanel يقرأ Header/Binding/Format فقط).
                 Columns = new List<GridColumn>
                 {
                     new() { Header = LocalizationService.Get("Str.Code"),    Binding = nameof(AccountDto.Code) },
@@ -161,9 +156,6 @@ namespace PrimeERP.Modules
             {
                 Key = "Journals",
                 TitleKey = "Str.Module.Journals",
-                // القيد يُنشأ مسودة، والكشوف والتقارير تقرأ المرحَّل وحده — فبلا هذا الزر لا يظهر القيد
-                // اليدوي في أي مكان بينما تظهر قيود السندات (تُرحَّل تلقائياً عند إنشائها).
-                // بلا ترحيل ولا إلغاء ترحيل: القيد يُنشأ مُرحَّلاً، وحُرّاس الرصيد والفترة هي التحقق.
                 PermissionPrefix = "Journal",
                 ViewModelType = typeof(JournalsViewModel),
                 Columns = new()
@@ -196,7 +188,6 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateJournalLineDto.Credit), Header = LocalizationService.Get("Str.Credit"), Kind = FieldKind.Number, Width = 110 },
                         new() { Key = nameof(CreateJournalLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 180 },
                     },
-                    // القيد لا يُحفظ غير متزن — فليَرَ المُدخِل الفرق وهو يكتب لا بعد الرفض.
                     LineTotals = new()
                     {
                         Keys = new() { nameof(CreateJournalLineDto.Debit), nameof(CreateJournalLineDto.Credit) },
@@ -244,14 +235,10 @@ namespace PrimeERP.Modules
                 }
             });
 
-            // النمط 2 القائم على ModuleKey — سبع وحدات، فرق الأسطر فقط (لا خدمة/ViewModel/Dialog جديدة، كلها
-            // تستدعي CategoryService/CategoryListViewModel/CategoryDialogFactory الموجودة).
             RegisterLookup(registry, "Categories", "Str.Module.Categories", "Categories.Add", "Categories.Edit", typeof(CategoriesLookupViewModel));
             RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Edit", typeof(BrandsViewModel));
             RegisterLookup(registry, "AssetCategories", "Str.Module.AssetCategories", "AssetCategories.Add", "AssetCategories.Edit", typeof(AssetCategoriesViewModel));
 
-            // الأربعة أدناه على كيانات Domain مخصصة موجودة مسبقاً (لا جدول Category عام) — حقول/أعمدة مختلفة
-            // لكل واحدة فتُسجَّل صراحة بدل RegisterLookup الموحّد.
             registry.Register(new ModuleDefinition
             {
                 Key = "Departments", TitleKey = "Str.Module.Departments", PermissionPrefix = "Departments", ViewModelType = typeof(DepartmentsViewModel),
@@ -371,14 +358,10 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateAssetDto.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "AssetCategories" },
                         new() { Key = nameof(CreateAssetDto.PurchaseDate), LabelKey = "Str.PurchaseDate", Kind = FieldKind.Date },
                         new() { Key = nameof(CreateAssetDto.PurchaseCost), LabelKey = "Str.PurchaseCost", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
-                        // الطريقة تحكم قائمة المموّل: خزينة أو بنك أو مورد — والقائمة تُعاد تعبئتها
-                        // باختيارها عبر PickerFilterField، وهي نفس آلية «الخزينة تتبع طريقة الدفع».
                         new() { Key = nameof(CreateAssetDto.AcquisitionMethod), LabelKey = "Str.Asset.Acquisition", Kind = FieldKind.Picker, IsRequired = true, PickerType = "AssetAcquisition" },
                         new() { Key = nameof(CreateAssetDto.FundingId), LabelKey = "Str.Asset.Funding", Kind = FieldKind.Picker, IsRequired = true, PickerType = "AssetFunding",
                                 PickerFilterField = nameof(CreateAssetDto.AcquisitionMethod) },
                         new() { Key = nameof(CreateAssetDto.UsefulLifeYears), LabelKey = "Str.Asset.Life", Kind = FieldKind.Number, Min = 0, Max = 100 },
-                        // قيمة الخردة تقديرٌ يُدخَل — أساسُ القسط (التكلفة − الخردة). أمّا القيمة الدفترية
-                        // فمحسوبة (التكلفة − مجمّع الإهلاك) ولا تُدخَل: إدخالها يكسر معادلة الإهلاك.
                         new() { Key = nameof(CreateAssetDto.SalvageValue), LabelKey = "Str.Asset.Salvage", Kind = FieldKind.Number, Min = 0 },
                         new() { Key = nameof(CreateAssetDto.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
                         new() { Key = nameof(CreateAssetDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
@@ -392,7 +375,6 @@ namespace PrimeERP.Modules
                 TitleKey = "Str.Module.AssetDepreciations",
                 PermissionPrefix = "Assets",
                 ViewModelType = typeof(AssetDepreciationsViewModel),
-                // الزرّ يُنشئ أقساط كل الأصول المستحقّة دفعةً واحدة — إجراءٌ على الكل فلا يحتاج صفّاً.
                 RowActions = new()
                 {
                     new()
@@ -466,7 +448,6 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreateAssetRevaluationDto.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
                         new() { Key = nameof(CreateAssetRevaluationDto.RevaluationDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
-                        // القيمة قبل التقييم تُلتقَط من الأصل في الخدمة — لا تُدخَل، والنوع يُشتقّ من الفرق.
                         new() { Key = nameof(CreateAssetRevaluationDto.NewValue), LabelKey = "Str.Asset.NewValue", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
                         new() { Key = nameof(CreateAssetRevaluationDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }
@@ -507,7 +488,6 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateAssetDisposalDto.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
                         new() { Key = nameof(CreateAssetDisposalDto.DisposalDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
                         new() { Key = nameof(CreateAssetDisposalDto.TreasuryId), LabelKey = "Str.Treasury", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Treasury" },
-                        // القيمة الدفترية والمجمّع يُلتقَطان من الأصل في الخدمة — والربح/الخسارة فرقٌ يُشتقّ.
                         new() { Key = nameof(CreateAssetDisposalDto.SalePrice), LabelKey = "Str.Asset.SalePrice", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
                         new() { Key = nameof(CreateAssetDisposalDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }
@@ -844,12 +824,10 @@ namespace PrimeERP.Modules
                 }
             });
 
-            // الأرصدة الافتتاحية: نفس محرِّر القيد بالضبط — الفرق أن الخدمة تضبط المصدر وتُلحق سطر الفرق.
             registry.Register(new ModuleDefinition
             {
                 Key = "OpeningBalances", TitleKey = "Str.Module.OpeningBalances", PermissionPrefix = "Journal",
                 ViewModelType = typeof(OpeningBalancesViewModel),
-                // قيد افتتاحي واحد للمنشأة — التعديل عليه بصلاحيته لا بإضافة قيد ثانٍ.
                 SingleRecord = true,
                 Columns = new()
                 {
@@ -859,8 +837,6 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Debit"), Binding = nameof(JournalEntryDto.TotalDebit), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
                     new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(JournalEntryDto.StatusText), Width = 100, Align = ColumnAlign.Center },
                 },
-                // بلا ترحيل ولا إلغاء ترحيل: الرصيد الافتتاحي يُنشأ مُرحَّلاً، والتعديل والحذف مباشران عليه.
-                // وزرٌّ ثانٍ بجوار «جديد»: نفس النموذج بصنفٍ بدل الحساب — بصلاحيته وحدها.
                 RowActions = new()
                 {
                     new()
@@ -885,9 +861,7 @@ namespace PrimeERP.Modules
                     LinesPropertyName = nameof(CreateJournalDto.Lines), DocumentKind = "OpeningBalances",
                     HeaderFields = new()
                     {
-                        // التاريخ من إعداد بدء العمل لا من كتابة المستخدم — الخدمة تفرضه عند الحفظ.
                         new() { Key = nameof(CreateJournalDto.EntryDate), LabelKey = "Str.StartDate", Kind = FieldKind.Date, IsReadOnly = true },
-                        // البيان تفرضه الخدمة — يُعرَض عند الفتح ولا يُكتب.
                         new() { Key = nameof(CreateJournalDto.Description), LabelKey = "Str.Description", Kind = FieldKind.Text, IsReadOnly = true,
                                 DefaultValue = PrimeERP.Application.Services.Accounting.OpeningBalanceService.FixedDescription },
                     },
@@ -898,7 +872,6 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateJournalLineDto.Credit), Header = LocalizationService.Get("Str.Credit"), Kind = FieldKind.Number, Width = 120 },
                         new() { Key = nameof(CreateJournalLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     },
-                    // القيد لا يُحفظ غير متزن — فليَرَ المُدخِل الفرق وهو يكتب لا بعد الرفض.
                     LineTotals = new()
                     {
                         Keys = new() { nameof(CreateJournalLineDto.Debit), nameof(CreateJournalLineDto.Credit) },
@@ -910,7 +883,6 @@ namespace PrimeERP.Modules
             registry.Register(new ModuleDefinition { Key = "Settings", TitleKey = "Str.Module.Settings", PermissionPrefix = "Settings", LayoutKind = LayoutKind.Settings });
         }
 
-        /// <summary>نسخةٌ من نموذج القيد الافتتاحي: الصنف بدل الحساب، والكمية والتكلفة، والرصيد يُحسب.</summary>
         private static DocumentDialogDefinition OpeningStockDialog() => new()
         {
             TitleKey = "أرصدة الأصناف الافتتاحية", TitleEditKey = "أرصدة الأصناف الافتتاحية",
@@ -936,13 +908,7 @@ namespace PrimeERP.Modules
             LineTotals = new() { Keys = new() { nameof(CreateOpeningStockLineDto.Value) } }
         };
 
-        /// <summary>
-        /// إجراءا القيد: يُرحَّل غير المرحَّل، ويُلغى ترحيل المرحَّل بصلاحيته. الشاشتان (القيود والأرصدة
-        /// الافتتاحية) تستوردانهما من هنا فلا يفترقان. بلا إلغاء الترحيل كان القيد المرحَّل مغلقاً نهائياً:
-        /// الخدمة تملك Unpost والصلاحية تُمنَح، لكن لا شيء في الشاشة يستدعيها.
-        /// </summary>
 
-        /// <summary>ترحيل المسير وإلغاؤه — نفس شكل صفّ القيود، بخدمته وصلاحيته. إثبات استحقاقٍ لا صرف.</summary>
         private static List<RowAction> PayrollRowActions() => new()
         {
             new()

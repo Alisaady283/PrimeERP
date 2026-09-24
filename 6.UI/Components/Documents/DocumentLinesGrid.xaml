@@ -1,15 +1,16 @@
 <UserControl x:Class="PrimeERP.UI.Components.Documents.DocumentLinesGrid"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:docs="clr-namespace:PrimeERP.UI.Components.Documents">
+             xmlns:docs="clr-namespace:PrimeERP.UI.Components.Documents"
+             xmlns:conv="clr-namespace:PrimeERP.UI.Converters">
     <UserControl.Resources>
 
-        <docs:LineCellValueConverter x:Key="CellValueConverter"/>
-        <docs:CellHasErrorConverter x:Key="CellHasErrorConverter"/>
-        <docs:CellErrorMessageConverter x:Key="CellErrorMessageConverter"/>
-        <docs:HorizontalToTextAlignmentConverter x:Key="HAlignToTextAlign"/>
+        <conv:LineCellValueConverter x:Key="CellValueConverter"/>
+        <conv:CellHasErrorConverter x:Key="CellHasErrorConverter"/>
+        <conv:CellErrorMessageConverter x:Key="CellErrorMessageConverter"/>
+        <conv:HorizontalToTextAlignmentConverter x:Key="HAlignToTextAlign"/>
 
-        <!-- ===== نمط الخلية: إطار أحمر + tooltip عند وجود خطأ تحقّق لهذه الخلية بالذات ===== -->
+        <!-- نمط الخلية -->
         <Style x:Key="LineCellStyle" TargetType="DataGridCell">
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="0"/>
@@ -39,7 +40,7 @@
             </Style.Triggers>
         </Style>
 
-        <!-- ===== عمود ترقيم السطور: يعرض DataGridRow.Header الذي يضبطه Grid_LoadingRow ===== -->
+        <!-- عمود ترقيم السطور: يعرض DataGridRow.Head -->
         <DataTemplate x:Key="CellView_RowNumber">
             <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=Header}"
                        HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -48,10 +49,7 @@
                        Foreground="{DynamicResource TextMuted}"/>
         </DataTemplate>
 
-        <!-- ===== نص عادي (يُستخدم أيضاً لأعمدة الـ Picker في هذا الجزء) =====
-             ملاحظة: Binding الأول Path="Self" (خاصية DocumentLine.Self ترجع this) — لا Path فارغ.
-             WPF لا يُنشئ أي مستمع PropertyChanged لمسار فارغ (Path=""), فلا يتحدّث القيمة حياً أبداً.
-             Path="Self" ينشئ مستمعاً حقيقياً يستجيب لإشعار OnPropertyChanged(string.Empty) القياسي. -->
+        <!-- نص عادي -->
         <DataTemplate x:Key="CellView_Text">
             <TextBlock VerticalAlignment="Center" Margin="10,0" TextTrimming="CharacterEllipsis"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
@@ -71,7 +69,7 @@
             <TextBox VerticalAlignment="Center" Margin="3" Padding="6,4"
                      TextAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment, Converter={StaticResource HAlignToTextAlign}}"
                      BorderThickness="1" BorderBrush="{DynamicResource OutlineFocus}"
-                     Background="{DynamicResource C.Input.Bg}" Foreground="{DynamicResource TextPrimary}"
+                     Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
                      FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                      LostFocus="TextCell_LostFocus">
                 <TextBox.Text>
@@ -83,7 +81,7 @@
             </TextBox>
         </DataTemplate>
 
-        <!-- ===== Picker (نص عادي فقط في هذا الجزء — الدمج الفعلي في الجزء 4.3) ===== -->
+        <!-- Picker -->
         <DataTemplate x:Key="CellView_Picker">
             <TextBlock VerticalAlignment="Center" Margin="10,0" TextTrimming="CharacterEllipsis"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
@@ -99,7 +97,7 @@
             </TextBlock>
         </DataTemplate>
 
-        <!-- ===== وضع تعديل Picker: TextBox + زر صغير (…) — لا PickerBaseControl كامل داخل الخلية ===== -->
+        <!-- وضع تعديل Picker  -->
         <DataTemplate x:Key="CellEdit_Picker">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -109,7 +107,7 @@
                 <TextBox Grid.Column="0" VerticalAlignment="Center" Margin="3,3,0,3" Padding="6,4"
                          TextAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment, Converter={StaticResource HAlignToTextAlign}}"
                          BorderThickness="1" BorderBrush="{DynamicResource OutlineFocus}"
-                         Background="{DynamicResource C.Input.Bg}" Foreground="{DynamicResource TextPrimary}"
+                         Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
                          FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                          LostFocus="TextCell_LostFocus">
                     <TextBox.Text>
@@ -119,7 +117,7 @@
                         </MultiBinding>
                     </TextBox.Text>
                 </TextBox>
-                <Button Grid.Column="1" Content="…" Width="24" Margin="2,3,3,3" Padding="0"
+                <Button Grid.Column="1" Content="…" Width="{DynamicResource C.Control.Size.Xs}" Margin="2,3,3,3" Padding="0"
                         Cursor="Hand" Click="PickerButton_Click"
                         Background="{DynamicResource SurfaceDefault}"
                         Foreground="{DynamicResource TextSecondary}"
@@ -127,7 +125,7 @@
             </Grid>
         </DataTemplate>
 
-        <!-- ===== Integer ===== -->
+        <!-- Integer -->
         <DataTemplate x:Key="CellView_Integer">
             <TextBlock VerticalAlignment="Center" Margin="10,0"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
@@ -147,7 +145,7 @@
             <TextBox VerticalAlignment="Center" Margin="3" Padding="6,4"
                      TextAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment, Converter={StaticResource HAlignToTextAlign}}"
                      BorderThickness="1" BorderBrush="{DynamicResource OutlineFocus}"
-                     Background="{DynamicResource C.Input.Bg}" Foreground="{DynamicResource TextPrimary}"
+                     Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
                      FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                      LostFocus="TextCell_LostFocus">
                 <TextBox.Text>
@@ -159,7 +157,7 @@
             </TextBox>
         </DataTemplate>
 
-        <!-- ===== Decimal ===== -->
+        <!-- Decimal -->
         <DataTemplate x:Key="CellView_Decimal">
             <TextBlock VerticalAlignment="Center" Margin="10,0"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
@@ -179,7 +177,7 @@
             <TextBox VerticalAlignment="Center" Margin="3" Padding="6,4"
                      TextAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment, Converter={StaticResource HAlignToTextAlign}}"
                      BorderThickness="1" BorderBrush="{DynamicResource OutlineFocus}"
-                     Background="{DynamicResource C.Input.Bg}" Foreground="{DynamicResource TextPrimary}"
+                     Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
                      FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                      LostFocus="TextCell_LostFocus">
                 <TextBox.Text>
@@ -191,7 +189,7 @@
             </TextBox>
         </DataTemplate>
 
-        <!-- ===== Money ===== -->
+        <!-- Money -->
         <DataTemplate x:Key="CellView_Money">
             <TextBlock VerticalAlignment="Center" Margin="10,0"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
@@ -211,7 +209,7 @@
             <TextBox VerticalAlignment="Center" Margin="3" Padding="6,4"
                      TextAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment, Converter={StaticResource HAlignToTextAlign}}"
                      BorderThickness="1" BorderBrush="{DynamicResource OutlineFocus}"
-                     Background="{DynamicResource C.Input.Bg}" Foreground="{DynamicResource TextPrimary}"
+                     Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
                      FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                      LostFocus="TextCell_LostFocus">
                 <TextBox.Text>
@@ -223,7 +221,7 @@
             </TextBox>
         </DataTemplate>
 
-        <!-- ===== Percent ===== -->
+        <!-- Percent -->
         <DataTemplate x:Key="CellView_Percent">
             <TextBlock VerticalAlignment="Center" Margin="10,0"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
@@ -243,7 +241,7 @@
             <TextBox VerticalAlignment="Center" Margin="3" Padding="6,4"
                      TextAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment, Converter={StaticResource HAlignToTextAlign}}"
                      BorderThickness="1" BorderBrush="{DynamicResource OutlineFocus}"
-                     Background="{DynamicResource C.Input.Bg}" Foreground="{DynamicResource TextPrimary}"
+                     Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
                      FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                      LostFocus="TextCell_LostFocus">
                 <TextBox.Text>
@@ -255,7 +253,7 @@
             </TextBox>
         </DataTemplate>
 
-        <!-- ===== Combo (بلا قائمة عناصر بعد — تحرير نصي عبر ComboBox قابل للتحرير) ===== -->
+        <!-- Combo -->
         <DataTemplate x:Key="CellView_Combo">
             <TextBlock VerticalAlignment="Center" Margin="10,0" TextTrimming="CharacterEllipsis"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
@@ -284,7 +282,7 @@
             </ComboBox>
         </DataTemplate>
 
-        <!-- ===== Checkbox (قالب واحد للعرض والتعديل معاً — دائماً في الوسط) ===== -->
+        <!-- Checkbox  -->
         <DataTemplate x:Key="CellView_Checkbox">
             <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center"
                       Checked="CheckCell_Changed" Unchecked="CheckCell_Changed">
@@ -297,7 +295,7 @@
             </CheckBox>
         </DataTemplate>
 
-        <!-- ===== Computed (للعرض فقط دائماً) ===== -->
+        <!-- Computed (للعرض فقط دائماً) -->
         <DataTemplate x:Key="CellView_Computed">
             <TextBlock VerticalAlignment="Center" Margin="10,0"
                        HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=HorizontalContentAlignment}"
@@ -362,11 +360,11 @@
                         <Setter Property="Padding" Value="10,0"/>
                         <Setter Property="BorderThickness" Value="0,0,0,1"/>
                         <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
-                        <!-- عناوين الأعمدة: وسط دائماً بلا استثناء (قاعدة موحدة لكل جداول النظام) -->
+                        
                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
                     </Style>
                 </DataGrid.ColumnHeaderStyle>
-                <!-- شريط رفيع غير مُرقّم — مجرّد مقبض نقر لتحديد الصف كاملاً (عمود "#" أصلاً يعرض الرقم) -->
+                
                 <DataGrid.RowHeaderStyle>
                     <Style TargetType="DataGridRowHeader">
                         <Setter Property="Background" Value="{DynamicResource SurfaceCanvas}"/>
@@ -391,7 +389,7 @@
             </DataGrid>
         </Border>
 
-        <!-- ===== صف الإجماليات — Grid منفصل بنفس عروض الأعمدة، يتزامن أفقياً مع الجدول الأساسي ===== -->
+        <!-- صف الإجماليات -->
         <Border Grid.Row="1" x:Name="footerWrap"
                 Visibility="Collapsed"
                 BorderBrush="{DynamicResource OutlineDefault}"
@@ -414,25 +412,25 @@
                       Foreground="{DynamicResource TextPrimary}"/>
         </Border>
 
-        <!-- ===== شريط أزرار السطور ===== -->
+        <!-- شريط أزرار السطور -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="{DynamicResource P.Space.2.Top}">
-            <Button Content="+ إضافة سطر" Click="btnAddRow_Click" Padding="10,5" Margin="0,0,6,0" Cursor="Hand"
+            <Button Content="+ إضافة سطر" Click="btnAddRow_Click" Padding="{DynamicResource C.Cell.Padding}" Margin="{DynamicResource C.Cell.Gap}" Cursor="Hand"
                     FontSize="{DynamicResource P.Font.Size.200}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                     Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
                     BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>
-            <Button Content="حذف السطر" Click="btnDeleteRow_Click" Padding="10,5" Margin="0,0,6,0" Cursor="Hand"
+            <Button Content="حذف السطر" Click="btnDeleteRow_Click" Padding="{DynamicResource C.Cell.Padding}" Margin="{DynamicResource C.Cell.Gap}" Cursor="Hand"
                     FontSize="{DynamicResource P.Font.Size.200}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                     Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
                     BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>
-            <Button Content="حذف الكل" Click="btnDeleteAllRows_Click" Padding="10,5" Margin="0,0,6,0" Cursor="Hand"
+            <Button Content="حذف الكل" Click="btnDeleteAllRows_Click" Padding="{DynamicResource C.Cell.Padding}" Margin="{DynamicResource C.Cell.Gap}" Cursor="Hand"
                     FontSize="{DynamicResource P.Font.Size.200}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                     Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource Danger}"
                     BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>
-            <Button Content="نسخ" Click="btnCopyRows_Click" Padding="10,5" Margin="0,0,6,0" Cursor="Hand"
+            <Button Content="نسخ" Click="btnCopyRows_Click" Padding="{DynamicResource C.Cell.Padding}" Margin="{DynamicResource C.Cell.Gap}" Cursor="Hand"
                     FontSize="{DynamicResource P.Font.Size.200}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                     Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
                     BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>
-            <Button Content="لصق" Click="btnPasteRows_Click" Padding="10,5" Cursor="Hand"
+            <Button Content="لصق" Click="btnPasteRows_Click" Padding="{DynamicResource C.Cell.Padding}" Cursor="Hand"
                     FontSize="{DynamicResource P.Font.Size.200}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                     Background="{DynamicResource SurfaceDefault}" Foreground="{DynamicResource TextPrimary}"
                     BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="1"/>

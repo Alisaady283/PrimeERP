@@ -8,7 +8,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>تتبّع السحب — المتبقي يتناقص مع كل سحب، والسحب الكامل يُصفّره، وحذف المستند الهدف يعيده.</summary>
+    /// <summary>تتبّع السحب</summary>
     [Collection("Database")]
     public class DocumentLinkServiceTests
     {
@@ -83,10 +83,6 @@ namespace PrimeERP.Tests.Services
             Assert.Contains(source, c => c.DocType == "GoodsReceipt");
         }
 
-        /// <summary>
-        /// كل مستندٍ يسجّل روابطه يُزيلها عند حذفه. الخلل الذي دفع لكتابته: الفواتير والمرتجعات كانت
-        /// تسجّل ولا تُزيل، فبقيت روابط يتيمة تمنع حذف مصدرها بحجّة سحبٍ صار محذوفاً — رسالة تحرس عدماً.
-        /// </summary>
         [Fact]
         public void EveryServiceThatRecordsPulls_RemovesThemOnDelete()
         {

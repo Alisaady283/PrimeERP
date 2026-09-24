@@ -13,6 +13,7 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.HR
 {
+    /// <summary>الحضور والانصراف</summary>
     public interface IAttendanceService
     {
         Result<PagedResult<AttendanceDto>> GetPaged(int page, int pageSize, AttendanceFilter filter = null);
@@ -22,10 +23,6 @@ namespace PrimeERP.Application.Services.HR
         Result Delete(int id);
     }
 
-    /// <summary>
-    /// الحضور والانصراف. الساعات الإضافية تُسجَّل هنا لا في شاشةٍ مستقلّة — «الإضافي» في المسير
-    /// مجموعُها عن الفترة، والغياب يُحتسب خصماً بأجر اليوم.
-    /// </summary>
     public class AttendanceService : ServiceBase, IAttendanceService
     {
         private readonly IAttendanceRepository _attendances;
@@ -124,7 +121,6 @@ namespace PrimeERP.Application.Services.HR
             });
         }
 
-        /// <summary>HH:mm — الفارغ لا وقت له، وغير المفهوم يُترك فارغاً بدل أن يُسقط السجل.</summary>
         private static TimeSpan? ParseTime(string value) =>
             TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
 

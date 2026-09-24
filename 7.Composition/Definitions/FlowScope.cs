@@ -1,6 +1,6 @@
 namespace PrimeERP.Composition.Definitions
 {
-    // نطاق ظهور الوحدة حسب Documents.SimplifiedFlow.
+    /// <summary>نطاق الدورة</summary>
     public enum FlowScope
     {
         Both,

@@ -1,3 +1,7 @@
+using PrimeERP.Platform.Settings;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.Platform.Localization;
+using PrimeERP.Platform.Audit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +12,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Reporting
 {
+    /// <summary>أرصدة الأطراف وكشوفها</summary>
     public interface IPartyReportService
     {
         Result<ReportData> CustomerBalances(DateTime from, DateTime to);
@@ -17,11 +22,7 @@ namespace PrimeERP.Application.Reporting
         Result<ReportData> AccountStatement(int accountId, DateTime from, DateTime to);
     }
 
-    /// <summary>
-    /// أرصدة الأطراف وكشوفها. العملاء والموردون يختلفان في طبيعة الحساب وتسمية الحركتين فقط — فالحساب
-    /// واحد بمعامل لا نسختان. كان في 8.Modules، والرصيد بإشارة طبيعة الحساب منطقٌ محاسبي لا تخطيط شاشة.
-    /// </summary>
-    public class PartyReportService : IPartyReportService
+    public class PartyReportService : ReportServiceBase, IPartyReportService
     {
         private readonly IJournalService _journal;
         private readonly ICustomerService _customers;
@@ -29,7 +30,8 @@ namespace PrimeERP.Application.Reporting
         private readonly IAccountService _accounts;
 
         public PartyReportService(IJournalService journal, ICustomerService customers,
-                                   ISupplierService suppliers, IAccountService accounts)
+                                   ISupplierService suppliers, IAccountService accounts, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+        : base(permissions, settings, localization, audit)
         {
             _journal = journal;
             _customers = customers;
@@ -39,6 +41,8 @@ namespace PrimeERP.Application.Reporting
 
         public Result<ReportData> CustomerBalances(DateTime from, DateTime to)
         {
+            var gate = Gate(); if (gate != null) return gate;
+
             var result = _customers.GetPaged(1, 5000);
             if (!result.IsSuccess) return Result.Fail<ReportData>(result.ErrorMessage);
 
@@ -48,6 +52,8 @@ namespace PrimeERP.Application.Reporting
 
         public Result<ReportData> SupplierBalances(DateTime from, DateTime to)
         {
+            var gate = Gate(); if (gate != null) return gate;
+
             var result = _suppliers.GetPaged(1, 5000);
             if (!result.IsSuccess) return Result.Fail<ReportData>(result.ErrorMessage);
 
@@ -68,7 +74,6 @@ namespace PrimeERP.Application.Reporting
             {
                 if (string.IsNullOrWhiteSpace(accountCode) || !byAccount.TryGetValue(accountCode, out var line)) continue;
 
-                // الرصيد بإشارة طبيعة الحساب: موجب يعني مديونية الطرف للعملاء، والتزاماً علينا للموردين.
                 var sign = debitIsCharge ? 1 : -1;
                 var row = new PartyBalanceRow
                 {
@@ -95,14 +100,24 @@ namespace PrimeERP.Application.Reporting
             });
         }
 
-        public Result<ReportData> CustomerStatement(int customerId, DateTime from, DateTime to) =>
-            Statement(customerId, from, to, () => _customers.GetStatement(customerId, from, to));
+        public Result<ReportData> CustomerStatement(int customerId, DateTime from, DateTime to)
+        {
+            var gate = Gate(); if (gate != null) return gate;
 
-        public Result<ReportData> SupplierStatement(int supplierId, DateTime from, DateTime to) =>
-            Statement(supplierId, from, to, () => _suppliers.GetStatement(supplierId, from, to));
+            return Statement(customerId, from, to, () => _customers.GetStatement(customerId, from, to));
+        }
+
+        public Result<ReportData> SupplierStatement(int supplierId, DateTime from, DateTime to)
+        {
+            var gate = Gate(); if (gate != null) return gate;
+
+            return Statement(supplierId, from, to, () => _suppliers.GetStatement(supplierId, from, to));
+        }
 
         public Result<ReportData> AccountStatement(int accountId, DateTime from, DateTime to)
         {
+            var gate = Gate(); if (gate != null) return gate;
+
             if (accountId == 0) return Result.Fail<ReportData>("اختر حساباً");
 
             var account = _accounts.GetById(accountId);
@@ -122,7 +137,6 @@ namespace PrimeERP.Application.Reporting
             var rows = result.Value.Select(l => new StatementRow
             { Date = l.Date, EntryNo = l.EntryNo, Description = l.Description, Debit = l.Debit, Credit = l.Credit, RunningBalance = l.RunningBalance }).ToList();
 
-            // رصيد آخر المدة سطراً ختامياً — الكشف بلا خلاصة يُجبر القارئ على تتبّع آخر رصيد جارٍ بعينه.
             if (rows.Count > 0)
                 rows.Add(new StatementRow
                 {

@@ -3,6 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.DTOs.HR
 {
+    /// <summary>بيانات الموظف</summary>
     public class EmployeeDto
     {
         public int      Id             { get; set; }
@@ -18,7 +19,6 @@ namespace PrimeERP.Application.DTOs.HR
         public decimal  BasicSalary    { get; set; }
         public string   Notes          { get; set; }
         public bool     IsActive       { get; set; }
-        /// <summary>كود حساب سلفته في الشجرة — يُنشأ معه، ورصيده سلفته المستحقّة عليه.</summary>
         public string   AccountCode    { get; set; }
 
         public string   StatusText     { get; set; }

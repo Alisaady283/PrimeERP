@@ -19,8 +19,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>حفظ عرض سعر من الشاشة الحقيقية. كان يُنهي التطبيق: Type.GetMethod على IQuotationService لا
-    /// يرى Create المُوَرَّثة من ICycleDocumentService، فيُستدعى null. الاختبار يمسك الاستثناء بدل أن يسقط التطبيق.</summary>
+    /// <summary>حفظ عرض سعر من الشاشة</summary>
     [Collection("WpfApplication")]
     public class QuotationDocumentTests : IDisposable
     {
@@ -31,7 +30,6 @@ namespace PrimeERP.Tests.Composition
         public QuotationDocumentTests()
         {
             AppSession.DevMode = true;
-            // حاوية بنفس تسجيل الإنتاج عدا الإشعارات — رسالة الفشل تصل للاختبار بدل أن تُبتلَع في الواجهة.
             _services = TestDatabaseFixture.BuildServices(s => s.AddSingleton<IToastService>(_toasts));
         }
 
@@ -52,7 +50,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_services);
-                _services.GetRequiredService<IIdentityService>().Apply("Default");
+                _services.GetRequiredService<IIdentityService>().Initialize();
 
                 var product = _services.GetRequiredService<IProductService>().Create(new CreateProductDto
                 { Name = "صنف عرض سعر", CostPrice = 10, SalePrice = 25, IsActive = true });

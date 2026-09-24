@@ -1,8 +1,8 @@
+using PrimeERP.Data.Core;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Application.Services;
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
@@ -12,21 +12,16 @@ using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Rules;
 using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Platform.Audit;
 using AuditAction = PrimeERP.Domain.Enums.AuditAction;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Application.Services.Parties
 {
-    /// <summary>
-    /// المالك الوحيد لمنطق العملاء — Repository تحته CRUD صرف فقط. كل حساب يُنشأ/يُحدَّث/يُحذف عبر
-    /// IAccountService حصراً (لا CustomerRepository يلمس جدول Accounts). CreateAccountDto.SkipAutoLink=true
-    /// إلزامي في كل استدعاء IAccountService.Create من هنا — يقطع الحلقة اللانهائية مع AccountService.Create
-    /// (الذي يستدعي CreateFromAccount أدناه عند الربط التلقائي).
-    /// </summary>
+    /// <summary>المالك الوحيد لمنطق العملاء</summary>
     public class CustomerService : PartyServiceBase<Customer, CustomerDto, CustomerFilter>, ICustomerService
     {
         protected override string PermissionPrefix => "Customers";
@@ -52,14 +47,14 @@ namespace PrimeERP.Application.Services.Parties
             CreatedBy   = CurrentUser
         };
 
-        private readonly ICustomerRepository _customers;
+        private readonly IPartyRepository<Customer> _customers;
         private readonly IJournalRepository _journalRepo;
         private readonly IAccountRepository _accountRepo;
         private readonly ICategoryRepository _categories;
         private readonly PrimeERP.Application.Services.Cheques.IChequeService _cheques;
 
         public CustomerService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
-            IAccountService accounts, INumberSequenceService numbers, ICustomerRepository customers, IAccountRepository accountRepo,
+            IAccountService accounts, INumberSequenceService numbers, IPartyRepository<Customer> customers, IAccountRepository accountRepo,
             IJournalRepository journalRepo, ICategoryRepository categories, PrimeERP.Application.Services.Cheques.IChequeService cheques)
             : base(permissions, settings, localization, audit, accounts, numbers, accountRepo)
         {
@@ -70,8 +65,6 @@ namespace PrimeERP.Application.Services.Parties
             _cheques = cheques;
         }
 
-        // ===================== القراءة =====================
-        // GetById/GetPaged/Search جاهزة من CrudServiceBase عبر FindById/FindPaged/FindSearch أدناه.
 
         protected override Customer FindById(int id) => _customers.GetById(id);
 
@@ -95,9 +88,7 @@ namespace PrimeERP.Application.Services.Parties
             return Ok(ToDto(customer));
         }
 
-        // GetStatement جاهزة من PartyServiceBase.
 
-        // ===================== الإنشاء =====================
 
         public Result<CustomerDto> Create(CreateCustomerDto dto)
         {
@@ -109,11 +100,9 @@ namespace PrimeERP.Application.Services.Parties
             var code = Numbers.Next(SequenceKey);
             var customer = BuildNewCustomer(dto, code);
 
-            var validation = Validator.Validate(customer);
-            if (!validation.IsValid)
-                return Result.Fail<CustomerDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
+            var check = Check(Validator, customer);
+            if (check.IsFailure) return check.As<CustomerDto>();
 
-            // تحذيرات لا تمنع — تُسجَّل في تفاصيل Audit فقط، لا Fail.
             var nameIsDuplicate = Setting(SettingKeys.Financial.WarnOnDuplicateCustomerName, true) && _customers.ExistsName(customer.Name);
             var phoneIsDuplicate = Setting(SettingKeys.Financial.WarnOnDuplicatePhone, true)
                 && !string.IsNullOrWhiteSpace(customer.Phone) && _customers.ExistsPhone(customer.Phone);
@@ -121,14 +110,14 @@ namespace PrimeERP.Application.Services.Parties
             int newId;
             try
             {
-                newId = Db.RunTransaction((conn, tx) =>
+                newId = Tx(db =>
                 {
-                    var accountResult = Accounts.Create(conn, tx, new CreateAccountDto
+                    var accountResult = Accounts.Create(db, new CreateAccountDto
                     {
                         ParentId = parent.Value.Id,
                         Name = customer.Name,
                         IsLeaf = true,
-                        SkipAutoLink = true // ⚠️ إلزامي — يمنع AccountService.Create من استدعاء CreateFromAccount ثانية (حلقة لا نهائية)
+                        SkipAutoLink = true // ⚠️ required: prevents an endless link loop
                     });
 
                     if (!accountResult.IsSuccess)
@@ -137,14 +126,11 @@ namespace PrimeERP.Application.Services.Parties
                     customer.AccountCode = accountResult.Value.Code;
                     customer.CreatedBy = CurrentUser;
 
-                    return _customers.Insert(customer, conn, tx);
+                    return _customers.Insert(customer, db);
                 });
             }
             catch (Exception ex)
             {
-                // فشل إنشاء الحساب (أو أي خطأ آخر داخل المعاملة، بما فيها أخطاء DB خام مثل خرق قيد تفرّد) →
-                // rollback الكل (Db.RunTransaction تراجعت بالفعل قبل إعادة رمي الاستثناء) وتحويله لـ Result.Fail
-                // بدل تسريبه كاستثناء خام للمستدعي.
                 return Result.Fail<CustomerDto>(ex.Message);
             }
 
@@ -161,35 +147,31 @@ namespace PrimeERP.Application.Services.Parties
             return Result.Ok(ToDto(customer));
         }
 
-        /// <summary>بمعاملة خارجية — يخدم مستندات F.4 (فاتورة تنشئ عميلاً جديداً ضمن معاملتها). بلا تحقق صلاحية (المستدعي تحقق صلاحيته الخاصة).</summary>
-        public Result<CustomerDto> Create(DbConnection conn, DbTransaction tx, CreateCustomerDto dto)
+        public Result<CustomerDto> Create(PrimeDbContext db, CreateCustomerDto dto)
         {
-            var parent = GetParentAccount(conn, tx);
+            var parent = GetParentAccount(db);
             if (!parent.IsSuccess) return Result.Fail<CustomerDto>(parent.ErrorMessage, parent.ErrorCode);
 
-            var code = Numbers.Next(conn, tx, SequenceKey);
+            var code = Numbers.Next(db, SequenceKey);
             var customer = BuildNewCustomer(dto, code);
 
-            var validation = Validator.Validate(customer);
-            if (!validation.IsValid)
-                return Result.Fail<CustomerDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
+            var check = Check(Validator, customer);
+            if (check.IsFailure) return check.As<CustomerDto>();
 
-            var link = CreateLinkedAccount(conn, tx, parent.Value.Id, customer.Name);
+            var link = CreateLinkedAccount(db, parent.Value.Id, customer.Name);
             if (!link.IsSuccess)
                 return Result.Fail<CustomerDto>(link.ErrorMessage, link.ErrorCode);
 
             customer.AccountCode = link.Value;
             customer.CreatedBy = CurrentUser;
 
-            var newId = _customers.Insert(customer, conn, tx);
+            var newId = _customers.Insert(customer, db);
             customer.Id = newId;
 
             return Result.Ok(ToDto(customer));
         }
 
-        // CreateFromAccount جاهزة من PartyServiceBase.
 
-        // ===================== التعديل =====================
 
         public Result Update(UpdateCustomerDto dto)
         {
@@ -218,27 +200,22 @@ namespace PrimeERP.Application.Services.Parties
             customer.CategoryId      = dto.CategoryId;
             customer.UpdatedBy       = CurrentUser;
 
-            var validation = Validator.Validate(customer);
-            if (!validation.IsValid)
-                return Result.Fail(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
+            var check = Check(Validator, customer);
+            if (check.IsFailure) return check;
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                _customers.Update(customer, conn, tx);
+                _customers.Update(customer, db);
 
-                // مزامنة اسم الحساب لو تغيّر الاسم — اتجاه واحد (عميل→حساب)؛ الاتجاه المعاكس (حساب→عميل) عبر
-                // UpdateNameFromAccount أدناه لا يستدعي هذا مرة أخرى، فلا حلقة ping-pong.
                 if (nameChanged && !string.IsNullOrWhiteSpace(customer.AccountCode))
-                    Accounts.UpdateName(conn, tx, customer.AccountCode, customer.Name);
+                    Accounts.UpdateName(db, customer.AccountCode, customer.Name);
             });
 
             Audit.Log(EntityName, customer.Id, AuditAction.Update, newValue: new { customer.Name });
             return Result.Ok();
         }
 
-        // UpdateNameFromAccount جاهزة من PartyServiceBase.
 
-        // ===================== الحذف =====================
 
         public Result Delete(int id)
         {
@@ -248,28 +225,23 @@ namespace PrimeERP.Application.Services.Parties
             if (customer == null)
                 return Fail("NotFound", ErrorCode.NotFound);
 
-            // TODO F.4: تحقق الفواتير (Sales/Purchase) — لا خدمة فواتير مبنية بعد، يُضاف فور بنائها في F.4.
             if (!string.IsNullOrWhiteSpace(customer.AccountCode) && _journalRepo.HasLinesForAccount(customer.AccountCode))
                 return Fail("HasTransactions", ErrorCode.ValidationFailed);
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                _customers.Delete(id, CurrentUser, conn, tx);
+                _customers.Delete(id, CurrentUser, db);
                 if (!string.IsNullOrWhiteSpace(customer.AccountCode))
-                    Accounts.Delete(conn, tx, customer.AccountCode);
+                    Accounts.Delete(db, customer.AccountCode);
             });
 
             Audit.Log(EntityName, id, AuditAction.Delete, details: customer.Code);
             return Result.Ok();
         }
 
-        // DeleteByAccountCode جاهزة من PartyServiceBase.
 
-        // ===================== الأرصدة والائتمان =====================
 
-        // RecalculateBalance/RecalculateAllBalances/CheckCreditLimit جاهزة من PartyServiceBase — منطق مطابق حرفياً لِما كان هنا، انتقل ليُستدعى لا يتكرر.
 
-        // ===================== أدوات داخلية =====================
 
         private static Customer BuildNewCustomer(CreateCustomerDto dto, string code) => new()
         {
@@ -293,7 +265,7 @@ namespace PrimeERP.Application.Services.Parties
 
         protected override CustomerDto ToDto(Customer c)
         {
-            var isOverLimit = c.CreditLimit > 0 && c.Balance > c.CreditLimit;
+            var isOverLimit = PartyRules.IsOverCreditLimit(c.Balance, c.CreditLimit);
             var hasTransactions = !string.IsNullOrWhiteSpace(c.AccountCode) && _journalRepo.HasLinesForAccount(c.AccountCode);
             var accountName = string.IsNullOrWhiteSpace(c.AccountCode) ? null : _accountRepo.GetByCode(c.AccountCode)?.Name;
 
@@ -322,7 +294,7 @@ namespace PrimeERP.Application.Services.Parties
                 IsActive          = c.IsActive,
                 Notes             = c.Notes,
                 CategoryId        = c.CategoryId,
-                CategoryName      = c.CategoryId != null ? _categories.GetById(c.CategoryId.Value)?.Name : null,
+                CategoryName      = c.CategoryName,
                 CreatedAt         = c.CreatedAt,
                 UpdatedAt         = c.UpdatedAt,
                 StatusVariant     = variant,

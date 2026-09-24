@@ -1,5 +1,6 @@
 namespace PrimeERP.Application.DTOs.Common
 {
+    /// <summary>بيانات الفئة</summary>
     public class CategoryDto
     {
         public int    Id         { get; set; }

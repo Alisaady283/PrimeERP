@@ -7,6 +7,7 @@ using System.Windows.Media.Animation;
 
 namespace PrimeERP.UI.Components.Inputs
 {
+    /// <summary>حقل إدخال AppToggleSwitch</summary>
     public partial class AppToggleSwitch : UserControl
     {
         private const double ThumbTravel = 18;

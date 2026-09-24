@@ -4,6 +4,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Inputs
 {
+    /// <summary>حقل إدخال AppTextArea</summary>
     public partial class AppTextArea : UserControl
     {
         public static readonly DependencyProperty LabelProperty =
@@ -132,7 +133,7 @@ namespace PrimeERP.UI.Components.Inputs
 
         private void ApplyEnabledVisual()
         {
-            border.Background  = IsEnabled ? (Brush)FindResource("C.Input.Bg")   : (Brush)FindResource("SurfaceSunken");
+            border.Background  = IsEnabled ? (Brush)FindResource("SurfaceDefault")   : (Brush)FindResource("SurfaceSunken");
             border.BorderBrush = IsEnabled ? (Brush)FindResource("OutlineDefault") : (Brush)FindResource("OutlineSubtle");
         }
 

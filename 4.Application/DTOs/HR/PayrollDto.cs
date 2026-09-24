@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Application.DTOs.HR
 {
+    /// <summary>بيانات مسير الرواتب</summary>
     public class PayrollDto
     {
         public int      Id              { get; set; }
@@ -15,7 +16,6 @@ namespace PrimeERP.Application.DTOs.HR
         public decimal  TotalDeductions { get; set; }
         public decimal  NetTotal        { get; set; }
 
-        /// <summary>مُرحَّل = أُثبت استحقاقه في القيود. الشرط الذي يُظهر زرّ الترحيل أو إلغاءه.</summary>
         public bool     IsPosted        { get; set; }
         public string   StatusText      { get; set; }
         public string   Notes           { get; set; }
@@ -44,8 +44,6 @@ namespace PrimeERP.Application.DTOs.HR
         public string  Notes        { get; set; }
     }
 
-    // EmployeeCode لا EmployeeId — منتقي سطر المستند يربط بالكود دائماً (نفس اتفاقية ProductCode/AccountCode
-    // في DocumentRenderer، راجع PickerValueField هناك).
     public class CreatePayrollLineDto
     {
         public int     LineNo       { get; set; }
@@ -60,7 +58,6 @@ namespace PrimeERP.Application.DTOs.HR
         public decimal Insurance    { get; set; }
         public decimal Tax          { get; set; }
 
-        /// <summary>مشتقٌّ لا مُدخَل — تحسبه الخدمة ويُعرض للمراجعة.</summary>
         public decimal NetSalary    { get; set; }
 
         public string  Notes        { get; set; }

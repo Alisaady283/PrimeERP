@@ -5,10 +5,7 @@ using Microsoft.Win32;
 
 namespace PrimeERP.Platform.Net
 {
-    /// <summary>
-    /// بصمة الجهاز: تجزئةٌ لقيمتين ثابتتين (معرّف ويندوز للجهاز واسمه) لا تُقرأ عكسياً ولا تحمل بياناً
-    /// شخصياً. تُرسَل مرّةً عند التفعيل ثم لا يحتاج البرنامج شبكةً بعدها — فلا قفل عند انقطاعها.
-    /// </summary>
+    /// <summary>بصمة الجهاز</summary>
     public static class MachineFingerprint
     {
         public static string Value()

@@ -1,6 +1,8 @@
 <UserControl x:Class="PrimeERP.UI.Components.Actions.AppDropdownButton"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- أزرار AppDropdownButton -->
     <StackPanel>
         <Button x:Name="btn" Height="{DynamicResource C.Button.Height.Sm}" Padding="14,0" Cursor="Hand"
                 BorderThickness="1" Click="btn_Click"
@@ -25,7 +27,7 @@
                            Foreground="{DynamicResource TextPrimary}"
                            Margin="{DynamicResource P.Space.2.Right}"/>
                 <Path Data="{StaticResource IconChevronDown}"
-                      Width="10" Height="10" Stretch="Uniform"
+                      Width="{DynamicResource C.Icon.Size.Xs}" Height="{DynamicResource C.Icon.Size.Xs}" Stretch="Uniform"
                       Stroke="{DynamicResource TextMuted}" StrokeThickness="2"
                       VerticalAlignment="Center"/>
             </StackPanel>

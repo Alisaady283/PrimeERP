@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Application.DTOs.Sales
 {
+    /// <summary>بيانات مرتجع البيع</summary>
     public class SalesReturnDto
     {
         public int      Id           { get; set; }

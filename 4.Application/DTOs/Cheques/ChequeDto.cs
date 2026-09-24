@@ -4,6 +4,7 @@ using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Application.DTOs.Cheques
 {
+    /// <summary>بيانات الشيك وحركته</summary>
     public class ChequeDto
     {
         public int      Id            { get; set; }
@@ -36,7 +37,7 @@ namespace PrimeERP.Application.DTOs.Cheques
         public string   CreatedBy      { get; set; }
     }
 
-    /// <summary>نقل شيك لحالة جديدة — TreasuryId مطلوب عملياً للإيداع والتحصيل (أين ذهب المال).</summary>
+    /// <summary>نقل شيك لحالة جديدة</summary>
     public class MoveChequeDto
     {
         public int      ChequeId     { get; set; }
@@ -46,7 +47,7 @@ namespace PrimeERP.Application.DTOs.Cheques
         public string   Notes        { get; set; }
     }
 
-    /// <summary>مستند استلام/صرف شيكات — رأس واحد وعدة شيكات، بنفس شكل أي مستند رأس+سطور.</summary>
+    /// <summary>مستند شيكات: رأسٌ وعدة شيكات</summary>
     public class CreateChequeDocumentDto
     {
         public int       Id      { get; set; }

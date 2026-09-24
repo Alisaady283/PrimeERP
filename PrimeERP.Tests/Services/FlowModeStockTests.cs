@@ -11,11 +11,11 @@ using PrimeERP.Platform.Permissions;
 using PrimeERP.Application.Services;
 using PrimeERP.Platform.Settings;
 using Xunit;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>الفرق بين الوضعين: المبسّط تخصم فيه الفاتورة من المخزون مباشرة (لا موظف مخزن)، والشامل
-    /// يخصم فيه إذن الصرف وحده والفاتورة تُسحب منه — فلو خصمت هي أيضاً لخُصم الرصيد مرتين.</summary>
+    /// <summary>الفرق بين الوضعين</summary>
     public class FlowModeStockTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();

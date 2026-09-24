@@ -7,11 +7,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.UI.Converters
 {
-    /// <summary>
-    /// StatusVariant → Brush من Resources/Themes فقط (الشاشة — يتبدّل فاتح/داكن تلقائياً لأنه DynamicResource).
-    /// parameter: "Solid" (افتراضي) / "Soft" / "SoftText" / "Hover" / "Border".
-    /// كل القيم من مفاتيح Colors.xaml/Colors.Dark.xaml الموجودة فعلاً — لا مفاتيح جديدة، لا تكرار.
-    /// </summary>
+    /// <summary>حالة ← لون</summary>
     public class VariantToBrushConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

@@ -3,6 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Pipeline.Steps
 {
+    /// <summary>خطوة التحقق</summary>
     public class ValidationStep<T> : IStep
     {
         private readonly IValidator<T> _validator;

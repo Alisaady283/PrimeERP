@@ -9,10 +9,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>
-    /// كل حقل يُدخله المستخدم في نموذج المستند لا بدّ أن يصل الورق. عمود الملاحظات سقط بصمت من فواتير
-    /// البيع والشراء ومرتجعاتهما لأن أعمدة الورق تُعدّ يدوياً هناك، وهذا يمنع تكرارها.
-    /// </summary>
+    /// <summary>كل حقل مُدخَل يصل الورق</summary>
     public class DocumentColumnParityTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -34,7 +31,6 @@ namespace PrimeERP.Tests.Composition
 
                 foreach (var field in definition.LineFields)
                 {
-                    // الكود يُطبع عمودين (كود واسم)، والنسبة يمثّلها مبلغها المحسوب.
                     if (printed.Contains(field.Key)) continue;
                     if (field.Key.EndsWith("Code") && printed.Contains(field.Key[..^4] + "Name")) continue;
                     if (field.Key.EndsWith("Percent") && printed.Contains(field.Key[..^7] + "Amount")) continue;

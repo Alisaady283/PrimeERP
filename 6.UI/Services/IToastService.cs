@@ -1,10 +1,10 @@
 namespace PrimeERP.UI.Services
 {
+    /// <summary>خدمة واجهة Toast</summary>
     public interface IToastService
     {
         void Success(string message, int durationMs = 3000);
 
-        /// <summary>يبقى ظاهراً حتى يُغلق المستخدم يدوياً — لا يختفي تلقائياً.</summary>
         void Error(string message);
 
         void Warning(string message, int durationMs = 4000);

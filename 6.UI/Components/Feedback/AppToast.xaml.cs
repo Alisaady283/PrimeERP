@@ -6,6 +6,7 @@ using System.Windows.Threading;
 
 namespace PrimeERP.UI.Components.Feedback
 {
+    /// <summary>حوارات وتنبيهات AppToast</summary>
     public partial class AppToast : UserControl
     {
         public static readonly DependencyProperty MessageProperty =
@@ -20,7 +21,6 @@ namespace PrimeERP.UI.Components.Feedback
             DependencyProperty.Register(nameof(ShowIcon), typeof(bool), typeof(AppToast),
                 new PropertyMetadata(true, (d, e) => ((AppToast)d).iconWrap.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed));
 
-        /// <summary>مدة العرض بالمللي ثانية — صفر أو أقل يعني "يبقى حتى يُغلق يدوياً" (تُستخدم لتوست الخطأ).</summary>
         public static readonly DependencyProperty DurationProperty =
             DependencyProperty.Register(nameof(Duration), typeof(int), typeof(AppToast),
                 new PropertyMetadata(3000));
@@ -30,7 +30,6 @@ namespace PrimeERP.UI.Components.Feedback
         public bool   ShowIcon { get => (bool)GetValue(ShowIconProperty);   set => SetValue(ShowIconProperty, value); }
         public int    Duration { get => (int)GetValue(DurationProperty);    set => SetValue(DurationProperty, value); }
 
-        /// <summary>يُطلق عند الإغلاق (يدوياً أو تلقائياً بعد Duration).</summary>
         public event EventHandler Dismissed;
 
         private DispatcherTimer _timer;

@@ -4,6 +4,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.HR
 {
+    /// <summary>عقد الأقسام</summary>
     public interface IDepartmentService
     {
         Result<List<DepartmentDto>> GetAll(bool includeInactive = false);

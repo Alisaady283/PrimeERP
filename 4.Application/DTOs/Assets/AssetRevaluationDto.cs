@@ -3,6 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.DTOs.Assets
 {
+    /// <summary>بيانات إعادة التقييم</summary>
     public class AssetRevaluationDto
     {
         public int      Id           { get; set; }
@@ -14,7 +15,6 @@ namespace PrimeERP.Application.DTOs.Assets
         public decimal  NewValue     { get; set; }
         public decimal  Difference   { get; set; }
 
-        /// <summary>«زيادة» أو «نقص» — يُشتقّ من الفرق ولا يُدخَل.</summary>
         public string   KindText     { get; set; }
         public StatusVariant KindVariant { get; set; }
 

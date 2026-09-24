@@ -8,15 +8,12 @@ using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Permissions;
-using Db = PrimeERP.Data.Core.DbHelper;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.Inventory
 {
-    // كل سطر = حركتا مخزون (Out من المصدر، In للهدف) بنفس المعاملة — بلا ترحيل محاسبي (نقل داخلي، لا قيمة
-    // مالية جديدة). يُعيد استخدام IStockService.RecordMovement مباشرة، لا Transfer(product,...) ذات المنتج
-    // الواحد (تلك تخدم نداءً برمجياً مباشراً، هنا مستند متعدد السطور).
+    /// <summary>التحويل بين المخازن</summary>
     public class StockTransferService : ServiceBase, IStockTransferService
     {
         private readonly IStockTransferRepository _repo;
@@ -83,20 +80,20 @@ namespace PrimeERP.Application.Services.Inventory
             int docId;
             try
             {
-                docId = Db.RunTransaction((conn, tx) =>
+                docId = Tx(db =>
                 {
-                    var docNo = _numbers.Next(conn, tx, "StockTransfer");
+                    var docNo = _numbers.Next(db, "StockTransfer");
                     var doc = new StockTransferDocument { DocNo = docNo, MovementDate = dto.MovementDate, FromWarehouseId = dto.FromWarehouseId, ToWarehouseId = dto.ToWarehouseId, Notes = dto.Notes, CreatedBy = AppSession.Username };
-                    var id = _repo.InsertHeader(conn, tx, doc);
+                    var id = _repo.InsertHeader(db, doc);
 
                     foreach (var line in resolvedLines)
                     {
-                        _repo.InsertLine(conn, tx, id, line);
+                        _repo.InsertLine(db, id, line);
 
-                        var outResult = _stock.RecordMovement(conn, tx, line.ProductId, dto.FromWarehouseId, MovementType.Out, line.Qty, 0, "StockTransfer", id, docNo, dto.MovementDate);
+                        var outResult = _stock.RecordMovement(db, line.ProductId, dto.FromWarehouseId, MovementType.Out, line.Qty, 0, "StockTransfer", id, docNo, dto.MovementDate);
                         if (!outResult.IsSuccess) throw new InvalidOperationException(outResult.ErrorMessage);
 
-                        var inResult = _stock.RecordMovement(conn, tx, line.ProductId, dto.ToWarehouseId, MovementType.In, line.Qty, 0, "StockTransfer", id, docNo, dto.MovementDate);
+                        var inResult = _stock.RecordMovement(db, line.ProductId, dto.ToWarehouseId, MovementType.In, line.Qty, 0, "StockTransfer", id, docNo, dto.MovementDate);
                         if (!inResult.IsSuccess) throw new InvalidOperationException(inResult.ErrorMessage);
                     }
 
@@ -114,16 +111,15 @@ namespace PrimeERP.Application.Services.Inventory
 
         public Result Update(CreateStockTransferDto dto) => Result.Fail("المستند مُرحَّل فور إنشائه — لا يمكن تعديله", ErrorCode.ValidationFailed);
 
-        /// <summary>حذف التحويل وأثره المخزني — حركتان (صادر ووارد) يمحوهما مصدرٌ واحد.</summary>
         public Result Delete(int id)
         {
             if (!Can("Delete")) return FailDenied();
             if (_repo.GetById(id) == null) return Result.Fail("المستند غير موجود", ErrorCode.NotFound);
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                _stock.RemoveMovements(conn, tx, EntityName, id);
-                _repo.DeleteDocument(conn, tx, id);
+                _stock.RemoveMovements(db, EntityName, id);
+                _repo.DeleteDocument(db, id);
             });
 
             Audit.Log(EntityName, id, AuditAction.Delete);

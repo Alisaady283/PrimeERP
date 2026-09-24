@@ -1,67 +1,65 @@
 using System;
-using System.Data;
-using System.Data.Common;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using PrimeERP.Data.Repositories.Base;
-using PrimeERP.Data.Schema;
+using PrimeERP.Data.Core;
+using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Data.Repositories
 {
-    /// <summary>طبقة وصول بيانات تسلسل الأرقام — SQL خام فقط. حساب إعادة التصفير السنوي والرقم التالي مسؤولية NumberSequenceService.</summary>
-    public class NumberSequenceRepository : RepositoryBase<NumberSequenceRow>, INumberSequenceRepository
+    /// <summary>مستودع NumberSequenceRow</summary>
+    public record NumberSequenceRow(string Prefix, int NextNumber, int Padding, bool ResetYearly, int? LastYear);
+
+    public interface INumberSequenceRepository
+    {
+        void EnsureRow(string key);
+        void EnsureRow(string key, string prefix);
+        void EnsureRow(string key, string prefix, int padding, bool resetYearly);
+        void EnsureRow(PrimeDbContext db, string key);
+        NumberSequenceRow GetRow(string key);
+        NumberSequenceRow GetRow(PrimeDbContext db, string key);
+        void UpdateNext(PrimeDbContext db, string key, int nextNumber, int year);
+    }
+
+    /// <summary>طبقة وصول بيانات تسلسل الأرقام</summary>
+    public class NumberSequenceRepository : RepositoryBase<NumberSequence>, INumberSequenceRepository
     {
         protected override string TableName => "NumberSequences";
 
-        protected override NumberSequenceRow Map(DataRow row) => new(
-            row["Prefix"] == DBNull.Value ? row["Key"].ToString() : row["Prefix"].ToString(),
-            Convert.ToInt32(row["NextNumber"]),
-            Convert.ToInt32(row["Padding"]),
-            Convert.ToBoolean(row["ResetYearly"]),
-            row["LastYear"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["LastYear"]));
 
-        public void CreateTable() =>
-            SchemaBuilder.Table("NumberSequences")
-                .Id()
-                .Text("Key", 50, required: true, unique: true)
-                .Text("Prefix", 20)
-                .Int("NextNumber", nullable: false, defaultValue: 1)
-                .Int("Padding", nullable: false, defaultValue: 5)
-                .Bool("ResetYearly", defaultValue: true)
-                .Int("LastYear")
-                .Create();
-
-        /// <summary>ينشئ صفاً افتراضياً للمفتاح لو غير موجود بعد (البادئة = المفتاح نفسه) — بلا تأثير لو موجود (Idempotent).</summary>
         public void EnsureRow(string key) => EnsureRow(key, key);
 
-        /// <summary>نفس EnsureRow أعلاه لكن ببادئة مخصَّصة مختلفة عن المفتاح — يستخدمها NumberSequenceSeeder (المفتاح "Customer" ثابت، البادئة "C-" من الإعدادات).</summary>
-        public void EnsureRow(string key, string prefix) => EnsureRowCore(null, null, key, prefix);
+        public void EnsureRow(string key, string prefix) => EnsureRowCore(null, key, prefix);
 
-        /// <summary>سريال سجلٍّ لا مستند: خاناتٌ أقل وبلا تصفير سنوي، فيُقرأ رقماً متصلاً (TR0001).</summary>
         public void EnsureRow(string key, string prefix, int padding, bool resetYearly) =>
-            EnsureRowCore(null, null, key, prefix, padding, resetYearly);
+            EnsureRowCore(null, key, prefix, padding, resetYearly);
 
-        /// <summary>نفس EnsureRow أعلاه لكن عبر (conn,tx) قائمة — يستخدمها NumberSequenceService.Next(conn,tx,...) عندما يُستدعى من داخل معاملة خدمة أخرى مفتوحة (JournalService.Create(conn,tx,...))؛ اتصال منفصل هنا يُعلِّق (deadlock) على SQLite.</summary>
-        public void EnsureRow(DbConnection conn, DbTransaction tx, string key) => EnsureRowCore(conn, tx, key, key);
+        public void EnsureRow(PrimeDbContext db, string key) => EnsureRowCore(db, key, key);
 
-        private void EnsureRowCore(DbConnection conn, DbTransaction tx, string key, string prefix,
-            int padding = 5, bool resetYearly = true)
-        {
-            var exists = conn != null
-                ? QueryAs(r => true, "SELECT 1 FROM NumberSequences WHERE [Key] = @k LIMIT 1", conn, tx, ("@k", key)).Count > 0
-                : Convert.ToInt64(Scalar("SELECT COUNT(*) FROM NumberSequences WHERE [Key] = @k", ("@k", key))) > 0;
-            if (exists) return;
+        private void EnsureRowCore(PrimeDbContext db, string key, string prefix,
+            int padding = 5, bool resetYearly = true) =>
+            Write(db =>
+            {
+                if (Rows(db).Any(s => s.Key == key)) return 0;
+                SetOf(db).Add(new NumberSequence
+                {
+                    Key = key, Prefix = prefix, NextNumber = 1, Padding = padding, ResetYearly = resetYearly
+                });
+                return 0;
+            }, db);
 
-            Exec("INSERT INTO NumberSequences ([Key], Prefix, NextNumber, Padding, ResetYearly) VALUES (@k, @p, 1, @d, @r)",
-                conn, tx, ("@k", key), ("@p", prefix), ("@d", padding), ("@r", resetYearly));
-        }
+        public NumberSequenceRow GetRow(string key) => GetRow(null, key);
 
-        public NumberSequenceRow GetRow(string key) =>
-            QueryOne("SELECT * FROM NumberSequences WHERE [Key] = @k", null, null, ("@k", key));
+        public NumberSequenceRow GetRow(PrimeDbContext db, string key) =>
+            Fetch(q => q.Where(s => s.Key == key), db)
+                .Select(s => new NumberSequenceRow(s.Prefix ?? s.Key, s.NextNumber, s.Padding, s.ResetYearly, s.LastYear))
+                .FirstOrDefault();
 
-        public NumberSequenceRow GetRow(DbConnection conn, DbTransaction tx, string key) =>
-            QueryOne("SELECT * FROM NumberSequences WHERE [Key] = @k", conn, tx, ("@k", key));
-
-        public void UpdateNext(DbConnection conn, DbTransaction tx, string key, int nextNumber, int year) =>
-            Exec("UPDATE NumberSequences SET NextNumber = @n, LastYear = @y WHERE [Key] = @k",
-                conn, tx, ("@n", nextNumber), ("@y", year), ("@k", key));
+        public void UpdateNext(PrimeDbContext db, string key, int nextNumber, int year) =>
+            Edit(s => s.Key == key, row =>
+            {
+                row.NextNumber = nextNumber;
+                row.LastYear = year;
+            }, db);
     }
 }

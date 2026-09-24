@@ -4,7 +4,7 @@ using PrimeERP.UI.Components.Display;
 
 namespace PrimeERP.Modules
 {
-    /// <summary>أعمدة القوائم المالية — عرضٌ لا منطق، فتبقى هنا بينما التصنيف والتجميع في طبقة التطبيق.</summary>
+    /// <summary>أعمدة القوائم المالية</summary>
     public static class FinancialStatementColumns
     {
         public static List<GridColumn> Build() => new()

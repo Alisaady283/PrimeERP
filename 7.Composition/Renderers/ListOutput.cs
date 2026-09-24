@@ -10,10 +10,7 @@ using PrimeERP.UI.Services;
 
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>
-    /// طباعة أي قائمة معروضة وتصديرها — القائمة والتقرير سواء: عنوان وأعمدة وصفوف. قطعة واحدة
-    /// تستوردها الشاشتان بدل نسختين تتفرّقان.
-    /// </summary>
+    /// <summary>طباعة أي قائمة معروضة وتصديرها</summary>
     public static class ListOutput
     {
         public static void Print(IServiceProvider services, string title, List<GridColumn> columns, List<object> rows)
@@ -28,7 +25,6 @@ namespace PrimeERP.Composition.Renderers
             if (printed.IsFailure) toast.Error(printed.ErrorMessage);
         }
 
-        /// <summary>الصيغة تُختار من امتداد الملف — نافذة الحفظ نفسها هي القائمة، بلا حوار صيغ إضافي.</summary>
         public static void Export(IServiceProvider services, string title, List<GridColumn> columns, List<object> rows)
         {
             var toast = services.GetRequiredService<IToastService>();

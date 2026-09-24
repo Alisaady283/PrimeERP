@@ -7,7 +7,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>زرّ الشريط يُبنى بأيقونته من موارد التطبيق — أيقونةٌ لا تُحلّ تعني زرّاً بلا رسم.</summary>
+    /// <summary>زرّ الشريط يُبنى بأيقونته</summary>
     public class ReorderButtonsTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -19,7 +19,7 @@ namespace PrimeERP.Tests.Composition
         {
             WpfApplicationFixture.Run(() =>
             {
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var missing = ToolbarAction.Catalogue
                     .Where(entry => System.Windows.Application.Current.TryFindResource(entry.Value.IconKey) == null)
@@ -37,7 +37,7 @@ namespace PrimeERP.Tests.Composition
         {
             WpfApplicationFixture.Run(() =>
             {
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var action = key == "moveUp"
                     ? ToolbarAction.MoveUp(null, "BuilderColumns.Edit")

@@ -7,6 +7,7 @@ using PrimeERP.UI.ViewModels.Base;
 
 namespace PrimeERP.UI.ViewModels
 {
+    /// <summary>نماذج عرض CycleDocumentViewModelBase</summary>
     public abstract class CycleDocumentViewModelBase : CrudViewModelBase<CycleDocumentDto, CycleDocumentFilter>
     {
         private readonly ICycleDocumentService _docs;

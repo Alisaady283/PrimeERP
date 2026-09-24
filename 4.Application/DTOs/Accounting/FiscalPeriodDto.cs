@@ -4,6 +4,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.DTOs.Accounting
 {
+    /// <summary>بيانات السنة والفترة المالية</summary>
     public class FiscalYearDto
     {
         public int       Id             { get; set; }

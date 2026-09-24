@@ -6,13 +6,7 @@ using PrimeERP.UI.ViewModels;
 
 namespace PrimeERP.UI.Components.Shell
 {
-    /// <summary>
-    /// غلاف حالة عرض حول NavItem (IsVisible/IsExpanded/IsActive) — يُبنى مرة عند ItemsSource ويُعاد حساب
-    /// IsVisible منه فقط عند AppSession.PermissionsChanged، بلا إعادة بناء الشجرة كاملة.
-    /// IPermissionService يُمرَّر بارامتر بناء من المستدعي الأول (AppSidebar.xaml.cs، code-behind يملك
-    /// UIServices) — لا UIServices هنا مباشرة، لأن NavItemViewModel نفسها ViewModel لا code-behind
-    /// (راجع القيد الملزم في ARCHITECTURE.md § UIServices: صفر استهلاك من Service/VM).
-    /// </summary>
+    /// <summary>حالة عنصر التنقّل</summary>
     public class NavItemViewModel : BaseViewModel
     {
         private readonly IPermissionService _permissions;
@@ -45,7 +39,6 @@ namespace PrimeERP.UI.Components.Shell
                 Children.Add(new NavItemViewModel(child, permissions));
         }
 
-        /// <summary>يبحث عن هذا المفتاح في نفسه أو أي عنصر تحته (بحث عميق).</summary>
         public NavItemViewModel FindByKey(string key)
         {
             if (Key == key) return this;
@@ -57,10 +50,6 @@ namespace PrimeERP.UI.Components.Shell
             return null;
         }
 
-        /// <summary>
-        /// يعيد حساب IsVisible تصاعدياً: عنصر بلا أبناء يظهر لو مسموح له فقط؛ عنصر له أبناء يظهر لو مسموح له
-        /// (أو بلا PermissionKey) وله ابن ظاهر واحد على الأقل — فأب كل أبنائه محجوبون يختفي تلقائياً.
-        /// </summary>
         public bool RecomputeVisibility()
         {
             var anyChildVisible = false;

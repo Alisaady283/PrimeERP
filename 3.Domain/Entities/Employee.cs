@@ -4,6 +4,7 @@ using PrimeERP.Domain.Entities.Common;
 
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان Employee</summary>
     public class Employee : BaseModel
     {
         public string    Code            { get; set; }
@@ -19,28 +20,23 @@ namespace PrimeERP.Domain.Entities
         public DateTime?  TerminationDate { get; set; }
         public decimal    BasicSalary     { get; set; }
 
-        /// <summary>بدلٌ شهريّ ثابت يدخل كل مسير بلا إدخال — البدلات المتغيّرة تُسجَّل في شاشتها.</summary>
         public decimal    FixedAllowances { get; set; }
 
         public bool       IsInsured       { get; set; }
         public DateTime?  InsuranceStartDate { get; set; }
 
-        /// <summary>حصة الموظف الشهرية من التأمين — تُستقطع في المسير وتُقيَّد دائنةً على التأمينات المستحقة.</summary>
         public decimal    InsuranceAmount { get; set; }
 
         public string     TaxNumber       { get; set; }
 
-        /// <summary>ضريبة الكسب الشهرية المستقطَعة — دائنةٌ على الضرائب المستحقة.</summary>
         public decimal    TaxAmount       { get; set; }
         public int?       AccountId       { get; set; }
 
-        /// <summary>كود حساب سلفته تحت «سلف الموظفين» — يُنشأ معه ويتبع اسمه ويُحذف بحذفه، كالعميل.</summary>
         public string     AccountCode     { get; set; }
         public string     BankAccount     { get; set; }
         public EmployeeStatus Status      { get; set; } = EmployeeStatus.Active;
         public string      Notes           { get; set; }
 
-        /// <summary>اسم القسم/الوظيفة الظاهر — ليس عموداً في Employees (مرتبط بـ DepartmentId/JobTitleId)، يملؤه مصدر البيانات وقت الجلب للعرض فقط (نفس نمط Product.CurrentStock/UnitName).</summary>
         public string DepartmentName { get; set; }
         public string JobTitleName   { get; set; }
     }

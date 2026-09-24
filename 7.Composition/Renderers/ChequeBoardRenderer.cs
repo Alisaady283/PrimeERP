@@ -23,8 +23,7 @@ using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>شاشة الشيكات: عرض + تحريك الحالة فقط. الحالات المعروضة في نافذة التحريك تأتي من الخدمة
-    /// (GetAllowedTransitions) لا من قائمة مكرّرة هنا — قاعدة الانتقال واحدة في مكان واحد.</summary>
+    /// <summary>شاشة الشيكات</summary>
     public static class ChequeBoardRenderer
     {
         public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services)
@@ -61,11 +60,7 @@ namespace PrimeERP.Composition.Renderers
             BindingOperations.SetBinding(grid, AppDataGrid.SelectedItemProperty, new Binding("SelectedItem") { Mode = BindingMode.TwoWay });
             BindingOperations.SetBinding(grid, AppDataGrid.IsLoadingProperty, new Binding("IsLoading"));
 
-            var pagination = new AppPagination();
-            BindingOperations.SetBinding(pagination, AppPagination.TotalItemsProperty, new Binding("TotalCount"));
-            BindingOperations.SetBinding(pagination, AppPagination.PageSizeProperty, new Binding("PageSize"));
-            BindingOperations.SetBinding(pagination, AppPagination.CurrentPageProperty, new Binding("CurrentPage") { Mode = BindingMode.OneWay });
-            pagination.PageChanged += (_, page) => vm.GoToPageCommand.Execute(page);
+            var pagination = PaginationBar.For(vm);
 
             var root = new Grid { DataContext = vm };
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });

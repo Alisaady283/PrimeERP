@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,11 +22,11 @@ using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Xunit;
 using PrimeERP.Composition.Renderers;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
-    // ينفّذ التقرير بالمسار نفسه الذي تنفّذه به الشاشة (ReportRenderer.Run) بلا تصيير — أسرع، ويثبت
-    // نفس الشيء: الخدمة تُحلّ، والوسائط تُربَط بأسماء البارامترات، والصفوف والإجماليات تصل.
+    /// <summary>توليد التقارير</summary>
     public class ReportsGenerateTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -68,7 +69,7 @@ namespace PrimeERP.Tests.Services
             _supplierId = suppliers.Create(new CreateSupplierDto { Name = "مورد" }).Value.Id;
 
             var stock = _db.Services.GetRequiredService<IStockService>();
-            Data.Core.DbHelper.RunTransaction((conn, tx) => stock.RecordMovement(conn, tx, product.Id, _warehouseId, Domain.Enums.MovementType.In, 100, 10, "Seed", null, "SEED"));
+            Data.Core.DbContextFactory.RunTransaction(db => stock.RecordMovement(db, product.Id, _warehouseId, Domain.Enums.MovementType.In, 100, 10, "Seed", null, "SEED"));
 
             _db.Services.GetRequiredService<ISalesInvoiceService>().Create(new CreateSalesInvoiceDto
             {

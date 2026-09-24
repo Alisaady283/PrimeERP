@@ -5,6 +5,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Display
 {
+    /// <summary>عرض AppCard</summary>
     public partial class AppCard : UserControl
     {
         public static readonly DependencyProperty TitleProperty =
@@ -15,7 +16,6 @@ namespace PrimeERP.UI.Components.Display
             DependencyProperty.Register(nameof(Icon), typeof(Geometry), typeof(AppCard),
                 new PropertyMetadata(null, OnIconChanged));
 
-        /// <summary>محتوى جسم الكارت — بديل عن Content لأن UserControl يملك خاصية Content موروثة بالفعل.</summary>
         public static readonly DependencyProperty BodyProperty =
             DependencyProperty.Register(nameof(Body), typeof(object), typeof(AppCard),
                 new PropertyMetadata(null, OnBodyChanged));

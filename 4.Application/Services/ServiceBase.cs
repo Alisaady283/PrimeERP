@@ -1,5 +1,5 @@
+using PrimeERP.Data.Core;
 using System;
-using System.Data.Common;
 using System.Linq;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Domain.Enums;
@@ -8,15 +8,10 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Application.Services
 {
-    /// <summary>
-    /// القاعدة المشتركة لكل خدمة — صلاحية/رسالة/معاملة/تدقيق بدل تكرارها في كل خدمة (55 فحص صلاحية +
-    /// 81 Result.Fail + 24 معاملة + 25 audit قبل R6). كل خدمة تحدّد PermissionPrefix/StringPrefix/EntityName
-    /// فقط، وتستخدم الدوال الجاهزة هنا.
-    /// </summary>
+    /// <summary>القاعدة المشتركة لكل خدمة</summary>
     public abstract class ServiceBase
     {
         protected abstract string PermissionPrefix { get; }
@@ -48,9 +43,6 @@ namespace PrimeERP.Application.Services
         protected Result<T> Require<T>(string action) =>
             Can(action) ? Result.Ok<T>(default) : Result.Fail<T>(Msg("PermissionDenied"), ErrorCode.Unauthorized);
 
-        /// <summary>مفتاح "Str.PermissionDenied" العام المشترك بين عدة خدمات (Account/Journal/FiscalPeriod/
-        /// Customer) — يختلف عن Msg("PermissionDenied") التي تبني "{StringPrefix}.PermissionDenied" (مفتاح
-        /// خاص بكل خدمة، تستخدمه Settings/Backup). استخدم هذه فقط لو الخدمة كانت أصلاً تستدعي المفتاح العام.</summary>
         protected Result FailDenied() => Result.Fail(Localization.Get("Str.PermissionDenied"), ErrorCode.Unauthorized);
 
         protected Result<T> FailDenied<T>() => Result.Fail<T>(Localization.Get("Str.PermissionDenied"), ErrorCode.Unauthorized);
@@ -77,15 +69,20 @@ namespace PrimeERP.Application.Services
             return result.IsValid ? Result.Ok() : Result.Fail(result.Errors.Values, ErrorCode.ValidationFailed);
         }
 
-        /// <summary>معاملة مخصّصة لعمليات لا تطابق شكل WriteOperation القياسي (Post/CloseYear متعددة الجداول). body يرجع فشلاً بدل رمي استثناء — التراجع (Rollback) يحدث دون كسر تدفّق الاستثناءات العادي.</summary>
-        protected Result Tx(AuditAction auditAction, Func<DbConnection, DbTransaction, Result> body, int recordId = 0)
+        /// <summary>معاملة ذرّية بلا نتيجة ولا</summary>
+        protected void Tx(Action<PrimeDbContext> body) => DbContextFactory.RunTransaction(body);
+
+        /// <summary>معاملة ذرّية تُرجع قيمة</summary>
+        protected T Tx<T>(Func<PrimeDbContext, T> body) => DbContextFactory.RunTransaction(body);
+
+        protected Result Tx(AuditAction auditAction, Func<PrimeDbContext, Result> body, int recordId = 0)
         {
             Result outcome = null;
             try
             {
-                Db.RunTransaction((conn, tx) =>
+                DbContextFactory.RunTransaction(db =>
                 {
-                    outcome = body(conn, tx);
+                    outcome = body(db);
                     if (outcome.IsFailure) throw new TransactionAbortedException();
                 });
             }
@@ -98,14 +95,14 @@ namespace PrimeERP.Application.Services
             return outcome;
         }
 
-        protected Result<T> Tx<T>(AuditAction auditAction, Func<DbConnection, DbTransaction, Result<T>> body, Func<T, int> recordIdOf = null)
+        protected Result<T> Tx<T>(AuditAction auditAction, Func<PrimeDbContext, Result<T>> body, Func<T, int> recordIdOf = null)
         {
             Result<T> outcome = null;
             try
             {
-                Db.RunTransaction((conn, tx) =>
+                DbContextFactory.RunTransaction(db =>
                 {
-                    outcome = body(conn, tx);
+                    outcome = body(db);
                     if (outcome.IsFailure) throw new TransactionAbortedException();
                 });
             }

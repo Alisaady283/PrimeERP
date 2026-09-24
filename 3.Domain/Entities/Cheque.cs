@@ -4,8 +4,7 @@ using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Domain.Entities
 {
-    /// <summary>شيك وارد أو صادر. الحالة لا تتغيّر أبداً بلا سطر ChequeMovement مقابل — هذا ما يجعل الدورة
-    /// قابلة للمراجعة (من حرّك، متى، وبأي قيد).</summary>
+    /// <summary>شيك وارد أو صادر</summary>
     public class Cheque : BaseModel
     {
         public string          ChequeNo   { get; set; }

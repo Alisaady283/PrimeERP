@@ -2,7 +2,7 @@ using System.Reflection;
 
 namespace PrimeERP.Platform
 {
-    /// <summary>هوية النسخة المُشغَّلة — مصدرٌ واحد يقرؤه التحديث و«عن البرنامج» معاً.</summary>
+    /// <summary>هوية النسخة المُشغَّلة</summary>
     public static class AppInfo
     {
         public static string Version =>

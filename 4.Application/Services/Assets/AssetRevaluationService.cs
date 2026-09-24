@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Assets;
@@ -12,10 +13,11 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Application.Services.Assets
 {
+    /// <summary>إعادة تقييم الأصل</summary>
     public interface IAssetRevaluationService
     {
         Result<PagedResult<AssetRevaluationDto>> GetPaged(int page, int pageSize, AssetRevaluationFilter filter = null);
@@ -25,10 +27,6 @@ namespace PrimeERP.Application.Services.Assets
         Result Delete(int id);
     }
 
-    /// <summary>
-    /// إعادة تقييم الأصل: القيمة قبلها تُلتقَط من الأصل نفسه، والنوع يُشتقّ من الفرق — زيادةً تُقيَّد
-    /// أرباحاً رأسمالية ونقصاً خسائر. مستندٌ كالسند: يُرحّل قيده، وحذفه يعكسه ويُعيد القيمة إلى ما قبله.
-    /// </summary>
     public class AssetRevaluationService
         : AssetMovementServiceBase<AssetRevaluation, AssetRevaluationDto, AssetRevaluationFilter>, IAssetRevaluationService
     {
@@ -68,7 +66,6 @@ namespace PrimeERP.Application.Services.Assets
             {
                 AssetId = dto.AssetId,
                 RevaluationDate = dto.RevaluationDate,
-                // القيمة قبل التقييم من الأصل لا من المستخدم — فلا تُدخَل خطأً ولا تتقادم.
                 OldValue = asset.RevaluedValue,
                 NewValue = dto.NewValue,
                 Notes = dto.Notes,
@@ -83,16 +80,16 @@ namespace PrimeERP.Application.Services.Assets
 
             try
             {
-                Db.RunTransaction((conn, tx) =>
+                Tx(db =>
                 {
-                    revaluation.Id = _revaluations.Insert(revaluation, conn, tx);
-                    Apply(conn, tx, asset, revaluation.NewValue);
+                    revaluation.Id = _revaluations.Insert(revaluation, db);
+                    Apply(db, asset, revaluation.NewValue);
 
-                    revaluation.JournalEntryId = PostEntry(conn, tx, revaluation.RevaluationDate,
+                    revaluation.JournalEntryId = PostEntry(db, revaluation.RevaluationDate,
                         $"{Msg("Revaluation")} — {asset.Name}",
                         accounts.Value.Debit, accounts.Value.Credit, System.Math.Abs(revaluation.Difference));
 
-                    _revaluations.SetJournalEntryId(conn, tx, revaluation.Id, revaluation.JournalEntryId.Value);
+                    _revaluations.SetJournalEntryId(db, revaluation.Id, revaluation.JournalEntryId.Value);
                 });
             }
             catch (InvalidOperationException ex)
@@ -106,7 +103,6 @@ namespace PrimeERP.Application.Services.Assets
             return Result.Ok(ToDto(revaluation));
         }
 
-        /// <summary>التعديل حذفٌ ثم إنشاء: القيد لا يُعدَّل في مكانه — نفس ما يفعله السند.</summary>
         public Result Update(UpdateAssetRevaluationDto dto)
         {
             if (!Can("Edit")) return FailDenied();
@@ -138,28 +134,20 @@ namespace PrimeERP.Application.Services.Assets
             var funds = EnsureReversible(revaluation.JournalEntryId);
             if (funds.IsFailure) return funds;
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                ReverseEntry(conn, tx, revaluation.JournalEntryId);
+                ReverseEntry(db, revaluation.JournalEntryId);
 
-                // القيمة تعود إلى ما قبل هذه الإعادة — لا إلى التكلفة، فقد تسبقها إعاداتٌ أخرى.
-                Apply(conn, tx, asset, revaluation.OldValue);
-                _revaluations.Delete(revaluation.Id, CurrentUser, conn, tx);
+                Apply(db, asset, revaluation.OldValue);
+                _revaluations.Delete(revaluation.Id, CurrentUser, db);
             });
 
             Audit.Log(EntityName, id, AuditAction.Delete, details: asset.Code);
             return Result.Ok();
         }
 
-        /// <summary>
-        /// الزيادة أرباحٌ رأسمالية والنقص خسائر — بندان غير تشغيليَّين تحت «إيرادات أخرى» و«مصروفات
-        /// أخرى». والأصل يزيد بالزيادة وينقص بالنقص في الطرف المقابل.
-        /// </summary>
         private Result<(string Debit, string Credit)> Sides(Asset asset, decimal difference)
         {
-            // حساب الأصل نفسه لا جذر الأصول الثابتة: الجذر تجميعيّ يحمل الفئات فلا يقبل ترحيلاً —
-            // نفس ما يفعله الإهلاك بـ DepreciationAccountCode. الزيادة تُدين الأصل وتُقيّد أرباحاً
-            // رأسمالية، والنقص يعكسهما.
             var own = Required(asset.AccountCode, "AccountsMissing");
             if (own.IsFailure) return Result.Fail<(string, string)>(own.ErrorMessage, own.ErrorCode);
 
@@ -171,13 +159,11 @@ namespace PrimeERP.Application.Services.Assets
                 : Result.Ok((counter.Value, own.Value));
         }
 
-        /// <summary>القيمة الجديدة تصير أساس الإهلاك، والدفترية تتبعها ناقصةً ما أُهلك.</summary>
-        private void Apply(System.Data.Common.DbConnection conn, System.Data.Common.DbTransaction tx,
-            Asset asset, decimal value)
+        private void Apply(PrimeDbContext db, Asset asset, decimal value)
         {
             asset.RevaluedValue = value;
             asset.CurrentValue = DepreciationRules.BookValue(value, asset.AccumulatedDepreciation);
-            _assets.Update(asset, conn, tx);
+            _assets.Update(asset, db);
         }
 
         protected override AssetRevaluationDto ToDto(AssetRevaluation r)

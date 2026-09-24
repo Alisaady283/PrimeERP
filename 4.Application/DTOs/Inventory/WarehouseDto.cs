@@ -1,5 +1,6 @@
 namespace PrimeERP.Application.DTOs.Inventory
 {
+    /// <summary>بيانات المخزن</summary>
     public class WarehouseDto
     {
         public int    Id          { get; set; }

@@ -4,11 +4,7 @@ using PrimeERP.UI.ViewModels;
 
 namespace PrimeERP.UI.Components.Documents
 {
-    /// <summary>
-    /// سطر مستند مرن — يخدم القيد والفاتورة وإذن المخزن بنفس النوع بدل كلاس مختلف لكل حالة.
-    /// كل القيم مخزّنة في Values؛ الخصائص المباشرة (Qty, Price...) والـ indexer كلاهما يقرأ/يكتب نفس المخزن.
-    /// يطبّق IEditableObject حتى يتعامل DataGrid تلقائياً مع ESC (استرجاع القيمة الأصلية) عبر آليته القياسية.
-    /// </summary>
+    /// <summary>سطر مستند مرن</summary>
     public class DocumentLine : BaseViewModel, IEditableObject
     {
         public Dictionary<string, object> Values { get; } = new();
@@ -19,12 +15,6 @@ namespace PrimeERP.UI.Components.Documents
             set => SetValue(key, value);
         }
 
-        /// <summary>
-        /// يرجع this — تُستخدم كخاصية Binding حقيقية (Path="Self") بدل Path فارغ في MultiBinding.
-        /// WPF لا يُنشئ أي مستمع PropertyChanged لمسار فارغ (Path="")، فلا يُعاد تقييم القيمة أبداً بعد
-        /// الربط الأول مهما أُطلقت إشعارات. Path="Self" ينشئ مستمعاً حقيقياً على اسم خاصية حقيقي،
-        /// فيستجيب لإشعار OnPropertyChanged(string.Empty) القياسي (اصطلاح "كل شيء تغيّر" في WPF).
-        /// </summary>
         public DocumentLine Self => this;
 
         public int LineNo
@@ -51,16 +41,13 @@ namespace PrimeERP.UI.Components.Documents
         public decimal LineTotal { get => GetDecimal(nameof(LineTotal)); set => SetValue(nameof(LineTotal), value); }
         public string  Notes     { get => GetString(nameof(Notes));      set => SetValue(nameof(Notes), value); }
 
-        /// <summary>سطر لم يُلمس بعد (أحد الأسطر الافتراضية الفارغة) — لا يُعتبر خطأ تحقّق.</summary>
         public bool IsEmpty =>
             string.IsNullOrEmpty(ItemCode) && Qty == 0 && Debit == 0 && Credit == 0 && string.IsNullOrEmpty(Notes);
 
         public bool IsValid => Errors.Count == 0;
 
-        /// <summary>مفتاح العمود → رسالة الخطأ — يملؤها LineValidationEngine.Validate بعد كل تحقق.</summary>
         public Dictionary<string, string> Errors { get; } = new();
 
-        /// <summary>LineValidationEngine يكتب مباشرة في Errors دون إشعار — تُستدعى بعد كل Validate لتحديث ربط الواجهة (الإطار الأحمر والـ tooltip).</summary>
         public void NotifyErrorsChanged() => OnPropertyChanged(nameof(Errors));
 
         public DocumentLine Clone()
@@ -71,7 +58,6 @@ namespace PrimeERP.UI.Components.Documents
             return clone;
         }
 
-        // ===================== IEditableObject — يجعل ESC أثناء تعديل الخلية يستعيد القيمة الأصلية تلقائياً =====================
 
         private Dictionary<string, object> _snapshot;
 
@@ -94,8 +80,6 @@ namespace PrimeERP.UI.Components.Documents
             Values[key] = value;
             OnPropertyChanged(key);
             OnPropertyChanged(nameof(IsEmpty));
-            // إشعار فارغ الاسم = "كل شيء تغيّر" بمواصفة WPF القياسية — يحدّث فوراً كل Binding يستمع على هذا
-            // الكائن (مثل Path="Self" في DocumentLinesGrid) دفعة واحدة بعد أي تعديل خلية أو إعادة حساب.
             OnPropertyChanged(string.Empty);
         }
 

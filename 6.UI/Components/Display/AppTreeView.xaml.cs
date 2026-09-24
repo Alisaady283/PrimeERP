@@ -7,10 +7,7 @@ using PrimeERP.UI.Components.Tree;
 
 namespace PrimeERP.UI.Components.Display
 {
-    /// <summary>
-    /// شجرة مربوطة على TreeNodeViewModel.VisibleChildren — فلترة إخفاء حقيقية عبر TreeFilterEngine،
-    /// لا مجرد توسيع لمسارات المطابقة كما كانت النسخة الأولى.
-    /// </summary>
+    /// <summary>شجرة مربوطة على TreeNodeViewModel.VisibleChildren</summary>
     public partial class AppTreeView : UserControl
     {
         public static readonly DependencyProperty ItemsSourceProperty =
@@ -35,7 +32,6 @@ namespace PrimeERP.UI.Components.Display
             set => SetValue(CheckModeProperty, value);
         }
 
-        /// <summary>يُطلق بعد كل تغيّر حالة تأشير (نقر المستخدم أو انتشار من عقدة أب).</summary>
         public event EventHandler<TreeNodeViewModel> CheckStateChanged;
 
         public IEnumerable<TreeNodeViewModel> ItemsSource
@@ -56,7 +52,6 @@ namespace PrimeERP.UI.Components.Display
             set => SetValue(SearchTextProperty, value);
         }
 
-        /// <summary>فلتر إضافي (مثل LeafOnly أو TypeFilter عند AccountPicker) — يُعاد تطبيقه مع كل بحث. استدعِ RefreshFilter() بعد تغييره برمجياً.</summary>
         public Func<TreeNodeViewModel, bool> ExtraFilter { get; set; }
 
         private List<TreeNodeViewModel> _roots = new();
@@ -66,11 +61,6 @@ namespace PrimeERP.UI.Components.Display
             InitializeComponent();
         }
 
-        /// <summary>⚠️ ItemsSource قد تُملأ لاحقاً بشكل غير متزامن (TreeRenderer يربط قبل اكتمال LoadAsync ثم
-        /// يملأ نفس نسخة RootNodes لاحقاً) — نسخة لقطة واحدة وقت الربط فقط (كما كانت) لا تلتقط ذلك أبداً لأن
-        /// قيمة الخاصية نفسها (مرجع المجموعة) لا يتغيّر، فقط محتواها؛ WPF لا يعيد استدعاء معالج تغيّر الخاصية
-        /// لمجرد تغيّر المحتوى. الاشتراك في INotifyCollectionChanged هنا يجعل القطعة تتصرّف كأي ItemsControl
-        /// حقيقي مربوط بـObservableCollection — اكتُشف فعلياً كسبب صفحة شجرة الحسابات الفارغة رغم بيانات حقيقية.</summary>
         private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var c = (AppTreeView)d;
@@ -97,7 +87,6 @@ namespace PrimeERP.UI.Components.Display
         private static void OnSearchTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
             ((AppTreeView)d).RefreshFilter();
 
-        /// <summary>يعيد تطبيق TreeFilterEngine بحالة SearchText/ExtraFilter الحالية — استدعِه بعد تغيير ExtraFilter برمجياً.</summary>
         public void RefreshFilter()
         {
             TreeFilterEngine.Apply(_roots, SearchText, ExtraFilter);
@@ -124,7 +113,6 @@ namespace PrimeERP.UI.Components.Display
             Cycle(node);
         }
 
-        /// <summary>ينقل العقدة للحالة التالية ثم ينشرها لكل الأبناء — عقدة الأب هي "تحديد/إلغاء الكل" لفرعها.</summary>
         public void Cycle(TreeNodeViewModel node)
         {
             if (!node.IsCheckEnabled) return;

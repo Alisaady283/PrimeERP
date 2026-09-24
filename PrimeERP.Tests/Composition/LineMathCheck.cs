@@ -16,7 +16,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>صافي السطر يُحسب حيّاً أثناء الإدخال بنفس معادلة الترحيل، والنافذة تتّسع لأعمدته.</summary>
+    /// <summary>صافي السطر يُحسب حيّاً</summary>
     [Collection("WpfApplication")]
     public class LineMathCheck : IDisposable
     {
@@ -32,7 +32,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
                 var toast = _db.Services.GetRequiredService<IToastService>();
                 var definition = _db.Services.GetRequiredService<IModuleRegistry>().Get("SalesInvoices").DocumentDialog;
 
@@ -51,7 +51,6 @@ namespace PrimeERP.Tests.Composition
                         var numerics = Descendants<AppNumericBox>(window).ToList();
                         var net = Descendants<AppTextBox>(window).First(t => t.IsReadOnly);
 
-                        // ترتيب الأعمدة: الكمية، السعر، خصم %، ق.مضافة %، خ.إضافة %
                         numerics[0].Value = 10m;
                         numerics[1].Value = 120m;
                         readings.Add(net.Text);
@@ -77,7 +76,7 @@ namespace PrimeERP.Tests.Composition
                 catch (Exception ex) { thrown = ex; }
 
                 Assert.Null(thrown);
-                Assert.Equal(new[] { "1,200.00", "1,080.00", "1,231.20", "1,220.40" }, readings);
+                Assert.Equal(new[] { "1,200.00", "1,080.00", "1,231.20", "1,218.89" }, readings);   // الخصم من الصافي بعد الضريبة
                 Assert.Equal(1260d, width);
             });
         }

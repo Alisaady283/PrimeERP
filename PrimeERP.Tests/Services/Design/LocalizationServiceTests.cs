@@ -4,9 +4,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services.Design
 {
-    /// <summary>LocalizationService (مفرد ثابت، يبدّل قاموس Strings.ar/en.xaml الحقيقي على Application.Current)
-    /// لم تكن مُختبرة إطلاقاً. [Collection("WpfApplication")] — نفس تجميعة IdentityServiceTests/
-    /// CrudPageRendererTests (كلها تلمس Application المشتركة عبر WpfApplicationFixture).</summary>
+    /// <summary>تبديل قاموس النصوص الحقيقي</summary>
     [Collection("WpfApplication")]
     public class LocalizationServiceTests
     {

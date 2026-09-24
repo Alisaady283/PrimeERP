@@ -1,116 +1,93 @@
 using System;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using PrimeERP.Data.Core;
-using PrimeERP.Data.Query;
 using PrimeERP.Data.Repositories.Base;
-using PrimeERP.Data.Schema;
 using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Data.Repositories
 {
+    /// <summary>البدل والخصم جدولان بشكلٍ واحد</summary>
     public interface IEmployeeMovementRepository<T> where T : EmployeeMovement
     {
-        void CreateTable();
-        T GetById(int id, DbConnection conn = null, DbTransaction tx = null);
+        T GetById(int id, PrimeDbContext db = null);
         (List<T> Items, int Total) GetPaged(int page, int pageSize, string searchText, int? employeeId,
             string sortColumn, bool sortDescending);
 
-        /// <summary>مجموع ما على كل موظف في شهرٍ بعينه — مادّة سطر المسير، باستعلامٍ واحد لا لكل موظف.</summary>
         Dictionary<int, decimal> SumByEmployee(int month, int year);
 
-        int Insert(T item, DbConnection conn = null, DbTransaction tx = null);
-        void Update(T item, DbConnection conn = null, DbTransaction tx = null);
-        void Delete(int id, string deletedBy, DbConnection conn = null, DbTransaction tx = null);
+        int Insert(T item, PrimeDbContext db = null);
+        void Update(T item, PrimeDbContext db = null);
+        void Delete(int id, string deletedBy, PrimeDbContext db = null);
     }
 
     public interface IEmployeeAllowanceRepository : IEmployeeMovementRepository<EmployeeAllowance> { }
     public interface IEmployeeDeductionRepository : IEmployeeMovementRepository<EmployeeDeduction> { }
 
-    /// <summary>
-    /// البدل والخصم جدولان بشكلٍ واحد — الفرق اسمُ الجدول وحده، فالجملة تُكتب هنا مرّةً ويرثها الاثنان.
-    /// اسم الموظف يأتي بربطٍ في الاستعلام لا باستعلامٍ لكل صفّ.
-    /// </summary>
     public abstract class EmployeeMovementRepository<T> : RepositoryBase<T>, IEmployeeMovementRepository<T>
         where T : EmployeeMovement, new()
     {
-        public void CreateTable() =>
-            SchemaBuilder.Table(TableName)
-                .Id()
-                .Int("EmployeeId", nullable: false)
-                .DateCol("Date", nullable: false)
-                .Int("Month", nullable: false).Int("Year", nullable: false)
-                .Text("Reason", 200)
-                .Decimal("Amount")
-                .Text("Notes")
-                .Audit().SoftDelete()
-                .Index("EmployeeId")
-                .Create();
 
-        private const string SelectWithEmployee = @"
-            SELECT t.*, e.Name AS EmployeeName, e.Code AS EmployeeCode
-            FROM {0} t LEFT JOIN Employees e ON e.Id = t.EmployeeId";
+        /// <summary>اسم الموظف وكوده عرضٌ فقط</summary>
+        private static List<T> WithEmployee(PrimeDbContext db, IQueryable<T> rows) =>
+            (from m in rows
+             join e in db.Employees.AsNoTracking() on m.EmployeeId equals e.Id into found
+             from e in found.DefaultIfEmpty()
+             select new { Row = m, e.Name, e.Code })
+            .AsEnumerable()
+            .Select(x =>
+            {
+                x.Row.EmployeeName = x.Name;
+                x.Row.EmployeeCode = x.Code;
+                return x.Row;
+            })
+            .ToList();
 
-        protected override T Map(DataRow row) => new()
+        public override T GetById(int id, PrimeDbContext db = null)
         {
-            Id         = Convert.ToInt32(row["Id"]),
-            EmployeeId = Convert.ToInt32(row["EmployeeId"]),
-            Date       = Convert.ToDateTime(row["Date"]),
-            Month      = Convert.ToInt32(row["Month"]),
-            Year       = Convert.ToInt32(row["Year"]),
-            Reason     = row["Reason"] == DBNull.Value ? null : row["Reason"].ToString(),
-            Amount     = Convert.ToDecimal(row["Amount"]),
-            Notes      = row["Notes"] == DBNull.Value ? null : row["Notes"].ToString(),
-            EmployeeName = row.Table.Columns.Contains("EmployeeName") && row["EmployeeName"] != DBNull.Value ? row["EmployeeName"].ToString() : null,
-            EmployeeCode = row.Table.Columns.Contains("EmployeeCode") && row["EmployeeCode"] != DBNull.Value ? row["EmployeeCode"].ToString() : null,
-            CreatedAt  = row["CreatedAt"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(row["CreatedAt"]),
-            CreatedBy  = row["CreatedBy"] == DBNull.Value ? null : row["CreatedBy"].ToString(),
-            IsDeleted  = Convert.ToBoolean(row["IsDeleted"]),
-        };
-
-        public override T GetById(int id, DbConnection conn = null, DbTransaction tx = null) =>
-            QueryOne($"{string.Format(SelectWithEmployee, TableName)} WHERE t.Id = @id AND t.IsDeleted = @d",
-                conn, tx, ("@id", id), ("@d", false));
+            return Scope(db, ctx =>
+            {
+                return WithEmployee(ctx, Live(Rows(ctx).AsNoTracking()).Where(m => m.Id == id)).FirstOrDefault();
+            });
+        }
 
         public (List<T> Items, int Total) GetPaged(int page, int pageSize, string searchText, int? employeeId,
             string sortColumn, bool sortDescending)
         {
-            var where = new WhereBuilder().Eq("t.IsDeleted", false).Eq("t.EmployeeId", employeeId).LikeAny(searchText, "t.Reason", "e.Name");
-            var column = sortColumn == "Amount" ? "t.Amount" : "t.Date";
+            using var db = DbContextFactory.Open();
+            var rows = Rows(db).AsNoTracking().Where(m => !m.IsDeleted);
+            if (employeeId != null) rows = rows.Where(m => m.EmployeeId == employeeId);
+            if (!string.IsNullOrWhiteSpace(searchText))
+                rows = rows.Where(m => EF.Functions.Like(m.Reason, $"%{searchText}%")
+                                    || db.Employees.Any(e => e.Id == m.EmployeeId
+                                                          && EF.Functions.Like(e.Name, $"%{searchText}%")));
 
-            return Page(where, page, pageSize, OrderBuilder.By(column, sortDescending, "t.Id"),
-                from: $"{TableName} t LEFT JOIN Employees e ON e.Id = t.EmployeeId",
-                select: string.Format(SelectWithEmployee, TableName));
+            var total = rows.Count();
+            var ordered = (sortColumn == "Amount" ? By(m => m.Amount, sortDescending)
+                                                 : By(m => m.Date,   sortDescending))(rows);
+
+            return (WithEmployee(db, ordered.ThenByDescending(m => m.Id)
+                                            .Skip(Math.Max(0, page - 1) * pageSize).Take(pageSize)), total);
         }
 
         public Dictionary<int, decimal> SumByEmployee(int month, int year)
         {
-            var result = new Dictionary<int, decimal>();
-            foreach (DataRow row in DbHelper.Query(
-                $@"SELECT EmployeeId, COALESCE(SUM(Amount), 0) AS Total FROM {TableName}
-                   WHERE IsDeleted = @d AND Month = @m AND Year = @y GROUP BY EmployeeId",
-                DbHelper.Params(("@d", false), ("@m", month), ("@y", year))).Rows)
-                result[Convert.ToInt32(row["EmployeeId"])] = Convert.ToDecimal(row["Total"]);
-
-            return result;
+            using var db = DbContextFactory.Open();
+            return Rows(db).AsNoTracking()
+                .Where(m => !m.IsDeleted && m.Month == month && m.Year == year)
+                .GroupBy(m => m.EmployeeId)
+                .Select(g => new { g.Key, Total = g.Sum(m => m.Amount) })
+                .ToDictionary(x => x.Key, x => x.Total);
         }
 
-        public int Insert(T item, DbConnection conn = null, DbTransaction tx = null) =>
-            InsertGetId($@"INSERT INTO {TableName} (EmployeeId, Date, Month, Year, Reason, Amount, Notes, CreatedBy)
-                           VALUES (@eid, @date, @month, @year, @reason, @amount, @notes, @by)",
-                conn, tx, ("@eid", item.EmployeeId), ("@date", item.Date), ("@month", item.Month), ("@year", item.Year),
-                ("@reason", item.Reason ?? ""), ("@amount", item.Amount), ("@notes", item.Notes ?? ""), ("@by", item.CreatedBy));
+        public int Insert(T item, PrimeDbContext db = null) => Add(item, db);
 
-        public void Update(T item, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec($@"UPDATE {TableName} SET EmployeeId = @eid, Date = @date, Month = @month, Year = @year, Reason = @reason, Amount = @amount,
-                    Notes = @notes, UpdatedAt = @now, UpdatedBy = @by WHERE Id = @id",
-                conn, tx, ("@eid", item.EmployeeId), ("@date", item.Date), ("@month", item.Month), ("@year", item.Year),
-                ("@reason", item.Reason ?? ""), ("@amount", item.Amount), ("@notes", item.Notes ?? ""), ("@now", DateTime.Now),
-                ("@by", item.UpdatedBy), ("@id", item.Id));
+        public void Update(T item, PrimeDbContext db = null) =>
+            Modify(item, db);
 
-        public void Delete(int id, string deletedBy, DbConnection conn = null, DbTransaction tx = null) =>
-            SoftDelete(id, deletedBy, conn, tx);
+        public void Delete(int id, string deletedBy, PrimeDbContext db = null) =>
+            SoftDelete(id, deletedBy, db);
     }
 
     public class EmployeeAllowanceRepository : EmployeeMovementRepository<EmployeeAllowance>, IEmployeeAllowanceRepository

@@ -2,6 +2,7 @@ using PrimeERP.Domain.Entities.Common;
 
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان Department</summary>
     public class Department : BaseModel
     {
         public string Name      { get; set; }

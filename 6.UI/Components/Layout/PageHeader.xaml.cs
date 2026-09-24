@@ -4,6 +4,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Layout
 {
+    /// <summary>تخطيط PageHeader</summary>
     public partial class PageHeader : UserControl
     {
         public static readonly DependencyProperty TitleProperty =

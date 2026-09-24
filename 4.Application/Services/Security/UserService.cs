@@ -1,49 +1,67 @@
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Security;
+using PrimeERP.Application.Validation;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
+using PrimeERP.Platform.Security;
 using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.Security
 {
-    // فوق جدول Users المُدار أصلاً عبر PermissionDb — راجع تعليق RoleService لنفس الاستثناء.
+    /// <summary>المستخدمون وكلمات مرورهم</summary>
     public class UserService : ServiceBase, IUserService
     {
         protected override string PermissionPrefix => "Users";
         protected override string StringPrefix => "Str.User";
         protected override string EntityName => "Users";
 
-        public UserService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
-            : base(permissions, settings, localization, audit) { }
+        private readonly IPermissionStore _store;
 
-        public Result<List<UserDto>> GetAll() => Result.Ok(PermissionDb.GetAllUsers().Select(ToDto).ToList());
+        public UserService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
+            IAuditLogger audit, IPermissionStore store)
+            : base(permissions, settings, localization, audit) => _store = store;
+
+        public Result<List<UserDto>> GetAll() => Result.Ok(_store.GetAllUsers().Select(ToDto).ToList());
 
         public Result<UserDto> Create(CreateUserDto dto)
         {
             if (!Can("Create")) return FailDenied<UserDto>();
-            if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password) || string.IsNullOrWhiteSpace(dto.DisplayName))
-                return Result.Fail<UserDto>("اسم المستخدم وكلمة المرور والاسم مطلوبون", ErrorCode.ValidationFailed);
-            if (PermissionDb.UsernameExists(dto.Username))
-                return Result.Fail<UserDto>("اسم المستخدم مستخدَم بالفعل", ErrorCode.ValidationFailed);
+            if (string.IsNullOrWhiteSpace(dto.Password)) return Fail<UserDto>("كلمة المرور مطلوبة", ErrorCode.ValidationFailed);
 
-            var id = PermissionDb.InsertUser(dto.Username, dto.Password, dto.DisplayName, dto.RoleId, dto.IsActive);
+            var check = Check(new UserValidator(_store),
+                new User { Username = dto.Username, DisplayName = dto.DisplayName, RoleId = dto.RoleId });
+            if (check.IsFailure) return check.As<UserDto>();
+
+            var (hash, salt) = PasswordHasher.Hash(dto.Password);
+            var id = _store.InsertUser(new User
+            {
+                Username = dto.Username, PasswordHash = hash, Salt = salt,
+                DisplayName = dto.DisplayName, RoleId = dto.RoleId, IsActive = dto.IsActive
+            });
             Audit.Log(EntityName, id, AuditAction.Insert, newValue: new { dto.Username });
 
-            return Result.Ok(PermissionDb.GetAllUsers().Where(u => u.Id == id).Select(ToDto).First());
+            return Result.Ok(_store.GetAllUsers().Where(u => u.Id == id).Select(ToDto).First());
         }
 
         public Result Update(UpdateUserDto dto)
         {
             if (!Can("Edit")) return FailDenied();
-            if (string.IsNullOrWhiteSpace(dto.DisplayName)) return Fail("الاسم مطلوب", ErrorCode.ValidationFailed);
 
-            PermissionDb.UpdateUser(dto.Id, dto.DisplayName, dto.RoleId, dto.IsActive);
+            var check = Check(new UserValidator(_store, isEdit: true),
+                new User { Id = dto.Id, DisplayName = dto.DisplayName, RoleId = dto.RoleId });
+            if (check.IsFailure) return check;
+
+            _store.UpdateUser(dto.Id, dto.DisplayName, dto.RoleId, dto.IsActive);
             if (!string.IsNullOrWhiteSpace(dto.Password))
-                PermissionDb.UpdateUserPassword(dto.Id, dto.Password);
+            {
+                var (hash, salt) = PasswordHasher.Hash(dto.Password);
+                _store.UpdateUserPassword(dto.Id, hash, salt);
+            }
 
             Audit.Log(EntityName, dto.Id, AuditAction.Update, newValue: new { dto.DisplayName });
             return Result.Ok();
@@ -53,12 +71,12 @@ namespace PrimeERP.Application.Services.Security
         {
             if (!Can("Delete")) return FailDenied();
 
-            PermissionDb.DeleteUser(id);
+            _store.DeleteUser(id);
             Audit.Log(EntityName, id, AuditAction.Delete);
             return Result.Ok();
         }
 
-        private static UserDto ToDto(PermissionDb.UserListRecord u)
+        private static UserDto ToDto(User u)
         {
             var (variant, statusKey) = (u.IsActive ? StatusVariant.Success : StatusVariant.Danger, u.IsActive ? "Active" : "Inactive");
             return new UserDto

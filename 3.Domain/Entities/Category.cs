@@ -1,5 +1,6 @@
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان Category</summary>
     public class Category
     {
         public int    Id        { get; set; }
@@ -9,10 +10,8 @@ namespace PrimeERP.Domain.Entities
         public bool   IsActive  { get; set; } = true;
         public string Notes     { get; set; }
 
-        /// <summary>حساب الفئة في الشجرة — تجميعيّ تحت جذر الأصول الثابتة، تعيش أصولُها تحته.</summary>
         public string AccountCode { get; set; }
 
-        /// <summary>مرآتها تحت جذر مجمّع الإهلاك — تعيش تحتها مجمّعات أصولها.</summary>
         public string DepreciationAccountCode { get; set; }
     }
 }

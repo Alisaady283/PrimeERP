@@ -1,6 +1,6 @@
+using PrimeERP.Data.Core;
 using System;
 using PrimeERP.Application.Services;
-using System.Data.Common;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Permissions;
@@ -14,14 +14,11 @@ using PrimeERP.UI.Services;
 using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
 using Xunit;
-using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>
-    /// قاعدة بيانات خاصة معزولة لكل اختبار (لا [Collection("Database")] المشتركة) — نفس سبب AccountServiceTests:
-    /// اختبارات تراكب السنوات المالية وتوليد الفترات تفترض "لا توجد سنوات أخرى" مسبقاً.
-    /// </summary>
+    /// <summary>قاعدة معزولة لكل اختبار</summary>
     public class FiscalPeriodServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -53,19 +50,18 @@ namespace PrimeERP.Tests.Services
 
         private void SeedEntry(string date, bool posted, params (string Code, decimal Debit, decimal Credit)[] lines)
         {
-            var id = Db.RunTransaction((conn, tx) =>
+            var id = DbContextFactory.RunTransaction(db =>
             {
                 var entry = new JournalEntry { EntryNo = $"TEST-{Guid.NewGuid():N}", EntryDate = date, Description = "test", Source = "test" };
-                var newId = _journalRepo.InsertHeader(conn, tx, entry);
+                var newId = _journalRepo.InsertHeader(db, entry);
                 int lineNo = 1;
                 foreach (var l in lines)
-                    _journalRepo.InsertLine(conn, tx, newId, lineNo++, new JournalLine { AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit });
+                    _journalRepo.InsertLine(db, newId, lineNo++, new JournalLine { AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit });
                 return newId;
             });
             if (posted) _journalRepo.SetPosted(id, true);
         }
 
-        // ===================== CreateYear =====================
 
         [Theory]
         [InlineData(12, 12)]
@@ -134,14 +130,13 @@ namespace PrimeERP.Tests.Services
         {
             var year = _service.CreateYear(new DateTime(2026, 1, 1), 12);
             Assert.True(year.IsSuccess);
-            Db.RunTransaction((conn, tx) => _fiscalRepo.SetYearClosed(conn, tx, year.Value.Id, DateTime.Now, "test", null));
+            DbContextFactory.RunTransaction(db => _fiscalRepo.SetYearClosed(db, year.Value.Id, DateTime.Now, "test", null));
 
             var result = _service.SetCurrent(year.Value.Id);
 
             Assert.False(result.IsSuccess);
         }
 
-        // ===================== IsOpen =====================
 
         [Fact]
         public void IsOpen_NoDefinedPeriod_DefaultsOpen()
@@ -177,12 +172,11 @@ namespace PrimeERP.Tests.Services
         public void IsOpen_ClosedYear_ReturnsFalse()
         {
             var year = _service.CreateYear(new DateTime(2026, 1, 1), 12);
-            Db.RunTransaction((conn, tx) => _fiscalRepo.SetYearClosed(conn, tx, year.Value.Id, DateTime.Now, "test", null));
+            DbContextFactory.RunTransaction(db => _fiscalRepo.SetYearClosed(db, year.Value.Id, DateTime.Now, "test", null));
 
             Assert.False(_service.IsOpen(new DateTime(2026, 3, 1)));
         }
 
-        // ===================== ClosePeriod / ReopenPeriod =====================
 
         [Fact]
         public void ClosePeriod_WithUnpostedEntries_Fails()
@@ -241,7 +235,6 @@ namespace PrimeERP.Tests.Services
             Assert.True(result.IsSuccess, result.ErrorMessage);
         }
 
-        // ===================== CloseYear / ReopenYear =====================
 
         [Fact]
         public void CloseYear_BuildsBalancedClosingEntry_NetProfitEqualsRevenueMinusExpense()
@@ -314,7 +307,6 @@ namespace PrimeERP.Tests.Services
             Assert.Null(_journalRepo.GetById(closingEntryId.Value));
         }
 
-        // ===================== الصلاحيات =====================
 
         [Fact]
         public void CreateYear_WithoutPermission_Fails()

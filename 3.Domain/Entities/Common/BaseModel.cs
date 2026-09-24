@@ -2,7 +2,7 @@ using System;
 
 namespace PrimeERP.Domain.Entities.Common
 {
-    /// <summary>القاعدة المشتركة لكل الكيانات الرئيسية — تتبع الإنشاء/التعديل، حذف منطقي، وعمود تزامن.</summary>
+    /// <summary>القاعدة المشتركة لكل الكيانات الرئيسية</summary>
     public abstract class BaseModel
     {
         public int       Id         { get; set; }
@@ -14,7 +14,6 @@ namespace PrimeERP.Domain.Entities.Common
         public DateTime? DeletedAt  { get; set; }
         public string    DeletedBy  { get; set; }
 
-        /// <summary>عدّاد تزامن متفائل (Optimistic Concurrency) — راجع SchemaBuilder.Concurrency وDbHelper.ExecuteWithConcurrencyCheck.</summary>
         public long RowVersion { get; set; }
     }
 }

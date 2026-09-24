@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.HR;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
@@ -12,17 +13,17 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.HR
 {
-    // بنفس بنية CategoryService — بيانات هيكلية بسيطة، بلا صفحات (GetAll فقط)، Delete = تعطيل منطقي.
+    /// <summary>خدمة الأقسام</summary>
     public class DepartmentService : ServiceBase, IDepartmentService
     {
         protected override string PermissionPrefix => "Departments";
         protected override string StringPrefix => "Str.Department";
         protected override string EntityName => "Departments";
 
-        private readonly IDepartmentRepository _repo;
+        private readonly ILookupRepository<Department> _repo;
 
         public DepartmentService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IDepartmentRepository repo) : base(permissions, settings, localization, audit) => _repo = repo;
+            IAuditLogger audit, ILookupRepository<Department> repo) : base(permissions, settings, localization, audit) => _repo = repo;
 
         public Result<List<DepartmentDto>> GetAll(bool includeInactive = false) =>
             Result.Ok(_repo.GetAll(includeInactive).Select(ToDto).ToList());

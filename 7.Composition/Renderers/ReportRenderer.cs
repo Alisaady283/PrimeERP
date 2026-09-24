@@ -13,9 +13,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Composition.Renderers
 {
-    // معايير + تشغيل + نتيجة — يبني لوحة المعايير بإعادة استخدام DialogRenderer.BuildField/LoadPickerItems/
-    // GetControlValue (نفس آلية الحقول المسطّحة)، والنتيجة عبر AppDataGrid العادية (Columns/Rows من
-    // ReportDefinition.Generate). صفر XAML جديد.
+    /// <summary>تصيير التقرير</summary>
     public static class ReportRenderer
     {
         public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services)
@@ -49,7 +47,6 @@ namespace PrimeERP.Composition.Renderers
 
             var resultGrid = new AppDataGrid { ShowRowActions = false };
 
-            // نتيجة آخر تشغيل — أزرار الطباعة والتصدير تعمل عليها، ومعطَّلة قبل أول تشغيل.
             PrimeERP.Application.Reporting.ReportData current = null;
             string currentTitle = null;
             List<object> Rows() => ((System.Collections.IEnumerable)current.Rows).Cast<object>().ToList();
@@ -81,8 +78,6 @@ namespace PrimeERP.Composition.Renderers
                 current = result.Value;
                 currentTitle = LocalizationService.Get(report.TitleKey);
 
-                // عنوان يُكمِّله التقرير نفسه (اسم الصنف في بطاقة الصنف مثلاً) — مفتاحٌ في الإجماليات
-                // يُرفَع للعنوان بدل أن يبني كل تقرير عنوانه بكود.
                 if (report.TitleOverrideTotalKey != null &&
                     current.Totals.TryGetValue(report.TitleOverrideTotalKey, out var suffix))
                     currentTitle = $"{currentTitle} — {suffix}";
@@ -116,10 +111,6 @@ namespace PrimeERP.Composition.Renderers
             return root;
         }
 
-        /// <summary>
-        /// ينفّذ التقرير المُعلَن: يحلّ خدمته، ويربط وسائط دالته بقيم بارامتراته بالاسم والترتيب، ثم
-        /// يستدعيها. لا كود لكل تقرير — طريقة واحدة يستوردها الثلاثة عشر وما يُبنى بعدها.
-        /// </summary>
         public static Result<PrimeERP.Application.Reporting.ReportData> Run(
             ReportDefinition report, IServiceProvider services, Dictionary<string, object> parameters)
         {

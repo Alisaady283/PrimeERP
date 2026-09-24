@@ -7,8 +7,13 @@ using PrimeERP.Domain.Rules;
 
 namespace PrimeERP.Application.Validation
 {
+    /// <summary>تحقّق نسخة البرنامج</summary>
     public class EditionValidator : IValidator<CreateEditionDto>
     {
+        private readonly BackupCapability _capability;
+
+        public EditionValidator(BackupCapability capability) => _capability = capability;
+
         public ValidationResult Validate(CreateEditionDto edition) =>
             Rules.For<CreateEditionDto>()
                 .Required(x => x.TargetFolder, "مسار النسخة")
@@ -17,13 +22,11 @@ namespace PrimeERP.Application.Validation
                     if (dto.ModuleKeys == null || dto.ModuleKeys.Count == 0)
                         result.AddError(nameof(dto.ModuleKeys), "اختر صفحةً واحدة على الأقل");
 
-                    // نسخ القاعدة ملفاً سلوكُ SQLite وحده — الخادم يبقى خادماً، فلا تُنسخ قاعدته في مجلد.
-                    if (DbFactory.Current.GetBackupCapability() != BackupCapability.FileCopy)
+                    if (_capability != BackupCapability.FileCopy)
                         result.AddError(nameof(dto.TargetFolder), "إنشاء نسخة يعمل مع قاعدة محلية فقط");
 
                     if (string.IsNullOrWhiteSpace(dto.TargetFolder)) return;
 
-                    // نسخة داخل البرنامج تنسخ نفسها وهي تُنسخ — مسارٌ خارجه شرطُ اكتمالها.
                     if (Path.TrimEndingDirectorySeparator(Path.GetFullPath(dto.TargetFolder))
                             .StartsWith(Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory),
                                         StringComparison.OrdinalIgnoreCase))

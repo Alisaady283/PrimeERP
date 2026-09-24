@@ -4,6 +4,7 @@ using System.Windows.Controls;
 
 namespace PrimeERP.UI.Components.Layout
 {
+    /// <summary>تخطيط FilterBar</summary>
     public partial class FilterBar : UserControl
     {
         public static readonly DependencyProperty SearchPlaceholderProperty =
@@ -25,14 +26,11 @@ namespace PrimeERP.UI.Components.Layout
         public string SearchPlaceholder { get => (string)GetValue(SearchPlaceholderProperty); set => SetValue(SearchPlaceholderProperty, value); }
         public object FiltersContent    { get => GetValue(FiltersContentProperty);              set => SetValue(FiltersContentProperty, value); }
 
-        /// <summary>إجراءات المستند المحدَّد — المستوى الثاني.</summary>
         public object ActionsContent    { get => GetValue(ActionsContentProperty);              set => SetValue(ActionsContentProperty, value); }
         public int?   ResultCount       { get => (int?)GetValue(ResultCountProperty);           set => SetValue(ResultCountProperty, value); }
 
-        /// <summary>يُطلق بعد فترة التهدئة الخاصة بـ AppSearchBox — استخدمه لتصفية البيانات فعلياً.</summary>
         public event EventHandler<string> Search;
 
-        /// <summary>يُطلق عند الضغط على "مسح الفلتر".</summary>
         public event EventHandler ClearRequested;
 
         public FilterBar()

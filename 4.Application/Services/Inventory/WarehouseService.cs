@@ -3,6 +3,7 @@ using System.Linq;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.Services.Common;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
@@ -13,17 +14,18 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.Inventory
 {
+    /// <summary>خدمة المخازن</summary>
     public class WarehouseService : ServiceBase, IWarehouseService
     {
         protected override string PermissionPrefix => "Warehouses";
         protected override string StringPrefix => "Str.Warehouse";
         protected override string EntityName => "Warehouses";
 
-        private readonly IWarehouseRepository _repo;
+        private readonly ILookupRepository<Warehouse> _repo;
         private readonly INumberSequenceService _numbers;
 
         public WarehouseService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IWarehouseRepository repo, INumberSequenceService numbers) : base(permissions, settings, localization, audit)
+            IAuditLogger audit, ILookupRepository<Warehouse> repo, INumberSequenceService numbers) : base(permissions, settings, localization, audit)
         {
             _repo = repo;
             _numbers = numbers;

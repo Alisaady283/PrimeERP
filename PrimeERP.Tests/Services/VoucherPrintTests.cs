@@ -11,7 +11,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>سند القبض والصرف: ورقةٌ مؤطَّرة بنصف A4، أسطرها تُقرأ جملةً وتوقيعاتها في الذيل.</summary>
+    /// <summary>سند القبض والصرف</summary>
     public class VoucherPrintTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -43,7 +43,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(PrintOrientation.Portrait, printable.Orientation);
         }
 
-        /// <summary>رقم المستند يظهر تحت العنوان وحده — كان يتكرّر في الترويسة.</summary>
         [Fact]
         public void TheNumberIsNotRepeated_InTheHeader()
         {
@@ -53,7 +52,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal("V-1", printable.DocumentSubtitle);
         }
 
-        /// <summary>المبلغ رقماً في صندوقٍ بلا وسم — موضعه المعروف يُغني عن بيانه.</summary>
         [Fact]
         public void TheAmountStandsAlone_InItsOwnBox()
         {
@@ -82,7 +80,6 @@ namespace PrimeERP.Tests.Services
 
         }
 
-        /// <summary>المبلغ بالحروف في سطره لا في صندوقٍ منفصل.</summary>
         [Fact]
         public void TheAmountInWords_SitsOnItsOwnLine()
         {
@@ -98,7 +95,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal("وذلك عن : ", line);
         }
 
-        /// <summary>الشيك وبنكه سطرٌ واحد لا سطران.</summary>
         [Fact]
         public void TheChequeAndItsBank_ShareOneLine()
         {
@@ -124,7 +120,6 @@ namespace PrimeERP.Tests.Services
             });
         }
 
-        /// <summary>الصرف يزيد توقيع المستلِم — من أخذ المال يوقّع بأنه أخذه.</summary>
         [Fact]
         public void ReceiptSignsTwice_AndPaymentThrice()
         {
@@ -132,7 +127,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(new[] { "المستلِم", "المحاسب", "الاعتماد" }, Build(isReceipt: false).SignatureLabels);
         }
 
-        /// <summary>أذون المخزن: أمين المخزن والاعتماد، ويزيد الصرفُ المستلِم. وغيرُها بتوقيعاتها المعتادة.</summary>
         [Theory]
         [InlineData("GoodsReceipt", new[] { "أمين المخزن", "الاعتماد" })]
         [InlineData("DeliveryNote", new[] { "المستلِم", "أمين المخزن", "الاعتماد" })]

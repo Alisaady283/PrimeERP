@@ -5,6 +5,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
+    /// <summary>نطاق الدورة</summary>
     public class FlowScopeTests
     {
         private static ModuleDefinition Module(string key, FlowScope scope) =>

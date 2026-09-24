@@ -17,22 +17,15 @@ using PrimeERP.UI.Components.Tree;
 using PrimeERP.UI.ViewModels;
 using PrimeERP.Platform.Permissions;
 using System.Dynamic;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Modules
 {
-    /// <summary>
-    /// شاشات وحدة البناء نفسها — إعلانات فوق جداول الوصف، أي أن الوحدة مبنيّةٌ بمفرداتها. لا شاشة
-    /// خاصة ولا XAML: نفس CrudPageRenderer الذي يُصيِّر كل شاشة في النظام.
-    ///
-    /// سلسلة الطلب محفوظة في الحقول: الصفحة تطلب قسماً، والعمود يطلب صفحة، والزرّ يطلب صفحة —
-    /// فلا يُنشأ يتيم.
-    /// </summary>
+    /// <summary>شاشات وحدة البناء نفسها</summary>
     public static class BuilderRegistrations
     {
         public static void RegisterAll(IModuleRegistry registry)
         {
-            // شاشات الوحدة وحداتٌ كاملة: لكلٍّ بادئتها ومفاتيحها المولَّدة (View/Create/Edit/Delete).
-            // كانت تستعير بادئة "Settings" — وهي بلا Create ولا Delete، فاختفى زرّا الإضافة والحذف.
             foreach (var key in new[] { "BuilderSections", "BuilderModules", "BuilderColumns", "BuilderActions", "BuilderFilters", "BuilderExport" })
                 PermissionKeys.RegisterBuilt(key);
 
@@ -66,7 +59,6 @@ namespace PrimeERP.Modules
         {
             Key = "BuilderModules", Reorderable = true, TitleKey = "Str.Builder.Modules", PermissionPrefix = "BuilderModules",
             ViewModelFactory = s => Vm<BuilderModulesService>(s, "BuilderModules"),
-            // القسم يُختار أولاً: لا صفحة بلا قسم، ولا زرّ ولا فلتر ولا عمود بلا صفحة.
             Filters = new()
             {
                 new() { Key = nameof(DynamicFilter.SectionId), LabelKey = "Str.Builder.Sections", PickerType = "BuilderSection" },
@@ -82,12 +74,10 @@ namespace PrimeERP.Modules
             },
             Dialog = Dialog<BuilderModulesService>("Str.Builder.Module", new()
             {
-                // النوع أول سؤال: هو ما يحكم القطع التالية والترحيل والصلاحيات.
                 new() { Key = nameof(BuilderModule.Kind), LabelKey = "Str.Builder.Kind", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderKind" },
                 new() { Key = nameof(BuilderModule.SectionId), LabelKey = "Str.Builder.Sections", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderSection" },
                 new() { Key = nameof(BuilderModule.Key), LabelKey = "Str.Builder.Key", Kind = FieldKind.Text, IsRequired = true, MaxLength = 60, IsReadOnlyOnEdit = true },
                 new() { Key = nameof(BuilderModule.Title), LabelKey = "Str.Builder.Title", Kind = FieldKind.Text, IsRequired = true, MaxLength = 160 },
-                // الجدول للسجل والحركة، والمصدر للتقرير — كلٌّ يظهر بنوعه.
                 new() { Key = nameof(BuilderModule.TableName), LabelKey = "Str.Builder.Table", Kind = FieldKind.Text, MaxLength = 60,
                         VisibleWhenField = nameof(BuilderModule.Kind), VisibleWhenValue = (int)Domain.Enums.BuilderKind.Record },
                 new() { Key = nameof(BuilderModule.LineTable), LabelKey = "Str.Builder.LineTable", Kind = FieldKind.Text, MaxLength = 60,
@@ -125,12 +115,10 @@ namespace PrimeERP.Modules
                 new() { Key = nameof(BuilderColumn.Header), LabelKey = "Str.Builder.Header", Kind = FieldKind.Text, IsRequired = true, MaxLength = 120 },
                 new() { Key = nameof(BuilderColumn.Name), LabelKey = "Str.Builder.ColumnName", Kind = FieldKind.Text, IsRequired = true, MaxLength = 60 },
                 new() { Key = nameof(BuilderColumn.DataType), LabelKey = "Str.Builder.DataType", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderDataType" },
-                // «من جدول»: القائمة تتبع النوع، فيظهر الجدول المرجعي عند اختيار مرجع.
                 new() { Key = nameof(BuilderColumn.RefModule), LabelKey = "Str.Builder.FromTable", Kind = FieldKind.Picker, PickerType = "BuilderModule",
                         VisibleWhenField = nameof(BuilderColumn.DataType), VisibleWhenValue = (int)Domain.Enums.BuilderDataType.Reference },
                 new() { Key = nameof(BuilderColumn.RefDisplay), LabelKey = "Str.Builder.DisplayColumn", Kind = FieldKind.Text, MaxLength = 60,
                         VisibleWhenField = nameof(BuilderColumn.DataType), VisibleWhenValue = (int)Domain.Enums.BuilderDataType.Reference },
-                // العمود المحسوب: تجميعٌ من جدول مرتبط — يُقرأ ولا يُخزَّن.
                 new() { Key = nameof(BuilderColumn.Aggregate), LabelKey = "Str.Builder.Computed", Kind = FieldKind.Picker, PickerType = "BuilderAggregate" },
                 new() { Key = nameof(BuilderColumn.AggFrom), LabelKey = "Str.Builder.AggFrom", Kind = FieldKind.Picker, PickerType = "BuilderModule" },
                 new() { Key = nameof(BuilderColumn.AggColumn), LabelKey = "Str.Builder.AggColumn", Kind = FieldKind.Text, MaxLength = 60 },
@@ -167,7 +155,6 @@ namespace PrimeERP.Modules
             Dialog = Dialog<BuilderActionsService>("Str.Builder.Action", new()
             {
                 new() { Key = nameof(BuilderAction.ModuleId), LabelKey = "Str.Builder.Modules", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderModule" },
-                // الزرّ يُختار من كتالوج النظام لا يُكتب.
                 new() { Key = nameof(BuilderAction.ActionKey), LabelKey = "Str.Builder.Button", Kind = FieldKind.Picker, IsRequired = true, PickerType = "ToolbarAction" },
                 new() { Key = nameof(BuilderAction.OnTable), LabelKey = "Str.Builder.OnRow", Kind = FieldKind.Check },
             })
@@ -201,10 +188,6 @@ namespace PrimeERP.Modules
             })
         });
 
-        /// <summary>
-        /// إنشاء برنامج: شجرة الأقسام وصفحاتها مؤشَّرة، والوضع مصدرها أعلاها، ومسارها من نافذة النظام.
-        /// شجرةُ التأشير نفسها التي تُصيَّر بها صلاحيات الأدوار — إعلانٌ لا شاشة.
-        /// </summary>
         private static void Export(IModuleRegistry registry) => registry.Register(new ModuleDefinition
         {
             Key = "BuilderExport", TitleKey = "Str.Builder.Export", PermissionPrefix = "BuilderExport",
@@ -215,7 +198,6 @@ namespace PrimeERP.Modules
                 SourceLabelKey = "Str.Builder.Customer",
                 Mode = TreeCheckMode.TwoState,
                 SaveTextKey = "Str.Builder.CreateProgram",
-                // المصدر عميلٌ لا وضعٌ: الوضع صار صفةً على ترخيصه، وشجرته تُبنى بما اختير له.
                 SourceItems = services => services.GetRequiredService<ILicenseService>().GetAll().Value
                     .Select(l => new SourceOption
                     {
@@ -239,12 +221,10 @@ namespace PrimeERP.Modules
         private static LicenseDto Licensed(IServiceProvider services, int id) =>
             id <= 0 ? null : services.GetRequiredService<ILicenseService>().GetById(id).Value;
 
-        /// <summary>شجرة العميل: صفحات وضعه، مؤشَّرٌ منها ما سبق أن اختير له — والترخيص الجديد بالكل.</summary>
         private static List<TreeNodeViewModel> LicenseTree(IServiceProvider services, int licenseId)
         {
             var license = Licensed(services, licenseId);
 
-            // بلا عميلٍ مختار تُعرَض الشجرة كاملةً كما كانت: الصفحة تقول ما يمكن منحه، والبناء وحده يطلب عميلاً.
             if (license == null) return EditionTree(services, simplified: false);
 
             var roots = EditionTree(services, license.Simplified);
@@ -257,10 +237,6 @@ namespace PrimeERP.Modules
             return roots;
         }
 
-        /// <summary>
-        /// منصِّب العميل: الملف الصغير نفسه يُنزَّل من الخادم، ويُكتب سريال العميل بجواره فلا يُمليه أحد.
-        /// نفس بوّابة الشبكة ونفس حوار التقدّم — بلا آلية ثالثة.
-        /// </summary>
         private static async Task<Result> CustomerInstaller(IServiceProvider services, int licenseId)
         {
             var license = Licensed(services, licenseId);
@@ -286,13 +262,11 @@ namespace PrimeERP.Modules
             var (ok, error) = await http.DownloadAsync($"{server}/package/PrimeERP.Setup.exe", target, progress);
             if (!ok) return Result.Fail($"تعذّر تنزيل المنصِّب: {error}", ErrorCode.Unexpected);
 
-            // السريال بجوار المنصِّب: يقرؤه عند فتحه فلا يكتبه العميل ولا يخطئ فيه.
             await System.IO.File.WriteAllTextAsync(System.IO.Path.Combine(folder, "serial.txt"), license.Serial);
 
             return Result.Ok();
         }
 
-        /// <summary>سريالٌ جديد بنموذجٍ صغير — نفس آلية أي حوار إضافة، بلا نافذة مكتوبة.</summary>
         private static void NewSerial(IServiceProvider services) =>
             DialogRenderer.ShowAndSave(new DialogDefinition
             {
@@ -307,7 +281,6 @@ namespace PrimeERP.Modules
                 }
             }, services, services.GetRequiredService<UI.Services.IToastService>());
 
-        /// <summary>نفس أقسام الشريط الجانبي وصفحاته الظاهرة في الوضع المختار — لا قائمة ثانية تُكتب.</summary>
         private static List<TreeNodeViewModel> EditionTree(IServiceProvider services, bool simplified)
         {
             var modules = services.GetRequiredService<IModuleRegistry>()
@@ -317,10 +290,8 @@ namespace PrimeERP.Modules
 
             foreach (var group in NavigationSource.Groups(services))
             {
-                // وحدة البناء لا تُصدَّر: النسخة برنامجٌ يعمل، لا أداة بناء.
                 if (group.Key == "Builder") continue;
 
-                // المحاسبة والإعدادات في كل نسخة — تُعرَض مؤشَّرة ولا تُنزع.
                 var always = NavigationMap.Protected.Contains(group.Key);
 
                 var section = new TreeNodeViewModel
@@ -342,10 +313,6 @@ namespace PrimeERP.Modules
             return roots;
         }
 
-        /// <summary>
-        /// القسم يورّث صفحاته والصفحات تُحدّد قسمها: الشجرة نفسها لا تورّث التأشير، والحفظ يقرأ الصفحات
-        /// وحدها — فبلا هذه القاعدة إلغاءُ قسمٍ لا يستثني منه شيئاً. والمحميّ يبقى مؤشَّراً دائماً.
-        /// </summary>
         private static void Inherit(List<TreeNodeViewModel> roots, TreeNodeViewModel changed)
         {
             if (changed != null && changed.Children.Count > 0)
@@ -375,10 +342,6 @@ namespace PrimeERP.Modules
             }
         }
 
-        /// <summary>
-        /// المسار أولاً، ثم حوار التقدّم القائم بينما العمل يجري خارج خيط الواجهة — النسخ آلاف الملفات،
-        /// وتشغيله على الخيط يُجمّد النافذة. Progress يعيد كل تقرير إلى خيط الواجهة بنفسه.
-        /// </summary>
         private static async Task<Result> CreateEdition(IServiceProvider services, int licenseId,
             List<TreeNodeViewModel> roots)
         {
@@ -406,8 +369,6 @@ namespace PrimeERP.Modules
             var progress = new Progress<EditionProgress>(step => handle.Report(step.Percent, step.Stage));
             var licenses = services.GetRequiredService<ILicenseService>();
 
-            // الحفظ على الترخيص يمرّ بالشبكة، فمكانه خارج خيط الواجهة داخل نفس المهمة — وإلا جمّد
-            // النافذة قبل أن يظهر مربّع التقدّم أصلاً.
             return await Task.Run(() =>
             {
                 var saved = licenses.SaveManifest(licenseId, keys);
@@ -417,7 +378,6 @@ namespace PrimeERP.Modules
             });
         }
 
-        // ===================== المشترك =====================
 
         private static object Vm<TService>(IServiceProvider services, string permissionPrefix)
             where TService : class, IRowService =>

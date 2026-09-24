@@ -12,14 +12,11 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Settings;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Application.Services.Print
 {
-    /// <summary>
-    /// يبني مستندات الطباعة من IPrintable فقط — لا يعرف Account/JournalEntry ولا أي Model، ولا يفتح أي نافذة
-    /// بنفسه (DialogHost يتولّى العرض، نفس نمط IDialogService). كل قيمة بصرية من 5.Design/Surfaces/PrintTheme.xaml
-    /// حصراً، لا من موارد الشاشة — الورق لا يتبدّل فاتح/داكن.
-    /// </summary>
+    /// <summary>يبني مستندات الطباعة من IPrintable</summary>
     public class PrintService : IPrintService
     {
         private readonly ISettingsService _settings;
@@ -55,11 +52,9 @@ namespace PrimeERP.Application.Services.Print
                 var pageSize = PageSizeFor(document.Orientation, document.HalfPage);
                 var labels = document.CopyLabels is { Count: > 0 } ? document.CopyLabels : new List<string> { null };
 
-                // كل نسخة تُبنى كصفحاتها الخاصة وتُضاف لمستند واحد — نقل PageContent بين مستندين لا يعمل.
                 var combined = new FixedDocument();
                 foreach (var label in labels)
                 {
-                    // الأصل بلا ختم؛ ما بعده صورة تُميَّز بختم قطري.
                     var watermark = labels.IndexOf(label) == 0 ? null : label;
 
                     foreach (var page in BuildPages(BuildFlowDocument(document, label), pageSize, document.ShowPageNumbers, watermark))
@@ -104,15 +99,9 @@ namespace PrimeERP.Application.Services.Print
             return Result.Ok();
         }
 
-        /// <summary>
-        /// يبني ملف PDF عبر IDocumentExporter (تنفيذه الفعلي ExportService في 6.UI، يُسجَّل في App.xaml.cs) —
-        /// لا يعتمد PrintService على UI مباشرة (كان اعتماداً معكوساً Application→UI، أُصلح في R2 عبر هذا العقد
-        /// في 3.Domain/Contracts، والحقن الحقيقي عبر DI في R3 — ExportService المُسجَّلة كـ IDocumentExporter).
-        /// </summary>
         public Result ExportToPdf(IPrintable document, string path) =>
             _exporter.ExportPrintableToPdf(document, path);
 
-        // ===== بناء المحتوى =====
 
         private FlowDocument BuildFlowDocument(IPrintable document, string copyLabel = null)
         {
@@ -196,7 +185,6 @@ namespace PrimeERP.Application.Services.Print
                 new Typeface(Res<FontFamily>("FontFamilyPrimary"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
                 Res<double>("FontSizeBase"), Brushes.Black, 1.0).WidthIncludingTrailingWhitespace;
 
-        /// <summary>FlowDocument لا يقبل حدّاً على نفسه، فتُنقل كتله إلى Section مؤطَّرة بداخله.</summary>
         private FlowDocument Frame(FlowDocument flow)
         {
             var inner = new Section
@@ -216,7 +204,6 @@ namespace PrimeERP.Application.Services.Print
             return flow;
         }
 
-        /// <summary>الترويسة قطعة تُستدعى لا رسم محلّي — CompanyHeaderComponent يقرّرها، وهذا ينفّذها.</summary>
         private Block BuildCompanyHeader() =>
             new BlockUIContainer(PaperNodeRenderer.ToElement(
                 CompanyHeaderComponent.Build(key => _settings.Get(key, "")), PaperTheme.Raw));
@@ -239,8 +226,6 @@ namespace PrimeERP.Application.Services.Print
             return p;
         }
 
-        /// <summary>الحقل = عنوان بجانب صندوق مؤطَّر يحمل قيمته — الشكل المعتمَد في المستندات الرسمية، وأوضح
-        /// من سطر نصّي متصل لأن حدود القيمة تفصل ما كُتب عمّا هو فارغ. تُلفّ الحقول في صفوف بعمودين.</summary>
         private Block BuildKeyValues(Dictionary<string, string> fields)
         {
             const int PairsPerRow = 2;
@@ -265,7 +250,6 @@ namespace PrimeERP.Application.Services.Print
                 index++;
             }
 
-            // إكمال الصف الأخير بخلايا فارغة — الجدول يتطلّب عدداً متساوياً من الخلايا في كل صف.
             while (row != null && index % PairsPerRow != 0)
             {
                 row.Cells.Add(NewCell("", Res<Brush>("TextSecondary"), bold: false, align: TextAlignment.Right, bare: true));
@@ -337,8 +321,6 @@ namespace PrimeERP.Application.Services.Print
                     if (section.Parties is { Count: > 0 }) yield return BuildParties(section.Parties);
                     break;
 
-                // الثلاثة التالية كانت تُبنى في المستند وتُسقَط بصمت هنا: باركود بلا رسم، وشروط بلا مكان،
-                // ومبلغ كتابةً يُحسب ولا يُطبع.
                 case PrintSectionType.AmountInWords:
                     yield return BuildCallout(
                         (string.IsNullOrWhiteSpace(section.Title) ? "مبلغاً وقدره" : section.Title) + ": " +
@@ -380,10 +362,8 @@ namespace PrimeERP.Application.Services.Print
             }
         }
 
-        /// <summary>صندوق تحذير/معلومة بارز — الألوان الستة من PrintTheme فقط (Soft خلفية، SoftText نص، Solid حدّ)، نفس المجموعات الدلالية المستخدمة في الشاشة (Colors.xaml) وMلفات التصدير (ExportTheme)، بقيم ورق ثابتة.</summary>
         private Block BuildCallout(string text, StatusVariant variant, bool boxed = false)
         {
-            // الصندوق المحدود يقف يمين الورقة بعرض ثُلثها — موضع المبلغ المعروف في السندات.
             if (boxed)
             {
                 var table = new Table { Margin = new Thickness(0, 8, 0, 12) };
@@ -421,7 +401,6 @@ namespace PrimeERP.Application.Services.Print
             };
         }
 
-        /// <summary>صناديق الأطراف جنباً إلى جنب — البائع والمشتري في فاتورة، الطرف الواحد في سند.</summary>
         private Table BuildParties(List<PrintParty> parties)
         {
             var table = new Table { CellSpacing = 8, Margin = new Thickness(0, 0, 0, 12) };
@@ -457,7 +436,6 @@ namespace PrimeERP.Application.Services.Print
             return table;
         }
 
-        /// <summary>الجدول الطويل يُقسَّم لجداول كلٌّ برأسه، فيتكرّر الرأس مع كل صفحة. صفر = جدول واحد.</summary>
         private IEnumerable<Block> BuildTablePages(PrintSection section, int linesPerPage)
         {
             var rows = section.Rows ?? new List<Dictionary<string, object>>();
@@ -495,7 +473,6 @@ namespace PrimeERP.Application.Services.Print
                 table.Columns.Add(new TableColumn { Width = new GridLength(col.Width, GridUnitType.Star) });
 
             var headerGroup = new TableRowGroup();
-            // العنوان وسط الخلية دائماً مهما كانت محاذاة بياناته — قاعدة عرض ثابتة لا تتبع نوع العمود.
             var headerRow = new TableRow { Background = Res<Brush>("HeaderBackground") };
             foreach (var col in columns)
                 headerRow.Cells.Add(NewCell(col.Header, Res<Brush>("TextPrimary"), bold: true, align: TextAlignment.Center, isHeader: true));
@@ -532,8 +509,6 @@ namespace PrimeERP.Application.Services.Print
                 table.RowGroups.Add(totalsGroup);
             }
 
-            // سطر لكل إجمالي لا صفّ واحد يحشرها جميعاً: الخلية الأولى تبتلع الأعمدة الباقية فتُحاذى
-            // التسمية والقيمة تحت آخر عمودين، وهو موضعهما في أي فاتورة رسمية.
             if (section.Totals is { Count: > 0 })
             {
                 var totalsGroup = new TableRowGroup();
@@ -594,16 +569,14 @@ namespace PrimeERP.Application.Services.Print
             return new TableCell(paragraph)
             {
                 Padding = new Thickness(8, 5, 8, 5),
-                // شبكة خفيفة تفصل الخلايا — بلا حدود يقرأ الجدول ككتلة نص لا كجدول.
                 BorderBrush = Res<Brush>("OutlineSubtle"),
                 BorderThickness = bare ? new Thickness(0) : isHeader ? new Thickness(0.6, 0.6, 0.6, 1) : new Thickness(0.6)
             };
         }
 
-        /// <summary>أشرطة Code128 بعروض متناوبة — الترميز في Domain والرسم هنا.</summary>
         private Block BuildBarcode(string text)
         {
-            var widths = PrimeERP.Domain.Helpers.Code128.Encode(text);
+            var widths = Code128.Encode(text);
             if (widths.Count == 0) return null;
 
             const double Unit = 1.1, Height = 38;
@@ -625,7 +598,6 @@ namespace PrimeERP.Application.Services.Print
             return paragraph;
         }
 
-        /// <summary>سطر لكل جزء — FlowDocument يحتاج LineBreak صريحاً.</summary>
         private static readonly char[] LineSeparators = { (char)10 };
 
 
@@ -643,12 +615,6 @@ namespace PrimeERP.Application.Services.Print
             return paragraph;
         }
 
-        /// <summary>الأرقام والتواريخ وسط الخلية، والنصوص (أسماء الأصناف والبيانات) لليمين — العربية تُقرأ من
-        /// اليمين، فتوسيط النص يكسر عمود الأسماء بصرياً. Align المُعلَن على العمود يتغلّب على ذلك عند تحديده.</summary>
-        /// <summary>
-        /// المستند RTL، وTextAlignment ينعكس معه: طلب Right يُخرج النصّ على حافة اليسار. الأسماء هنا
-        /// بصرية لا منطقية — Right تعني «يُرى يميناً»، فتُترجَم إلى Left ليُصيبها الانعكاس فتستقيم.
-        /// </summary>
         private static TextAlignment AlignFor(PrintColumn column, object value) =>
             !string.IsNullOrEmpty(column.Align) ? AlignOf(column.Align)
                                                 : AlignOf(value is string or null ? "Right" : "Center");
@@ -668,7 +634,6 @@ namespace PrimeERP.Application.Services.Print
             return value.ToString();
         }
 
-        /// <summary>A4 عند 96 نقطة/بوصة. ونصفُه يقسم الارتفاع لا العرض — وإلّا ضاقت أسطر السند.</summary>
         private static Size PageSizeFor(PrintOrientation orientation, bool halfPage = false)
         {
             const double a4Width = 793.7, a4Height = 1122.5;
@@ -680,7 +645,6 @@ namespace PrimeERP.Application.Services.Print
             return halfPage ? new Size(size.Width, size.Height / 2) : size;
         }
 
-        /// <summary>يحوّل FlowDocument المُرقَّم إلى FixedDocument (تقنية VisualBrush القياسية في WPF)، مع تذييل "صفحة X من Y" حقيقي لكل صفحة فعلية.</summary>
         private static FixedDocument ConvertToFixedDocument(FlowDocument flowDocument, Size pageSize, bool showPageNumbers)
         {
             var document = new FixedDocument();
@@ -689,8 +653,6 @@ namespace PrimeERP.Application.Services.Print
             return document;
         }
 
-        /// <summary>صفحات غير مرتبطة بمستند — PageContent لا يقبل مستندين، فبناء النسخ يحتاجها حرّة.</summary>
-        /// <summary>ختم قطري باهت يميّز الصورة عن الأصل بلا حجب المحتوى.</summary>
         private static UIElement Watermark(string text, Size pageSize)
         {
             var label = new System.Windows.Controls.TextBlock
@@ -718,7 +680,6 @@ namespace PrimeERP.Application.Services.Print
             var paginator = ((IDocumentPaginatorSource)flowDocument).DocumentPaginator;
             paginator.PageSize = pageSize;
 
-            // FlowDocument يستخدم DynamicDocumentPaginator — PageCount يبقى 0 حتى تُفرَض حسبة كاملة متزامنة.
             if (paginator is DynamicDocumentPaginator dynamicPaginator && !dynamicPaginator.IsPageCountValid)
                 dynamicPaginator.ComputePageCount();
 

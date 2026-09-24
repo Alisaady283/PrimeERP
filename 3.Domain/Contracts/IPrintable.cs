@@ -5,14 +5,13 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Domain.Contracts
 {
+    /// <summary>عقد الطباعة ومفرداته</summary>
     public enum PrintOrientation { Portrait, Landscape }
 
     public enum PrintSectionType { Title, KeyValues, Table, Text, Spacer, Callout, Parties, AmountInWords, Terms, Barcode }
 
     public static class PrintTotals
     {
-        /// <summary>سعر الوحدة ونِسَبها ليست كمّيات تُضاف — فلا تُجمَع في صف الإجمالي.</summary>
-        // الأسعار والنِّسَب ليست كمّيات، والأكواد والمعرّفات ليست أرقاماً تُجمَع أصلاً.
         private static readonly string[] NonAdditive =
             { "Price", "Cost", "Rate", "Percent", "Discount", "Code", "Id", "No", "Number" };
 
@@ -24,10 +23,8 @@ namespace PrimeERP.Domain.Contracts
         public string Key    { get; set; }
         public string Header { get; set; }
         public double Width  { get; set; } = 1;
-        /// <summary>فارغ = المحاذاة تُشتقّ من نوع القيمة (نص يميناً، رقم/تاريخ وسطاً).</summary>
         public string Align  { get; set; }
 
-        /// <summary>تنسيق .NET قياسي (مثال: "N2", "yyyy-MM-dd") يُطبَّق عبر IFormattable — فارغ يعني نص كما هو.</summary>
         public string Format { get; set; }
     }
 
@@ -38,7 +35,7 @@ namespace PrimeERP.Domain.Contracts
         public bool   IsBold  { get; set; } = true;
     }
 
-    /// <summary>قسم واحد من مستند الطباعة — عنوان/بيانات مفتاح-قيمة/جدول/نص حر/فاصل.</summary>
+    /// <summary>قسم واحد من مستند الطباعة</summary>
     public class PrintSection
     {
         public PrintSectionType Type { get; set; }
@@ -50,33 +47,26 @@ namespace PrimeERP.Domain.Contracts
         public List<Dictionary<string, object>> Rows { get; set; }
         public List<PrintTotal> Totals { get; set; }
 
-        /// <summary>صف إجماليات مفاتيحه أعمدة الجدول.</summary>
         public Dictionary<string, object> TotalsRow { get; set; }
 
-        /// <summary>لتمييز صفوف معيّنة (مثال: حسابات تجميعية غير Leaf في ميزان المراجعة) — نفس نمط AppDataGrid.RowHighlightSelector.</summary>
         public Func<Dictionary<string, object>, bool> RowBold { get; set; }
 
         public string Text { get; set; }
 
-        /// <summary>أجزاء سطرٍ تُملأ نقاطاً حتى حافة الورقة — تُقاس بخطّها وقت البناء لا تُقدَّر.</summary>
         public List<string> FillParts { get; set; }
 
-        /// <summary>حصّة كل جزء من عرض السطر — مجموعها واحد.</summary>
         public List<double> FillShares { get; set; }
 
-        /// <summary>لـ PrintSectionType.Parties — صناديق متجاورة (البائع/المشتري)، كل صندوق عنوان وأسطر.</summary>
         public List<PrintParty> Parties { get; set; }
 
-        /// <summary>AmountInWords فقط — المبلغ رقماً، والنص يُشتقّ منه بعملة الإعدادات.</summary>
         public decimal Amount { get; set; }
         public string Currency { get; set; }
         public string SubUnit { get; set; }
 
-        /// <summary>لـ PrintSectionType.Callout فقط — يلوّن الصندوق عبر PrintTheme (Soft/SoftText/Solid لنفس المتغيّر).</summary>
         public StatusVariant? Variant { get; set; }
     }
 
-    /// <summary>صندوق طرف واحد في قسم Parties — البائع أو المشتري.</summary>
+    /// <summary>صندوق طرف واحد في قسم</summary>
     public class PrintParty
     {
         public string Title { get; set; }
@@ -84,10 +74,7 @@ namespace PrimeERP.Domain.Contracts
         public List<string> Details { get; set; } = new();
     }
 
-    /// <summary>
-    /// أي مستند قابل للطباعة ينفّذ هذا العقد فقط — PrintService لا يعرف شيئاً عن Account/JournalEntry/فاتورة،
-    /// يبني المستند من BuildSections() حصراً (نفس نمط IPrintable الأصلي في الوصف الأول لهذه الخدمة).
-    /// </summary>
+    /// <summary>أي مستند قابل للطباعة ينفّذ</summary>
     public interface IPrintable
     {
         string DocumentTitle { get; }
@@ -103,16 +90,12 @@ namespace PrimeERP.Domain.Contracts
         bool ShowSignatures { get; }
         List<string> SignatureLabels { get; }
 
-        /// <summary>تسميات النسخ (أصل / صورة العميل) — فارغة تعني نسخة واحدة بلا تسمية.</summary>
         List<string> CopyLabels => new();
 
-        /// <summary>صفر = جدول واحد؛ أكبر يقسّمه ويكرّر رأسه في كل صفحة.</summary>
         int LinesPerPage => 0;
 
-        /// <summary>إطارٌ يحيط بالمستند كلّه — سنداتُ القبض والصرف ورقةٌ مؤطَّرة تُقصّ، لا كشفاً ممتداً.</summary>
         bool Framed => false;
 
-        /// <summary>نصف A4 عرضاً — السند نصف ورقةٍ تُقصّ، فلا يُطبع على صفحةٍ كاملة يتبدّد أكثرها.</summary>
         bool HalfPage => false;
     }
 }

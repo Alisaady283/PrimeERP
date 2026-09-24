@@ -10,19 +10,15 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Application.Services.Inventory
 {
+    /// <summary>رصيد أول المدة للأصناف</summary>
     public interface IOpeningStockService
     {
         Result<CreateOpeningStockDto> Create(CreateOpeningStockDto dto);
     }
 
-    /// <summary>
-    /// رصيد أول المدة للأصناف: حركة وارد لكل صنف بتكلفتها فيبدأ المتوسط المرجّح من أول يوم، وقيدٌ واحد
-    /// من حـ/ المخزون إلى الحساب المختار من الإعدادات. الاثنان في معاملة واحدة — فلا مخزونٌ بلا قيده.
-    /// </summary>
     public class OpeningStockService : ServiceBase, IOpeningStockService, IPermissionGated
     {
         private readonly IStockService _stock;
@@ -62,9 +58,9 @@ namespace PrimeERP.Application.Services.Inventory
 
             try
             {
-                Db.RunTransaction((conn, tx) =>
+                Tx(db =>
                 {
-                    var entry = _journals.Create(conn, tx, new CreateJournalDto
+                    var entry = _journals.Create(db, new CreateJournalDto
                     {
                         EntryDate = dto.Date,
                         Description = "رصيد أول المدة للأصناف",
@@ -77,11 +73,11 @@ namespace PrimeERP.Application.Services.Inventory
                     });
                     if (entry.IsFailure) throw new InvalidOperationException(entry.ErrorMessage);
 
-                    _journals.Post(conn, tx, entry.Value.Id);
+                    _journals.Post(db, entry.Value.Id);
 
                     foreach (var line in lines)
                     {
-                        var moved = _stock.RecordMovement(conn, tx, line.ProductId, dto.WarehouseId,
+                        var moved = _stock.RecordMovement(db, line.ProductId, dto.WarehouseId,
                             MovementType.In, line.Qty, line.UnitCost, EntityName, entry.Value.Id, entry.Value.EntryNo,
                             dto.Date, line.Notes);
 

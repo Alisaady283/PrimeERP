@@ -10,7 +10,7 @@ using PrimeERP.UI.Components.Tree;
 
 namespace PrimeERP.Modules
 {
-    /// <summary>شاشتا الصلاحيات — تكوين فقط فوق TreeCheckListRenderer، الشجرة من PermissionKeys.All() آلياً.</summary>
+    /// <summary>شاشتا الصلاحيات</summary>
     public static class PermissionModuleRegistrations
     {
         public static void RegisterAll(IModuleRegistry registry)
@@ -26,12 +26,12 @@ namespace PrimeERP.Modules
                     TitleKey = "صلاحيات الأدوار",
                     SourceLabelKey = "الدور",
                     Mode = TreeCheckMode.TwoState,
-                    SourceItems = _ => PermissionDb.GetAllRoles()
+                    SourceItems = services => services.GetRequiredService<IPermissionStore>().GetAllRoles()
                         .Select(r => new SourceOption { Id = r.Id, Display = r.NameAr })
                         .ToList(),
-                    BuildTree = (_, roleId) =>
+                    BuildTree = (services, roleId) =>
                     {
-                        var granted = PermissionDb.GetRolePermissions(roleId).ToHashSet();
+                        var granted = services.GetRequiredService<IPermissionStore>().GetRolePermissions(roleId).ToHashSet();
                         var roots = PermissionTreeFactory.Build();
                         foreach (var node in PermissionTreeFactory.KeyNodes(roots))
                             node.CheckState = granted.Contains(node.Id) ? NodeCheckState.Checked : NodeCheckState.Unchecked;
@@ -75,7 +75,7 @@ namespace PrimeERP.Modules
                     TitleKey = "صلاحيات المستخدمين",
                     SourceLabelKey = "المستخدم",
                     Mode = TreeCheckMode.ThreeState,
-                    SourceItems = _ => PermissionDb.GetAllUsers()
+                    SourceItems = services => services.GetRequiredService<IPermissionStore>().GetAllUsers()
                         .Select(u => new SourceOption { Id = u.Id, Display = u.DisplayName })
                         .ToList(),
                     BuildTree = (services, userId) =>
@@ -128,10 +128,6 @@ namespace PrimeERP.Modules
             });
         }
 
-        /// <summary>
-        /// العرض بوّابة القسم: باقي إجراءاته معطَّلة حتى يُؤشَّر، فلا تُبنى حالة خاطئة أصلاً بدل تصحيحها
-        /// لاحقاً بصمت. ورفعه يُنزل إجراءاته معه، والقسم يتبع أبناءه فيظهر مؤشَّراً بأوّل إجراء.
-        /// </summary>
         public static void SyncModules(List<TreeNodeViewModel> roots, NodeCheckState on)
         {
             foreach (var module in roots) SyncModule(module, on);
@@ -142,14 +138,11 @@ namespace PrimeERP.Modules
             var view = module.Children.FirstOrDefault(child => child.Id == PermissionRules.ViewKeyOf(child.Id));
             if (view == null) return;
 
-            // البوّابة تُقاس بالعرض الفعّال: منحٌ صريح، أو موروث يسمح به الدور. المستخدم يرى القسم في
-            // الحالتين، فحجب باقي إجراءاته في الثانية منعٌ بلا سبب.
             var open = view.CheckState == on ||
                        (view.CheckState == NodeCheckState.Inherited && view.InheritedAllowed);
 
             foreach (var action in module.Children.Where(child => child != view))
             {
-                // مفتوح = يُسمح بالتأشير والإلغاء، لا أن يُؤشَّر. مغلق = يُلغى ويُعطَّل.
                 action.IsCheckEnabled = open;
                 if (!open) action.CheckState = view.CheckState;
             }
@@ -164,7 +157,6 @@ namespace PrimeERP.Modules
                 module.CheckState = state;
                 foreach (var node in module.Children)
                 {
-                    // التعطيل يُرفع أولاً وإلا بقيت عقدة معطَّلة على حالتها القديمة بعد «تحديد الكل».
                     node.IsCheckEnabled = true;
                     node.CheckState = state;
                 }

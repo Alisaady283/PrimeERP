@@ -6,11 +6,13 @@
 
 | الملف | يجيب عن |
 |---|---|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | أين يسكن كل شيء، ودورة حياته، وما المبنيّ فعلاً |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | أين يسكن كل شيء، ودورة حياته، والمصائد والقرارات المثبتة |
+| [docs/FILES.md](docs/FILES.md) | فهرس كل ملف بوظيفته في سطر — مولَّد بـ`Tools/Docs/generate.sh` |
+| [docs/System.dot](docs/System.dot) | خريطة النظام: دائرةٌ لكل طبقة بدوائر مجلداتها، والخطوط بينها — السهم الأحمر خرق |
+| [docs/PageFlow.puml](docs/PageFlow.puml) | مسار الشاشة من الإعلان إلى الصفّ |
 | [RULES.md](RULES.md) | ما يُلزم وما يُمنع، وأين يُصلَح كل نوع من الخطأ |
 | [RECIPES.md](RECIPES.md) | خطوات كل طلب بعينه |
 | [BUILD.md](BUILD.md) | سجلّ وحدة البناء |
-| [5.Design/DESIGN_TOKENS.md](5.Design/DESIGN_TOKENS.md) | جدول رموز التصميم — مولَّد آلياً بـ `Tools/DesignTokens/generate.sh`، لا يُعدَّل يدوياً |
 
 ## القواعد غير القابلة للتفاوض
 
@@ -34,5 +36,5 @@ bash Tools/ArchitectureCheck/check.sh # صفر FAIL
 
 - قاعدة البيانات: `%LOCALAPPDATA%\PrimeERP\PrimeERP.db` (SQLite).
 - البرنامج المفتوح يقفل الملف التنفيذي فيفشل البناء — يُغلَق قبل `dotnet build` و `dotnet test`.
-- المجموعة الكاملة ٣٨٥ اختباراً في ~٤٠ دقيقة، وتُشغَّل في الخلفية.
+- المجموعة الكاملة ٤٧٠ اختباراً في ~ساعة، وتُشغَّل في الخلفية.
 - الاختبارات تُنشئ قواعد SQLite مؤقتة في `%TEMP%`؛ تشغيلةٌ تُقطَع تترك ملفاتها، فيُنظَّف `PrimeERP.Tests.*.db` عند امتلاء القرص.

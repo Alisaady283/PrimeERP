@@ -1,3 +1,6 @@
+using PrimeERP.Platform.Settings;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.Platform.Audit;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Assets;
@@ -7,24 +10,24 @@ using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Application.Reporting
 {
+    /// <summary>تقريرا الأصول</summary>
     public interface IAssetReportService
     {
         Result<ReportData> Register(int? categoryId);
         Result<ReportData> ByCategory();
     }
 
-    /// <summary>
-    /// تقريرا الأصول: كشفٌ مسطّح، ومجمَّعٌ بالفئة. الأرقام من خدمة الأصول كما هي — القيمة الدفترية
-    /// والمجمّع محسوبان في الخدمة ومُرحَّلان بقيود، فالتقرير يعرض ولا يحسب شيئاً سوى الإجماليات.
-    /// </summary>
-    public class AssetReportService : IAssetReportService
+    public class AssetReportService : ReportServiceBase, IAssetReportService
     {
         private readonly IAssetService _assets;
 
-        public AssetReportService(IAssetService assets) => _assets = assets;
+        public AssetReportService(IAssetService assets, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+            : base(permissions, settings, localization, audit) => _assets = assets;
 
         public Result<ReportData> Register(int? categoryId)
         {
+            var gate = Gate(); if (gate != null) return gate;
+
             var loaded = Load(categoryId);
             if (loaded.IsFailure) return Result.Fail<ReportData>(loaded.ErrorMessage);
 
@@ -33,9 +36,10 @@ namespace PrimeERP.Application.Reporting
             return Result.Ok(new ReportData { Rows = rows, Totals = Totals(rows) });
         }
 
-        /// <summary>كل فئة عنواناً، أصولها تحته، ثم مجموعها — نفس بنية القوائم المالية (heading/total).</summary>
         public Result<ReportData> ByCategory()
         {
+            var gate = Gate(); if (gate != null) return gate;
+
             var loaded = Load(null);
             if (loaded.IsFailure) return Result.Fail<ReportData>(loaded.ErrorMessage);
 

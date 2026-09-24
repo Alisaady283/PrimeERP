@@ -5,11 +5,7 @@ using PrimeERP.Platform.Permissions;
 
 namespace PrimeERP.UI.Services
 {
-    /// <summary>
-    /// ينقل بين صفحات مسجَّلة بمفتاح نصي بلا معرفة بأي صفحة بعينها — AppShell/AppSidebar يسجّلان
-    /// الصفحات بمفاتيحها عند الإقلاع ثم يستدعيان NavigateTo فقط. كل مفتاح صفحة يقابل صلاحية
-    /// "{key}.View" بنفس تسمية PermissionKeys (مثال: "Accounts" ↔ PermissionKeys.Accounts.View).
-    /// </summary>
+    /// <summary>ينقل بين صفحات مسجَّلة بمفتاح</summary>
     public class NavigationService : INavigationService
     {
         private readonly IPermissionService _permissions;

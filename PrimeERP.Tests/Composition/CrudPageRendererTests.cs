@@ -15,10 +15,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>يثبت أن CrudPageRenderer يبني صفحة حقيقية (لا XAML) من ModuleDefinition، تُحلّ ViewModel
-    /// حقيقية عبر DI، وتُحمّل بيانات حقيقية من ICustomerService — على خيط STA حقيقي (عناصر WPF فعلية).
-    /// [Collection("WpfApplication")] لمنع تعارض إنشاء System.Windows.Application المتوازي — نفس نمط
-    /// IdentityServiceTests.</summary>
+    /// <summary>صفحة CRUD حقيقية من تعريفها</summary>
     [Collection("WpfApplication")]
     public class CrudPageRendererTests : IDisposable
     {
@@ -37,7 +34,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 PrimeERP.UI.Services.UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
                 var definition = registry.Get("Customers");
@@ -52,10 +49,6 @@ namespace PrimeERP.Tests.Composition
                 dynamic vm = element.DataContext;
                 Assert.NotNull(vm);
 
-                // Loaded يستدعي LoadAsync عبر async void — WpfApplicationFixture خيط بـDispatcher.Run فعلي،
-                // فمتابعة await تُجدوَل على طابور هذا الخيط نفسه (DispatcherSynchronizationContext حقيقية).
-                // بما أننا الآن **داخل** الاستدعاء المتزامن نفسه (Dispatcher.Invoke)، انتظار Thread.Sleep هنا
-                // كان سيُعلِّق الخيط عن معالجة طابوره — ضخّ إطارات متداخلة (PushFrame) هو الحل الصحيح الوحيد.
                 var deadline = DateTime.UtcNow.AddSeconds(5);
                 while (!((IEnumerable)vm.Items).Cast<object>().Any() && DateTime.UtcNow < deadline)
                 {
@@ -74,7 +67,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 PrimeERP.UI.Services.UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
                 var definition = registry.Get("Customers");

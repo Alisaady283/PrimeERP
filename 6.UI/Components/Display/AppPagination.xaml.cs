@@ -6,6 +6,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Display
 {
+    /// <summary>عرض AppPagination</summary>
     public partial class AppPagination : UserControl
     {
         public static readonly DependencyProperty TotalItemsProperty =
@@ -51,7 +52,6 @@ namespace PrimeERP.UI.Components.Display
         private static void OnPageSizesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
             ((AppPagination)d).PopulatePageSizes();
 
-        /// <summary>الرقم المعروض هو الحجم المستعمل — القائمة تتبع الخاصية ولا تتخلّف عنها.</summary>
         private static void OnPageSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var pagination = (AppPagination)d;
@@ -104,8 +104,6 @@ namespace PrimeERP.UI.Components.Display
                     Width = size, Height = size,
                     Margin = new Thickness(gap / 2, 0, gap / 2, 0),
                     FontSize = fontSize,
-                    // النمط الضمني للأزرار يفرض حشو 14,8 — داخل زر 32px يبتلع الرقم فيظهر شريطاً رفيعاً
-                    // مقصوصاً بدل "1". الزر هنا مربّع صغير، محتواه يتوسّطه بلا حشو.
                     Padding = new Thickness(0),
                     HorizontalContentAlignment = HorizontalAlignment.Center,
                     VerticalContentAlignment = VerticalAlignment.Center,
@@ -115,8 +113,6 @@ namespace PrimeERP.UI.Components.Display
                     FontWeight = active ? FontWeights.SemiBold : FontWeights.Medium
                 };
 
-                // مرجع حيّ لا لقطة: FindResource تُثبِّت الفرشاة وقت الإنشاء فلا تتبع تبديل الوضع، وكانت
-                // أزرار الترقيم تبقى بألوان الوضع السابق بعد التحويل للداكن.
                 Bind(btn, Control.BorderBrushProperty, active ? "BrandDefault" : "OutlineDefault");
                 Bind(btn, Control.BackgroundProperty, active ? "BrandDefault" : "SurfaceRaised");
                 Bind(btn, Control.ForegroundProperty, active ? "TextOnBrand" : "TextPrimary");
@@ -129,7 +125,6 @@ namespace PrimeERP.UI.Components.Display
             AddNavButton("IconChevronsLeft", () => GoTo(TotalPages), CurrentPage == TotalPages);
         }
 
-        // أيقونة حقيقية لا رمز نصي («‹›») — الرموز النصية تُرسَم بوزن الخط لا بوزن الأيقونات، فتبدو رفيعة وغريبة.
         private void AddNavButton(string iconKey, Action action, bool disabled)
         {
             var size = (double)FindResource("C.Pagination.Button.Size");

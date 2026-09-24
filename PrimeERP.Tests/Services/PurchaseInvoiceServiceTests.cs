@@ -15,10 +15,11 @@ using PrimeERP.Application.Services.Purchasing;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Xunit;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
-    // نسخة طبق الأصل من SalesInvoiceServiceTests — نفس منطق زرع الحسابات، الاتجاه معكوس (شراء يزيد المخزون).
+    /// <summary>فاتورة الشراء وقيدها</summary>
     public class PurchaseInvoiceServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();

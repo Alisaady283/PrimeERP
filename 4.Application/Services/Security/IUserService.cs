@@ -4,6 +4,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Security
 {
+    /// <summary>عقد المستخدمين</summary>
     public interface IUserService
     {
         Result<List<UserDto>> GetAll();

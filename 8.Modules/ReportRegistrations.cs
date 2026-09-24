@@ -9,10 +9,7 @@ using F = PrimeERP.Application.Reporting.FinancialStatementFactory;
 
 namespace PrimeERP.Modules
 {
-    /// <summary>
-    /// التقارير الثلاثة عشر — إعلانات خالصة: خدمةٌ ودالةٌ ووسائطها، ثم أعمدة العرض. لا كود هنا: منطق
-    /// كل تقرير في خدمته بطبقة التطبيق، وأي حسابٍ يعود إلى هذا الملف كسرٌ يفحصه check.sh.
-    /// </summary>
+    /// <summary>التقارير الثلاثة عشر</summary>
     public static class ReportRegistrations
     {
         public static void RegisterAll(IModuleRegistry registry)
@@ -93,7 +90,6 @@ namespace PrimeERP.Modules
                 arguments: System.Array.Empty<string>(), statement: true);
         }
 
-        /// <summary>تسجيل تقرير: وحدةٌ بتخطيط تقرير وتعريفٍ يصف مصدره وأعمدته — بلا سطر خاص بكلٍّ.</summary>
         private static void Register(IModuleRegistry registry, string key, string titleKey,
             System.Type serviceType, string method, List<ParameterDefinition> parameters, List<GridColumn> columns,
             string[] arguments = null, bool statement = false, string titleFromTotal = null) =>
@@ -107,17 +103,14 @@ namespace PrimeERP.Modules
                     Arguments = arguments ?? new[] { "From", "To" },
                     Parameters = parameters,
                     Columns = columns,
-                    // القوائم المالية تُقرأ نزولاً: عناوينها ومجاميعها مميَّزة، وبلا تبادل ألوان.
                     RowKind = statement ? (key == "AssetsByCategory" ? AssetRowKind : F.RowKind) : null,
                     AlternatingRows = !statement,
                     TitleOverrideTotalKey = titleFromTotal
                 }
             });
 
-        /// <summary>عنوان الفئة ومجموعها يُميَّزان بصرياً كما في القوائم المالية.</summary>
         private static readonly System.Func<object, string> AssetRowKind = row => (row as AssetRegisterRow)?.Kind;
 
-        // ===================== البارامترات المتكرّرة =====================
 
         private static List<ParameterDefinition> Party(string key, string labelKey, string pickerType)
         {
@@ -135,7 +128,6 @@ namespace PrimeERP.Modules
             return list;
         }
 
-        /// <summary>فئة الأصل — نفس قائمة شاشة الأصول لا قائمةً ثانية.</summary>
         private static List<ParameterDefinition> AssetCategory() => new()
         {
             new() { Key = "CategoryId", LabelKey = "Str.Category", Kind = FieldKind.Picker,
@@ -149,14 +141,12 @@ namespace PrimeERP.Modules
             return list;
         }
 
-        // ===================== الأعمدة =====================
 
         private static GridColumn Money(string header, string binding, string group = null) => new()
         {
             Group = group, Header = header, Binding = binding, Width = 120, Align = ColumnAlign.Center, Format = "N2"
         };
 
-        /// <summary>ثلاث مجموعات، كلٌّ مدين ودائن، والكود والاسم بلا مجموعة فيمتدّ عنوانهما على صفَّي الرأس.</summary>
         private static List<GridColumn> TrialBalanceColumns()
         {
             var debit = LocalizationService.Get("Str.Debit");
@@ -206,9 +196,6 @@ namespace PrimeERP.Modules
             Money(LocalizationService.Get("Str.RunningBalance"), nameof(StatementRow.RunningBalance)),
         };
 
-        // ثلاث مجموعات بثلاثة أعمدة: وارد · منصرف · رصيد — كلٌّ بكمية وسعر وقيمة. السعر مشتقّ من
-        // القيمة على الكمية، والرصيد بالمتوسط المرجَّح المتحرّك.
-        // سطرٌ لكل مسير وبنودُه أعمدة — كسطر الفاتورة: الاستحقاقات ثم الاستقطاعات ثم الصافي.
         private static List<GridColumn> PayslipColumns() => new()
         {
             new() { Header = "المسير", Binding = nameof(PayslipRow.PayrollNo), Width = 110 },
@@ -265,7 +252,6 @@ namespace PrimeERP.Modules
             Money(LocalizationService.Get("Str.Asset.BookValue"), nameof(AssetRegisterRow.BookValue)),
         };
 
-        /// <summary>المجمَّع بالفئة: عمودٌ واحد يحمل اسم الفئة أو اسم الأصل، والأرقام الأربعة بجانبه.</summary>
         private static List<GridColumn> AssetCategoryColumns() => new()
         {
             new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(AssetRegisterRow.Name), Width = 300, IsStarWidth = true },

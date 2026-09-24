@@ -13,8 +13,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>سلوك السحب كما طُلب حرفياً: ما سُحب لا يظهر مرة أخرى، وعند حذف المستند الهدف يعود المتبقي.
-    /// كل ذلك بلا عمود حالة — المتبقي محسوب من DocumentLinks لا مخزَّن.</summary>
+    /// <summary>سلوك السحب كما طُلب حرفياً</summary>
     [Collection("Database")]
     public class PullServiceTests
     {

@@ -12,8 +12,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.ViewModels
 {
-    /// <summary>يثبت أن PagedViewModelBase/CrudViewModelBase تعملان فعلياً فوق خدمة حقيقية (ICustomerService)
-    /// لا وهمية — Toast/Dialog وحدهما مزيَّفان (زخرفة واجهة بحتة، غير معنيّة بمنطق الصفحات/الحذف المُختبَر هنا).</summary>
+    /// <summary>نماذج العرض فوق خدمة حقيقية</summary>
     public class CrudViewModelBaseTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();

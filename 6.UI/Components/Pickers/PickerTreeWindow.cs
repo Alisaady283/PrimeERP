@@ -16,10 +16,7 @@ using PrimeERP.UI.Components.Tree;
 
 namespace PrimeERP.UI.Components.Pickers
 {
-    /// <summary>
-    /// نافذة اختيار بشجرة مشتركة (تُستخدم بواسطة AccountPicker حالياً) — تُبنى من C# فقط داخل AppDialogWindow.
-    /// تعتمد على AppTreeView + TreeFilterEngine للفلترة الحقيقية، ولا تعرف شيئاً عن قاعدة البيانات.
-    /// </summary>
+    /// <summary>نافذة اختيار بشجرة مشتركة</summary>
     public class PickerTreeWindow : AppDialogWindow
     {
         public TreeNodeViewModel SelectedNode { get; private set; }

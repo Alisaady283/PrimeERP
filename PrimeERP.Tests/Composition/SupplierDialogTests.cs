@@ -20,6 +20,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
+    /// <summary>حوار المورد</summary>
     [Collection("WpfApplication")]
     public class SupplierDialogTests : IDisposable
     {
@@ -35,7 +36,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
                 var dialog = registry.Get("Suppliers").Dialog;

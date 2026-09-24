@@ -1,17 +1,19 @@
 using PrimeERP.Domain.Contracts;
-using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Application.Validation
 {
+    /// <summary>تحقّق المستخدم</summary>
     public class UserValidator : ValidatorBase, IValidator<User>
     {
+        private readonly IPermissionStore _store;
         private readonly bool _isEdit;
 
-        public UserValidator(bool isEdit = false)
+        public UserValidator(IPermissionStore store, bool isEdit = false)
         {
+            _store = store;
             _isEdit = isEdit;
         }
 
@@ -19,16 +21,15 @@ namespace PrimeERP.Application.Validation
         {
             var result = new ValidationResult();
 
-            Required(result, "Username", user.Username, "اسم المستخدم");
-            MinLength(result, "Username", user.Username, 3, "اسم المستخدم");
             Required(result, "DisplayName", user.DisplayName, "الاسم الظاهر");
             Custom(result, "RoleId", user.RoleId > 0, "يجب اختيار دور للمستخدم");
 
-            if (!_isEdit)
-            {
-                var exists = PermissionDb.FindByUsername(user.Username) != null;
-                Unique(result, "Username", exists, "اسم المستخدم");
-            }
+            // الاسم لا يُعدَّل بعد الإنشاء
+            if (_isEdit) return result;
+
+            Required(result, "Username", user.Username, "اسم المستخدم");
+            MinLength(result, "Username", user.Username, 3, "اسم المستخدم");
+            Unique(result, "Username", _store.FindByUsername(user.Username) != null, "اسم المستخدم");
 
             return result;
         }

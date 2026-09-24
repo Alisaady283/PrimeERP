@@ -9,6 +9,7 @@ using System.Windows.Threading;
 
 namespace PrimeERP.UI.Components.Inputs
 {
+    /// <summary>حقل إدخال AppComboBox</summary>
     public partial class AppComboBox : UserControl
     {
         public static readonly DependencyProperty ItemsSourceProperty =
@@ -70,7 +71,6 @@ namespace PrimeERP.UI.Components.Inputs
         public string          Label             { get => (string)GetValue(LabelProperty);                set => SetValue(LabelProperty, value); }
         public string           ErrorText         { get => (string)GetValue(ErrorTextProperty);            set => SetValue(ErrorTextProperty, value); }
 
-        /// <summary>محسوبة تلقائياً من ErrorText — الأنماط في Themes/Components/Inputs.xaml تقرأها لإظهار حالة الخطأ.</summary>
         public bool             HasError          { get => (bool)GetValue(HasErrorProperty);               private set => SetValue(HasErrorProperty, value); }
         public bool               IsRequired        { get => (bool)GetValue(IsRequiredProperty);             set => SetValue(IsRequiredProperty, value); }
 
@@ -79,9 +79,6 @@ namespace PrimeERP.UI.Components.Inputs
         private List<object> _allItems = new();
         private bool _suppressTextChanged;
 
-        // الفتح بالماوس يقع عند الإفلات لا عند الضغط: Popup بـ StaysOpen=False يُغلق نفسه عند أول إفلات
-        // خارج حدوده، فلو فُتح أثناء الضغط (GotFocus يسبق MouseUp) أغلقه الإفلات نفسه فوراً — وهذا سبب
-        // "تظهر وتختفي خلال ثانية" عند النقر على الحقل.
         private bool _openOnMouseUp;
         private bool _suppressOpen;
 
@@ -105,8 +102,6 @@ namespace PrimeERP.UI.Components.Inputs
             c.SelectedValue = e.NewValue != null ? c.GetValueOf(e.NewValue) : null;
             c.btnClear.Visibility = c.AllowClear && e.NewValue != null ? Visibility.Visible : Visibility.Collapsed;
 
-            // يُرفَع لأي تغيّر — بالنقر أو برمجياً. كان مقصوراً على النقر، فالحقول التابعة (ترشيح قائمة،
-            // إظهار مشروط) لا تُخطَر عند الضبط من الكود أو من قيمة افتراضية.
             c.SelectionChanged?.Invoke(c, EventArgs.Empty);
         }
 
@@ -178,7 +173,6 @@ namespace PrimeERP.UI.Components.Inputs
 
         private void txtSearch_GotFocus(object sender, RoutedEventArgs e)
         {
-            // تركيز لوحة المفاتيح (Tab) يفتح فوراً؛ تركيز الماوس ينتظر الإفلات.
             if (_suppressOpen || Mouse.LeftButton == MouseButtonState.Pressed) return;
             Filter(IsSearchable ? txtSearch.Text : "");
         }
@@ -187,13 +181,8 @@ namespace PrimeERP.UI.Components.Inputs
         {
             Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
             {
-                // الضغط داخل القائمة ينقل التركيز خارج الحقل — إغلاقها هنا كان يسبق وصول النقرة للعنصر،
-                // فتُغلق بلا اختيار (أول نقرة تفشل والثانية تنجح).
                 if (popup.IsMouseOver) return;
 
-                // ونفسه بلوحة المفاتيح: السهم ينقل التركيز إلى القائمة، فكان الإغلاق يقع فور انتقاله
-                // فلا يجد Enter قائمةً يختار منها. الحراسة بالمِلْكية لا بالماوس: ما دام التركيز داخل
-                // القائمة فهي قيد الاستخدام.
                 if (popup.IsKeyboardFocusWithin) return;
 
                 popup.IsOpen = false;
@@ -219,8 +208,6 @@ namespace PrimeERP.UI.Components.Inputs
             {
                 lst.SelectedIndex = 0;
 
-                // الحاوية نفسها هي ما يُركَّز لا الصندوق: تركيز الصندوق يجعل أول سهمٍ تالٍ ينتقل للعنصر
-                // الأول بدلاً من الثاني، فيبدو كأن سهماً ضاع.
                 if (lst.ItemContainerGenerator.ContainerFromIndex(0) is ListBoxItem first) first.Focus();
                 else lst.Focus();
 
@@ -232,8 +219,6 @@ namespace PrimeERP.UI.Components.Inputs
             }
         }
 
-        // العنصر يُقرأ من الحاوية المضغوطة لا من lst.SelectedItem — الاعتماد على الأخير كان يفشل في أول
-        // نقرة لأن التحديد لم يكن قد وصل بعد.
         private void lst_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             var container = ItemsControl.ContainerFromElement(lst, (DependencyObject)e.OriginalSource) as ListBoxItem;
@@ -246,8 +231,6 @@ namespace PrimeERP.UI.Components.Inputs
 
         private void lst_KeyDown(object sender, KeyEventArgs e)
         {
-            // e.Handled لازمة: المفتاح غير المُعلَّم يتابع صعوده إلى الحوار الحاوي فيُفعِّل زرّه
-            // الافتراضي — اختيارٌ من القائمة يحفظ المستند.
             if (e.Key == Key.Enter && lst.SelectedItem != null)
             {
                 SelectItem(lst.SelectedItem);
@@ -266,13 +249,11 @@ namespace PrimeERP.UI.Components.Inputs
             popup.IsOpen = false;
             _openOnMouseUp = false;
 
-            // إعادة التركيز للحقل بلا إعادة فتح القائمة — GotFocus يفتحها افتراضياً.
             _suppressOpen = true;
             txtSearch.Focus();
             _suppressOpen = false;
         }
 
-        // عند الإفلات لا الضغط، لنفس سبب حقل البحث: الإفلات خارج Popup مفتوح يغلقه فوراً.
         private void chevron_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             var wasOpen = popup.IsOpen;

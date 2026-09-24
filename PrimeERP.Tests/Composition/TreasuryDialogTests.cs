@@ -19,8 +19,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>إضافة بنك من الشاشة الحقيقية: "رقم الحساب بالبنك" يظهر عند اختيار بنك، والحساب يُنشأ تحت
-    /// "البنوك" لا "الصناديق".</summary>
+    /// <summary>إضافة بنك من الشاشة الحقيقية</summary>
     [Collection("WpfApplication")]
     public class TreasuryDialogTests : IDisposable
     {
@@ -36,7 +35,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var definition = _db.Services.GetRequiredService<IModuleRegistry>().Get("Treasuries");
                 var page = CrudPageRenderer.Render(definition, _db.Services);

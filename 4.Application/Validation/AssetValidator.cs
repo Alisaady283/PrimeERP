@@ -3,6 +3,7 @@ using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Application.Validation
 {
+    /// <summary>تحقّق الأصل</summary>
     public class AssetValidator : ValidatorBase, IValidator<Asset>
     {
         public ValidationResult Validate(Asset asset)

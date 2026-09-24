@@ -4,10 +4,7 @@ using System.Linq;
 
 namespace PrimeERP.UI.Components.Documents
 {
-    /// <summary>
-    /// محرك حساب أعمدة السطر — دوال C# مسجّلة بمفتاح ثابت، عمداً بلا أي تقييم نصوص ديناميكي (Eval)
-    /// لأنه خطر أمنياً وبطيء. كل صيغة تُحسب من القيم الخام مباشرة فلا تعتمد على ترتيب التنفيذ.
-    /// </summary>
+    /// <summary>محرك حساب أعمدة السطر</summary>
     public static class LineComputeEngine
     {
         private static readonly Dictionary<string, Func<DocumentLine, decimal>> _formulas = new();
@@ -43,7 +40,6 @@ namespace PrimeERP.UI.Components.Documents
         public static decimal Compute(string key, DocumentLine line) =>
             !string.IsNullOrEmpty(key) && _formulas.TryGetValue(key, out var formula) ? formula(line) : 0m;
 
-        /// <summary>يعيد حساب كل الأعمدة المحسوبة في السطر (Type=Computed) ويكتب النتيجة في نفس مفتاح كل عمود.</summary>
         public static void Recalculate(DocumentLine line, List<LineColumn> columns)
         {
             foreach (var col in columns.Where(c => c.Type == LineColumnType.Computed && !string.IsNullOrEmpty(c.ComputeExpression)))

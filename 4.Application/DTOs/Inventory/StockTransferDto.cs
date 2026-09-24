@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Application.DTOs.Inventory
 {
+    /// <summary>بيانات التحويل المخزني</summary>
     public class StockTransferDto
     {
         public int      Id                { get; set; }

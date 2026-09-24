@@ -1,5 +1,5 @@
+using PrimeERP.Data.Core;
 using System;
-using System.Data.Common;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
@@ -16,16 +16,11 @@ using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.DTOs.Parties;
 using Xunit;
-using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>
-    /// قاعدة بيانات خاصة معزولة لكل اختبار (لا [Collection("Database")] المشتركة) عمداً — اختبارات هذه الفئة
-    /// تفترض شجرة حسابات "نظيفة" (مثال: أول ابن لـ 1202 كوده 1202001 بالضبط)، وهذا يتطلب عدم تسرّب حسابات
-    /// من اختبار سابق. xUnit يُنشئ نسخة جديدة من فئة الاختبار قبل كل [Fact]، فبناء TestDatabaseFixture هنا
-    /// (لا عبر ICollectionFixture مشتركة) يعطي كل اختبار قاعدة بيانات مستقلة تلقائياً.
-    /// </summary>
+    /// <summary>قاعدة معزولة لكل اختبار</summary>
     public class AccountServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -35,10 +30,6 @@ namespace PrimeERP.Tests.Services
         {
             AppSession.DevMode = true;
 
-            // AutoLinkEnabled=true افتراضياً الآن يفشل صراحةً لو ICustomerService/ISupplierService غير مسجَّلة
-            // (بدل السكوت القديم) — أي اختبار ينشئ حساباً تحت جذر العملاء/الموردين يحتاج خدمة مسجَّلة، حتى لو
-            // لم يكن يفحص الربط نفسه. تسجيل افتراضي بلا تأثير هنا؛ الاختبارات التي تفحص الربط الفعلي (134/187)
-            // تبني حاويتها الخاصة محلياً بالـ Fake الذي تريد فحصه (آخر تسجيل لنفس النوع هو الفائز في DI).
             var services = TestDatabaseFixture.BuildServices(s =>
             {
                 s.AddSingleton<ICustomerService>(new FakeCustomerService());
@@ -55,13 +46,13 @@ namespace PrimeERP.Tests.Services
         private int SeedPostedEntry(string date, params (string Code, decimal Debit, decimal Credit)[] lines)
         {
             var journal = _db.Services.GetRequiredService<IJournalRepository>();
-            var id = Db.RunTransaction((conn, tx) =>
+            var id = DbContextFactory.RunTransaction(db =>
             {
                 var entry = new JournalEntry { EntryNo = $"TEST-{Guid.NewGuid():N}", EntryDate = date, Description = "test", Source = "test" };
-                var newId = journal.InsertHeader(conn, tx, entry);
+                var newId = journal.InsertHeader(db, entry);
                 int lineNo = 1;
                 foreach (var l in lines)
-                    journal.InsertLine(conn, tx, newId, lineNo++, new JournalLine { AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit });
+                    journal.InsertLine(db, newId, lineNo++, new JournalLine { AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit });
                 return newId;
             });
             journal.SetPosted(id, true);
@@ -74,35 +65,34 @@ namespace PrimeERP.Tests.Services
             public string? LastDeletedAccountCode;
             public (string Code, string Name)? LastNameSync;
 
-            Result IAccountLinkedService.CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name, string rootCode) =>
-                CreateFromAccount(conn, tx, accountCode, name);
+            Result IAccountLinkedService.CreateFromAccount(PrimeDbContext db, string accountCode, string name, string rootCode) =>
+                CreateFromAccount(db, accountCode, name);
 
-            public Result<CustomerDto> CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
+            public Result<CustomerDto> CreateFromAccount(PrimeDbContext db, string accountCode, string name)
             {
                 LastCreatedFor = (accountCode, name);
                 return Result.Ok(new CustomerDto { Id = 999, Code = "C-TEST", AccountCode = accountCode, Name = name });
             }
 
-            public Result DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode)
+            public Result DeleteByAccountCode(PrimeDbContext db, string accountCode)
             {
                 LastDeletedAccountCode = accountCode;
                 return Result.Ok();
             }
 
-            public Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
+            public Result UpdateNameFromAccount(PrimeDbContext db, string accountCode, string name)
             {
                 LastNameSync = (accountCode, name);
                 return Result.Ok();
             }
 
-            // بقية ICustomerService غير مستخدَمة من AccountServiceTests — Fake مصغّر بقصد نفس الاختبارات فقط.
             public Result<PagedResult<CustomerDto>> GetPaged(int page, int pageSize, CustomerFilter filter = null) => throw new NotImplementedException();
             public Result<CustomerDto> GetById(int id) => throw new NotImplementedException();
             public Result<CustomerDto> GetByCode(string code) => throw new NotImplementedException();
             public Result<System.Collections.Generic.List<CustomerDto>> Search(string term, int maxResults = 50) => throw new NotImplementedException();
             public Result<System.Collections.Generic.List<AccountStatementLine>> GetStatement(int id, DateTime from, DateTime to) => throw new NotImplementedException();
             public Result<CustomerDto> Create(CreateCustomerDto dto) => throw new NotImplementedException();
-            public Result<CustomerDto> Create(DbConnection conn, DbTransaction tx, CreateCustomerDto dto) => throw new NotImplementedException();
+            public Result<CustomerDto> Create(PrimeDbContext db, CreateCustomerDto dto) => throw new NotImplementedException();
             public Result Update(UpdateCustomerDto dto) => throw new NotImplementedException();
             public Result Delete(int id) => throw new NotImplementedException();
             public Result RecalculateBalance(int id) => throw new NotImplementedException();
@@ -116,35 +106,34 @@ namespace PrimeERP.Tests.Services
             public string? LastDeletedAccountCode;
             public (string Code, string Name)? LastNameSync;
 
-            Result IAccountLinkedService.CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name, string rootCode) =>
-                CreateFromAccount(conn, tx, accountCode, name);
+            Result IAccountLinkedService.CreateFromAccount(PrimeDbContext db, string accountCode, string name, string rootCode) =>
+                CreateFromAccount(db, accountCode, name);
 
-            public Result<SupplierDto> CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
+            public Result<SupplierDto> CreateFromAccount(PrimeDbContext db, string accountCode, string name)
             {
                 LastCreatedFor = (accountCode, name);
                 return Result.Ok(new SupplierDto { Id = 999, Code = "S-TEST", AccountCode = accountCode, Name = name });
             }
 
-            public Result DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode)
+            public Result DeleteByAccountCode(PrimeDbContext db, string accountCode)
             {
                 LastDeletedAccountCode = accountCode;
                 return Result.Ok();
             }
 
-            public Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
+            public Result UpdateNameFromAccount(PrimeDbContext db, string accountCode, string name)
             {
                 LastNameSync = (accountCode, name);
                 return Result.Ok();
             }
 
-            // بقية ISupplierService غير مستخدَمة من AccountServiceTests — Fake مصغّر بقصد نفس الاختبارات فقط.
             public Result<PagedResult<SupplierDto>> GetPaged(int page, int pageSize, SupplierFilter filter = null) => throw new NotImplementedException();
             public Result<SupplierDto> GetById(int id) => throw new NotImplementedException();
             public Result<SupplierDto> GetByCode(string code) => throw new NotImplementedException();
             public Result<System.Collections.Generic.List<SupplierDto>> Search(string term, int maxResults = 50) => throw new NotImplementedException();
             public Result<System.Collections.Generic.List<AccountStatementLine>> GetStatement(int id, DateTime from, DateTime to) => throw new NotImplementedException();
             public Result<SupplierDto> Create(CreateSupplierDto dto) => throw new NotImplementedException();
-            public Result<SupplierDto> Create(DbConnection conn, DbTransaction tx, CreateSupplierDto dto) => throw new NotImplementedException();
+            public Result<SupplierDto> Create(PrimeDbContext db, CreateSupplierDto dto) => throw new NotImplementedException();
             public Result Update(UpdateSupplierDto dto) => throw new NotImplementedException();
             public Result Delete(int id) => throw new NotImplementedException();
             public Result RecalculateBalance(int id) => throw new NotImplementedException();
@@ -239,7 +228,6 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
-        // القاعدة الحالية: الحساب بلا قيود يتحوّل لأب تلقائياً عند أول ابن — الرفض مشروط بوجود قيود عليه.
         public void Create_UnderAccountWithoutEntries_TurnsItIntoAParent()
         {
             var leaf = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "عميل leaf" });
@@ -266,7 +254,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(result.Value.Code, fake.LastCreatedFor.Value.Code);
         }
 
-        /// <summary>يتحقق أن ResolveAutoLink يعمل للمورد فعلياً عبر SupplierService الحقيقية (لا Fake) — R6.</summary>
         [Fact]
         public void Create_UnderSuppliersRoot_CreatesLinkedSupplier_ViaRealSupplierService()
         {
@@ -286,7 +273,6 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
-        // "يقبل قيوداً" لم يعد حقلاً يُحرَّر: التعديل يتجاهل ما يُرسَل ويشتقّ الحالة من وجود الأبناء.
         public void Update_IgnoresIsLeaf_AndKeepsItDerivedFromChildren()
         {
             var parent = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "أب له ابن" });
@@ -394,9 +380,7 @@ namespace PrimeERP.Tests.Services
             }
         }
 
-        // ===================== شجرة الأصول مقفلة =====================
 
-        /// <summary>الحارس نائمٌ بلا إعداد، فكل اختبار هنا يضبط جذر التكلفة أولاً كما يفعل الإقلاع.</summary>
         private IAccountRepository Accounts() => _db.Services.GetRequiredService<IAccountRepository>();
 
         private void ConfigureAssetRoot() =>
@@ -422,7 +406,6 @@ namespace PrimeERP.Tests.Services
         {
             ConfigureAssetRoot();
 
-            // حِمل المالك: خدمة الأصول وتسويتها تمرّران SkipAutoLink، والشجرة لا تمرّره.
             var result = _service.Create(new CreateAccountDto
             { ParentId = Accounts().GetByCode("1101001").Id, Name = "فئة أصول", IsLeaf = false, SkipAutoLink = true });
 

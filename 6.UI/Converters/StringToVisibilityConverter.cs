@@ -5,7 +5,7 @@ using System.Windows.Data;
 
 namespace PrimeERP.UI.Converters
 {
-    /// <summary>نص فارغ/فارغ تماماً يعني Collapsed — غير ذلك Visible.</summary>
+    /// <summary>نص فارغ/فارغ تماماً يعني Collapsed</summary>
     public class StringToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType,

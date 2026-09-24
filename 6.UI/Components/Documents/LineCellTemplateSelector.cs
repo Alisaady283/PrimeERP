@@ -3,11 +3,7 @@ using System.Windows.Controls;
 
 namespace PrimeERP.UI.Components.Documents
 {
-    /// <summary>
-    /// يختار قالب الخلية (عرض أو تعديل) حسب LineColumnType من قوالب معرّفة مسبقاً في DocumentLinesGrid.xaml
-    /// (مفتاح كل قالب: "CellView_{Type}" أو "CellEdit_{Type}"). كل عمود يملك نسخته الخاصة من المُحدِّد
-    /// (ColumnType ثابت لكل عمود)، لكن القوالب نفسها مشتركة وساكنة — لا FrameworkElementFactory ولا XamlReader.
-    /// </summary>
+    /// <summary>يختار قالب الخلية</summary>
     public class LineCellTemplateSelector : DataTemplateSelector
     {
         public LineColumnType ColumnType { get; set; }

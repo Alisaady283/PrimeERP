@@ -6,6 +6,7 @@ using System.Windows.Input;
 
 namespace PrimeERP.UI.Components.Actions
 {
+    /// <summary>أزرار AppDropdownButton</summary>
     public partial class AppDropdownButton : UserControl
     {
         public static readonly DependencyProperty TextProperty =
@@ -24,7 +25,6 @@ namespace PrimeERP.UI.Components.Actions
         public IEnumerable Items             { get => (IEnumerable)GetValue(ItemsProperty);         set => SetValue(ItemsProperty, value); }
         public string      DisplayMemberPath { get => (string)GetValue(DisplayMemberPathProperty);  set => SetValue(DisplayMemberPathProperty, value); }
 
-        /// <summary>يُطلق عند اختيار عنصر من القائمة، ويحمله.</summary>
         public event EventHandler<object> ItemSelected;
 
         public AppDropdownButton()

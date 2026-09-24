@@ -4,15 +4,11 @@ using System.Linq;
 
 namespace PrimeERP.Domain.Helpers
 {
-    /// <summary>مبالغ سطر واحد بعد الخصم والضريبتين.</summary>
+    /// <summary>مبالغ سطر واحد بعد الخصم</summary>
     public readonly record struct LineAmounts(
         decimal Gross, decimal Discount, decimal Taxable, decimal Vat, decimal Withholding, decimal Net);
 
-    /// <summary>
-    /// مصدر واحد لحساب مبالغ المستندات التجارية — فواتير البيع والشراء ومرتجعاتها تستدعيه بدل أربع نسخ.
-    /// الوعاء = الإجمالي ناقص الخصم. القيمة المضافة تُضاف للمستحق، وضريبة الخصم والإضافة تُحجَز منه
-    /// لصالح مصلحة الضرائب فتُنقص الصافي بلا أن تمسّ الإيراد.
-    /// </summary>
+    /// <summary>مصدر واحد لحساب مبالغ المستندات</summary>
     public static class DocumentTotals
     {
         public static LineAmounts ForLine(decimal qty, decimal unitPrice,
@@ -22,7 +18,7 @@ namespace PrimeERP.Domain.Helpers
             var discount = Round(gross * discountPercent / 100m);
             var taxable = gross - discount;
             var vat = Round(taxable * vatPercent / 100m);
-            var withholding = Round(taxable * withholdingPercent / 100m);
+            var withholding = Round((taxable + vat) * withholdingPercent / 100m);   // الأساس: الصافي بعد الخصم والضريبة
 
             return new LineAmounts(gross, discount, taxable, vat, withholding, taxable + vat - withholding);
         }

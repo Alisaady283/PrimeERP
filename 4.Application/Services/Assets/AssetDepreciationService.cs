@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,15 +15,15 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Application.Services.Assets
 {
+    /// <summary>قسط الإهلاك سجلٌّ مستقلّ</summary>
     public interface IAssetDepreciationService
     {
         Result<decimal> MonthlyAmount(int assetId);
 
-        /// <summary>يُنشئ أقساط كل الأصول المستحقّة حتى تاريخٍ — قسطٌ لكل أصلٍ عن كل شهر.</summary>
         Result<int> RunFor(DateTime upTo);
 
         Result<PagedResult<AssetDepreciationDto>> GetPaged(int page, int pageSize, AssetDepreciationFilter filter = null);
@@ -32,12 +33,6 @@ namespace PrimeERP.Application.Services.Assets
         Result Delete(int id);
     }
 
-    /// <summary>
-    /// قسط الإهلاك سجلٌّ مستقلّ كالسند: إنشاءٌ وتعديلٌ وحذف، ولكلٍّ قيده — فحذف القسط يحذف قيده معه،
-    /// ولا يبقى قيدٌ يتيم. وزرّ «احتساب الإهلاك» يمرّ من نفس مسار الإنشاء لكل أصلٍ وكل شهرٍ مستحقّ،
-    /// فلا مسار ترحيلٍ ثانٍ. ومجمّع الأصل ودفتريّته وآخر شهرٍ أُهلك **تُشتقّ من أقساطه** لا من رقمٍ
-    /// محفوظ قد يتناقض معها.
-    /// </summary>
     public class AssetDepreciationService
         : AssetMovementServiceBase<AssetDepreciation, AssetDepreciationDto, AssetDepreciationFilter>, IAssetDepreciationService
     {
@@ -107,7 +102,6 @@ namespace PrimeERP.Application.Services.Assets
             return Result.Ok(ToDto(charge));
         }
 
-        /// <summary>التعديل حذفٌ ثم إنشاء: القيد لا يُعدَّل في مكانه، ويبقى الأصل ودفاتره متطابقَين.</summary>
         public Result Update(UpdateAssetDepreciationDto dto)
         {
             if (!Can("Edit")) return FailDenied();
@@ -133,12 +127,12 @@ namespace PrimeERP.Application.Services.Assets
             var funds = EnsureReversible(charge.JournalEntryId);
             if (funds.IsFailure) return funds;
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                ReverseEntry(conn, tx, charge.JournalEntryId);
-                _charges.Delete(id, conn, tx);
+                ReverseEntry(db, charge.JournalEntryId);
+                _charges.Delete(id, db);
 
-                Recalculate(conn, tx, charge.AssetId);
+                Recalculate(db, charge.AssetId);
             });
 
             Audit.Log(EntityName, id, AuditAction.Delete, details: charge.Notes);
@@ -180,22 +174,20 @@ namespace PrimeERP.Application.Services.Assets
             return Result.Ok(created);
         }
 
-        /// <summary>القسط وقيده في معاملة واحدة، ثم يُشتقّ مجمّع الأصل من أقساطه.</summary>
         private Result Post(AssetDepreciation charge, Asset asset, string expenseAccount)
         {
             try
             {
-                Db.RunTransaction((conn, tx) =>
+                Tx(db =>
                 {
-                    charge.Id = _charges.Insert(charge, conn, tx);
+                    charge.Id = _charges.Insert(charge, db);
 
-                    // الدائن مجمّع الأصل نفسه داخل مجمّع فئته — فيجمع كل أبٍ أبناءه صعوداً بلا حسابٍ عامّ.
-                    charge.JournalEntryId = PostEntry(conn, tx, charge.PeriodDate, charge.Notes,
+                    charge.JournalEntryId = PostEntry(db, charge.PeriodDate, charge.Notes,
                         expenseAccount, asset.DepreciationAccountCode, charge.Amount, asset.Name);
 
-                    _charges.SetJournalEntryId(conn, tx, charge.Id, charge.JournalEntryId.Value);
+                    _charges.SetJournalEntryId(db, charge.Id, charge.JournalEntryId.Value);
 
-                    Recalculate(conn, tx, charge.AssetId);
+                    Recalculate(db, charge.AssetId);
                 });
             }
             catch (InvalidOperationException ex)
@@ -206,22 +198,18 @@ namespace PrimeERP.Application.Services.Assets
             return Result.Ok();
         }
 
-        /// <summary>
-        /// مجمّع الأصل ودفتريّته وآخر شهرٍ أُهلك — كلها مشتقّة من أقساطه القائمة، فحذف أي قسطٍ أو
-        /// إضافته يُصحّح الأصل تلقائياً ولا يبقى رقمٌ محفوظ يخالف سجلّاته.
-        /// </summary>
-        private void Recalculate(System.Data.Common.DbConnection conn, System.Data.Common.DbTransaction tx, int assetId)
+        private void Recalculate(PrimeDbContext db, int assetId)
         {
-            var asset = _assets.GetById(assetId, conn, tx);
+            var asset = _assets.GetById(assetId, db);
             if (asset == null) return;
 
-            var charges = _charges.OfAsset(assetId, conn, tx);
+            var charges = _charges.OfAsset(assetId, db);
 
             asset.AccumulatedDepreciation = charges.Sum(c => c.Amount);
             asset.CurrentValue = DepreciationRules.BookValue(Base(asset), asset.AccumulatedDepreciation);
             asset.LastDepreciationDate = charges.Count == 0 ? null : charges.Max(c => c.PeriodDate);
 
-            _assets.Update(asset, conn, tx);
+            _assets.Update(asset, db);
         }
 
         protected override AssetDepreciationDto ToDto(AssetDepreciation charge)

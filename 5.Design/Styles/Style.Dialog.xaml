@@ -2,12 +2,12 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- L4 — كل البصري لـ AppDialogWindow (والحوارات المشتقة). راجع تعليق Style.Button.xaml لقاعدة L1 المباشرة للأبعاد. -->
+    <!-- أنماط الحوارات -->
 
     <Style x:Key="DialogHeaderStyle" TargetType="Border">
         <Setter Property="Padding" Value="20,16"/>
-        <Setter Property="Background" Value="{DynamicResource C.Dialog.Header.Bg}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource C.Dialog.Header.Border}"/>
+        <Setter Property="Background" Value="{DynamicResource SurfaceHeader}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource OutlineSubtle}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
     </Style>
 
@@ -67,13 +67,12 @@
     </Style>
 
     <Style x:Key="DialogFooterStyle" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource C.Dialog.Footer.Bg}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource C.Dialog.Footer.Border}"/>
+        <Setter Property="Background" Value="{DynamicResource SurfaceOverlay}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="0,1,0,0"/>
         <Setter Property="Padding" Value="20,14"/>
     </Style>
 
-    <!-- مسافة قياسية بين زر وزر عند بناء صف أزرار برمجياً (Footer) — بدل Thickness حرفية في الكود. -->
     <Thickness x:Key="DialogButtonSpacing">8,0,0,0</Thickness>
 
 </ResourceDictionary>

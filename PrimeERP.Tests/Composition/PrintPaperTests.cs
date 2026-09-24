@@ -13,7 +13,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>خيارات الورق: النسخ المعنونة، تكرار رأس الجدول، الباركود، والشيك بمواضعه المطلقة.</summary>
+    /// <summary>خيارات الورق</summary>
     public class PrintPaperTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -72,7 +72,6 @@ namespace PrimeERP.Tests.Composition
             var content = StaThreadHelper.Run(() => _db.Services.GetRequiredService<IPrintService>().BuildContent(printable));
             Assert.True(content.IsSuccess, content.ErrorMessage);
 
-            // ثلاث شرائح ⇒ ثلاثة جداول سطور، كلٌّ برأسه. (جدولا الترويسة والحقول أضيق.)
             var lineTables = content.Value.Blocks.OfType<Table>().Where(t => t.Columns.Count >= 5).ToList();
             Assert.Equal(3, lineTables.Count);
         }
@@ -82,7 +81,6 @@ namespace PrimeERP.Tests.Composition
         {
             var printable = Build(1, new PrintDocuments.PaperOptions { CopyLabels = new() { "أصل", "صورة العميل" } });
 
-            // الفحص داخل خيط الإنشاء — عناصر WPF مملوكة لخيطها.
             var rotatedStamps = StaThreadHelper.Run(() =>
             {
                 var built = _db.Services.GetRequiredService<IPrintService>().Build(printable);

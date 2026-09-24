@@ -18,6 +18,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
+    /// <summary>السندات والشيكات</summary>
     [Collection("Database")]
     public class VoucherAndChequeTests
     {
@@ -29,7 +30,6 @@ namespace PrimeERP.Tests.Services
             AppSession.DevMode = true;
         }
 
-        // حساب ورقي حقيقي تحت جذر النقدية — الترحيل يرفض أي حساب غير ورقي، وهذا ما تفرضه الخدمة عملياً.
         private string SeedLeafAccount()
         {
             var parentId = _db.Services.GetRequiredService<PrimeERP.Data.Repositories.IAccountRepository>().GetByCode("12").Id;
@@ -128,11 +128,9 @@ namespace PrimeERP.Tests.Services
             var cheque = SeedIncomingCheque(out var treasury);
             var service = _db.Services.GetRequiredService<IChequeService>();
 
-            // شيك بالمحفظة لا يرتد — الارتداد يقع بعد الإيداع فقط.
             var illegal = service.Move(new MoveChequeDto { ChequeId = cheque.Id, ToStatus = (int)ChequeStatus.Bounced });
             Assert.False(illegal.IsSuccess);
 
-            // محصَّل: لا حالة بلا رجعة — الحركة قد تكون خطأً فتُعاد بحركة مضادة تُسجَّل بقيدها.
             service.Move(new MoveChequeDto { ChequeId = cheque.Id, ToStatus = (int)ChequeStatus.Collected, TreasuryId = treasury.Id });
             Assert.Contains(ChequeStatus.InHand, service.GetAllowedTransitions(cheque.Id).Value);
         }
@@ -144,7 +142,6 @@ namespace PrimeERP.Tests.Services
             var cheque = SeedIncomingCheque(out var treasury);
             var service = _db.Services.GetRequiredService<IChequeService>();
 
-            // لم يتحرّك بعد: تصحيح الإدخال مسموح.
             var edited = service.UpdateUnmoved(cheque.Id,
                 new CreateChequeLineDto { ChequeNo = "CHQ-EDITED", Amount = 750m, BankName = "بنك آخر", PartyId = cheque.PartyId },
                 DateTime.Today);
@@ -154,7 +151,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal("CHQ-EDITED", after.ChequeNo);
             Assert.Equal(750m, after.Amount);
 
-            // تحرّك: صار له قيد مقابل، فيُصحَّح بحركة لا بالكتابة فوقه.
             Assert.True(service.Move(new MoveChequeDto
             { ChequeId = cheque.Id, ToStatus = (int)ChequeStatus.Deposited, TreasuryId = treasury.Id }).IsSuccess);
 
@@ -171,7 +167,6 @@ namespace PrimeERP.Tests.Services
             var customer = SeedCustomer();
             var chequeNo = $"CHQ-{Guid.NewGuid():N}"[..12];
 
-            // الشيك يُنشأ من قسم الشيكات وحده — السند لم يعد يُنشئه بعد إزالة طريقة «شيك» منه.
             var document = _db.Services.GetRequiredService<IChequeService>().CreateBatch(new CreateChequeDocumentDto
             {
                 DocDate = DateTime.Today,
@@ -186,7 +181,6 @@ namespace PrimeERP.Tests.Services
             }, ChequeDirection.Incoming);
             Assert.True(document.IsSuccess, document.ErrorMessage);
 
-            // بالرقم لا بأول عنصر: القائمة مرتَّبة، وأولها يتبدّل مع كل شيك يزرعه اختبار آخر في نفس القاعدة.
             var cheques = _db.Services.GetRequiredService<IChequeService>().GetPaged(1, 200);
             var created = cheques.Value.Items.Single(c => c.ChequeNo == chequeNo);
             return _db.Services.GetRequiredService<IChequeService>().GetById(created.Id).Value;

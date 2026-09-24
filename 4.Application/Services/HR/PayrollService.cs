@@ -11,11 +11,11 @@ using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
 using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Application.Services.HR
 {
+    /// <summary>مسير الرواتب</summary>
     public class PayrollService : ServiceBase, IPayrollService
     {
         private readonly IPayrollRepository _payrolls;
@@ -75,7 +75,6 @@ namespace PrimeERP.Application.Services.HR
         {
             if (!Can("PaySalary")) return FailDenied<PayrollDetailDto>();
 
-            // بلا سطورٍ مُدخَلة يُولّدها المسير لكل موظفٍ نشط.
             var lines = dto.Lines is { Count: > 0 } ? dto.Lines : GenerateLines(dto.PeriodStart, dto.PeriodEnd);
             if (lines.Count == 0) return Result.Fail<PayrollDetailDto>("لا موظفين نشطين لتوليد المسير", ErrorCode.ValidationFailed);
 
@@ -108,21 +107,20 @@ namespace PrimeERP.Application.Services.HR
             int payrollId;
             try
             {
-                payrollId = Db.RunTransaction((conn, tx) =>
+                payrollId = Tx(db =>
                 {
-                    var payrollNo = _numbers.Next(conn, tx, "Payroll");
+                    var payrollNo = _numbers.Next(db, "Payroll");
                     var payroll = new Payroll
                     {
                         PayrollNo = payrollNo, PeriodStart = dto.PeriodStart, PeriodEnd = dto.PeriodEnd, PaymentDate = dto.PaymentDate,
                         TotalBasic = totalBasic, TotalAllowances = totalAllowances, TotalDeductions = totalDeductions, NetTotal = netTotal,
                         Notes = dto.Notes, CreatedBy = AppSession.Username
                     };
-                    var id = _payrolls.InsertHeader(conn, tx, payroll);
+                    var id = _payrolls.InsertHeader(db, payroll);
 
                     foreach (var line in resolvedLines)
-                        _payrolls.InsertLine(conn, tx, id, line);
+                        _payrolls.InsertLine(db, id, line);
 
-                    // بلا قيد هنا: يُرحَّل بزرّه كالأصول والشيكات.
                     return id;
                 });
             }
@@ -137,7 +135,6 @@ namespace PrimeERP.Application.Services.HR
 
         public Result Update(CreatePayrollDto dto) => Result.Fail("مسير الرواتب يُحذف ويُعاد إنشاؤه بدل تعديله", ErrorCode.ValidationFailed);
 
-        /// <summary>إثبات استحقاق لا صرف — الخزينة لا تُمسّ، فالصرف سندٌ لاحق.</summary>
         public Result Post(int id)
         {
             if (!Can("PaySalary")) return FailDenied();
@@ -168,7 +165,6 @@ namespace PrimeERP.Application.Services.HR
             Add(insurancePayable, 0, lines.Sum(l => l.Insurance));
             Add(taxPayable,       0, lines.Sum(l => l.Tax));
 
-            // على حساب صاحبها لا على جامع، فيظهر السداد في كشف حسابه.
             foreach (var line in lines.Where(l => l.Advances > 0))
             {
                 var employee = _employees.GetById(line.EmployeeId);
@@ -178,15 +174,14 @@ namespace PrimeERP.Application.Services.HR
                 Add(employee.AccountCode, 0, line.Advances);
             }
 
-            // تُنقص المصروف ولا تُنشئ التزاماً.
             var otherDeductions = lines.Sum(l => l.Deductions);
             if (otherDeductions > 0) Add(salaryExpense, 0, otherDeductions);
 
             try
             {
-                Db.RunTransaction((conn, tx) =>
+                Tx(db =>
                 {
-                    var entry = _journal.Create(conn, tx, new CreateJournalDto
+                    var entry = _journal.Create(db, new CreateJournalDto
                     {
                         EntryDate = payroll.PaymentDate,
                         Description = $"استحقاق مسير رواتب {payroll.PayrollNo}",
@@ -195,11 +190,11 @@ namespace PrimeERP.Application.Services.HR
                     });
                     if (!entry.IsSuccess) throw new InvalidOperationException(entry.ErrorMessage);
 
-                    var posted = _journal.Post(conn, tx, entry.Value.Id);
+                    var posted = _journal.Post(db, entry.Value.Id);
                     if (!posted.IsSuccess) throw new InvalidOperationException(posted.ErrorMessage);
 
-                    _payrolls.SetJournalEntryId(conn, tx, id, entry.Value.Id);
-                    _payrolls.SetPosted(conn, tx, id, true);
+                    _payrolls.SetJournalEntryId(db, id, entry.Value.Id);
+                    _payrolls.SetPosted(db, id, true);
                 });
             }
             catch (InvalidOperationException ex)
@@ -211,7 +206,6 @@ namespace PrimeERP.Application.Services.HR
             return Result.Ok();
         }
 
-        /// <summary>لا يُعالج ما صُرف منه — الصرف مستندٌ مستقلّ يُعكَس بنفسه.</summary>
         public Result Unpost(int id)
         {
             if (!Can("PaySalary")) return FailDenied();
@@ -220,11 +214,11 @@ namespace PrimeERP.Application.Services.HR
             if (payroll == null) return Result.Fail("المسير غير موجود", ErrorCode.NotFound);
             if (!payroll.IsPosted) return Result.Fail("المسير غير مُرحَّل", ErrorCode.ValidationFailed);
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                if (payroll.JournalEntryId != null) _journal.Delete(conn, tx, payroll.JournalEntryId.Value);
-                _payrolls.SetJournalEntryId(conn, tx, id, null);
-                _payrolls.SetPosted(conn, tx, id, false);
+                if (payroll.JournalEntryId != null) _journal.Delete(db, payroll.JournalEntryId.Value);
+                _payrolls.SetJournalEntryId(db, id, null);
+                _payrolls.SetPosted(db, id, false);
             });
 
             Audit.Log(EntityName, id, AuditAction.Update, details: "إلغاء ترحيل");
@@ -249,7 +243,6 @@ namespace PrimeERP.Application.Services.HR
             return Result.Ok((salaryExpense, allowanceExpense, salariesPayable, insurancePayable, taxPayable));
         }
 
-        /// <summary>حذف المسير وقيده — لا أثر مخزني له.</summary>
         public Result Delete(int id)
         {
             if (!Can("Delete")) return FailDenied();
@@ -257,23 +250,21 @@ namespace PrimeERP.Application.Services.HR
             var payroll = _payrolls.GetById(id);
             if (payroll == null) return Result.Fail("المسير غير موجود", ErrorCode.NotFound);
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                if (payroll.JournalEntryId != null) _journal.Delete(conn, tx, payroll.JournalEntryId.Value);
-                _payrolls.DeleteDocument(conn, tx, id);
+                if (payroll.JournalEntryId != null) _journal.Delete(db, payroll.JournalEntryId.Value);
+                _payrolls.DeleteDocument(db, id);
             });
 
             Audit.Log(EntityName, id, AuditAction.Delete);
             return Result.Ok();
         }
 
-        /// <summary>سطرٌ لكل موظفٍ نشط: بطاقتُه وحركاتُ فترته. استعلامٌ واحد لكل مصدر لا لكل موظف.</summary>
         private List<CreatePayrollLineDto> GenerateLines(DateTime from, DateTime to)
         {
             var employees = _employees.GetAll(activeOnly: true);
             if (employees.Count == 0) return new List<CreatePayrollLineDto>();
 
-            // البدل والخصم بشهر استحقاقهما، والحضور بتاريخه — واقعةُ يومٍ لا استحقاقَ شهر.
             var allowances = _allowances.SumByEmployee(to.Month, to.Year);
             var deductions = _deductions.SumByEmployee(to.Month, to.Year);
             var overtime = _attendances.OvertimeByEmployee(from, to);
@@ -284,7 +275,6 @@ namespace PrimeERP.Application.Services.HR
             var lineNo = 1;
             return employees.Select(e =>
             {
-                // شهرٌ على ثلاثين، ويومٌ على ثماني.
                 var dailyRate = e.BasicSalary / 30m;
                 var hourlyRate = dailyRate / 8m;
 
@@ -310,7 +300,6 @@ namespace PrimeERP.Application.Services.HR
             }).ToList();
         }
 
-        /// <summary>رصيد حساب الموظف المدين — صفرٌ بلا حساب أو بلا رصيد.</summary>
         private decimal AdvanceInstalment(Employee employee)
         {
             if (string.IsNullOrWhiteSpace(employee.AccountCode)) return 0;
@@ -321,7 +310,6 @@ namespace PrimeERP.Application.Services.HR
             return account.Value.Balance;
         }
 
-        /// <summary>النسخ بالانعكاس فلا يسقط حقلٌ يُضاف لاحقاً.</summary>
         private static PayrollDetailDto ToDetail(PayrollDto source)
         {
             var detail = new PayrollDetailDto();

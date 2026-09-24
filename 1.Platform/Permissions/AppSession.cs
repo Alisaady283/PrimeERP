@@ -3,10 +3,9 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Platform.Permissions
 {
-    /// <summary>حالة المستخدم الحالي الجارية — من سجّل دخوله وما صلاحياته.</summary>
+    /// <summary>حالة المستخدم الحالي</summary>
     public static class AppSession
     {
-        /// <summary>يُطلق عند أي تغيير في DevMode أو Permissions — القطع المرتبطة بالصلاحيات تعيد تقييم حالتها عند سماعه.</summary>
         public static event EventHandler PermissionsChanged;
 
         public static void RaisePermissionsChanged() => PermissionsChanged?.Invoke(null, EventArgs.Empty);
@@ -18,14 +17,12 @@ namespace PrimeERP.Platform.Permissions
         public static string RoleName    { get; private set; }
         public static bool   IsAuthenticated { get; private set; }
 
-        /// <summary>في وضع التطوير يمنح كل الصلاحيات بدون تسجيل دخول — مضبوط بشرط الـ build فلا يتسرّب لنسخة الإنتاج.</summary>
 #if DEBUG
         public static bool DevMode { get; set; } = true;
 #else
         public static bool DevMode { get; } = false;
 #endif
 
-        /// <summary>التجاوز قبل تسجيل الدخول فقط — بعده تسري صلاحيات المستخدم وحدها.</summary>
         public static bool BypassPermissions => DevMode && !IsAuthenticated;
 
         public static HashSet<string> Permissions { get; } = new();

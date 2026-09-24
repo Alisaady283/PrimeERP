@@ -1,15 +1,10 @@
 using System.Data.Common;
 using PrimeERP.Data.Core;
-using PrimeERP.Data.Providers;
 using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Data.Repositories
 {
-    /// <summary>
-    /// اتصالٌ بقاعدة نسخةٍ أخرى. قاعدة البرنامج العامل تمرّ من DbFactory (اتصال واحد للعملية)، وقاعدة
-    /// النسخة ليست هي — فالاتصال يُفتح هنا صراحةً، ثم تكتب فيه مستودعاتُ النظام نفسها بتحميلاتها التي
-    /// تقبل اتصالاً. لا جملة SQL تُكتب هنا.
-    /// </summary>
+    /// <summary>اتصالٌ بقاعدة نسخةٍ أخرى</summary>
     public interface IEditionRepository
     {
         DbConnection Open(string databasePath);
@@ -19,8 +14,8 @@ namespace PrimeERP.Data.Repositories
     {
         public DbConnection Open(string databasePath)
         {
-            var connection = new SqliteProvider().CreateConnection(
-                new DbConfig { Provider = DatabaseProvider.Sqlite, FilePath = databasePath });
+            var connection = new Microsoft.Data.Sqlite.SqliteConnection(
+                new DbConfig { Provider = DatabaseProvider.Sqlite, FilePath = databasePath }.ConnectionString());
 
             connection.Open();
             return connection;

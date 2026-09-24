@@ -3,6 +3,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
+    <!-- نصوص الواجهة — إنجليزي -->
+
     <sys:String x:Key="Str.AppName">PrimeERP</sys:String>
 
     <sys:String x:Key="Str.Save">Save</sys:String>
@@ -231,7 +233,7 @@
     <sys:String x:Key="Str.Module.OpeningBalances">Opening Balances</sys:String>
     <sys:String x:Key="Str.Module.Settings">Settings</sys:String>
 
-    <!-- ===== وحدة البناء ===== -->
+    <!-- وحدة البناء -->
     <sys:String x:Key="Str.Builder.Sections">Sections</sys:String>
     <sys:String x:Key="Str.Builder.Modules">Pages</sys:String>
     <sys:String x:Key="Str.Builder.Columns">Columns</sys:String>
@@ -468,8 +470,6 @@
     <sys:String x:Key="Str.Customer.Status.OverLimit">Over limit</sys:String>
 
     <sys:String x:Key="Str.Identity.Signature">Signature</sys:String>
-    <sys:String x:Key="Str.Identity.Default">Default</sys:String>
-    <sys:String x:Key="Str.Identity.Corporate">Corporate</sys:String>
     <sys:String x:Key="Str.Identity.NotFound">Unknown identity pack</sys:String>
 
     <sys:String x:Key="Str.Gallery.Title">Controls Gallery</sys:String>
@@ -479,4 +479,30 @@
     <sys:String x:Key="Str.State.Error">Error</sys:String>
     <sys:String x:Key="Str.State.ReadOnly">Read-only</sys:String>
 
+    <sys:String x:Key="Str.PleaseWait">Please wait…</sys:String>
+    <sys:String x:Key="Str.Backup.Create">Create backup</sys:String>
+    <sys:String x:Key="Str.Action.New">New</sys:String>
+    <sys:String x:Key="Str.Action.NewTip">Add a new item</sys:String>
+    <sys:String x:Key="Str.Action.EditTip">Edit the selected item</sys:String>
+    <sys:String x:Key="Str.Action.DeleteTip">Delete the selected item</sys:String>
+    <sys:String x:Key="Str.Action.SaveTip">Save changes</sys:String>
+    <sys:String x:Key="Str.Action.CancelTip">Cancel the operation</sys:String>
+    <sys:String x:Key="Str.Action.PrintTip">Print</sys:String>
+    <sys:String x:Key="Str.Action.Export">Export</sys:String>
+    <sys:String x:Key="Str.Action.ExportTip">Export</sys:String>
+    <sys:String x:Key="Str.Action.Refresh">Refresh</sys:String>
+    <sys:String x:Key="Str.Action.RefreshTip">Refresh data</sys:String>
+    <sys:String x:Key="Str.Action.Post">Post</sys:String>
+    <sys:String x:Key="Str.Action.PostTip">Post the document</sys:String>
+    <sys:String x:Key="Str.Action.Unpost">Unpost</sys:String>
+    <sys:String x:Key="Str.Action.UnpostTip">Unpost the document</sys:String>
+    <sys:String x:Key="Str.Action.ExpandAll">Expand all</sys:String>
+    <sys:String x:Key="Str.Action.ExpandAllTip">Expand every node</sys:String>
+    <sys:String x:Key="Str.Action.CollapseAll">Collapse all</sys:String>
+    <sys:String x:Key="Str.Action.CollapseAllTip">Collapse every node</sys:String>
+    <sys:String x:Key="Str.Action.MoveUp">Up</sys:String>
+    <sys:String x:Key="Str.Action.MoveUpTip">Swap order with the one above</sys:String>
+    <sys:String x:Key="Str.Action.MoveDown">Down</sys:String>
+    <sys:String x:Key="Str.Action.MoveDownTip">Swap order with the one below</sys:String>
+    <sys:String x:Key="Str.Picker.FullSearch">Full search (F4)</sys:String>
 </ResourceDictionary>

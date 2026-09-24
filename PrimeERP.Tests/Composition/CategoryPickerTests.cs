@@ -21,8 +21,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    // يثبت بند "+ إضافة فئة" داخل منتقي الفئة نفسه (WireCategoryPickerAddOption) — حوار فئة متداخل يُفتح
-    // من داخل حوار فئة آخر، يُحفَظ، والقائمة الأصلية تُعاد تحميلها لتشمل الفئة الجديدة.
+    /// <summary>قائمة الفئات في الحوار</summary>
     [Collection("WpfApplication")]
     public class CategoryPickerTests : IDisposable
     {
@@ -38,7 +37,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
                 var dialog = registry.Get("Products").Dialog;

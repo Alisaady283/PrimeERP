@@ -46,8 +46,8 @@
 
 | الطبقة | القطع |
 |---|---|
-| الوصف | `BuilderSection`/`Module`/`Column`/`Action`/`Filter` + `BuilderKind`/`DataType`/`Aggregate` فوق `SchemaBuilder` و `RepositoryBase` |
-| البيانات | `DynamicRepository` — العمود المحسوب استعلامٌ فرعي، بـ `WhereBuilder` و `OrderBuilder` |
+| الوصف | `BuilderSection`/`Module`/`Column`/`Action`/`Filter` + `BuilderKind`/`DataType`/`Aggregate` فوق `BuiltTables` و `RepositoryBase` |
+| البيانات | `DynamicRepository` — كيسُ خصائص فوق EF، والعمود المحسوب يُجمَع بعد القراءة |
 | الخدمة | `DynamicEntityService` (يرث `ServiceBase`) · `BuilderRowValidator` · خدمات الوصف الخمس فوق `CrudServiceBase` |
 | العرض | `DynamicViewModel` — نموذجٌ واحد للجدول المبنيّ ولشاشات الوصف عبر `IRowService` |
 | التحميل | `BuilderModuleLoader` — وصف ← تعريف ← تسجيل، بالنوع |
@@ -59,14 +59,14 @@
 - **الفلتر يقرأ قائمته من حقل الصفحة المُعلَن بنفس المفتاح** — لا مصدر ثانٍ يُعلَن للعمود نفسه.
 - **حذف القسم يبقى محذوفاً** (`SectionKeys`)، والشريط يقرأ الصفوف بعد البذر.
 - **البذر يقرأ مفاتيح القسم من الخريطة** لا من عمود الصفّ المبذور — وإلا بقيت كل شاشة جديدة خارج الوحدة وخارج النسخ.
-- **بيان النسخة يُكتب بـ `SettingRepository.Upsert`** على اتصال قاعدة النسخة، لا بجملة `UPDATE` مكتوبة.
-- **`MigrationRunner`/`EnsureBuiltTable` آمنة للتكرار**، فترقية النسخة لا تُسقط جدولاً.
+- **بيان النسخة يُكتب بـ `ISettingStore.Upsert`** على اتصال قاعدة النسخة، لا بجملة `UPDATE` مكتوبة.
+- **`SchemaSync`/`CreateBuiltTable` آمنة للتكرار**، فترقية النسخة لا تُسقط جدولاً.
 
-## ٥. المتبقّي
+## ٥. الحرّاس
 
-| البند | الحالة |
+| الحارس | الموضع |
 |---|---|
-| صفحات القسمَين المحميَّين (`Accounting` و `Settings`) لا تُبذَر — ٨ صفحات بلا أعمدة ولا أزرار ولا فلاتر في الوحدة | مُشخَّص: `BuilderModuleLoader.Coded` يشترط صفَّ قسمٍ قبل بذر صفحاته، و `SeedSections` تتخطّى المحميّ. الإصلاح يفصل «يُبذَر» عن «يُعدَّل»، ويحرس `NavigationMap.Groups` من تكرار القسم |
-| صفحات التقارير تُبذَر بلا عمود ولا فلتر — ١٥ صفحة | مُشخَّص: البذر يقرأ `ModuleDefinition.Columns`/`Filters` بينما التقرير يُعلنها في `ReportDefinition.Columns`/`Parameters`. وللعلّة وجهان: لا تُبذَر، ولو بُذرت لما أثّرت — `ReportRenderer` لا يقرأ ذاك الموضع |
-| صفوف مبذورة لصفحاتٍ زال تسجيلها من الكود | مُشخَّص: البذر لا ينظّف صفحةً لم تعد مسجَّلة |
-| تجربة فعلية: بناء قسم وصفحة وجدول وحفظ سجل | لم تُنفَّذ بعد |
+| القسم المحميّ يُبذَر بصفحاته ولا يُحذف | `BuilderSection.IsProtected` — يُكتب عند البذر، ويرفضه `BuilderSectionsService.Erase` |
+| صفحةٌ تحفظ سجلات بلا جدول تُرفض | `BuilderModuleValidator` عبر بوابة `BuilderCrudServiceBase.Validate` |
+| صفٌّ مبذورٌ لصفحةٍ زال تسجيلها يُحذف | `SeedModules` يقارن المسجَّل بالمبذور في كل إقلاع |
+| صفّ الجدول المبنيّ يمرّ بقواعد أعمدته | `BuilderRowValidator` عبر `DynamicEntityService.Check` |

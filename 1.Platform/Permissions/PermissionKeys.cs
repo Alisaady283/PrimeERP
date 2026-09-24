@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace PrimeERP.Platform.Permissions
 {
-    /// <summary>كل مفتاح صلاحية في النظام — كلاس ثابت متداخل لكل وحدة، بلا سلاسل نصية مبعثرة في الكود.</summary>
+    /// <summary>كل مفتاح صلاحية في النظام</summary>
     public static class PermissionKeys
     {
         public static class Accounts
@@ -64,8 +64,6 @@ namespace PrimeERP.Platform.Permissions
             public const string ColumnCostPrice = "Products.Column.CostPrice";
         }
 
-        // النمط 2 القائم على ModuleKey (فئات/ماركات/وحدات/مخازن/فئات أصول/أقسام/وظائف) — نفس الأربعة
-        // مفاتيح لكل وحدة، لا Export/Print (قوائم بحتة بلا طباعة/تصدير حتى الآن).
         public static class Categories
         {
             public const string View = "Categories.View", Create = "Categories.Create", Edit = "Categories.Edit", Delete = "Categories.Delete";
@@ -136,12 +134,9 @@ namespace PrimeERP.Platform.Permissions
             public const string View     = "Inventory.View";
             public const string StockIn  = "Inventory.StockIn";
 
-            /// <summary>أرصدة الأصناف الافتتاحية — تُمنح لفئةٍ محدَّدة، فيظهر زرّها لها وحدها.</summary>
             public const string OpeningStock = "Inventory.OpeningStock";
             public const string StockOut = "Inventory.StockOut";
 
-            // أذون الدورة الشاملة الأربعة — بوّابة كلٍّ منها مفتاحه وحده، كما لإذنَي الوضع المبسّط أعلاه.
-            // غيابها كان يرفض كل فعل فيها: Can يختبر العضوية، ومفتاحٌ لا وجود له لا يُمنح لأحد.
             public const string GoodsReceipt = "Inventory.GoodsReceipt";
             public const string GoodsIssue   = "Inventory.GoodsIssue";
             public const string DeliveryNote = "Inventory.DeliveryNote";
@@ -149,8 +144,6 @@ namespace PrimeERP.Platform.Permissions
             public const string Transfer = "Inventory.Transfer";
             public const string Export   = "Inventory.Export";
             public const string Print    = "Inventory.Print";
-            // CrudViewModelBase العامة (Add/Edit/Delete على شبكة StockIn/StockOut/Transfer) تحتاج هذه الثلاثة
-            // بنفس التسمية القياسية — منفصلة عن StockIn/StockOut أعلاه (تلك لأوامر برمجية محدَّدة لاحقاً).
             public const string Create   = "Inventory.Create";
             public const string Edit     = "Inventory.Edit";
             public const string Delete   = "Inventory.Delete";
@@ -209,7 +202,6 @@ namespace PrimeERP.Platform.Permissions
         {
             public const string View    = "Settings.View";
             public const string Edit    = "Settings.Edit";
-            /// <summary>تعديل إعداد IsSystem=true — أعلى من Edit العادية.</summary>
             public const string System  = "Settings.System";
             public const string Backup  = "Settings.Backup";
             public const string Restore = "Settings.Restore";
@@ -217,7 +209,6 @@ namespace PrimeERP.Platform.Permissions
             public const string ClosePeriod  = "Settings.ClosePeriod";
             public const string ReopenPeriod = "Settings.ReopenPeriod";
             public const string CloseYear    = "Settings.CloseYear";
-            /// <summary>الأخطر في النظام — تحذف قيد الإقفال وتعيد فتح سنة كاملة. صلاحية منفصلة ومقيَّدة عمداً.</summary>
             public const string ReopenYear   = "Settings.ReopenYear";
         }
 
@@ -230,14 +221,8 @@ namespace PrimeERP.Platform.Permissions
             public const string ManageRoles = "Users.ManageRoles";
         }
 
-        /// <summary>يجمع كل مفاتيح الصلاحيات المعرّفة عبر كل الوحدات — يُستخدم لزرع جدول Permissions تلقائياً.</summary>
-        /// <summary>
-        /// مفاتيح الوحدات المبنيّة — تُسجَّل عند الإقلاع فتظهر في شجرة الصلاحيات مع المكتوبة بلا تمييز.
-        /// شجرة الشاشة تُبنى من All() آلياً، فلا تعديل في شاشة الصلاحيات نفسها.
-        /// </summary>
         private static readonly List<string> Built = new();
 
-        /// <summary>يُستدعى مرّة عند الإقلاع لكل وحدة مبنيّة: View/Create/Edit/Delete.</summary>
         public static void RegisterBuilt(string moduleKey)
         {
             foreach (var action in new[] { "View", "Create", "Edit", "Delete" })

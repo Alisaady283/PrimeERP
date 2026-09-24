@@ -14,9 +14,11 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using PrimeERP.Platform.Permissions;
+using PrimeERP.UI.Components;
 
 namespace PrimeERP.UI.Components.Display
 {
+    /// <summary>الشبكة: أعمدةٌ وترقيمٌ وتحديد</summary>
     public partial class AppDataGrid : UserControl
     {
         public static readonly DependencyProperty ColumnsSourceProperty =
@@ -63,10 +65,6 @@ namespace PrimeERP.UI.Components.Display
             DependencyProperty.Register(nameof(PageSize), typeof(int), typeof(AppDataGrid),
                 new PropertyMetadata(15, OnPageSizeChanged));
 
-        /// <summary>ترقيم AppDataGrid الداخلي جانب العميل (يُقسِّم ItemsSource الكاملة محلياً) — يتعارض مع
-        /// ترقيم من طرف الخادم (Service.GetPaged يُرجع صفحة واحدة فقط، لا القائمة كاملة). false يُخفي شريط
-        /// الترقيم الداخلي فقط؛ لا يغيّر أي سلوك آخر — القطعة الأصلية والاستهلاكات الحالية (Gallery) بلا تأثير
-        /// (الافتراضي true يطابق السلوك السابق حرفياً). أُضيفت عند اكتشاف الفعلي عبر CrudPageRenderer (R9).</summary>
         public static readonly DependencyProperty SummaryTextProperty =
             DependencyProperty.Register(nameof(SummaryText), typeof(string), typeof(AppDataGrid),
                 new PropertyMetadata(null, (d, e) =>
@@ -95,7 +93,6 @@ namespace PrimeERP.UI.Components.Display
         public bool                    ShowPagination    { get => (bool)GetValue(ShowPaginationProperty);                  set => SetValue(ShowPaginationProperty, value); }
         public string                  SummaryText       { get => (string)GetValue(SummaryTextProperty);                   set => SetValue(SummaryTextProperty, value); }
 
-        /// <summary>يُستدعى لكل صف ليقرر تلوينه: "danger"/"warning"/null — مفيد لتنبيهات مثل تجاوز حد الائتمان أو نفاد المخزون.</summary>
         public Func<object, string> RowHighlightSelector { get; set; }
 
         public static readonly DependencyProperty UseAlternatingRowsProperty =
@@ -103,7 +100,6 @@ namespace PrimeERP.UI.Components.Display
                 new PropertyMetadata(true, (d, _) => ((AppDataGrid)d).grid.AlternatingRowBackground =
                     ((AppDataGrid)d).AlternatingRowBrush));
 
-        /// <summary>false يوقف تبادل ألوان الصفوف — القوائم المالية تُميَّز بأقسامها لا بخطوط متبادلة.</summary>
         public bool UseAlternatingRows
         {
             get => (bool)GetValue(UseAlternatingRowsProperty);
@@ -111,7 +107,7 @@ namespace PrimeERP.UI.Components.Display
         }
 
         private Brush AlternatingRowBrush => UseAlternatingRows
-            ? (Brush)FindResource("C.Grid.Row.AltBg")
+            ? (Brush)FindResource("GridRowAltBg")
             : Brushes.Transparent;
 
         public IReadOnlyList<object> SelectedItems => grid.SelectedItems.Cast<object>().ToList();
@@ -175,8 +171,6 @@ namespace PrimeERP.UI.Components.Display
             c.LoadItems();
         }
 
-        // ItemsSource DP نفسه لا يتغيّر مرجعياً عند Items.Clear()+Add(...) على ObservableCollection ثابتة
-        // (نمط PagedViewModelBase) — بلا هذا المستمع تبقى الشبكة على أول لقطة (غالباً فارغة قبل أول تحميل).
         private void OnSourceCollectionChanged(object sender, NotifyCollectionChangedEventArgs e) => LoadItems();
 
         private static void OnSelectedItemChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -214,7 +208,6 @@ namespace PrimeERP.UI.Components.Display
             c.RefreshPage();
         }
 
-        // ===================== Columns =====================
 
         private void RebuildColumns()
         {
@@ -311,11 +304,6 @@ namespace PrimeERP.UI.Components.Display
             };
         }
 
-        /// <summary>
-        /// صفّ رؤوس المجموعات فوق رؤوس الأعمدة: خلية واحدة تمتدّ على أعمدة المجموعة، وعمودٌ بلا مجموعة
-        /// يُكتب عنوانه هنا ممتدّاً على الصفَّين (ورأسه في الشبكة يُترك فارغاً) — فيتوسّط بينهما.
-        /// عروض الأعمدة تُربَط بعرض أعمدة الشبكة الفعلي فتبقى المحاذاة قائمة مع أي تغيير.
-        /// </summary>
         private void BuildGroupHeader()
         {
             groupHeader.ColumnDefinitions.Clear();
@@ -355,20 +343,19 @@ namespace PrimeERP.UI.Components.Display
                     FontWeight = FontWeights.SemiBold,
                     Margin = new Thickness(4, 8, 4, 8)
                 };
-                text.SetResourceReference(TextBlock.ForegroundProperty, "C.Grid.Header.Fg");
+                text.SetResourceReference(TextBlock.ForegroundProperty, "GridHeaderFg");
 
                 Grid.SetColumn(text, index);
                 Grid.SetColumnSpan(text, span);
                 groupHeader.Children.Add(text);
 
-                // عمود بلا مجموعة: عنوانه أعلاه، فيُفرَّغ رأسه في الشبكة كي لا يتكرّر.
                 if (string.IsNullOrEmpty(group)) dataColumns[index].Header = "";
 
                 index += span;
             }
         }
 
-        /// <summary>عرض عمود الشبكة الفعلي إلى GridLength بالبكسل.</summary>
+        /// <summary>عرض العمود الفعلي</summary>
         private class PixelWidthConverter : System.Windows.Data.IValueConverter
         {
             public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) =>
@@ -415,9 +402,7 @@ namespace PrimeERP.UI.Components.Display
             pathFactory.SetValue(Path.StretchProperty, Stretch.Uniform);
             pathFactory.SetValue(Path.WidthProperty, iconSize);
             pathFactory.SetValue(Path.HeightProperty, iconSize);
-            // مرجعُ مورد لا نسخةٌ منه: الفرشاة في القاموس لونها DynamicResource، فأخذُها بـFindResource
-            // يلتقطها قبل أن يُحلّ لونها — فترسم بشفافية، فيظهر الزرّ بلا أيقونة.
-            pathFactory.SetResourceReference(Path.StrokeProperty, "C.Icon.Fg");
+            pathFactory.SetResourceReference(Path.StrokeProperty, "TextSecondary");
             pathFactory.SetResourceReference(Path.StrokeThicknessProperty, "C.Icon.Stroke");
             pathFactory.SetValue(Path.StrokeLineJoinProperty, PenLineJoin.Round);
             pathFactory.SetValue(Path.StrokeStartLineCapProperty, PenLineCap.Round);
@@ -433,7 +418,6 @@ namespace PrimeERP.UI.Components.Display
             return btnFactory;
         }
 
-        // ===================== Data / Paging =====================
 
         private void LoadItems()
         {
@@ -461,7 +445,6 @@ namespace PrimeERP.UI.Components.Display
         private void UpdateVisualState()
         {
             var isEmpty = _allItems.Count == 0;
-            // الجدول يبقى ظاهراً وإن خلا: رأسه يقول ما الأعمدة، ورسالة الفراغ تحته لا فوقه.
             emptyState.Visibility = !IsLoading && isEmpty ? Visibility.Visible : Visibility.Collapsed;
             grid.Visibility = Visibility.Visible;
         }
@@ -477,7 +460,6 @@ namespace PrimeERP.UI.Components.Display
             e.Row.Tag = RowHighlightSelector?.Invoke(e.Row.Item);
         }
 
-        // ===================== Sorting (over the full dataset, not just the page) =====================
 
         private void grid_Sorting(object sender, DataGridSortingEventArgs e)
         {
@@ -517,7 +499,6 @@ namespace PrimeERP.UI.Components.Display
             return string.Compare(a.ToString(), b.ToString(), StringComparison.OrdinalIgnoreCase);
         }
 
-        // ===================== Footer totals =====================
 
         private void RebuildFooterColumns()
         {
@@ -592,12 +573,11 @@ namespace PrimeERP.UI.Components.Display
             footerGrid.ItemsSource = new List<object> { row };
         }
 
-        // ===================== Horizontal scroll sync between grid and footer =====================
 
         private void HookScrollSync()
         {
-            _gridScroll = FindVisualChild<ScrollViewer>(grid);
-            _footerScroll = FindVisualChild<ScrollViewer>(footerGrid);
+            _gridScroll = VisualTree.FindChild<ScrollViewer>(grid);
+            _footerScroll = VisualTree.FindChild<ScrollViewer>(footerGrid);
 
             if (_gridScroll != null)
                 _gridScroll.ScrollChanged += (s, e) =>
@@ -607,19 +587,7 @@ namespace PrimeERP.UI.Components.Display
                 };
         }
 
-        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T typed) return typed;
-                var result = FindVisualChild<T>(child);
-                if (result != null) return result;
-            }
-            return null;
-        }
 
-        // ===================== Toolbar =====================
 
         private void btnExport_Click(object sender, RoutedEventArgs e) => ExportRequested?.Invoke(this, EventArgs.Empty);
     }

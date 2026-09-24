@@ -1,80 +1,73 @@
 using System;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using PrimeERP.Data.Repositories.Base;
-using PrimeERP.Data.Schema;
+using PrimeERP.Data.Core;
 using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Data.Repositories
 {
+    /// <summary>مستودع License</summary>
     public interface ILicenseRepository
     {
-        void CreateTable();
         List<License> GetAll(bool includeInactive = false);
-        License GetById(int id, DbConnection conn = null, DbTransaction tx = null);
+        License GetById(int id, PrimeDbContext db = null);
         License GetBySerial(string serial);
         int  Insert(License license);
         void Update(License license);
         void Delete(int id);
+        void Clear(PrimeDbContext db = null);
     }
 
     public class LicenseRepository : RepositoryBase<License>, ILicenseRepository
     {
         protected override string TableName => "Licenses";
 
-        public void CreateTable() =>
-            SchemaBuilder.Table("Licenses")
-                .Id()
-                .Text("CustomerName", 200, required: true)
-                .Text("Location", 200)
-                .Text("Serial", 40, required: true, unique: true)
-                .Text("Manifest", 4000)
-                .Bool("Simplified")
-                .Text("MachineHash", 100)
-                .Bool("IsActive", defaultValue: true)
-                .Audit()
-                .Create();
 
         public List<License> GetAll(bool includeInactive = false) =>
-            includeInactive
-                ? Query("SELECT * FROM Licenses ORDER BY CustomerName")
-                : Query("SELECT * FROM Licenses WHERE IsActive = @a ORDER BY CustomerName", null, null, ("@a", true));
+            Fetch(q => q.Where(l => includeInactive || l.IsActive).OrderBy(l => l.CustomerName));
 
-        public override License GetById(int id, DbConnection conn = null, DbTransaction tx = null) =>
-            QueryOne("SELECT * FROM Licenses WHERE Id = @id", conn, tx, ("@id", id));
 
-        public License GetBySerial(string serial) =>
-            QueryOne("SELECT * FROM Licenses WHERE Serial = @s", null, null, ("@s", serial));
+        public License GetBySerial(string serial) => One(q => q.Where(l => l.Serial == serial));
 
-        public int Insert(License l) =>
-            InsertGetId(@"INSERT INTO Licenses (CustomerName, Location, Serial, Manifest, Simplified, MachineHash, IsActive, CreatedAt, CreatedBy)
-                          VALUES (@name, @loc, @serial, @manifest, @simple, @machine, @active, @now, @by)",
-                null, null, ("@name", l.CustomerName), ("@loc", l.Location ?? ""), ("@serial", l.Serial),
-                ("@manifest", l.Manifest ?? ""), ("@simple", l.Simplified), ("@machine", l.MachineHash ?? ""),
-                ("@active", l.IsActive), ("@now", DateTime.Now), ("@by", l.CreatedBy ?? ""));
+        public int Insert(License l)
+        {
+            l.CreatedAt = DateTime.Now;
+            return Add(l);
+        }
 
         public void Update(License l) =>
-            Exec(@"UPDATE Licenses SET CustomerName = @name, Location = @loc, Manifest = @manifest,
-                          Simplified = @simple, MachineHash = @machine, IsActive = @active, UpdatedAt = @now
-                   WHERE Id = @id",
-                null, null, ("@name", l.CustomerName), ("@loc", l.Location ?? ""), ("@manifest", l.Manifest ?? ""),
-                ("@simple", l.Simplified), ("@machine", l.MachineHash ?? ""), ("@active", l.IsActive),
-                ("@now", DateTime.Now), ("@id", l.Id));
+            Write(db =>
+            {
+                var row = Rows(db).AsTracking().FirstOrDefault(x => x.Id == l.Id);
+                if (row == null) return 0;
+                row.CustomerName = l.CustomerName;
+                row.Location = l.Location ?? "";
+                row.Manifest = l.Manifest ?? "";
+                row.Simplified = l.Simplified;
+                row.MachineHash = l.MachineHash ?? "";
+                row.IsActive = l.IsActive;
+                row.UpdatedAt = DateTime.Now;
+                return 0;
+            });
 
-        public void Delete(int id) => SoftDelete(id);
+        public void Delete(int id) =>
+            Write(db =>
+            {
+                var row = Rows(db).AsTracking().FirstOrDefault(l => l.Id == id);
+                if (row == null) return 0;
+                row.IsDeleted = true;
+                row.DeletedAt = DateTime.Now;
+                return 0;
+            });
 
-        protected override License Map(DataRow row) => new()
-        {
-            Id           = Convert.ToInt32(row["Id"]),
-            CustomerName = row["CustomerName"]?.ToString(),
-            Location     = row["Location"]?.ToString(),
-            Serial       = row["Serial"]?.ToString(),
-            Manifest     = row["Manifest"]?.ToString(),
-            Simplified   = row["Simplified"] != DBNull.Value && Convert.ToBoolean(row["Simplified"]),
-            MachineHash  = row["MachineHash"]?.ToString(),
-            IsActive     = row["IsActive"] == DBNull.Value || Convert.ToBoolean(row["IsActive"]),
-            CreatedAt    = row["CreatedAt"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(row["CreatedAt"])
-        };
+        public void Clear(PrimeDbContext db = null) =>
+            Write(ctx =>
+            {
+                SetOf(ctx).RemoveRange(Rows(ctx));
+                return 0;
+            }, db);
+
     }
 }

@@ -1,52 +1,52 @@
 using System;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using PrimeERP.Data.Repositories.Base;
-using PrimeERP.Data.Schema;
-using DbHelper = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Data.Core;
 using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Data.Repositories
 {
-    /// <summary>
-    /// طبقة وصول بيانات شجرة الحسابات — SQL خام ↔ Models فقط، بلا أي منطق أعمال (مستوى/كود/ربط/رصيد/Audit).
-    /// كل ذلك مسؤولية IAccountService.
-    /// </summary>
+    /// <summary>مستودع Account</summary>
+    public interface IAccountRepository
+    {
+        void SeedDefaults();
+        List<Account> GetAll(bool includeInactive = false);
+        Account GetById(int id, PrimeDbContext db = null);
+        Account GetByCode(string code, PrimeDbContext db = null);
+        List<Account> GetByCodes(IEnumerable<string> codes, PrimeDbContext db = null);
+        List<Account> GetChildren(string parentCode, PrimeDbContext db = null);
+
+        List<Account> GetAllChildren(string parentCode, PrimeDbContext db = null);
+        List<Account> GetLeaves();
+        int GetLevel(string code);
+        int GetTypeOf(string code);
+        bool HasChildren(string code);
+        bool HasChildren(string code, PrimeDbContext db);
+        int Insert(Account a, PrimeDbContext db = null);
+        void Update(Account a, PrimeDbContext db = null);
+        void UpdateName(PrimeDbContext db, string code, string name);
+        void SetIsLeaf(string code, bool isLeaf, PrimeDbContext db = null);
+        void Delete(string code, PrimeDbContext db = null);
+        void UpdateBalance(string code, decimal balance, PrimeDbContext db = null);
+    }
+
+    /// <summary>طبقة وصول بيانات شجرة الحسابات</summary>
     public class AccountRepository : RepositoryBase<Account>, IAccountRepository
     {
         protected override string TableName => "Accounts";
 
-        public void CreateTable() =>
-            SchemaBuilder.Table("Accounts")
-                .Id()
-                .Text("Code", 30, required: true, unique: true)
-                .Text("Name", 200, required: true)
-                .Text("ParentCode", 30)
-                .Int("Level", nullable: false, defaultValue: 1)
-                .Bool("IsLeaf", defaultValue: true)
-                .Int("Type", nullable: false)
-                .Decimal("Balance")
-                .Text("Notes")
-                .Bool("IsActive", defaultValue: true)
-                .Audit()
-                .Index("ParentCode")
-                .Create();
 
         public void SeedDefaults()
         {
             if (GetAll().Count > 0) return;
 
-            // IsLeaf=false افتراضياً لكل حساب — فئة تحتاج حسابات فرعية حقيقية تُنشأ لاحقاً عبر AccountService.Create.
-            // "3200" استثناء: الأرباح المحتجزة حساب دفتري واحد نهائي (مستهدَف مباشرة بقيد الإقفال السنوي)، فيجب أن يكون Leaf فعلياً.
             var accounts = new (string Code, string Name, string Parent, int Level, int Type, bool IsLeaf)[]
             {
                 ("1",    "أصول",                  null,  1, 1, false),
                 ("11",   "أصول غير متداولة",      "1",   2, 1, false),
-                // صافي: يجمع تكلفة الأصول ومجمّع إهلاكها (سالب) — فرصيده القيمة الدفترية لا التكلفة.
                 ("1101", "صافي الأصول الثابتة",   "11",  3, 1, false),
-                // ابنا الصافي، وكلاهما تجميعيّ: الأول تسكنه الفئات وتحتها أصولها، والثاني مراياها
-                // — مجمع الفئة تحته، ومجمع الأصل تحت مجمع فئته. فرصيد الصافي هو القيمة الدفترية.
                 ("1101001", "الأصول الثابتة",             "1101", 4, 1, false),
                 ("1101002", "مجمّع إهلاك الأصول الثابتة", "1101", 4, 1, false),
                 ("12",   "أصول متداولة",          "1",   2, 1, false),
@@ -54,12 +54,10 @@ namespace PrimeERP.Data.Repositories
                 ("1202", "ذمم مدينة (العملاء)",   "12",  3, 1, false),
                 ("1203", "البنوك",                "12",  3, 1, false),
                 ("1204", "الصناديق",              "12",  3, 1, false),
-                // تجميعيّ يسكنه الموظفون: لكلٍّ ورقةٌ باسمه تُنشأ مع إنشائه، ورصيدها سلفته المستحقّة عليه.
                 ("1205", "سلف الموظفين",          "12",  3, 1, false),
                 ("2",    "خصوم",                  null,  1, 2, false),
                 ("21",   "خصوم متداولة",          "2",   2, 2, false),
                 ("2101", "ذمم دائنة (الموردون)",  "21",  3, 2, false),
-                // مستحقّات المسير: ما أُثبت استحقاقه ولم يُصرف بعد. الصرف الفعلي يخصمها لاحقاً بسند صرف.
                 ("2102", "رواتب وأجور مستحقة",    "21",  3, 2, true),
                 ("2103", "التأمينات المستحقة",    "21",  3, 2, true),
                 ("2104", "الضرائب المستحقة",      "21",  3, 2, true),
@@ -72,102 +70,85 @@ namespace PrimeERP.Data.Repositories
                 ("42",   "إيرادات أخرى",          "4",   2, 4, false),
                 ("5",    "مصروفات",               null,  1, 5, false),
                 ("51",   "مصروفات تشغيلية",       "5",   2, 5, false),
-                // طرفا المسير المدينان: الأجر وبدلاته كلٌّ في حسابه، فيُقرأ عبء العمالة موزَّعاً لا مجمَّعاً.
                 ("5101", "مصروف الرواتب والأجور", "51",  3, 5, true),
                 ("5102", "مصروف البدلات",         "51",  3, 5, true),
                 ("52",   "مصروفات أخرى",          "5",   2, 5, false),
             };
 
-            foreach (var a in accounts)
-                Exec("INSERT INTO Accounts (Code, Name, ParentCode, Level, IsLeaf, Type) VALUES (@code, @name, @parent, @level, @leaf, @type)",
-                    null, null, ("@code", a.Code), ("@name", a.Name), ("@parent", a.Parent), ("@level", a.Level), ("@leaf", a.IsLeaf), ("@type", a.Type));
+            Write(db =>
+            {
+                SetOf(db).AddRange(accounts.Select(a => new Account
+                {
+                    Code = a.Code, Name = a.Name, ParentCode = a.Parent,
+                    Level = a.Level, IsLeaf = a.IsLeaf, Type = a.Type, IsActive = true
+                }));
+                return 0;
+            });
         }
 
-        protected override Account Map(DataRow row) => new()
-        {
-            Id         = Convert.ToInt32(row["Id"]),
-            Code       = row["Code"].ToString(),
-            Name       = row["Name"].ToString(),
-            ParentCode = row["ParentCode"] == DBNull.Value ? null : row["ParentCode"].ToString(),
-            Level      = Convert.ToInt32(row["Level"]),
-            IsLeaf     = Convert.ToBoolean(row["IsLeaf"]),
-            Type       = Convert.ToInt32(row["Type"]),
-            Balance    = Convert.ToDecimal(row["Balance"]),
-            Notes      = row["Notes"] == DBNull.Value ? "" : row["Notes"].ToString(),
-            IsActive   = Convert.ToBoolean(row["IsActive"]),
-            CreatedAt  = row["CreatedAt"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(row["CreatedAt"]),
-            UpdatedAt  = row["UpdatedAt"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(row["UpdatedAt"])
-        };
 
         public List<Account> GetAll(bool includeInactive = false) =>
-            includeInactive
-                ? Query("SELECT * FROM Accounts ORDER BY Code")
-                : Query("SELECT * FROM Accounts WHERE IsActive = @a ORDER BY Code", null, null, ("@a", true));
+            Fetch(q => q.Where(a => includeInactive || a.IsActive).OrderBy(a => a.Code));
 
-        public Account GetByCode(string code, DbConnection conn = null, DbTransaction tx = null) =>
-            QueryOne("SELECT * FROM Accounts WHERE Code = @c", conn, tx, ("@c", code));
+        public Account GetByCode(string code, PrimeDbContext db = null) =>
+            One(q => q.Where(a => a.Code == code), db);
 
-        public List<Account> GetChildren(string parentCode, DbConnection conn = null, DbTransaction tx = null) =>
-            Query("SELECT * FROM Accounts WHERE ParentCode = @p AND IsActive = @a ORDER BY Code", conn, tx, ("@p", parentCode), ("@a", true));
+        public List<Account> GetChildren(string parentCode, PrimeDbContext db = null) =>
+            Fetch(q => q.Where(a => a.ParentCode == parentCode && a.IsActive).OrderBy(a => a.Code), db);
 
-        // يشمل المعطَّل عمداً: الحذف تعطيل لا إزالة، وكوده يبقى محجوزاً بفهرس فريد — توليد كود جديد من
-        // الأبناء النشطين وحدهم كان يعيد استخدام كود محذوف فيُرفَض بـ"الكود مستخدم من قبل".
-        public List<Account> GetAllChildren(string parentCode, DbConnection conn = null, DbTransaction tx = null) =>
-            Query("SELECT * FROM Accounts WHERE ParentCode = @p ORDER BY Code", conn, tx, ("@p", parentCode));
+        /// <summary>حسابات القيد بضمّةٍ واحدة</summary>
+        public List<Account> GetByCodes(IEnumerable<string> codes, PrimeDbContext db = null)
+        {
+            var wanted = codes.Distinct().ToList();
+            return Fetch(q => q.Where(a => wanted.Contains(a.Code)), db);
+        }
+
+        public List<Account> GetAllChildren(string parentCode, PrimeDbContext db = null) =>
+            Fetch(q => q.Where(a => a.ParentCode == parentCode).OrderBy(a => a.Code), db);
 
         public List<Account> GetLeaves() =>
-            Query("SELECT * FROM Accounts WHERE IsLeaf = @l AND IsActive = @a ORDER BY Code", null, null, ("@l", true), ("@a", true));
+            Fetch(q => q.Where(a => a.IsLeaf && a.IsActive).OrderBy(a => a.Code));
 
-        public int GetLevel(string code)
-        {
-            var result = Scalar("SELECT Level FROM Accounts WHERE Code = @c", ("@c", code));
-            return result != null ? Convert.ToInt32(result) : 1;
-        }
+        public int GetLevel(string code) => GetByCode(code)?.Level ?? 1;
 
-        public int GetTypeOf(string code)
-        {
-            var result = Scalar("SELECT Type FROM Accounts WHERE Code = @c", ("@c", code));
-            return result != null ? Convert.ToInt32(result) : 1;
-        }
+        public int GetTypeOf(string code) => GetByCode(code)?.Type ?? 1;
 
-        public bool HasChildren(string code) => HasChildren(code, null, null);
+        public bool HasChildren(string code) => HasChildren(code, null);
 
-        // بمعاملة صريحة: قراءة حالة الأب بعد حذف ابنه داخل نفس المعاملة تحتاج رؤية تغييرها غير المُثبَّت بعد.
-        public bool HasChildren(string code, DbConnection conn, DbTransaction tx)
-        {
-            const string sql = "SELECT COUNT(*) FROM Accounts WHERE ParentCode = @p AND IsActive = @a";
-            var value = conn != null
-                ? DbHelper.Query(conn, tx, sql, DbHelper.Params(("@p", code), ("@a", true))).Rows[0][0]
-                : Scalar(sql, ("@p", code), ("@a", true));
+        public bool HasChildren(string code, PrimeDbContext db) =>
+            Count(q => q.Where(a => a.ParentCode == code && a.IsActive), db) > 0;
 
-            return Convert.ToInt64(value) > 0;
-        }
+        public int Insert(Account a, PrimeDbContext db = null) => Add(a, db);
 
-        /// <summary>إدراج صف كما هو — الخدمة هي من تحسب Level وتضبط IsLeaf للأب والربط والـ Audit، لا هنا.</summary>
-        public int Insert(Account a, DbConnection conn = null, DbTransaction tx = null) =>
-            InsertGetId(
-                "INSERT INTO Accounts (Code, Name, ParentCode, Level, IsLeaf, Type, Notes, IsActive) VALUES (@code, @name, @parent, @level, @leaf, @type, @notes, @active)",
-                conn, tx, ("@code", a.Code), ("@name", a.Name), ("@parent", a.ParentCode), ("@level", a.Level), ("@leaf", a.IsLeaf), ("@type", a.Type), ("@notes", a.Notes ?? ""), ("@active", a.IsActive));
+        public void Update(Account a, PrimeDbContext db = null) =>
+            Edit(x => x.Code == a.Code, row =>
+            {
+                row.Name = a.Name;
+                row.Notes = a.Notes ?? "";
+                row.IsLeaf = a.IsLeaf;
+                row.IsActive = a.IsActive;
+            }, db);
 
-        /// <summary>تحديث حقول الحساب نفسه فقط — مزامنة العميل/المورد المرتبط والـ Audit مسؤولية الخدمة.</summary>
-        public void Update(Account a, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec("UPDATE Accounts SET Name = @name, Notes = @notes, IsLeaf = @leaf, IsActive = @active, UpdatedAt = @now WHERE Code = @code",
-                conn, tx, ("@name", a.Name), ("@notes", a.Notes ?? ""), ("@leaf", a.IsLeaf), ("@active", a.IsActive), ("@now", DateTime.Now), ("@code", a.Code));
+        public void UpdateName(PrimeDbContext db, string code, string name) =>
+            Edit(a => a.Code == code, row => row.Name = name, db);
 
-        /// <summary>تحديث الاسم فقط — تستخدمها AccountService.UpdateName لمزامنة اسم حساب من تعديل الطرف المرتبط (عميل/مورد).</summary>
-        public void UpdateName(DbConnection conn, DbTransaction tx, string code, string name) =>
-            Exec("UPDATE Accounts SET Name = @name, UpdatedAt = @now WHERE Code = @code",
-                conn, tx, ("@name", name), ("@now", DateTime.Now), ("@code", code));
+        public void SetIsLeaf(string code, bool isLeaf, PrimeDbContext db = null) =>
+            Write(db =>
+            {
+                var row = Rows(db).AsTracking().FirstOrDefault(a => a.Code == code);
+                if (row != null) row.IsLeaf = isLeaf;
+                return 0;
+            }, db);
 
-        public void SetIsLeaf(string code, bool isLeaf, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec("UPDATE Accounts SET IsLeaf = @f WHERE Code = @c", conn, tx, ("@f", isLeaf), ("@c", code));
+        public void Delete(string code, PrimeDbContext db = null) =>
+            Write(db =>
+            {
+                var row = Rows(db).AsTracking().FirstOrDefault(a => a.Code == code);
+                if (row != null) row.IsActive = false;
+                return 0;
+            }, db);
 
-        /// <summary>حذف منطقي (IsActive=false) لصف الحساب فقط — حذف العميل/المورد المرتبط والـ Audit مسؤولية الخدمة.</summary>
-        public void Delete(string code, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec("UPDATE Accounts SET IsActive = @a WHERE Code = @code", conn, tx, ("@a", false), ("@code", code));
-
-        public void UpdateBalance(string code, decimal balance, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec("UPDATE Accounts SET Balance = @b, UpdatedAt = @now WHERE Code = @code",
-                conn, tx, ("@b", balance), ("@now", DateTime.Now), ("@code", code));
+        public void UpdateBalance(string code, decimal balance, PrimeDbContext db = null) =>
+            Edit(a => a.Code == code, row => row.Balance = balance, db);
     }
 }

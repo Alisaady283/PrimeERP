@@ -1,9 +1,28 @@
 using System;
 using System.IO;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Npgsql;
 
 namespace PrimeERP.Data.Core
 {
+    /// <summary>المحرّكات المدعومة</summary>
+    public enum DatabaseProvider
+    {
+        Sqlite,
+        SqlServer,
+        PostgreSql
+    }
+
+    /// <summary>قدرة المحرّك على النسخ</summary>
+    public enum BackupCapability
+    {
+        FileCopy,
+        SqlCommand,
+        ExternalTool
+    }
+
+    /// <summary>قاعدة البيانات DbConfig</summary>
     public class DbConfig
     {
         public DatabaseProvider Provider { get; set; } = DatabaseProvider.Sqlite;
@@ -19,7 +38,40 @@ namespace PrimeERP.Data.Core
         public bool EnableRetryOnFailure { get; set; } = false;
         public int  MaxRetryCount        { get; set; } = 3;
 
-        /// <summary>يقرأ إعدادات قاعدة البيانات من appsettings.json — بقيم افتراضية آمنة (SQLite محلي) عند غيابه.</summary>
+        private static DbConfig _current;
+
+        /// <summary>الإعداد الحيّ</summary>
+        public static DbConfig Current => _current ??= Load();
+
+        public static void Use(DbConfig config) => _current = config;
+
+        /// <summary>سلسلة الاتصال بمحرّكها</summary>
+        public string ConnectionString() => Provider switch
+        {
+            DatabaseProvider.SqlServer => new SqlConnectionStringBuilder
+            {
+                DataSource = Port > 0 ? $"{Host},{Port}" : Host,
+                InitialCatalog = Database,
+                TrustServerCertificate = true,
+                ConnectTimeout = CommandTimeout,
+                IntegratedSecurity = UseIntegratedSecurity,
+                UserID = UseIntegratedSecurity ? "" : Username,
+                Password = UseIntegratedSecurity ? "" : Password
+            }.ConnectionString,
+
+            DatabaseProvider.PostgreSql => new NpgsqlConnectionStringBuilder
+            {
+                Host = Host,
+                Port = Port > 0 ? Port : 5432,
+                Database = Database,
+                Username = Username,
+                Password = Password,
+                Timeout = CommandTimeout
+            }.ConnectionString,
+
+            _ => $"Data Source={FilePath};Default Timeout={CommandTimeout}"
+        };
+
         public static DbConfig Load()
         {
             var config = new DbConfig();
@@ -59,11 +111,8 @@ namespace PrimeERP.Data.Core
             }
             catch
             {
-                // appsettings.json غير موجود أو غير صالح — القيم الافتراضية (SQLite محلي) تكفي
             }
 
-            // مسار ثابت خارج bin/ عمداً — تنظيف بناء (rm -rf bin/obj) كان يمسح قاعدة البيانات معه فعلياً
-            // طالما عاشت داخل مجلد الإخراج نفسه؛ AppData يبقى حتى مع أعنف تنظيف بناء.
             if (config.Provider == DatabaseProvider.Sqlite && !Path.IsPathRooted(config.FilePath))
             {
                 var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PrimeERP");

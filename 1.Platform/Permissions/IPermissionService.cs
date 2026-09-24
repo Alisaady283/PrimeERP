@@ -2,6 +2,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Platform.Permissions
 {
+    /// <summary>فحص الصلاحية وتحميلها</summary>
     public interface IPermissionService
     {
         bool Can(string key);
@@ -11,8 +12,7 @@ namespace PrimeERP.Platform.Permissions
         IEnumerable<string> GetUserPermissions(int userId);
     }
 
-    /// <summary>إدارة المنح (شاشتا صلاحيات الدور/المستخدم) — منفصلة عن بوابة القراءة الساخنة IPermissionService
-    /// التي تُستهلك في كل قطعة واجهة.</summary>
+    /// <summary>إدارة المنح للدور والمستخدم</summary>
     public interface IPermissionAdminService
     {
         HashSet<string> GetEffectivePermissions(int userId);

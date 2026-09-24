@@ -3,6 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Assets
 {
+    /// <summary>عقد خدمة الأصول</summary>
     public interface IAssetService
     {
         Result<PagedResult<AssetDto>> GetPaged(int page, int pageSize, AssetFilter filter = null);
@@ -10,8 +11,6 @@ namespace PrimeERP.Application.Services.Assets
         Result<AssetDto> Create(CreateAssetDto dto);
         Result Update(UpdateAssetDto dto);
         Result Delete(int id);
-
-        /// <summary>يُرحّل قيد اقتناءٍ غائب لأصلٍ سبق وجود الترحيل — تستعمله تسوية الإقلاع.</summary>
-        Result PostMissingAcquisition(PrimeERP.Domain.Entities.Asset asset);
+        Result SeedDefaults();
     }
 }

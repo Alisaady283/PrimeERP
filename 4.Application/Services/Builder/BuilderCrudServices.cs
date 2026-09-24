@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Application.Validation;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Entities.Common;
 using PrimeERP.Domain.Enums;
@@ -14,10 +15,7 @@ using System.Dynamic;
 
 namespace PrimeERP.Application.Services.Builder
 {
-    /// <summary>
-    /// خدمة صفوف: ما ينتظره CrudPageRenderer وDialogRenderer من أي شاشة. يُنفِّذه الجدولُ المبنيّ
-    /// (DynamicEntityService) وشاشاتُ الوصف معاً، فنموذج عرض واحد يخدم الاثنين.
-    /// </summary>
+    /// <summary>خدمة صفوف</summary>
     public interface IRowService
     {
         Result<PagedResult<IDictionary<string, object>>> GetPaged(int page, int pageSize, DynamicFilter filter);
@@ -27,11 +25,7 @@ namespace PrimeERP.Application.Services.Builder
         Result Delete(int id);
     }
 
-    /// <summary>
-    /// شاشات الوصف الخمس. ترث CrudServiceBase فتأخذ منه القراءة كاملةً (GetById/GetPaged/Search)
-    /// بصلاحياتها ورسائلها — والإنشاء والتعديل والحذف تبقى هنا كما يقرّر الأساس نفسه، لأن منطق الكتابة
-    /// يختلف بين كيان وآخر. والفرق بين الخمس ثلاث دوال: ماذا تقرأ، وكيف تكتب، وكيف تحذف.
-    /// </summary>
+    /// <summary>شاشات الوصف الخمس</summary>
     public abstract class BuilderCrudServiceBase<TEntity>
         : CrudServiceBase<TEntity, IDictionary<string, object>, DynamicFilter>, IRowService
         where TEntity : BaseModel
@@ -49,7 +43,6 @@ namespace PrimeERP.Application.Services.Builder
         protected abstract int Write(IDictionary<string, object> values);
         protected abstract Result Erase(int id);
 
-        // ===== ما يطلبه الأساس للقراءة =====
 
         protected override TEntity FindById(int id) => All().FirstOrDefault(e => e.Id == id);
 
@@ -61,7 +54,6 @@ namespace PrimeERP.Application.Services.Builder
             return (items.Skip((page < 1 ? 0 : page - 1) * pageSize).Take(pageSize).ToList(), items.Count);
         }
 
-        /// <summary>ترشيح بالقسم أو الصفحة — كلٌّ يقرّر ما ينطبق عليه، والافتراضي بلا ترشيح.</summary>
         protected virtual List<TEntity> Narrow(List<TEntity> items, DynamicFilter filter) => items;
 
         protected virtual List<TEntity> Sort(List<TEntity> items) => items;
@@ -72,7 +64,6 @@ namespace PrimeERP.Application.Services.Builder
         protected override List<TEntity> FindSearch(string term, int maxResults) =>
             Match(All(), term).Take(maxResults).ToList();
 
-        /// <summary>الصفّ ExpandoObject بخصائص الكيان — يربطه WPF بالاسم ويقرؤه الكود كقاموس.</summary>
         protected override IDictionary<string, object> ToDto(TEntity entity)
         {
             IDictionary<string, object> row = new ExpandoObject();
@@ -89,14 +80,19 @@ namespace PrimeERP.Application.Services.Builder
                 : items.Where(e => ToDto(e).Values
                     .Any(v => v?.ToString()?.Contains(term, StringComparison.OrdinalIgnoreCase) == true)).ToList();
 
-        // ===== الكتابة: تبقى هنا كما يقرّر الأساس =====
 
         public Result<PagedResult<IDictionary<string, object>>> GetPaged(int page, int pageSize, DynamicFilter filter) =>
             base.GetPaged(page, pageSize, filter);
 
+        /// <summary>تحقّق الوصف قبل كتابته</summary>
+        protected virtual Result Validate(IDictionary<string, object> values) => Result.Ok();
+
         public Result<IDictionary<string, object>> Create(IDictionary<string, object> values)
         {
             if (!Can("Create")) return FailDenied<IDictionary<string, object>>();
+
+            var check = Validate(values);
+            if (check.IsFailure) return check.As<IDictionary<string, object>>();
 
             var id = Write(values);
             Audit.Log(EntityName, id, AuditAction.Insert, newValue: values);
@@ -107,6 +103,9 @@ namespace PrimeERP.Application.Services.Builder
         public Result Update(IDictionary<string, object> values)
         {
             if (!Can("Edit")) return FailDenied();
+
+            var check = Validate(values);
+            if (check.IsFailure) return check;
 
             var id = Write(values);
             Audit.Log(EntityName, id, AuditAction.Update, newValue: values);
@@ -126,7 +125,6 @@ namespace PrimeERP.Application.Services.Builder
             return Result.Ok();
         }
 
-        /// <summary>ترتيبٌ مذكور يُحترَم، وغيابه يعني آخر القائمة — فالسهمان وحدهما ما يُعيد الترتيب.</summary>
         protected static int Order(IDictionary<string, object> v, IEnumerable<int> siblings)
         {
             var written = Int(v, "SortOrder");
@@ -147,9 +145,11 @@ namespace PrimeERP.Application.Services.Builder
         protected override string EntityName => "BuilderSections";
         protected override List<BuilderSection> All() => Repo.Sections();
 
-        /// <summary>قسمٌ به صفحات لا يُحذف — الصفحة تطلب قسماً، فلا يُترك يتيم.</summary>
         protected override Result Erase(int id)
         {
+            if (Repo.Sections().FirstOrDefault(s => s.Id == id)?.IsProtected == true)
+                return Fail("قسمٌ محميّ لا يُحذف", ErrorCode.ValidationFailed);
+
             if (Repo.Modules().Any(m => m.SectionId == id))
                 return Fail(Msg("SectionHasModules"), ErrorCode.ValidationFailed);
 
@@ -162,7 +162,6 @@ namespace PrimeERP.Application.Services.Builder
             SortOrder = Order(v, Repo.Sections().Select(s => s.SortOrder)),
             Id = Int(v, "Id"), Key = Text(v, "Key"), Title = Text(v, "Title"),
             IconKey = Text(v, "IconKey"), CreatedBy = CurrentUser,
-            // عمود الصفحات احتياطُ قاعدةٍ لم تُبذَر — يُقرأ من الصفّ المحفوظ فلا يمحوه تعديلٌ للاسم.
             Modules = Repo.Sections().FirstOrDefault(s => s.Id == Int(v, "Id"))?.Modules
         });
     }
@@ -176,6 +175,14 @@ namespace PrimeERP.Application.Services.Builder
 
         protected override string EntityName => "BuilderModules";
         protected override List<BuilderModule> All() => Repo.Modules();
+
+        protected override Result Validate(IDictionary<string, object> v) =>
+            Check(new BuilderModuleValidator(Repo.Modules()), new BuilderModule
+            {
+                Id = Int(v, "Id"), Key = Text(v, "Key"), Title = Text(v, "Title"),
+                Kind = (BuilderKind)Int(v, "Kind"), SectionId = Int(v, "SectionId"),
+                TableName = Text(v, "TableName")
+            });
 
         protected override List<BuilderModule> Sort(List<BuilderModule> items)
         {
@@ -199,7 +206,6 @@ namespace PrimeERP.Application.Services.Builder
             return Result.Ok();
         }
 
-        /// <summary>الشبكة تعرض الاسم لا المعرِّف — القسم من صفّه، والنوع من نصوصه.</summary>
         protected override IDictionary<string, object> ToDto(BuilderModule entity)
         {
             var row = base.ToDto(entity);
@@ -221,11 +227,9 @@ namespace PrimeERP.Application.Services.Builder
                 TableName = Text(v, "TableName"), LineTable = Text(v, "LineTable"),
                 SourceKey = Text(v, "SourceKey"), CopiedFrom = Text(v, "CopiedFrom"),
                 IsActive = Bool(v, "IsActive"), CreatedBy = CurrentUser,
-                // «مبذورة من الكود» صفةُ منشأٍ لا حقلَ حوار — تُقرأ من الصفّ المحفوظ فلا يمحوها تعديلٌ للاسم.
                 IsCoded = Repo.Modules().FirstOrDefault(m => m.Id == Int(v, "Id"))?.IsCoded ?? false
             });
 
-            // نسخة من صفحة: أعمدتها وأزرارها وفلاترها تُنسخ كما هي ثم تُعدَّل — نسخٌ لا بناء.
             var copiedFrom = Text(v, "CopiedFrom");
             if (Int(v, "Id") == 0 && !string.IsNullOrWhiteSpace(copiedFrom))
             {
@@ -242,7 +246,7 @@ namespace PrimeERP.Application.Services.Builder
         }
     }
 
-    /// <summary>الأعمدة والأزرار والفلاتر أبناءٌ يُستبدلون بالجملة لصفحتهم — مزامنة واحدة للثلاثة.</summary>
+    /// <summary>أبناء الصفحة يُستبدلون بالجملة</summary>
     public abstract class BuilderChildService<TEntity> : BuilderCrudServiceBase<TEntity> where TEntity : BaseModel
     {
         protected BuilderChildService(IBuilderRepository repo, IPermissionService p, ISettingsProvider s, ILocalizationService l, IAuditLogger a)
@@ -259,7 +263,6 @@ namespace PrimeERP.Application.Services.Builder
 
         protected override List<TEntity> All() => Of(0);
 
-        /// <summary>الشبكة تعرض اسم الصفحة وقسمها لا معرِّفاتهما — كشاشة الصفحات.</summary>
         protected override IDictionary<string, object> ToDto(TEntity entity)
         {
             var row = base.ToDto(entity);
@@ -352,7 +355,6 @@ namespace PrimeERP.Application.Services.Builder
 
         private Dictionary<int, double> _shares;
 
-        /// <summary>النسبة الظاهرة هي التي يُطبّقها المُحمِّل — من ColumnWidths، فلا يختلف المعروض عن المطبَّق.</summary>
         protected override IDictionary<string, object> ToDto(BuilderColumn entity)
         {
             var row = base.ToDto(entity);

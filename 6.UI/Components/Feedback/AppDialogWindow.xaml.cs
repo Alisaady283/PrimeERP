@@ -9,11 +9,7 @@ using PrimeERP.UI.Converters;
 
 namespace PrimeERP.UI.Components.Feedback
 {
-    /// <summary>
-    /// القاعدة الموحّدة لكل نوافذ الحوار (تأكيد/رسالة/تقدّم وأي حوار أعمال لاحقاً): هيدر ملوّن + محتوى + فوتر.
-    /// الحوارات المشتقة (AppConfirmDialog, AppMessageDialog, AppProgressDialog) تبنى بالكامل من C# دون XAML خاص بها،
-    /// وتضبط Body/Footer/HeaderVariant عبر الخصائص المحمية هنا.
-    /// </summary>
+    /// <summary>القاعدة الموحّدة لكل نوافذ الحوار</summary>
     public partial class AppDialogWindow : Window
     {
         public AppDialogWindow()
@@ -21,8 +17,6 @@ namespace PrimeERP.UI.Components.Feedback
             InitializeComponent();
             var active = FindActiveWindow();
             if (Owner == null && active != this) Owner = active;
-            // السقف من مساحة العمل لا من ارتفاع الشاشة: الأخير يتجاهل شريط المهام، ومع SizeToContent
-            // تنمو النافذة بكل سطر يُضاف حتى يهبط الفوتر تحت حافة الشاشة فيغيب زر الحفظ.
             const double Chrome = 150;   // الرأس والفوتر
             MaxHeight = SystemParameters.WorkArea.Height * 0.92;
             contentScroll.MaxHeight = MaxHeight - VerticalGutter - Chrome;
@@ -34,26 +28,17 @@ namespace PrimeERP.UI.Components.Feedback
         private double HorizontalGutter => shell.Margin.Left + shell.Margin.Right;
         private double VerticalGutter   => shell.Margin.Top + shell.Margin.Bottom;
 
-        /// <summary>
-        /// عرض البطاقة المرئية — لا عرض النافذة. النافذة أوسع منها بهامش الظل من الجانبين، فيُضاف الهامش
-        /// هنا مرة واحدة بدل أن يتذكّره كل نداء. ضبط Width مباشرةً يُنتج بطاقةً أضيق ممّا طُلب.
-        /// </summary>
         public double CardWidth
         {
             get => (double.IsNaN(Width) ? ActualWidth : Width) - HorizontalGutter;
             set { Width = value + HorizontalGutter; MinWidth = Width; }
         }
 
-        /// <summary>ارتفاع البطاقة المرئية — يُلغي SizeToContent لأن الطلب صريح.</summary>
         public double CardHeight
         {
             set { SizeToContent = SizeToContent.Manual; Height = value + VerticalGutter; }
         }
 
-        /// <summary>
-        /// Border لا يقصّ أبناءه باستدارته، فالهيدر الملوّن يربّع الزاويتين العلويتين والفوتر السفليتين.
-        /// القصّ يُحسب من استدارة البطاقة نفسها فيتبع هوية التصميم النشطة بلا رقم مكرّر.
-        /// </summary>
         private void ClipCorners()
         {
             var radius = Math.Max(0, shell.CornerRadius.TopLeft - shell.BorderThickness.Left);
@@ -85,11 +70,6 @@ namespace PrimeERP.UI.Components.Feedback
 
         private static readonly VariantToBrushConverter VariantConverter = new();
 
-        /// <summary>
-        /// اللون في الرأس إشارةُ حالة لا زينة: العلامة التجارية ليست حالة، فنموذج الأعمال يأخذ رأساً
-        /// محايداً من سطح الثيم (درجة عن جسم البطاقة، صعوداً في الداكن ونزولاً في الفاتح). أما الحالات —
-        /// تأكيد حذف، تحذير، نجاح — فتُلوَّن بتدرّجها الخفيف ونصّها المقروء عليه.
-        /// </summary>
         protected StatusVariant HeaderVariant
         {
             set
@@ -97,7 +77,7 @@ namespace PrimeERP.UI.Components.Feedback
                 var isPlain = value == StatusVariant.Brand;
 
                 headerBorder.Background = isPlain
-                    ? (Brush)FindResource("C.Dialog.Header.Bg")
+                    ? (Brush)FindResource("SurfaceHeader")
                     : Variant(value, "Soft");
 
                 var foreground = isPlain ? (Brush)FindResource("TextPrimary") : Variant(value, "SoftText");
@@ -122,7 +102,6 @@ namespace PrimeERP.UI.Components.Feedback
             set => footerHost.Content = value;
         }
 
-        /// <summary>ينفَّذ عند Enter، إلا لو التركيز داخل TextBox متعدد الأسطر (AcceptsReturn) فيُترك السطر الجديد يعمل طبيعياً.</summary>
         protected virtual void OnEnterPressed() { }
 
         protected virtual void OnEscapePressed()
@@ -131,7 +110,6 @@ namespace PrimeERP.UI.Components.Feedback
             Close();
         }
 
-        // WindowStyle=None يلغي شريط عنوان النظام (كان يكرّر عنوان الحوار مرتين) — والسحب يعود عبر الهيدر نفسه.
         private void headerBorder_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed) DragMove();

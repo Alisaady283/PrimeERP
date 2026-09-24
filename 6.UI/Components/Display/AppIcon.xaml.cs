@@ -4,8 +4,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Display
 {
-    /// <summary>أيقونة بمواصفة واحدة — تقرأ الحجم والسماكة من C.Icon.* فلا موضع استدعاء يحدّد رقماً.
-    /// Key هو مفتاح Geometry في 5.Design/Icons/Icons.xaml.</summary>
+    /// <summary>أيقونة بمواصفة واحدة</summary>
     public partial class AppIcon : UserControl
     {
         public static readonly DependencyProperty KeyProperty =
@@ -37,7 +36,7 @@ namespace PrimeERP.UI.Components.Display
             path.Data = string.IsNullOrEmpty(Key) ? null : TryFindResource(Key) as Geometry;
             path.StrokeThickness = Resource("C.Icon.Stroke", 1.75);
             if (Brush != null) path.Stroke = Brush;
-            else path.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "C.Icon.Fg");
+            else path.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "TextSecondary");
 
             var size = Resource($"C.Icon.Size.{Size}", 18);
             path.Width = size;

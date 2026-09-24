@@ -7,7 +7,7 @@ using PrimeERP.Platform.Permissions;
 
 namespace PrimeERP.UI.Components.Actions
 {
-    /// <summary>زر يتعطل أو يختفي (حسب HideIfDenied) لو المستخدم الحالي لا يملك PermissionKey.</summary>
+    /// <summary>زرّ محكوم بالصلاحية</summary>
     public partial class PermissionButton : UserControl
     {
         public static readonly DependencyProperty TextProperty =

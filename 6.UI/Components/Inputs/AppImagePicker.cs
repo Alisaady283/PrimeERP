@@ -8,8 +8,7 @@ using PrimeERP.Application.Services.Print;
 
 namespace PrimeERP.UI.Components.Inputs
 {
-    /// <summary>حقل صورة قيمته نص Base64 لا مسار ملف — الصورة تُصغَّر وتُحفَظ داخل البيانات نفسها، فتنجو مع
-    /// النسخة الاحتياطية وتنتقل مع النظام، بخلاف ملف خارجي يختفي بصمت وقت الطباعة.</summary>
+    /// <summary>حقل صورة قيمته نص Base64</summary>
     public class AppImagePicker : UserControl
     {
         private readonly Image _preview = new() { Stretch = Stretch.Uniform, Height = 96, Margin = new Thickness(0, 0, 12, 0) };
@@ -52,8 +51,6 @@ namespace PrimeERP.UI.Components.Inputs
             };
             if (dialog.ShowDialog() != true) return;
 
-            // الابتلاع الصامت كان يترك المستخدم يظن أن الشعار حُفظ بينما لم يُقرأ الملف أصلاً — الرسالة
-            // تظهر داخل الحقل نفسه (المكوّن لا يعرف خدمات الإشعارات، ولا يجوز له).
             try { Value = ImageData.Encode(dialog.FileName); _error = null; }
             catch (Exception ex) { Value = null; _error = $"تعذّرت قراءة الصورة: {ex.Message}"; }
 

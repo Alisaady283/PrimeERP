@@ -3,6 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Inventory
 {
+    /// <summary>عقد الأصناف</summary>
     public interface IProductService
     {
         Result<PagedResult<ProductDto>> GetPaged(int page, int pageSize, ProductFilter filter = null);

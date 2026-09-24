@@ -3,6 +3,7 @@ using PrimeERP.Domain.Entities.Common;
 
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان User</summary>
     public class User : BaseModel
     {
         public string    Username     { get; set; }

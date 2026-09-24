@@ -1,6 +1,8 @@
 <UserControl x:Class="PrimeERP.UI.Components.Display.AppIcon"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- عرض AppIcon -->
     <Path x:Name="path"
           Stretch="Uniform"
           StrokeLineJoin="Round"

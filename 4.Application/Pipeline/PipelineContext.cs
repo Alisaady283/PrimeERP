@@ -1,13 +1,13 @@
 using System.Collections.Generic;
-using System.Data.Common;
+using PrimeERP.Data.Core;
 using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Pipeline
 {
+    /// <summary>سياق يمرّ بين الخطوات</summary>
     public class PipelineContext
     {
-        public DbConnection Conn { get; set; }
-        public DbTransaction Tx { get; set; }
+        public PrimeDbContext Db { get; set; }
         public object Input { get; set; }
         public object Output { get; set; }
         public Dictionary<string, object> Items { get; } = new();

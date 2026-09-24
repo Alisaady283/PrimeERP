@@ -8,10 +8,7 @@ using System.Dynamic;
 
 namespace PrimeERP.Application.Validation
 {
-    /// <summary>
-    /// قواعد صفٍّ في جدول مبنيّ. القواعد مُعلَنة على أعمدته لا مكتوبة هنا، فتمرّ عبر .Custom — وهي
-    /// المُعلَن أنها تغطّي أي قاعدة مركّبة. والنتيجة ValidationResult كأي متحقّق، فتترجمها ServiceBase.Check.
-    /// </summary>
+    /// <summary>قواعد صفٍّ في جدول مبنيّ</summary>
     public class BuilderRowValidator : IValidator<IDictionary<string, object>>
     {
         private readonly List<BuilderColumn> _columns;

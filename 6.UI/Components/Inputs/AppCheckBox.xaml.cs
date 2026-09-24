@@ -5,6 +5,7 @@ using System.Windows.Input;
 
 namespace PrimeERP.UI.Components.Inputs
 {
+    /// <summary>حقل إدخال AppCheckBox</summary>
     public partial class AppCheckBox : UserControl
     {
         public static readonly DependencyProperty IsCheckedProperty =
@@ -50,7 +51,6 @@ namespace PrimeERP.UI.Components.Inputs
             c.txtDescription.Visibility = string.IsNullOrEmpty((string)e.NewValue) ? Visibility.Collapsed : Visibility.Visible;
         }
 
-        /// <summary>يحدّد أي علامة تظهر (صح/شرطة) من (Checked/Indeterminate) — الشكل نفسه (اللون) من الأنماط.</summary>
         private void Render()
         {
             checkPath.Visibility = IsChecked && !IsIndeterminate ? Visibility.Visible : Visibility.Collapsed;

@@ -4,6 +4,7 @@ using PrimeERP.Domain.Entities.Common;
 
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان StockTransferDocument</summary>
     public class StockTransferDocument : BaseModel
     {
         public string   DocNo           { get; set; }

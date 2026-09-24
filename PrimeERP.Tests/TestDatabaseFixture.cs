@@ -4,40 +4,27 @@ using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.App.Bootstrap;
 using PrimeERP.Data.Core;
-using PrimeERP.Data.Schema;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Tests
 {
-    /// <summary>
-    /// ملف SQLite مؤقت مستقل لكل تشغيلة اختبار — لا يشارك PrimeERP.db الفعلي، ويُحذف بعد الانتهاء.
-    /// يُشارك عبر ICollectionFixture بين كل الاختبارات التي تحتاج قاعدة بيانات حقيقية.
-    ///
-    /// منذ R3: يبني حاوية DI خاصة به عبر نفس دوال التسجيل الحقيقية (App.Bootstrap.DependencyInjection) —
-    /// "حاوية اختبار خاصة" بالمعنى الحرفي، لا محاكاة يدوية منفصلة قد تنحرف عن تسجيل الإنتاج الفعلي. مثيل DI
-    /// جديد كلياً لكل TestDatabaseFixture (أي لكل تشغيلة اختبار مستقلة) يعني SettingsService بذاكرة تخزين
-    /// مؤقت فارغة دائماً هنا — يُلغي تماماً مشكلة "تسرّب الإعداد بين الاختبارات" التي كانت تُعالَج سابقاً
-    /// بـ SettingsService.Instance.Reload() (لا معنى لها بعد zoo static Instance المحذوفة في R3 أصلاً).
-    /// </summary>
+    /// <summary>ملف SQLite مؤقت مستقل لكل</summary>
     public class TestDatabaseFixture : IDisposable
     {
         public string DbPath { get; }
 
-        /// <summary>الحاوية الافتراضية (تسجيل إنتاج كامل بلا تعديل) — تكفي أغلب الاختبارات. لاختبار يحتاج Fake/Mock لخدمة بعينها، استخدم BuildServices(overrides) بدلاً منها.</summary>
         public IServiceProvider Services { get; }
 
         public TestDatabaseFixture()
         {
-            // ⚠️ توقف 11 — يضمن تسجيل مخطَّط pack:// (عبر System.Windows.Application) قبل أي اختبار طباعة،
-            // بصرف النظر عن ترتيب xUnit غير الحتمي؛ TestDatabaseFixture تُبنى في كل اختبار تقريباً فهذا أول
-            // نقطة مضمونة التنفيذ قبل أي منطق اختبار فعلي. راجع WpfApplicationFixture وARCHITECTURE.md.
+            // ⚠️ registers the pack:// scheme before any print test
             WpfApplicationFixture.Ensure();
 
             DbPath = Path.Combine(Path.GetTempPath(), $"PrimeERP.Tests.{Guid.NewGuid():N}.db");
 
-            DbFactory.Configure(new DbConfig
+            DbConfig.Use(new DbConfig
             {
                 Provider = DatabaseProvider.Sqlite,
                 FilePath = DbPath
@@ -45,11 +32,8 @@ namespace PrimeERP.Tests
 
             Services = BuildServices();
 
-            // القاعدة جاهزة داخل BuildServices بترتيب الإنتاج — كانت قائمة إنشاء الجداول منسوخة هنا في
-            // ٣٩ سطراً، فكل جدول جديد يحتاج إضافته في موضعين.
         }
 
-        /// <summary>يبني حاوية DI جديدة بنفس تسجيل الإنتاج — configureOverrides يُستدعى بعده مباشرة، فأي تسجيل فيه (Fake/Mock) يفوز عند الحلّ (آخر تسجيل لنفس النوع هو الفائز في Microsoft.Extensions.DependencyInjection).</summary>
         public static IServiceProvider BuildServices(Action<IServiceCollection> configureOverrides = null)
         {
             var services = new ServiceCollection()
@@ -63,11 +47,22 @@ namespace PrimeERP.Tests
 
             var provider = services.BuildServiceProvider();
 
-            // ترتيب الإنتاج بالضبط (App.xaml.cs): القاعدة تُهيَّأ ثم تُسجَّل الوحدات — لأن الوحدات المبنيّة
-            // تُقرأ من جداول الوصف عند التسجيل. كان الترتيب هنا معكوساً فانحرف الاختبار عن الإقلاع الفعلي.
             provider.EnsureDatabaseReady();
             provider.RegisterModules();
             return provider;
+        }
+
+        public IPermissionStore Permissions => Services.GetRequiredService<IPermissionStore>();
+
+        /// <summary>مستخدمٌ بكلمة مرور مُلبَّدة</summary>
+        public int AddUser(string username, string password, string displayName, int roleId, bool isActive = true)
+        {
+            var (hash, salt) = PrimeERP.Platform.Security.PasswordHasher.Hash(password);
+            return Permissions.InsertUser(new PrimeERP.Domain.Entities.User
+            {
+                Username = username, PasswordHash = hash, Salt = salt,
+                DisplayName = displayName, RoleId = roleId, IsActive = isActive
+            });
         }
 
         public void Dispose()

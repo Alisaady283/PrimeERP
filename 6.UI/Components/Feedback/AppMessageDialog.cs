@@ -10,6 +10,7 @@ using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.UI.Components.Feedback
 {
+    /// <summary>حوارات وتنبيهات AppMessageDialog</summary>
     public class AppMessageDialog : AppDialogWindow
     {
         public AppMessageDialog(string title, string message, StatusVariant variant = StatusVariant.Info)

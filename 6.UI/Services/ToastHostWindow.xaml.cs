@@ -4,7 +4,7 @@ using PrimeERP.UI.Components.Feedback;
 
 namespace PrimeERP.UI.Services
 {
-    /// <summary>نافذة شفافة عائمة دائماً في الأعلى تستضيف تكديس الـ Toasts — مستقلة عن أي نافذة تطبيق محددة.</summary>
+    /// <summary>نافذة الإشعارات العائمة</summary>
     public partial class ToastHostWindow : Window
     {
         public ToastHostWindow()

@@ -10,11 +10,7 @@ using System.Windows.Threading;
 
 namespace PrimeERP.UI.Components.Pickers
 {
-    /// <summary>
-    /// القاعدة غير المعمَّمة لكل Picker — الشكل المضغوط (نص + بحث فوري + زر مسح + زر بحث كامل) وسلوكه الأساسي.
-    /// لا تُستخدم مباشرة؛ الطبقة المعمَّمة PickerBase&lt;T&gt; تنفّذ SearchAsync/ResolveExactCodeAsync/OpenSelectionWindow
-    /// عبر IPickerDataSource&lt;T&gt;. لا تستدعي أي قاعدة بيانات هنا إطلاقاً.
-    /// </summary>
+    /// <summary>القاعدة غير المعمَّمة لكل Picker</summary>
     public partial class PickerBaseControl : UserControl
     {
         public static readonly DependencyProperty SelectedIdProperty =
@@ -100,7 +96,6 @@ namespace PrimeERP.UI.Components.Pickers
             c.txtRequired.Visibility = c.IsRequired ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        // ===== نقاط الامتداد التي تنفّذها PickerBase<T> =====
 
         protected virtual Task<IEnumerable<PickerResultItem>> SearchAsync(string term) =>
             Task.FromResult(Enumerable.Empty<PickerResultItem>());
@@ -110,7 +105,6 @@ namespace PrimeERP.UI.Components.Pickers
 
         protected virtual void OpenSelectionWindow() { }
 
-        // ===== السلوك المشترك =====
 
         private async Task RunSearchAsync(string term)
         {
@@ -250,11 +244,8 @@ namespace PrimeERP.UI.Components.Pickers
 
         protected void RaiseQuickAddRequested() => QuickAddRequested?.Invoke(this, EventArgs.Empty);
 
-        /// <summary>يفتح نافذة الاختيار الكاملة المناسبة لهذا النوع (شجرة أو جدول) — تُستخدم من مستهلكين خارجيين
-        /// (مثل خلايا DocumentLinesGrid المدمجة) بدل تضمين الـ PickerBaseControl كاملاً.</summary>
         public void OpenPicker() => OpenSelectionWindow();
 
-        /// <summary>يبحث عن كود دقيق دون فتح أي نافذة — تُستخدم للملء التلقائي عند الكتابة المباشرة.</summary>
         public Task<PickerResultItem> ResolveCodeAsync(string code) => ResolveExactCodeAsync(code);
     }
 }

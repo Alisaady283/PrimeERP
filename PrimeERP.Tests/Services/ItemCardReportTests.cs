@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,14 +11,10 @@ using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using Xunit;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>
-    /// تقرير حركة الصنف بالمتوسط المرجَّح المتحرّك — بمثال المستخدم حرفياً: ثلاث شراءات ثم بيع، وبعد
-    /// كل حركة تُجمع الكمية ثم القيمة ويُشتقّ السعر منهما. قاعدةٌ معزولة لكل اختبار فالأرقام قطعية.
-    /// </summary>
+    /// <summary>تقرير حركة الصنف بالمتوسط المرجَّح</summary>
     public class ItemCardReportTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -44,7 +41,7 @@ namespace PrimeERP.Tests.Services
         private void Move(MovementType type, decimal qty, decimal unitCost, int day)
         {
             var stock = _db.Services.GetRequiredService<IStockService>();
-            Db.RunTransaction((conn, tx) => stock.RecordMovement(conn, tx, _productId, _warehouseId,
+            DbContextFactory.RunTransaction(db => stock.RecordMovement(db, _productId, _warehouseId,
                 type, qty, unitCost, "Test", null, $"T{day}", new DateTime(2026, 1, day)));
         }
 
@@ -77,7 +74,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(50m, rows[0].BalancePrice);
             Assert.Equal(2500m, rows[0].BalanceValue);
 
-            // 2500 + 4000 = 6500 على 100 قطعة ← 65
             Assert.Equal(4000m, rows[1].InValue);
             Assert.Equal(100m, rows[1].BalanceQty);
             Assert.Equal(65m, rows[1].BalancePrice);
@@ -109,7 +105,6 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void TheSalePriceWritten_DoesNotChangeTheCost()
         {
-            // سعر البيع المكتوب في الحركة لا يُسعّر الصرف — المتوسط وحده يفعل.
             Purchases();
             Move(MovementType.Out, 75, 999, 4);
 

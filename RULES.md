@@ -1,14 +1,18 @@
 # RULES.md — ما يُلزم وما يُمنع
 
-## القواعد الأربع
+## القواعد الست
 
 **١. لا كتابة يدوية.** القطع والخدمات والقواعد والصلاحيات والتحقق والتصميم كلها مبنيّة. العمل الجديد إعلانٌ يجمعها. أيّ سطر يُكتب مرّتين خطأٌ في الموضع: المصدر المشترك غائب فيُبنى أولاً ثم يُستورَد مرّتين. لا تُكتب نسخةٌ أولى على نيّة تعميمها لاحقاً.
 
 **٢. البناء غير السليم يُحذَف ويُعاد.** بناءٌ في غير موضعه، أو نسخةٌ يدوية من مشترك، أو ترقيعٌ فوق ترقيع: تُراجَع آلية النظام الصحيحة لهذا النوع، ثم يُعاد البناء سليماً — حذفاً وإضافةً أو تعديلاً، أيّهما أنظف. لا طبقة فوق بنية معطوبة، ولا جديدٌ يلتفّ حول قديم مكسور.
 
-**٣. المؤقّت يُحذَف فور اكتشافه.** استثناؤه الوحيد: حذفُه الآن يكسر البناء وبديلُه مجدوَل صراحةً — يُسجَّل `// TEMPORARY — السبب` ويُدرَج في دين `ARCHITECTURE.md` التقني. `check.sh` يرفض أي مؤقت غير مُسجَّل.
+**٣. المؤقّت يُحذَف فور اكتشافه.** استثناؤه الوحيد: حذفُه الآن يكسر البناء وبديلُه مجدوَل صراحةً — يُسجَّل `// TEMPORARY — السبب`، و`check.sh` يرفض بقاءه.
 
 **٤. تعديلٌ واحد في أكثر من موضع يعني غياب المصدر المشترك.** يُبنى المصدر ثم يُستورَد.
+
+**٥. التعليق عنوانٌ لا شرح.** كلمةٌ إلى خمس تسمّي القطعة (`/// <summary>مستودع Product</summary>` · `<!-- أيقونات النظام -->` · `<!-- Nav -->`). السببُ والآليةُ والمصيدةُ موضعها `ARCHITECTURE.md`، فالكود يُقرأ ولا يُشرَح. و`check.sh` يرفض ما طال.
+
+**٦. الطبقة الوسيطة تُقاس بالسطور لا بالتصنيف.** تُبنى حين تمرّ بها قطعةٌ كثيرة الاستعمال فتُكتب مرّة بدل مئة — كالتحقق والصلاحية والتدقيق والمعاملة تمرّ كلها ببوابة واحدة. وتُحذَف حين تكون مجرّد تصنيف: مفتاحٌ يشير إلى مفتاح، أو مجلّدٌ يعيد تصدير ما تحته، أو آلةٌ بلا محتوى — فظاهرها ترتيبٌ وحقيقتها تعقيد. والمقياس واحد في الحالتين: أيّهما أقلّ سطراً وأقصر طريقاً إلى القطعة.
 
 ## الأسئلة الخمسة قبل أي إضافة
 
@@ -29,7 +33,7 @@
 | # | الخطوة | الموضع | الشرط |
 |---|---|---|---|
 | ١ | الكيان | `3.Domain/Entities` | خصائص فقط — بلا سلوك ولا استدعاء |
-| ٢ | المستودع | `2.Data/Repositories` | يرث `RepositoryBase<T>`، شرطه `WhereBuilder`، ترتيبه `OrderBuilder`. SQL فقط |
+| ٢ | المستودع | `2.Data/Repositories` | يرث `RepositoryBase<T>`، شرطه `Shape` وترتيبه `By`/`DocumentOrder` — LINQ فوق `PrimeDbContext`، بلا SQL مكتوب |
 | ٣ | الـDTOs | `4.Application/DTOs` | `XDto` قراءة · `CreateXDto` كتابة · `XFilter` ترشيح |
 | ٤ | المتحقّق | `4.Application/Validation` | `IValidator<T>` عبر `Rules.For<T>()` |
 | ٥ | الخدمة | `4.Application/Services/<القسم>` | ترث `ServiceBase` وتُعلن `PermissionPrefix` و `StringPrefix` و `EntityName` |
@@ -39,7 +43,7 @@
 
 **قواعد `Rules.For<T>()`**: `Required` · `MinLength` · `MaxLength` · `Range` · `Positive` · `Email` · `Phone` · `DateValid` · `Unique` · `Custom`.
 
-**يُمنَع داخل الخدمة**: رسالة بلغة بشرية خارج `Strings.*.xaml` · شرط تحقق خارج المتحقّق · فحص صلاحية خارج `Can` · SQL خارج المستودع.
+**يُمنَع داخل الخدمة**: رسالة بلغة بشرية خارج `Strings.*.xaml` · شرط تحقق خارج المتحقّق · فحص صلاحية خارج `Can` · استعلام خارج المستودع.
 
 **حسابٌ تستعمله خدمتان يُخرَج إلى `3.Domain/Rules/`** — كـ `DepreciationRules` تستوردها خدمة الاحتساب وتقرير الأصول، فيبقى الرقم واحداً.
 
@@ -69,10 +73,9 @@ registry.Register(new ModuleDefinition
 | `CycleDocumentRegistrations.Register` | مستند دورة (طلب/أمر/عرض سعر) |
 | `RegisterChequeDocument` · `RegisterVoucher` | مستندات الخزينة |
 | `RegisterLookup` | قائمة بسيطة (كود/اسم/نشط) |
-| `BalanceReportFactory` | تقرير أرصدة |
 | `CategoryDialogFactory` | حوار فئة |
 
-**قطعٌ مُعلَنة جاهزة**: `StandardFields.DialogFields()` · `StandardFields.AuditColumns()` · `StandardFields.DateRange()` · `JournalRowActions()` · `TradePaper.*`.
+**قطعٌ مُعلَنة جاهزة**: `StandardFields.DialogFields()` · `StandardFields.AuditColumns()` · `StandardFields.DateRange()` · `PayrollRowActions()` · `TradePaper.*`.
 
 **نموذج العرض** يرث `CrudViewModelBase<TDto,TFilter>` ويُعلن `PermissionPrefix` فقط — بلا تحميل وبلا حفظ.
 
@@ -104,9 +107,8 @@ registry.Register(new ModuleDefinition
 
 | الخطأ | موضعه الوحيد |
 |---|---|
-| لون، مسافة، خطّ، ظلّ، استدارة | `5.Design/Identity/<الحزمة>/Primitives.*.xaml` |
-| معنى اللون (سطح، نصّ، علامة) | `5.Design/Semantic/Semantic.{Light,Dark}.xaml` |
-| مقاس مكوّن بعينه | `5.Design/Components/Tokens.<المكوّن>.xaml` |
+| لون — أيّ لون | `5.Design/Colors.xaml` |
+| مسافة، خطّ، ظلّ، استدارة، مقاس مكوّن | `5.Design/Sizes.xaml` |
 | شكل عنصر WPF | `5.Design/Styles/Style.<النوع>.xaml` |
 | نصّ ظاهر للمستخدم | `5.Design/Strings/Strings.{ar,en}.xaml` |
 | أيقونة | `5.Design/Icons/Icons.xaml` |
@@ -114,9 +116,9 @@ registry.Register(new ModuleDefinition
 | منطق أعمال أو حساب | `4.Application/Services/…` |
 | قاعدة تحقق | `4.Application/Validation/…` |
 | قاعدة محاسبية نقية | `3.Domain/Rules/…` |
-| استعلام، ترتيب، ترشيح | `2.Data/Repositories` + `Query/{WhereBuilder,OrderBuilder}` |
+| استعلام، ترتيب، ترشيح | `2.Data/Repositories` + `Base/RepositoryBase.{Fetch,Page,By,DocumentOrder}` |
 | جملة الحذف (ناعم أو صلب) | `2.Data/Repositories/Base/RepositoryBase` — `SoftDelete` / `HardDelete` |
-| كتابة إعداد (ولو في قاعدة أخرى) | `1.Platform/Settings/SettingRepository` — `Upsert` |
+| كتابة إعداد (ولو في قاعدة أخرى) | `ISettingStore.Upsert` — تنفيذه `2.Data/Repositories/SettingRepository` |
 | تجميد الواجهة في عملية طويلة | `IDialogService.ShowProgress` + `Task.Run` + `IProgress<T>` |
 | حواجز الحذف (مرحَّل، سُحب منه، له أبناء) | خدمة الكيان في `4.Application` |
 | صلاحية | `1.Platform/Permissions/PermissionKeys.cs` |
@@ -126,10 +128,31 @@ registry.Register(new ModuleDefinition
 
 ---
 
+## تصحيح موضعٍ أو تكرار
+
+النقل لا يُخلَط بالمنطق، والقياس قبل وبعد لا الثقة.
+
+**صنفان، لا يجتمعان في التزامٍ واحد:**
+- **نقل** — ملفٌ أو نوعٌ أو فضاء اسم ينتقل، ولا يتغيّر سطر منطقٍ واحد.
+- **استخراج مشترك** — أساسٌ يرثه اثنان فأكثر، بلا نقل ملفاتٍ معه.
+
+**البوابات الأربع لكل خطوة:**
+
+| البوابة | الأمر | الشرط |
+|---|---|---|
+| جرد الأنواع | `python Tools/ArchitectureCheck/placement.py inventory` | العدد نفسه قبل وبعد — نوعٌ يضيع في النقل يظهر هنا |
+| البناء | `dotnet build` | صفر خطأ |
+| الاختبارات | `dotnet test` | صفر سقوط |
+| الحدود | `bash Tools/ArchitectureCheck/check.sh` | صفر FAIL، ويُحذف سطر المخالفة من `placement-debt.txt` |
+
+`placement-debt.txt` قائمةٌ مُجمَّدة: ما فيها يُصلَح بالترتيب، وأي مخالفةٍ خارجها تُسقط الفحص فوراً.
+
+---
+
 ## قواعد الاختبار
 
 - الاختبار يُكتب حين يكشف كسراً لا يكشفه البناء، لا لكل تعديل.
-- اختبارٌ يُصيِّر الشاشة الحقيقية ويضغط زرّها أثمن من عشرة تفحص الكود المجرّد: زرّ «جديد» كان معطَّلاً في تسع وحدات بينما اختبار نموذجه المجرّد يمرّ.
+- اختبارٌ يُصيِّر الشاشة الحقيقية ويضغط زرّها أثمن من عشرة تفحص الكود المجرّد: الزرّ المعطَّل يمرّ من اختبار النموذج المجرّد ولا يمرّ من الشاشة.
 - الاختبار الجديد يُثبَت بإعادة الكسر: إن لم يسقط على الكود المكسور فهو لا يحرس شيئاً.
 - لا حالة ساكنة مُستعارة بلا إعادة — `AppSession` يتقاسمها كل الاختبارات.
 - لا اعتماد على «أول عنصر» في قائمة مرتَّبة؛ يُختار السجلّ بمعرّفه.

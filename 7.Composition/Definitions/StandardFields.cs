@@ -4,10 +4,7 @@ using PrimeERP.UI.Components.Display;
 
 namespace PrimeERP.Composition.Definitions
 {
-    // قطع قابلة للاستدعاء من أي تسجيل وحدة — حالة نشط/غير نشط + تاريخ إنشاء/تعديل. تفترض أن الـ DTO المقروء
-    // (لا Create/Update) يملك IsActive/StatusText/CreatedAt/UpdatedAt بهذه الأسماء بالضبط؛ Create/Update
-    // بلا CreatedAt/UpdatedAt عمداً — ApplyFields تتجاهل أي حقل بلا خاصية مطابقة على الـ DTO المستهدف، فحقلا
-    // التاريخ يُعرَضان فقط في الفورم ولا يُرسَلان أبداً.
+    /// <summary>حقول تتكرر في كل حوار</summary>
     public static class StandardFields
     {
         public static List<FieldDefinition> DialogFields() => new()
@@ -17,8 +14,6 @@ namespace PrimeERP.Composition.Definitions
             new() { Key = "UpdatedAt", LabelKey = "Str.UpdatedAt", Kind = FieldKind.ReadOnly, DisplayFormat = "yyyy-MM-dd HH:mm" },
         };
 
-        /// <summary>مدى التاريخ: بارامترا كل تقرير مؤرَّخ. كانا مكتوبين بنصّهما في تسع تقارير، فتغيير
-        /// المدى الافتراضي كان يعني تعديل تسعة مواضع.</summary>
         public static List<ParameterDefinition> DateRange(int monthsBack = 1) => new()
         {
             new() { Key = "From", LabelKey = "Str.DateFrom", Kind = FieldKind.Date, DefaultValue = System.DateTime.Today.AddMonths(-monthsBack) },

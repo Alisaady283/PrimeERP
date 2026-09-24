@@ -13,6 +13,7 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.Inventory
 {
+    /// <summary>خدمة الأصناف</summary>
     public class ProductService : CrudServiceBase<Product, ProductDto, ProductFilter>, IProductService
     {
         protected override string PermissionPrefix => "Products";
@@ -63,8 +64,8 @@ namespace PrimeERP.Application.Services.Inventory
                 Notes = dto.Notes, IsActive = dto.IsActive, CreatedBy = CurrentUser
             };
 
-            var validation = new ProductValidator().Validate(product);
-            if (!validation.IsValid) return Result.Fail<ProductDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
+            var check = Check(new ProductValidator(), product);
+            if (check.IsFailure) return check.As<ProductDto>();
 
             var id = _products.Insert(product);
             product.Id = id;
@@ -84,8 +85,8 @@ namespace PrimeERP.Application.Services.Inventory
             product.CostPrice = dto.CostPrice; product.SalePrice = dto.SalePrice; product.MinPrice = dto.MinPrice;
             product.Notes = dto.Notes; product.IsActive = dto.IsActive; product.UpdatedBy = CurrentUser;
 
-            var validation = new ProductValidator().Validate(product);
-            if (!validation.IsValid) return Result.Fail(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
+            var check = Check(new ProductValidator(), product);
+            if (check.IsFailure) return check;
 
             _products.Update(product);
             Audit.Log(EntityName, product.Id, AuditAction.Update, newValue: new { product.Name });
@@ -110,8 +111,8 @@ namespace PrimeERP.Application.Services.Inventory
             return new ProductDto
             {
                 Id = p.Id, Code = p.Code, Barcode = p.Barcode, Name = p.Name, NameEn = p.NameEn,
-                CategoryId = p.CategoryId, CategoryName = p.CategoryId != null ? _categories.GetById(p.CategoryId.Value)?.Name : null,
-                BrandId = p.BrandId, BrandName = p.BrandId != null ? _categories.GetById(p.BrandId.Value)?.Name : null,
+                CategoryId = p.CategoryId, CategoryName = p.CategoryName,
+                BrandId = p.BrandId, BrandName = p.BrandName,
                 CostPrice = p.CostPrice, SalePrice = p.SalePrice, MinPrice = p.MinPrice, Notes = p.Notes,
                 IsActive = p.IsActive, StatusVariant = variant, StatusText = LocalizationService.Get($"Str.{statusKey}"),
                 CreatedAt = p.CreatedAt, UpdatedAt = p.UpdatedAt,

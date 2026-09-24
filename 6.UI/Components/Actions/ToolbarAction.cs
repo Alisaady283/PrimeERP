@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using PrimeERP.Platform.Localization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Actions
 {
-    /// <summary>تعريف زر شريط أدوات — يُبنى من كود C# ويُستهلك عبر ActionToolbar.ButtonsSource.</summary>
+    /// <summary>تعريف زر شريط أدوات</summary>
     public class ToolbarAction
     {
         public string   Key           { get; set; }
@@ -19,46 +20,37 @@ namespace PrimeERP.UI.Components.Actions
         public bool     Separator     { get; set; }
         public string   Tooltip       { get; set; }
 
-        /// <summary>مثل "Ctrl+N" أو "F5" أو "Delete" — يُسجَّل تلقائياً كـ KeyBinding في نافذة ActionToolbar المضيفة.</summary>
         public string   Shortcut      { get; set; }
 
-        // إجراء مُعلَن بلا أيقونة وارد (إجراءات الوحدات النصّية) — TryFindResource ترمي على مفتاح فارغ.
         private static Geometry Icon_(string key) =>
             string.IsNullOrEmpty(key) ? null : System.Windows.Application.Current?.TryFindResource(key) as Geometry;
 
-        /// <summary>
-        /// كتالوج الأزرار القياسية: مفتاحٌ ← اسمه وأيقونته وشكله واختصاره وتلميحه. مصدرٌ واحد تقرأ منه
-        /// المصانع أدناه، ويقرأ منه معالج البناء ليعرض ما يملكه النظام — فأي زرّ يُضاف هنا يظهر في
-        /// المعالج بلا تعديل ثانٍ، ولا تتكرّر قيمه في موضعين.
-        /// </summary>
-        public static readonly IReadOnlyDictionary<string, (string Text, string IconKey, string Variant, string Shortcut, string Tooltip)> Catalogue =
+        /// <summary>مفاتيح النصوص لا النصوص</summary>
+        public static readonly IReadOnlyDictionary<string, (string TextKey, string IconKey, string Variant, string Shortcut, string TooltipKey)> Catalogue =
             new Dictionary<string, (string, string, string, string, string)>
             {
-                ["new"]         = ("جديد",        "IconAdd",         "primary",   "Ctrl+N", "إضافة عنصر جديد"),
-                ["edit"]        = ("تعديل",       "IconEdit",        "secondary", "Ctrl+E", "تعديل العنصر المحدد"),
-                ["delete"]      = ("حذف",         "IconDelete",      "danger",    "Delete", "حذف العنصر المحدد"),
-                ["save"]        = ("حفظ",         "IconSave",        "primary",   "Ctrl+S", "حفظ التغييرات"),
-                ["cancel"]      = ("إلغاء",       "IconCancel",      "ghost",     null,     "إلغاء العملية"),
-                ["print"]       = ("طباعة",       "IconPrint",       "secondary", null,     "طباعة"),
-                ["export"]      = ("تصدير",       "IconExport",      "secondary", null,     "تصدير"),
-                ["refresh"]     = ("تحديث",       "IconRefresh",     "ghost",     "F5",     "تحديث البيانات"),
-                ["post"]        = ("ترحيل",       "IconCheck",       "success",   null,     "ترحيل المستند"),
-                ["unpost"]      = ("إلغاء ترحيل", "IconCancel",      "warning",   null,     "إلغاء ترحيل المستند"),
-                ["expandAll"]   = ("توسيع الكل",  "IconChevronDown", "ghost",     null,     "توسيع كل العقد"),
-                ["collapseAll"] = ("طي الكل",     "IconChevronUp",   "ghost",     null,     "طي كل العقد"),
-                ["moveUp"]      = ("لأعلى",       "IconChevronUp",   "secondary", null,     "تبديل الترتيب مع ما قبله"),
-                ["moveDown"]    = ("لأسفل",       "IconChevronDown", "secondary", null,     "تبديل الترتيب مع ما بعده"),
+                ["new"]          = ("Str.Action.New", "IconAdd", "primary", "Ctrl+N", "Str.Action.NewTip"),
+                ["edit"]         = ("Str.Edit", "IconEdit", "secondary", "Ctrl+E", "Str.Action.EditTip"),
+                ["delete"]       = ("Str.Delete", "IconDelete", "danger", "Delete", "Str.Action.DeleteTip"),
+                ["save"]         = ("Str.Save", "IconSave", "primary", "Ctrl+S", "Str.Action.SaveTip"),
+                ["cancel"]       = ("Str.Cancel", "IconCancel", "ghost", null, "Str.Action.CancelTip"),
+                ["print"]        = ("Str.Print", "IconPrint", "secondary", null, "Str.Action.PrintTip"),
+                ["export"]       = ("Str.Action.Export", "IconExport", "secondary", null, "Str.Action.ExportTip"),
+                ["refresh"]      = ("Str.Action.Refresh", "IconRefresh", "ghost", "F5", "Str.Action.RefreshTip"),
+                ["post"]         = ("Str.Action.Post", "IconCheck", "success", null, "Str.Action.PostTip"),
+                ["unpost"]       = ("Str.Action.Unpost", "IconCancel", "warning", null, "Str.Action.UnpostTip"),
+                ["expandAll"]    = ("Str.Action.ExpandAll", "IconChevronDown", "ghost", null, "Str.Action.ExpandAllTip"),
+                ["collapseAll"]  = ("Str.Action.CollapseAll", "IconChevronUp", "ghost", null, "Str.Action.CollapseAllTip"),
+                ["moveUp"]       = ("Str.Action.MoveUp", "IconChevronUp", "secondary", null, "Str.Action.MoveUpTip"),
+                ["moveDown"]     = ("Str.Action.MoveDown", "IconChevronDown", "secondary", null, "Str.Action.MoveDownTip"),
             };
 
-        /// <summary>
-        /// يبني زراً من الكتالوج. text غير الفارغ يُخصّص الاسم ويُفرِّد المفتاح — صفحة المستندات فيها
-        /// زرّا طباعة (تقرير ومستند)، ولولا التفريد لتصادما في قائمة "المزيد" وفي الاختصارات.
-        /// </summary>
         private static ToolbarAction FromCatalogue(string key, ICommand command, string permissionKey, string text = null)
         {
             var spec = Catalogue[key];
-            return Build(text == null ? key : $"{key}:{text}", text ?? spec.Text, spec.IconKey, spec.Variant,
-                command, permissionKey, spec.Shortcut, text ?? spec.Tooltip);
+            return Build(text == null ? key : $"{key}:{text}", text ?? LocalizationService.Get(spec.TextKey),
+                spec.IconKey, spec.Variant, command, permissionKey, spec.Shortcut,
+                text ?? LocalizationService.Get(spec.TooltipKey));
         }
 
         public static ToolbarAction SeparatorItem() => new() { Separator = true };

@@ -1,6 +1,6 @@
+using PrimeERP.Data.Core;
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Vouchers;
@@ -15,10 +15,11 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Application.Services.Vouchers
 {
+    /// <summary>سند قبض/صرف</summary>
     public interface IVoucherService
     {
         Result<PagedResult<VoucherDto>> GetPaged(int page, int pageSize, VoucherFilter filter = null);
@@ -31,8 +32,6 @@ namespace PrimeERP.Application.Services.Vouchers
     public interface IReceiptVoucherService : IVoucherService { }
     public interface IPaymentVoucherService : IVoucherService { }
 
-    /// <summary>سند قبض/صرف: يُرحَّل محاسبياً فور الحفظ، وطرف النقدية هو حساب الخزينة المختارة لا حساباً عاماً.
-    /// طريقة "شيك" تُنشئ الشيك وحركته الأولى في نفس المعاملة — نقطة إدخال واحدة للرقم، بلا تكرار.</summary>
     public abstract class VoucherServiceBase : ServiceBase, IVoucherService
     {
         private readonly IVoucherRepository _repo;
@@ -122,27 +121,27 @@ namespace PrimeERP.Application.Services.Vouchers
             int voucherId;
             try
             {
-                voucherId = Db.RunTransaction((conn, tx) =>
+                voucherId = Tx(db =>
                 {
                     var voucher = new Voucher
                     {
-                        VoucherNo = _numbers.Next(conn, tx, EntityName), VoucherDate = dto.VoucherDate, Kind = _kind,
+                        VoucherNo = _numbers.Next(db, EntityName), VoucherDate = dto.VoucherDate, Kind = _kind,
                         PartyKind = PartyOf, PartyId = dto.PartyId, TreasuryId = dto.TreasuryId, Amount = dto.Amount,
                         Method = method, Reference = dto.Reference, Notes = dto.Notes, CreatedBy = AppSession.Username
                     };
-                    var id = _repo.InsertHeader(conn, tx, voucher);
+                    var id = _repo.InsertHeader(db, voucher);
 
                     var lineNo = 1;
                     foreach (var allocation in dto.Allocations ?? new())
-                        _repo.InsertAllocation(conn, tx, id, new VoucherAllocation
+                        _repo.InsertAllocation(db, id, new VoucherAllocation
                         {
                             LineNo = lineNo++, InvoiceType = EntityName, InvoiceNo = allocation.InvoiceNo,
                             Amount = allocation.Amount, Notes = allocation.Notes
                         });
 
                     voucher.Id = id;
-                    var entryId = PostEntry(conn, tx, voucher, cashAccount, partyAccount);
-                    _repo.SetLinks(conn, tx, id, entryId, null);
+                    var entryId = PostEntry(db, voucher, cashAccount, partyAccount);
+                    _repo.SetLinks(db, id, entryId, null);
 
                     return id;
                 });
@@ -179,24 +178,23 @@ namespace PrimeERP.Application.Services.Vouchers
                 if (funds.IsFailure) return funds;
             }
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
                 if (voucher.ChequeId != null)
                 {
-                    _cheques.DeleteMovements(conn, tx, voucher.ChequeId.Value);
-                    _cheques.Delete(conn, tx, voucher.ChequeId.Value);
+                    _cheques.DeleteMovements(db, voucher.ChequeId.Value);
+                    _cheques.Delete(db, voucher.ChequeId.Value);
                 }
 
-                if (voucher.JournalEntryId != null) _journals.Delete(conn, tx, voucher.JournalEntryId.Value);
-                _repo.Delete(conn, tx, id);
+                if (voucher.JournalEntryId != null) _journals.Delete(db, voucher.JournalEntryId.Value);
+                _repo.Delete(db, id);
             });
 
             Audit.Log(EntityName, id, AuditAction.Delete);
             return Result.Ok();
         }
 
-        // قبض: النقدية مدينة والعميل دائن. صرف: المورد مدين والنقدية دائنة.
-        private int PostEntry(DbConnection conn, DbTransaction tx, Voucher voucher, string cashAccount, string partyAccount)
+        private int PostEntry(PrimeDbContext db, Voucher voucher, string cashAccount, string partyAccount)
         {
             var description = $"{(IsReceipt ? "سند قبض" : "سند صرف")} {voucher.VoucherNo}";
             var entry = new CreateJournalDto
@@ -209,10 +207,10 @@ namespace PrimeERP.Application.Services.Vouchers
                 }
             };
 
-            var created = _journals.Create(conn, tx, entry);
+            var created = _journals.Create(db, entry);
             if (created.IsFailure) throw new InvalidOperationException(created.ErrorMessage);
 
-            var posted = _journals.Post(conn, tx, created.Value.Id);
+            var posted = _journals.Post(db, created.Value.Id);
             if (posted.IsFailure) throw new InvalidOperationException(posted.ErrorMessage);
 
             return created.Value.Id;
@@ -231,13 +229,6 @@ namespace PrimeERP.Application.Services.Vouchers
             return supplier.IsSuccess ? supplier.Value.AccountCode : null;
         }
 
-        /// <summary>
-        /// الخزينة والبنك لا يقبلان سالباً — كالمخزن تماماً: لا يُصرف ما ليس فيهما. يُفحص قبل أي كتابة،
-        /// فمعاملتان متتاليتان تُسلسَلان وترى الثانية أثر الأولى ملتزماً فتُرفض لو لم يبقَ ما يكفي.
-        ///
-        /// القبض لا يُفحص (يزيد الرصيد).
-        /// ورصيد حساب الخزينة مدينٌ بطبعه: مدين ناقص دائن، فالصرف يُنقصه.
-        /// </summary>
         private Result EnsureFunds(string cashAccount, decimal amount)
         {
             if (IsReceipt || string.IsNullOrWhiteSpace(cashAccount)) return Result.Ok();

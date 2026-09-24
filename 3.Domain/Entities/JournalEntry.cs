@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان JournalEntry</summary>
     public class JournalEntry
     {
         public int      Id          { get; set; }

@@ -2,6 +2,7 @@ using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Application.DTOs.Treasury
 {
+    /// <summary>بيانات الخزينة</summary>
     public class TreasuryDto
     {
         public int          Id            { get; set; }
@@ -21,7 +22,6 @@ namespace PrimeERP.Application.DTOs.Treasury
     {
         public string Name          { get; set; }
 
-        /// <summary>TreasuryKind — يحدّد أي أصل في الشجرة يقع تحته الحساب: الصناديق أم البنوك.</summary>
         public int    Kind          { get; set; } = (int)PrimeERP.Domain.Enums.TreasuryKind.Cash;
         public bool   IsBank        { get => Kind == (int)PrimeERP.Domain.Enums.TreasuryKind.Bank; set => Kind = (int)(value ? PrimeERP.Domain.Enums.TreasuryKind.Bank : PrimeERP.Domain.Enums.TreasuryKind.Cash); }
         public string AccountCode   { get; set; }

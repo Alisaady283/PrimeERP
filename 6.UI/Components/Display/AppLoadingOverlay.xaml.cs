@@ -5,6 +5,7 @@ using System.Windows.Media.Animation;
 
 namespace PrimeERP.UI.Components.Display
 {
+    /// <summary>عرض AppLoadingOverlay</summary>
     public partial class AppLoadingOverlay : UserControl
     {
         public static readonly DependencyProperty IsBusyProperty =

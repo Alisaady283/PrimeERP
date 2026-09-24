@@ -3,6 +3,7 @@ using System.Windows;
 
 namespace PrimeERP.UI.Components.Documents
 {
+    /// <summary>عمود سطر المستند</summary>
     public enum LineColumnType
     {
         RowNumber, Text, Integer, Decimal, Money, Percent, Picker, Combo, Checkbox, Computed
@@ -18,16 +19,13 @@ namespace PrimeERP.UI.Components.Documents
         None, Sum, Count
     }
 
-    /// <summary>
-    /// محاذاة منطقية لا فيزيائية — Auto يتبع نوع العمود (أرقام/تواريخ/أكواد/حالات = وسط، نصوص = بداية اتجاه اللغة)،
-    /// Start/End يتبعان اتجاه اللغة أيضاً (لا يمين/يسار ثابتين). القاعدة نفسها مطبّقة في ColumnAlign (Display/GridColumn).
-    /// </summary>
+    /// <summary>محاذاة منطقية لا فيزيائية</summary>
     public enum LineAlign
     {
         Auto, Start, Center, End
     }
 
-    /// <summary>تعريف عمود في DocumentLinesGrid — يُبنى من كود C# (LineColumnPresets)، لا XAML.</summary>
+    /// <summary>تعريف عمود في DocumentLinesGrid</summary>
     public class LineColumn
     {
         public string          Key         { get; set; }
@@ -41,20 +39,14 @@ namespace PrimeERP.UI.Components.Documents
         public LineAlign        Align       { get; set; } = LineAlign.Auto;
         public LinePickerType   PickerType  { get; set; } = LinePickerType.None;
 
-        /// <summary>مفتاح صيغة مسجّلة في LineComputeEngine — يُعاد حسابها تلقائياً عند أي تغيير في السطر (عمود Type=Computed فقط).</summary>
         public string ComputeExpression { get; set; }
 
         public LineColumnFooter Footer       { get; set; } = LineColumnFooter.None;
         public string           PermissionKey{ get; set; }
         public int?              MaxLength    { get; set; }
 
-        /// <summary>عند اختيار عنصر من الـ picker: مفتاح عمود آخر في نفس السطر ← اسم الخاصية على الكائن المختار التي تُنسخ منها القيمة.</summary>
         public Dictionary<string, string> FillsFrom { get; set; } = new();
 
-        /// <summary>
-        /// المحاذاة الفعلية لهذا العمود — Auto يُحسم حسب Type (نص = بداية اتجاه اللغة، غير ذلك = وسط).
-        /// النتيجة Left/Right فيزيائية لكنها "منطقية" فعلياً لأن WPF يعكسها تلقائياً حسب FlowDirection المحيط.
-        /// </summary>
         public HorizontalAlignment ResolveHorizontalAlignment()
         {
             var effective = Align == LineAlign.Auto ? AutoAlignFor(Type) : Align;

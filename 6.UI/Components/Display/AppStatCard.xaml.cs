@@ -6,6 +6,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Display
 {
+    /// <summary>عرض AppStatCard</summary>
     public partial class AppStatCard : UserControl
     {
         public static readonly DependencyProperty TitleProperty =
@@ -44,7 +45,6 @@ namespace PrimeERP.UI.Components.Display
         public double?  Trend    { get => (double?)GetValue(TrendProperty);   set => SetValue(TrendProperty, value); }
         public ICommand Command  { get => (ICommand)GetValue(CommandProperty);set => SetValue(CommandProperty, value); }
 
-        /// <summary>يُطلق عند النقر — استخدمه أو Command حسب ما يناسب الاستدعاء.</summary>
         public event EventHandler Click;
 
         public AppStatCard()

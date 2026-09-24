@@ -4,6 +4,7 @@ using PrimeERP.Domain.Entities.Common;
 
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان StockMovement</summary>
     public class StockMovement : BaseModel
     {
         public string       MovementNo    { get; set; }

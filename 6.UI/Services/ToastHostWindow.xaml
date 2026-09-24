@@ -10,5 +10,7 @@
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="Manual"
         FlowDirection="RightToLeft">
+
+    <!-- خدمة واجهة ToastHostWindow -->
     <StackPanel x:Name="pnlToasts" Margin="16"/>
 </Window>

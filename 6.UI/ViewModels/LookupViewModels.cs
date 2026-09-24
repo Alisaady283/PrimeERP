@@ -4,10 +4,7 @@ using PrimeERP.UI.Services;
 
 namespace PrimeERP.UI.ViewModels
 {
-    // كل وحدة أدناه = CategoryListViewModel بموديول-كي وصلاحية مختلفَين فقط — لا منطق إضافي.
-    // Departments/JobTitles/Units/Warehouses انتقلت لكيانات Domain مخصصة موجودة مسبقاً (أغنى من Category
-    // العام — Warehouse فيه Code/Location، Unit فيه Symbol)، راجع DepartmentsViewModel/JobTitlesViewModel/
-    // UnitsViewModel/WarehousesViewModel في ملفاتها الخاصة.
+    /// <summary>نماذج عرض CategoriesLookupViewModel</summary>
     public class CategoriesLookupViewModel : CategoryListViewModel
     {
         public CategoriesLookupViewModel(ICategoryService c, IPermissionService p, IToastService t, IDialogService d)

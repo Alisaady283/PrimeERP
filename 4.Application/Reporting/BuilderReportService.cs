@@ -1,3 +1,7 @@
+using PrimeERP.Platform.Settings;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.Platform.Localization;
+using PrimeERP.Platform.Audit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,23 +12,23 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Reporting
 {
+    /// <summary>تقرير مبنيّ</summary>
     public interface IBuilderReportService
     {
         Result<ReportData> Rows(string moduleKey, DateTime from, DateTime to);
     }
 
-    /// <summary>
-    /// تقرير مبنيّ: يقرأ جدول وحدةٍ أخرى بمداه ويُرجع ReportData — نفس شكل كل تقرير في النظام، فيمرّ
-    /// من ReportRenderer.Run بلا مسار ثانٍ.
-    /// </summary>
-    public class BuilderReportService : IBuilderReportService
+    public class BuilderReportService : ReportServiceBase, IBuilderReportService
     {
         private readonly IBuilderRepository _repo;
 
-        public BuilderReportService(IBuilderRepository repo) => _repo = repo;
+        public BuilderReportService(IBuilderRepository repo, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+            : base(permissions, settings, localization, audit) => _repo = repo;
 
         public Result<ReportData> Rows(string moduleKey, DateTime from, DateTime to)
         {
+            var gate = Gate(); if (gate != null) return gate;
+
             var module = _repo.Modules().FirstOrDefault(m => m.Key == moduleKey);
             if (module == null || string.IsNullOrWhiteSpace(module.TableName))
                 return Result.Fail<ReportData>("مصدر التقرير غير موجود", ErrorCode.NotFound);
@@ -39,7 +43,6 @@ namespace PrimeERP.Application.Reporting
             });
         }
 
-        /// <summary>المدى يُطبَّق على أول عمود تاريخ في الجدول — جدولٌ بلا تاريخ يُقرأ كاملاً.</summary>
         private static List<IDictionary<string, object>> Within(List<IDictionary<string, object>> rows,
             List<BuilderColumn> columns, DateTime from, DateTime to)
         {
@@ -51,7 +54,6 @@ namespace PrimeERP.Application.Reporting
                                 && value.Date >= from.Date && value.Date <= to.Date).ToList();
         }
 
-        /// <summary>الإجماليات من الأعمدة المُعلَن لها إجمالي في الوصف — لا حساب مكتوب هنا.</summary>
         private static Dictionary<string, string> Totals(List<IDictionary<string, object>> rows, List<BuilderColumn> columns) =>
             columns
                 .Where(c => !c.IsLine && !string.IsNullOrWhiteSpace(c.Footer) && c.Footer != "None")

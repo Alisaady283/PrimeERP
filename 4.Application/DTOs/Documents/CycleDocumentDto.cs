@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Application.DTOs.Documents
 {
+    /// <summary>بيانات مستند الدورة</summary>
     public class CycleDocumentDto
     {
         public int      Id        { get; set; }
@@ -23,7 +24,6 @@ namespace PrimeERP.Application.DTOs.Documents
 
     public class CycleDocumentLineDto
     {
-        /// <summary>معرّف السطر في قاعدة البيانات — مرجع السحب في DocumentLinks.SourceLineId.</summary>
         public int     Id          { get; set; }
         public int     LineNo      { get; set; }
         public string  ProductCode { get; set; }

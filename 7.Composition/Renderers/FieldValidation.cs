@@ -8,10 +8,7 @@ using PrimeERP.UI.Components.Inputs;
 
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>تحقّق واجهة واحد لكل الشاشات: القاعدة تُعلَن على FieldDefinition، وهذا المُقيِّم يطبّقها ويكتب
-    /// الخطأ على الحقل نفسه. لا شاشة تكتب تحققاً خاصاً بها، ولا تحقّق مكرّر لكل حوار — إضافة قاعدة جديدة
-    /// تقع هنا مرة واحدة فتسري على كل حقل يُعلنها. لا يحلّ محل تحقّق الخدمة (هو الحارس الحقيقي)، بل يمنع
-    /// وصول قيمة مكسورة أصلاً ويشرحها عند الحقل بدل رسالة عامة بعد الحفظ.</summary>
+    /// <summary>تحقّق واجهة واحد لكل الشاشات</summary>
     internal static class FieldValidation
     {
         internal static bool Validate(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> controls)
@@ -62,7 +59,6 @@ namespace PrimeERP.Composition.Renderers
         {
             if (value is not DateTime date) return $"{label} تاريخ غير صالح";
 
-            // 1/1/0001 و1/1/2001 نتيجة نصّ لم يُحلَّل، لا تاريخ قصده المستخدم.
             if (date.Year < 1900) return $"{label} تاريخ غير صالح";
             if (field.MinDate != null && date < field.MinDate) return $"{label} لا يسبق {field.MinDate:yyyy-MM-dd}";
             if (field.MaxDate != null && date > field.MaxDate) return $"{label} لا يتجاوز {field.MaxDate:yyyy-MM-dd}";

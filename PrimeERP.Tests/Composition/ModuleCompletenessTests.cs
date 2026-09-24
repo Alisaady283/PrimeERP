@@ -9,11 +9,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>
-    /// حارس اكتمال الشاشة. الشاشة التي تعمل وحدها ولا يراها النظام ناقصة، والنقص لا يُكتشف بالتصريف:
-    /// مفتاحٌ خارج الخريطة يعني شاشةً بلا شريط جانبي، **وبلا وحدة بناء، وبلا إنشاء برنامج** — وخدمةٌ
-    /// غير مسجَّلة تعني استثناءً عند أول فتح. هذه الاختبارات تُسقط البناء بدل أن ننتظر اكتشافها بالتجربة.
-    /// </summary>
+    /// <summary>حارس اكتمال الشاشة</summary>
     public class ModuleCompletenessTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -47,10 +43,6 @@ namespace PrimeERP.Tests.Composition
                 "مفاتيح في NavigationMap بلا وحدة مسجَّلة — قسمٌ يعرض فراغاً: " + string.Join(", ", dangling));
         }
 
-        /// <summary>
-        /// نموذج العرض وخدمة الحوار يُحلّان من الحاوي وقت الفتح لا وقت التصريف — فنسيان سطر التسجيل
-        /// في DependencyInjection لا يظهر إلا باستثناءٍ أمام المستخدم. يُحلّان هنا بدل ذلك.
-        /// </summary>
         [Fact]
         public void EveryDeclaredType_ResolvesFromTheContainer()
         {
@@ -70,16 +62,11 @@ namespace PrimeERP.Tests.Composition
 
         private void Resolve(string key, string role, Type type, List<string> unresolved)
         {
-            // الأنواع المفتوحة (ExpandoObject للوحدة المبنيّة) تُحلّ بمصنعها لا بالحاوي.
             if (type == null || type == typeof(System.Dynamic.ExpandoObject)) return;
 
             if (_db.Services.GetService(type) == null) unresolved.Add($"{key}: {role} ({type.Name})");
         }
 
-        /// <summary>
-        /// كل شاشةٍ تُرحّل قيداً تُتيح عكسه. حركةٌ تُرحَّل بلا سبيل لحذفها تترك الدفاتر بلا تصحيح —
-        /// وهي القاعدة التي يوثّقها ARCHITECTURE لدورة الأصول والمستندات.
-        /// </summary>
         [Fact]
         public void EveryPostingScreen_OffersDeletion()
         {
@@ -96,10 +83,6 @@ namespace PrimeERP.Tests.Composition
                 "شاشات تُرحّل قيوداً بلا زرّ حذف يعكسها: " + string.Join(", ", missing));
         }
 
-        /// <summary>
-        /// بادئة كل شاشة مغطّاة بمفاتيح فعلية. شجرة الصلاحيات تُبنى من PermissionKeys.All()، فبادئةٌ بلا
-        /// مفتاح تعني شاشةً لا تظهر في شاشة الأدوار — لا سبيل لمنحها، ولا سبب ظاهر لرفضها.
-        /// </summary>
         [Fact]
         public void EveryModulePrefix_HasPermissionKeys()
         {
@@ -117,10 +100,6 @@ namespace PrimeERP.Tests.Composition
                 + string.Join(", ", uncovered));
         }
 
-        /// <summary>
-        /// كل بوّابة إذنٍ تسألها خدمةٌ موجودةٌ فعلاً. Can اختبار عضوية صرف: مفتاحٌ غير مُعرَّف لا يُمنح
-        /// لأحد ولا يظهر في أي شاشة، فيُرفض كل فعلٍ خلفه صامتاً. هذا ما أصاب أذون الدورة الأربعة.
-        /// </summary>
         [Fact]
         public void EveryServicePermissionKey_IsDefined()
         {

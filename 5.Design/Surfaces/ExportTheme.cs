@@ -2,12 +2,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Design.Surfaces
 {
-    /// <summary>
-    /// كل قيمة بصرية تستخدمها التصديرات (Excel/CSV/PDF عبر ClosedXML وQuestPDF) — ثوابت C# صرفة لأن Excel
-    /// لا يقرأ XAML. ثابتة دائماً (لا فاتح/داكن — ورقة/ملف مُصدَّر لا "يتبدّل" مع ثيم التطبيق).
-    /// نفس المجموعات الدلالية الست الموجودة في Resources/Themes وResources/Print، بنفس القيم الفعلية
-    /// (القيم الفاتحة من Colors.xaml) — لا اختراع ألوان جديدة هنا.
-    /// </summary>
+    /// <summary>ألوان ملفات Excel/CSV/PDF</summary>
     public static class ExportTheme
     {
         public const string FontFamily     = "Arial";

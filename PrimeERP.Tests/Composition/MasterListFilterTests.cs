@@ -19,8 +19,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    // يثبت FilterDefinition/ModuleDefinition.Filters (تسجيل الأصناف) — اختيار فئة في منتقي الفلتر الجديد
-    // يكتب Filter.CategoryId ثم يُعيد التحميل، بلا أي كود خاص بالوحدة.
+    /// <summary>فلترة القائمة الرئيسية</summary>
     [Collection("WpfApplication")]
     public class MasterListFilterTests : IDisposable
     {
@@ -36,7 +35,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var categories = _db.Services.GetRequiredService<ICategoryService>();
                 var catA = categories.Create(new CreateCategoryDto { Name = "فئة أ", ModuleKey = "Products" }).Value;

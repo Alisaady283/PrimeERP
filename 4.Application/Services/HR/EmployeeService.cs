@@ -1,12 +1,12 @@
+using PrimeERP.Data.Core;
 using System.Collections.Generic;
 using PrimeERP.Application.DTOs.HR;
 using PrimeERP.Application.Services.Common;
 using PrimeERP.Application.Validation;
 using PrimeERP.Data.Repositories;
-using System.Data.Common;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Domain.Entities;
-using Db = PrimeERP.Data.Core.DbHelper;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
@@ -16,8 +16,7 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.HR
 {
-    // بنفس بنية ProductService. IsActive في الحوار/الشبكة مبسَّطة عمداً فوق Employee.Status (Active/Inactive
-    // فقط، OnLeave غير مكشوف بعد — قابل للتطوير لاحقاً بلا توسيع FieldKind الآن).
+    /// <summary>خدمة الموظفين</summary>
     public class EmployeeService : CrudServiceBase<Employee, EmployeeDto, EmployeeFilter>, IEmployeeService, IAccountLinkedService
     {
         protected override string PermissionPrefix => "HR";
@@ -25,13 +24,13 @@ namespace PrimeERP.Application.Services.HR
         protected override string EntityName => "Employees";
 
         private readonly IEmployeeRepository _employees;
-        private readonly IDepartmentRepository _departments;
-        private readonly IJobTitleRepository _jobTitles;
+        private readonly ILookupRepository<Department> _departments;
+        private readonly ILookupRepository<JobTitle> _jobTitles;
         private readonly INumberSequenceService _numbers;
         private readonly Accounting.IAccountService _accounts;
 
         public EmployeeService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IEmployeeRepository employees, IDepartmentRepository departments, IJobTitleRepository jobTitles,
+            IAuditLogger audit, IEmployeeRepository employees, ILookupRepository<Department> departments, ILookupRepository<JobTitle> jobTitles,
             INumberSequenceService numbers, Accounting.IAccountService accounts)
             : base(permissions, settings, localization, audit)
         {
@@ -63,14 +62,13 @@ namespace PrimeERP.Application.Services.HR
                 Status = dto.IsActive ? EmployeeStatus.Active : EmployeeStatus.Inactive, CreatedBy = CurrentUser
             };
 
-            var validation = new EmployeeValidator().Validate(employee);
-            if (!validation.IsValid) return Result.Fail<EmployeeDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
+            var check = Check(new EmployeeValidator(), employee);
+            if (check.IsFailure) return check.As<EmployeeDto>();
 
-            // الموظف وحساب سلفته سجلٌّ واحد بوجهين، كالعميل: يُنشآن معاً أو لا يُنشأ أيّهما.
-            var id = Db.RunTransaction((conn, tx) =>
+            var id = Tx(db =>
             {
-                employee.AccountCode = CreateAdvanceAccount(conn, tx, employee.Name);
-                return _employees.Insert(employee, conn, tx);
+                employee.AccountCode = CreateAdvanceAccount(db, employee.Name);
+                return _employees.Insert(employee, db);
             });
             employee.Id = id;
 
@@ -78,9 +76,7 @@ namespace PrimeERP.Application.Services.HR
             return Result.Ok(ToDto(employee));
         }
 
-        /// <summary>ورقةٌ باسم الموظف تحت جذر سلف الموظفين. جذرٌ غير مضبوط = بلا حساب، والموظف يُنشأ
-        /// على أي حال — فربطُ الحسابات إعدادٌ لا شرطٌ لوجود الموظف.</summary>
-        private string CreateAdvanceAccount(DbConnection conn, DbTransaction tx, string name)
+        private string CreateAdvanceAccount(PrimeDbContext db, string name)
         {
             var rootCode = Settings.Get(SettingKeys.Accounts.EmployeeAdvances, "");
             if (string.IsNullOrWhiteSpace(rootCode)) return null;
@@ -88,8 +84,7 @@ namespace PrimeERP.Application.Services.HR
             var root = _accounts.GetByCode(rootCode);
             if (!root.IsSuccess) return null;
 
-            // SkipAutoLink إلزامي: يمنع AccountService.Create من استدعاء CreateFromAccount ثانيةً (حلقة لا نهائية).
-            var created = _accounts.Create(conn, tx, new CreateAccountDto
+            var created = _accounts.Create(db, new CreateAccountDto
             { ParentId = root.Value.Id, Name = name, IsLeaf = true, SkipAutoLink = true });
 
             return created.IsSuccess ? created.Value.Code : null;
@@ -109,16 +104,14 @@ namespace PrimeERP.Application.Services.HR
             employee.Notes = dto.Notes; employee.Status = dto.IsActive ? EmployeeStatus.Active : EmployeeStatus.Inactive;
             employee.UpdatedBy = CurrentUser;
 
-            var validation = new EmployeeValidator().Validate(employee);
-            if (!validation.IsValid) return Result.Fail(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
+            var check = Check(new EmployeeValidator(), employee);
+            if (check.IsFailure) return check;
 
-            // الاسم يتبع في الاتجاهين: تعديله هنا يُعدّل حسابه، وتعديله في الشجرة يُعدّله هنا
-            // (UpdateNameFromAccount) — بلا استدعاءٍ عكسيّ من أيّهما، فلا حلقة.
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                _employees.Update(employee, conn, tx);
+                _employees.Update(employee, db);
                 if (nameChanged && !string.IsNullOrWhiteSpace(employee.AccountCode))
-                    _accounts.UpdateName(conn, tx, employee.AccountCode, employee.Name);
+                    _accounts.UpdateName(db, employee.AccountCode, employee.Name);
             });
 
             Audit.Log(EntityName, employee.Id, AuditAction.Update, newValue: new { employee.Name });
@@ -132,48 +125,42 @@ namespace PrimeERP.Application.Services.HR
             var employee = _employees.GetById(id);
             if (employee == null) return Fail("NotFound", ErrorCode.NotFound);
 
-            // الحساب يُحذف مع صاحبه. ورفضُ AccountService حذفَ حسابٍ عليه قيود يحمي السلفة القائمة:
-            // موظفٌ له رصيد سلفة لا يُحذف بلا تصفيتها أوّلاً.
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
                 if (!string.IsNullOrWhiteSpace(employee.AccountCode))
-                    _accounts.Delete(conn, tx, employee.AccountCode);
-                _employees.Delete(id, CurrentUser, conn, tx);
+                    _accounts.Delete(db, employee.AccountCode);
+                _employees.Delete(id, CurrentUser, db);
             });
 
             Audit.Log(EntityName, id, AuditAction.Delete, details: employee.Code);
             return Result.Ok();
         }
 
-        // ===================== الاتجاه المعاكس: من الشجرة إلى الموظف =====================
 
-        /// <summary>حسابٌ أُنشئ تحت جذر السلف مباشرةً ينشئ موظفه — كما ينشئ حسابُ العميل عميلَه.</summary>
-        Result IAccountLinkedService.CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name, string rootCode)
+        Result IAccountLinkedService.CreateFromAccount(PrimeDbContext db, string accountCode, string name, string rootCode)
         {
             var employee = new Employee
             {
-                Code = _numbers.Next(conn, tx, "Employee"), Name = name, AccountCode = accountCode,
+                Code = _numbers.Next(db, "Employee"), Name = name, AccountCode = accountCode,
                 HireDate = System.DateTime.Today, Status = EmployeeStatus.Active, CreatedBy = CurrentUser
             };
 
-            _employees.Insert(employee, conn, tx);
+            _employees.Insert(employee, db);
             return Result.Ok();
         }
 
-        /// <summary>تعديل اسم الحساب يتبعه اسم الموظف. بلا مزامنةٍ عكسية فلا حلقة.</summary>
-        public Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
+        public Result UpdateNameFromAccount(PrimeDbContext db, string accountCode, string name)
         {
-            _employees.UpdateNameByAccountCode(conn, tx, accountCode, name);
+            _employees.UpdateNameByAccountCode(db, accountCode, name);
             return Result.Ok();
         }
 
-        /// <summary>حذف الحساب يحذف موظفه. لا سجلّ مرتبط = لا خطأ.</summary>
-        public Result DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode)
+        public Result DeleteByAccountCode(PrimeDbContext db, string accountCode)
         {
-            var employee = _employees.GetByAccountCode(accountCode, conn, tx);
+            var employee = _employees.GetByAccountCode(accountCode, db);
             if (employee == null) return Result.Ok();
 
-            _employees.Delete(employee.Id, CurrentUser, conn, tx);
+            _employees.Delete(employee.Id, CurrentUser, db);
             return Result.Ok();
         }
 

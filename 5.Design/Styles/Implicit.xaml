@@ -2,15 +2,9 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!--
-        شبكة أمان بصرية — أنماط ضمنية (بلا x:Key) لكل عنصر WPF خام أساسي، حتى لا يظهر أي عنصر منسي
-        بلا قطعة جاهزة (App*) بمظهر Windows الافتراضي غير المصمَّم. لا تتعارض مع القطع الجاهزة القائمة:
-        أي خاصية (Background/BorderThickness...) مضبوطة محلياً صراحة داخل قطعة موجودة تبقى كما هي —
-        القيمة المحلية تفوز دائماً على Setter من نمط ضمني. Border مستثنى عمداً (لا يقبل تنميطاً ضمنياً مفيداً).
-        كل الألوان DynamicResource دائماً — التزاماً بقاعدة الوضع الداكن.
-    -->
+    <!-- أنماط ضمنية لعناصر WPF -->
 
-    <!-- ===== Window / UserControl ===== -->
+    <!-- Window / UserControl -->
 
     <Style TargetType="Window">
         <Setter Property="Background" Value="{DynamicResource SurfaceCanvas}"/>
@@ -25,19 +19,14 @@
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
     </Style>
 
-    <!-- ===== TextBlock ===== -->
+    <!-- TextBlock -->
 
-    <!--
-        عمداً بلا Foreground — Style Setter يتفوّق دائماً على الوراثة (Inherited Value) في ترتيب أولويات WPF،
-        فلو ضُبط هنا سيُسكت أي محاولة من حاوية أبعد (مثل AppSidebar بخلفية داكنة) لتوريث لون فاتح لكل نص
-        بداخلها — وهذا بالضبط ما كان يُخفي نصوص الـ Sidebar والأزرار. الخط/الحجم فقط هنا؛ اللون يُورَّث دائماً.
-    -->
     <Style TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
     </Style>
 
-    <!-- ===== TextBox ===== -->
+    <!-- TextBox -->
 
     <Style TargetType="TextBox">
         <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
@@ -72,7 +61,7 @@
         </Setter>
     </Style>
 
-    <!-- ===== ComboBox (غير قابل للتحرير — للتحرير/البحث استخدم قطعة Inputs/AppComboBox الجاهزة) ===== -->
+    <!-- ComboBox -->
 
     <Style TargetType="ComboBox">
         <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
@@ -134,9 +123,8 @@
         </Setter>
     </Style>
 
-    <!-- ===== CheckBox ===== -->
+    <!-- CheckBox -->
 
-    <!-- Foreground عمداً غائب — نص التسمية يورث من الحاوية؛ لون صندوق الصح/الحدود ثابت لأنه هوية الصندوق نفسه لا نص. -->
     <Style TargetType="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
@@ -167,9 +155,8 @@
         </Setter>
     </Style>
 
-    <!-- ===== RadioButton ===== -->
+    <!-- RadioButton -->
 
-    <!-- Foreground عمداً غائب — نفس منطق CheckBox أعلاه. -->
     <Style TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
@@ -198,7 +185,7 @@
         </Setter>
     </Style>
 
-    <!-- ===== Button ===== -->
+    <!-- Button -->
 
     <Style TargetType="Button">
         <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
@@ -232,7 +219,7 @@
         </Setter>
     </Style>
 
-    <!-- ===== DatePicker / Calendar (بلا إعادة قولبة كاملة — القطعة الجاهزة AppDatePicker هي الاستخدام المُوصى به) ===== -->
+    <!-- DatePicker -->
 
     <Style TargetType="DatePicker">
         <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
@@ -290,7 +277,7 @@
         <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
-    <!-- ===== ToolTip ===== -->
+    <!-- ToolTip -->
 
     <Style TargetType="ToolTip">
         <Setter Property="Background" Value="{DynamicResource TextPrimary}"/>
@@ -311,7 +298,7 @@
         </Setter>
     </Style>
 
-    <!-- ===== ContextMenu / MenuItem ===== -->
+    <!-- ContextMenu / MenuItem -->
 
     <Style TargetType="ContextMenu">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
@@ -333,7 +320,6 @@
         </Setter>
     </Style>
 
-    <!-- Foreground عمداً غائب — يورث من ContextMenu (يضمن خلفية فاتحة بثبات عبر نمطه الخاص). -->
     <Style TargetType="MenuItem">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
@@ -355,7 +341,7 @@
         </Setter>
     </Style>
 
-    <!-- ===== ProgressBar ===== -->
+    <!-- ProgressBar -->
 
     <Style TargetType="ProgressBar">
         <Setter Property="Background" Value="{DynamicResource SurfaceCanvas}"/>
@@ -376,7 +362,7 @@
         </Setter>
     </Style>
 
-    <!-- ===== Separator ===== -->
+    <!-- Separator -->
 
     <Style TargetType="Separator">
         <Setter Property="Background" Value="{DynamicResource OutlineDefault}"/>
@@ -384,9 +370,8 @@
         <Setter Property="Margin" Value="0,6"/>
     </Style>
 
-    <!-- ===== GroupBox ===== -->
+    <!-- GroupBox -->
 
-    <!-- Foreground عمداً غائب على مستوى الـ Style (المحتوى يورث)؛ عنوان الرأس له لونه الخاص صراحة داخل القالب أسفله. -->
     <Style TargetType="GroupBox">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
@@ -414,9 +399,8 @@
         </Setter>
     </Style>
 
-    <!-- ===== Expander ===== -->
+    <!-- Expander -->
 
-    <!-- Foreground عمداً غائب — عنوان ومحتوى Expander يورثان من الحاوية. -->
     <Style TargetType="Expander">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
@@ -468,7 +452,7 @@
         </Setter>
     </Style>
 
-    <!-- ===== TabControl / TabItem ===== -->
+    <!-- TabControl / TabItem -->
 
     <Style TargetType="TabControl">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
@@ -501,7 +485,7 @@
         </Setter>
     </Style>
 
-    <!-- ===== ListBox / ListBoxItem ===== -->
+    <!-- ListBox / ListBoxItem -->
 
     <Style TargetType="ListBox">
         <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
@@ -513,7 +497,6 @@
         <Setter Property="Padding" Value="4"/>
     </Style>
 
-    <!-- Foreground عمداً غائب — يورث من ListBox (يضمن Background+Foreground متطابقين عبر نمطه الخاص). -->
     <Style TargetType="ListBoxItem">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="Padding" Value="8,6"/>
@@ -536,7 +519,7 @@
         </Setter>
     </Style>
 
-    <!-- ===== DataGrid (خصائص أساسية فقط — القطعة الجاهزة AppDataGrid هي الاستخدام المُوصى به للجداول الحقيقية) ===== -->
+    <!-- DataGrid -->
 
     <Style TargetType="DataGrid">
         <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
@@ -554,7 +537,7 @@
         <Setter Property="CanUserAddRows" Value="False"/>
     </Style>
 
-    <!-- ===== Popup ===== -->
+    <!-- Popup -->
 
     <Style TargetType="Popup">
         <Setter Property="AllowsTransparency" Value="True"/>

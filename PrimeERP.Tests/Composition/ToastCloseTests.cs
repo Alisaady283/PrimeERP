@@ -9,6 +9,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
+    /// <summary>إغلاق التنبيه</summary>
     [Collection("WpfApplication")]
     public class ToastCloseTests : System.IDisposable
     {
@@ -20,7 +21,7 @@ namespace PrimeERP.Tests.Composition
         {
             WpfApplicationFixture.Run(() =>
             {
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var toast = new AppToast { Message = "القيد غير متوازن", Variant = "error", Duration = 0 };
 

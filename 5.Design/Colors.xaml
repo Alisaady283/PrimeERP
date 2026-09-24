@@ -1,0 +1,119 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- ألوان النظام -->
+
+    <!-- Surface -->
+    <SolidColorBrush x:Key="PageBg" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SurfaceCanvas"     Color="#EFF2F7"/>
+    <SolidColorBrush x:Key="SurfaceBackground" Color="#F7F9FC"/>
+    <SolidColorBrush x:Key="SurfaceDefault"    Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SurfaceRaised"     Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SurfaceOverlay"    Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SurfaceSunken"     Color="#EFF2F7"/>
+    <SolidColorBrush x:Key="SurfaceHeader"     Color="#F7F9FC"/>
+
+    <!-- Border -->
+    <SolidColorBrush x:Key="OutlineSubtle"  Color="#EFF2F7"/>
+    <SolidColorBrush x:Key="OutlineDefault" Color="#E1E6EF"/>
+    <SolidColorBrush x:Key="OutlineStrong"  Color="#CBD3E0"/>
+    <SolidColorBrush x:Key="OutlineFocus"   Color="#0F2442"/>
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="TextPrimary"   Color="#1B2233"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#4E5975"/>
+    <SolidColorBrush x:Key="TextTertiary"  Color="#6B7794"/>
+    <SolidColorBrush x:Key="TextMuted"     Color="#98A3B8"/>
+    <SolidColorBrush x:Key="TextOnBrand"   Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TextLink"      Color="#0F2442"/>
+
+    <!-- Brand -->
+    <SolidColorBrush x:Key="BrandDefault"    Color="#0F2442"/>
+    <SolidColorBrush x:Key="BrandHover"      Color="#0C1D36"/>
+    <SolidColorBrush x:Key="BrandActive"     Color="#09172A"/>
+    <SolidColorBrush x:Key="BrandSoft"       Color="#ECF0F6"/>
+    <SolidColorBrush x:Key="BrandSoftBorder" Color="#A9BDD6"/>
+    <SolidColorBrush x:Key="BrandSoftText"   Color="#0C1D36"/>
+
+    <!-- Grid -->
+    <SolidColorBrush x:Key="GridHeaderBg" Color="#EFF2F7"/>  
+    <SolidColorBrush x:Key="GridHeaderFg" Color="#1B2233"/>
+    <SolidColorBrush x:Key="GridRowAltBg" Color="#F7F9FC"/>  
+
+    <SolidColorBrush x:Key="TreeFolder" Color="#E9B949"/>
+    <SolidColorBrush x:Key="LoginBg" Color="#F7F7F7"/>
+    <SolidColorBrush x:Key="ToolbarBg" Color="#FFFFFF"/>  
+
+    <!-- Status -->
+    <SolidColorBrush x:Key="Success"         Color="#277F55"/>
+    <SolidColorBrush x:Key="SuccessHover"    Color="#1E6544"/>
+    <SolidColorBrush x:Key="SuccessSoft"     Color="#EDF6F0"/>
+    <SolidColorBrush x:Key="SuccessSoftText" Color="#1E6544"/>
+
+    <SolidColorBrush x:Key="Danger"         Color="#B03E34"/>
+    <SolidColorBrush x:Key="DangerHover"    Color="#8F312A"/>
+    <SolidColorBrush x:Key="DangerSoft"     Color="#FCEFEE"/>
+    <SolidColorBrush x:Key="DangerSoftText" Color="#8F312A"/>
+
+    <SolidColorBrush x:Key="Warning"         Color="#B07817"/>
+    <SolidColorBrush x:Key="WarningHover"    Color="#8D5F12"/>
+    <SolidColorBrush x:Key="WarningSoft"     Color="#FDF5E9"/>
+    <SolidColorBrush x:Key="WarningSoftText" Color="#8D5F12"/>
+
+    <SolidColorBrush x:Key="Info"         Color="#3A66A0"/>
+    <SolidColorBrush x:Key="InfoHover"    Color="#2F5382"/>
+    <SolidColorBrush x:Key="InfoSoft"     Color="#EEF3FA"/>
+    <SolidColorBrush x:Key="InfoSoftText" Color="#2F5382"/>
+
+    <!-- Nav -->
+    <SolidColorBrush x:Key="NavSurface"       Color="#F7F9FC"/>  
+    <SolidColorBrush x:Key="NavSurfaceRaised" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="NavText"          Color="#3A445C"/>
+    <SolidColorBrush x:Key="NavTextHover"     Color="#0F2442"/>
+    <SolidColorBrush x:Key="NavTextSelected"  Color="#0F2442"/>
+    <SolidColorBrush x:Key="NavIcon"          Color="#6B7794"/>
+    <SolidColorBrush x:Key="NavIconHover"     Color="#0F2442"/>
+    <SolidColorBrush x:Key="NavIconSelected"  Color="#0F2442"/>
+    <SolidColorBrush x:Key="NavHover"         Color="#EFF2F7"/>
+    <SolidColorBrush x:Key="NavSelected"      Color="#ECF0F6"/>
+    <SolidColorBrush x:Key="NavSelectedBar"   Color="#0F2442"/>
+    <SolidColorBrush x:Key="NavSectionLabel"  Color="#4E5975"/>
+    <SolidColorBrush x:Key="NavDivider"       Color="#1E3D64"/>
+
+    <!-- TopBar -->
+    <SolidColorBrush x:Key="TopBarSurface"   Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TopBarBorder"    Color="#E1E6EF"/>
+    <SolidColorBrush x:Key="TopBarText"      Color="#1B2233"/>
+    <SolidColorBrush x:Key="TopBarIcon"      Color="#4E5975"/>
+    <SolidColorBrush x:Key="TopBarIconHover" Color="#0F2442"/>
+
+    <!-- Table -->
+    <SolidColorBrush x:Key="TableHeaderBg"        Color="#0F2442"/>
+    <SolidColorBrush x:Key="TableHeaderText"      Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TableHeaderBorder"    Color="#0C1D36"/>
+    <SolidColorBrush x:Key="TableRowHover"        Color="#ECF0F6"/>
+    <SolidColorBrush x:Key="TableRowSelected"     Color="#D4DEEB"/>
+    <SolidColorBrush x:Key="TableRowSelectedText" Color="#1B2233"/>
+    <SolidColorBrush x:Key="TableBorder"          Color="#EFF2F7"/>
+    <SolidColorBrush x:Key="TableFooterBg"        Color="#EFF2F7"/>
+
+    <!-- Interaction -->
+    <SolidColorBrush x:Key="StateHoverOverlay"   Color="#1B2233" Opacity="0.04"/>
+    <SolidColorBrush x:Key="StatePressedOverlay" Color="#1B2233" Opacity="0.08"/>
+    <sys:Double x:Key="StateDisabledOpacity">0.45</sys:Double>
+    <SolidColorBrush x:Key="StateSelectedBg" Color="#D4DEEB"/>
+    <SolidColorBrush x:Key="FocusRing"       Color="#0F2442"/>
+    <sys:Double x:Key="FocusRingWidth">2</sys:Double>
+
+    <!-- Shadow -->
+    <DropShadowEffect x:Key="ShadowSm" BlurRadius="{DynamicResource P.Shadow.Sm.Blur}" ShadowDepth="{DynamicResource P.Shadow.Sm.Depth}" Opacity="{DynamicResource P.Shadow.Sm.Opacity}" Color="#1B2233" Direction="270"/>
+    <DropShadowEffect x:Key="ShadowMd" BlurRadius="{DynamicResource P.Shadow.Md.Blur}" ShadowDepth="{DynamicResource P.Shadow.Md.Depth}" Opacity="{DynamicResource P.Shadow.Md.Opacity}" Color="#1B2233" Direction="270"/>
+    <DropShadowEffect x:Key="ShadowLg" BlurRadius="{DynamicResource P.Shadow.Lg.Blur}" ShadowDepth="{DynamicResource P.Shadow.Lg.Depth}" Opacity="{DynamicResource P.Shadow.Lg.Opacity}" Color="#1B2233" Direction="270"/>
+    <DropShadowEffect x:Key="ShadowXl" BlurRadius="{DynamicResource P.Shadow.Xl.Blur}" ShadowDepth="{DynamicResource P.Shadow.Xl.Depth}" Opacity="{DynamicResource P.Shadow.Xl.Opacity}" Color="#1B2233" Direction="270"/>
+
+    <!-- Scrim -->
+    <SolidColorBrush x:Key="Scrim" Color="#000000" Opacity="0.35"/>
+
+</ResourceDictionary>

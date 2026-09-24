@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Application.DTOs.Sales
 {
+    /// <summary>بيانات فاتورة البيع</summary>
     public class SalesInvoiceDto
     {
         public int      Id           { get; set; }
@@ -61,8 +62,6 @@ namespace PrimeERP.Application.DTOs.Sales
         public int     SourceLineId { get; set; }
     }
 
-    // نوع واحد لكل من الإنشاء والتعديل مثل CreateJournalDto — Update مرفوضة دائماً هنا فعلياً (الفاتورة
-    // تُرحَّل فوراً عند الإنشاء)، Id يبقى بلا استخدام فعلي.
     public class CreateSalesInvoiceDto
     {
         public int      Id          { get; set; }

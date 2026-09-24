@@ -11,6 +11,7 @@ using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.UI.Components.Feedback
 {
+    /// <summary>حوارات وتنبيهات AppProgressDialog</summary>
     public class AppProgressDialog : AppDialogWindow
     {
         private readonly TextBlock _txtMessage;
@@ -66,7 +67,6 @@ namespace PrimeERP.UI.Components.Feedback
 
         protected override void OnEscapePressed()
         {
-            // لا يُغلق بـ ESC تلقائياً — يُترك التحكم لـ IProgressHandle.Close() أو زر الإلغاء إن وُجد
         }
     }
 }

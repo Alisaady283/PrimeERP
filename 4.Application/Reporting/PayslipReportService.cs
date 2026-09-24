@@ -1,42 +1,47 @@
+using PrimeERP.Platform.Settings;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.Platform.Localization;
+using PrimeERP.Platform.Audit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.Services.HR;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Domain.Entities;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Reporting
 {
+    /// <summary>قسيمة راتب موظف</summary>
     public interface IPayslipReportService
     {
         Result<ReportData> Payslip(int employeeId, DateTime from, DateTime to);
     }
 
-    /// <summary>
-    /// قسيمة راتب موظف: بياناته، ثم استحقاقاته، ثم استقطاعاته، ثم صافيه. تُقرأ من سطور المسير المُرحَّلة
-    /// لا تُحسب من جديد — فالمعروض هو المُرحَّل بعينه.
-    /// </summary>
-    public class PayslipReportService : IPayslipReportService
+    public class PayslipReportService : ReportServiceBase, IPayslipReportService
     {
         private readonly IPayrollRepository _payrolls;
         private readonly IEmployeeRepository _employees;
-        private readonly IDepartmentRepository _departments;
-        private readonly IJobTitleRepository _jobTitles;
+        private readonly ILookupRepository<Department> _departments;
+        private readonly ILookupRepository<JobTitle> _jobTitles;
 
         public PayslipReportService(IPayrollRepository payrolls, IEmployeeRepository employees,
-            IDepartmentRepository departments, IJobTitleRepository jobTitles)
+            ILookupRepository<Department> departments, ILookupRepository<JobTitle> jobTitles, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+        : base(permissions, settings, localization, audit)
         {
             _payrolls = payrolls; _employees = employees; _departments = departments; _jobTitles = jobTitles;
         }
 
         public Result<ReportData> Payslip(int employeeId, DateTime from, DateTime to)
         {
+            var gate = Gate(); if (gate != null) return gate;
+
             if (employeeId == 0) return Result.Fail<ReportData>("اختر موظفاً");
 
             var employee = _employees.GetById(employeeId);
             if (employee == null) return Result.Fail<ReportData>("الموظف غير موجود");
 
-            // مسيرات الفترة المُرحَّلة وحدها: المسوّدة لم تُثبَت بعد فلا قسيمة لها.
             var payrolls = _payrolls.GetPaged(1, 500, null, "PaymentDate", false).Items
                 .Where(p => p.IsPosted && p.PaymentDate >= from && p.PaymentDate <= to)
                 .ToList();
@@ -49,7 +54,6 @@ namespace PrimeERP.Application.Reporting
             if (lines.Count == 0)
                 return Result.Fail<ReportData>("لا مسير مُرحَّل لهذا الموظف في الفترة المختارة");
 
-            // سطرٌ لكل مسير، وبنودُه أعمدة — كسطر الفاتورة، فتُقرأ الفترات متجاورةً لا متتابعة.
             var rows = lines.Select(x => new PayslipRow
             {
                 PayrollNo = x.Payroll.PayrollNo,
@@ -78,7 +82,6 @@ namespace PrimeERP.Application.Reporting
                 Rows = rows,
                 Totals = new()
                 {
-                    // بيانات الموظف في ذيل التقرير ورأسه المطبوع — لا صفوفاً تُزاحم سطوره.
                     ["Employee"] = $"{employee.Name} ({employee.Code})",
                     ["Job"] = string.Join(" — ", new[] { department, jobTitle }.Where(v => !string.IsNullOrWhiteSpace(v))),
                     ["Gross"] = $"الاستحقاقات: {rows.Sum(r => r.Gross):N2}",

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Application.DTOs.Common
 {
+    /// <summary>بيانات الترخيص</summary>
     public class LicenseDto
     {
         public int      Id           { get; set; }
@@ -15,7 +16,7 @@ namespace PrimeERP.Application.DTOs.Common
         public DateTime CreatedAt    { get; set; }
     }
 
-    /// <summary>طلب سريال: اسم العميل وموقعه، وما اختير له من صفحات.</summary>
+    /// <summary>طلب سريال</summary>
     public class CreateLicenseDto
     {
         public string CustomerName { get; set; }

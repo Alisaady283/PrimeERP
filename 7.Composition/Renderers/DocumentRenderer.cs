@@ -20,13 +20,9 @@ using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.Composition.Renderers
 {
-    // محرر مستند رأس+سطور عام (قيد يومية اليوم، فواتير لاحقاً) — يعيد استخدام بناء/تعبئة/قراءة حقول
-    // DialogRenderer للرأس، ويبني شبكة سطور متكررة (إضافة/حذف صف) بنفس آلية FieldKind لكل عمود. لا رصيد
-    // حيّ في الواجهة عمداً — الخادم (JournalValidator) يرفض القيد غير المتوازن برسالة واضحة عند الحفظ.
+    /// <summary>تصيير محرّر المستند</summary>
     public static class DocumentRenderer
     {
-        // سطر واحد في شبكة السطور — Link غير فارغ يعني أن السطر جاء بسحب من مستند آخر، فتُنسَخ حقوله
-        // الأربعة على DTO السطر عند الحفظ فيسجّل الرابط في DocumentLinks.
         internal class EditorRow
         {
             public Grid Row;
@@ -42,21 +38,15 @@ namespace PrimeERP.Composition.Renderers
             public object EditItem;
             public bool IsEdit;
 
-            /// <summary>يضيف سطراً جاهزاً للشبكة — نافذة السحب تستهلكها.</summary>
             public Action<PullDialog.PulledLine> AddPulledRow;
 
-            /// <summary>ينسخ قيم رأس المستند المصدر (الطرف/المخزن) للحقول الفارغة في الرأس الحالي.</summary>
             public Action<Dictionary<string, object>> ApplyPulledHeader;
         }
 
-        // بناء المحرِّر مفصول عن غلافه — الحوار والصفحة يستهلكانه معاً بلا تكرار.
         internal static DocumentEditor BuildEditor(DocumentDialogDefinition def, IServiceProvider services, IToastService toast, object editItem)
         {
             bool isEdit = editItem != null;
 
-            // editItem الوارد من شبكة القائمة هو JournalEntryDto (بلا Lines) — يحتاج استبداله بالنسخة
-            // الكاملة (JournalEntryDetailDto) قبل بناء السطور. GetById(int) اتفاقية اسم/توقيع موحّدة لأي
-            // خدمة مستند تستهلك هذا المحرر.
             if (isEdit)
             {
                 var id = (int)editItem.GetType().GetProperty("Id").GetValue(editItem);
@@ -76,7 +66,6 @@ namespace PrimeERP.Composition.Renderers
             var rows = new List<EditorRow>();
             var linesHost = new StackPanel();
 
-            // الإجماليات تتبع كل تغيير: إضافة صف، حذفه، أو تعديل رقم فيه. تُسنَد بعد بناء الشريط أدناه.
             Action refreshTotals = () => { };
 
             void RemoveRow(EditorRow entry)
@@ -186,7 +175,6 @@ namespace PrimeERP.Composition.Renderers
             var addLineBtn = new Btn { Text = LocalizationService.Get("Str.AddLine"), Variant = "secondary", Size = "sm", Margin = new Thickness(0, 4, 0, 0) };
             addLineBtn.Click += (_, __) => AddRow(null);
 
-            // الرأس خارج التمرير والسطور داخله: يبقى ظاهراً مهما طال المستند بدل أن يصعد معه.
             var linesScroll = new ScrollViewer
             {
                 Content = linesHost,
@@ -221,7 +209,6 @@ namespace PrimeERP.Composition.Renderers
                 EditItem = editItem, IsEdit = isEdit
             };
 
-            // السحب فعل يسبق تعبئة السطور — مكانه أعلى النموذج لا في فوتر الحفظ.
             foreach (var pullButton in BuildPullButtons(def, services, () => editor)) pullBar.Children.Add(pullButton);
             pullBar.Visibility = pullBar.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
@@ -234,7 +221,6 @@ namespace PrimeERP.Composition.Renderers
                     var headerField = def.HeaderFields.FirstOrDefault(f => f.Key == key);
                     if (headerField == null) continue;
 
-                    // لا يُطمس اختيار قائم — السحب يملأ الفارغ فقط.
                     if (DialogRenderer.GetControlValue(control, headerField.Kind) != null) continue;
 
                     if (headerField.Kind == FieldKind.Picker)
@@ -246,7 +232,6 @@ namespace PrimeERP.Composition.Renderers
 
             editor.AddPulledRow = pulled =>
             {
-                // آخر صف فارغ (بلا صنف) يُستهلَك بدل تركه معلّقاً أسفل السطور المسحوبة.
                 var target = rows.LastOrDefault(r => IsEmptyRow(r, def)) ?? AddRow(null);
                 target.Link = pulled;
 
@@ -259,10 +244,6 @@ namespace PrimeERP.Composition.Renderers
             return editor;
         }
 
-        /// <summary>
-        /// شريط الإجماليات أسفل السطور: مجموع كل مفتاح بعنوان عموده، ويظهر الفرق بلون التحذير متى اختلّ
-        /// التوازن. يقرأ الخانات المعروضة نفسها، فما يراه المُدخِل هو ما يُرسَل للخدمة.
-        /// </summary>
         private static (FrameworkElement Bar, Action Refresh) BuildTotalsBar(DocumentDialogDefinition def, List<EditorRow> rows)
         {
             var bar = new StackPanel
@@ -312,7 +293,6 @@ namespace PrimeERP.Composition.Renderers
                 var gap = SumOf(def.LineTotals.MustBalance[0]) - SumOf(def.LineTotals.MustBalance[1]);
                 difference.Text = Math.Abs(gap).ToString("N2");
 
-                // الصفر ليس تحذيراً — اللون يفرّق بين قيدٍ متزن وآخر ينقصه مبلغ.
                 var brush = gap == 0m ? "TextSecondary" : "Danger";
                 difference.SetResourceReference(TextBlock.ForegroundProperty, brush);
                 differenceLabel.SetResourceReference(TextBlock.ForegroundProperty, brush);
@@ -321,8 +301,6 @@ namespace PrimeERP.Composition.Renderers
             return (bar, Refresh);
         }
 
-        /// <summary>يربط صافي السطر بمدخلاته: أي تغيير في الكمية أو السعر أو النِّسَب يعيد الحساب فوراً
-        /// بنفس DocumentTotals التي يرحّل بها الحفظ — فما يراه المستخدم هو ما يُخزَّن، لا معادلة ثانية.</summary>
         private static void WireLineMath(DocumentDialogDefinition def, Dictionary<string, FrameworkElement> controls)
         {
             var math = def.LineMath;
@@ -340,7 +318,6 @@ namespace PrimeERP.Composition.Renderers
             {
                 if (key == null || !controls.TryGetValue(key, out var control) || control is not AppNumericBox box) continue;
 
-                // AppNumericBox.Value خاصية اعتمادية بلا حدث عام — هذا الأسلوب القياسي للاستماع لها.
                 DependencyPropertyDescriptor.FromProperty(AppNumericBox.ValueProperty, typeof(AppNumericBox))
                     .AddValueChanged(box, (_, _) => Recalculate());
             }
@@ -348,13 +325,8 @@ namespace PrimeERP.Composition.Renderers
             Recalculate();
         }
 
-        /// <summary>
-        /// التاريخ الذي يُملأ به حقل تاريخٍ على صفٍّ جديد. تقرؤه التعبئة و IsBlankRow معاً فلا يفترقان:
-        /// قيمةٌ وضعها المُصيِّر ليست إدخالاً من المستخدم.
-        /// </summary>
         private static DateTime NewRowDate => DateTime.Today;
 
-        // فارغ = كل حقوله بلا قيمة فعلية (نص فارغ/صفر/بلا اختيار/تاريخ لم يلمسه أحد).
         private static bool IsBlankRow(EditorRow row, DocumentDialogDefinition def)
         {
             foreach (var lf in def.LineFields)
@@ -363,8 +335,6 @@ namespace PrimeERP.Composition.Renderers
                 if (value == null) continue;
                 if (value is string text && string.IsNullOrWhiteSpace(text)) continue;
                 if (value is decimal number && number == 0) continue;
-                // مستند سطوره تحمل تاريخاً (استحقاق الشيك) كان يفتح بصفّين "غير فارغين" لأن المُصيِّر ملأ
-                // تاريخهما — فيُرسَل صفٌّ لم يُلمَس وتردّ الخدمة الحفظ كله بـ"رقم الشيك مطلوب".
                 if (value is DateTime date && date == NewRowDate) continue;
                 return false;
             }
@@ -377,11 +347,6 @@ namespace PrimeERP.Composition.Renderers
             return key != null && DialogRenderer.GetControlValue(row.Controls[key], FieldKind.Picker) == null;
         }
 
-        /// <summary>
-        /// القائمة تُرجع ما تطلبه خانة الـDTO لا ما يفترضه المُصيِّر: خانة نصية تأخذ الكود ورقمية تأخذ
-        /// المُعرِّف. كان السطر يفرض "Code" على كل قائمة — وهو صحيح للصنف والحساب والموظف لأن خاناتها نصّية،
-        /// وخاطئ لقائمة الطرف في مستند الشيكات (PartyId رقم) فكان الحفظ يسقط بمحاولة تحويل كود العميل لرقم.
-        /// </summary>
         private static string PickerValueFieldOf(Type lineDtoType, LineFieldDefinition field)
         {
             if (field.Kind != FieldKind.Picker) return "Id";
@@ -405,7 +370,6 @@ namespace PrimeERP.Composition.Renderers
                 DialogRenderer.SetControlValue(control, new FieldDefinition { Key = key, LabelKey = "", Kind = field.Kind }, value);
         }
 
-        // زر لكل مصدر سحب مُعلَن على الوحدة — يقرأ حقول المطابقة من رأس المستند الحالي وقت الضغط لا وقت البناء.
         internal static List<Btn> BuildPullButtons(DocumentDialogDefinition def, IServiceProvider services, Func<DocumentEditor> current)
         {
             var permissions = services.GetRequiredService<IPermissionService>();
@@ -470,8 +434,6 @@ namespace PrimeERP.Composition.Renderers
             return window.Saved;
         }
 
-        // يقرّب لأقرب Token عرض موجود بدل رقم ثابت — النافذة الافتراضية (Sm=420) تكفي حواراً مسطّحاً فقط،
-        // صف السطور هنا أعرض بكثير (حساب+مدين+دائن+ملاحظات+زر حذف).
         private static double ComputeDialogWidth(DocumentDialogDefinition def)
         {
             var contentWidth = def.LineFields.Sum(lf => lf.Width) + 40 + 64;
@@ -505,12 +467,8 @@ namespace PrimeERP.Composition.Renderers
             int lineNo = 1;
             foreach (var row in rows)
             {
-                // المحرِّر يفتح بصفّين فارغين افتراضياً — إرسالهما للخدمة يفشل الحفظ كله برسالة "الصنف غير موجود"
-                // على صف لم يلمسه المستخدم أصلاً. الصف الفارغ يُتجاهَل، والفراغ الكامل يُرفض برسالة واضحة أدناه.
                 if (IsBlankRow(row, def)) continue;
 
-                // الإلزام على السطر كان مُعلَناً وغير مفحوص: التحقق يمرّ على الرأس وحده، فيُحفظ شيك بلا
-                // طرف ولا بنك رغم أن حقليهما مُعلَنان مطلوبان. نفس المُتحقِّق يفحص السطر الآن.
                 if (!FieldValidation.Validate(lineFieldDefs, row.Controls)) rowsValid = false;
 
                 var lineDto = Activator.CreateInstance(def.LineDtoType);
@@ -536,7 +494,6 @@ namespace PrimeERP.Composition.Renderers
 
                 linesList.Add(lineDto);
             }
-            // كل الصفوف تُفحص قبل الخروج، فيرى المستخدم كل نواقصه دفعةً لا واحداً بعد واحد.
             if (!rowsValid) return false;
             if (linesList.Count == 0) { toast.Error("المستند يحتاج سطراً واحداً على الأقل"); return false; }
 

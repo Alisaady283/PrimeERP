@@ -4,10 +4,7 @@ using PrimeERP.Composition.Definitions;
 
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>
-    /// حلّ نموذج العرض والخدمة: بالمصنع إن أُعلن، وإلا بالنوع كما كان. موضعٌ واحد يستورده كل مُصيِّر —
-    /// كانت سبعة مواضع تستدعي GetRequiredService بالنوع مباشرةً، فلا مكان لوحدةٍ لا يكفيها نوعها.
-    /// </summary>
+    /// <summary>حلّ نموذج العرض والخدمة</summary>
     internal static class Resolve
     {
         internal static object ViewModel(ModuleDefinition definition, IServiceProvider services) =>

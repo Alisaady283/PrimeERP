@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System;
 using PrimeERP.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,11 +15,11 @@ using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.DTOs.Parties;
 using Xunit;
-using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>قاعدة بيانات خاصة معزولة لكل اختبار — نفس سبب AccountServiceTests/JournalServiceTests (شجرة حسابات نظيفة، لا تسرّب حسابات/عملاء بين الاختبارات).</summary>
+    /// <summary>قاعدة بيانات خاصة معزولة لكل</summary>
     public class CustomerServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -27,7 +28,7 @@ namespace PrimeERP.Tests.Services
         private readonly ISettingsService _settings;
         private readonly INumberSequenceService _numbers;
         private readonly IAccountRepository _accountRepo;
-        private readonly ICustomerRepository _customerRepo;
+        private readonly IPartyRepository<Customer> _customerRepo;
 
         public CustomerServiceTests()
         {
@@ -38,7 +39,7 @@ namespace PrimeERP.Tests.Services
             _settings = _db.Services.GetRequiredService<ISettingsService>();
             _numbers = _db.Services.GetRequiredService<INumberSequenceService>();
             _accountRepo = _db.Services.GetRequiredService<IAccountRepository>();
-            _customerRepo = _db.Services.GetRequiredService<ICustomerRepository>();
+            _customerRepo = _db.Services.GetRequiredService<IPartyRepository<Customer>>();
         }
 
         public void Dispose() => _db.Dispose();
@@ -53,19 +54,18 @@ namespace PrimeERP.Tests.Services
         private void SeedPostedEntry(string date, params (string Code, decimal Debit, decimal Credit)[] lines)
         {
             var journal = _db.Services.GetRequiredService<IJournalRepository>();
-            var id = Db.RunTransaction((conn, tx) =>
+            var id = DbContextFactory.RunTransaction(db =>
             {
                 var entry = new JournalEntry { EntryNo = $"TEST-{Guid.NewGuid():N}", EntryDate = date, Description = "test", Source = "test" };
-                var newId = journal.InsertHeader(conn, tx, entry);
+                var newId = journal.InsertHeader(db, entry);
                 int lineNo = 1;
                 foreach (var l in lines)
-                    journal.InsertLine(conn, tx, newId, lineNo++, new JournalLine { AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit });
+                    journal.InsertLine(db, newId, lineNo++, new JournalLine { AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit });
                 return newId;
             });
             journal.SetPosted(id, true);
         }
 
-        // ===================== الربط ثنائي الاتجاه (الأهم) =====================
 
         [Fact]
         public void Create_CreatesLinkedAccount_UnderCustomersRoot()
@@ -169,7 +169,6 @@ namespace PrimeERP.Tests.Services
             Assert.Null(_customerRepo.GetById(created.Value.Id));
         }
 
-        // ===================== الأساسيات =====================
 
         [Fact]
         public void Create_WithoutCustomersAccountConfigured_Fails()
@@ -196,7 +195,6 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Create_WithLeafParentAccount_Fails()
         {
-            // خارج شجرتَي الأصول والمخزون المقفلتين — المقصود أبٌ ورقيّ لا شجرةٌ تُدار من صفحتها.
             var leafAccount = _accounts.Create(new CreateAccountDto { ParentId = _accountRepo.GetByCode("52").Id, Name = "حساب ورقي", IsLeaf = true });
             Assert.True(leafAccount.IsSuccess, leafAccount.ErrorMessage);
 
@@ -210,12 +208,6 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Create_AccountCreationFailure_RollsBackEverything()
         {
-            // تصادم كود الحساب لا يصلح لاختبار rollback: GenerateChildCodeInternal يحسب max+1 على الأبناء
-            // الحاليين فعلياً، فأي كود أُدرَج يدوياً مسبقاً يُقرأ كابن قائم ويُتجنَّب تلقائياً (لا تصادم فعلي).
-            // البديل الحقيقي: نزرع تصادماً على كود العميل نفسه — نُدرج عميلاً بنفس الكود الذي سيولّده
-            // NumberSequenceService.Next("Customer") تالياً (Peek لا يستهلك الرقم) — الحساب يُنشأ بنجاح داخل
-            // المعاملة، ثم يفشل _customerRepo.Insert بخرق قيد تفرّد Code، فيتراجع كل شيء (بما فيه الحساب
-            // الذي أُنشئ للتو في نفس المعاملة) — rollback فعلي بفشل حقيقي، لا فشل تحقق مسبق.
             var nextCode = _numbers.Peek("Customer");
             _customerRepo.Insert(new Customer { Code = nextCode, Name = "عميل موجود مسبقاً", IsActive = true });
 
@@ -228,7 +220,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(accountsBefore, _accountRepo.GetChildren("1202").Count); // الحساب الذي أُنشئ تراجع أيضاً
         }
 
-        // ===================== الائتمان =====================
 
         [Fact]
         public void CheckCreditLimit_ZeroLimit_AlwaysAllows()
@@ -261,7 +252,7 @@ namespace PrimeERP.Tests.Services
             var created = _service.Create(new CreateCustomerDto { Name = "متجاوز", CreditLimit = 100m });
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
-            Db.RunTransaction((conn, tx) => _customerRepo.SetBalance(created.Value.Id, 500m, conn, tx));
+            DbContextFactory.RunTransaction(db => _customerRepo.SetBalance(created.Value.Id, 500m, db));
 
             var reloaded = _service.GetById(created.Value.Id);
 
@@ -270,7 +261,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(StatusVariant.Danger, reloaded.Value.StatusVariant);
         }
 
-        // ===================== الأرصدة =====================
 
         [Fact]
         public void RecalculateBalance_MatchesAccountBalance()
@@ -300,7 +290,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(750m, _customerRepo.GetById(created.Value.Id).Balance);
         }
 
-        // ===================== الصلاحيات =====================
 
         [Fact]
         public void Create_WithoutPermission_Fails()

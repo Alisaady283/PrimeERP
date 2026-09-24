@@ -14,6 +14,65 @@
 
 ---
 
+## ٠) مثالٌ حقيقي — شاشة «الخزائن والبنوك» من أولها لآخرها
+
+سبعة مواضع، كلها موجودة في المستودع الآن. من يفهم هذه الشاشة يفهم كل شاشات النظام.
+
+| # | الموضع | الملف |
+|---|---|---|
+| ١ | الكيان | `3.Domain/Entities/Treasury.cs` — خصائص فقط |
+| ٢ | المستودع | `2.Data/Repositories/TreasuryRepository.cs` — يرث `RepositoryBase<T>` بـLINQ |
+| ٣ | البيانات | `4.Application/DTOs/Treasury/TreasuryDto.cs` — `Dto`/`Create`/`Update`/`Filter` |
+| ٤ | الخدمة | `4.Application/Services/Treasury/TreasuryService.cs` — المنطق والحُرّاس |
+| ٥ | نموذج العرض | `6.UI/ViewModels/TreasuriesViewModel.cs` — يرث `CrudViewModelBase` ويُعلن `PermissionPrefix` |
+| ٦ | الإعلان | `8.Modules/TreasuryRegistrations.cs:21` |
+| ٧ | الشروط الثلاثة | `NavigationMap.cs:19` · `Strings.ar.xaml:217` · `DependencyInjection.cs:162` |
+
+الإعلان نفسه — هذا ما يصير شاشةً كاملة، بلا XAML وبلا code-behind:
+
+```csharp
+registry.Register(new ModuleDefinition
+{
+    Key = "Treasuries", TitleKey = "Str.Module.Treasuries", PermissionPrefix = "Treasuries",
+    ViewModelType = typeof(TreasuriesViewModel),
+    Columns = new()
+    {
+        new() { Header = "الكود", Binding = nameof(TreasuryDto.Code), Width = 100, Align = ColumnAlign.Center },
+        new() { Header = "الرصيد", Binding = nameof(TreasuryDto.Balance), Width = 130,
+                Format = "N2", Footer = FooterAggregate.Sum },
+    },
+    Dialog = new DialogDefinition
+    {
+        TitleKey = "Str.Treasuries.Add", TitleEditKey = "Str.Treasuries.Edit", GridColumns = 2,
+        ServiceType = typeof(ITreasuryService),
+        CreateDtoType = typeof(CreateTreasuryDto), UpdateDtoType = typeof(UpdateTreasuryDto),
+        Fields = new()
+        {
+            new() { Key = nameof(CreateTreasuryDto.Kind), LabelKey = "النوع", Kind = FieldKind.Picker,
+                    PickerType = "TreasuryKind", IsRequired = true, IsReadOnlyOnEdit = true },
+            new() { Key = nameof(CreateTreasuryDto.Name), LabelKey = "الاسم", Kind = FieldKind.Text, IsRequired = true },
+        }
+    }
+});
+```
+
+وعليها تُجرى التعديلات الأربعة الشائعة — سطرٌ واحد لكلٍّ منها:
+
+| المطلوب | أين | كيف |
+|---|---|---|
+| عمود جديد | `Columns` | `new() { Header = "…", Binding = nameof(Dto.X), Width = 120 }` — والحقل موجودٌ في الـDto أولاً |
+| زرّ | `EnabledActions` | من كتالوج `ToolbarAction` — لا يُبنى زرّ جديد |
+| فلتر | `Filters` | ولا يعمل إلا إذا قرأه المستودع من `XFilter` |
+| القسم الذي تظهر فيه | `NavigationMap.Coded` | مفتاح الصفحة داخل مصفوفة قسمها |
+
+والمصنع يسبق الإعلان اليدوي: قائمةٌ بسيطة (كود/اسم/نشط) تُسجَّل بسطر واحد — `ModuleRegistrations.cs:249`:
+
+```csharp
+RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Edit", typeof(BrandsViewModel));
+```
+
+---
+
 ## ١) تقرير جديد
 
 التقرير ليس شاشة. هو **دالةٌ في خدمة** تُرجع `Result<ReportData>`، و**إعلانٌ** يصف من أين تُقرأ وبأي أعمدة تُعرَض. `ReportRenderer` يستدعيها بالانعكاس — بلا شاشة وبلا نموذج عرض.
@@ -40,7 +99,7 @@
 | # | الملف | ماذا |
 |---|---|---|
 | ١ | `3.Domain/Entities/` | كيان: خصائص فقط |
-| ٢ | `2.Data/Repositories/` | يرث `RepositoryBase<T>` · `WhereBuilder` · `OrderBuilder` · `SchemaBuilder` — SQL فقط |
+| ٢ | `2.Data/Repositories/` | يرث `RepositoryBase<T>` · `Shape` شرطاً · `By`/`DocumentOrder` ترتيباً — LINQ فقط |
 | ٣ | `4.Application/DTOs/` | `XDto` · `CreateXDto` · `UpdateXDto` · `XFilter` |
 | ٤ | `4.Application/Validation/` | `IValidator<T>` عبر `Rules.For<T>()` |
 | ٥ | `4.Application/Services/<القسم>/` | يرث `ServiceBase` ويُعلن الثلاثة |
@@ -83,12 +142,12 @@
 السلسلة كاملة وإلا ظهر الحقل ولم يُحفظ:
 
 ```
-الكيان → SchemaBuilder (عمود) → المستودع: INSERT + UPDATE + Map
+الكيان (خاصية) → المستودع إن لزم شرطٌ جديد
        → DTOs (Dto/Create/Update) → الخدمة: بناء الكيان + ToDto
        → المتحقّق إن لزم → حقل في الحوار → عمود في الشبكة → نصّان
 ```
 
-`SchemaBuilder.Create` آمنة للتكرار وتُضيف العمود الناقص، فلا مهاجرة يدوية لعمودٍ جديد.
+خاصيةٌ على الكيان تكفي: `PrimeDbContext` يُولَّد من الجداول القائمة، و`SchemaSync` يُلحق العمود الناقص عند الإقلاع — فلا مهاجرة يدوية ولا `INSERT`/`UPDATE` تُكتب.
 
 ---
 

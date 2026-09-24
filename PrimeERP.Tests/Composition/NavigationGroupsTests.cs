@@ -7,9 +7,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>الشريط الجانبي قائمة مفاتيح مكتوبة يدوياً — وحدة مسجَّلة وغائبة عنها موجودة فعلاً لكن لا
-    /// يراها المستخدم أبداً (حدث فعلاً مع الأرصدة الافتتاحية ومستندَي الشيكات). هذا الاختبار يجعل النسيان
-    /// كسراً ظاهراً لا اختفاءً صامتاً.</summary>
+    /// <summary>مفاتيح الشريط الجانبي</summary>
     public class NavigationGroupsTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();

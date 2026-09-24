@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.UI.Components.Documents
 {
-    /// <summary>تعريفات أعمدة جاهزة لأنماط المستندات القياسية — كل نمط يستخدم Presets مختلفة بلا تكرار للتصميم.</summary>
+    /// <summary>تعريفات أعمدة جاهزة لأنماط المستندات</summary>
     public static class LineColumnPresets
     {
         public static List<LineColumn> Journal() => new()

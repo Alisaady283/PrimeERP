@@ -8,10 +8,7 @@ using System.Threading.Tasks;
 
 namespace PrimeERP.Platform.Net
 {
-    /// <summary>
-    /// الموضع الوحيد الذي يلمس الشبكة في البرنامج — التفعيل والتحديث والتنزيل يمرّون به، فلا عميل HTTP
-    /// ثانٍ ولا مهلة تُضبط في موضعين.
-    /// </summary>
+    /// <summary>الموضع الوحيد الذي يلمس الشبكة</summary>
     public interface IHttpGateway
     {
         Task<(bool Ok, string Error, JsonElement Body)> PostAsync(string url, object payload, string adminToken = null);
@@ -20,7 +17,6 @@ namespace PrimeERP.Platform.Net
 
     public class HttpGateway : IHttpGateway, IDisposable
     {
-        // التنزيل يطول بطبعه، والسؤال القصير لا: مهلةٌ قصيرة له، وإلا جمّد خادمٌ لا يردّ الواجهةَ دقائق.
         private static readonly TimeSpan AskTimeout = TimeSpan.FromSeconds(20);
 
         private readonly HttpClient _client = new() { Timeout = TimeSpan.FromMinutes(30) };
@@ -37,7 +33,6 @@ namespace PrimeERP.Platform.Net
 
                 using var cancel = new System.Threading.CancellationTokenSource(AskTimeout);
 
-                // ConfigureAwait(false): المستدعي قد ينتظر النتيجة حاجزاً، والعودة لخيط الواجهة حينها تُعلِّقه.
                 using var response = await _client.SendAsync(request, cancel.Token).ConfigureAwait(false);
                 var text = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 var body = Parse(text);
@@ -56,7 +51,6 @@ namespace PrimeERP.Platform.Net
             }
         }
 
-        /// <summary>تنزيلٌ بتقدّمٍ محسوب — الحزمة مئات الميجابايت، والشريط يقرأ الطول المُعلَن.</summary>
         public async Task<(bool Ok, string Error)> DownloadAsync(string url, string targetPath, IProgress<double> progress = null)
         {
             try

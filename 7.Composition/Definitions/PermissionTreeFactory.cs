@@ -5,8 +5,7 @@ using PrimeERP.UI.Components.Tree;
 
 namespace PrimeERP.Composition.Definitions
 {
-    /// <summary>يبني شجرة الصلاحيات من PermissionKeys.All() آلياً — موديول ← إجراء. لا قائمة يدوية:
-    /// أي مفتاح جديد يظهر تلقائياً في الشاشتين.</summary>
+    /// <summary>يبني شجرة الصلاحيات من PermissionKeys</summary>
     public static class PermissionTreeFactory
     {
         private static readonly Dictionary<string, string> ModuleNames = new()
@@ -36,8 +35,6 @@ namespace PrimeERP.Composition.Definitions
             ["ManageRoles"] = "إدارة الأدوار",
         };
 
-        /// <summary>عقدة لكل موديول، وتحتها عقدة لكل مفتاح. عقدة الموديول ليست مفتاحاً بذاتها (IsCheckable=false)
-        /// لكنها تنشر حالتها لأبنائها عبر AppTreeView.ApplyState.</summary>
         public static List<TreeNodeViewModel> Build()
         {
             var groups = PermissionKeys.All()
@@ -58,7 +55,6 @@ namespace PrimeERP.Composition.Definitions
                     IsExpanded = false
                 };
 
-                // العرض أولاً: هو بوّابة القسم، فمكانه رأس القائمة لا وسطها.
                 foreach (var key in group.OrderBy(k => k.EndsWith(".View") ? 0 : 1).ThenBy(k => k))
                 {
                     moduleNode.AddChild(new TreeNodeViewModel
@@ -77,7 +73,6 @@ namespace PrimeERP.Composition.Definitions
             return roots;
         }
 
-        /// <summary>كل عقد المفاتيح (الأوراق) في الشجرة — العقد الجذرية تجميعية بلا مفتاح.</summary>
         public static IEnumerable<TreeNodeViewModel> KeyNodes(IEnumerable<TreeNodeViewModel> roots) =>
             roots.SelectMany(r => r.Children);
 

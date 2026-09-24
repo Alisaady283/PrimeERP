@@ -7,7 +7,7 @@ using PrimeERP.UI.Components.Tree;
 
 namespace PrimeERP.UI.Components.Pickers
 {
-    /// <summary>اختيار حساب من شجرة الحسابات — LeafOnly يمنع اختيار حساب له فروع (يظهر رمادياً غير قابل للنقر لا مخفياً).</summary>
+    /// <summary>اختيار حساب من شجرة الحسابات</summary>
     public class AccountPicker : PickerBase<Account>
     {
         public bool         LeafOnly   { get; set; } = true;

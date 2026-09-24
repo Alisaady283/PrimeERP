@@ -1,87 +1,75 @@
 using System;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using PrimeERP.Data.Repositories.Base;
-using PrimeERP.Data.Schema;
+using PrimeERP.Data.Core;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Data.Repositories
 {
+    /// <summary>مستودع Treasury</summary>
     public interface ITreasuryRepository
     {
-        void CreateTable();
         List<Treasury> GetAll(bool includeInactive = false);
-        Treasury GetById(int id, DbConnection conn = null, DbTransaction tx = null);
-        int Insert(Treasury t, DbConnection conn = null, DbTransaction tx = null);
-        void Update(Treasury t);
-        void Delete(int id);
-        Treasury GetByAccountCode(string accountCode, DbConnection conn = null, DbTransaction tx = null);
-        void UpdateNameByAccountCode(DbConnection conn, DbTransaction tx, string accountCode, string name);
-        void DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode);
+        Treasury GetById(int id, PrimeDbContext db = null);
+        int Insert(Treasury t, PrimeDbContext db = null);
+        void Update(Treasury t, PrimeDbContext db = null);
+        void Delete(int id, PrimeDbContext db = null);
+        Treasury GetByAccountCode(string accountCode, PrimeDbContext db = null);
+        void UpdateNameByAccountCode(PrimeDbContext db, string accountCode, string name);
+        void DeleteByAccountCode(PrimeDbContext db, string accountCode);
     }
 
     public class TreasuryRepository : RepositoryBase<Treasury>, ITreasuryRepository
     {
         protected override string TableName => "Treasuries";
 
-        public void CreateTable() =>
-            SchemaBuilder.Table("Treasuries")
-                .Id()
-                .Text("Code", 30, required: true, unique: true)
-                .Text("Name", 200, required: true)
-                .Int("Kind", nullable: false, defaultValue: 1)
-                .Text("AccountCode", 30)
-                .Text("BankName", 200)
-                .Text("AccountNumber", 60)
-                .Text("Notes")
-                .Bool("IsActive", defaultValue: true)
-                .Audit()
-                .Create();
 
         public List<Treasury> GetAll(bool includeInactive = false) =>
-            includeInactive
-                ? Query("SELECT * FROM Treasuries ORDER BY Code")
-                : Query("SELECT * FROM Treasuries WHERE IsActive = @a ORDER BY Code", null, null, ("@a", true));
+            Fetch(q => q.Where(t => includeInactive || t.IsActive).OrderBy(t => t.Code));
 
-        public override Treasury GetById(int id, DbConnection conn = null, DbTransaction tx = null) =>
-            QueryOne("SELECT * FROM Treasuries WHERE Id = @id", conn, tx, ("@id", id));
 
-        public int Insert(Treasury t, DbConnection conn = null, DbTransaction tx = null) =>
-            InsertGetId(@"INSERT INTO Treasuries (Code, Name, Kind, AccountCode, BankName, AccountNumber, Notes, IsActive)
-                          VALUES (@code, @name, @kind, @acc, @bank, @accno, @notes, @active)",
-                conn, tx, ("@code", t.Code), ("@name", t.Name), ("@kind", (int)t.Kind), ("@acc", t.AccountCode ?? ""),
-                ("@bank", t.BankName ?? ""), ("@accno", t.AccountNumber ?? ""), ("@notes", t.Notes ?? ""), ("@active", t.IsActive));
+        public Treasury GetByAccountCode(string accountCode, PrimeDbContext db = null) =>
+            One(q => q.Where(t => t.AccountCode == (accountCode ?? "")), db);
 
-        public void Update(Treasury t) =>
-            Exec(@"UPDATE Treasuries SET Name = @name, Kind = @kind, AccountCode = @acc, BankName = @bank,
-                          AccountNumber = @accno, Notes = @notes, IsActive = @active, UpdatedAt = @now WHERE Id = @id",
-                null, null, ("@name", t.Name), ("@kind", (int)t.Kind), ("@acc", t.AccountCode ?? ""), ("@bank", t.BankName ?? ""),
-                ("@accno", t.AccountNumber ?? ""), ("@notes", t.Notes ?? ""), ("@active", t.IsActive), ("@now", DateTime.Now), ("@id", t.Id));
+        public int Insert(Treasury t, PrimeDbContext db = null) => Add(t, db);
 
-        public Treasury GetByAccountCode(string accountCode, DbConnection conn = null, DbTransaction tx = null) =>
-            QueryOne("SELECT * FROM Treasuries WHERE AccountCode = @c", conn, tx, ("@c", accountCode ?? ""));
+        public void Update(Treasury t, PrimeDbContext db = null) =>
+            Edit(x => x.Id == t.Id, row =>
+            {
+                row.Name = t.Name;
+                row.Kind = t.Kind;
+                row.AccountCode = t.AccountCode ?? "";
+                row.BankName = t.BankName ?? "";
+                row.AccountNumber = t.AccountNumber ?? "";
+                row.Notes = t.Notes ?? "";
+                row.IsActive = t.IsActive;
+            }, db);
 
-        public void UpdateNameByAccountCode(DbConnection conn, DbTransaction tx, string accountCode, string name) =>
-            Exec("UPDATE Treasuries SET Name = @n WHERE AccountCode = @c", conn, tx, ("@n", name ?? ""), ("@c", accountCode ?? ""));
+        public void UpdateNameByAccountCode(PrimeDbContext db, string accountCode, string name) =>
+            Write(db =>
+            {
+                foreach (var row in Rows(db).AsTracking().Where(t => t.AccountCode == (accountCode ?? "")))
+                    row.Name = name ?? "";
+                return 0;
+            }, db);
 
-        public void DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode) =>
-            Exec("UPDATE Treasuries SET IsActive = @a WHERE AccountCode = @c", conn, tx, ("@a", false), ("@c", accountCode ?? ""));
+        public void DeleteByAccountCode(PrimeDbContext db, string accountCode) =>
+            Write(db =>
+            {
+                foreach (var row in Rows(db).AsTracking().Where(t => t.AccountCode == (accountCode ?? "")))
+                    row.IsActive = false;
+                return 0;
+            }, db);
 
-        public void Delete(int id) => Exec("UPDATE Treasuries SET IsActive = @a WHERE Id = @id", null, null, ("@a", false), ("@id", id));
-
-        protected override Treasury Map(DataRow row) => new()
-        {
-            Id            = Convert.ToInt32(row["Id"]),
-            Code          = row["Code"].ToString(),
-            Name          = row["Name"].ToString(),
-            Kind          = (TreasuryKind)Convert.ToInt32(row["Kind"]),
-            AccountCode   = row["AccountCode"] == DBNull.Value ? null : row["AccountCode"].ToString(),
-            BankName      = row["BankName"] == DBNull.Value ? null : row["BankName"].ToString(),
-            AccountNumber = row["AccountNumber"] == DBNull.Value ? null : row["AccountNumber"].ToString(),
-            Notes         = row["Notes"] == DBNull.Value ? null : row["Notes"].ToString(),
-            IsActive      = Convert.ToBoolean(row["IsActive"]),
-        };
+        public void Delete(int id, PrimeDbContext db = null) =>
+            Write(db =>
+            {
+                var row = Rows(db).AsTracking().FirstOrDefault(t => t.Id == id);
+                if (row != null) row.IsActive = false;
+                return 0;
+            }, db);
     }
 }

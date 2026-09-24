@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,16 +12,12 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Application.Services.Common
 {
-    // تخدم عدة وحدات (ModuleKey مميّز) — بلا فحص صلاحية داخلي عمداً: الاستدعاء دائماً عبر أمر مُحمي مسبقاً
-    // في طبقة الـVM/الحوار (نفس ثقة DialogRenderer بأي ServiceType آخر تستدعيه بالانعكاس).
+    /// <summary>فئات الوحدات وحساباتها</summary>
     public class CategoryService : ServiceBase, ICategoryService
     {
-        /// <summary>فئات الأصول وحدها تسكن شجرة الحسابات — الفئة تجميعيّ تحت جذر الأصول الثابتة،
-        /// وأصولها أوراقٌ تحته. بقية الوحدات (الأصناف) تصنيفٌ بلا حساب كما كانت.</summary>
         private const string LinkedModule = "AssetCategories";
 
         private readonly ICategoryRepository _repo;
@@ -64,24 +61,22 @@ namespace PrimeERP.Application.Services.Common
         {
             var category = new Category { Name = dto.Name, ParentId = dto.ParentId, ModuleKey = dto.ModuleKey, Notes = dto.Notes, IsActive = true };
 
-            var validation = new CategoryValidator(_repo).Validate(category);
-            if (!validation.IsValid) return Result.Fail<CategoryDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
+            var check = Check(new CategoryValidator(_repo), category);
+            if (check.IsFailure) return check.As<CategoryDto>();
 
-            // الحسابان والسجل في **معاملة واحدة** كما يفعل العميل: لو فشل أيّهما تراجع الكل، فلا يبقى
-            // حسابٌ يتيم في الشجرة. الاستثناء يُخرج المعاملة فتتراجع — نفس أسلوب CustomerService.Create.
             int id;
             try
             {
-                id = Db.RunTransaction((conn, tx) =>
+                id = Tx(db =>
                 {
                     if (category.ModuleKey == LinkedModule)
                     {
-                        category.AccountCode = Account(conn, tx, SettingKeys.Accounts.FixedAssets, category.Name);
+                        category.AccountCode = Account(db, SettingKeys.Accounts.FixedAssets, category.Name);
                         category.DepreciationAccountCode =
-                            Account(conn, tx, SettingKeys.Accounts.AccumulatedDepreciation, Mirror(category.Name));
+                            Account(db, SettingKeys.Accounts.AccumulatedDepreciation, Mirror(category.Name));
                     }
 
-                    return _repo.Insert(category, conn, tx);
+                    return _repo.Insert(category, db);
                 });
             }
             catch (InvalidOperationException ex)
@@ -104,21 +99,19 @@ namespace PrimeERP.Application.Services.Common
             category.Name = dto.Name;
             category.IsActive = dto.IsActive;
             category.Notes = dto.Notes;
-            // ParentId متعمَّد بلا تعديل — IsReadOnlyOnEdit في CategoryDialogFactory (لا إعادة تأصيل بعد الإنشاء).
 
             var validation = new CategoryValidator(_repo).Validate(category);
             if (!validation.IsValid) return Result.Fail(validation.Errors.Values.ToList(), ErrorCode.ValidationFailed);
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                _repo.Update(category, conn, tx);
+                _repo.Update(category, db);
 
-                // تغيير الاسم لا يضرّ ولو كانت عليها قيود — يُزامَن مع حسابَيها اتجاهاً واحداً.
                 if (!string.IsNullOrWhiteSpace(category.AccountCode))
-                    _accounts.UpdateName(conn, tx, category.AccountCode, category.Name);
+                    _accounts.UpdateName(db, category.AccountCode, category.Name);
 
                 if (!string.IsNullOrWhiteSpace(category.DepreciationAccountCode))
-                    _accounts.UpdateName(conn, tx, category.DepreciationAccountCode, Mirror(category.Name));
+                    _accounts.UpdateName(db, category.DepreciationAccountCode, Mirror(category.Name));
             });
 
             Audit.Log(EntityName, category.Id, AuditAction.Update, newValue: new { category.Name, category.IsActive });
@@ -131,45 +124,32 @@ namespace PrimeERP.Application.Services.Common
             if (category == null) return Result.Fail("التصنيف غير موجود", ErrorCode.NotFound);
             if (_repo.HasChildren(id)) return Result.Fail("لا يمكن حذف تصنيف له تصنيفات فرعية نشطة", ErrorCode.ValidationFailed);
 
-            // حاجز الشجرة نفسه: لا يُحذَف حساب له أبناء. الفئة أبوها الأصول، فوجود أصلٍ واحد يمنع حذفها
-            // — وهو الحاجز الذي يحمله AccountService.Delete العامّ، ومسار المالك يتخطّاه فيلزم هنا.
             if (_assets.GetPaged(1, 1, categoryId: id).Total > 0)
                 return Result.Fail(Msg("HasAssets"), ErrorCode.ValidationFailed);
 
-            // وحاجز القيود كما في العميل والمورد — على الحسابين.
             if (HasLines(category.AccountCode) || HasLines(category.DepreciationAccountCode))
                 return Result.Fail(Msg("HasTransactions"), ErrorCode.ValidationFailed);
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                _repo.Delete(id, conn, tx);
+                _repo.Delete(id, db);
 
                 if (!string.IsNullOrWhiteSpace(category.AccountCode))
-                    _accounts.Delete(conn, tx, category.AccountCode);
+                    _accounts.Delete(db, category.AccountCode);
 
                 if (!string.IsNullOrWhiteSpace(category.DepreciationAccountCode))
-                    _accounts.Delete(conn, tx, category.DepreciationAccountCode);
+                    _accounts.Delete(db, category.DepreciationAccountCode);
             });
             Audit.Log(EntityName, id, AuditAction.Delete);
             return Result.Ok();
         }
 
-        /// <summary>اسم المرآة — «مجمع» + اسم الفئة، فيُقرأ جانبا الشجرة متقابلَين.</summary>
-        /// <summary>
-        /// اسم حساب المجمّع المقابل. عامّ لأنه اصطلاح الشجرة لا تفصيلة فئة: يستورده AssetService لمجمّع
-        /// الأصل وتسويةُ الإقلاع لما سبق الربط — فاسمٌ يُكتب في أربعة مواضع يتفرّق عند أول تغيير.
-        /// </summary>
         public static string Mirror(string name) => $"مجمع {name}";
 
         private bool HasLines(string code) =>
             !string.IsNullOrWhiteSpace(code) && _journals.HasLinesForAccount(code);
 
-        /// <summary>
-        /// حساب تجميعيّ تحت الجذر المُعلَن، في معاملة المستدعي. SkipAutoLink إلزامي كما في العميل: يمنع
-        /// AccountService من محاولة إنشاء كيانٍ من الحساب فتنشأ حلقة. يرمي عند الفشل ليتراجع الكل.
-        /// </summary>
-        private string Account(System.Data.Common.DbConnection conn, System.Data.Common.DbTransaction tx,
-            string rootKey, string name)
+        private string Account(PrimeDbContext db, string rootKey, string name)
         {
             var root = Setting(rootKey, "");
             if (string.IsNullOrWhiteSpace(root)) throw new InvalidOperationException(Msg("AccountsMissing"));
@@ -177,7 +157,7 @@ namespace PrimeERP.Application.Services.Common
             var parent = _accounts.GetByCode(root);
             if (parent.IsFailure) throw new InvalidOperationException(parent.ErrorMessage);
 
-            var created = _accounts.Create(conn, tx, new DTOs.Accounting.CreateAccountDto
+            var created = _accounts.Create(db, new DTOs.Accounting.CreateAccountDto
             { ParentId = parent.Value.Id, Name = name, IsLeaf = false, SkipAutoLink = true });
 
             if (created.IsFailure) throw new InvalidOperationException(created.ErrorMessage);

@@ -14,9 +14,11 @@ using PrimeERP.UI.Components.Actions;
 using PrimeERP.UI.Components.Inputs;
 using PrimeERP.UI.Services;
 using Xunit;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Composition
 {
+    /// <summary>صفحة الإعدادات</summary>
     [Collection("WpfApplication")]
     public class SettingsPageRendererTests : System.IDisposable
     {
@@ -30,7 +32,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
                 var definition = registry.Get("Settings");

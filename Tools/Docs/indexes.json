@@ -1,0 +1,856 @@
+{
+ "AppSettings": [
+  {
+   "name": "IX_AppSettings_Key",
+   "unique": true,
+   "columns": [
+    "Key"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Accounts": [
+  {
+   "name": "IX_Accounts_ParentCode",
+   "unique": false,
+   "columns": [
+    "ParentCode"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_Accounts_Code",
+   "unique": true,
+   "columns": [
+    "Code"
+   ],
+   "origin": "c"
+  }
+ ],
+ "JournalEntries": [
+  {
+   "name": "IX_JournalEntries_EntryNo",
+   "unique": true,
+   "columns": [
+    "EntryNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "JournalEntryLines": [
+  {
+   "name": "IX_JournalEntryLines_AccountCode",
+   "unique": false,
+   "columns": [
+    "AccountCode"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_JournalEntryLines_EntryId",
+   "unique": false,
+   "columns": [
+    "EntryId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "FiscalPeriods": [
+  {
+   "name": "IX_FiscalPeriods_FiscalYearId",
+   "unique": false,
+   "columns": [
+    "FiscalYearId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "NumberSequences": [
+  {
+   "name": "IX_NumberSequences_Key",
+   "unique": true,
+   "columns": [
+    "Key"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Customers": [
+  {
+   "name": "IX_Customers_AccountCode",
+   "unique": false,
+   "columns": [
+    "AccountCode"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_Customers_Code",
+   "unique": true,
+   "columns": [
+    "Code"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Suppliers": [
+  {
+   "name": "IX_Suppliers_AccountCode",
+   "unique": false,
+   "columns": [
+    "AccountCode"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_Suppliers_Code",
+   "unique": true,
+   "columns": [
+    "Code"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Categories": [
+  {
+   "name": "IX_Categories_ParentId",
+   "unique": false,
+   "columns": [
+    "ParentId"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_Categories_ModuleKey",
+   "unique": false,
+   "columns": [
+    "ModuleKey"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Products": [
+  {
+   "name": "IX_Products_BrandId",
+   "unique": false,
+   "columns": [
+    "BrandId"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_Products_CategoryId",
+   "unique": false,
+   "columns": [
+    "CategoryId"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_Products_Code",
+   "unique": true,
+   "columns": [
+    "Code"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Assets": [
+  {
+   "name": "IX_Assets_CategoryId",
+   "unique": false,
+   "columns": [
+    "CategoryId"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_Assets_Code",
+   "unique": true,
+   "columns": [
+    "Code"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Employees": [
+  {
+   "name": "IX_Employees_DepartmentId",
+   "unique": false,
+   "columns": [
+    "DepartmentId"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_Employees_Code",
+   "unique": true,
+   "columns": [
+    "Code"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Warehouses": [
+  {
+   "name": "IX_Warehouses_Code",
+   "unique": true,
+   "columns": [
+    "Code"
+   ],
+   "origin": "c"
+  }
+ ],
+ "StockMovements": [
+  {
+   "name": "IX_StockMovements_WarehouseId",
+   "unique": false,
+   "columns": [
+    "WarehouseId"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_StockMovements_ProductId",
+   "unique": false,
+   "columns": [
+    "ProductId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "SalesInvoices": [
+  {
+   "name": "IX_SalesInvoices_CustomerId",
+   "unique": false,
+   "columns": [
+    "CustomerId"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_SalesInvoices_InvoiceNo",
+   "unique": true,
+   "columns": [
+    "InvoiceNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "SalesInvoiceLines": [
+  {
+   "name": "IX_SalesInvoiceLines_InvoiceId",
+   "unique": false,
+   "columns": [
+    "InvoiceId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "PurchaseInvoices": [
+  {
+   "name": "IX_PurchaseInvoices_SupplierId",
+   "unique": false,
+   "columns": [
+    "SupplierId"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_PurchaseInvoices_InvoiceNo",
+   "unique": true,
+   "columns": [
+    "InvoiceNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "PurchaseInvoiceLines": [
+  {
+   "name": "IX_PurchaseInvoiceLines_InvoiceId",
+   "unique": false,
+   "columns": [
+    "InvoiceId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Permissions": [
+  {
+   "name": "IX_Permissions_Key",
+   "unique": true,
+   "columns": [
+    "Key"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Roles": [
+  {
+   "name": "IX_Roles_Name",
+   "unique": true,
+   "columns": [
+    "Name"
+   ],
+   "origin": "c"
+  }
+ ],
+ "RolePermissions": [
+  {
+   "name": "IX_RolePermissions_RoleId",
+   "unique": false,
+   "columns": [
+    "RoleId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Users": [
+  {
+   "name": "IX_Users_Username",
+   "unique": true,
+   "columns": [
+    "Username"
+   ],
+   "origin": "c"
+  }
+ ],
+ "UserPermissions": [
+  {
+   "name": "IX_UserPermissions_UserId",
+   "unique": false,
+   "columns": [
+    "UserId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "__Migrations": [
+  {
+   "name": "IX___Migrations_Name",
+   "unique": true,
+   "columns": [
+    "Name"
+   ],
+   "origin": "c"
+  }
+ ],
+ "SalesReturns": [
+  {
+   "name": "IX_SalesReturns_CustomerId",
+   "unique": false,
+   "columns": [
+    "CustomerId"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_SalesReturns_ReturnNo",
+   "unique": true,
+   "columns": [
+    "ReturnNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "SalesReturnLines": [
+  {
+   "name": "IX_SalesReturnLines_ReturnId",
+   "unique": false,
+   "columns": [
+    "ReturnId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "PurchaseReturns": [
+  {
+   "name": "IX_PurchaseReturns_SupplierId",
+   "unique": false,
+   "columns": [
+    "SupplierId"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_PurchaseReturns_ReturnNo",
+   "unique": true,
+   "columns": [
+    "ReturnNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "PurchaseReturnLines": [
+  {
+   "name": "IX_PurchaseReturnLines_ReturnId",
+   "unique": false,
+   "columns": [
+    "ReturnId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "StockInDocuments": [
+  {
+   "name": "IX_StockInDocuments_DocNo",
+   "unique": true,
+   "columns": [
+    "DocNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "StockInLines": [
+  {
+   "name": "IX_StockInLines_DocumentId",
+   "unique": false,
+   "columns": [
+    "DocumentId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "StockOutDocuments": [
+  {
+   "name": "IX_StockOutDocuments_DocNo",
+   "unique": true,
+   "columns": [
+    "DocNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "StockOutLines": [
+  {
+   "name": "IX_StockOutLines_DocumentId",
+   "unique": false,
+   "columns": [
+    "DocumentId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "StockTransferDocuments": [
+  {
+   "name": "IX_StockTransferDocuments_DocNo",
+   "unique": true,
+   "columns": [
+    "DocNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "StockTransferLines": [
+  {
+   "name": "IX_StockTransferLines_DocumentId",
+   "unique": false,
+   "columns": [
+    "DocumentId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Payrolls": [
+  {
+   "name": "IX_Payrolls_PayrollNo",
+   "unique": true,
+   "columns": [
+    "PayrollNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "PayrollLines": [
+  {
+   "name": "IX_PayrollLines_PayrollId",
+   "unique": false,
+   "columns": [
+    "PayrollId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "DocumentLinks": [
+  {
+   "name": "IX_DocumentLinks_TargetId",
+   "unique": false,
+   "columns": [
+    "TargetId"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_DocumentLinks_SourceLineId",
+   "unique": false,
+   "columns": [
+    "SourceLineId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "PurchaseRequestDocuments": [
+  {
+   "name": "IX_PurchaseRequestDocuments_DocNo",
+   "unique": true,
+   "columns": [
+    "DocNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "PurchaseRequestLines": [
+  {
+   "name": "IX_PurchaseRequestLines_DocumentId",
+   "unique": false,
+   "columns": [
+    "DocumentId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "PurchaseOrderDocuments": [
+  {
+   "name": "IX_PurchaseOrderDocuments_DocNo",
+   "unique": true,
+   "columns": [
+    "DocNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "PurchaseOrderLines": [
+  {
+   "name": "IX_PurchaseOrderLines_DocumentId",
+   "unique": false,
+   "columns": [
+    "DocumentId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "QuotationDocuments": [
+  {
+   "name": "IX_QuotationDocuments_DocNo",
+   "unique": true,
+   "columns": [
+    "DocNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "QuotationLines": [
+  {
+   "name": "IX_QuotationLines_DocumentId",
+   "unique": false,
+   "columns": [
+    "DocumentId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "SalesOrderDocuments": [
+  {
+   "name": "IX_SalesOrderDocuments_DocNo",
+   "unique": true,
+   "columns": [
+    "DocNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "SalesOrderLines": [
+  {
+   "name": "IX_SalesOrderLines_DocumentId",
+   "unique": false,
+   "columns": [
+    "DocumentId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "GoodsReceiptDocuments": [
+  {
+   "name": "IX_GoodsReceiptDocuments_DocNo",
+   "unique": true,
+   "columns": [
+    "DocNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "GoodsReceiptLines": [
+  {
+   "name": "IX_GoodsReceiptLines_DocumentId",
+   "unique": false,
+   "columns": [
+    "DocumentId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "GoodsIssueDocuments": [
+  {
+   "name": "IX_GoodsIssueDocuments_DocNo",
+   "unique": true,
+   "columns": [
+    "DocNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "GoodsIssueLines": [
+  {
+   "name": "IX_GoodsIssueLines_DocumentId",
+   "unique": false,
+   "columns": [
+    "DocumentId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "DeliveryNoteDocuments": [
+  {
+   "name": "IX_DeliveryNoteDocuments_DocNo",
+   "unique": true,
+   "columns": [
+    "DocNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "DeliveryNoteLines": [
+  {
+   "name": "IX_DeliveryNoteLines_DocumentId",
+   "unique": false,
+   "columns": [
+    "DocumentId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "SalesReceiptDocuments": [
+  {
+   "name": "IX_SalesReceiptDocuments_DocNo",
+   "unique": true,
+   "columns": [
+    "DocNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "SalesReceiptLines": [
+  {
+   "name": "IX_SalesReceiptLines_DocumentId",
+   "unique": false,
+   "columns": [
+    "DocumentId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Treasuries": [
+  {
+   "name": "IX_Treasuries_Code",
+   "unique": true,
+   "columns": [
+    "Code"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Vouchers": [
+  {
+   "name": "IX_Vouchers_VoucherDate",
+   "unique": false,
+   "columns": [
+    "VoucherDate"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_Vouchers_VoucherNo",
+   "unique": true,
+   "columns": [
+    "VoucherNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "VoucherAllocations": [
+  {
+   "name": "IX_VoucherAllocations_VoucherId",
+   "unique": false,
+   "columns": [
+    "VoucherId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Cheques": [
+  {
+   "name": "IX_Cheques_Status",
+   "unique": false,
+   "columns": [
+    "Status"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_Cheques_DueDate",
+   "unique": false,
+   "columns": [
+    "DueDate"
+   ],
+   "origin": "c"
+  }
+ ],
+ "ChequeMovements": [
+  {
+   "name": "IX_ChequeMovements_ChequeId",
+   "unique": false,
+   "columns": [
+    "ChequeId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "BuilderSections": [
+  {
+   "name": "IX_BuilderSections_Key",
+   "unique": true,
+   "columns": [
+    "Key"
+   ],
+   "origin": "c"
+  }
+ ],
+ "BuilderModules": [
+  {
+   "name": "IX_BuilderModules_SectionId",
+   "unique": false,
+   "columns": [
+    "SectionId"
+   ],
+   "origin": "c"
+  },
+  {
+   "name": "IX_BuilderModules_Key",
+   "unique": true,
+   "columns": [
+    "Key"
+   ],
+   "origin": "c"
+  }
+ ],
+ "BuilderColumns": [
+  {
+   "name": "IX_BuilderColumns_ModuleId",
+   "unique": false,
+   "columns": [
+    "ModuleId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "BuilderActions": [
+  {
+   "name": "IX_BuilderActions_ModuleId",
+   "unique": false,
+   "columns": [
+    "ModuleId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "BuilderFilters": [
+  {
+   "name": "IX_BuilderFilters_ModuleId",
+   "unique": false,
+   "columns": [
+    "ModuleId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "AssetRevaluations": [
+  {
+   "name": "IX_AssetRevaluations_AssetId",
+   "unique": false,
+   "columns": [
+    "AssetId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "AssetDepreciationLines": [
+  {
+   "name": "IX_AssetDepreciationLines_RunId",
+   "unique": false,
+   "columns": [
+    "RunId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "AssetDepreciations": [
+  {
+   "name": "IX_AssetDepreciations_AssetId",
+   "unique": false,
+   "columns": [
+    "AssetId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "AssetDisposals": [
+  {
+   "name": "IX_AssetDisposals_AssetId",
+   "unique": false,
+   "columns": [
+    "AssetId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "EmployeeAllowances": [
+  {
+   "name": "IX_EmployeeAllowances_EmployeeId",
+   "unique": false,
+   "columns": [
+    "EmployeeId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "EmployeeDeductions": [
+  {
+   "name": "IX_EmployeeDeductions_EmployeeId",
+   "unique": false,
+   "columns": [
+    "EmployeeId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Attendances": [
+  {
+   "name": "IX_Attendances_EmployeeId",
+   "unique": false,
+   "columns": [
+    "EmployeeId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "Licenses": [
+  {
+   "name": "IX_Licenses_Serial",
+   "unique": true,
+   "columns": [
+    "Serial"
+   ],
+   "origin": "c"
+  }
+ ]
+}

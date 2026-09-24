@@ -3,6 +3,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
+    <!-- نصوص الواجهة — عربي -->
+
     <sys:String x:Key="Str.AppName">PrimeERP</sys:String>
 
     <sys:String x:Key="Str.Save">حفظ</sys:String>
@@ -231,7 +233,7 @@
     <sys:String x:Key="Str.Module.OpeningBalances">الأرصدة الافتتاحية</sys:String>
     <sys:String x:Key="Str.Module.Settings">الإعدادات</sys:String>
 
-    <!-- ===== وحدة البناء ===== -->
+    <!-- وحدة البناء -->
     <sys:String x:Key="Str.Builder.Sections">الأقسام</sys:String>
     <sys:String x:Key="Str.Builder.Modules">الصفحات</sys:String>
     <sys:String x:Key="Str.Builder.Columns">الأعمدة</sys:String>
@@ -468,8 +470,6 @@
     <sys:String x:Key="Str.Customer.Status.OverLimit">متجاوز الحد</sys:String>
 
     <sys:String x:Key="Str.Identity.Signature">التوقيع</sys:String>
-    <sys:String x:Key="Str.Identity.Default">افتراضي</sys:String>
-    <sys:String x:Key="Str.Identity.Corporate">مؤسسي</sys:String>
     <sys:String x:Key="Str.Identity.NotFound">حزمة هوية غير معروفة</sys:String>
 
     <sys:String x:Key="Str.Gallery.Title">معرض القطع</sys:String>
@@ -479,4 +479,30 @@
     <sys:String x:Key="Str.State.Error">خطأ</sys:String>
     <sys:String x:Key="Str.State.ReadOnly">للقراءة فقط</sys:String>
 
+    <sys:String x:Key="Str.PleaseWait">انتظر من فضلك…</sys:String>
+    <sys:String x:Key="Str.Backup.Create">إنشاء نسخة احتياطية</sys:String>
+    <sys:String x:Key="Str.Action.New">جديد</sys:String>
+    <sys:String x:Key="Str.Action.NewTip">إضافة عنصر جديد</sys:String>
+    <sys:String x:Key="Str.Action.EditTip">تعديل العنصر المحدد</sys:String>
+    <sys:String x:Key="Str.Action.DeleteTip">حذف العنصر المحدد</sys:String>
+    <sys:String x:Key="Str.Action.SaveTip">حفظ التغييرات</sys:String>
+    <sys:String x:Key="Str.Action.CancelTip">إلغاء العملية</sys:String>
+    <sys:String x:Key="Str.Action.PrintTip">طباعة</sys:String>
+    <sys:String x:Key="Str.Action.Export">تصدير</sys:String>
+    <sys:String x:Key="Str.Action.ExportTip">تصدير</sys:String>
+    <sys:String x:Key="Str.Action.Refresh">تحديث</sys:String>
+    <sys:String x:Key="Str.Action.RefreshTip">تحديث البيانات</sys:String>
+    <sys:String x:Key="Str.Action.Post">ترحيل</sys:String>
+    <sys:String x:Key="Str.Action.PostTip">ترحيل المستند</sys:String>
+    <sys:String x:Key="Str.Action.Unpost">إلغاء ترحيل</sys:String>
+    <sys:String x:Key="Str.Action.UnpostTip">إلغاء ترحيل المستند</sys:String>
+    <sys:String x:Key="Str.Action.ExpandAll">توسيع الكل</sys:String>
+    <sys:String x:Key="Str.Action.ExpandAllTip">توسيع كل العقد</sys:String>
+    <sys:String x:Key="Str.Action.CollapseAll">طي الكل</sys:String>
+    <sys:String x:Key="Str.Action.CollapseAllTip">طي كل العقد</sys:String>
+    <sys:String x:Key="Str.Action.MoveUp">لأعلى</sys:String>
+    <sys:String x:Key="Str.Action.MoveUpTip">تبديل الترتيب مع ما قبله</sys:String>
+    <sys:String x:Key="Str.Action.MoveDown">لأسفل</sys:String>
+    <sys:String x:Key="Str.Action.MoveDownTip">تبديل الترتيب مع ما بعده</sys:String>
+    <sys:String x:Key="Str.Picker.FullSearch">بحث كامل (F4)</sys:String>
 </ResourceDictionary>

@@ -6,6 +6,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Inputs
 {
+    /// <summary>حقل إدخال AppDatePicker</summary>
     public partial class AppDatePicker : UserControl
     {
         public static readonly DependencyProperty SelectedDateProperty =
@@ -48,7 +49,6 @@ namespace PrimeERP.UI.Components.Inputs
             Loaded += (_, __) => AttachTextBox();
         }
 
-        // DatePicker يبني صندوق نصّه في القالب لا في XAML — يُلتقَط بعد التحميل لإضافة سلوك الكتابة.
         private void AttachTextBox()
         {
             var box = picker.Template?.FindName("PART_TextBox", picker) as System.Windows.Controls.Primitives.DatePickerTextBox;
@@ -61,8 +61,6 @@ namespace PrimeERP.UI.Components.Inputs
 
         private System.Windows.Controls.Primitives.DatePickerTextBox _textBox;
 
-        /// <summary>كتابة 05072026 تُنتج 05/07/2026: الفاصل يُدرَج تلقائياً بعد كل رقمين، فلا يضطر المستخدم
-        /// لكتابته ولا يقع في صيغة يرفضها المحلّل فتُقرأ 1/1/0001.</summary>
         private void TextBox_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
         {
             if (e.Text.Length != 1 || !char.IsDigit(e.Text[0])) { e.Handled = true; return; }
@@ -123,7 +121,7 @@ namespace PrimeERP.UI.Components.Inputs
 
         private void ApplyEnabledVisual()
         {
-            border.Background  = IsEnabled ? (Brush)FindResource("C.Input.Bg")   : (Brush)FindResource("SurfaceSunken");
+            border.Background  = IsEnabled ? (Brush)FindResource("SurfaceDefault")   : (Brush)FindResource("SurfaceSunken");
             border.BorderBrush = IsEnabled ? (Brush)FindResource("OutlineDefault") : (Brush)FindResource("OutlineSubtle");
         }
 

@@ -3,6 +3,7 @@ using PrimeERP.Platform.Permissions;
 
 namespace PrimeERP.Application.Pipeline.Steps
 {
+    /// <summary>خطوة فحص الصلاحية</summary>
     public class PermissionStep : IStep
     {
         private readonly IPermissionService _permissions;

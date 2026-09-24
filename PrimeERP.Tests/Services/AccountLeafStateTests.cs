@@ -7,8 +7,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>الحساب إمّا أب وإمّا يقبل قيوداً — حالة مشتقّة من البيانات لا اختيار للمستخدم: أول ابن
-    /// يحوّله لأب، وحذف آخر ابن يعيده، وقيدٌ مسجَّل عليه يمنع تفريعه.</summary>
+    /// <summary>الحساب إمّا أب وإمّا يقبل</summary>
     public class AccountLeafStateTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();

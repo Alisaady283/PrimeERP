@@ -6,8 +6,7 @@ using PrimeERP.Application.Services.Print;
 
 namespace PrimeERP.UI.Services
 {
-    /// <summary>الواجهة المرئية للطباعة — PrintService يبني المستند ولا يفتح نوافذ، وهذه تفتحها. المعاينة
-    /// أولاً هي الافتراضي: DocumentViewer نفسه يحمل زر الطباعة، فلا نطبع بالخطأ قبل رؤية الورق.</summary>
+    /// <summary>الواجهة المرئية للطباعة</summary>
     public class PrintDialogHost : IPrintDialogHost
     {
         public bool ShowPrintDialog(FixedDocument document)
@@ -23,8 +22,6 @@ namespace PrimeERP.UI.Services
         {
             var viewer = new DocumentViewer { Document = document };
 
-            // المقاس من مقاس الورقة نفسها لا رقم ثابت: الفاتورة العرضيّة أوسع من التقرير الطولي، ورقم
-            // واحد لهما يقصّ الأولى أو يترك فراغاً في الثاني. والحدّ الأعلى مساحة الشاشة المتاحة.
             var page = document.DocumentPaginator.PageSize;
             var area = SystemParameters.WorkArea;
             const double Chrome = 90;
@@ -42,14 +39,13 @@ namespace PrimeERP.UI.Services
                 Owner = System.Windows.Application.Current?.MainWindow
             };
 
-            // عرض الصفحة كاملاً بلا قصّ أياً كان اتجاهها، والمستخدم يكبّر بعدها كما يشاء.
             window.Loaded += (_, _) =>
             {
                 try { viewer.FitToWidth(); }
                 catch (Exception) { /* المعاينة تبقى بمقاسها الافتراضي لو رفض العارض الملاءمة */ }
             };
 
-            // ⚠️ Show() لا ShowDialog() — ShowDialog تُعلَّق في بيئة هذا الجهاز (توقف 10، ARCHITECTURE.md).
+            // ⚠️ Show() not ShowDialog() — ARCHITECTURE § المصائد
             window.Show();
         }
     }

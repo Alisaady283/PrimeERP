@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Common;
@@ -13,14 +14,10 @@ using PrimeERP.Application.Services.Vouchers;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using Xunit;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>
-    /// المخزن والخزينة والبنك لا يقبلون سالباً. المثال الحاكم: صرفان بخمسين والموجود سبعون — الأول
-    /// يمرّ والثاني يُرفض، لأن كلاًّ منهما يقرأ الرصيد داخل معاملته فيرى أثر ما قبله ملتزماً.
-    /// </summary>
+    /// <summary>المخزن والخزينة والبنك لا يقبلون</summary>
     public class NegativeBalanceGuardTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -45,11 +42,9 @@ namespace PrimeERP.Tests.Services
         private PrimeERP.Domain.Results.Result Move(MovementType type, decimal qty)
         {
             var stock = _db.Services.GetRequiredService<IStockService>();
-            return Db.RunTransaction((conn, tx) => stock.RecordMovement(
-                conn, tx, _productId, _warehouseId, type, qty, 10, "Test", null, "T"));
+            return DbContextFactory.RunTransaction(db => stock.RecordMovement(db, _productId, _warehouseId, type, qty, 10, "Test", null, "T"));
         }
 
-        // ===================== المخزن =====================
 
         [Fact]
         public void TwoIssuesOfFifty_AgainstSeventy_LetTheFirstThroughAndRefuseTheSecond()
@@ -98,7 +93,6 @@ namespace PrimeERP.Tests.Services
             Assert.True(stock.Transfer(_productId, _warehouseId, other, 10).IsSuccess);
         }
 
-        // ===================== الخزينة والبنك =====================
 
         private int Treasury(TreasuryKind kind)
         {
@@ -130,7 +124,6 @@ namespace PrimeERP.Tests.Services
             Assert.Contains("لا يكفي", result.ErrorMessage);
         }
 
-        // ===================== الحذف والتعديل لا يُنزلان الرصيد تحت الصفر =====================
 
         private (int TreasuryId, string AccountCode) CashTreasury()
         {
@@ -154,7 +147,6 @@ namespace PrimeERP.Tests.Services
                     }
                 }).Value.Id;
 
-        /// <summary>قيدٌ يصرف من خزينةٍ فارغة يُرفض عند إنشائه — القيد يُنشأ مُرحَّلاً فيحرّك الرصيد فوراً.</summary>
         [Fact]
         public void AnEntry_ThatDrivesTheTreasuryNegative_IsRefusedOnCreation()
         {
@@ -176,7 +168,6 @@ namespace PrimeERP.Tests.Services
             Assert.Contains("لا يكفي", created.ErrorMessage);
         }
 
-        /// <summary>وافتتاحيٌّ يفعل الشيء نفسه يُرفض كذلك — يمرّ بنفس الباب.</summary>
         [Fact]
         public void AnOpeningBalance_ThatDrivesTheTreasuryNegative_IsRefused()
         {
@@ -197,7 +188,6 @@ namespace PrimeERP.Tests.Services
             Assert.False(created.IsSuccess, "افتتاحيٌّ أنزل الخزينة تحت الصفر ومرّ");
         }
 
-        /// <summary>قبض مئة ثم صرف خمسين: حذف سند القبض يُنزل الخزينة تحت الصفر، فيُرفض عند بابه.</summary>
         [Fact]
         public void DeletingAReceiptVoucher_ThatWasPartlySpent_IsRefused()
         {
@@ -221,7 +211,6 @@ namespace PrimeERP.Tests.Services
             Assert.Contains("لا يكفي", deleted.ErrorMessage);
         }
 
-        /// <summary>الافتتاحي يُنشأ مُرحَّلاً — ومع ذلك يُعدَّل: الترحيل لم يعد يقفل ما تملكه شاشته.</summary>
         [Fact]
         public void AnOpeningBalance_IsEditable_AlthoughItIsPosted()
         {
@@ -245,7 +234,6 @@ namespace PrimeERP.Tests.Services
                 .GetByCode(treasury.AccountCode).Value.Balance);
         }
 
-        /// <summary>افتتاحي ألف ثم صرف أربعمئة: تعديلُه إلى ثلاثمئة يُنزل الخزينة تحت الصفر، فيُرفض.</summary>
         [Fact]
         public void EditingAnOpeningBalance_BelowWhatWasSpent_IsRefused()
         {

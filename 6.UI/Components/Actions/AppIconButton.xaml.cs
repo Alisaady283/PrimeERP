@@ -5,6 +5,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Actions
 {
+    /// <summary>أزرار AppIconButton</summary>
     public partial class AppIconButton : UserControl
     {
         public static readonly DependencyProperty IconProperty =

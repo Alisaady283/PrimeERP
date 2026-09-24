@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +15,11 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Application.Services.Assets
 {
+    /// <summary>بيع الأصل واستبعاده</summary>
     public interface IAssetDisposalService
     {
         Result<PagedResult<AssetDisposalDto>> GetPaged(int page, int pageSize, AssetDisposalFilter filter = null);
@@ -27,14 +29,6 @@ namespace PrimeERP.Application.Services.Assets
         Result Delete(int id);
     }
 
-    /// <summary>
-    /// بيع الأصل واستبعاده: مستندٌ كالسند يُرحّل قيده، وحذفه يعكسه ويُعيد الأصل عاملاً. الأصل لا
-    /// يُحذَف أبداً — يُعطَّل، فتبقى قيوده وتاريخه في الدفاتر ويخرج من احتساب الإهلاك (RunFor تمرّ
-    /// على النشط وحده).
-    ///
-    /// القيد يُغلق حسابَي الأصل معاً: مجمّعه مديناً بما أُهلك، وحسابه دائناً بقيمته، والخزينة مدينةً
-    /// بالثمن، والفرق ربحاً رأسمالياً دائناً أو خسارةً رأسمالية مدينة.
-    /// </summary>
     public class AssetDisposalService
         : AssetMovementServiceBase<AssetDisposal, AssetDisposalDto, AssetDisposalFilter>, IAssetDisposalService
     {
@@ -72,7 +66,6 @@ namespace PrimeERP.Application.Services.Assets
             var asset = _assets.GetById(dto.AssetId);
             if (asset == null) return Result.Fail<AssetDisposalDto>(Msg("NotFound"), ErrorCode.NotFound);
 
-            // أصلٌ بيع مرّة لا يُباع ثانية — حساباه صُفّرا، فقيدٌ ثانٍ يخلق رصيداً من العدم.
             if (_disposals.GetPaged(1, 1, assetId: dto.AssetId).Total > 0)
                 return Result.Fail<AssetDisposalDto>(Msg("AlreadyDisposed"), ErrorCode.ValidationFailed);
 
@@ -82,7 +75,6 @@ namespace PrimeERP.Application.Services.Assets
                 DisposalDate = dto.DisposalDate,
                 TreasuryId = dto.TreasuryId,
                 SalePrice = dto.SalePrice,
-                // القيمة والمجمّع من الأصل لحظة البيع لا من المستخدم.
                 AssetValue = asset.RevaluedValue > 0 ? asset.RevaluedValue : asset.PurchaseCost,
                 AccumulatedDepreciation = asset.AccumulatedDepreciation,
                 Notes = dto.Notes,
@@ -97,15 +89,15 @@ namespace PrimeERP.Application.Services.Assets
 
             try
             {
-                Db.RunTransaction((conn, tx) =>
+                Tx(db =>
                 {
-                    disposal.Id = _disposals.Insert(disposal, conn, tx);
+                    disposal.Id = _disposals.Insert(disposal, db);
 
-                    disposal.JournalEntryId = PostEntry(conn, tx, disposal.DisposalDate,
+                    disposal.JournalEntryId = PostEntry(db, disposal.DisposalDate,
                         $"{Msg("Disposal")} — {asset.Name}", lines.Value);
 
-                    _disposals.SetJournalEntryId(conn, tx, disposal.Id, disposal.JournalEntryId.Value);
-                    Activate(conn, tx, asset, false);
+                    _disposals.SetJournalEntryId(db, disposal.Id, disposal.JournalEntryId.Value);
+                    Activate(db, asset, false);
                 });
             }
             catch (InvalidOperationException ex)
@@ -119,7 +111,6 @@ namespace PrimeERP.Application.Services.Assets
             return Result.Ok(ToDto(disposal));
         }
 
-        /// <summary>التعديل حذفٌ ثم إنشاء: القيد لا يُعدَّل في مكانه — نفس ما يفعله السند.</summary>
         public Result Update(UpdateAssetDisposalDto dto)
         {
             if (!Can("Edit")) return FailDenied();
@@ -151,24 +142,18 @@ namespace PrimeERP.Application.Services.Assets
             var funds = EnsureReversible(disposal.JournalEntryId);
             if (funds.IsFailure) return funds;
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                ReverseEntry(conn, tx, disposal.JournalEntryId);
-                _disposals.Delete(disposal.Id, CurrentUser, conn, tx);
+                ReverseEntry(db, disposal.JournalEntryId);
+                _disposals.Delete(disposal.Id, CurrentUser, db);
 
-                // الأصل يعود عاملاً فيستأنف الإهلاك من حيث وقف — مجمّعه لم يُمسّ، القيد وحده عُكس.
-                Activate(conn, tx, asset, true);
+                Activate(db, asset, true);
             });
 
             Audit.Log(EntityName, id, AuditAction.Delete, details: asset.Code);
             return Result.Ok();
         }
 
-        /// <summary>
-        /// سطور قيد البيع: الخزينة مدينةً بالثمن، ومجمّع الأصل مديناً بما أُهلك (فيُقفَل)، وحساب الأصل
-        /// دائناً بقيمته (فيُقفَل)، والفرق ربحاً دائناً أو خسارةً مدينة. السطر الصفريّ يُحذَف — قيدٌ
-        /// بسطرٍ بصفر لا معنى له، وأصلٌ لم يُهلك بعد ليس له مجمّع.
-        /// </summary>
         private Result<List<CreateJournalLineDto>> Lines(Asset asset, AssetDisposal disposal)
         {
             var own = Required(asset.AccountCode, "AccountsMissing");
@@ -205,12 +190,10 @@ namespace PrimeERP.Application.Services.Assets
         private static bool Meaningful(CreateJournalLineDto line) =>
             !string.IsNullOrWhiteSpace(line.AccountCode) && (line.Debit != 0 || line.Credit != 0);
 
-        /// <summary>الاستبعاد تعطيلٌ لا حذف — فيبقى الأصل بتاريخه ويخرج من احتساب الإهلاك.</summary>
-        private void Activate(System.Data.Common.DbConnection conn, System.Data.Common.DbTransaction tx,
-            Asset asset, bool active)
+        private void Activate(PrimeDbContext db, Asset asset, bool active)
         {
             asset.IsActive = active;
-            _assets.Update(asset, conn, tx);
+            _assets.Update(asset, db);
         }
 
         protected override AssetDisposalDto ToDto(AssetDisposal d)

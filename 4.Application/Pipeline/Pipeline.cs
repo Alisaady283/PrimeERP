@@ -9,7 +9,7 @@ using PrimeERP.Platform.Permissions;
 
 namespace PrimeERP.Application.Pipeline
 {
-    /// <summary>مؤلِّف خطوات مرن للعمليات غير النمطية (Post/Unpost/CloseYear...) — للعمليات القياسية (CRUD) راجع CrudOperation في Operations/.</summary>
+    /// <summary>مؤلِّف خطوات للعمليات غير النمطية</summary>
     public class Pipeline<TOut>
     {
         private readonly List<IStep> _steps = new();
@@ -54,7 +54,7 @@ namespace PrimeERP.Application.Pipeline
         }
     }
 
-    /// <summary>يجمع الخطوات التي تُنفَّذ داخل معاملة واحدة — Before/Save/After بنفس الشكل الظاهر في Pipeline نفسه.</summary>
+    /// <summary>خطوات معاملةٍ واحدة</summary>
     public class TransactionBuilder
     {
         internal readonly List<IStep> Steps = new();

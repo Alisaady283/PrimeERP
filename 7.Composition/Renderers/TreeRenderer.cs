@@ -19,8 +19,7 @@ using PrimeERP.UI.Services;
 
 namespace PrimeERP.Composition.Renderers
 {
-    // يبني صفحة شجرة/شجرة+تفاصيل من ModuleDefinition — نفس فلسفة CrudPageRenderer، صفر XAML جديد.
-    // البحث فلترة جانب العميل عبر AppTreeView.SearchText/TreeFilterEngine — بلا استعلام خادم لكل حرف.
+    /// <summary>تصيير الشجرة</summary>
     public static class TreeRenderer
     {
         public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services)
@@ -48,7 +47,6 @@ namespace PrimeERP.Composition.Renderers
             var filterBar = new FilterBar { SearchPlaceholder = LocalizationService.Get("Str.Search") };
             filterBar.Search += (_, text) => vm.SearchText = text;
 
-            // نفس شريط فلاتر صفحة القائمة — الشجرة تستورده ولا تبني لنفسها فلتراً آخر.
             if (definition.Filters is { Count: > 0 })
                 filterBar.FiltersContent = FilterControls.Build(definition.Filters, vm, services);
 

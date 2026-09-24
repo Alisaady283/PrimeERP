@@ -2,9 +2,11 @@ using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.Services;
 using PrimeERP.Platform.Settings;
 using Xunit;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
+    /// <summary>الإعدادات</summary>
     [Collection("Database")]
     public class SettingsServiceTests
     {
@@ -56,7 +58,6 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Cache_ReflectsSetWithoutManualReload()
         {
-            // Set نفسه يُبطل الـ Cache داخلياً (Reload) — لا حاجة لاستدعاء يدوي بين Set وGet التالي.
             _service.Set("Test.Cache.Key", "first");
             Assert.Equal("first", _service.Get("Test.Cache.Key", ""));
 
@@ -72,7 +73,6 @@ namespace PrimeERP.Tests.Services
 
             _service.Reload();
 
-            // بعد Reload صراحة، القراءة التالية تُحمَّل من قاعدة البيانات من جديد ويجب أن تُرجع نفس القيمة المحفوظة.
             Assert.Equal("before", _service.Get("Test.Reload.Key", ""));
         }
 

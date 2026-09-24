@@ -15,22 +15,10 @@ using PrimeERP.Domain.Entities;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Platform.Audit;
 using AuditAction = PrimeERP.Domain.Enums.AuditAction;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Application.Services.Accounting
 {
-    /// <summary>
-    /// المالك الوحيد لمنطق السنوات/الفترات المالية — Repository تحته CRUD صرف فقط. يعتمد IJournalService عبر
-    /// Lazy&lt;T&gt; لا حقناً مباشراً — تبعية دائرية حقيقية بين الخدمتين (JournalService.BuildDto يحتاج
-    /// IFiscalPeriodService.GetPeriodFor مباشرة، وFiscalPeriodService.CloseYear يحتاج IJournalService لإنشاء/
-    /// ترحيل قيد الإقفال) — لا يمكن لحاوية DI بناء الاثنتين بحقن مباشر متبادل، فالجانب الوحيد الذي يستخدم
-    /// IJournalService خارج مسار الإقلاع (ClosePeriod/CloseYear/ReopenYear وقت التشغيل الفعلي لا وقت البناء)
-    /// يأخذ Lazy&lt;IJournalService&gt; (مُسجَّل في DependencyInjection.cs كمصنع خاص به) بدل الحقن المباشر.
-    ///
-    /// كل صلاحيات هذه الخدمة عبر PermissionKeys.Settings.* (لا "Fiscal" منفصلة في PermissionKeys.cs) —
-    /// PermissionPrefix="Settings" يطابق ذلك حرفياً. Audit.Log يستهدف جدولين مختلفين (FiscalYears/FiscalPeriods)
-    /// حسب العملية، فيُمرَّر اسم الجدول صريحاً في كل استدعاء بدل الاعتماد على EntityName الموروثة.
-    /// </summary>
+    /// <summary>المالك الوحيد لمنطق السنوات/الفترات المالية</summary>
     public class FiscalPeriodService : ServiceBase, IFiscalPeriodService
     {
         protected override string PermissionPrefix => "Settings";
@@ -50,10 +38,6 @@ namespace PrimeERP.Application.Services.Accounting
             _journal = journal;
         }
 
-        // ===================== القراءة =====================
-        // بلا تحقق صلاحية عمداً — استعلامات تُستدعى بكثرة من خدمات أخرى (JournalService.IsOpen عند كل قيد)،
-        // لا ينبغي أن تُحجب بصلاحية Fiscal منفصلة غير معرَّفة أصلاً؛ العملية الأصلية (تسجيل قيد، عرض تقرير)
-        // لها صلاحيتها الخاصة المُتحقَّق منها بالفعل. نفس منطق AccountService.CanAcceptEntries.
 
         public Result<FiscalYearDto> GetCurrentYear()
         {
@@ -75,8 +59,6 @@ namespace PrimeERP.Application.Services.Accounting
             return Result.Ok(ToPeriodDto(period));
         }
 
-        /// <summary>مفتوح افتراضياً بلا فترة معرَّفة (يسمح بتشغيل النظام قبل إعداد السنوات المالية)، إلا لو
-        /// SettingKeys.Financial.RequireFiscalPeriod=true. فترة/سنة مقفلة = مغلق دائماً بلا استثناء.</summary>
         public bool IsOpen(DateTime date)
         {
             var period = _fiscalPeriods.GetPeriodContaining(date.ToString("yyyy-MM-dd"));
@@ -108,7 +90,6 @@ namespace PrimeERP.Application.Services.Accounting
             return Result.Ok(open);
         }
 
-        // ===================== الكتابة =====================
 
         public Result<FiscalYearDto> CreateYear(DateTime start, int periodsCount = 12, string name = null)
         {
@@ -123,8 +104,6 @@ namespace PrimeERP.Application.Services.Accounting
             if (_fiscalPeriods.AnyYearOverlapping(start.ToString("yyyy-MM-dd"), end.ToString("yyyy-MM-dd"), null))
                 return Result.Fail<FiscalYearDto>(Msg("OverlappingYear"), ErrorCode.Conflict);
 
-            // عدم تطابق شهر البداية مع SettingKeys.Financial.FiscalYearStartMonth تحذير لا يمنع — يُسجَّل في
-            // تفاصيل Audit فقط، السنة تُنشأ بالتاريخ المطلوب فعلياً بلا حجب.
             var configuredStartMonth = Setting(SettingKeys.Financial.FiscalYearStartMonth, 1);
             var monthMismatch = start.Month != configuredStartMonth;
 
@@ -140,18 +119,18 @@ namespace PrimeERP.Application.Services.Accounting
 
             var isFirstYear = _fiscalPeriods.GetAllYears().Count == 0;
 
-            var yearId = Db.RunTransaction((conn, tx) =>
+            var yearId = Tx(db =>
             {
-                var id = _fiscalPeriods.InsertYear(conn, tx, new FiscalYear { Name = name, StartDate = start.ToString("yyyy-MM-dd"), EndDate = end.ToString("yyyy-MM-dd") });
+                var id = _fiscalPeriods.InsertYear(db, new FiscalYear { Name = name, StartDate = start.ToString("yyyy-MM-dd"), EndDate = end.ToString("yyyy-MM-dd") });
 
                 foreach (var p in periods)
                 {
                     p.FiscalYearId = id;
-                    _fiscalPeriods.InsertPeriod(conn, tx, p);
+                    _fiscalPeriods.InsertPeriod(db, p);
                 }
 
                 if (isFirstYear)
-                    _fiscalPeriods.SetCurrentYear(conn, tx, id);
+                    _fiscalPeriods.SetCurrentYear(db, id);
 
                 return id;
             });
@@ -176,7 +155,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (year.IsClosed)
                 return Result.Fail(Msg("YearIsClosed"), ErrorCode.ValidationFailed);
 
-            Db.RunTransaction((conn, tx) => _fiscalPeriods.SetCurrentYear(conn, tx, yearId));
+            Tx(db => _fiscalPeriods.SetCurrentYear(db, yearId));
 
             Audit.Log("FiscalYears", yearId, AuditAction.Update, details: $"تعيين {year.Name} كسنة حالية");
             return Result.Ok();
@@ -204,7 +183,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (unposted.Value > 0)
                 return Result.Fail(Msg("HasUnpostedEntries"), ErrorCode.ValidationFailed);
 
-            Db.RunTransaction((conn, tx) => _fiscalPeriods.SetPeriodClosed(conn, tx, periodId, DateTime.Now, CurrentUser));
+            Tx(db => _fiscalPeriods.SetPeriodClosed(db, periodId, DateTime.Now, CurrentUser));
 
             Audit.Log("FiscalPeriods", periodId, AuditAction.Update, details: $"إقفال الفترة {period.Name}");
             return Result.Ok();
@@ -230,7 +209,7 @@ namespace PrimeERP.Application.Services.Accounting
             if (laterClosed)
                 return Result.Fail(Msg("NextPeriodClosed"), ErrorCode.ValidationFailed);
 
-            Db.RunTransaction((conn, tx) => _fiscalPeriods.SetPeriodReopened(conn, tx, periodId));
+            Tx(db => _fiscalPeriods.SetPeriodReopened(db, periodId));
 
             Audit.Log("FiscalPeriods", periodId, AuditAction.Update, details: $"إعادة فتح الفترة {period.Name}");
             return Result.Ok();
@@ -288,21 +267,21 @@ namespace PrimeERP.Application.Services.Accounting
             int? closingEntryId;
             try
             {
-                closingEntryId = Db.RunTransaction((conn, tx) =>
+                closingEntryId = Tx(db =>
                 {
                     int? entryId = null;
 
                     if (lines.Count > 0)
                     {
-                        var createResult = _journal.Value.Create(conn, tx, dto);
+                        var createResult = _journal.Value.Create(db, dto);
                         if (!createResult.IsSuccess) throw new InvalidOperationException(createResult.ErrorMessage);
                         entryId = createResult.Value.Id;
 
-                        var postResult = _journal.Value.Post(conn, tx, entryId.Value);
+                        var postResult = _journal.Value.Post(db, entryId.Value);
                         if (!postResult.IsSuccess) throw new InvalidOperationException(postResult.ErrorMessage);
                     }
 
-                    _fiscalPeriods.SetYearClosed(conn, tx, yearId, DateTime.Now, CurrentUser, entryId);
+                    _fiscalPeriods.SetYearClosed(db, yearId, DateTime.Now, CurrentUser, entryId);
                     return entryId;
                 });
             }
@@ -328,18 +307,18 @@ namespace PrimeERP.Application.Services.Accounting
 
             try
             {
-                Db.RunTransaction((conn, tx) =>
+                Tx(db =>
                 {
                     if (year.ClosingEntryId.HasValue)
                     {
-                        var unpostResult = _journal.Value.Unpost(conn, tx, year.ClosingEntryId.Value);
+                        var unpostResult = _journal.Value.Unpost(db, year.ClosingEntryId.Value);
                         if (!unpostResult.IsSuccess) throw new InvalidOperationException(unpostResult.ErrorMessage);
 
-                        var deleteResult = _journal.Value.Delete(conn, tx, year.ClosingEntryId.Value);
+                        var deleteResult = _journal.Value.Delete(db, year.ClosingEntryId.Value);
                         if (!deleteResult.IsSuccess) throw new InvalidOperationException(deleteResult.ErrorMessage);
                     }
 
-                    _fiscalPeriods.SetYearReopened(conn, tx, yearId);
+                    _fiscalPeriods.SetYearReopened(db, yearId);
                 });
             }
             catch (InvalidOperationException ex)
@@ -360,9 +339,7 @@ namespace PrimeERP.Application.Services.Accounting
             return _journal.Value.CountUnpostedBetween(ParseDate(period.StartDate), ParseDate(period.EndDate));
         }
 
-        // ===================== أدوات داخلية =====================
 
-        /// <summary>يعكس رصيد حساب ليصفّره — رصيد دائن (سالب) يُصفَّر بسطر مدين، رصيد مدين (موجب) يُصفَّر بسطر دائن. تُستخدم لكل من الإيرادات والمصروفات معاً بلا تمييز نوع.</summary>
         private static CreateJournalLineDto ReverseLine(string accountCode, decimal balance) =>
             balance < 0
                 ? new CreateJournalLineDto { AccountCode = accountCode, Debit = -balance }

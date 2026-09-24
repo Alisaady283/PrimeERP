@@ -4,7 +4,7 @@ using PrimeERP.Domain.Entities.Common;
 
 namespace PrimeERP.Domain.Entities
 {
-    // مستند دورة بلا ترحيل ولا أثر مخزني: طلب شراء، أمر شراء، عرض سعر، أمر توريد.
+    /// <summary>كيان CycleDocument</summary>
     public class CycleDocument : BaseModel
     {
         public string   DocNo    { get; set; }

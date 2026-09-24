@@ -19,7 +19,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>قائمة الخزينة/البنك تتبع طريقة الدفع: نقداً تعرض الخزن، وتحويلاً أو شيكاً تعرض البنوك.</summary>
+    /// <summary>قائمة الخزينة/البنك تتبع طريقة الدفع</summary>
     [Collection("WpfApplication")]
     public class VoucherTreasuryPickerTests : IDisposable
     {
@@ -35,7 +35,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var accounts = _db.Services.GetRequiredService<IAccountService>();
                 var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
@@ -44,8 +44,6 @@ namespace PrimeERP.Tests.Composition
                     accounts.Create(new CreateAccountDto
                     { ParentId = accounts.GetByCode(parentCode).Value.Id, Name = name, IsLeaf = true, SkipAutoLink = true }).Value.Code;
 
-                // أسماء مميّزة: النظام يبذر «الصندوق الرئيسي» و«البنك الرئيسي» عند أول تشغيل، فاسمٌ
-                // مطابق لهما يجعل الاختبار يقيس البذرة لا ما أنشأه.
                 var cash = treasuries.Create(new CreateTreasuryDto
                 { Name = "صندوق الاختبار", IsBank = false, AccountCode = LeafUnder("1201", "صندوق"), IsActive = true });
                 var bank = treasuries.Create(new CreateTreasuryDto
@@ -83,7 +81,6 @@ namespace PrimeERP.Tests.Composition
                 Assert.True(thrown == null, thrown?.ToString());
                 Assert.NotNull(treasury);
 
-                // القائمة تحوي المبذور أيضاً — المحكّ أن نوعها يتبع طريقة الدفع، لا أن تكون سطراً واحداً.
                 void AssertShows(string present, string absent)
                 {
                     Assert.Contains(present, Names(treasury));

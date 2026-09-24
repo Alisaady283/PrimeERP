@@ -6,6 +6,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
+    /// <summary>الطباعة</summary>
     [Collection("Database")]
     public class PrintServiceTests
     {
@@ -32,10 +33,20 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Build_JournalEntryPrint_ProducesNonEmptyFixedDocument()
         {
-            // أنواع WPF (FlowDocument/Table) تفرض خيط STA — انظر StaThreadHelper.
             StaThreadHelper.Run(() =>
             {
-                var printable = PrintTemplates.JournalEntryPrint(SampleEntry());
+                var printable = PrimeERP.Composition.Print.PrintDocuments.Report(new PrimeERP.Composition.Definitions.ReportResult
+                {
+                    Title = "قيد اختباري",
+                    Columns = new() { new() { Header = "الحساب", Binding = "AccountCode", Width = 40 },
+                                      new() { Header = "مدين", Binding = "Debit", Width = 30, Format = "N2" },
+                                      new() { Header = "دائن", Binding = "Credit", Width = 30, Format = "N2" } },
+                    Rows = new List<object>
+                    {
+                        new JournalLine { AccountCode = "1204", AccountName = "الصندوق", Debit = 100m, Credit = 0m },
+                        new JournalLine { AccountCode = "41", AccountName = "إيرادات المبيعات", Debit = 0m, Credit = 100m }
+                    }
+                });
 
                 var result = _service.Build(printable);
 

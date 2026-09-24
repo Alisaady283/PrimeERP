@@ -3,6 +3,7 @@ using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Application.Validation
 {
+    /// <summary>تحقّق استبعاد الأصل</summary>
     public class AssetDisposalValidator : ValidatorBase, IValidator<AssetDisposal>
     {
         public ValidationResult Validate(AssetDisposal disposal)
@@ -13,7 +14,6 @@ namespace PrimeERP.Application.Validation
             if (disposal.TreasuryId <= 0) result.AddError("TreasuryId", "اختر الخزينة التي قُبض فيها الثمن");
             if (disposal.DisposalDate == default) result.AddError("DisposalDate", "تاريخ البيع مطلوب");
 
-            // بيعٌ بلا ثمن وارد (تبرّعٌ أو إعدام)، والسالب لا: قيدٌ بطرفٍ سالب لا معنى له.
             if (disposal.SalePrice < 0) result.AddError("SalePrice", "ثمن البيع لا يكون سالباً");
 
             return result;

@@ -6,34 +6,25 @@ using PrimeERP.UI.Components.Tree;
 
 namespace PrimeERP.Composition.Definitions
 {
-    /// <summary>شاشة شجرة قابلة للتأشير مدفوعة بمصدر (دور/مستخدم) — تُستهلك عبر TreeCheckListRenderer.</summary>
+    /// <summary>شاشة شجرة قابلة للتأشير مدفوعة</summary>
     public class TreeCheckListDefinition
     {
         public string TitleKey { get; init; }
         public string SourceLabelKey { get; init; }
         public TreeCheckMode Mode { get; init; } = TreeCheckMode.TwoState;
 
-        /// <summary>عناصر المصدر أعلى الشاشة (الأدوار أو المستخدمون).</summary>
         public Func<IServiceProvider, List<SourceOption>> SourceItems { get; init; }
 
-        /// <summary>نصٌّ يرافق المصدر المختار ويُنسخ — سريال العميل في شاشة إنشاء البرنامج. فارغ = بلا نص.</summary>
         public Func<IServiceProvider, int, string> SourceNote { get; init; }
 
-        /// <summary>يبني الشجرة بحالتها الحالية للمصدر المختار.</summary>
         public Func<IServiceProvider, int, List<TreeNodeViewModel>> BuildTree { get; init; }
 
-        /// <summary>الحفظ غير متزامن: منه ما يطول (نسخ برنامج كامل)، وخيط الواجهة لا يُحجَز.</summary>
         public Func<IServiceProvider, int, List<TreeNodeViewModel>, Task<Result>> Save { get; init; }
 
-        /// <summary>أزرار إضافية بجانب الحفظ (نسخ من دور، إعادة للموروث...).</summary>
         public List<TreeCheckListAction> Actions { get; init; } = new();
 
-        /// <summary>قواعد بين العقد (مثل: لا فعل بلا عرض، أو القسم يورّث صفحاته) — تُطبَّق بعد البناء
-        /// وبعد كل نقرة وبعد كل إجراء جماعي. موضع واحد لا ثلاثة، وإلا سرت القاعدة في مسار وسقطت في آخر.
-        /// المعامل الثاني هو العقدة التي تغيّرت — null بعد البناء والإجراءات الجماعية.</summary>
         public Action<List<TreeNodeViewModel>, TreeNodeViewModel> ApplyRules { get; init; }
 
-        /// <summary>نصّ زرّ الحفظ — بلا إعلان يبقى «حفظ».</summary>
         public string SaveTextKey { get; init; } = "Str.Save";
 
         public string PermissionKey { get; init; }
@@ -50,13 +41,10 @@ namespace PrimeERP.Composition.Definitions
         public string TextKey { get; init; }
         public string Variant { get; init; } = "secondary";
 
-        /// <summary>إجراءٌ على المصدر المختار (تأشير صلاحيات دور) — أم مستقلٌّ عنه (إنشاء عميل جديد)؟</summary>
         public bool RequiresSource { get; init; } = true;
 
-        /// <summary>إجراءٌ يطول (تنزيل، بناء) — يُنتظَر ونتيجته تُقال، كما يفعل الحفظ. فارغ = Run الفوري.</summary>
         public Func<IServiceProvider, int, List<TreeNodeViewModel>, Task<Result>> RunAsync { get; init; }
 
-        /// <summary>يستقبل (services, sourceId, nodes) ويعدّل حالات العقد مباشرة.</summary>
         public Action<IServiceProvider, int, List<TreeNodeViewModel>> Run { get; init; }
     }
 }

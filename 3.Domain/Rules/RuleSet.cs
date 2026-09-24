@@ -5,14 +5,12 @@ using PrimeERP.Domain.Contracts;
 
 namespace PrimeERP.Domain.Rules
 {
+    /// <summary>قواعد التحقق ومجموعتها</summary>
     public static class Rules
     {
         public static RuleSet<T> For<T>() => new();
     }
 
-    /// <summary>بناء تحقق مرن — يستخرج اسم الحقل من Expression بدل تكراره كنص حر في كل استدعاء (بديل تكرار
-    /// ValidatorBase اليدوي). .Custom تُغطّي أي قاعدة أعمال مركّبة (AccountingRules، تفرّد عبر Repository،
-    /// حلقات على مجموعات) لا تُختزل في فحص خاصية واحدة — راجع JournalValidator.</summary>
     public class RuleSet<T>
     {
         private readonly System.Collections.Generic.List<Action<T, ValidationResult>> _checks = new();
@@ -98,7 +96,6 @@ namespace PrimeERP.Domain.Rules
             });
         }
 
-        /// <summary>alreadyExists يُستدعى فقط لو باقي القاعدة تحتاجه فعلياً — استخدم && قصيرة الدارة داخل الدالة الممرَّرة لتفادي استعلام DB غير ضروري (راجع AccountValidator.Unique).</summary>
         public RuleSet<T> Unique(Expression<Func<T, object>> selector, Func<T, bool> alreadyExists, string label)
         {
             var (field, _) = Compile(selector);

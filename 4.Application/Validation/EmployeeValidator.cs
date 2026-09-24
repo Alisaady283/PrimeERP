@@ -3,6 +3,7 @@ using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Application.Validation
 {
+    /// <summary>تحقّق الموظف</summary>
     public class EmployeeValidator : ValidatorBase, IValidator<Employee>
     {
         public ValidationResult Validate(Employee employee)

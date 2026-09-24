@@ -1,6 +1,6 @@
+using PrimeERP.Data.Core;
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
@@ -9,17 +9,17 @@ using PrimeERP.Application.Validation;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Rules;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Application.Services.Parties
 {
-    /// <summary>المالك الوحيد لمنطق الموردين — بناء جديد كامل (لا منطق قديم يُنقل) فوق PartyServiceBase، بنفس نمط CustomerService حرفياً.</summary>
+    /// <summary>المالك الوحيد لمنطق الموردين</summary>
     public class SupplierService : PartyServiceBase<Supplier, SupplierDto, SupplierFilter>, ISupplierService
     {
         protected override string PermissionPrefix => "Suppliers";
@@ -41,14 +41,14 @@ namespace PrimeERP.Application.Services.Parties
             Code = code, Name = name, AccountCode = accountCode, IsActive = true, CreatedBy = CurrentUser
         };
 
-        private readonly ISupplierRepository _suppliers;
+        private readonly IPartyRepository<Supplier> _suppliers;
         private readonly IJournalRepository _journalRepo;
         private readonly IAccountRepository _accountRepo;
         private readonly ICategoryRepository _categories;
         private readonly PrimeERP.Application.Services.Cheques.IChequeService _cheques;
 
         public SupplierService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
-            IAccountService accounts, INumberSequenceService numbers, ISupplierRepository suppliers, IAccountRepository accountRepo,
+            IAccountService accounts, INumberSequenceService numbers, IPartyRepository<Supplier> suppliers, IAccountRepository accountRepo,
             IJournalRepository journalRepo, ICategoryRepository categories, PrimeERP.Application.Services.Cheques.IChequeService cheques)
             : base(permissions, settings, localization, audit, accounts, numbers, accountRepo)
         {
@@ -90,22 +90,21 @@ namespace PrimeERP.Application.Services.Parties
             var code = Numbers.Next(SequenceKey);
             var supplier = BuildNewSupplier(dto, code);
 
-            var validation = Validator.Validate(supplier);
-            if (!validation.IsValid)
-                return Result.Fail<SupplierDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
+            var check = Check(Validator, supplier);
+            if (check.IsFailure) return check.As<SupplierDto>();
 
             int newId;
             try
             {
-                newId = Db.RunTransaction((conn, tx) =>
+                newId = Tx(db =>
                 {
-                    var link = CreateLinkedAccount(conn, tx, parent.Value.Id, supplier.Name);
+                    var link = CreateLinkedAccount(db, parent.Value.Id, supplier.Name);
                     if (!link.IsSuccess) throw new InvalidOperationException(link.ErrorMessage);
 
                     supplier.AccountCode = link.Value;
                     supplier.CreatedBy = CurrentUser;
 
-                    return _suppliers.Insert(supplier, conn, tx);
+                    return _suppliers.Insert(supplier, db);
                 });
             }
             catch (Exception ex)
@@ -119,26 +118,24 @@ namespace PrimeERP.Application.Services.Parties
             return Result.Ok(ToDto(supplier));
         }
 
-        /// <summary>بمعاملة خارجية — يخدم مستندات F.4 (فاتورة تنشئ مورداً جديداً ضمن معاملتها). بلا تحقق صلاحية (المستدعي تحقق صلاحيته الخاصة).</summary>
-        public Result<SupplierDto> Create(DbConnection conn, DbTransaction tx, CreateSupplierDto dto)
+        public Result<SupplierDto> Create(PrimeDbContext db, CreateSupplierDto dto)
         {
-            var parent = GetParentAccount(conn, tx);
+            var parent = GetParentAccount(db);
             if (!parent.IsSuccess) return Result.Fail<SupplierDto>(parent.ErrorMessage, parent.ErrorCode);
 
-            var code = Numbers.Next(conn, tx, SequenceKey);
+            var code = Numbers.Next(db, SequenceKey);
             var supplier = BuildNewSupplier(dto, code);
 
-            var validation = Validator.Validate(supplier);
-            if (!validation.IsValid)
-                return Result.Fail<SupplierDto>(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
+            var check = Check(Validator, supplier);
+            if (check.IsFailure) return check.As<SupplierDto>();
 
-            var link = CreateLinkedAccount(conn, tx, parent.Value.Id, supplier.Name);
+            var link = CreateLinkedAccount(db, parent.Value.Id, supplier.Name);
             if (!link.IsSuccess) return Result.Fail<SupplierDto>(link.ErrorMessage, link.ErrorCode);
 
             supplier.AccountCode = link.Value;
             supplier.CreatedBy = CurrentUser;
 
-            var newId = _suppliers.Insert(supplier, conn, tx);
+            var newId = _suppliers.Insert(supplier, db);
             supplier.Id = newId;
 
             return Result.Ok(ToDto(supplier));
@@ -159,16 +156,15 @@ namespace PrimeERP.Application.Services.Parties
             supplier.PaymentTermDays = dto.PaymentTermDays; supplier.SupplierType = dto.SupplierType; supplier.Notes = dto.Notes;
             supplier.IsActive = dto.IsActive; supplier.CategoryId = dto.CategoryId; supplier.UpdatedBy = CurrentUser;
 
-            var validation = Validator.Validate(supplier);
-            if (!validation.IsValid)
-                return Result.Fail(string.Join("; ", validation.Errors.Values), ErrorCode.ValidationFailed);
+            var check = Check(Validator, supplier);
+            if (check.IsFailure) return check;
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                _suppliers.Update(supplier, conn, tx);
+                _suppliers.Update(supplier, db);
 
                 if (nameChanged && !string.IsNullOrWhiteSpace(supplier.AccountCode))
-                    Accounts.UpdateName(conn, tx, supplier.AccountCode, supplier.Name);
+                    Accounts.UpdateName(db, supplier.AccountCode, supplier.Name);
             });
 
             Audit.Log(EntityName, supplier.Id, AuditAction.Update, newValue: new { supplier.Name });
@@ -185,18 +181,17 @@ namespace PrimeERP.Application.Services.Parties
             if (!string.IsNullOrWhiteSpace(supplier.AccountCode) && _journalRepo.HasLinesForAccount(supplier.AccountCode))
                 return Fail("HasTransactions", ErrorCode.ValidationFailed);
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                _suppliers.Delete(id, CurrentUser, conn, tx);
+                _suppliers.Delete(id, CurrentUser, db);
                 if (!string.IsNullOrWhiteSpace(supplier.AccountCode))
-                    Accounts.Delete(conn, tx, supplier.AccountCode);
+                    Accounts.Delete(db, supplier.AccountCode);
             });
 
             Audit.Log(EntityName, id, AuditAction.Delete, details: supplier.Code);
             return Result.Ok();
         }
 
-        // RecalculateBalance/RecalculateAllBalances/CheckCreditLimit جاهزة من PartyServiceBase.
 
         private static Supplier BuildNewSupplier(CreateSupplierDto dto, string code) => new()
         {
@@ -221,7 +216,7 @@ namespace PrimeERP.Application.Services.Parties
 
         protected override SupplierDto ToDto(Supplier s)
         {
-            var isOverLimit = s.CreditLimit > 0 && s.Balance > s.CreditLimit;
+            var isOverLimit = PartyRules.IsOverCreditLimit(s.Balance, s.CreditLimit);
             var hasTransactions = !string.IsNullOrWhiteSpace(s.AccountCode) && _journalRepo.HasLinesForAccount(s.AccountCode);
             var accountName = string.IsNullOrWhiteSpace(s.AccountCode) ? null : _accountRepo.GetByCode(s.AccountCode)?.Name;
 
@@ -251,7 +246,7 @@ namespace PrimeERP.Application.Services.Parties
                 IsActive          = s.IsActive,
                 Notes             = s.Notes,
                 CategoryId        = s.CategoryId,
-                CategoryName      = s.CategoryId != null ? _categories.GetById(s.CategoryId.Value)?.Name : null,
+                CategoryName      = s.CategoryName,
                 CreatedAt         = s.CreatedAt,
                 UpdatedAt         = s.UpdatedAt,
                 StatusVariant     = variant,

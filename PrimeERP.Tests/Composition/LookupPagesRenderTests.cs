@@ -11,7 +11,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>القوائم المرجعية تُفتح فعلاً: تصييرٌ ثم تحميلٌ حقيقي بلا استثناء.</summary>
+    /// <summary>القوائم المرجعية تُفتح فعلاً</summary>
     public class LookupPagesRenderTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -29,7 +29,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 PrimeERP.UI.Services.UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var definition = _db.Services.GetRequiredService<IModuleRegistry>().Get(key);
                 Assert.NotNull(definition);

@@ -11,6 +11,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
+    /// <summary>مستندات الدورة</summary>
     [Collection("Database")]
     public class CycleDocumentServiceTests
     {

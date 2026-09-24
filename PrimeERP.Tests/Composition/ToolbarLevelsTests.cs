@@ -13,7 +13,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>مستويا الإجراءات: التقرير أعلى، والمستند المحدَّد أسفل، يفصلهما فاصل. كلٌّ منهما طباعة وتصدير.</summary>
+    /// <summary>مستويا الإجراءات</summary>
     [Collection("WpfApplication")]
     public class ToolbarLevelsTests : IDisposable
     {
@@ -26,13 +26,12 @@ namespace PrimeERP.Tests.Composition
         private FrameworkElement ToolbarOf(string moduleKey)
         {
             UIServices.Initialize(_db.Services);
-            _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+            _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
             var definition = _db.Services.GetRequiredService<IModuleRegistry>().Get(moduleKey);
             var page = CrudPageRenderer.Render(definition, _db.Services);
             page.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
 
-            // القياس والترتيب يبنيان الشجرة المرئية — بدونهما لا وجود للقطع الداخلية.
             page.Measure(new Size(1200, 800));
             page.Arrange(new Rect(0, 0, 1200, 800));
             page.UpdateLayout();
@@ -40,7 +39,6 @@ namespace PrimeERP.Tests.Composition
             return page;
         }
 
-        /// <summary>شريطان: الأول في رأس الصفحة (إجراءات التقرير)، والثاني في صفّ الفلترة (إجراءات المستند).</summary>
         private static List<string> LabelsOf(FrameworkElement page, bool documentLevel)
         {
             var toolbars = FindAll<ActionToolbar>(page).ToList();

@@ -1,86 +1,161 @@
 using System;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using PrimeERP.Platform.Permissions;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Data.Core;
 using PrimeERP.Data.Repositories.Base;
-using PrimeERP.Data.Schema;
 
 namespace PrimeERP.Data.Repositories
 {
-    public class BackupHistoryRecord
+    /// <summary>مستودع Backup</summary>
+    public interface IBackupRepository
     {
-        public int Id { get; set; }
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public long SizeBytes { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; }
-        public string Note { get; set; }
-        public BackupType BackupType { get; set; }
-        public string DatabaseProvider { get; set; }
-        public bool IsValid { get; set; }
-        public string ValidationMessage { get; set; }
+        List<BackupHistoryRecord> GetAll(PrimeDbContext db = null);
+        List<BackupHistoryRecord> GetRecent(int count);
+        BackupHistoryRecord GetById(int id, PrimeDbContext db = null);
+        int Insert(BackupHistoryRecord record);
+        int Insert(PrimeDbContext db, BackupHistoryRecord record);
+        void Delete(int id);
+        void DeleteOlderThan(DateTime cutoff);
+
+        BackupCapability Capability { get; }
+        string FileExtension { get; }
+
+        void CopyTo(string targetPath);
+        void RestoreFrom(string sourcePath);
+        (bool Ok, string Error) Verify(string filePath);
     }
 
-    /// <summary>طبقة وصول بيانات سجل النسخ الاحتياطية — SQL خام ↔ BackupHistoryRecord فقط. بلا تحقق ملفات ولا نسخ فعلي ولا حساب retention (كلها في BackupService).</summary>
+    /// <summary>طبقة وصول بيانات سجل النسخ</summary>
     public class BackupRepository : RepositoryBase<BackupHistoryRecord>, IBackupRepository
     {
-        protected override string TableName => "BackupHistory";
-
-        public void CreateTable() =>
-            SchemaBuilder.Table("BackupHistory")
-                .Id()
-                .Text("FileName", 260, required: true)
-                .Text("FilePath", 500, required: true)
-                .Int("SizeBytes", nullable: false, defaultValue: 0)
-                .DateCol("CreatedAt", nullable: false)
-                .Text("CreatedBy", 100)
-                .Text("Note", 400)
-                .Int("BackupType", nullable: false, defaultValue: 1)
-                .Text("DatabaseProvider", 30)
-                .Bool("IsValid", defaultValue: true)
-                .Text("ValidationMessage", 500)
-                .Create();
-
-        protected override BackupHistoryRecord Map(DataRow row) => new()
+        /// <summary>قدرة المحرّك على النسخ</summary>
+        public BackupCapability Capability => DbConfig.Current.Provider switch
         {
-            Id                = Convert.ToInt32(row["Id"]),
-            FileName          = row["FileName"].ToString(),
-            FilePath          = row["FilePath"].ToString(),
-            SizeBytes         = Convert.ToInt64(row["SizeBytes"]),
-            CreatedAt         = Convert.ToDateTime(row["CreatedAt"]),
-            CreatedBy         = row["CreatedBy"] == DBNull.Value ? null : row["CreatedBy"].ToString(),
-            Note              = row["Note"] == DBNull.Value ? null : row["Note"].ToString(),
-            BackupType        = (BackupType)Convert.ToInt32(row["BackupType"]),
-            DatabaseProvider  = row["DatabaseProvider"] == DBNull.Value ? null : row["DatabaseProvider"].ToString(),
-            IsValid           = Convert.ToBoolean(row["IsValid"]),
-            ValidationMessage = row["ValidationMessage"] == DBNull.Value ? null : row["ValidationMessage"].ToString()
+            DatabaseProvider.SqlServer  => BackupCapability.SqlCommand,
+            DatabaseProvider.PostgreSql => BackupCapability.ExternalTool,
+            _                           => BackupCapability.FileCopy
         };
 
-        public override List<BackupHistoryRecord> GetAll(DbConnection conn = null, DbTransaction tx = null) =>
-            Query("SELECT * FROM BackupHistory ORDER BY CreatedAt DESC", conn, tx);
+        public string FileExtension => DbConfig.Current.Provider switch
+        {
+            DatabaseProvider.SqlServer  => ".bak",
+            DatabaseProvider.PostgreSql => ".sql",
+            _                           => ".db"
+        };
+
+        /// <summary>أمرُ المحرّك بمسار ملفٍ</summary>
+        private static void Run(string sql, string path)
+        {
+            using var db = DbContextFactory.Open();
+            var conn = db.Database.GetDbConnection();
+            if (conn.State != System.Data.ConnectionState.Open) conn.Open();
+
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText = sql;
+            cmd.CommandTimeout = DbConfig.Current.CommandTimeout;
+
+            var parameter = cmd.CreateParameter();
+            parameter.ParameterName = "@path";
+            parameter.Value = path;
+            cmd.Parameters.Add(parameter);
+
+            cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>نسخة القاعدة إلى ملف</summary>
+        public void CopyTo(string targetPath)
+        {
+            if (Capability == BackupCapability.ExternalTool) throw Unsupported();
+
+            Run(Capability == BackupCapability.FileCopy
+                    ? "VACUUM INTO @path"
+                    : $"BACKUP DATABASE [{DbConfig.Current.Database}] TO DISK = @path WITH INIT",
+                targetPath);
+        }
+
+        public void RestoreFrom(string sourcePath)
+        {
+            if (Capability == BackupCapability.ExternalTool) throw Unsupported();
+
+            if (Capability == BackupCapability.FileCopy)
+            {
+                Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+                System.IO.File.Copy(sourcePath, DbConfig.Current.FilePath, overwrite: true);
+                return;
+            }
+
+            Run($"RESTORE DATABASE [{DbConfig.Current.Database}] FROM DISK = @path WITH REPLACE, RECOVERY", sourcePath);
+        }
+
+        private static NotSupportedException Unsupported() =>
+            new("النسخ الاحتياطي لقاعدة PostgreSQL يحتاج أداة pg_dump خارجية — غير مدعوم من داخل التطبيق.");
+
+        /// <summary>سلامة الملف وكونه قاعدة PrimeERP</summary>
+        public (bool Ok, string Error) Verify(string filePath)
+        {
+            var kind = DbConfig.Current.Provider;
+
+            try
+            {
+                if (kind == DatabaseProvider.SqlServer)
+                {
+                    Run("RESTORE VERIFYONLY FROM DISK = @path", filePath);
+                    return (true, null);
+                }
+
+                if (kind != DatabaseProvider.Sqlite) return (true, null);
+
+                using var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={filePath};Mode=ReadOnly");
+                conn.Open();
+
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "PRAGMA integrity_check;";
+                    var result = cmd.ExecuteScalar()?.ToString();
+                    if (!string.Equals(result, "ok", StringComparison.OrdinalIgnoreCase)) return (false, result);
+                }
+
+                using var tables = conn.CreateCommand();
+                tables.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('AppSettings', 'Accounts')";
+                return Convert.ToInt64(tables.ExecuteScalar()) == 2 ? (true, null) : (false, "");
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message);
+            }
+        }
+
+        protected override string TableName => "BackupHistory";
+
+
+        public override List<BackupHistoryRecord> GetAll(PrimeDbContext db = null) =>
+            Fetch(q => q.OrderByDescending(b => b.CreatedAt), db);
 
         public List<BackupHistoryRecord> GetRecent(int count) =>
-            Query($"SELECT * FROM BackupHistory ORDER BY CreatedAt DESC {DbFactory.Current.LimitClause(0, count)}");
+            Fetch(q => q.OrderByDescending(b => b.CreatedAt).Take(count));
 
-        public int Insert(BackupHistoryRecord record) => Insert(null, null, record);
+        public int Insert(BackupHistoryRecord record) => Insert(null, record);
 
-        public int Insert(DbConnection conn, DbTransaction tx, BackupHistoryRecord record) =>
-            InsertGetId(
-                @"INSERT INTO BackupHistory (FileName, FilePath, SizeBytes, CreatedAt, CreatedBy, Note, BackupType, DatabaseProvider, IsValid, ValidationMessage)
-                  VALUES (@fn, @fp, @sz, @ca, @cb, @note, @bt, @dp, @iv, @vm)",
-                conn, tx,
-                ("@fn", record.FileName), ("@fp", record.FilePath), ("@sz", record.SizeBytes),
-                ("@ca", record.CreatedAt), ("@cb", record.CreatedBy), ("@note", record.Note ?? ""),
-                ("@bt", (int)record.BackupType), ("@dp", record.DatabaseProvider),
-                ("@iv", record.IsValid), ("@vm", record.ValidationMessage));
+        public int Insert(PrimeDbContext db, BackupHistoryRecord record) => Add(record, db);
 
-        public void Delete(int id) => Exec("DELETE FROM BackupHistory WHERE Id = @id", null, null, ("@id", id));
+        public void Delete(int id) =>
+            Write(db =>
+            {
+                var row = Rows(db).AsTracking().FirstOrDefault(b => b.Id == id);
+                if (row != null) SetOf(db).Remove(row);
+                return 0;
+            });
 
         public void DeleteOlderThan(DateTime cutoff) =>
-            Exec("DELETE FROM BackupHistory WHERE CreatedAt < @cutoff", null, null, ("@cutoff", cutoff));
+            Write(db =>
+            {
+                SetOf(db).RemoveRange(Rows(db).Where(b => b.CreatedAt < cutoff));
+                return 0;
+            });
     }
 }

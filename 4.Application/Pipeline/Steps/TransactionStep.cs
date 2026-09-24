@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using PrimeERP.Domain.Results;
-using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Data.Core;
 
 namespace PrimeERP.Application.Pipeline.Steps
 {
-    /// <summary>يفتح معاملة جديدة إن لم يكن ctx.Conn مفتوحاً بالفعل (خدمة أخرى نادت هذا الـ Pipeline ضمن معاملتها) — يعيد استخدام المعاملة القائمة بدل فتح اتصال ثانٍ (يعلّق SQLite، راجع DbHelper.Query).</summary>
+    /// <summary>خطوة فتح المعاملة أو إعادة</summary>
     public class TransactionStep : IStep
     {
         private readonly IReadOnlyList<IStep> _inner;
@@ -15,31 +15,34 @@ namespace PrimeERP.Application.Pipeline.Steps
 
         public Result Execute(PipelineContext ctx)
         {
-            if (ctx.Conn != null)
+            if (ctx.Db != null)
                 return RunInner(ctx);
-
-            using var conn = Db.GetConnection();
-            using var tx = conn.BeginTransaction();
-            ctx.Conn = conn;
-            ctx.Tx = tx;
 
             try
             {
-                var result = RunInner(ctx);
-                if (result.IsFailure) { tx.Rollback(); return result; }
-                tx.Commit();
-                return result;
+                return DbContextFactory.RunTransaction(db =>
+                {
+                    ctx.Db = db;
+
+                    var result = RunInner(ctx);
+                    if (result.IsFailure) throw new StepFailure(result);   // الفشل يُرجع المعاملة
+                    return result;
+                });
             }
-            catch
+            catch (StepFailure failure)
             {
-                tx.Rollback();
-                throw;
+                return failure.Result;
             }
             finally
             {
-                ctx.Conn = null;
-                ctx.Tx = null;
+                ctx.Db = null;
             }
+        }
+
+        private sealed class StepFailure : System.Exception
+        {
+            public StepFailure(Result result) => Result = result;
+            public Result Result { get; }
         }
 
         private Result RunInner(PipelineContext ctx)

@@ -7,10 +7,7 @@ using PrimeERP.UI.Components.Feedback;
 
 namespace PrimeERP.UI.Services
 {
-    /// <summary>
-    /// واجهة async فوق حوارات معتمدة على AppDialogWindow. الاستدعاء الفعلي لـ ShowDialog() يبقى متزامناً
-    /// (طبيعة الحوارات المشروطة في WPF)، لكن التوقيع async يسمح للمستدعي بالانتظار طبيعياً بلا Task.Run غريب.
-    /// </summary>
+    /// <summary>واجهة async فوق حوارات معتمدة</summary>
     public class DialogService : IDialogService
     {
         public Task<bool> ConfirmAsync(string title, string message, string confirmText = null, bool isDangerous = false)
@@ -73,8 +70,6 @@ namespace PrimeERP.UI.Services
             public void Report(double percent, string message) =>
                 _dialog.Dispatcher.Invoke(() => _dialog.SetProgress(percent, message));
 
-            // النافذة تُعرَض بـShow لا ShowDialog، وضبط DialogResult عليها يرمي استثناءً في WPF —
-            // فالإغلاق إغلاقٌ مباشر. الإغلاق المكرَّر (Close ثم Dispose) لا يضرّ: نافذة مغلقة تتجاهله.
             public void Close() => _dialog.Dispatcher.Invoke(_dialog.Close);
 
             public void Dispose() => Close();

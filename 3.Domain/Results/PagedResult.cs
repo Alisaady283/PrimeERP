@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Domain.Results
 {
-    /// <summary>نتيجة صفحة واحدة من قائمة أكبر — كل Service.GetPaged يرجعها بشكل موحّد.</summary>
+    /// <summary>نتيجة صفحة واحدة من قائمة</summary>
     public class PagedResult<T>
     {
         public List<T> Items      { get; set; } = new();

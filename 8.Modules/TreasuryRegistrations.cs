@@ -12,8 +12,7 @@ using PrimeERP.UI.ViewModels;
 
 namespace PrimeERP.Modules
 {
-    /// <summary>الخزائن والسندات والشيكات. السندان قبض/صرف نفس التعريف بالضبط عدا الطرف والخدمة — تُبنى من
-    /// دالة واحدة بدل نسختين متطابقتين.</summary>
+    /// <summary>الخزائن والسندات والشيكات</summary>
     public static class TreasuryRegistrations
     {
         public static void RegisterAll(IModuleRegistry registry)
@@ -37,7 +36,6 @@ namespace PrimeERP.Modules
                     CreateDtoType = typeof(CreateTreasuryDto), UpdateDtoType = typeof(UpdateTreasuryDto),
                     Fields = new()
                     {
-                        // الحساب لا يُختار: الخزينة ورقة تحت "الصناديق" والبنك تحت "البنوك"، والنوع وحده يحدّد أيهما.
                         new() { Key = nameof(CreateTreasuryDto.Kind), LabelKey = "النوع", Kind = FieldKind.Picker, PickerType = "TreasuryKind", IsRequired = true, IsReadOnlyOnEdit = true, DefaultValue = (int)TreasuryKind.Cash },
                         new() { Key = nameof(CreateTreasuryDto.Name), LabelKey = "اسم الخزينة / البنك", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
                         new() { Key = nameof(CreateTreasuryDto.AccountNumber), LabelKey = "رقم الحساب بالبنك", Kind = FieldKind.Text, MaxLength = 60,
@@ -74,7 +72,6 @@ namespace PrimeERP.Modules
             });
         }
 
-        // مستند شيكات: رأس (تاريخ/طرف/بيان) وسطور، كل سطر شيك مستقل — نفس محرّر المستندات بلا استثناء.
         private static void RegisterChequeDocument(IModuleRegistry registry, string key, string title,
             System.Type viewModel, System.Type service, string partyLabelKey, string partyPickerType)
         {
@@ -104,7 +101,6 @@ namespace PrimeERP.Modules
                     LineFields = new()
                     {
                         new() { Key = nameof(CreateChequeLineDto.ChequeNo), Header = "رقم الشيك", Kind = FieldKind.Text, Width = 130, IsRequired = true },
-                        // البنك من قائمة البنوك لا كتابةً — والخانة تحمل الاسم فتقرؤه القوائم والتقارير كما هي.
                         new() { Key = nameof(CreateChequeLineDto.BankName), Header = "اسم البنك", Kind = FieldKind.Picker, Width = 170,
                                 IsRequired = true, PickerType = "Bank", PickerValueField = "Display" },
                         new() { Key = nameof(CreateChequeLineDto.Amount), Header = LocalizationService.Get("Str.Amount"), Kind = FieldKind.Number, Width = 120, IsRequired = true },
@@ -141,7 +137,6 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateVoucherDto.VoucherDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
                         new() { Key = nameof(CreateVoucherDto.PartyId), LabelKey = partyLabelKey, Kind = FieldKind.Picker, PickerType = partyPickerType, IsRequired = true },
                         new() { Key = nameof(CreateVoucherDto.Method), LabelKey = "طريقة الدفع", Kind = FieldKind.Picker, PickerType = "PaymentMethod", IsRequired = true, DefaultValue = (int)PaymentMethod.Cash },
-                        // القائمة تتبع طريقة الدفع: نقداً تعرض الخزن، وتحويلاً أو شيكاً تعرض البنوك.
                         new() { Key = nameof(CreateVoucherDto.TreasuryId), LabelKey = "الخزينة / البنك", Kind = FieldKind.Picker, PickerType = "Treasury", IsRequired = true,
                                 PickerFilterField = nameof(CreateVoucherDto.Method) },
                         new() { Key = nameof(CreateVoucherDto.Amount), LabelKey = "Str.Amount", Kind = FieldKind.Number, IsRequired = true },

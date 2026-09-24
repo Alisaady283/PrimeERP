@@ -13,6 +13,7 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.HR
 {
+    /// <summary>البدل والخصم خدمةٌ واحدة بجدولين</summary>
     public interface IEmployeeMovementService
     {
         Result<PagedResult<EmployeeMovementDto>> GetPaged(int page, int pageSize, EmployeeMovementFilter filter = null);
@@ -25,10 +26,6 @@ namespace PrimeERP.Application.Services.HR
     public interface IAllowanceService : IEmployeeMovementService { }
     public interface IDeductionService : IEmployeeMovementService { }
 
-    /// <summary>
-    /// البدل والخصم خدمةٌ واحدة بجدولين — الفرق مستودعُها وبادئة صلاحيتها. يجمعها المسير عن فترته،
-    /// فلا تُدخَل في سطوره يدوياً.
-    /// </summary>
     public abstract class EmployeeMovementService<T> : ServiceBase, IEmployeeMovementService
         where T : EmployeeMovement, new()
     {

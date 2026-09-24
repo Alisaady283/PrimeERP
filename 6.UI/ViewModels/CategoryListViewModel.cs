@@ -9,11 +9,9 @@ using PrimeERP.UI.ViewModels.Base;
 
 namespace PrimeERP.UI.ViewModels
 {
+    /// <summary>نماذج عرض CategoryFilter</summary>
     public class CategoryFilter { }
 
-    // يخدم كل الوحدات "المسطّحة القائمة على ModuleKey" (فروع، ماركات، وحدات، مخازن، أقسام، وظائف،
-    // فئات أصول...) بلا تكرار خدمة/ViewModel — الفرق الوحيد بين وحدة وأخرى هو moduleKey/permissionPrefix،
-    // يُثبَّتان في مُنشئ وحدة فرعية سطر واحد (راجع LookupViewModels.cs).
     public class CategoryListViewModel : CrudViewModelBase<CategoryDto, CategoryFilter>
     {
         private readonly ICategoryService _categories;

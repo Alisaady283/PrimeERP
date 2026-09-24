@@ -7,6 +7,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Inputs
 {
+    /// <summary>حقل إدخال AppNumericBox</summary>
     public partial class AppNumericBox : UserControl
     {
         public static readonly DependencyProperty ValueProperty =
@@ -122,7 +123,7 @@ namespace PrimeERP.UI.Components.Inputs
 
         private void ApplyEnabledVisual()
         {
-            border.Background  = IsEnabled ? (Brush)FindResource("C.Input.Bg")   : (Brush)FindResource("SurfaceSunken");
+            border.Background  = IsEnabled ? (Brush)FindResource("SurfaceDefault")   : (Brush)FindResource("SurfaceSunken");
             border.BorderBrush = IsEnabled ? (Brush)FindResource("OutlineDefault") : (Brush)FindResource("OutlineSubtle");
         }
 
@@ -134,9 +135,6 @@ namespace PrimeERP.UI.Components.Inputs
             e.Handled = !Regex.IsMatch(proposed, pattern);
         }
 
-        // Value كانت تُضبَط عند LostFocus فقط — فمن يكتب رقماً ثم يضغط "حفظ"/"سحب" مباشرة (بلا مغادرة الحقل)
-        // كان يُقرأ منه الرقم القديم. هنا تُضبَط مع كل حرف بلا لمس نص الحقل أثناء الكتابة (التنسيق والقص
-        // على الحدود يبقيان في Commit عند مغادرة الحقل).
         private void txt_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (!_isFocused) return;

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.HR;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
@@ -12,16 +13,17 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.HR
 {
+    /// <summary>خدمة المسمّيات الوظيفية</summary>
     public class JobTitleService : ServiceBase, IJobTitleService
     {
         protected override string PermissionPrefix => "JobTitles";
         protected override string StringPrefix => "Str.JobTitle";
         protected override string EntityName => "JobTitles";
 
-        private readonly IJobTitleRepository _repo;
+        private readonly ILookupRepository<JobTitle> _repo;
 
         public JobTitleService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IJobTitleRepository repo) : base(permissions, settings, localization, audit) => _repo = repo;
+            IAuditLogger audit, ILookupRepository<JobTitle> repo) : base(permissions, settings, localization, audit) => _repo = repo;
 
         public Result<List<JobTitleDto>> GetAll(bool includeInactive = false) =>
             Result.Ok(_repo.GetAll(includeInactive).Select(ToDto).ToList());

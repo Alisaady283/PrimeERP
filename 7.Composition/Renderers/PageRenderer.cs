@@ -5,8 +5,7 @@ using PrimeERP.UI.Components.Tree;
 
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>نقطة التوزيع الوحيدة حسب ModuleDefinition.LayoutKind — المستهلك (MainWindow) لا يعرف عن وجود
-    /// أكثر من مُصيِّر واحد، ولا يختار بينهما بنفسه (لا if/switch مكرر في كل موضع استدعاء).</summary>
+    /// <summary>نقطة التوزيع الوحيدة حسب ModuleDefinition.LayoutKind</summary>
     public static class PageRenderer
     {
         public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services) =>

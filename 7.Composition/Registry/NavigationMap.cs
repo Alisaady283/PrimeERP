@@ -3,11 +3,7 @@ using System.Linq;
 
 namespace PrimeERP.Composition.Registry
 {
-    /// <summary>
-    /// خريطة الشريط الجانبي. أقسام الكود هنا، وما يُبنى منها يُبذَر مرّةً في جدول الوصف فيصير قابلاً
-    /// للتعديل (تسمية، ترتيب، نقل وحدة، إخفاء) — عدا المحميّة: المحاسبة والإعدادات ووحدة البناء نفسها
-    /// تبقى من الكود، فلا يُقفل المستخدم على نفسه بابَ الإصلاح.
-    /// </summary>
+    /// <summary>خريطة الشريط الجانبي</summary>
     public static class NavigationMap
     {
         public static readonly (string Key, string Text, string IconKey, string[] Modules)[] Coded =
@@ -24,20 +20,18 @@ namespace PrimeERP.Composition.Registry
             ("Builder", "وحدة البناء", "IconSettings", new[] { "BuilderSections", "BuilderModules", "BuilderColumns", "BuilderActions", "BuilderFilters", "BuilderExport" }),
         };
 
-        /// <summary>أقسامٌ لا تُبذَر ولا تُعدَّل: بها شجرة الحسابات والإعدادات ووحدة البناء نفسها.</summary>
         public static readonly string[] Protected = { "Accounting", "Settings", "Builder" };
 
-        /// <summary>
-        /// المحميّ من الكود، والباقي من الوصف. جدولٌ فارغ = الكود كاملاً — فلا يختفي الشريط أبداً مهما
-        /// أخفق البذر.
-        /// </summary>
         public static (string Key, string Text, string IconKey, string[] Keys)[] Groups(
             IReadOnlyList<(string Key, string Title, string IconKey, string[] ModuleKeys)> built = null)
         {
             if (built == null || built.Count == 0)
                 return Coded.Select(c => (c.Key, c.Text, c.IconKey, c.Modules)).ToArray();
 
-            return Coded.Where(c => Protected.Contains(c.Key)).Select(c => (c.Key, c.Text, c.IconKey, c.Modules))
+            var seeded = built.Select(b => b.Key).ToHashSet();
+
+            return Coded.Where(c => Protected.Contains(c.Key) && !seeded.Contains(c.Key))
+                .Select(c => (c.Key, c.Text, c.IconKey, c.Modules))
                 .Concat(built.Select(b => (b.Key, b.Title, b.IconKey, b.ModuleKeys)))
                 .ToArray();
         }

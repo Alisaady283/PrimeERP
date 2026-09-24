@@ -6,7 +6,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.DTOs.Accounting
 {
-    /// <summary>للجداول/القوائم — لا Model خام (JournalEntry) يخرج من الخدمة إطلاقاً.</summary>
+    /// <summary>للجداول/القوائم</summary>
     public class JournalEntryDto
     {
         public int      Id          { get; set; }
@@ -29,14 +29,13 @@ namespace PrimeERP.Application.DTOs.Accounting
         public int      LinesCount  { get; set; }
         public string   FiscalPeriodName { get; set; }
 
-        /// <summary>الخدمة تحسب الأربعة هذه (صلاحية + حالة القيد معاً) — الـ ViewModel لا يعيد حساب قواعد "متى يُسمح".</summary>
         public bool CanEdit   { get; set; }
         public bool CanDelete { get; set; }
         public bool CanPost   { get; set; }
         public bool CanUnpost { get; set; }
     }
 
-    /// <summary>للحوار — نفس JournalEntryDto زائد السطور الكاملة.</summary>
+    /// <summary>للحوار</summary>
     public class JournalEntryDetailDto : JournalEntryDto
     {
         public List<JournalLineDto> Lines { get; set; } = new();
@@ -64,7 +63,7 @@ namespace PrimeERP.Application.DTOs.Accounting
         public string  Notes       { get; set; }
     }
 
-    /// <summary>لِكل من Create وUpdate — Id=0 يعني "جديد" (Update يتطلّب Id>0 يحدّد القيد المستهدف).</summary>
+    /// <summary>لِكل من Create وUpdate</summary>
     public class CreateJournalDto
     {
         public int      Id          { get; set; }
@@ -88,12 +87,11 @@ namespace PrimeERP.Application.DTOs.Accounting
         public bool     SortDescending { get; set; } = true;
     }
 
-    /// <summary>سطر ميزان مراجعة — الافتتاحي والختامي أحدهما صفر حسب طبيعة رصيد نوع الحساب (مدين/دائن).</summary>
+    /// <summary>سطر ميزان مراجعة</summary>
     public class TrialBalanceLine
     {
         public string      Code    { get; set; }
         public string      Name    { get; set; }
-        /// <summary>الحساب التجميعي الأب — القوائم تُجمِّع عنده فتعرض «العملاء» لا اسم كل عميل.</summary>
         public string      ParentCode { get; set; }
         public string      ParentName { get; set; }
         public int         Level   { get; set; }

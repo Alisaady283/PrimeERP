@@ -2,27 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Data.Sqlite;
 using PrimeERP.Application.Services;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Data.Core;
-using PrimeERP.Data.Schema;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
 using Timer = System.Timers.Timer;
 
 namespace PrimeERP.Application.Services.Backup
 {
-    /// <summary>
-    /// المكان الوحيد لأخذ/استعادة/التحقق من النسخ الاحتياطية — بديل Core/BackupManager.cs (المحذوف).
-    /// كل اختلاف بين محركات القاعدة عبر IDbProvider (BuildBackupCommand/BuildRestoreCommand/GetBackupCapability) —
-    /// لا "if" على نوع المحرك هنا سوى في Validate (فحص لا يمثّله IDbProvider بعد).
-    /// </summary>
+    /// <summary>المكان الوحيد لأخذ/استعادة/التحقق من النسخ</summary>
     public class BackupService : ServiceBase, IBackupService
     {
         protected override string PermissionPrefix => "Settings";
@@ -51,14 +45,10 @@ namespace PrimeERP.Application.Services.Backup
                 folder ??= ResolveBackupFolder();
                 Directory.CreateDirectory(folder);
 
-                var provider = DbFactory.Current;
-                var config   = DbFactory.Config;
-
-                var fileName   = $"PrimeERP_{DateTime.Now:yyyyMMdd_HHmmss}{provider.BackupFileExtension}";
+                var fileName   = $"PrimeERP_{DateTime.Now:yyyyMMdd_HHmmss}{_repo.FileExtension}";
                 var targetPath = Path.Combine(folder, fileName);
 
-                var sql = provider.BuildBackupCommand(config, targetPath);
-                Db.Execute(sql, Db.Params(("@path", targetPath)));
+                _repo.CopyTo(targetPath);
 
                 var record = new BackupHistoryRecord
                 {
@@ -69,7 +59,7 @@ namespace PrimeERP.Application.Services.Backup
                     CreatedBy        = AppSession.Username,
                     Note             = note,
                     BackupType       = type,
-                    DatabaseProvider = provider.Kind.ToString(),
+                    DatabaseProvider = DbConfig.Current.Provider.ToString(),
                     IsValid          = true
                 };
 
@@ -112,20 +102,7 @@ namespace PrimeERP.Application.Services.Backup
 
             try
             {
-                var provider = DbFactory.Current;
-                var config   = DbFactory.Config;
-
-                if (provider.GetBackupCapability() == BackupCapability.FileCopy)
-                {
-                    // SQLite يجمع الاتصالات (Connection Pooling) — يجب تفريغها قبل استبدال الملف فعلياً، وإلا بقي مقفلاً.
-                    SqliteConnection.ClearAllPools();
-                    File.Copy(filePath, provider.GetDatabaseFilePath(config), overwrite: true);
-                }
-                else
-                {
-                    var sql = provider.BuildRestoreCommand(config, filePath);
-                    Db.Execute(sql, Db.Params(("@path", filePath)));
-                }
+                _repo.RestoreFrom(filePath);
 
                 Audit.Log(EntityName, 0, AuditAction.Update, details: $"استعادة من نسخة: {Path.GetFileName(filePath)}");
                 return Result.Ok();
@@ -145,56 +122,12 @@ namespace PrimeERP.Application.Services.Backup
             if (!File.Exists(filePath)) return Fail<bool>("FileNotFound", ErrorCode.NotFound);
             if (new FileInfo(filePath).Length <= 0) return Fail<bool>("FileEmpty", ErrorCode.ValidationFailed);
 
-            var kind = DbFactory.Current.Kind;
+            var (ok, error) = _repo.Verify(filePath);
+            if (ok) return Result.Ok(true);
 
-            if (kind == DatabaseProvider.Sqlite) return ValidateSqlite(filePath);
-            if (kind == DatabaseProvider.SqlServer) return ValidateSqlServer(filePath);
-
-            // PostgreSQL: التحقق الكامل يحتاج pg_restore خارجياً — نكتفي بفحص الوجود/الحجم أعلاه.
-            return Result.Ok(true);
-        }
-
-        private Result<bool> ValidateSqlite(string filePath)
-        {
-            try
-            {
-                using var conn = new SqliteConnection($"Data Source={filePath};Mode=ReadOnly");
-                conn.Open();
-
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "PRAGMA integrity_check;";
-                    var result = cmd.ExecuteScalar()?.ToString();
-                    if (!string.Equals(result, "ok", StringComparison.OrdinalIgnoreCase))
-                        return Result.Fail<bool>($"{Msg("IntegrityCheckFailed")}: {result}", ErrorCode.ValidationFailed);
-                }
-
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='__Migrations'";
-                    var exists = Convert.ToInt64(cmd.ExecuteScalar()) > 0;
-                    if (!exists) return Fail<bool>("NotAPrimeErpDatabase", ErrorCode.ValidationFailed);
-                }
-
-                return Result.Ok(true);
-            }
-            catch (Exception ex)
-            {
-                return Result.Fail<bool>($"{Msg("CorruptFile")}: {ex.Message}", ErrorCode.Unexpected);
-            }
-        }
-
-        private Result<bool> ValidateSqlServer(string filePath)
-        {
-            try
-            {
-                Db.Execute("RESTORE VERIFYONLY FROM DISK = @path", Db.Params(("@path", filePath)));
-                return Result.Ok(true);
-            }
-            catch (Exception ex)
-            {
-                return Result.Fail<bool>($"{Msg("CorruptFile")}: {ex.Message}", ErrorCode.Unexpected);
-            }
+            return string.IsNullOrEmpty(error)
+                ? Fail<bool>("NotAPrimeErpDatabase", ErrorCode.ValidationFailed)
+                : Result.Fail<bool>($"{Msg("CorruptFile")}: {error}", ErrorCode.Unexpected);
         }
 
         public List<BackupInfo> List(string folder = null) =>

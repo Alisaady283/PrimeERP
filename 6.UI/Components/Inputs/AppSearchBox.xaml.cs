@@ -5,6 +5,7 @@ using System.Windows.Threading;
 
 namespace PrimeERP.UI.Components.Inputs
 {
+    /// <summary>حقل إدخال AppSearchBox</summary>
     public partial class AppSearchBox : UserControl
     {
         public static readonly DependencyProperty TextProperty =
@@ -28,7 +29,6 @@ namespace PrimeERP.UI.Components.Inputs
         public int    DelayMs          { get => (int)GetValue(DelayMsProperty);         set => SetValue(DelayMsProperty, value); }
         public bool   ShowClearButton  { get => (bool)GetValue(ShowClearButtonProperty);set => SetValue(ShowClearButtonProperty, value); }
 
-        /// <summary>يُطلق بعد توقّف الكتابة لمدة DelayMs — استخدمه للبحث الفعلي بدل TextChanged المباشر.</summary>
         public event EventHandler<string> Search;
 
         private readonly DispatcherTimer _debounce;

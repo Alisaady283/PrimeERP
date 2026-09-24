@@ -2,6 +2,7 @@ using System;
 
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان FiscalPeriod</summary>
     public class FiscalPeriod
     {
         public int       Id           { get; set; }

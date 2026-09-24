@@ -11,9 +11,7 @@ using F = PrimeERP.Application.Reporting.FinancialStatementFactory;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>
-    /// القائمة تعرض مستوى التجميع لا دفتر الأستاذ: «ذمم مدينة» سطر واحد مهما بلغ عدد العملاء.
-    /// </summary>
+    /// <summary>مستوى التجميع في القائمة</summary>
     public class StatementGroupingTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -40,7 +38,6 @@ namespace PrimeERP.Tests.Services
 
             var journal = _db.Services.GetRequiredService<IJournalService>();
 
-            // الصندوق يُموَّل قبل الصرف منه: حارس الرصيد يرفض إنزاله تحت الصفر.
             journal.Create(new CreateJournalDto
             {
                 EntryDate = DateTime.Today.AddDays(-2), Description = "تمويل الصندوق",

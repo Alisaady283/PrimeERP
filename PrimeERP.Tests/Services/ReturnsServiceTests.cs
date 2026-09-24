@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,10 +18,11 @@ using PrimeERP.Application.Services.Sales;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Xunit;
-using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
+    /// <summary>المرتجعات</summary>
     public class ReturnsServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -59,7 +61,7 @@ namespace PrimeERP.Tests.Services
             _supplierId = suppliers.Create(new CreateSupplierDto { Name = "مورد" }).Value.Id;
 
             var stock = _db.Services.GetRequiredService<IStockService>();
-            Db.RunTransaction((conn, tx) => stock.RecordMovement(conn, tx, _productId, _warehouseId, Domain.Enums.MovementType.In, 100, 10, "Seed", null, "SEED"));
+            DbContextFactory.RunTransaction(db => stock.RecordMovement(db, _productId, _warehouseId, Domain.Enums.MovementType.In, 100, 10, "Seed", null, "SEED"));
         }
 
         public void Dispose() => _db.Dispose();

@@ -15,7 +15,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>الشاشة نفسها لا التعريف: هل يصل المعرّف المختار للبناء فيظهر التأشير فعلاً؟</summary>
+    /// <summary>الشاشة نفسها لا التعريف</summary>
     [Collection("WpfApplication")]
     public class PermissionScreenTests : IDisposable
     {
@@ -31,10 +31,10 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
-                var roleId = PermissionDb.InsertRole("Full", "كامل");
-                PermissionDb.ReplaceRolePermissions(roleId, PermissionKeys.All());
+                var roleId = _db.Permissions.InsertRole("Full", "كامل");
+                _db.Permissions.ReplaceRolePermissions(roleId, PermissionKeys.All());
 
                 var definition = _db.Services.GetRequiredService<IModuleRegistry>().Get("RolePermissions");
                 var page = TreeCheckListRenderer.Render(definition, _db.Services);
@@ -59,8 +59,8 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
-                PermissionDb.InsertRole("Assistant", "مساعد");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
+                _db.Permissions.InsertRole("Assistant", "مساعد");
 
                 var definition = _db.Services.GetRequiredService<IModuleRegistry>().Get("RolePermissions");
                 var page = TreeCheckListRenderer.Render(definition, _db.Services);
@@ -102,8 +102,8 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
-                PermissionDb.InsertRole("Assistant", "مساعد");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
+                _db.Permissions.InsertRole("Assistant", "مساعد");
 
                 var definition = _db.Services.GetRequiredService<IModuleRegistry>().Get("RolePermissions");
                 var page = TreeCheckListRenderer.Render(definition, _db.Services);
@@ -139,8 +139,8 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
-                PermissionDb.InsertRole("Assistant", "مساعد");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
+                _db.Permissions.InsertRole("Assistant", "مساعد");
 
                 var definition = _db.Services.GetRequiredService<IModuleRegistry>().Get("RolePermissions");
                 var page = TreeCheckListRenderer.Render(definition, _db.Services);
@@ -156,11 +156,9 @@ namespace PrimeERP.Tests.Composition
 
                 tree.Cycle(view);
 
-                // يفتح فقط: لا يؤشّر شيئاً منها.
                 Assert.True(others.All(n => n.IsCheckEnabled), "الأزرار لم تُفتح بعد تأشير العرض");
                 Assert.All(others, n => Assert.Equal(NodeCheckState.Unchecked, n.CheckState));
 
-                // ويُسمح بالتأشير والإلغاء لكلٍّ على حدة.
                 var print = others.Single(n => n.Id == "Sales.Print");
                 tree.Cycle(print);
                 Assert.Equal(NodeCheckState.Checked, print.CheckState);

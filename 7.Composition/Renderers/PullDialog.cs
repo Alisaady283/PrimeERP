@@ -14,8 +14,7 @@ using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>نافذة "سحب من": أعلاها قائمة المستندات المتاحة، وأسفلها سطور المستند المختار بكميّة قابلة
-    /// للتعديل حتى المتبقي. لا تعرف نوع مستند بعينه — تستهلك PullService العام.</summary>
+    /// <summary>نافذة "سحب من"</summary>
     public static class PullDialog
     {
         public class PulledLine
@@ -33,7 +32,6 @@ namespace PrimeERP.Composition.Renderers
         {
             public List<PulledLine> Lines { get; init; } = new();
 
-            /// <summary>قيم رأس المستند المصدر (الطرف/المخزن) — تُنسخ للحقول الفارغة في رأس الهدف.</summary>
             public Dictionary<string, object> Header { get; init; } = new();
         }
 

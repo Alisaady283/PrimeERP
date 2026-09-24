@@ -3,10 +3,7 @@ using PrimeERP.UI.ViewModels;
 
 namespace PrimeERP.UI.Components.Tree
 {
-    /// <summary>
-    /// عقدة شجرة قابلة للمراقبة — تحمل الكائن الأصلي (Data) بجانب حقول العرض،
-    /// وتفصل بين كل الأبناء (Children) والأبناء الظاهرين بعد الفلترة (VisibleChildren).
-    /// </summary>
+    /// <summary>عقدة شجرة قابلة للمراقبة</summary>
     public class TreeNodeViewModel : BaseViewModel
     {
         public string Id          { get; set; }
@@ -15,14 +12,12 @@ namespace PrimeERP.UI.Components.Tree
         public string DisplayText { get; set; }
         public bool   IsLeaf      { get; set; }
 
-        /// <summary>الكائن الأصلي (Account/Customer/...) — يُستخدم عند الاختيار الفعلي.</summary>
         public object Data { get; set; }
 
         public TreeNodeViewModel Parent { get; private set; }
 
         public ObservableCollection<TreeNodeViewModel> Children { get; } = new();
 
-        /// <summary>الأبناء بعد الفلترة — AppTreeView يربط على هذه لا على Children مباشرة.</summary>
         public ObservableCollection<TreeNodeViewModel> VisibleChildren { get; } = new();
 
         private bool _isExpanded;
@@ -39,7 +34,6 @@ namespace PrimeERP.UI.Components.Tree
             set => SetProperty(ref _isSelected, value);
         }
 
-        /// <summary>true لو هذه العقدة نفسها (لا أبناؤها) طابقت نص البحث الحالي — تُستخدم للتمييز اللوني.</summary>
         private bool _isMatch;
         public bool IsMatch
         {
@@ -47,7 +41,6 @@ namespace PrimeERP.UI.Components.Tree
             set => SetProperty(ref _isMatch, value);
         }
 
-        /// <summary>هل تظهر هذه العقدة أصلاً ضمن VisibleChildren لأبيها (يحسبها TreeFilterEngine).</summary>
         private bool _isVisible = true;
         public bool IsVisible
         {
@@ -55,7 +48,6 @@ namespace PrimeERP.UI.Components.Tree
             set => SetProperty(ref _isVisible, value);
         }
 
-        /// <summary>false يعني عقدة هيكلية فقط (مثل فرع غير قابل للاختيار في AccountPicker مع LeafOnly) — تظهر رمادية وغير قابلة للنقر.</summary>
         private bool _isSelectable = true;
         public bool IsSelectable
         {
@@ -70,23 +62,18 @@ namespace PrimeERP.UI.Components.Tree
             set => SetProperty(ref _checkState, value);
         }
 
-        /// <summary>false لعقد التجميع التي لا تحمل مفتاحاً بذاتها (اسم الموديول مثلاً) — تُظهر مربعاً يوزّع على الأبناء فقط.</summary>
         public bool IsCheckable { get; set; } = true;
 
         private bool _isCheckEnabled = true;
-        /// <summary>false يمنع النقر ويُبهت المؤشّر — قاعدة بين العقد تُقرّرها الشاشة، لا الشجرة.</summary>
         public bool IsCheckEnabled
         {
             get => _isCheckEnabled;
             set { if (_isCheckEnabled == value) return; _isCheckEnabled = value; OnPropertyChanged(); }
         }
 
-        /// <summary>نص توضيحي بجانب الحالة الموروثة — مثال "(الدور: مسموح)".</summary>
         public string InheritedHint { get; set; }
 
         private bool _inheritedAllowed;
-        /// <summary>الموروث المسموح يتمايز بصرياً عن الممنوع — بلا ذلك يبدوان فارغَين فيظنّ المستخدم أن
-        /// لا شيء ممنوح، فيضغط «تحديد الكل» ويحوّل الوراثة كلها لمنح صريح.</summary>
         public bool InheritedAllowed
         {
             get => _inheritedAllowed;

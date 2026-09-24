@@ -7,6 +7,7 @@ using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.UI.Components.Feedback
 {
+    /// <summary>حوارات وتنبيهات AppConfirmDialog</summary>
     public class AppConfirmDialog : AppDialogWindow
     {
         public bool Result { get; private set; }

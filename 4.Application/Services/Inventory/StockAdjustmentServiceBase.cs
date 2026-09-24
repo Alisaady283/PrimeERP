@@ -9,15 +9,12 @@ using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Permissions;
-using Db = PrimeERP.Data.Core.DbHelper;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Application.Services.Inventory
 {
-    // أساس مشترك لـStockInService/StockOutService — الفرق الوحيد فعلياً MovementType واسم السلسلة الرقمية
-    // ("StockIn"/"StockOut")؛ بلا ترحيل محاسبي (تسويات مخزون بحتة، نطاق مُبسَّط عمداً — راجع تعليق سابق).
-    /// <summary>خدمةٌ بوّابتها مفتاحٌ واحد مُعلَن — يقرؤه حارس التغطية في ModuleCompletenessTests.</summary>
+    /// <summary>خدمةٌ بوّابتها مفتاحٌ واحد مُعلَن</summary>
     public interface IPermissionGated
     {
         string PermissionKey { get; }
@@ -49,8 +46,6 @@ namespace PrimeERP.Application.Services.Inventory
         protected override string StringPrefix => "Str.Stock";
         protected override string EntityName => _entityName;
 
-        /// <summary>بوّابة الإذن كاملةً — مُعلَنة لا مبنيّةً داخل الشرط، ليقرأها حارس التغطية فيتحقّق
-        /// من وجودها في PermissionKeys. مفتاحٌ غير مُعرَّف يُرفض دائماً بلا رسالة تكشف السبب.</summary>
         public string PermissionKey => $"{PermissionPrefix}.{_permissionAction}";
 
         private bool Can() => Permissions.Can(PermissionKey);
@@ -108,23 +103,23 @@ namespace PrimeERP.Application.Services.Inventory
             int docId;
             try
             {
-                docId = Db.RunTransaction((conn, tx) =>
+                docId = Tx(db =>
                 {
-                    var docNo = _numbers.Next(conn, tx, _sequenceKey);
+                    var docNo = _numbers.Next(db, _sequenceKey);
                     var doc = new StockAdjustment { DocNo = docNo, MovementDate = dto.MovementDate, WarehouseId = dto.WarehouseId, Notes = dto.Notes, CreatedBy = AppSession.Username };
-                    var id = Repo.InsertHeader(conn, tx, doc);
+                    var id = Repo.InsertHeader(db, doc);
 
                     var inserted = new List<(PrimeERP.Application.DTOs.Documents.IPullableLine Line, int TargetLineId, decimal Qty)>();
                     for (int i = 0; i < resolvedLines.Count; i++)
                     {
                         var line = resolvedLines[i];
-                        var lineId = Repo.InsertLine(conn, tx, id, line);
-                        var moveResult = _stock.RecordMovement(conn, tx, line.ProductId, dto.WarehouseId, _direction, line.Qty, line.UnitCost, _entityName, id, docNo, dto.MovementDate);
+                        var lineId = Repo.InsertLine(db, id, line);
+                        var moveResult = _stock.RecordMovement(db, line.ProductId, dto.WarehouseId, _direction, line.Qty, line.UnitCost, _entityName, id, docNo, dto.MovementDate);
                         if (!moveResult.IsSuccess) throw new InvalidOperationException(moveResult.ErrorMessage);
 
                         inserted.Add((pulls[i], lineId, line.Qty));
                     }
-                    _links.RecordPulls(conn, tx, _entityName, id, inserted);
+                    _links.RecordPulls(db, _entityName, id, inserted);
 
                     return id;
                 });
@@ -140,10 +135,6 @@ namespace PrimeERP.Application.Services.Inventory
 
         public Result Update(CreateStockAdjustmentDto dto) => Result.Fail("المستند مُرحَّل فور إنشائه — لا يمكن تعديله", ErrorCode.ValidationFailed);
 
-        /// <summary>
-        /// حذف الإذن وأثره المخزني معاً. لا قيد له — أذون المخزن حركةُ مخزون لا محاسبة. والسحب يمنع
-        /// الحذف: إذنٌ سُحب منه يقوم عليه مستندٌ لاحق.
-        /// </summary>
         public Result Delete(int id)
         {
             if (!Can("Delete")) return FailDenied();
@@ -152,11 +143,11 @@ namespace PrimeERP.Application.Services.Inventory
             if (_links.GetPulledBySource(_entityName, id).Count > 0)
                 return Result.Fail("سُحب من هذا المستند — احذف ما سُحب إليه أولاً", ErrorCode.ValidationFailed);
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                _links.RemovePull(_entityName, id, conn, tx);
-                _stock.RemoveMovements(conn, tx, _entityName, id);
-                Repo.DeleteDocument(conn, tx, id);
+                _links.RemovePull(_entityName, id, db);
+                _stock.RemoveMovements(db, _entityName, id);
+                Repo.DeleteDocument(db, id);
             });
 
             Audit.Log(_entityName, id, AuditAction.Delete);

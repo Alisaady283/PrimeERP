@@ -3,6 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Inventory
 {
+    /// <summary>عقد التحويل المخزني</summary>
     public interface IStockTransferService
     {
         Result<PagedResult<StockTransferDto>> GetPaged(int page, int pageSize, StockTransferFilter filter = null);

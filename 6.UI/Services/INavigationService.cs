@@ -3,6 +3,7 @@ using System.Windows.Controls;
 
 namespace PrimeERP.UI.Services
 {
+    /// <summary>خدمة واجهة Navigation</summary>
     public interface INavigationService
     {
         UserControl CurrentPage { get; }

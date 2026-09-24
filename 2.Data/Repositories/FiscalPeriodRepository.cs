@@ -1,159 +1,148 @@
 using System;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using PrimeERP.Data.Query;
 using PrimeERP.Data.Repositories.Base;
-using PrimeERP.Data.Schema;
+using PrimeERP.Data.Core;
 using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Data.Repositories
 {
-    /// <summary>
-    /// طبقة وصول بيانات السنوات/الفترات المالية — SQL خام ↔ Models فقط. بلا تحقق، بلا منطق تواريخ (كل ذلك
-    /// مسؤولية IFiscalPeriodService). يدير كيانين (FiscalYear أساسي عبر RepositoryBase، FiscalPeriod ثانوي
-    /// عبر QueryAs) — راجع تعليق RepositoryBase.QueryAs.
-    /// </summary>
+    /// <summary>مستودع FiscalPeriod</summary>
+    public interface IFiscalPeriodRepository
+    {
+
+        List<FiscalYear> GetAllYears();
+        FiscalYear GetYearById(int id);
+        FiscalYear GetCurrentYear();
+        FiscalYear GetYearContaining(string date);
+        bool AnyYearOverlapping(string start, string end, int? excludeId);
+        int InsertYear(PrimeDbContext db, FiscalYear year);
+        void UpdateYear(PrimeDbContext db, FiscalYear year);
+        void SetYearClosed(PrimeDbContext db, int id, DateTime closedAt, string closedBy, int? closingEntryId);
+        void SetYearReopened(PrimeDbContext db, int id);
+        void SetCurrentYear(PrimeDbContext db, int id);
+
+        List<FiscalPeriod> GetPeriods(int yearId);
+        FiscalPeriod GetPeriodById(int id);
+        FiscalPeriod GetPeriodContaining(string date);
+        void InsertPeriod(PrimeDbContext db, FiscalPeriod period);
+        void UpdatePeriod(PrimeDbContext db, FiscalPeriod period);
+        void SetPeriodClosed(PrimeDbContext db, int id, DateTime closedAt, string closedBy);
+        void SetPeriodReopened(PrimeDbContext db, int id);
+    }
+
+    /// <summary>طبقة وصول بيانات السنوات/الفترات المالية</summary>
     public class FiscalPeriodRepository : RepositoryBase<FiscalYear>, IFiscalPeriodRepository
     {
         protected override string TableName => "FiscalYears";
 
-        public void CreateTable()
-        {
-            SchemaBuilder.Table("FiscalYears")
-                .Id()
-                .Text("Name", 100, required: true)
-                .Text("StartDate", 20, required: true)
-                .Text("EndDate", 20, required: true)
-                .Bool("IsClosed", defaultValue: false)
-                .DateCol("ClosedAt")
-                .Text("ClosedBy", 100)
-                .Int("ClosingEntryId")
-                .Bool("IsCurrent", defaultValue: false)
-                .Audit()
-                .SoftDelete()
-                .Concurrency()
-                .Create();
 
-            SchemaBuilder.Table("FiscalPeriods")
-                .Id()
-                .Int("FiscalYearId", nullable: false)
-                .Int("PeriodNo", nullable: false)
-                .Text("Name", 100, required: true)
-                .Text("StartDate", 20, required: true)
-                .Text("EndDate", 20, required: true)
-                .Bool("IsClosed", defaultValue: false)
-                .DateCol("ClosedAt")
-                .Text("ClosedBy", 100)
-                .Audit()
-                .Concurrency()
-                .ForeignKey("FiscalYearId", "FiscalYears", "Id")
-                .Index("FiscalYearId")
-                .Create();
-        }
 
-        protected override FiscalYear Map(DataRow row) => new()
-        {
-            Id             = Convert.ToInt32(row["Id"]),
-            Name           = row["Name"].ToString(),
-            StartDate      = row["StartDate"].ToString(),
-            EndDate        = row["EndDate"].ToString(),
-            IsClosed       = Convert.ToBoolean(row["IsClosed"]),
-            ClosedAt       = row["ClosedAt"] == DBNull.Value ? null : Convert.ToDateTime(row["ClosedAt"]),
-            ClosedBy       = row["ClosedBy"] == DBNull.Value ? null : row["ClosedBy"].ToString(),
-            ClosingEntryId = row["ClosingEntryId"] == DBNull.Value ? null : Convert.ToInt32(row["ClosingEntryId"]),
-            IsCurrent      = Convert.ToBoolean(row["IsCurrent"]),
-            IsDeleted      = Convert.ToBoolean(row["IsDeleted"]),
-            RowVersion     = Convert.ToInt64(row["RowVersion"])
-        };
 
-        private static FiscalPeriod MapPeriod(DataRow row) => new()
-        {
-            Id           = Convert.ToInt32(row["Id"]),
-            FiscalYearId = Convert.ToInt32(row["FiscalYearId"]),
-            PeriodNo     = Convert.ToInt32(row["PeriodNo"]),
-            Name         = row["Name"].ToString(),
-            StartDate    = row["StartDate"].ToString(),
-            EndDate      = row["EndDate"].ToString(),
-            IsClosed     = Convert.ToBoolean(row["IsClosed"]),
-            ClosedAt     = row["ClosedAt"] == DBNull.Value ? null : Convert.ToDateTime(row["ClosedAt"]),
-            ClosedBy     = row["ClosedBy"] == DBNull.Value ? null : row["ClosedBy"].ToString(),
-            RowVersion   = Convert.ToInt64(row["RowVersion"])
-        };
 
-        // ===== سنوات =====
+        private const string Periods = "FiscalPeriods";
 
         public List<FiscalYear> GetAllYears() =>
-            Query("SELECT * FROM FiscalYears WHERE IsDeleted = @d ORDER BY StartDate DESC", null, null, ("@d", false));
+            Fetch(q => q.Where(y => !y.IsDeleted).OrderByDescending(y => y.StartDate));
 
         public FiscalYear GetYearById(int id) => GetById(id);
 
-        public FiscalYear GetCurrentYear() =>
-            QueryOne("SELECT * FROM FiscalYears WHERE IsCurrent = @c AND IsDeleted = @d", null, null, ("@c", true), ("@d", false));
+        public FiscalYear GetCurrentYear() => One(q => q.Where(y => y.IsCurrent && !y.IsDeleted));
 
         public FiscalYear GetYearContaining(string date) =>
-            QueryOne("SELECT * FROM FiscalYears WHERE @date >= StartDate AND @date <= EndDate AND IsDeleted = @d",
-                null, null, ("@date", date), ("@d", false));
+            One(q => q.Where(y => !y.IsDeleted
+                               && string.Compare(date, y.StartDate) >= 0
+                               && string.Compare(date, y.EndDate) <= 0));
 
-        public bool AnyYearOverlapping(string start, string end, int? excludeId)
-        {
-            var where = new WhereBuilder()
-                .Eq("IsDeleted", false)
-                .RawWithParam(p => $"StartDate <= {p}", end)
-                .RawWithParam(p => $"EndDate >= {p}", start)
-                .RawWithParam(p => $"Id != {p}", excludeId);
-            return Convert.ToInt64(Scalar($"SELECT COUNT(*) FROM FiscalYears {where.Sql}", where.Parameters)) > 0;
-        }
+        public bool AnyYearOverlapping(string start, string end, int? excludeId) =>
+            Count(q => q.Where(y => !y.IsDeleted
+                                 && string.Compare(y.StartDate, end) <= 0
+                                 && string.Compare(y.EndDate, start) >= 0
+                                 && (excludeId == null || y.Id != excludeId))) > 0;
 
-        public int InsertYear(DbConnection conn, DbTransaction tx, FiscalYear year) =>
-            InsertGetId("INSERT INTO FiscalYears (Name, StartDate, EndDate, IsCurrent) VALUES (@name, @start, @end, @current)",
-                conn, tx, ("@name", year.Name), ("@start", year.StartDate), ("@end", year.EndDate), ("@current", year.IsCurrent));
+        public int InsertYear(PrimeDbContext db, FiscalYear year) => Add(year, db);
 
-        public void UpdateYear(DbConnection conn, DbTransaction tx, FiscalYear year) =>
-            Exec("UPDATE FiscalYears SET Name = @name, StartDate = @start, EndDate = @end, UpdatedAt = @now WHERE Id = @id",
-                conn, tx, ("@name", year.Name), ("@start", year.StartDate), ("@end", year.EndDate), ("@now", DateTime.Now), ("@id", year.Id));
+        public void UpdateYear(PrimeDbContext db, FiscalYear year) =>
+            Edit(y => y.Id == year.Id, row =>
+            {
+                row.Name = year.Name;
+                row.StartDate = year.StartDate;
+                row.EndDate = year.EndDate;
+            }, db);
 
-        public void SetYearClosed(DbConnection conn, DbTransaction tx, int id, DateTime closedAt, string closedBy, int? closingEntryId) =>
-            Exec("UPDATE FiscalYears SET IsClosed = @c, ClosedAt = @at, ClosedBy = @by, ClosingEntryId = @entry WHERE Id = @id",
-                conn, tx, ("@c", true), ("@at", closedAt), ("@by", closedBy), ("@entry", (object)closingEntryId), ("@id", id));
+        public void SetYearClosed(PrimeDbContext db, int id, DateTime closedAt, string closedBy,
+                                  int? closingEntryId) =>
+            Edit(y => y.Id == id, row =>
+            {
+                row.IsClosed = true;
+                row.ClosedAt = closedAt;
+                row.ClosedBy = closedBy;
+                row.ClosingEntryId = closingEntryId;
+            }, db);
 
-        public void SetYearReopened(DbConnection conn, DbTransaction tx, int id) =>
-            Exec("UPDATE FiscalYears SET IsClosed = @c, ClosedAt = NULL, ClosedBy = NULL, ClosingEntryId = NULL WHERE Id = @id",
-                conn, tx, ("@c", false), ("@id", id));
+        public void SetYearReopened(PrimeDbContext db, int id) =>
+            Edit(y => y.Id == id, row =>
+            {
+                row.IsClosed = false;
+                row.ClosedAt = null;
+                row.ClosedBy = null;
+                row.ClosingEntryId = null;
+            }, db);
 
-        public void SetCurrentYear(DbConnection conn, DbTransaction tx, int id)
-        {
-            Exec("UPDATE FiscalYears SET IsCurrent = @f", conn, tx, ("@f", false));
-            Exec("UPDATE FiscalYears SET IsCurrent = @t WHERE Id = @id", conn, tx, ("@t", true), ("@id", id));
-        }
-
-        // ===== فترات =====
+        public void SetCurrentYear(PrimeDbContext db, int id) =>
+            Write(db =>
+            {
+                foreach (var row in Rows(db).AsTracking())
+                    row.IsCurrent = row.Id == id;
+                return 0;
+            }, db);
 
         public List<FiscalPeriod> GetPeriods(int yearId) =>
-            QueryAs(MapPeriod, "SELECT * FROM FiscalPeriods WHERE FiscalYearId = @y ORDER BY PeriodNo", null, null, ("@y", yearId));
+            FetchOf<FiscalPeriod>(Periods, q => q.Where(p => p.FiscalYearId == yearId).OrderBy(p => p.PeriodNo));
 
         public FiscalPeriod GetPeriodById(int id) =>
-            QueryOneAs(MapPeriod, "SELECT * FROM FiscalPeriods WHERE Id = @id", null, null, ("@id", id));
+            FetchOf<FiscalPeriod>(Periods, q => q.Where(p => p.Id == id).Take(1)).FirstOrDefault();
 
         public FiscalPeriod GetPeriodContaining(string date) =>
-            QueryOneAs(MapPeriod, "SELECT * FROM FiscalPeriods WHERE @date >= StartDate AND @date <= EndDate", null, null, ("@date", date));
+            FetchOf<FiscalPeriod>(Periods, q => q.Where(p => string.Compare(date, p.StartDate) >= 0
+                                                          && string.Compare(date, p.EndDate) <= 0).Take(1))
+                .FirstOrDefault();
 
-        public void InsertPeriod(DbConnection conn, DbTransaction tx, FiscalPeriod period) =>
-            Exec(@"INSERT INTO FiscalPeriods (FiscalYearId, PeriodNo, Name, StartDate, EndDate) VALUES (@year, @no, @name, @start, @end)",
-                conn, tx,
-                ("@year", period.FiscalYearId), ("@no", period.PeriodNo), ("@name", period.Name),
-                ("@start", period.StartDate), ("@end", period.EndDate));
+        public void InsertPeriod(PrimeDbContext db, FiscalPeriod period) =>
+            Write(db => { SetOf<FiscalPeriod>(db, Periods).Add(period); return 0; }, db);
 
-        public void UpdatePeriod(DbConnection conn, DbTransaction tx, FiscalPeriod period) =>
-            Exec("UPDATE FiscalPeriods SET Name = @name, StartDate = @start, EndDate = @end, UpdatedAt = @now WHERE Id = @id",
-                conn, tx, ("@name", period.Name), ("@start", period.StartDate), ("@end", period.EndDate), ("@now", DateTime.Now), ("@id", period.Id));
+        public void UpdatePeriod(PrimeDbContext db, FiscalPeriod period) =>
+            Write(db =>
+            {
+                var row = RowsOf<FiscalPeriod>(db, Periods).AsTracking().FirstOrDefault(p => p.Id == period.Id);
+                if (row == null) return 0;
+                row.Name = period.Name;
+                row.StartDate = period.StartDate;
+                row.EndDate = period.EndDate;
+                return 0;
+            }, db);
 
-        public void SetPeriodClosed(DbConnection conn, DbTransaction tx, int id, DateTime closedAt, string closedBy) =>
-            Exec("UPDATE FiscalPeriods SET IsClosed = @c, ClosedAt = @at, ClosedBy = @by WHERE Id = @id",
-                conn, tx, ("@c", true), ("@at", closedAt), ("@by", closedBy), ("@id", id));
+        public void SetPeriodClosed(PrimeDbContext db, int id, DateTime closedAt, string closedBy) =>
+            Write(db =>
+            {
+                var row = RowsOf<FiscalPeriod>(db, Periods).AsTracking().FirstOrDefault(p => p.Id == id);
+                if (row == null) return 0;
+                row.IsClosed = true;
+                row.ClosedAt = closedAt;
+                row.ClosedBy = closedBy;
+                return 0;
+            }, db);
 
-        public void SetPeriodReopened(DbConnection conn, DbTransaction tx, int id) =>
-            Exec("UPDATE FiscalPeriods SET IsClosed = @c, ClosedAt = NULL, ClosedBy = NULL WHERE Id = @id",
-                conn, tx, ("@c", false), ("@id", id));
+        public void SetPeriodReopened(PrimeDbContext db, int id) =>
+            Write(db =>
+            {
+                var row = RowsOf<FiscalPeriod>(db, Periods).AsTracking().FirstOrDefault(p => p.Id == id);
+                if (row == null) return 0;
+                row.IsClosed = false;
+                row.ClosedAt = null;
+                row.ClosedBy = null;
+                return 0;
+            }, db);
     }
 }

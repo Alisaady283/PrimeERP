@@ -6,12 +6,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Architecture
 {
-    /// <summary>
-    /// نسخة انعكاسية (IL مُصرَّف فعلياً) من فحوصات حدود الطبقات في Tools/ArchitectureCheck/check.sh § 1 —
-    /// تكمّلها لا تكررها: check.sh يفحص نص المصدر (using) فيفلت منه أي إشارة بالاسم الكامل المؤهَّل بلا
-    /// using مطابق، بينما هذا يفحص التوقيعات المُصرَّفة فعلياً (قاعدة/واجهات/حقول/خصائص/دوال) — لا يمكن أن
-    /// يفلت منه خرق حقيقي وصل للـIL بغض النظر عن أسلوب كتابته في المصدر.
-    /// </summary>
+    /// <summary>حدود الطبقات على IL المُصرَّف</summary>
     public class LayerBoundaryTests
     {
         private static readonly Assembly MainAssembly = typeof(PrimeERP.Domain.Entities.Account).Assembly;

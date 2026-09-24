@@ -1,0 +1,361 @@
+{
+ "bond": {
+  "AppSettings": "AppSetting",
+  "BackupHistory": "BackupHistoryRecord",
+  "Accounts": "Account",
+  "JournalEntries": "JournalEntry",
+  "JournalEntryLines": "JournalLine",
+  "FiscalYears": "FiscalYear",
+  "FiscalPeriods": "FiscalPeriod",
+  "Customers": "Customer",
+  "Suppliers": "Supplier",
+  "Categories": "Category",
+  "Products": "Product",
+  "Assets": "Asset",
+  "Employees": "Employee",
+  "Departments": "Department",
+  "JobTitles": "JobTitle",
+  "Units": "Unit",
+  "Warehouses": "Warehouse",
+  "StockMovements": "StockMovement",
+  "SalesInvoices": "SalesInvoice",
+  "SalesInvoiceLines": "SalesInvoiceLine",
+  "PurchaseInvoices": "PurchaseInvoice",
+  "PurchaseInvoiceLines": "PurchaseInvoiceLine",
+  "Permissions": "Permission",
+  "Roles": "Role",
+  "RolePermissions": "RolePermission",
+  "Users": "User",
+  "UserPermissions": "UserPermission",
+  "AuditLog": "AuditEntry",
+  "SalesReturns": "SalesReturn",
+  "SalesReturnLines": "SalesReturnLine",
+  "PurchaseReturns": "PurchaseReturn",
+  "PurchaseReturnLines": "PurchaseReturnLine",
+  "StockInDocuments": "StockAdjustment",
+  "StockInLines": "StockAdjustmentLine",
+  "StockOutDocuments": "StockAdjustment",
+  "StockOutLines": "StockAdjustmentLine",
+  "StockTransferDocuments": "StockTransferDocument",
+  "StockTransferLines": "StockTransferLine",
+  "Payrolls": "Payroll",
+  "PayrollLines": "PayrollLine",
+  "DocumentLinks": "DocumentLink",
+  "PurchaseRequestDocuments": "CycleDocument",
+  "PurchaseRequestLines": "CycleDocumentLine",
+  "PurchaseOrderDocuments": "CycleDocument",
+  "PurchaseOrderLines": "CycleDocumentLine",
+  "QuotationDocuments": "CycleDocument",
+  "QuotationLines": "CycleDocumentLine",
+  "SalesOrderDocuments": "CycleDocument",
+  "SalesOrderLines": "CycleDocumentLine",
+  "GoodsReceiptDocuments": "StockAdjustment",
+  "GoodsReceiptLines": "StockAdjustmentLine",
+  "GoodsIssueDocuments": "StockAdjustment",
+  "GoodsIssueLines": "StockAdjustmentLine",
+  "DeliveryNoteDocuments": "StockAdjustment",
+  "DeliveryNoteLines": "StockAdjustmentLine",
+  "SalesReceiptDocuments": "StockAdjustment",
+  "SalesReceiptLines": "StockAdjustmentLine",
+  "Treasuries": "Treasury",
+  "Vouchers": "Voucher",
+  "VoucherAllocations": "VoucherAllocation",
+  "Cheques": "Cheque",
+  "ChequeMovements": "ChequeMovement",
+  "BuilderSections": "BuilderSection",
+  "BuilderModules": "BuilderModule",
+  "BuilderColumns": "BuilderColumn",
+  "BuilderActions": "BuilderAction",
+  "BuilderFilters": "BuilderFilter",
+  "AssetRevaluations": "AssetRevaluation",
+  "AssetDepreciations": "AssetDepreciation",
+  "AssetDisposals": "AssetDisposal",
+  "EmployeeAllowances": "EmployeeAllowance",
+  "EmployeeDeductions": "EmployeeDeduction",
+  "Attendances": "Attendance",
+  "Licenses": "License",
+  "NumberSequences": "NumberSequence"
+ },
+ "skip": [
+  "AssetDepreciationLines",
+  "AssetDepreciationRuns",
+  "__Migrations",
+  "sqlite_sequence"
+ ],
+ "orphan": [],
+ "columns_without_property": {
+  "Accounts": [
+   "CreatedBy",
+   "UpdatedBy"
+  ],
+  "Assets": [
+   "DepAccountCode"
+  ],
+  "Attendances": [
+   "CheckInMinutes",
+   "CheckOutMinutes"
+  ],
+  "Categories": [
+   "CreatedAt",
+   "CreatedBy",
+   "DepAccountCode",
+   "UpdatedAt",
+   "UpdatedBy"
+  ],
+  "ChequeMovements": [
+   "UpdatedAt",
+   "UpdatedBy"
+  ],
+  "DocumentLinks": [
+   "UpdatedAt",
+   "UpdatedBy"
+  ],
+  "FiscalPeriods": [
+   "CreatedAt",
+   "CreatedBy",
+   "UpdatedAt",
+   "UpdatedBy"
+  ],
+  "FiscalYears": [
+   "CreatedAt",
+   "CreatedBy",
+   "DeletedAt",
+   "DeletedBy",
+   "UpdatedAt",
+   "UpdatedBy"
+  ],
+  "JournalEntries": [
+   "UpdatedBy"
+  ],
+  "PurchaseInvoiceLines": [
+   "TaxAmount",
+   "TaxPercent"
+  ],
+  "PurchaseInvoices": [
+   "TaxAmount"
+  ],
+  "PurchaseReturnLines": [
+   "TaxAmount",
+   "TaxPercent"
+  ],
+  "PurchaseReturns": [
+   "TaxAmount"
+  ],
+  "SalesInvoiceLines": [
+   "TaxAmount",
+   "TaxPercent"
+  ],
+  "SalesInvoices": [
+   "TaxAmount"
+  ],
+  "SalesReturnLines": [
+   "TaxAmount",
+   "TaxPercent"
+  ],
+  "SalesReturns": [
+   "TaxAmount"
+  ]
+ },
+ "properties_without_column": {
+  "AssetDepreciation": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "RowVersion"
+  ],
+  "Asset": [
+   "DepreciationAccountCode"
+  ],
+  "Attendance": [
+   "CheckIn",
+   "CheckOut",
+   "EmployeeCode",
+   "EmployeeName",
+   "RowVersion"
+  ],
+  "BuilderAction": [
+   "RowVersion"
+  ],
+  "BuilderColumn": [
+   "RowVersion"
+  ],
+  "BuilderFilter": [
+   "RowVersion"
+  ],
+  "BuilderModule": [
+   "RowVersion"
+  ],
+  "BuilderSection": [
+   "RowVersion"
+  ],
+  "Cheque": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "RowVersion"
+  ],
+  "StockAdjustment": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "Lines",
+   "RowVersion"
+  ],
+  "Department": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "RowVersion"
+  ],
+  "EmployeeAllowance": [
+   "EmployeeCode",
+   "EmployeeName",
+   "RowVersion"
+  ],
+  "EmployeeDeduction": [
+   "EmployeeCode",
+   "EmployeeName",
+   "RowVersion"
+  ],
+  "Employee": [
+   "DepartmentName",
+   "JobTitleName"
+  ],
+  "JobTitle": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "RowVersion"
+  ],
+  "JournalEntry": [
+   "Lines"
+  ],
+  "License": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "RowVersion"
+  ],
+  "Payroll": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "Lines",
+   "RowVersion"
+  ],
+  "Product": [
+   "CurrentStock",
+   "TaxRate",
+   "UnitName"
+  ],
+  "PurchaseInvoiceLine": [
+   "UnitId"
+  ],
+  "PurchaseInvoice": [
+   "CurrencyId",
+   "DeletedAt",
+   "DeletedBy",
+   "DiscountPercent",
+   "DueDate",
+   "ExchangeRate",
+   "IsDeleted",
+   "Lines",
+   "PaidAmount",
+   "PaymentMethod",
+   "RemainingAmount",
+   "RowVersion"
+  ],
+  "CycleDocument": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "Lines",
+   "RowVersion"
+  ],
+  "PurchaseReturn": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "Lines",
+   "RowVersion"
+  ],
+  "Role": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "RowVersion"
+  ],
+  "SalesInvoiceLine": [
+   "UnitId"
+  ],
+  "SalesInvoice": [
+   "CurrencyId",
+   "DeletedAt",
+   "DeletedBy",
+   "DiscountPercent",
+   "DueDate",
+   "ExchangeRate",
+   "IsDeleted",
+   "Lines",
+   "PaidAmount",
+   "PaymentMethod",
+   "RemainingAmount",
+   "RowVersion",
+   "SalesRepId"
+  ],
+  "SalesReturn": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "Lines",
+   "RowVersion"
+  ],
+  "StockMovement": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "RowVersion"
+  ],
+  "StockTransferDocument": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "Lines",
+   "RowVersion"
+  ],
+  "Supplier": [
+   "AccountId"
+  ],
+  "Treasury": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "RowVersion"
+  ],
+  "Unit": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "RowVersion"
+  ],
+  "User": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "RoleName"
+  ],
+  "Voucher": [
+   "Allocations",
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "RowVersion"
+  ],
+  "Warehouse": [
+   "DeletedAt",
+   "DeletedBy",
+   "IsDeleted",
+   "RowVersion"
+  ]
+ }
+}

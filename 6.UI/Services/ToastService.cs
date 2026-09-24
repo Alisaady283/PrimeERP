@@ -4,7 +4,7 @@ using PrimeERP.UI.Components.Feedback;
 
 namespace PrimeERP.UI.Services
 {
-    /// <summary>يعرض إشعارات Toast فوق أي نافذة نشطة عبر نافذة مضيفة شفافة مستقلة — لا يعتمد على نافذة تطبيق محددة.</summary>
+    /// <summary>يعرض إشعارات Toast فوق أي</summary>
     public class ToastService : IToastService
     {
         private const int MaxVisible = 4;

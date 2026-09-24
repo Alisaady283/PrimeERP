@@ -12,9 +12,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>المعاملات كلها تصبّ في القيود والتقارير تقرأ منها — لكن القيد يُنشأ مسودة والكشف يقرأ
-    /// المرحَّل وحده، فالقيد اليدوي كان يغيب بينما تظهر السندات (تُرحَّل تلقائياً). الترحيل صار إجراءً
-    /// مُعلَناً على شاشة القيود.</summary>
+    /// <summary>المعاملات كلها تصبّ في القيود</summary>
     public class JournalToStatementTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -48,7 +46,6 @@ namespace PrimeERP.Tests.Services
             });
             Assert.True(entry.IsSuccess, entry.ErrorMessage);
 
-            // القيد يُنشأ مُرحَّلاً، فيصل الكشف فور إنشائه بلا خطوة ترحيلٍ ثانية.
             var customers = _db.Services.GetRequiredService<ICustomerService>();
 
             var statement = customers.GetStatement(customer.Value.Id, DateTime.Today.AddDays(-1), DateTime.Today).Value;
@@ -56,7 +53,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(750, line.Debit);
         }
 
-        /// <summary>الشاشة بلا ترحيل ولا إلغاء ترحيل: القيد يُنشأ مُرحَّلاً، وحارس الرصيد والفترة هما التحقق.</summary>
         [Fact]
         public void TheJournalsScreen_ExposesNoPostingAction()
         {

@@ -1,18 +1,12 @@
+using PrimeERP.Data.Core;
 using System;
-using System.Data.Common;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Permissions;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Application.Services
 {
-    /// <summary>
-    /// يولّد أرقاماً متسلسلة فريدة لكل مفتاح (قيود يومية، فواتير...) بصيغة Prefix-Year-Number، مع تصفير
-    /// سنوي اختياري. منطق "هل نُصفّر لأن السنة تغيّرت؟" هنا (الخدمة)، لا في NumberSequenceRepository —
-    /// الأخيرة SQL خام ↔ صف فقط. أول استخدام لأي مفتاح ينشئ صفّه تلقائياً بإعدادات افتراضية
-    /// (البادئة = المفتاح نفسه، 5 خانات، تصفير سنوي) — تُعدَّل لاحقاً عبر شاشة إعدادات عند الحاجة.
-    /// </summary>
+    /// <summary>أرقام متسلسلة لكل مفتاح</summary>
     public class NumberSequenceService : INumberSequenceService
     {
         private readonly INumberSequenceRepository _repo;
@@ -29,27 +23,26 @@ namespace PrimeERP.Application.Services
         public string Next(string key)
         {
             _repo.EnsureRow(key);
-            return Db.RunTransaction((conn, tx) => NextCore(conn, tx, key));
+            return DbContextFactory.RunTransaction(db => NextCore(db, key));   // لا يرث ServiceBase: بلا صلاحية ولا تدقيق
         }
 
-        public string Next(DbConnection conn, DbTransaction tx, string key)
+        public string Next(PrimeDbContext db, string key)
         {
-            _repo.EnsureRow(conn, tx, key);
-            return NextCore(conn, tx, key);
+            _repo.EnsureRow(db, key);
+            return NextCore(db, key);
         }
 
-        private string NextCore(DbConnection conn, DbTransaction tx, string key)
+        private string NextCore(PrimeDbContext db, string key)
         {
-            var row = _repo.GetRow(conn, tx, key);
+            var row = _repo.GetRow(db, key);
             var year = DateTime.Now.Year;
             var number = row.ResetYearly && row.LastYear != year ? 1 : row.NextNumber;
 
-            _repo.UpdateNext(conn, tx, key, number + 1, year);
+            _repo.UpdateNext(db, key, number + 1, year);
 
             return Format(row.Prefix, year, number, row.Padding, row.ResetYearly);
         }
 
-        /// <summary>المستند يحمل سنته لأنه يُصفَّر بها؛ والسجلّ الذي لا يُصفَّر سريالٌ متصل بلا سنة.</summary>
         private static string Format(string prefix, int year, int number, int padding, bool yearly) =>
             yearly ? $"{prefix}-{year}-{number.ToString("D" + padding)}"
                    : $"{prefix}{number.ToString("D" + padding)}";

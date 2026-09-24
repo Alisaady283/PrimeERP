@@ -14,7 +14,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>أزرار الشريط: أيّها يعمل بلا تحديد صفّ، وأيّها ينتظره.</summary>
+    /// <summary>أزرار الشريط</summary>
     [Collection("WpfApplication")]
     public class ToolbarEnabledTests : IDisposable
     {
@@ -27,7 +27,7 @@ namespace PrimeERP.Tests.Composition
         private List<ToolbarAction> Toolbar(string moduleKey)
         {
             UIServices.Initialize(_db.Services);
-            _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+            _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
             var definition = _db.Services.GetRequiredService<IModuleRegistry>().Get(moduleKey);
             var page = CrudPageRenderer.Render(definition, _db.Services);
@@ -65,7 +65,6 @@ namespace PrimeERP.Tests.Composition
                 var actions = Toolbar("OpeningBalances");
                 var add = actions.Single(a => a.Text == "جديد");
 
-                // لا قيد افتتاحي بعد — الإضافة متاحة.
                 Assert.True(add.Command.CanExecute(null));
             });
         }

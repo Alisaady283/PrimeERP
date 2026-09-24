@@ -10,19 +10,21 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.Security
 {
-    // فوق جداول Roles/Users المُدارة أصلاً عبر PermissionDb (استثناء DbHelper مباشر مقبول ومسجَّل، مثل
-    // BackupService — لا Repository موازٍ لجداول Platform.Permissions).
+    /// <summary>الأدوار وصلاحياتها</summary>
     public class RoleService : ServiceBase, IRoleService
     {
         protected override string PermissionPrefix => "Users";
         protected override string StringPrefix => "Str.Role";
         protected override string EntityName => "Roles";
 
-        public RoleService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
-            : base(permissions, settings, localization, audit) { }
+        private readonly IPermissionStore _store;
+
+        public RoleService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
+            IAuditLogger audit, IPermissionStore store)
+            : base(permissions, settings, localization, audit) => _store = store;
 
         public Result<List<RoleDto>> GetAll() =>
-            Result.Ok(PermissionDb.GetAllRoles().Select(r => new RoleDto { Id = r.Id, Name = r.Name, NameAr = r.NameAr, IsSystem = r.IsSystem }).ToList());
+            Result.Ok(_store.GetAllRoles().Select(r => new RoleDto { Id = r.Id, Name = r.Name, NameAr = r.NameAr, IsSystem = r.IsSystem }).ToList());
 
         public Result<RoleDto> Create(CreateRoleDto dto)
         {
@@ -30,7 +32,7 @@ namespace PrimeERP.Application.Services.Security
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.NameAr))
                 return Result.Fail<RoleDto>("اسم الدور مطلوب", ErrorCode.ValidationFailed);
 
-            var id = PermissionDb.InsertRole(dto.Name, dto.NameAr);
+            var id = _store.InsertRole(dto.Name, dto.NameAr);
             Audit.Log(EntityName, id, AuditAction.Insert, newValue: new { dto.Name });
             return Result.Ok(new RoleDto { Id = id, Name = dto.Name, NameAr = dto.NameAr, IsSystem = false });
         }
@@ -38,11 +40,11 @@ namespace PrimeERP.Application.Services.Security
         public Result Update(UpdateRoleDto dto)
         {
             if (!Can("ManageRoles")) return FailDenied();
-            if (PermissionDb.IsSystemRole(dto.Id)) return Fail("لا يمكن تعديل دور نظامي", ErrorCode.ValidationFailed);
+            if (_store.IsSystemRole(dto.Id)) return Fail("لا يمكن تعديل دور نظامي", ErrorCode.ValidationFailed);
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.NameAr))
                 return Fail("اسم الدور مطلوب", ErrorCode.ValidationFailed);
 
-            PermissionDb.UpdateRole(dto.Id, dto.Name, dto.NameAr);
+            _store.UpdateRole(dto.Id, dto.Name, dto.NameAr);
             Audit.Log(EntityName, dto.Id, AuditAction.Update, newValue: new { dto.Name });
             return Result.Ok();
         }
@@ -50,10 +52,10 @@ namespace PrimeERP.Application.Services.Security
         public Result Delete(int id)
         {
             if (!Can("ManageRoles")) return FailDenied();
-            if (PermissionDb.IsSystemRole(id)) return Fail("لا يمكن حذف دور نظامي", ErrorCode.ValidationFailed);
-            if (PermissionDb.RoleHasUsers(id)) return Fail("لا يمكن حذف دور له مستخدمون", ErrorCode.ValidationFailed);
+            if (_store.IsSystemRole(id)) return Fail("لا يمكن حذف دور نظامي", ErrorCode.ValidationFailed);
+            if (_store.RoleHasUsers(id)) return Fail("لا يمكن حذف دور له مستخدمون", ErrorCode.ValidationFailed);
 
-            PermissionDb.DeleteRole(id);
+            _store.DeleteRole(id);
             Audit.Log(EntityName, id, AuditAction.Delete);
             return Result.Ok();
         }

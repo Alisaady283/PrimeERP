@@ -2,7 +2,7 @@ using System;
 
 namespace PrimeERP.Application.DTOs.Assets
 {
-    /// <summary>قسط إهلاكٍ كما يُعرَض: أصله وشهره ومبلغه وقيده.</summary>
+    /// <summary>قسط إهلاكٍ كما يُعرَض</summary>
     public class AssetDepreciationDto
     {
         public int      Id          { get; set; }

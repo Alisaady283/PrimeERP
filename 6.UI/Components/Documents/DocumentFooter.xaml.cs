@@ -5,9 +5,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Documents
 {
-    /// <summary>
-    /// تذييل مستند عام (إجماليات + رسالة حالة + إجراءات) — يُحدَّث حيّاً من DocumentLinesGrid.LineChanged/TotalsChanged.
-    /// </summary>
+    /// <summary>تذييل مستند عام</summary>
     public partial class DocumentFooter : UserControl
     {
         public static readonly DependencyProperty TotalsSourceProperty =
@@ -34,7 +32,6 @@ namespace PrimeERP.UI.Components.Documents
             InitializeComponent();
         }
 
-        /// <summary>تحديث حيّ للإجماليات — غلاف صريح فوق TotalsSource كما هو مطلوب، بلا فرق وظيفي عن الخاصية.</summary>
         public void UpdateTotals(List<FooterTotal> totals) => TotalsSource = totals;
 
         private static void OnStatusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>

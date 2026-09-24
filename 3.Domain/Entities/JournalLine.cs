@@ -1,5 +1,6 @@
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان JournalLine</summary>
     public class JournalLine
     {
         public int     Id          { get; set; }

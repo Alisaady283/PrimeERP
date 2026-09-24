@@ -3,15 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.UI.Components.Tree
 {
-    /// <summary>
-    /// فلترة إخفاء حقيقية على شجرة TreeNodeViewModel (لا مجرد توسيع).
-    /// القواعد:
-    ///   - العقدة تظهر لو مطابقة، أو لو أي ابن لها مطابق (مباشر أو غير مباشر)
-    ///   - الآباء المؤدية لمطابقة تظهر وتتوسع تلقائياً أثناء البحث
-    ///   - غير المطابقة وبلا أبناء مطابقين تختفي تماماً (لا تدخل VisibleChildren لأبيها)
-    ///   - المطابقة تُميّز عبر IsMatch (تلوين في القالب)
-    ///   - بحث فارغ: كل العقد تظهر، وحالة التوسّع تبقى كما كانت (لا تُفرض ولا تُلغى)
-    /// </summary>
+    /// <summary>فلترة إخفاء حقيقية على شجرة</summary>
     public static class TreeFilterEngine
     {
         public static void Apply(IEnumerable<TreeNodeViewModel> roots, string search,
@@ -47,7 +39,6 @@ namespace PrimeERP.UI.Components.Tree
 
             if (hasSearch && anyChildVisible)
                 node.IsExpanded = true;
-            // بحث فارغ: لا نلمس IsExpanded — يبقى بحالته السابقة كما هو (الحالة الأصلية)
 
             return node.IsVisible;
         }

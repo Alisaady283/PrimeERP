@@ -16,29 +16,18 @@ using PrimeERP.UI.Services;
 
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>
-    /// يبني صفحة قائمة+CRUD كاملة من ModuleDefinition واحدة عبر تجميع القطع الجاهزة (PageHeader/FilterBar/
-    /// AppDataGrid/AppPagination) — صفر XAML جديد لكل كيان، صفر منطق داخل Window/Page (القاعدة المعمارية
-    /// الثابتة منذ البداية). الربط بخصائص CrudViewModelBase&lt;TDto,TFilter&gt; عبر Binding بالاسم (WPF
-    /// ينعكس على أي نوع مغلَق فعلياً وقت التشغيل، لا يحتاج معرفة TDto/TFilter هنا) — عدا استدعاءات مباشرة
-    /// قليلة (LoadAsync، أوامر البحث/الصفحات من مستمعي أحداث C#) تحتاج dynamic لنفس السبب.
-    /// </summary>
+    /// <summary>تصيير صفحة القائمة وCRUD</summary>
     public static class CrudPageRenderer
     {
         public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services)
         {
             dynamic vm = Resolve.ViewModel(definition, services);
 
-            // حجم الصفحة من الإعدادات وحدها — لا رقم في نموذج العرض ولا في شريط الترقيم.
             var configured = services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>()
                 .Get(PrimeERP.Platform.Settings.SettingKeys.UI.PageSize, 25);
             if (configured > 0 && vm.PageSize < 1000) vm.PageSize = configured;
 
-            // بلا Title — AppShell.TopBar يعرض عنوان الصفحة تلقائياً من NavItem المختار (breadcrumb)؛ تكراره
-            // هنا ظهر فعلياً كنص مكرر حرفياً عند أول تشغيل حقيقي (راجع توقف 10). PageHeader هنا لاستضافة زر
-            // الإضافة فقط.
             var header = new PageHeader();
-            // سجلّ واحد: الإضافة تُعطَّل بعد أوّله — التعديل والحذف يبقيان بصلاحياتهما لمن يملكها.
             ICommand addCommand = definition.SingleRecord
                 ? new PrimeERP.UI.ViewModels.RelayCommand(
                     _ => vm.AddCommand.Execute(null),
@@ -60,14 +49,12 @@ namespace PrimeERP.Composition.Renderers
                 actions.Insert(4, ToolbarAction.MoveDown((ICommand)vm.MoveDownCommand, edit));
             }
 
-            // المستوى الأول: القائمة كتقرير — طباعة وتصدير، بلا حاجة لتحديد سجل.
             var view = $"{definition.PermissionPrefix}.View";
             actions.Add(ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(
                 _ => PrintList(definition, services, vm)), view, "طباعة التقرير"));
             actions.Add(ToolbarAction.Export(new PrimeERP.UI.ViewModels.RelayCommand(
                 _ => ExportGrid(definition, services, vm)), view, "تصدير التقرير"));
 
-            // المستوى الثاني يعيش في صفّ الفلترة أدناه، لا هنا — إجراءات الصفحة وإجراءات المستند صفّان لا صفّ.
             var documentActions = definition.DocumentDialog == null ? null : new List<ToolbarAction>
             {
                 ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(
@@ -78,7 +65,6 @@ namespace PrimeERP.Composition.Renderers
                     _ => vm.SelectedItem != null), view, "تصدير المستند"),
             };
 
-            // إجراءات الوحدة المُعلَنة (ترحيل قيد، تحريك شيك…) — تعمل على السجل المحدَّد، وتُحدِّث الشبكة بعدها.
             foreach (var rowAction in definition.RowActions ?? new List<RowAction>())
             {
                 var captured = rowAction;
@@ -114,13 +100,7 @@ namespace PrimeERP.Composition.Renderers
             if (documentActions != null)
                 filterBar.ActionsContent = new ActionToolbar { ButtonsSource = ToolbarActions.Enabled(definition, documentActions) };
 
-            // ShowPagination=false — ترقيم AppDataGrid الداخلي جانب العميل (يُقسِّم القائمة الكاملة محلياً)
-            // يتعارض مع الترقيم الحقيقي من طرف الخادم هنا (كل صفحة تُجلَب من GetPaged عند الطلب فقط، لا
-            // القائمة كاملة أبداً في الذاكرة) — AppPagination أدناه هي المرجع الوحيد. اكتُشف التكرار البصري
-            // فعلياً عند أول تشغيل حقيقي (تسجيل دخول + AppShell) — راجع توقف 10 في ARCHITECTURE.md.
-            // بطاقة الجدول تبدأ من رأسه لا من شريط الإجراءات فوقه — الشريط هيكل، والجدول بيانات.
             var grid = new AppDataGrid
-            // بلا عمود إجراءات: تعديل وحذف في الشريط، فعمودٌ ثالث لهما تكرارٌ يأكل عرضاً ويزيد ضجيجاً.
             { ColumnsSource = definition.Columns, ShowRowActions = false, ShowPagination = false, Margin = new Thickness(0, 12, 0, 0) };
             BindingOperations.SetBinding(grid, AppDataGrid.ItemsSourceProperty, new Binding("Items"));
             BindingOperations.SetBinding(grid, AppDataGrid.SelectedItemProperty, new Binding("SelectedItem") { Mode = BindingMode.TwoWay });
@@ -157,14 +137,7 @@ namespace PrimeERP.Composition.Renderers
                 });
             }
 
-            // حشو متساوٍ حول الصفحة يأتي من AppShell؛ هنا الفصل بين الجدول وشريط الترقيم وحده.
-            var pagination = new AppPagination { Margin = new Thickness(0, 8, 0, 0) };
-            BindingOperations.SetBinding(pagination, AppPagination.TotalItemsProperty, new Binding("TotalCount"));
-            BindingOperations.SetBinding(pagination, AppPagination.PageSizeProperty, new Binding("PageSize"));
-            // OneWay صراحة — CurrentPage على الـVM للقراءة فقط (private set)، والتنقل الفعلي عبر PageChanged→GoToPageCommand
-            // لا كتابة عكسية على الخاصية؛ AppPagination.CurrentPageProperty ثنائية الاتجاه افتراضياً (BindsTwoWayByDefault).
-            BindingOperations.SetBinding(pagination, AppPagination.CurrentPageProperty, new Binding("CurrentPage") { Mode = BindingMode.OneWay });
-            pagination.PageChanged += (_, page) => vm.GoToPageCommand.Execute(page);
+            var pagination = PaginationBar.For(vm, new Thickness(0, 8, 0, 0));
 
             var root = new Grid { DataContext = vm };
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -186,7 +159,6 @@ namespace PrimeERP.Composition.Renderers
             return root;
         }
 
-        /// <summary>الطباعة والتصدير من ListOutput — القائمة والتقرير يستوردان نفس القطعة.</summary>
         private static void PrintList(ModuleDefinition definition, IServiceProvider services, dynamic vm) =>
             ListOutput.Print(services, LocalizationService.Get(definition.TitleKey), definition.Columns, Rows(vm));
 

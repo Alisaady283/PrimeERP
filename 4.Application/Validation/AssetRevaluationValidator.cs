@@ -3,6 +3,7 @@ using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Application.Validation
 {
+    /// <summary>تحقّق إعادة التقييم</summary>
     public class AssetRevaluationValidator : ValidatorBase, IValidator<AssetRevaluation>
     {
         public ValidationResult Validate(AssetRevaluation revaluation)
@@ -13,7 +14,6 @@ namespace PrimeERP.Application.Validation
             if (revaluation.RevaluationDate == default) result.AddError("RevaluationDate", "تاريخ إعادة التقييم مطلوب");
             Positive(result, "NewValue", revaluation.NewValue, "القيمة بعد إعادة التقييم");
 
-            // تقييمٌ بلا فرق قيدٌ فارغ — يُرفَض بدل أن يُرحَّل صفراً.
             if (revaluation.Difference == 0)
                 result.AddError("NewValue", "القيمة الجديدة تساوي القيمة الحالية — لا فرق يُرحَّل");
 

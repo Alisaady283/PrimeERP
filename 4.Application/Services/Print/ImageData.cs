@@ -5,12 +5,11 @@ using System.Windows.Media.Imaging;
 
 namespace PrimeERP.Application.Services.Print
 {
-    /// <summary>تحويل صورة ↔ Base64 — مشترك بين حقل الصورة في الواجهة ومستند الطباعة، فالترميز واحد لا نسختان.</summary>
+    /// <summary>تحويل صورة ↔ Base64</summary>
     public static class ImageData
     {
         private const int MaxDimension = 512;
 
-        /// <summary>يقرأ ملفاً، يصغّره لأقصى بُعد ثابت، ويعيده PNG بترميز Base64 — الحجم المحفوظ صغير أياً كان الأصل.</summary>
         public static string Encode(string path)
         {
             var source = new BitmapImage();
@@ -30,8 +29,6 @@ namespace PrimeERP.Application.Services.Print
             return Convert.ToBase64String(stream.ToArray());
         }
 
-        /// <summary>الصورة تُجمَّد قبل إعادتها — بناء مستند الطباعة يجري على خيط STA غير خيط الإنشاء، وبلا
-        /// تجميد يرمي "belongs to a different thread" (نفس سبب تجميد فُرَش PrintTheme).</summary>
         public static BitmapImage Decode(string base64)
         {
             if (string.IsNullOrWhiteSpace(base64)) return null;

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
+    /// <summary>سندات الدورة</summary>
     [Collection("Database")]
     public class CycleVoucherServiceTests
     {

@@ -8,12 +8,9 @@ using PrimeERP.UI.Services;
 
 namespace PrimeERP.App;
 
-/// <summary>
-/// Interaction logic for App.xaml
-/// </summary>
+/// <summary>Interaction logic for App.xaml</summary>
 public partial class App : System.Windows.Application
 {
-    /// <summary>حاوية DI الحقيقية — بديل ServiceLocator (R3). عامة للقراءة فقط؛ التهيئة الوحيدة هنا في OnStartup.</summary>
     public static System.IServiceProvider Services { get; private set; }
 
     protected override void OnStartup(StartupEventArgs e)
@@ -31,21 +28,13 @@ public partial class App : System.Windows.Application
         Services.EnsureDatabaseReady();
         Services.RegisterModules();
 
-#if DEBUG
-        // بيانات وهمية للتجربة اليدوية فقط — بوابتها الداخلية (DemoDataSeeder.Seed) تتحقق من عدم وجود
-        // عملاء بالفعل، فلا تُعاد أبداً بعد أول زرع ناجح ولا تدخل نسخة الإنتاج (Release) إطلاقاً.
-        PrimeERP.Modules.DemoDataSeeder.Seed(Services);
-#endif
-
         UIServices.Initialize(Services);
 
         Services.GetRequiredService<IIdentityService>().Initialize();
 
-        // ⚠️ توقف 10 — Window.ShowDialog() تُعلَّق للأبد هنا (بيئة تشغيل هذا الجهاز تحديداً — راجع
-        // ARCHITECTURE.md)؛ Show() تعمل فوراً. الحل: Show() + حلقة Dispatcher يدوية (DispatcherFrame)
-        // تُحاكي حجب ShowDialog دون استخدام آليته الداخلية المُعطَّلة. ShutdownMode=OnExplicitShutdown في
-        // App.xaml لهذا السبب بالضبط — لا اعتماد على أي نافذة تُصبح MainWindow تلقائياً.
-        var login = new LoginWindow(Services.GetRequiredService<IPermissionService>());
+        // ⚠️ Show() not ShowDialog() — ARCHITECTURE § المصائد
+        var login = new LoginWindow(Services.GetRequiredService<IPermissionService>(),
+                                     Services.GetRequiredService<IPermissionStore>());
         var loginFrame = new DispatcherFrame();
         login.Closed += (_, __) => loginFrame.Continue = false;
         login.Show();

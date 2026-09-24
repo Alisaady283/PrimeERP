@@ -5,11 +5,11 @@
              xmlns:conv="clr-namespace:PrimeERP.UI.Converters"
              Foreground="{DynamicResource NavText}">
     <UserControl.Resources>
-        <shell:IconKeyToGeometryConverter x:Key="IconConv"/>
+        <conv:IconKeyToGeometryConverter x:Key="IconConv"/>
         <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
         <conv:StringToVisibilityConverter x:Key="StringVis"/>
 
-        <!-- ===== قالب متكرر ضمنياً (بلا x:Key) — يُستخدم لكل مستوى في الشجرة تلقائياً عبر Children ===== -->
+        <!-- قالب متكرر ضمنياً (بلا x:Key)  -->
         <DataTemplate DataType="{x:Type shell:NavItemViewModel}">
             <StackPanel>
                 <StackPanel.Style>
@@ -23,11 +23,9 @@
                     </Style>
                 </StackPanel.Style>
 
-                <!-- فاصل -->
                 <Border Visibility="{Binding IsSeparator, Converter={StaticResource BoolVis}}"
-                        Height="1" Margin="16,8" Background="{DynamicResource NavHover}"/>
+                        Height="{DynamicResource P.Border.Thin}" Margin="16,8" Background="{DynamicResource NavHover}"/>
 
-                <!-- الصف نفسه -->
                 <Border Visibility="{Binding IsSeparator, Converter={StaticResource BoolVis}, ConverterParameter=inverse}"
                         x:Name="rowBorder" Cursor="Hand" Background="Transparent"
                         MouseLeftButtonUp="NavRow_MouseLeftButtonUp">
@@ -44,7 +42,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="3"/>
                             <ColumnDefinition Width="15"/>
-                            <ColumnDefinition Width="24"/>
+                            <ColumnDefinition Width="{DynamicResource C.Control.Size.Xs}"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -71,7 +69,7 @@
                         </Border>
 
                         <Path Grid.Column="5" x:Name="chevron" Visibility="Collapsed" VerticalAlignment="Center"
-                              Data="{StaticResource IconChevronDown}" Width="11" Height="11" Stretch="Uniform"
+                              Data="{StaticResource IconChevronDown}" Width="{DynamicResource C.Icon.Size.Xs}" Height="{DynamicResource C.Icon.Size.Xs}" Stretch="Uniform"
                               Stroke="{DynamicResource NavIcon}" StrokeThickness="2">
                             <Path.RenderTransform>
                                 <RotateTransform x:Name="chevronRotate" Angle="0" CenterX="5.5" CenterY="5.5"/>
@@ -80,8 +78,7 @@
                     </Grid>
                 </Border>
 
-                <!-- الأبناء — يُطويان بالكامل في الوضع المطوي (لا قوائم فرعية منبثقة في هذا الجزء) -->
-                <Border x:Name="childrenClip" ClipToBounds="True" MaxHeight="0" Margin="18,0,0,0">
+                <Border x:Name="childrenClip" ClipToBounds="True" MaxHeight="0" Margin="{DynamicResource C.Section.Indent}">
                     <Border.Style>
                         <Style TargetType="Border">
                             <Setter Property="Visibility" Value="Visible"/>
@@ -133,8 +130,6 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <!-- بلا محاذاة أفقية: الشريط يملأ عموده ويمتدّ بطول النافذة كاملةً، فلا تبقى فجوة بلون النافذة
-         بجانبه ولا ينقطع سطحه قبل أسفلها. -->
     <Border x:Name="root" Width="240" VerticalAlignment="Stretch"
             Background="{DynamicResource NavSurface}" ClipToBounds="True">
         <Grid>
@@ -146,7 +141,7 @@
 
             <Grid Grid.Row="0" Height="61">
                 <ContentPresenter x:Name="logoPresenter" Margin="16,0" VerticalAlignment="Center"/>
-                <Border Height="1" VerticalAlignment="Bottom" Background="{DynamicResource NavHover}"/>
+                <Border Height="{DynamicResource P.Border.Thin}" VerticalAlignment="Bottom" Background="{DynamicResource NavHover}"/>
             </Grid>
 
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">

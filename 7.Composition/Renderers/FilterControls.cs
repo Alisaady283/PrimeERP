@@ -9,11 +9,7 @@ using PrimeERP.UI.Components.Inputs;
 
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>
-    /// شريط فلاتر الصفحة المُعلَنة — تقرؤه صفحة القائمة وصفحة الشجرة معاً. القطعة والقائمة والقيمة كلها
-    /// من آلية حقول الحوار نفسها (BuildField · LoadPickerItems · GetControlValue · OnChanged)، فأي نوع
-    /// يعمل في حقلٍ يعمل في فلتر — والفلتر التبديلي مربّع تأشير لا قائمة.
-    /// </summary>
+    /// <summary>شريط فلاتر الصفحة المُعلَنة</summary>
     public static class FilterControls
     {
         public static FrameworkElement Build(List<FilterDefinition> filters, dynamic vm, IServiceProvider services)
@@ -29,7 +25,6 @@ namespace PrimeERP.Composition.Renderers
 
                 if (control is AppComboBox combo)
                 {
-                    // الفلتر بلا عنوان فوقه: نصّه داخله، وعرضه ثابت، ويُمسح بزرّه.
                     combo.Label = null;
                     combo.Placeholder = LocalizationService.Get(filter.LabelKey);
                     combo.Width = filter.Width;
@@ -49,7 +44,6 @@ namespace PrimeERP.Composition.Renderers
                 panel.Children.Add(control);
             }
 
-            // فلترٌ يحكم فلتراً — نفس ApplyPickerFilters في الحوار: اختيار القسم يُعيد ملء قائمة صفحاته.
             foreach (var filter in filters.Where(f => !string.IsNullOrEmpty(f.PickerFilterField)))
             {
                 if (!controls.TryGetValue(filter.PickerFilterField, out var source)) continue;

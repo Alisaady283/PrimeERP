@@ -4,6 +4,8 @@
              xmlns:display="clr-namespace:PrimeERP.UI.Components.Display"
              xmlns:actionsctl="clr-namespace:PrimeERP.UI.Components.Actions"
              xmlns:conv="clr-namespace:PrimeERP.UI.Converters">
+
+    <!-- قشرة AppTopBar -->
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
     </UserControl.Resources>
@@ -21,11 +23,9 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <!-- زر طي/فتح الشريط الجانبي -->
             <actionsctl:AppIconButton Grid.Column="0" x:Name="btnToggleSidebar" Icon="{StaticResource IconMenu}"
                                        TooltipText="طي/فتح القائمة" Click="btnToggleSidebar_Click" Margin="0,0,14,0"/>
 
-            <!-- العنوان + الـ breadcrumb -->
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <display:AppBreadcrumb x:Name="breadcrumb"/>
                 <TextBlock x:Name="pageTitleText" FontSize="{DynamicResource P.Font.Size.600}"
@@ -33,15 +33,12 @@
                            Foreground="{DynamicResource TextPrimary}"/>
             </StackPanel>
 
-            <!-- spacer -->
             <Border Grid.Column="2"/>
 
-            <!-- اسم الشركة -->
             <TextBlock Grid.Column="3" x:Name="companyText" VerticalAlignment="Center" Margin="0,0,18,0"
                        FontSize="{DynamicResource P.Font.Size.300}" FontFamily="{DynamicResource P.Font.Family.Primary}"
                        Foreground="{DynamicResource TextSecondary}"/>
 
-            <!-- التاريخ: هجري وميلادي -->
             <StackPanel Grid.Column="4" x:Name="datePanel" VerticalAlignment="Center" Margin="0,0,18,0">
                 <TextBlock x:Name="gregorianText" HorizontalAlignment="Left"
                            FontSize="{DynamicResource P.Font.Size.200}" FontFamily="{DynamicResource P.Font.Family.Primary}"
@@ -51,24 +48,21 @@
                            Foreground="{DynamicResource TextMuted}"/>
             </StackPanel>
 
-            <!-- الإشعارات -->
-            <Grid Grid.Column="5" Margin="0,0,10,0">
+            <Grid Grid.Column="5" Margin="{DynamicResource C.Field.Gap}">
                 <actionsctl:AppIconButton x:Name="btnNotifications" Icon="{StaticResource IconBell}"
                                            TooltipText="الإشعارات" Click="btnNotifications_Click"/>
                 <Border x:Name="notifBadge" Background="{DynamicResource Danger}" CornerRadius="7"
-                        Width="14" Height="14" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,-2,0"
+                        Width="{DynamicResource C.Glyph.Size}" Height="14" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,-2,0"
                         Visibility="Collapsed" IsHitTestVisible="False">
                     <TextBlock x:Name="notifBadgeText" FontSize="9" Foreground="White"
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
             </Grid>
 
-            <!-- إجراءات إضافية من المستهلك -->
-            <ContentPresenter Grid.Column="6" x:Name="actionsPresenter" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <ContentPresenter Grid.Column="6" x:Name="actionsPresenter" VerticalAlignment="Center" Margin="{DynamicResource C.Field.Gap}"/>
 
-            <!-- قائمة المستخدم -->
             <StackPanel Grid.Column="7" Orientation="Horizontal" VerticalAlignment="Center">
-                <Border Width="34" Height="34" CornerRadius="17" Background="{DynamicResource BrandDefault}" Margin="0,0,8,0">
+                <Border Width="{DynamicResource C.IconButton.Size}" Height="{DynamicResource C.IconButton.Size}" CornerRadius="17" Background="{DynamicResource BrandDefault}" Margin="{DynamicResource C.Field.GapSm}">
                     <TextBlock x:Name="userInitialText" HorizontalAlignment="Center" VerticalAlignment="Center"
                                Foreground="White" FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
                                FontFamily="{DynamicResource P.Font.Family.Primary}"/>

@@ -1,5 +1,6 @@
 namespace PrimeERP.Application.DTOs.HR
 {
+    /// <summary>بيانات المسمّى الوظيفي</summary>
     public class JobTitleDto
     {
         public int    Id       { get; set; }

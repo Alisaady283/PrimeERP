@@ -4,6 +4,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Inventory
 {
+    /// <summary>عقد الوحدات</summary>
     public interface IUnitService
     {
         Result<List<UnitDto>> GetAll(bool includeInactive = false);

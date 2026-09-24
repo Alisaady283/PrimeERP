@@ -2,7 +2,7 @@ using System;
 
 namespace PrimeERP.Domain.Entities
 {
-    /// <summary>ربط سحب واحد: سطر مستند مصدر ← سطر مستند هدف. جدول واحد يخدم دورتي الشراء والبيع معاً.</summary>
+    /// <summary>ربط سحب واحد</summary>
     public class DocumentLink
     {
         public int      Id           { get; set; }

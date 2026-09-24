@@ -3,22 +3,26 @@ using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Domain.Entities
 {
-    /// <summary>قسم في الشريط الجانبي — يُطلَب قبل الصفحة، فلا صفحة بلا قسم.</summary>
+    /// <summary>قسم في الشريط الجانبي</summary>
+    /// <summary>ما يتقاسمه أبناء الوحدة</summary>
+    public abstract class BuilderChild : BaseModel
+    {
+        public int ModuleId  { get; set; }
+        public int SortOrder { get; set; }
+    }
+
     public class BuilderSection : BaseModel
     {
         public string Key      { get; set; }
         public string Title    { get; set; }
         public string IconKey  { get; set; }
         public int    SortOrder { get; set; }
+        public bool   IsProtected { get; set; }
 
-        /// <summary>مفاتيح وحدات القسم مفصولةً بفاصلة — تُبذَر من خريطة الكود ثم تُعدَّل.</summary>
         public string Modules  { get; set; }
     }
 
-    /// <summary>
-    /// وحدة مبنيّة: صفحة كاملة بنوعها. النوع يحكم كل ما بعده — التقرير بلا جدول يقرأ من غيره، والسجلّ
-    /// جدولٌ بحوار، والحركة جدولٌ برأس وسطور. لا يُخلط بينها بعد الحفظ.
-    /// </summary>
+    /// <summary>وحدة مبنيّة</summary>
     public class BuilderModule : BaseModel
     {
         public string          Key        { get; set; }
@@ -32,14 +36,12 @@ namespace PrimeERP.Domain.Entities
         public int             SortOrder  { get; set; }
         public bool            IsActive   { get; set; } = true;
 
-        /// <summary>مبذورة من صفحات الكود: تُعرَض وتُرتَّب وتُحذَف، ولا تُسجَّل ولا يُنشأ لها جدول.</summary>
         public bool            IsCoded    { get; set; }
     }
 
-    /// <summary>عمود في جدول الوحدة: تعريف تخزينه وعرضه معاً. المحسوب لا يُخزَّن بل يُجمَّع عند القراءة.</summary>
-    public class BuilderColumn : BaseModel
+    /// <summary>عمود في جدول الوحدة</summary>
+    public class BuilderColumn : BuilderChild
     {
-        public int             ModuleId    { get; set; }
         public string          Name        { get; set; }   // اسم العمود في القاعدة
         public string          Header      { get; set; }   // الاسم الظاهر
         public BuilderDataType DataType    { get; set; }
@@ -49,7 +51,6 @@ namespace PrimeERP.Domain.Entities
         public string          RefModule   { get; set; }   // نوع «من جدول»: مفتاح الوحدة المرجعية
         public string          RefDisplay  { get; set; }   // العمود المعروض منها
 
-        // العمود المحسوب: تجميعٌ من جدول مرتبط، يُقرأ ولا يُكتب (مثل رصيد العميل).
         public BuilderAggregate Aggregate   { get; set; } = BuilderAggregate.None;
         public string           AggFrom     { get; set; }  // الجدول المُجمَّع منه
         public string           AggColumn   { get; set; }  // عموده
@@ -60,30 +61,23 @@ namespace PrimeERP.Domain.Entities
         public bool            IsLine      { get; set; }   // سطر لا رأس (الحركة)
         public double          Width       { get; set; } = 140;
 
-        /// <summary>نسبة العمود من عرض الجدول. أكبر من صفر في أي عمود يجعل الجدول كلَّه نسبيّاً،
-        /// فيبقى تناسبه واحداً على أي عرض شاشة وفي أي نسخة. صفر = العرض بالبكسل كما هو.</summary>
         public double          WidthPercent { get; set; }
         public string          Footer      { get; set; }   // None / Sum / Count / Average — نصّ لأن التعداد في 6.UI
-        public int             SortOrder   { get; set; }
     }
 
-    /// <summary>زرّ مُختار من كتالوج النظام — لا يُكتب، يُؤشَّر.</summary>
-    public class BuilderAction : BaseModel
+    /// <summary>زرّ مُختار من كتالوج النظام</summary>
+    public class BuilderAction : BuilderChild
     {
-        public int    ModuleId { get; set; }
         public string ActionKey { get; set; }   // New / Edit / Delete / Refresh / Print / Export / Post…
         public bool   OnTable   { get; set; }   // إجراء جدول (على السجل المحدَّد) لا إجراء صفحة
-        public int    SortOrder { get; set; }
     }
 
-    /// <summary>فلتر فوق الشبكة — قائمة، تبديل، أو مدى تاريخين.</summary>
-    public class BuilderFilter : BaseModel
+    /// <summary>فلتر فوق الشبكة</summary>
+    public class BuilderFilter : BuilderChild
     {
-        public int    ModuleId  { get; set; }
         public string Key       { get; set; }
         public string Label     { get; set; }
         public string Kind      { get; set; }   // Combo / Toggle / DateRange
         public string RefModule { get; set; }
-        public int    SortOrder { get; set; }
     }
 }

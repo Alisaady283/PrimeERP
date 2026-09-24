@@ -7,6 +7,7 @@ using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Helpers;
 using PrimeERP.Domain.Enums;
@@ -15,15 +16,13 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Application.Services.Purchasing
 {
-    // نسخة طبق الأصل من SalesInvoiceService — الفرق: Debit Inventory (لا COGS، الشراء يُرسمَل في المخزون
-    // مباشرة بسعر الشراء)، Debit VATInput (لا VATOutput)، Credit المورد (لا Debit العميل)، حركة مخزون In (لا Out).
+    /// <summary>فاتورة الشراء وقيدها</summary>
     public class PurchaseInvoiceService : ServiceBase, IPurchaseInvoiceService
     {
-        private readonly IPurchaseInvoiceRepository _invoices;
+        private readonly IInvoiceRepository<PurchaseInvoice, PurchaseInvoiceLine> _invoices;
         private readonly IProductRepository _products;
         private readonly ISupplierService _suppliers;
         private readonly IStockService _stock;
@@ -32,7 +31,7 @@ namespace PrimeERP.Application.Services.Purchasing
 
         private readonly PrimeERP.Application.Services.Documents.IDocumentLinkService _links;
 
-        public PurchaseInvoiceService(IPurchaseInvoiceRepository invoices, IProductRepository products, ISupplierService suppliers,
+        public PurchaseInvoiceService(IInvoiceRepository<PurchaseInvoice, PurchaseInvoiceLine> invoices, IProductRepository products, ISupplierService suppliers,
             IStockService stock, IJournalService journal, INumberSequenceService numbers,
             PrimeERP.Application.Services.Documents.IDocumentLinkService links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
@@ -113,7 +112,6 @@ namespace PrimeERP.Application.Services.Purchasing
                 });
             }
 
-            // المتبقّي على المصدر يُفحص قبل أي كتابة — الواجهة تمنع الخطأ، والخدمة تمنع الالتفاف عليها.
             var pullCheck = _links.ValidatePulls(dto.Lines.Select(l => ((PrimeERP.Application.DTOs.Documents.IPullableLine)l, l.Qty)));
             if (pullCheck.IsFailure) return Result.Fail<PurchaseInvoiceDetailDto>(pullCheck.ErrorMessage, pullCheck.ErrorCode);
 
@@ -138,32 +136,30 @@ namespace PrimeERP.Application.Services.Purchasing
             try
             {
                 var simplifiedFlow = Settings.Get(SettingKeys.Documents.SimplifiedFlow, true);
-                invoiceId = Db.RunTransaction((conn, tx) =>
+                invoiceId = Tx(db =>
                 {
-                    var invoiceNo = _numbers.Next(conn, tx, "PurchaseInvoice");
+                    var invoiceNo = _numbers.Next(db, "PurchaseInvoice");
                     var invoice = new PurchaseInvoice
                     {
                         InvoiceNo = invoiceNo, InvoiceDate = dto.InvoiceDate, SupplierId = dto.SupplierId, WarehouseId = dto.WarehouseId,
                         SubTotal = subTotal, DiscountAmount = discountAmount, VatAmount = vatAmount, WithholdingAmount = withholdingAmount, NetTotal = netTotal, Status = InvoiceStatus.Confirmed, Notes = dto.Notes,
                         CreatedBy = AppSession.Username
                     };
-                    var id = _invoices.InsertHeader(conn, tx, invoice);
+                    var id = _invoices.InsertHeader(db, invoice);
 
                     var inserted = new List<(PrimeERP.Application.DTOs.Documents.IPullableLine Line, int TargetLineId, decimal Qty)>();
                     for (int i = 0; i < resolvedLines.Count; i++)
                     {
                         var line = resolvedLines[i];
-                        inserted.Add((dto.Lines[i], _invoices.InsertLine(conn, tx, id, line), line.Qty));
-                        // الوضع المبسّط: الفاتورة تحرّك المخزون بنفسها (لا موظف مخزن ولا أذون). الوضع الشامل:
-                        // إذن الصرف/الاستلام هو من يحرّك المخزون، والفاتورة تُسحب منه — فتحريكها هنا يخصم مرتين.
+                        inserted.Add((dto.Lines[i], _invoices.InsertLine(db, id, line), line.Qty));
                         var moveResult = simplifiedFlow
-                            ? _stock.RecordMovement(conn, tx, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, line.UnitPrice,
+                            ? _stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, line.UnitPrice,
                             "PurchaseInvoice", id, invoiceNo, dto.InvoiceDate)
                             : Result.Ok();
                         if (!moveResult.IsSuccess) throw new InvalidOperationException(moveResult.ErrorMessage);
                     }
 
-                    _links.RecordPulls(conn, tx, EntityName, id, inserted);
+                    _links.RecordPulls(db, EntityName, id, inserted);
 
                     var journalLines = new List<CreateJournalLineDto>
                     {
@@ -171,20 +167,19 @@ namespace PrimeERP.Application.Services.Purchasing
                         new() { LineNo = 2, AccountCode = supplier.Value.AccountCode, Credit = netTotal },
                     };
                     if (vatAmount > 0) journalLines.Add(new() { LineNo = 3, AccountCode = vatAccount, Debit = vatAmount });
-                    // ما نحجزه من المورد نُورّده للمصلحة نيابةً عنه — التزام علينا لا خصم من قيمة الشراء.
                     if (withholdingAmount > 0) journalLines.Add(new() { LineNo = journalLines.Count + 1, AccountCode = withholdingAccount, Credit = withholdingAmount });
 
                     var journalDto = new CreateJournalDto
                     {
                         EntryDate = dto.InvoiceDate, Description = $"فاتورة شراء {invoiceNo}", Source = nameof(JournalSource.Purchase), Lines = journalLines
                     };
-                    var createResult = _journal.Create(conn, tx, journalDto);
+                    var createResult = _journal.Create(db, journalDto);
                     if (!createResult.IsSuccess) throw new InvalidOperationException(createResult.ErrorMessage);
 
-                    var postResult = _journal.Post(conn, tx, createResult.Value.Id);
+                    var postResult = _journal.Post(db, createResult.Value.Id);
                     if (!postResult.IsSuccess) throw new InvalidOperationException(postResult.ErrorMessage);
 
-                    _invoices.SetJournalEntryId(conn, tx, id, createResult.Value.Id);
+                    _invoices.SetJournalEntryId(db, id, createResult.Value.Id);
                     return id;
                 });
             }
@@ -195,7 +190,6 @@ namespace PrimeERP.Application.Services.Purchasing
 
             Audit.Log("PurchaseInvoices", invoiceId, AuditAction.Insert, newValue: new { SupplierId = dto.SupplierId, NetTotal = netTotal });
 
-            // نفس ملاحظة SalesInvoiceService — Supplier.Balance عمود مخزَّن، يُعاد حسابه بعد التزام المعاملة فقط.
             _suppliers.RecalculateBalance(dto.SupplierId);
 
             return GetById(invoiceId);
@@ -203,10 +197,6 @@ namespace PrimeERP.Application.Services.Purchasing
 
         public Result Update(CreatePurchaseInvoiceDto dto) => Result.Fail("الفاتورة مُرحَّلة فور إنشائها — لا يمكن تعديلها", ErrorCode.ValidationFailed);
 
-        /// <summary>
-        /// نفس تسلسل السند: صلاحية ثم معاملة تحذف القيد وأثر المخزون والمستند معاً — فلا يبقى قيدٌ
-        /// ولا حركةٌ بلا مستندها. الصلاحية هي البوابة، والحواجز المحاسبية تبقى حيث كانت.
-        /// </summary>
         public Result Delete(int id)
         {
             if (!Can("Delete")) return FailDenied();
@@ -214,17 +204,15 @@ namespace PrimeERP.Application.Services.Purchasing
             var document = _invoices.GetById(id);
             if (document == null) return Result.Fail("الفاتورة غير موجودة", ErrorCode.NotFound);
 
-            // السحب يمنع الحذف: مستندٌ لاحق يقوم عليه، فحذفه يترك الأخير بلا أصل.
             if (_links.GetPulledBySource(EntityName, id).Count > 0)
                 return Result.Fail("سُحب من هذا المستند — احذف ما سُحب إليه أولاً", ErrorCode.ValidationFailed);
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                if (document.JournalEntryId != null) _journal.Delete(conn, tx, document.JournalEntryId.Value);
-                _stock.RemoveMovements(conn, tx, "PurchaseInvoice", id);
-                // روابط ما سحبه هذا المستند تُزال معه، وإلّا بقيت تحرس مصدراً عن مستندٍ لم يعد موجوداً.
-                _links.RemovePull(EntityName, id, conn, tx);
-                _invoices.DeleteDocument(conn, tx, id);
+                if (document.JournalEntryId != null) _journal.Delete(db, document.JournalEntryId.Value);
+                _stock.RemoveMovements(db, "PurchaseInvoice", id);
+                _links.RemovePull(EntityName, id, db);
+                _invoices.DeleteDocument(db, id);
             });
 
             Audit.Log(EntityName, id, AuditAction.Delete);

@@ -6,10 +6,7 @@ using System.Windows.Controls;
 
 namespace PrimeERP.UI.Components.Shell
 {
-    /// <summary>
-    /// القطعة الجامعة: AppSidebar + AppTopBar + منطقة صفحة — تربط الطي والـ breadcrumb بينهما تلقائياً
-    /// وتمرر كل أحداث AppTopBar للأعلى. هذه القطعة الوحيدة التي ستحتويها MainWindow في المرحلة H.
-    /// </summary>
+    /// <summary>القطعة الجامعة</summary>
     public partial class AppShell : UserControl
     {
         public static readonly DependencyProperty NavItemsProperty =
@@ -36,12 +33,6 @@ namespace PrimeERP.UI.Components.Shell
             DependencyProperty.Register(nameof(UserRole), typeof(string), typeof(AppShell),
                 new PropertyMetadata("", (d, e) => ((AppShell)d).topBar.UserRole = (string)e.NewValue));
 
-        public static readonly DependencyProperty IsDarkModeProperty =
-            DependencyProperty.Register(nameof(IsDarkMode), typeof(bool), typeof(AppShell),
-                new PropertyMetadata(false, (d, e) => ((AppShell)d).topBar.IsDarkMode = (bool)e.NewValue));
-
-        public bool IsDarkMode { get => (bool)GetValue(IsDarkModeProperty); set => SetValue(IsDarkModeProperty, value); }
-
         public List<NavItem> NavItems    { get => (List<NavItem>)GetValue(NavItemsProperty);   set => SetValue(NavItemsProperty, value); }
         public object        CurrentPage { get => GetValue(CurrentPageProperty);                set => SetValue(CurrentPageProperty, value); }
         public string        SelectedKey { get => (string)GetValue(SelectedKeyProperty);        set => SetValue(SelectedKeyProperty, value); }
@@ -54,14 +45,11 @@ namespace PrimeERP.UI.Components.Shell
         public event EventHandler ProfileClicked;
         public event EventHandler PasswordChangeRequested;
         public event EventHandler LogoutRequested;
-        public event EventHandler ThemeToggled;
         public event EventHandler LanguageToggled;
         public event EventHandler UpdateRequested;
 
-        /// <summary>يُمرَّر مباشرة لـ AppTopBar.ActionsContent — واجهة موحّدة على مستوى AppShell.</summary>
         public object TopBarActionsContent { get => topBar.ActionsContent; set => topBar.ActionsContent = value; }
 
-        /// <summary>يُمرَّر مباشرة لـ AppSidebar.LogoContent/FooterContent.</summary>
         public object SidebarLogoContent   { get => sidebar.LogoContent;   set => sidebar.LogoContent = value; }
         public object SidebarFooterContent { get => sidebar.FooterContent; set => sidebar.FooterContent = value; }
 
@@ -73,7 +61,6 @@ namespace PrimeERP.UI.Components.Shell
             topBar.ProfileClicked           += (s, e) => ProfileClicked?.Invoke(this, e);
             topBar.PasswordChangeRequested  += (s, e) => PasswordChangeRequested?.Invoke(this, e);
             topBar.LogoutRequested          += (s, e) => LogoutRequested?.Invoke(this, e);
-            topBar.ThemeToggled             += (s, e) => ThemeToggled?.Invoke(this, e);
             topBar.LanguageToggled          += (s, e) => LanguageToggled?.Invoke(this, e);
             topBar.UpdateRequested          += (s, e) => UpdateRequested?.Invoke(this, e);
         }
@@ -108,10 +95,6 @@ namespace PrimeERP.UI.Components.Shell
 
         private void topBar_SidebarToggled(object sender, EventArgs e) => sidebar.IsCollapsed = !sidebar.IsCollapsed;
 
-        /// <summary>يحدّث breadcrumb/PageTitle من مسار العنصر المختار — Breadcrumb للأسلاف فقط (لا العنصر
-        /// نفسه، PageTitle يعرضه أصلاً)؛ عنصر جذري بلا أسلاف = بلا breadcrumb إطلاقاً (لا معنى لمسار عنصر
-        /// واحد يكرر العنوان). ⚠️ توقف 10 — كان يُدرج العنصر الأخير في القائمتين معاً فيظهر نصاً مكرراً
-        /// حرفياً عند أول تشغيل حقيقي بتنقّل مسطّح (كل الوحدات الحالية بلا تعشيش).</summary>
         private void UpdateBreadcrumb()
         {
             var path = FindPath(NavItems, SelectedKey);

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Application.DTOs.Common
 {
-    /// <summary>طلب إنشاء نسخة برنامج: صفحاتها ووضعها ومسارها.</summary>
+    /// <summary>طلب إنشاء نسخة برنامج</summary>
     public class CreateEditionDto
     {
         public List<string> ModuleKeys   { get; set; } = new();
@@ -10,6 +10,6 @@ namespace PrimeERP.Application.DTOs.Common
         public string       TargetFolder { get; set; }
     }
 
-    /// <summary>تقدّم الإنشاء كما ترفعه الخدمة: نسبةٌ ومرحلة — تعرضهما الواجهة ولا تحسبهما.</summary>
+    /// <summary>تقدّم الإنشاء: نسبةٌ ومرحلة</summary>
     public record EditionProgress(double Percent, string Stage);
 }

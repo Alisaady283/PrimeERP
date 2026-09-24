@@ -8,11 +8,11 @@ using PrimeERP.Domain.Contracts;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Xunit;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>الشعار ومحاذاة الجدول في الورق — كلاهما كان يفشل بصمت: شعار لا يظهر، ورأس جدول يتبع محاذاة
-    /// بياناته بدل التوسيط.</summary>
+    /// <summary>الشعار ومحاذاة الجدول في الورق</summary>
     public class PrintFormattingTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -49,7 +49,6 @@ namespace PrimeERP.Tests.Services
         {
             StaThreadHelper.Run(() =>
             {
-                // صورة 1×1 صالحة بترميز Base64 — يكفي لإثبات وصولها من الإعدادات للورق.
                 const string pixel = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
                 _db.Services.GetRequiredService<ISettingsService>().Set(SettingKeys.Company.LogoData, pixel);
 
@@ -80,7 +79,6 @@ namespace PrimeERP.Tests.Services
                 header.Arrange(new System.Windows.Rect(0, 0, width, header.DesiredSize.Height));
                 header.UpdateLayout();
 
-                // القطعة تضع مواضعها مطلقة فلا تتبع اتجاه المستند — الإحداثيات هنا هي المرئية كما هي.
                 (double Left, double Right) Visual(System.Windows.FrameworkElement element)
                 {
                     var box = element.TransformToAncestor(header).TransformBounds(new System.Windows.Rect(element.RenderSize));
@@ -88,7 +86,6 @@ namespace PrimeERP.Tests.Services
                 }
 
                 var logo = Visual(Descendants<System.Windows.Controls.Image>(header).First());
-                // الجذر لوح رصّ أيضاً — المقصود لوح بيانات الشركة، أي أوّل ما يحمل أسطراً نصّية.
                 var company = Visual(Descendants<System.Windows.Controls.StackPanel>(header)
                     .First(panel => panel.Children.OfType<System.Windows.Controls.TextBlock>().Any()));
 
@@ -112,14 +109,11 @@ namespace PrimeERP.Tests.Services
 
                 Assert.Equal(System.Windows.TextAlignment.Center, paragraphs.First(p => TextOf(p) == "الصنف").TextAlignment);
 
-                // المستند RTL وTextAlignment ينعكس معه: Left هنا هي التي تُرى يميناً — والنصّ العربي
-                // كان يخرج على حافة اليسار حين طُلبت Right.
                 Assert.Equal(System.Windows.TextAlignment.Left, paragraphs.First(p => TextOf(p) == "صنف تجريبي").TextAlignment);
                 Assert.Equal(System.Windows.TextAlignment.Center, paragraphs.First(p => TextOf(p) == "5").TextAlignment);
             });
         }
 
-        /// <summary>الرأس عناصر WPF داخل BlockUIContainer لا Inlines — البحث ينزل للشجرة المنطقية هناك.</summary>
         private static System.Collections.Generic.IEnumerable<T> Elements<T>(BlockCollection blocks)
             where T : System.Windows.DependencyObject
         {
@@ -151,7 +145,6 @@ namespace PrimeERP.Tests.Services
                 foreach (var found in Descendants<T>(child)) yield return found;
         }
 
-        // FlowDocument شجرة كتل لا شجرة منطقية — LogicalTreeHelper لا يصل لخلايا الجداول.
         private static System.Collections.Generic.IEnumerable<Paragraph> Paragraphs(BlockCollection blocks)
         {
             foreach (var block in blocks)

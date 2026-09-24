@@ -10,6 +10,7 @@ using PrimeERP.UI.ViewModels.Base;
 
 namespace PrimeERP.UI.ViewModels
 {
+    /// <summary>نماذج عرض السندات والشيكات</summary>
     public abstract class VoucherViewModelBase : CrudViewModelBase<VoucherDto, VoucherFilter>
     {
         private readonly IVoucherService _vouchers;
@@ -48,7 +49,7 @@ namespace PrimeERP.UI.ViewModels
             : base(vouchers, "Payments", p, t, d) { }
     }
 
-    /// <summary>الشيكات تُنشأ من السندات لا من هنا — الشاشة للعرض وتحريك الحالة فقط، لذا الحذف ممنوع.</summary>
+    /// <summary>الشيك يُنشأ من سنده</summary>
     public class ChequesViewModel : CrudViewModelBase<ChequeDto, ChequeFilter>
     {
         private readonly IChequeService _cheques;
@@ -71,7 +72,7 @@ namespace PrimeERP.UI.ViewModels
             Result.Fail("الشيك يُلغى بحركة (ارتداد/رد) لا بالحذف", PrimeERP.Domain.Results.ErrorCode.ValidationFailed);
     }
 
-    /// <summary>شبكة شيكات الاتجاه الواحد — الإضافة تفتح مستند "عدة شيكات" عبر DocumentDialog.</summary>
+    /// <summary>شبكة شيكات الاتجاه الواحد</summary>
     public abstract class ChequeDocumentViewModelBase : CrudViewModelBase<ChequeDto, ChequeFilter>
     {
         private readonly IChequeDocumentService _documents;
@@ -106,7 +107,7 @@ namespace PrimeERP.UI.ViewModels
             IToastService toast, IDialogService dialogs) : base(documents, permissions, toast, dialogs) { }
     }
 
-    /// <summary>الأرصدة الافتتاحية قيود بمصدر OpeningBalance — نفس شبكة القيود بفلتر مصدر واحد.</summary>
+    /// <summary>الأرصدة الافتتاحية قيود بمصدر OpeningBalance</summary>
     public class OpeningBalancesViewModel : CrudViewModelBase<JournalEntryDto, JournalFilter>
     {
         private readonly PrimeERP.Application.Services.Accounting.IOpeningBalanceService _openings;

@@ -1,5 +1,6 @@
 namespace PrimeERP.Application.DTOs.HR
 {
+    /// <summary>بيانات القسم</summary>
     public class DepartmentDto
     {
         public int    Id        { get; set; }

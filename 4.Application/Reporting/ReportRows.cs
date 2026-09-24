@@ -1,6 +1,6 @@
 namespace PrimeERP.Application.Reporting
 {
-    /// <summary>ميزان المراجعة القياسي: افتتاحي ثم حركة الفترة ثم ختامي، كلٌّ مدين ودائن.</summary>
+    /// <summary>ميزان المراجعة القياسي</summary>
     public class TrialBalanceRow
     {
         public string  Code { get; set; }
@@ -13,7 +13,7 @@ namespace PrimeERP.Application.Reporting
         public decimal ClosingCredit { get; set; }
     }
 
-    /// <summary>المخزون بشكل الفترة كالعملاء والموردين: أول المدة، الوارد، المنصرف، آخر المدة.</summary>
+    /// <summary>المخزون بشكل الفترة كالعملاء والموردين</summary>
     public class StockBalanceRow
     {
         public string  ProductCode   { get; set; }
@@ -25,7 +25,7 @@ namespace PrimeERP.Application.Reporting
         public decimal Closing       { get; set; }
     }
 
-    /// <summary>رصيد طرف بشكل الفترة: أول المدة، ما تحمّله، ما سُدِّد، آخر المدة.</summary>
+    /// <summary>رصيد طرف بشكل الفترة</summary>
     public class PartyBalanceRow
     {
         public string  Code    { get; set; }
@@ -46,10 +46,7 @@ namespace PrimeERP.Application.Reporting
         public decimal RunningBalance { get; set; }
     }
 
-    /// <summary>
-    /// سطرٌ في حركة الصنف: ما ورد، وما انصرف، والرصيد بعدهما — كلٌّ بكميته وسعره وقيمته. السعر مشتقٌّ
-    /// من القيمة على الكمية لا مخزَّن، والرصيد يتحرّك بالمتوسط المرجَّح كما يُرحَّل في القيد تماماً.
-    /// </summary>
+    /// <summary>سطرٌ في حركة الصنف</summary>
     public class ItemCardRow
     {
         public string  Date         { get; set; }
@@ -69,9 +66,7 @@ namespace PrimeERP.Application.Reporting
         public decimal BalanceValue { get; set; }
     }
 
-    /// <summary>
-    /// راتب موظفٍ في مسير — سطرٌ واحد وبنودُه أعمدة، كسطر الفاتورة. الاستحقاقات ثم الاستقطاعات ثم الصافي.
-    /// </summary>
+    /// <summary>راتب موظفٍ في مسير</summary>
     public class PayslipRow
     {
         public string   PayrollNo   { get; set; }
@@ -111,7 +106,7 @@ namespace PrimeERP.Application.Reporting
         public decimal NetTotal  { get; set; }
     }
 
-    /// <summary>سطر سجلّ الأصول: تكلفته ومجمّع إهلاكه وقيمته الدفترية المتبقية.</summary>
+    /// <summary>سطر سجلّ الأصول</summary>
     public class AssetRegisterRow
     {
         public string  Code            { get; set; }
@@ -120,7 +115,6 @@ namespace PrimeERP.Application.Reporting
         public string  PurchaseDate    { get; set; }
         public decimal PurchaseCost    { get; set; }
 
-        /// <summary>القيمة الإجمالية بعد إعادة التقييم — تساوي التكلفة ما لم يُعَد تقييم الأصل.</summary>
         public decimal Revalued        { get; set; }
         public decimal SalvageValue    { get; set; }
         public int     UsefulLifeYears { get; set; }
@@ -129,7 +123,6 @@ namespace PrimeERP.Application.Reporting
         public decimal BookValue       { get; set; }
         public string  Location        { get; set; }
 
-        /// <summary>heading لعنوان فئة، total لمجموعها، فارغ لأصلٍ — تُميَّز الثلاثة بصرياً.</summary>
         public string  Kind            { get; set; }
     }
 }

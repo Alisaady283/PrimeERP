@@ -22,6 +22,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
+    /// <summary>حوار الصنف</summary>
     [Collection("WpfApplication")]
     public class ProductDialogTests : IDisposable
     {
@@ -37,7 +38,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var categories = _db.Services.GetRequiredService<ICategoryService>();
                 var category = categories.Create(new CreateCategoryDto { Name = "أدوات كهربائية", ModuleKey = "Products" });
@@ -89,7 +90,6 @@ namespace PrimeERP.Tests.Composition
                 Assert.Equal(category.Value.Id, created.CategoryId);
                 Assert.Equal(80m, created.SalePrice);
 
-                // فلترة بسيطة بالفئة — تعمل عبر ProductFilter.CategoryId فعلياً، لا واجهة UI بعد.
                 var filtered = products.GetPaged(1, 20, new ProductFilter { CategoryId = category.Value.Id }).Value.Items;
                 Assert.Contains(filtered, p => p.Id == created.Id);
 

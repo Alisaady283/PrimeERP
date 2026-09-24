@@ -5,8 +5,7 @@ using PrimeERP.Application.Services.Common;
 
 namespace PrimeERP.Composition.Definitions
 {
-    // حوار إضافة/تعديل فئة موحّد — يُستدعى لكل وحدة تحتاجه (Products اليوم، غيرها لاحقاً) بلا تكرار كود.
-    // ModuleKey تُثبَّت عبر FixedValues، بلا أي عنصر مرئي للمستخدم.
+    /// <summary>حوار الفئة لكل وحدة</summary>
     public static class CategoryDialogFactory
     {
         public static DialogDefinition Build(string moduleKey, string titleKey = "Str.Category.Add", string titleEditKey = "Str.Category.Edit") => new()

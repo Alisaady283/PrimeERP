@@ -5,9 +5,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Cheques
 {
-    /// <summary>مستند "استلام/صرف شيكات" — غلاف رقيق فوق IChequeService بالشكل الذي يستهلكه محرّر المستندات
-    /// (Create/GetById/GetPaged). لا جدول مستند مستقل عمداً: الشيك نفسه هو السجل، والمستند وسيلة إدخال
-    /// عدة شيكات دفعة واحدة. التعديل يقع على الشيك بحركاته لا على الدفعة.</summary>
+    /// <summary>مستند "استلام/صرف شيكات"</summary>
     public interface IChequeDocumentService
     {
         Result<PagedResult<ChequeDto>> GetPaged(int page, int pageSize, ChequeFilter filter = null);
@@ -57,7 +55,6 @@ namespace PrimeERP.Application.Services.Cheques
 
         public Result<ChequeDocumentResultDto> Create(CreateChequeDocumentDto dto) => _cheques.CreateBatch(dto, _direction);
 
-        // المستند يحمل شيكاً واحداً في وضع التعديل (GetById أعلاه) — الخدمة تحرس شرط "لم يتحرّك".
         public Result Update(CreateChequeDocumentDto dto)
         {
             var line = dto.Lines?.FirstOrDefault();

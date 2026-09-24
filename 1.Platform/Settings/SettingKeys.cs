@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Platform.Settings
 {
-    /// <summary>كل مفتاح إعداد في النظام — كلاس ثابت متداخل، بلا نصوص حرة في الكود. أكواد الحسابات الخاصة هنا فقط (Accounts.*) — لا تُكتب حرفياً في أي خدمة أخرى.</summary>
+    /// <summary>كل مفتاح إعداد في النظام</summary>
     public static class SettingKeys
     {
         public static class Company
@@ -11,8 +11,6 @@ namespace PrimeERP.Platform.Settings
             public const string NameEn            = "Company.NameEn";
             public const string TaxNumber         = "Company.TaxNumber";
 
-            /// <summary>تاريخ بدء العمل بالنظام — منه تُؤرَّخ الأرصدة الافتتاحية، فلا تُكتب بتاريخ حديث
-            /// يجعلها حركةَ فترة بدل رصيد ما قبلها.</summary>
             public const string StartDate         = "Company.StartDate";
             public const string CommercialRegNo   = "Company.CommercialRegNo";
             public const string Address           = "Company.Address";
@@ -20,14 +18,11 @@ namespace PrimeERP.Platform.Settings
             public const string Email             = "Company.Email";
             public const string LogoPath          = "Company.LogoPath";
 
-            /// <summary>الشعار نفسه Base64 داخل قاعدة البيانات لا مساراً على القرص — ينجو مع النسخة الاحتياطية
-            /// وينتقل مع النظام لجهاز آخر، بخلاف ملف خارجي يضيع بصمت وقت الطباعة.</summary>
             public const string LogoData          = "Company.LogoData";
         }
 
         public static class Financial
         {
-            /// <summary>اسم العملة ووحدتها الفرعية كما يُكتبان في التفقيط على المستندات.</summary>
             public const string CurrencyName     = "Financial.CurrencyName";
             public const string CurrencySubUnit  = "Financial.CurrencySubUnit";
 
@@ -38,46 +33,33 @@ namespace PrimeERP.Platform.Settings
             public const string DefaultCostMethod    = "Financial.DefaultCostMethod";
             public const string RoundingMethod       = "Financial.RoundingMethod";
 
-            /// <summary>false (الافتراضي): تاريخ بلا فترة مالية مُعرَّفة = مفتوح (يسمح بتشغيل النظام قبل إعداد السنوات). true: يمنع التسجيل بلا فترة معرَّفة.</summary>
             public const string RequireFiscalPeriod  = "Financial.RequireFiscalPeriod";
 
-            /// <summary>false (الافتراضي): يمنع تكرار نفس الحساب في أكثر من سطر بقيد اليومية الواحد. true: يسمح به.</summary>
             public const string AllowDuplicateAccountInEntry = "Financial.AllowDuplicateAccountInEntry";
 
-            /// <summary>true (الافتراضي): تحذير لا منع — عميل جديد باسم مطابق لعميل قائم.</summary>
             public const string WarnOnDuplicateCustomerName = "Financial.WarnOnDuplicateCustomerName";
 
-            /// <summary>true (الافتراضي): تحذير لا منع — عميل جديد برقم هاتف مطابق لعميل قائم.</summary>
             public const string WarnOnDuplicatePhone = "Financial.WarnOnDuplicatePhone";
         }
 
-        /// <summary>أكواد الحسابات الخاصة — تُقرأ من هنا فقط عبر ISettingsService، لا تُكتب حرفياً في أي خدمة. كل عميل شجرة مختلفة.</summary>
+        /// <summary>أكواد الحسابات</summary>
         public static class Accounts
         {
             public const string Customers        = "Accounts.Customers";
             public const string Suppliers        = "Accounts.Suppliers";
             public const string Inventory        = "Accounts.Inventory";
 
-            /// <summary>الطرف الدائن لأرصدة الأصناف الافتتاحية وتسويات المخزون — يختاره المستخدم من الإعدادات.</summary>
             public const string OpeningAdjustments = "Accounts.OpeningAdjustments";
             public const string DepreciationExpense     = "Accounts.DepreciationExpense";
             public const string AccumulatedDepreciation = "Accounts.AccumulatedDepreciation";
 
-            /// <summary>تكلفة الأصول الثابتة (1101001) — الطرف المدين في قيد الاقتناء وفي زيادة إعادة التقييم.
-            /// أبوه «صافي الأصول الثابتة» (1101) هو جذر الشجرة المقفلة: هو ومجمّع الإهلاك وكل ما تحتهما
-            /// يُدار من صفحة الأصول وحدها — راجع AccountService.IsAssetManaged.</summary>
             public const string FixedAssets   = "Accounts.FixedAssets";
 
-            /// <summary>أرباح رأسمالية — بندٌ غير تشغيلي تحت «إيرادات أخرى» (42) في قائمة الدخل.</summary>
             public const string CapitalGains  = "Accounts.CapitalGains";
 
-            /// <summary>خسائر رأسمالية — بندٌ غير تشغيلي تحت «مصروفات أخرى» (52) في قائمة الدخل.</summary>
             public const string CapitalLosses = "Accounts.CapitalLosses";
             public const string Cash             = "Accounts.Cash";
 
-            /// <summary>مفاتيح الأصول المرتبطة بكيانات: قيمتها كود حساب <b>تجميعي</b> يعيش أبناؤه ككيانات
-            /// (عميل/مورد/خزينة/بنك). ضبطها على حساب ورقي يُعطّل الربط بصمت — لذلك تُرفَض عند الحفظ.</summary>
-            /// <summary>سلف الموظفين (1205) — تجميعيّ يسكنه الموظفون، لكلٍّ ورقةٌ باسمه تحمل رصيد سلفته.</summary>
             public const string EmployeeAdvances = "Accounts.EmployeeAdvances";
 
             public static readonly string[] LinkedRoots = { Customers, Suppliers, Cash, Bank, FixedAssets, EmployeeAdvances };
@@ -86,8 +68,6 @@ namespace PrimeERP.Platform.Settings
             public const string SalesReturns     = "Accounts.SalesReturns";
             public const string COGS             = "Accounts.COGS";
 
-            // حسابات المسير. الترحيل إثباتُ استحقاق لا صرف: مدينان بالمصروف، ودائنون بما استُحقّ ولم
-            // يُصرف بعد. والصرف الفعلي يقع لاحقاً بسند صرف يخصم المستحقّ من الخزينة.
             public const string SalaryExpense      = "Accounts.SalaryExpense";
             public const string AllowanceExpense   = "Accounts.AllowanceExpense";
             public const string SalariesPayable    = "Accounts.SalariesPayable";
@@ -97,13 +77,10 @@ namespace PrimeERP.Platform.Settings
             public const string VATInput         = "Accounts.VATInput";
             public const string VATOutput        = "Accounts.VATOutput";
 
-            /// <summary>ضريبة الخصم والإضافة: ما يُحجَز من مستحقّاتنا أصلٌ لدى المصلحة، وما نحجزه من الموردين التزام علينا.</summary>
             public const string WithholdingReceivable = "Accounts.WithholdingReceivable";
             public const string WithholdingPayable    = "Accounts.WithholdingPayable";
 
-            /// <summary>حسابات دورة الشيكات — بالمحفظة (وارد لم يودَع)، تحت التحصيل (مودع بالبنك)، وشيكات الدفع (صادر).</summary>
 
-            /// <summary>false يعطّل الربط التلقائي (حساب↔عميل/مورد) كلياً وبصمت — true (الافتراضي) يفرض نجاح الربط أو Fail صريح، لا سكوت.</summary>
             public const string AutoLinkEnabled  = "Accounts.AutoLinkEnabled";
         }
 
@@ -125,15 +102,8 @@ namespace PrimeERP.Platform.Settings
             public const string NumberPadding         = "Documents.NumberPadding";
             public const string ResetNumbersYearly    = "Documents.ResetNumbersYearly";
 
-            /// <summary>مفعّل: الفاتورة تمسّ المخزون ومستندات الدورة مخفية. معطّل: الدورة الكاملة والإذن يمسّ المخزون.</summary>
             public const string SimplifiedFlow        = "Documents.SimplifiedFlow";
 
-            /// <summary>
-            /// البادئة الفعلية لتسلسل NumberSequenceService بالمفتاح "Customer" — يزرعها NumberSequenceSeeder، لا
-            /// EnsureRow التلقائية (التي كانت ستجعل البادئة "Customer" نفسها). بلا شرطة لاحقة — NumberSequenceService.
-            /// Format يضيف "-" فاصلة بنفسه دائماً (نفس اصطلاح JournalPrefix="JE" الحالي)؛ قيمة بشرطة هنا كانت
-            /// ستنتج "C--2026-00001" (شرطة مزدوجة) بدل "C-2026-00001".
-            /// </summary>
             public const string CustomerPrefix = "Documents.CustomerPrefix";
             public const string SupplierPrefix = "Documents.SupplierPrefix";
             public const string ProductPrefix  = "Documents.ProductPrefix";
@@ -141,20 +111,15 @@ namespace PrimeERP.Platform.Settings
 
         public static class UI
         {
-            public const string Theme             = "UI.Theme";
             public const string Language          = "UI.Language";
             public const string UseArabicNumerals = "UI.UseArabicNumerals";
             public const string DateFormat        = "UI.DateFormat";
             public const string PageSize          = "UI.PageSize";
             public const string SidebarCollapsed  = "UI.SidebarCollapsed";
 
-            /// <summary>بيان النسخة: مفاتيح الوحدات المسموحة مفصولة بفاصلة. فارغ = النظام كاملاً.</summary>
             public const string Manifest          = "UI.Manifest";
 
-            /// <summary>مفتاح حزمة الهوية الحالية (اسم مجلد تحت Resources/Design/Identity — "Default"/"Corporate") — يقرأه IIdentityService.Initialize عند الإقلاع.</summary>
-            public const string Identity          = "UI.Identity";
 
-            public const string IdentityBaseline  = "UI.IdentityBaseline";
         }
 
         public static class Backup
@@ -165,14 +130,12 @@ namespace PrimeERP.Platform.Settings
             public const string RetentionCount          = "Backup.RetentionCount";
         }
 
-        /// <summary>ترخيص هذه النسخة — يكتبه المنصِّب عند التفعيل، ويقرؤه التحديث.</summary>
         public static class License
         {
             public const string Serial   = "License.Serial";
             public const string Customer = "License.Customer";
         }
 
-        /// <summary>إعدادات المطوّر: عنوان الخادم وتوكنه ورقم الإصدار — لا تُنسخ إلى نسخة العميل.</summary>
         public static class Developer
         {
             public const string ServerUrl  = "Developer.ServerUrl";
@@ -186,7 +149,6 @@ namespace PrimeERP.Platform.Settings
             public const string RequirePasswordChange    = "Security.RequirePasswordChange";
         }
 
-        /// <summary>تعريف كامل لمفتاح إعداد — قيمته الافتراضية، نوعه، فئته — يستخدمه SettingSeeder لزرع الجدول.</summary>
         public record Definition(string Key, string DefaultValue, string DataType, string Category, bool IsSystem = false);
 
         public static List<Definition> All() => new()
@@ -258,14 +220,11 @@ namespace PrimeERP.Platform.Settings
             new(Documents.SupplierPrefix,        "S",    "string", "Documents"),
             new(Documents.ProductPrefix,         "P",    "string", "Documents"),
 
-            new(UI.Theme,            "Light",       "string", "UI"),
             new(UI.Language,         "Ar",          "string", "UI"),
             new(UI.UseArabicNumerals,"false",       "bool",   "UI"),
             new(UI.DateFormat,       "yyyy-MM-dd",  "string", "UI"),
             new(UI.PageSize,         "25",          "int",    "UI"),
             new(UI.SidebarCollapsed, "false",       "bool",   "UI"),
-            new(UI.Identity,         "Signature",   "string", "UI"),
-            new(UI.IdentityBaseline, "",            "string", "UI", true),
 
             new(Backup.AutoBackupEnabled,       "false", "bool",   "Backup"),
             new(Backup.AutoBackupPath,          "",      "string", "Backup"),

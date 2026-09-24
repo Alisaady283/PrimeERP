@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System;
 using PrimeERP.Application.Services;
 using System.Linq;
@@ -12,11 +13,11 @@ using PrimeERP.UI.Services;
 using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
 using Xunit;
-using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>قاعدة بيانات خاصة معزولة لكل اختبار — نفس سبب AccountServiceTests/FiscalPeriodServiceTests.</summary>
+    /// <summary>قاعدة بيانات خاصة معزولة لكل</summary>
     public class JournalServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -58,7 +59,6 @@ namespace PrimeERP.Tests.Services
             Lines = lines.Select((l, i) => new CreateJournalLineDto { LineNo = i + 1, AccountCode = l.Code, Debit = l.Debit, Credit = l.Credit }).ToList()
         };
 
-        // ===================== الإنشاء =====================
 
         [Fact]
         public void Create_Balanced_Succeeds_AndGeneratesEntryNo()
@@ -192,7 +192,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(new[] { 1, 2 }, lines.Select(l => l.LineNo).OrderBy(n => n));
         }
 
-        // ===================== التعديل =====================
 
         [Fact]
         public void Update_ReplacesLines_AndFollowsBalances()
@@ -226,7 +225,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(originalNo, _journalRepo.GetById(created.Value.Id).EntryNo);
         }
 
-        // ===================== الحذف =====================
 
         [Fact]
         public void Delete_RemovesTheEntry_AndRestoresBalances()
@@ -241,7 +239,6 @@ namespace PrimeERP.Tests.Services
         }
 
 
-        // ===================== الترحيل =====================
 
         [Fact]
         public void Creating_UpdatesAllAccountBalancesCorrectly()
@@ -274,10 +271,7 @@ namespace PrimeERP.Tests.Services
             var fiscal = _db.Services.GetRequiredService<IFiscalPeriodService>();
             var year = fiscal.CreateYear(new DateTime(2026, 1, 1), 1);
 
-            // ClosePeriod العادية ترفض الإقفال لوجود القيد أعلاه غير مرحّل (بتصميم النظام: لا يمكن أصلاً أن
-            // توجد فترة مقفلة بها قيد غير مرحّل عبر المسار الطبيعي — Create وClosePeriod كلاهما يمنعان هذا
-            // التوليف). نحاكي الحالة الحدّية مباشرة عبر FiscalPeriodRepository لاختبار حارس IsOpen في Post فعلياً.
-            Db.RunTransaction((conn, tx) => _fiscalRepo.SetPeriodClosed(conn, tx, year.Value.Periods.Single().Id, DateTime.Now, "test"));
+            DbContextFactory.RunTransaction(db => _fiscalRepo.SetPeriodClosed(db, year.Value.Periods.Single().Id, DateTime.Now, "test"));
 
             var result = _service.Post(created.Value.Id);
 
@@ -334,8 +328,6 @@ namespace PrimeERP.Tests.Services
             Assert.True(valid.IsSuccess);
             Assert.True(invalid.IsSuccess);
 
-            // القيد يُنشأ مُرحَّلاً، فنصنع المسودّة بإلغاء ترحيل الأول: الثاني يبقى مُرحَّلاً فيفشل ترحيله
-            // ثانيةً، وما نتحقق منه أن فشل واحدٍ يمنع ترحيل الآخر ولا يمسّ رصيداً.
             _service.Unpost(valid.Value.Id);
             var cashBalanceBeforeBatch = _accountRepo.GetByCode(cash).Balance;
 
@@ -345,12 +337,10 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(0, result.Value.SuccessCount);
             Assert.True(result.Value.FailedCount > 0);
 
-            // الأول (الصالح) لم يُرحَّل، ورصيده (ورصيد cash عموماً) لم يتغيّر بفعل PostBatch
             Assert.False(_journalRepo.GetById(valid.Value.Id).IsPosted);
             Assert.Equal(cashBalanceBeforeBatch, _accountRepo.GetByCode(cash).Balance);
         }
 
-        // ===================== ميزان المراجعة =====================
 
         [Fact]
         public void TrialBalance_TotalDebitEqualsTotalCredit()
@@ -387,7 +377,6 @@ namespace PrimeERP.Tests.Services
         public void TrialBalance_PostedOnlyTrue_ExcludesDrafts()
         {
             var (cash, revenue) = CreateCashAndRevenue();
-            // القيد يُنشأ مُرحَّلاً، والمسودّة تُصنع بإلغاء ترحيله.
             var entry = _service.Create(BuildDto(new DateTime(2026, 1, 5), (cash, 1000m, 0m), (revenue, 0m, 1000m)));
             _service.Unpost(entry.Value.Id);
 
@@ -420,7 +409,6 @@ namespace PrimeERP.Tests.Services
             Assert.True(created.IsSuccess, created.ErrorMessage);
         }
 
-        // ===================== الصلاحيات =====================
 
         [Fact]
         public void Create_WithoutPermission_Fails()

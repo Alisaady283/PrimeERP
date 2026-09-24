@@ -10,11 +10,11 @@ using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Services;
 using Xunit;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>ExportService (CSV/Excel/PDF فعلية عبر ClosedXML/QuestPDF) لم تكن مُختبرة إطلاقاً رغم
-    /// كونها منطقاً نقياً بلا حاجة لخيط WPF (لا تُنشئ أي DispatcherObject).</summary>
+    /// <summary>تصدير CSV وExcel وPDF فعلي</summary>
     [Collection("Database")]
     public class ExportServiceTests : IDisposable
     {
@@ -136,21 +136,18 @@ namespace PrimeERP.Tests.Services
         public void ExportPrintableToPdf_ProducesNonEmptyFile()
         {
             var path = TempFile("pdf");
-            var printable = PrintTemplates.JournalEntryPrint(new JournalEntry
-            {
-                EntryNo = "JE-TEST-1",
-                EntryDate = "2026-01-01",
-                Description = "قيد اختباري للتصدير",
-                Source = "يدوي",
-                CreatedBy = "tester",
-                TotalDebit = 100m,
-                TotalCredit = 100m,
-                Lines = new List<JournalLine>
+            var printable = PrimeERP.Composition.Print.PrintDocuments.Report(new PrimeERP.Composition.Definitions.ReportResult
                 {
-                    new() { AccountCode = "1204", AccountName = "الصندوق", Debit = 100m, Credit = 0m },
-                    new() { AccountCode = "41", AccountName = "إيرادات المبيعات", Debit = 0m, Credit = 100m }
-                }
-            });
+                    Title = "قيد اختباري",
+                    Columns = new() { new() { Header = "الحساب", Binding = "AccountCode", Width = 40 },
+                                      new() { Header = "مدين", Binding = "Debit", Width = 30, Format = "N2" },
+                                      new() { Header = "دائن", Binding = "Credit", Width = 30, Format = "N2" } },
+                    Rows = new List<object>
+                    {
+                        new JournalLine { AccountCode = "1204", AccountName = "الصندوق", Debit = 100m, Credit = 0m },
+                        new JournalLine { AccountCode = "41", AccountName = "إيرادات المبيعات", Debit = 0m, Credit = 100m }
+                    }
+                });
 
             var result = _service.ExportPrintableToPdf(printable, path);
 

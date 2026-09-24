@@ -7,7 +7,7 @@ using Entry = PrimeERP.Domain.Rules.InventoryCosting.Entry;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>المتوسط المرجَّح المتحرّك — القاعدة النقيّة وحدها، بلا قاعدة بيانات.</summary>
+    /// <summary>المتوسط المرجَّح المتحرّك</summary>
     public class InventoryCostingTests
     {
         private static Entry In(decimal qty, decimal cost) => new(MovementType.In, qty, cost);
@@ -47,7 +47,6 @@ namespace PrimeERP.Tests.Services
 
             Assert.True(InventoryCosting.TryIssueCost(balance, 75, out var cost));
 
-            // 10250 ÷ 150 = 68.333…  ×75 = 5125
             Assert.Equal(5125m, cost);
         }
 
@@ -64,7 +63,6 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void SellingEverything_EmptiesTheValueExactly()
         {
-            // كسر التقريب لا يترك قيمةً بلا كمية: صرفُ الكل يأخذ القيمة كاملةً.
             var balance = InventoryCosting.Replay(new[] { In(3, 10) }.Append(Out(3)));
 
             Assert.Equal(0m, balance.Qty);
@@ -84,7 +82,6 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void AReturnedSale_ReentersAtTheCostItLeftWith()
         {
-            // مرتجع بيع يعود بتكلفة صرفه (50)، فلا يلوّث المتوسط.
             var balance = InventoryCosting.Replay(new[] { In(50, 50), Out(30), In(30, 50) });
 
             Assert.Equal(50m, balance.Qty);

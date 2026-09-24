@@ -8,9 +8,7 @@ using PrimeERP.Domain.Contracts;
 
 namespace PrimeERP.Application.Services.Print
 {
-    /// <summary>
-    /// مترجم PaperNode إلى عناصر WPF — عام تماماً، لا يعرف عن الترويسة ولا عن أي قطعة بعينها.
-    /// </summary>
+    /// <summary>مترجم PaperNode إلى عناصر WPF</summary>
     public static class PaperNodeRenderer
     {
         public static FrameworkElement ToElement(PaperNode node, Func<string, object> resource) => node switch
@@ -59,11 +57,6 @@ namespace PrimeERP.Application.Services.Print
             return panel;
         }
 
-        /// <summary>
-        /// التخطيط LeftToRight بمواضع مطلقة داخل مستند RTL: العمود النجمي يُوضع أخيراً فيقع بعد الانعكاس
-        /// على حافة اليمين، وما بحجمه قبله فيلاصق حافة اليسار. الاعتماد على RTL هنا يعكس المحاذاة أيضاً
-        /// فيلتصق الطرفان ككتلة واحدة — وهو الخطأ الذي كان يُصلَح في كل مُصيِّر على حدة.
-        /// </summary>
         private static FrameworkElement Row(PaperRow node, Func<string, object> resource)
         {
             var grid = new Grid { FlowDirection = FlowDirection.LeftToRight };

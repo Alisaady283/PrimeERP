@@ -2,40 +2,13 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!--
-        جذر دمج الموارد — بلا ملفات L1/Identity هنا عمداً (⚠️ توقف 5، ARCHITECTURE.md). Theme.xaml هذا لا يُدمج
-        وحده أبداً — IIdentityService.Apply/Initialize هو المسؤول الوحيد عن بنائه: يُدرج الستة ملفات
-        Identity/{key}/Primitives.*.xaml أولاً في قاموس فارغ جديد، ثم يدمج Theme.xaml هذا فوقها كخطوة تالية.
-        السبب: ResourceDictionary تُخزِّن (تُجمِّد) كل مورد مُركَّب أول مرة يُطلَب (مثال: DropShadowEffect
-        "ShadowMd" الذي تشير خاصية BlurRadius فيه لـ P.Shadow.Md.Blur عبر DynamicResource متداخل) — لا تُعيد
-        تقييمه لاحقاً حتى لو تغيّر المفتاح الذي يشير إليه، بخلاف قيمة محلية مباشرة على FrameworkElement (تُعاد
-        دائماً). فلو حُمِّل Theme.xaml (وبالتالي Semantic.Light.xaml) قبل تثبيت الهوية الصحيحة ولو للحظة، تتجمّد
-        "ShadowMd" على قيمة الهوية الخاطئة إلى الأبد — لا يُصلحها أي InvalidateProperty/SetResourceReference
-        لاحق، مهما كانت الهوية النهائية. الترتيب الصحيح الوحيد: الهوية أولاً، ثم Theme.xaml — لا العكس أبداً.
-    -->
-    <ResourceDictionary.MergedDictionaries>
-        <!-- ===== L2 — Semantic منقولة إلى Theme.Semantic.xaml (⚠️ توقف 6) — تُدمَج قبل هذا الملف عبر IdentityService.Apply، لا هنا. ===== -->
+    <!-- دمج موارد التصميم -->
 
-        <!-- ===== L3 — Components ===== -->
-        <ResourceDictionary Source="Components/Tokens.Button.xaml"/>
-        <ResourceDictionary Source="Components/Tokens.Input.xaml"/>
-        <ResourceDictionary Source="Components/Tokens.Dialog.xaml"/>
-        <ResourceDictionary Source="Components/Tokens.Grid.xaml"/>
-        <ResourceDictionary Source="Components/Tokens.Icon.xaml"/>
-        <ResourceDictionary Source="Components/Tokens.Nav.xaml"/>
-        <ResourceDictionary Source="Components/Tokens.Card.xaml"/>
-        <ResourceDictionary Source="Components/Tokens.Badge.xaml"/>
-        <ResourceDictionary Source="Components/Tokens.Toolbar.xaml"/>
-        <ResourceDictionary Source="Components/Tokens.Pagination.xaml"/>
-        <ResourceDictionary Source="Components/Tokens.Tree.xaml"/>
-        <ResourceDictionary Source="Components/Tokens.Toast.xaml"/>
-        <ResourceDictionary Source="Components/Tokens.Document.xaml"/>
+    <ResourceDictionary.MergedDictionaries>
 
         <ResourceDictionary Source="Icons/Icons.xaml"/>
         <ResourceDictionary Source="Styles/Implicit.xaml"/>
         <ResourceDictionary Source="Styles/ScrollBars.xaml"/>
-
-        <!-- ===== L4 — Styles ===== -->
         <ResourceDictionary Source="Styles/Style.Input.xaml"/>
         <ResourceDictionary Source="Styles/Style.Button.xaml"/>
         <ResourceDictionary Source="Styles/Style.Dialog.xaml"/>

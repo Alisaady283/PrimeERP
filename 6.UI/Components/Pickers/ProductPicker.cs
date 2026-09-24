@@ -4,10 +4,7 @@ using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.UI.Components.Pickers
 {
-    /// <summary>
-    /// اختيار صنف بجدول بحث — تمييز أحمر للأصناف بدون رصيد. WarehouseId هنا مجرّد سياق تعريفي؛
-    /// الفلترة الفعلية لرصيد مخزن محدد مسؤولية IPickerDataSource&lt;Product&gt; المُمرَّر (يملأ Product.CurrentStock).
-    /// </summary>
+    /// <summary>اختيار صنف بجدول بحث</summary>
     public class ProductPicker : PickerBase<Product>
     {
         public int? WarehouseId { get; set; }

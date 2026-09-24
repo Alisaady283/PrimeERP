@@ -4,7 +4,7 @@ using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.UI.Components.Pickers
 {
-    /// <summary>اختيار مورد بجدول بحث — نفس نمط CustomerPicker.</summary>
+    /// <summary>اختيار مورد بجدول بحث</summary>
     public class SupplierPicker : PickerBase<Supplier>
     {
         public List<int> ExcludeIds { get; set; } = new();

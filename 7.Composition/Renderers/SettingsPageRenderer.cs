@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -14,10 +15,11 @@ using PrimeERP.UI.Components.Inputs;
 using PrimeERP.UI.Components.Layout;
 using PrimeERP.UI.Services;
 using Btn = PrimeERP.UI.Components.Actions.AppButton;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Composition.Renderers
 {
-    // صفحة إعدادات واحدة بسبعة تبويبات، مبنية من SettingKeys.All() عبر DialogRenderer.BuildField.
+    /// <summary>تصيير صفحة الإعدادات</summary>
     public static class SettingsPageRenderer
     {
         private static readonly (string Category, string TitleKey)[] CategoryOrder =
@@ -32,7 +34,10 @@ namespace PrimeERP.Composition.Renderers
             var toast = services.GetRequiredService<IToastService>();
             var allDefs = SettingKeys.All();
 
-            var header = new PageHeader();
+            var header = new PageHeader { Subtitle = $"الإصدار {PrimeERP.Platform.AppInfo.Version}" };
+            var updateButton = new Btn { Text = "البحث عن تحديث", Variant = "secondary", Size = "sm" };
+            updateButton.Click += async (_, __) => await UpdateFlow.RunAsync(services);
+            header.ActionsContent = updateButton;
             var controls = new Dictionary<string, (FieldDefinition Field, FrameworkElement Control)>();
 
             var tabs = CategoryOrder.Select(cat =>
@@ -43,15 +48,12 @@ namespace PrimeERP.Composition.Renderers
                     var isAccount = cat.Category == "Accounts";
                     var field = new FieldDefinition
                     {
-                        // LabelKey هنا نص العرض مباشرة — Get تُعيد المفتاح نفسه لو غير موجود بالقاموس.
                         Key = def.Key, LabelKey = LabelFor(def.Key),
                         Kind = isAccount ? FieldKind.Picker
                              : def.Key == SettingKeys.Company.LogoData ? FieldKind.Image
                              : def.DataType switch { "bool" => FieldKind.Check, "int" => FieldKind.Number, _ => FieldKind.Text },
                         PickerType = isAccount ? "Account" : null,
                         PickerValueField = isAccount ? "Code" : "Id",
-                        // أصل مرتبط = أب تعيش تحته الكيانات، فلا يُعرَض إلا التجميعي؛ وباقي حسابات
-                        // الإعدادات وجهة ترحيل فعلية فلا تُعرَض إلا الورقية.
                         PickerGroupsOnly = isAccount && SettingKeys.Accounts.LinkedRoots.Contains(def.Key),
                         PickerLeafOnly = isAccount && !SettingKeys.Accounts.LinkedRoots.Contains(def.Key),
                     };
@@ -124,7 +126,6 @@ namespace PrimeERP.Composition.Renderers
             return root;
         }
 
-        /// <summary>ورقة شبكة سنتيمترية تُطبَع على ورق الشيك لقياس إزاحة الطابعة ثم تُحفَظ في الإعدادات.</summary>
         private static FrameworkElement BuildChequeCalibration(IServiceProvider services, IToastService toast)
         {
             var button = new Btn { Text = "طباعة ورقة معايرة الشيك", Variant = "secondary", Size = "sm", Margin = new Thickness(0, 8, 0, 0) };
@@ -183,7 +184,10 @@ namespace PrimeERP.Composition.Renderers
                         var confirmed = await dialogs.ConfirmAsync(LocalizationService.Get("Str.Backup.Restore"), LocalizationService.Get("Str.Backup.RestoreConfirm"), isDangerous: true);
                         if (!confirmed) return;
 
-                        var result = backup.Restore(b.FilePath);
+                        using var handle = dialogs.ShowProgress(LocalizationService.Get("Str.Backup.Restore"),
+                                                               LocalizationService.Get("Str.PleaseWait"));
+                        var result = await Task.Run(() => backup.Restore(b.FilePath));
+
                         if (!result.IsSuccess) toast.Error(result.ErrorMessage);
                         else toast.Success(LocalizationService.Get("Str.Success"));
                     };
@@ -196,9 +200,12 @@ namespace PrimeERP.Composition.Renderers
                 }
             }
 
-            createBtn.Click += (_, __) =>
+            createBtn.Click += async (_, __) =>
             {
-                var result = backup.Create();
+                using var handle = dialogs.ShowProgress(LocalizationService.Get("Str.Backup.Create"),
+                                                       LocalizationService.Get("Str.PleaseWait"));
+                var result = await Task.Run(() => backup.Create());
+
                 if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
                 toast.Success(LocalizationService.Get("Str.Success"));
                 RefreshList();
@@ -257,9 +264,9 @@ namespace PrimeERP.Composition.Renderers
             [SettingKeys.Documents.CustomerPrefix] = "بادئة كود العميل", [SettingKeys.Documents.SupplierPrefix] = "بادئة كود المورد",
             [SettingKeys.Documents.ProductPrefix] = "بادئة كود الصنف",
 
-            [SettingKeys.UI.Theme] = "المظهر", [SettingKeys.UI.Language] = "اللغة", [SettingKeys.UI.UseArabicNumerals] = "أرقام عربية",
+            [SettingKeys.UI.Language] = "اللغة", [SettingKeys.UI.UseArabicNumerals] = "أرقام عربية",
             [SettingKeys.UI.DateFormat] = "صيغة التاريخ", [SettingKeys.UI.PageSize] = "عدد الصفوف بالصفحة",
-            [SettingKeys.UI.SidebarCollapsed] = "طي الشريط الجانبي افتراضياً", [SettingKeys.UI.Identity] = "حزمة الهوية البصرية",
+            [SettingKeys.UI.SidebarCollapsed] = "طي الشريط الجانبي افتراضياً",
 
             [SettingKeys.Backup.AutoBackupEnabled] = "تفعيل النسخ التلقائي", [SettingKeys.Backup.AutoBackupPath] = "مسار النسخ الاحتياطي",
             [SettingKeys.Backup.AutoBackupIntervalHours] = "الفاصل بالساعات", [SettingKeys.Backup.RetentionCount] = "عدد النسخ المحتفَظ بها",

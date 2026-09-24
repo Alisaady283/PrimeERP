@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
@@ -12,16 +13,17 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.Inventory
 {
+    /// <summary>خدمة الوحدات</summary>
     public class UnitService : ServiceBase, IUnitService
     {
         protected override string PermissionPrefix => "Units";
         protected override string StringPrefix => "Str.Unit";
         protected override string EntityName => "Units";
 
-        private readonly IUnitRepository _repo;
+        private readonly ILookupRepository<Unit> _repo;
 
         public UnitService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IUnitRepository repo) : base(permissions, settings, localization, audit) => _repo = repo;
+            IAuditLogger audit, ILookupRepository<Unit> repo) : base(permissions, settings, localization, audit) => _repo = repo;
 
         public Result<List<UnitDto>> GetAll(bool includeInactive = false) =>
             Result.Ok(_repo.GetAll(includeInactive).Select(ToDto).ToList());

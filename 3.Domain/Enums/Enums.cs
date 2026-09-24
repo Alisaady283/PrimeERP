@@ -1,5 +1,6 @@
 namespace PrimeERP.Domain.Enums
 {
+    /// <summary>تعدادات النظام</summary>
     public enum AccountType
     {
         Asset     = 1,
@@ -86,8 +87,7 @@ namespace PrimeERP.Domain.Enums
         Settings   = 12
     }
 
-    /// <summary>طريقة التكلفة — المتوسط المرجَّح المتحرّك وحده، وهو ما تنفّذه InventoryCosting فعلاً.
-    /// القيمة 2 محفوظة كما هي فلا تتغيّر دلالة ما هو مخزَّن.</summary>
+    /// <summary>طريقة التكلفة</summary>
     public enum CostMethod
     {
         WeightedAverage = 2
@@ -118,7 +118,7 @@ namespace PrimeERP.Domain.Enums
         Outgoing = 2
     }
 
-    /// <summary>حالات الشيك — الوارد يبدأ InHand، الصادر يبدأ Issued. كل انتقال يُسجَّل كحركة مستقلة.</summary>
+    /// <summary>حالات الشيك</summary>
     public enum ChequeStatus
     {
         InHand    = 1,
@@ -148,14 +148,10 @@ namespace PrimeERP.Domain.Enums
     {
         Manual     = 1,
         Auto       = 2,
-        /// <summary>نسخة أمان تلقائية قبل عملية استعادة — تحمي من استعادة فاشلة تُفقد البيانات الحالية.</summary>
         PreRestore = 3
     }
 
-    /// <summary>
-    /// نوع الوحدة المبنيّة — أول سؤال في المعالج، ويحكم كل ما بعده: التقرير بلا جدول يقرأ من غيره،
-    /// والسجلّ جدولٌ بحوار حقول، والحركة جدولٌ برأس وسطور. الترحيل والصلاحيات تتبع النوع.
-    /// </summary>
+    /// <summary>نوع الوحدة المبنيّة</summary>
     public enum BuilderKind
     {
         Report   = 0,
@@ -163,7 +159,7 @@ namespace PrimeERP.Domain.Enums
         Movement = 2
     }
 
-    /// <summary>نوع بيانات عمود مبنيّ — يُترجَم إلى عمود في القاعدة وإلى حقل في الفورم معاً.</summary>
+    /// <summary>نوع بيانات عمود مبنيّ</summary>
     public enum BuilderDataType
     {
         Text     = 0,
@@ -175,7 +171,7 @@ namespace PrimeERP.Domain.Enums
         Reference = 6
     }
 
-    /// <summary>تجميع العمود المحسوب من جدول مرتبط — يُقرأ ولا يُخزَّن.</summary>
+    /// <summary>تجميع العمود المحسوب من جدول</summary>
     public enum BuilderAggregate
     {
         None  = 0,
@@ -185,4 +181,14 @@ namespace PrimeERP.Domain.Enums
         Min   = 4,
         Max   = 5
     }
+
+    /// <summary>طريقة اقتناء الأصل</summary>
+    public enum AssetAcquisition
+    {
+        Cash = 1,
+        Bank = 2,
+        Supplier = 3
+    }
+
+    public enum LinkedEntityType { None, Customer, Supplier }
 }

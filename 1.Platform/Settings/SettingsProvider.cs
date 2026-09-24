@@ -2,15 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Permissions;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Platform.Settings
 {
+    /// <summary>قراءة الإعدادات وكتابتها بذاكرة مؤقتة</summary>
     public class SettingsProvider : ISettingsProvider
     {
+        private readonly ISettingStore _store;
         private readonly object _lock = new();
         private Dictionary<string, string> _cache;
+
+        public SettingsProvider(ISettingStore store) => _store = store;
 
         public event Action<string> Changed;
 
@@ -30,28 +34,21 @@ namespace PrimeERP.Platform.Settings
 
         public void SetRaw<T>(string key, T value)
         {
-            var existing = SettingRepository.GetByKey(key);
-            SettingRepository.Upsert(BuildRecord(key, value, existing));
+            _store.Upsert(BuildRecord(key, value, _store.GetByKey(key)));
             Reload();
             Changed?.Invoke(key);
         }
 
         public void SetManyRaw(Dictionary<string, object> values)
         {
-            var existingRows = values.Keys.ToDictionary(k => k, SettingRepository.GetByKey);
-
-            Db.RunTransaction((conn, tx) =>
-            {
-                foreach (var (key, value) in values)
-                    SettingRepository.Upsert(conn, tx, BuildRecord(key, value, existingRows[key]));
-            });
+            _store.UpsertMany(values.Select(v => BuildRecord(v.Key, v.Value, _store.GetByKey(v.Key))).ToList());
 
             Reload();
             foreach (var key in values.Keys) Changed?.Invoke(key);
         }
 
         public Dictionary<string, string> GetSection(string category) =>
-            SettingRepository.GetByCategory(category).ToDictionary(s => s.Key, s => s.Value);
+            _store.GetByCategory(category).ToDictionary(s => s.Key, s => s.Value);
 
         public void Reload() { lock (_lock) _cache = null; }
 
@@ -61,11 +58,11 @@ namespace PrimeERP.Platform.Settings
             lock (_lock)
             {
                 if (_cache != null) return;
-                _cache = SettingRepository.GetAll().ToDictionary(s => s.Key, s => s.Value);
+                _cache = _store.GetAll().ToDictionary(s => s.Key, s => s.Value);
             }
         }
 
-        public static SettingRecord BuildRecord<T>(string key, T value, SettingRecord existing) => new()
+        public static AppSetting BuildRecord<T>(string key, T value, AppSetting existing) => new()
         {
             Key           = key,
             Value         = FormatValue(value),

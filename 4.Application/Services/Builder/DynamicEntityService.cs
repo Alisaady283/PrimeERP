@@ -14,23 +14,18 @@ using System.Dynamic;
 
 namespace PrimeERP.Application.Services.Builder
 {
-    /// <summary>مرشِّح أي وحدة مبنيّة — نفس شكل مرشِّحات النظام: بحث وفرز وترقيم.</summary>
+    /// <summary>مرشِّح أي وحدة مبنيّة</summary>
     public class DynamicFilter
     {
         public string SearchText { get; set; }
         public string SortBy { get; set; }
         public bool   SortDescending { get; set; }
 
-        /// <summary>ترشيح شاشات الوصف: القسم ثم صفحته — فارغ = الكل.</summary>
         public int?   SectionId { get; set; }
         public int?   ModuleId  { get; set; }
     }
 
-    /// <summary>
-    /// خدمة أي جدول بناه المستخدم. ترث ServiceBase كأي خدمة، فتأخذ منها الصلاحية ورسالتها والتدقيق
-    /// والتحقق — والفرق أن بادئتها واسم كيانها من الوصف، وأن صفّها قاموسٌ لا كيان.
-    /// تواقيعها هي التي ينتظرها CrudPageRenderer وDialogRenderer: GetPaged / GetById / Create / Update / Delete.
-    /// </summary>
+    /// <summary>خدمة أي جدول بناه المستخدم</summary>
     public class DynamicEntityService : ServiceBase, IRowService
     {
         private readonly BuilderModule _module;
@@ -110,7 +105,6 @@ namespace PrimeERP.Application.Services.Builder
             return Result.Ok();
         }
 
-        /// <summary>القواعد مُعلَنة على الأعمدة، والمتحقّق يقرؤها — وCheck يترجم نتيجته كأي خدمة.</summary>
         private Result Validate(IDictionary<string, object> values, int exceptId) =>
             Check(new BuilderRowValidator(_columns, (column, value) => _repo.Exists(column, value, exceptId)), values);
     }

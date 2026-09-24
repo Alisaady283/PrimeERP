@@ -11,10 +11,7 @@ using PrimeERP.UI.ViewModels;
 
 namespace PrimeERP.Modules
 {
-    /// <summary>
-    /// شاشات الموارد البشرية التي يجمع منها المسير: البدلات والخصومات والحضور. البدل والخصم شكلٌ واحد
-    /// بخدمتين، فيُسجَّلان من دالّةٍ واحدة — الفرق عنوانها وخدمتها ووسم مبلغها.
-    /// </summary>
+    /// <summary>شاشات الموارد البشرية التي يجمع</summary>
     public static class HrRegistrations
     {
         public static void RegisterAll(IModuleRegistry registry)
@@ -28,14 +25,11 @@ namespace PrimeERP.Modules
             Attendance(registry);
         }
 
-        /// <summary>تاريخ الإنشاء يُعرض ولا يُدخَل، والالتقاط بالشهر والسنة — بهما يجمع المسير.</summary>
         private static void Movement(IModuleRegistry registry, string key, string titleKey, Type viewModel,
             Type service, string reasonLabel, string amountLabel) =>
             registry.Register(new ModuleDefinition
             {
                 Key = key, TitleKey = titleKey, PermissionPrefix = "HR", ViewModelType = viewModel,
-                // تاريخ الإنشاء من StandardFields لا مكتوباً هنا — الموضع الواحد الذي يستورده كل فورم،
-                // فتغيير صيغته يقع مرّةً في النظام كلّه.
                 Columns = new List<GridColumn>
                 {
                     new() { Header = LocalizationService.Get("Str.Employee"), Binding = nameof(EmployeeMovementDto.EmployeeName), Width = 200, IsStarWidth = true },

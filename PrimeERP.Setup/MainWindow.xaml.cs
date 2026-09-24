@@ -8,15 +8,11 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
-using Microsoft.Data.Sqlite;
 using Microsoft.Win32;
 
 namespace PrimeERP.Setup
 {
-    /// <summary>
-    /// منصِّبٌ صغير: يسأل السريال، ويتحقق منه على الخادم بربطه بجهازه، ثم يُنزّل حزمة العميل ويفكّها
-    /// ويكتب سرياله في قاعدتها. لا يحمل البرنامج بداخله — ولهذا يبقى ملفاً صغيراً يُنزَّل من الموقع.
-    /// </summary>
+    /// <summary>منصِّبٌ صغير</summary>
     public partial class MainWindow : Window
     {
         private const string Server = "https://primelogic-eg.com/erp";
@@ -29,7 +25,6 @@ namespace PrimeERP.Setup
             folderBox.Text = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "PrimeERP");
 
-            // سريالٌ بجوار المنصِّب (يضعه المطوّر للعميل) يُقرأ فلا يُملى بالهاتف ولا يُخطأ في حرف.
             var beside = Path.Combine(AppContext.BaseDirectory, "serial.txt");
             if (File.Exists(beside)) serialBox.Text = File.ReadAllText(beside).Trim();
         }
@@ -66,7 +61,7 @@ namespace PrimeERP.Setup
                 ZipFile.ExtractToDirectory(archive, folder, overwriteFiles: true);
                 File.Delete(archive);
 
-                WriteLicense(folder, serial, activation.Value.GetProperty("customer").GetString());
+                WriteLicense(folder, serial, activation.Value);
                 Shortcut(folder);
 
                 progress.Value = 100;
@@ -86,7 +81,7 @@ namespace PrimeERP.Setup
         private async Task<JsonElement?> Activate(string serial)
         {
             var response = await _http.PostAsJsonAsync($"{Server}/activate",
-                new { serial, machine = Fingerprint() });
+                new { serial, machine = PrimeERP.Platform.Net.MachineFingerprint.Value() });
 
             var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
 
@@ -120,25 +115,19 @@ namespace PrimeERP.Setup
             return true;
         }
 
-        /// <summary>السريال يُكتب في قاعدة النسخة — منه يعرف البرنامج نفسه عند طلب التحديث.</summary>
-        private static void WriteLicense(string folder, string serial, string customer)
+        private static void WriteLicense(string folder, string serial, JsonElement activation)
         {
-            var database = Directory.GetFiles(folder, "*.db", SearchOption.AllDirectories);
-            if (database.Length == 0) return;
+            string Read(string name) => activation.TryGetProperty(name, out var value) ? value.GetString() ?? "" : "";
 
-            using var connection = new SqliteConnection($"Data Source={database[0]}");
-            connection.Open();
-
-            foreach (var (key, value) in new[] { ("License.Serial", serial), ("License.Customer", customer) })
+            var license = new
             {
-                using var command = connection.CreateCommand();
-                command.CommandText = @"INSERT INTO AppSettings ([Key], Value, Category, DataType, IsSystem)
-                                        VALUES ($k, $v, 'License', 'string', 1)
-                                        ON CONFLICT([Key]) DO UPDATE SET Value = $v";
-                command.Parameters.AddWithValue("$k", key);
-                command.Parameters.AddWithValue("$v", value ?? "");
-                command.ExecuteNonQuery();
-            }
+                serial,
+                customer = Read("customer"),
+                manifest = Read("manifest"),
+                simplified = activation.TryGetProperty("simplified", out var s) && s.GetBoolean()
+            };
+
+            File.WriteAllText(Path.Combine(folder, "license.json"), JsonSerializer.Serialize(license));
         }
 
         private static void Shortcut(string folder)
@@ -148,25 +137,11 @@ namespace PrimeERP.Setup
 
             var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
             var link = Path.Combine(desktop, "PrimeERP.url");
-            var url = exe.Replace(Path.DirectorySeparatorChar, '/');
+            var url = new Uri(exe).AbsoluteUri;
 
-            File.WriteAllLines(link, new[] { "[InternetShortcut]", $"URL=file:///{url}", $"IconFile={exe}", "IconIndex=0" });
+            File.WriteAllLines(link, new[] { "[InternetShortcut]", $"URL={url}", $"IconFile={exe}", "IconIndex=0" });
         }
 
-        private static string Fingerprint()
-        {
-            var guid = "";
-            try
-            {
-                using var key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)
-                    .OpenSubKey(@"SOFTWARE\Microsoft\Cryptography");
-                guid = key?.GetValue("MachineGuid")?.ToString() ?? "";
-            }
-            catch { }
-
-            var parts = string.Join("|", Environment.MachineName, guid);
-            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(parts)))[..32];
-        }
 
         private void Say(string message) => statusText.Text = message;
     }

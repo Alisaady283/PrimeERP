@@ -1,21 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using PrimeERP.Data.Query;
-using PrimeERP.Data.Repositories.Base;
+using Microsoft.EntityFrameworkCore;
+using PrimeERP.Data.Core;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
-using System.Dynamic;
 
 namespace PrimeERP.Data.Repositories
 {
-    /// <summary>
-    /// مستودع أي جدول بناه المستخدم — نفس شكل مستودعات النظام (WarehouseRepository مثالاً)، والفرق أن
-    /// الجدول وأعمدته من الوصف لا مكتوبة، والصفّ قاموسٌ لا كيان. العمود المحسوب استعلامٌ فرعي يُقرأ
-    /// ولا يُكتب، فرصيدُ الطرف يُحسب عند القراءة كما يفعل النظام اليوم.
-    /// </summary>
-    public class DynamicRepository : RepositoryBase<IDictionary<string, object>>
+    /// <summary>مستودع أي جدول بناه المستخدم</summary>
+    public class DynamicRepository
     {
         private readonly string _table;
         private readonly List<BuilderColumn> _columns;
@@ -24,90 +18,138 @@ namespace PrimeERP.Data.Repositories
         {
             _table = table;
             _columns = columns;
+            BuiltTables.Declare(table, columns);
         }
-
-        protected override string TableName => _table;
 
         private IEnumerable<BuilderColumn> Stored => _columns.Where(c => c.Aggregate == BuilderAggregate.None);
         private IEnumerable<BuilderColumn> Computed => _columns.Where(c => c.Aggregate != BuilderAggregate.None);
 
-        /// <summary>الأعمدة المخزَّنة كما هي، والمحسوبة استعلاماً فرعياً بجانبها.</summary>
-        private string Select()
+        private List<IDictionary<string, object>> Read(
+            Func<IQueryable<Dictionary<string, object>>, IQueryable<Dictionary<string, object>>> shape)
         {
-            var parts = new List<string> { "t.*" };
+            using var db = DbContextFactory.Open();
+            var rows = shape(db.Rows(_table).AsNoTracking()).AsEnumerable()
+                .Select(r => (IDictionary<string, object>)new Dictionary<string, object>(r))
+                .ToList();
 
-            foreach (var c in Computed)
-                parts.Add($"(SELECT COALESCE({c.Aggregate.ToString().ToUpperInvariant()}({c.AggColumn}), 0) " +
-                          $"FROM {c.AggFrom} WHERE {c.AggMatch} = t.Id) AS {c.Name}");
-
-            return string.Join(", ", parts);
+            Compute(db, rows);
+            return rows;
         }
+
+        /// <summary>الأعمدة التجميعية تُحسب من جدول</summary>
+        private void Compute(PrimeDbContext db, List<IDictionary<string, object>> rows)
+        {
+            foreach (var c in Computed)
+            {
+                if (string.IsNullOrWhiteSpace(c.AggFrom) || string.IsNullOrWhiteSpace(c.AggMatch)) continue;
+
+                var lines = db.Rows(c.AggFrom).AsNoTracking().AsEnumerable().ToList();
+                foreach (var row in rows)
+                {
+                    var own = lines.Where(l => Equals(Number(l[c.AggMatch]), Number(row["Id"])));
+                    row[c.Name] = c.Aggregate switch
+                    {
+                        BuilderAggregate.Count => own.Count(),
+                        BuilderAggregate.Sum   => own.Sum(l => Number(l[c.AggColumn])),
+                        BuilderAggregate.Avg   => own.Any() ? own.Average(l => Number(l[c.AggColumn])) : 0m,
+                        BuilderAggregate.Min   => own.Any() ? own.Min(l => Number(l[c.AggColumn])) : 0m,
+                        BuilderAggregate.Max   => own.Any() ? own.Max(l => Number(l[c.AggColumn])) : 0m,
+                        _                      => 0m,
+                    };
+                }
+            }
+        }
+
+        private static decimal Number(object value) => value == null ? 0m : Convert.ToDecimal(value);
 
         public (List<IDictionary<string, object>> Items, int Total) GetPaged(int page, int pageSize, string searchText,
             string sortColumn, bool sortDescending)
         {
-            var searchable = Stored.Where(c => c.DataType == BuilderDataType.Text).Select(c => "t." + c.Name).ToArray();
-            var where = new WhereBuilder().Eq("t.IsDeleted", false).LikeAny(searchText, searchable);
+            var searchable = Stored.Where(c => c.DataType == BuilderDataType.Text).Select(c => c.Name).ToList();
+            var column = Stored.Any(c => c.Name == sortColumn) ? sortColumn : DefaultSort();
 
-            var column = Stored.Any(c => c.Name == sortColumn) ? "t." + sortColumn : DefaultSort();
+            IQueryable<Dictionary<string, object>> Shape(IQueryable<Dictionary<string, object>> rows)
+            {
+                var q = rows.Where(r => !(bool)r["IsDeleted"]);
+                if (!string.IsNullOrWhiteSpace(searchText) && searchable.Count > 0)
+                    q = q.Where(r => searchable.Any(name => EF.Functions.Like((string)r[name], $"%{searchText}%")));
+                return q;
+            }
 
-            return Page(where, page, pageSize, OrderBuilder.By(column, sortDescending, "t.Id"),
-                from: $"{_table} t", select: $"SELECT {Select()} FROM {_table} t");
+            using var db = DbContextFactory.Open();
+            var total = Shape(db.Rows(_table).AsNoTracking()).Count();
+
+            var items = Read(q =>
+            {
+                var shaped = Shape(q);
+                var ordered = sortDescending
+                    ? shaped.OrderByDescending(r => r[column])
+                    : shaped.OrderBy(r => r[column]);
+                return ordered.ThenByDescending(r => r["Id"]).Skip(Math.Max(0, page - 1) * pageSize).Take(pageSize);
+            });
+
+            return (items, total);
         }
 
-        /// <summary>يتبع قاعدة الترتيب: المؤرَّخ بتاريخه، وغيره بأول عمود نصّي.</summary>
         private string DefaultSort()
         {
             var date = Stored.FirstOrDefault(c => c.DataType == BuilderDataType.Date);
-            return "t." + (date?.Name ?? Stored.FirstOrDefault()?.Name ?? "Id");
+            return date?.Name ?? Stored.FirstOrDefault()?.Name ?? "Id";
         }
 
         public IDictionary<string, object> GetById(int id) =>
-            QueryOne($"SELECT {Select()} FROM {_table} t WHERE t.Id = @id", null, null, ("@id", id));
+            Read(q => q.Where(r => (int)r["Id"] == id).Take(1)).FirstOrDefault();
 
         public int Insert(IDictionary<string, object> values, string user)
         {
-            var names = Stored.Select(c => c.Name).ToList();
-            var sql = $"INSERT INTO {_table} ({string.Join(", ", names)}, CreatedAt, CreatedBy) " +
-                      $"VALUES ({string.Join(", ", names.Select(n => "@" + n))}, @now, @by)";
+            using var db = DbContextFactory.Open();
+            var row = Blank();
+            foreach (var c in Stored) row[c.Name] = values.TryGetValue(c.Name, out var v) ? v : null;
+            row["CreatedAt"] = DateTime.Now;
+            row["CreatedBy"] = user ?? "";
 
-            return InsertGetId(sql, null, null, Params(values, names)
-                .Append(("@now", (object)DateTime.Now)).Append(("@by", (object)(user ?? ""))).ToArray());
+            db.BuiltSet(_table).Add(row);
+            db.SaveChanges();
+            return Convert.ToInt32(row["Id"]);
         }
 
         public void Update(int id, IDictionary<string, object> values)
         {
-            var names = Stored.Select(c => c.Name).ToList();
-            var sql = $"UPDATE {_table} SET {string.Join(", ", names.Select(n => $"{n} = @{n}"))}, UpdatedAt = @now WHERE Id = @id";
+            using var db = DbContextFactory.Open();
+            var row = db.BuiltSet(_table).FirstOrDefault(r => (int)r["Id"] == id);
+            if (row == null) return;
 
-            Exec(sql, null, null, Params(values, names)
-                .Append(("@now", (object)DateTime.Now)).Append(("@id", (object)id)).ToArray());
+            foreach (var c in Stored)
+                if (values.TryGetValue(c.Name, out var v)) row[c.Name] = v;
+
+            row["UpdatedAt"] = DateTime.Now;
+            db.SaveChanges();
         }
 
-        // الحذف ناعم كما في كل جداول النظام — البيانات تبقى والسجل يُخفى.
-        public void Delete(int id) =>
-            Exec($"UPDATE {_table} SET IsDeleted = @d, DeletedAt = @now WHERE Id = @id",
-                null, null, ("@d", true), ("@now", DateTime.Now), ("@id", id));
-
-        public bool Exists(string column, object value, int exceptId) =>
-            Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM {_table} WHERE {column} = @v AND Id <> @id AND IsDeleted = @d",
-                ("@v", value ?? DBNull.Value), ("@id", exceptId), ("@d", false))) > 0;
-
-        private static IEnumerable<(string, object)> Params(IDictionary<string, object> values, List<string> names) =>
-            names.Select(n => ("@" + n, values.TryGetValue(n, out var v) && v != null ? v : DBNull.Value));
-
-        /// <summary>
-        /// الصفّ ExpandoObject لا Dictionary: WPF يربط الأعمدة بأسماء الخصائص، والقاموس العادي بلا خصائص
-        /// فتظهر الخلايا فارغة. وExpandoObject قاموسٌ أيضاً، فيقرؤه بقية الكود كما هو.
-        /// </summary>
-        protected override IDictionary<string, object> Map(DataRow row)
+        public void Delete(int id)
         {
-            IDictionary<string, object> expando = new ExpandoObject();
+            using var db = DbContextFactory.Open();
+            var row = db.BuiltSet(_table).FirstOrDefault(r => (int)r["Id"] == id);
+            if (row == null) return;
 
-            foreach (DataColumn column in row.Table.Columns)
-                expando[column.ColumnName] = row[column] == DBNull.Value ? null : row[column];
+            row["IsDeleted"] = true;
+            row["DeletedAt"] = DateTime.Now;
+            db.SaveChanges();
+        }
 
-            return expando;
+        public bool Exists(string column, object value, int exceptId)
+        {
+            using var db = DbContextFactory.Open();
+            return db.Rows(_table).AsNoTracking()
+                .Any(r => r[column].Equals(value) && (int)r["Id"] != exceptId && !(bool)r["IsDeleted"]);
+        }
+
+        private Dictionary<string, object> Blank()
+        {
+            var row = new Dictionary<string, object>();
+            foreach (var c in Stored) row[c.Name] = null;
+            row["IsDeleted"] = false;
+            return row;
         }
     }
 }

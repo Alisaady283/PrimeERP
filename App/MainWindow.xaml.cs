@@ -11,13 +11,11 @@ using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Components.Shell;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.App
 {
-    /// <summary>القطعة الوحيدة هنا AppShell — التنقل بين الوحدات المسجَّلة عبر IModuleRegistry، كل صفحة تُبنى
-    /// عند الطلب فقط (لا كل الوحدات دفعة واحدة) عبر PageRenderer (يوزّع حسب ModuleDefinition.LayoutKind على
-    /// CrudPageRenderer أو TreeRenderer — R11). مُنشأة يدوياً من App.xaml.cs.OnStartup (لا StartupUri)، فحقن
-    /// IServiceProvider مباشر عبر المُنشئ ممكن — لا استدعاء XAML ضمني هنا.</summary>
+    /// <summary>القطعة الوحيدة هنا AppShell</summary>
     public partial class MainWindow : Window
     {
         private readonly IServiceProvider _services;
@@ -34,7 +32,6 @@ namespace PrimeERP.App
             shell.UserRole = AppSession.RoleName;
 
             shell.NavItems = BuildNavGroups();
-            SyncThemeIndicator();
 
             var first = _registry.All().FirstOrDefault();
             if (first != null)
@@ -44,8 +41,6 @@ namespace PrimeERP.App
             }
         }
 
-        // مفتاح أيقونة لكل وحدة — من 5.Design/Icons/Icons.xaml (Geometry فقط، بلا emoji). الوحدات بلا مطابقة
-        // صريحة هنا (كل التقارير مثلاً) تستخدم IconReports كافتراضي عبر IconKeyForModule.
         private static readonly Dictionary<string, string> ModuleIconKeys = new()
         {
             ["Accounts"] = "IconAccounts", ["Journals"] = "IconJournal",
@@ -72,7 +67,6 @@ namespace PrimeERP.App
 
         private List<NavItem> BuildNavGroups()
         {
-            // مصدر الأقسام واحد تقرؤه هذه النافذة وشاشة إنشاء البرنامج — لا نسخة منه هنا.
             var groups = NavigationSource.Groups(_services);
 
             var simplified = _services.GetRequiredService<ISettingsService>().Get(SettingKeys.Documents.SimplifiedFlow, true);
@@ -101,52 +95,11 @@ namespace PrimeERP.App
             shell.CurrentPage = PageRenderer.Render(definition, _services);
         }
 
-        private void Shell_ThemeToggled(object sender, EventArgs e)
-        {
-            var identity = _services.GetRequiredService<IIdentityService>();
-            identity.ApplyMode(identity.CurrentMode == PrimeERP.Platform.Design.ThemeMode.Dark
-                ? PrimeERP.Platform.Design.ThemeMode.Light
-                : PrimeERP.Platform.Design.ThemeMode.Dark);
-
-            SyncThemeIndicator();
-        }
-
-        /// <summary>التحديث سؤالٌ ثم تنزيل: ما دام الإصدار نفسه لا يحدث شيء سوى إخبارٍ بذلك.</summary>
-        private async void Shell_UpdateRequested(object sender, EventArgs e)
-        {
-            var updates = _services.GetRequiredService<PrimeERP.Application.Services.IUpdateService>();
-            var dialogs = _services.GetRequiredService<PrimeERP.UI.Services.IDialogService>();
-            var toast = _services.GetRequiredService<PrimeERP.UI.Services.IToastService>();
-
-            var check = await updates.CheckAsync();
-            if (check.IsFailure) { toast.Error(check.ErrorMessage); return; }
-
-            if (!check.Value.Available)
-            {
-                toast.Info($"نسختك أحدث ما لدينا ({PrimeERP.Platform.AppInfo.Version})");
-                return;
-            }
-
-            if (!await dialogs.ConfirmAsync("تحديث", $"يوجد إصدار {check.Value.Version} — هل تريد تنزيله؟")) return;
-
-            using var handle = dialogs.ShowProgress("تحديث", $"تنزيل الإصدار {check.Value.Version}");
-            var progress = new Progress<double>(percent => handle.Report(percent, "تنزيل"));
-
-            var file = await updates.DownloadAsync(check.Value, progress);
-            if (file.IsFailure) { toast.Error(file.ErrorMessage); return; }
-
-            toast.Success($"نُزِّل الإصدار {check.Value.Version} — أغلق البرنامج وشغّل الحزمة");
-        }
-
-        private void SyncThemeIndicator() =>
-            shell.IsDarkMode = _services.GetRequiredService<IIdentityService>().CurrentMode
-                               == PrimeERP.Platform.Design.ThemeMode.Dark;
+        private async void Shell_UpdateRequested(object sender, EventArgs e) =>
+            await PrimeERP.UI.Services.UpdateFlow.RunAsync(_services);
 
         private void Shell_LogoutRequested(object sender, EventArgs e)
         {
-            // بسيط عمداً — إعادة تسجيل دخول بلا إعادة تشغيل التطبيق كاملاً تحتاج إعادة بناء نافذة تسجيل
-            // الدخول من الصفر داخل نفس العملية؛ خارج نطاق R9. الإغلاق هنا كافٍ ومطلوب أمنياً (صفر بيانات
-            // جلسة سابقة متبقية بعد Close — AppSession.SignOut يُفرّغها قبل الإغلاق).
             AppSession.SignOut();
             Close();
         }

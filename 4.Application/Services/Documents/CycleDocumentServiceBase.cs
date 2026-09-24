@@ -7,12 +7,12 @@ using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Permissions;
-using Db = PrimeERP.Data.Core.DbHelper;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Application.Services.Documents
 {
+    /// <summary>مستندات الدورة: أساسٌ وستّ خدمات</summary>
     public interface ICycleDocumentService
     {
         Result<PagedResult<CycleDocumentDto>> GetPaged(int page, int pageSize, CycleDocumentFilter filter = null);
@@ -27,7 +27,6 @@ namespace PrimeERP.Application.Services.Documents
     public interface IQuotationService : ICycleDocumentService { }
     public interface ISalesOrderService : ICycleDocumentService { }
 
-    // نسخة CycleDocument من StockAdjustmentServiceBase: بلا ترحيل وبلا أثر مخزني، وطرف اختياري بدل مخزن.
     public abstract class CycleDocumentServiceBase<TRepo> : ServiceBase, ICycleDocumentService where TRepo : ICycleDocumentRepository
     {
         protected readonly TRepo Repo;
@@ -99,7 +98,6 @@ namespace PrimeERP.Application.Services.Documents
                 if (l.Qty <= 0)
                     return Result.Fail<CycleDocumentDetailDto>("الكمية يجب أن تكون أكبر من صفر", ErrorCode.ValidationFailed);
 
-                // التحقق من المتبقي على المصدر هنا لا في الواجهة فقط — الواجهة تمنع الخطأ، والخدمة تمنع الالتفاف عليها.
                 var pullCheck = _links.ValidatePull(l.SourceType, l.SourceId, l.SourceLineId, l.Qty, l.SourceNo);
                 if (pullCheck.IsFailure)
                     return Result.Fail<CycleDocumentDetailDto>(pullCheck.ErrorMessage, pullCheck.ErrorCode);
@@ -112,23 +110,23 @@ namespace PrimeERP.Application.Services.Documents
                 pulls.Add(l);
             }
 
-            var docId = Db.RunTransaction((conn, tx) =>
+            var docId = Tx(db =>
             {
                 var doc = new CycleDocument
                 {
-                    DocNo = _numbers.Next(conn, tx, _sequenceKey),
+                    DocNo = _numbers.Next(db, _sequenceKey),
                     DocDate = dto.DocDate,
                     PartyId = dto.PartyId,
                     Notes = dto.Notes,
                     CreatedBy = AppSession.Username
                 };
 
-                var id = Repo.InsertHeader(conn, tx, doc);
+                var id = Repo.InsertHeader(db, doc);
                 var inserted = new List<(IPullableLine Line, int TargetLineId, decimal Qty)>();
                 for (int i = 0; i < resolved.Count; i++)
-                    inserted.Add((pulls[i], Repo.InsertLine(conn, tx, id, resolved[i]), resolved[i].Qty));
+                    inserted.Add((pulls[i], Repo.InsertLine(db, id, resolved[i]), resolved[i].Qty));
 
-                _links.RecordPulls(conn, tx, _entityName, id, inserted);
+                _links.RecordPulls(db, _entityName, id, inserted);
                 return id;
             });
 
@@ -151,7 +149,6 @@ namespace PrimeERP.Application.Services.Documents
             if (!Can("Delete")) return FailDenied();
             if (Repo.GetById(id) == null) return Result.Fail("المستند غير موجود", ErrorCode.NotFound);
 
-            // السحب يمنع الحذف: مستندٌ لاحق يقوم عليه، فحذفه يترك الأخير بلا أصل.
             if (_links.GetPulledBySource(_entityName, id).Count > 0)
                 return Result.Fail("سُحب من هذا المستند — احذف ما سُحب إليه أولاً", ErrorCode.ValidationFailed);
 
@@ -160,10 +157,10 @@ namespace PrimeERP.Application.Services.Documents
             return Result.Ok();
         }
 
-        private void DeleteWithLinks(int id) => Db.RunTransaction((conn, tx) =>
+        private void DeleteWithLinks(int id) => Tx(db =>
         {
-            _links.RemovePull(_entityName, id, conn, tx);
-            Repo.DeleteDocument(conn, tx, id);
+            _links.RemovePull(_entityName, id, db);
+            Repo.DeleteDocument(db, id);
         });
 
         private CycleDocumentDto ToDto(CycleDocument d)

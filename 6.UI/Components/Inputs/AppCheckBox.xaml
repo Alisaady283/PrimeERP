@@ -1,6 +1,8 @@
 <UserControl x:Class="PrimeERP.UI.Components.Inputs.AppCheckBox"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- حقل إدخال AppCheckBox -->
     <Grid x:Name="root" Background="Transparent"
           MouseLeftButtonUp="Root_MouseLeftButtonUp">
         <Grid.ColumnDefinitions>
@@ -10,14 +12,13 @@
 
         <Border x:Name="box" Grid.Column="0" VerticalAlignment="Center" Style="{StaticResource CheckBoxBoxStyle}">
             <Grid>
-                <!-- علامة الصح (Checked) -->
+                
                 <Path x:Name="checkPath"
                       Data="{StaticResource IconCheck}"
                       HorizontalAlignment="Center" VerticalAlignment="Center"
                       Style="{StaticResource CheckBoxMarkStyle}"
                       Visibility="Collapsed"/>
 
-                <!-- شرطة (Indeterminate) -->
                 <Rectangle x:Name="dashMark"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
                            Style="{StaticResource CheckBoxDashStyle}"

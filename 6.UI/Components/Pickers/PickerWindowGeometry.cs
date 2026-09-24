@@ -3,7 +3,7 @@ using System.Windows;
 
 namespace PrimeERP.UI.Components.Pickers
 {
-    /// <summary>يتذكر آخر حجم/موضع لكل نافذة اختيار (بالعنوان كمفتاح) خلال نفس جلسة التشغيل — بالذاكرة، بلا قرص.</summary>
+    /// <summary>يتذكر آخر حجم/موضع لكل نافذة</summary>
     internal static class PickerWindowGeometry
     {
         private static readonly Dictionary<string, Rect> _cache = new();

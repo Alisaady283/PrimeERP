@@ -4,13 +4,13 @@ using System.Windows;
 
 namespace PrimeERP.Platform.Localization
 {
+    /// <summary>قاموس النصوص واتجاه الواجهة</summary>
     public enum AppLanguage
     {
         Ar,
         En
     }
 
-    /// <summary>يبدّل قاموس النصوص (Strings.ar/en.xaml) واتجاه الواجهة (RTL/LTR) معاً.</summary>
     public static class LocalizationService
     {
         public static AppLanguage CurrentLanguage { get; private set; } = AppLanguage.Ar;
@@ -32,10 +32,6 @@ namespace PrimeERP.Platform.Localization
             if (existing != null)
                 dicts.Remove(existing);
 
-            // Uri مطلق (pack://application:,,,/{asm};component/...) لا نسبي عمداً — نفس اصطلاح
-            // IdentityService.Apply/PrintService.Theme: Uri نسبي يعتمد على Application.ResourceAssembly، يُضبط
-            // تلقائياً وصحيحاً في PrimeERP.exe الحقيقي لكنه هشّ في أي مضيف آخر (مضيف اختباري مثلاً) — اكتُشف
-            // فعلياً عند أول اختبار حقيقي لهذه الدالة (IOException "Cannot locate resource").
             var asmName = typeof(LocalizationService).Assembly.GetName().Name;
             var file = language == AppLanguage.Ar ? "Strings.ar.xaml" : "Strings.en.xaml";
 
@@ -59,7 +55,6 @@ namespace PrimeERP.Platform.Localization
         public static void Toggle() =>
             Apply(CurrentLanguage == AppLanguage.Ar ? AppLanguage.En : AppLanguage.Ar);
 
-        /// <summary>يجلب نص "Str.X" مباشرة من القاموس الحالي — مفيد من الكود بدل XAML binding.</summary>
         public static string Get(string key)
         {
             if (System.Windows.Application.Current?.Resources.Contains(key) == true)

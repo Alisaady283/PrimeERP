@@ -8,6 +8,7 @@ using System.Windows.Shapes;
 
 namespace PrimeERP.UI.Components.Display
 {
+    /// <summary>عرض AppBreadcrumb</summary>
     public partial class AppBreadcrumb : UserControl
     {
         public static readonly DependencyProperty ItemsProperty =
@@ -16,7 +17,6 @@ namespace PrimeERP.UI.Components.Display
 
         public IEnumerable<string> Items { get => (IEnumerable<string>)GetValue(ItemsProperty); set => SetValue(ItemsProperty, value); }
 
-        /// <summary>يُطلق عند النقر على أي جزء غير الأخير — يحمل فهرس الجزء.</summary>
         public event EventHandler<int> ItemClick;
 
         public AppBreadcrumb()

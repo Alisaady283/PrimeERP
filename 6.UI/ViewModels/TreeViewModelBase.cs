@@ -12,7 +12,7 @@ using PrimeERP.UI.ViewModels.Base;
 
 namespace PrimeERP.UI.ViewModels
 {
-    // بناء الشجرة نفسه في TreeRenderer (7.Composition، يملك TreeLayoutOptions) لا هنا — راجع TreeRenderer.cs.
+    /// <summary>نماذج عرض TreeViewModelBase</summary>
     public abstract class TreeViewModelBase<TDto, TFilter> : PagedViewModelBase<TDto, TFilter> where TFilter : new()
     {
         protected readonly IDialogService Dialogs;
@@ -28,7 +28,6 @@ namespace PrimeERP.UI.ViewModels
         public ICommand ExpandAllCommand { get; }
         public ICommand CollapseAllCommand { get; }
 
-        // الحوار الفعلي يُبنى في 7.Composition (DialogRenderer) — الـVM ترفع حدثاً فقط، لا تعرف عنه شيئاً.
         public event Action AddRequested;
         public event Action<object> EditRequested;
 

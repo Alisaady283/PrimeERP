@@ -1,3 +1,7 @@
+using PrimeERP.Platform.Settings;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.Platform.Localization;
+using PrimeERP.Platform.Audit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +12,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Reporting
 {
+    /// <summary>تقارير المخزون</summary>
     public interface IStockReportService
     {
         Result<ReportData> Balances(DateTime from, DateTime to);
@@ -15,17 +20,14 @@ namespace PrimeERP.Application.Reporting
         Result<ReportData> ItemCard(int productId);
     }
 
-    /// <summary>
-    /// تقارير المخزون. كانت أجسامها مكتوبة داخل تسجيل التقارير في 8.Modules تجمع ثلاث خدمات بمنطق
-    /// مكتوب هناك — والتجميع منطق أعمال يسكن طبقة التطبيق.
-    /// </summary>
-    public class StockReportService : IStockReportService
+    public class StockReportService : ReportServiceBase, IStockReportService
     {
         private readonly IStockService _stock;
         private readonly IProductService _products;
         private readonly IWarehouseService _warehouses;
 
-        public StockReportService(IStockService stock, IProductService products, IWarehouseService warehouses)
+        public StockReportService(IStockService stock, IProductService products, IWarehouseService warehouses, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+        : base(permissions, settings, localization, audit)
         {
             _stock = stock;
             _products = products;
@@ -34,13 +36,14 @@ namespace PrimeERP.Application.Reporting
 
         public Result<ReportData> Balances(DateTime from, DateTime to)
         {
+            var gate = Gate(); if (gate != null) return gate;
+
             var products = _products.GetPaged(1, 5000);
             if (!products.IsSuccess) return Result.Fail<ReportData>(products.ErrorMessage);
 
             var warehouses = _warehouses.GetAll(true);
             if (!warehouses.IsSuccess) return Result.Fail<ReportData>(warehouses.ErrorMessage);
 
-            // كل الحركات منذ البداية: ما قبل الفترة رصيدٌ أول المدة، وما فيها وارد ومنصرف.
             var history = _stock.GetMovements(new DateTime(1900, 1, 1), to, null, int.MaxValue);
             if (!history.IsSuccess) return Result.Fail<ReportData>(history.ErrorMessage);
 
@@ -90,6 +93,8 @@ namespace PrimeERP.Application.Reporting
 
         public Result<ReportData> Movements(DateTime from, DateTime to, int? warehouseId)
         {
+            var gate = Gate(); if (gate != null) return gate;
+
             var movements = _stock.GetMovements(from, to, warehouseId);
             if (!movements.IsSuccess) return Result.Fail<ReportData>(movements.ErrorMessage);
 
@@ -114,12 +119,13 @@ namespace PrimeERP.Application.Reporting
 
         public Result<ReportData> ItemCard(int productId)
         {
+            var gate = Gate(); if (gate != null) return gate;
+
             if (productId == 0) return Result.Fail<ReportData>("اختر صنفاً");
 
             var productResult = _products.GetById(productId);
             if (!productResult.IsSuccess) return Result.Fail<ReportData>("الصنف غير موجود");
 
-            // السجلّ كاملاً وتصاعدياً: الرصيد الجاري لا يُبنى على حركاتٍ مبتورة ولا مقلوبة الترتيب.
             var history = _stock.GetCostingHistory(productResult.Value.Id);
             if (!history.IsSuccess) return Result.Fail<ReportData>(history.ErrorMessage);
 

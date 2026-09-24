@@ -4,6 +4,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.HR
 {
+    /// <summary>عقد المسمّيات الوظيفية</summary>
     public interface IJobTitleService
     {
         Result<List<JobTitleDto>> GetAll(bool includeInactive = false);

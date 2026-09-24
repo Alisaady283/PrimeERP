@@ -2,6 +2,7 @@ using System;
 
 namespace PrimeERP.Application.DTOs.Security
 {
+    /// <summary>بيانات المستخدم</summary>
     public class UserDto
     {
         public int      Id          { get; set; }
@@ -15,7 +16,6 @@ namespace PrimeERP.Application.DTOs.Security
         public PrimeERP.Domain.Results.StatusVariant StatusVariant { get; set; }
     }
 
-    // Password هنا نص عادٍ من الحوار فقط — يُهاش داخل الخدمة قبل التخزين، لا يُخزَّن ولا يُعرَض أبداً كنص صريح.
     public class CreateUserDto
     {
         public string Username    { get; set; }
@@ -25,7 +25,6 @@ namespace PrimeERP.Application.DTOs.Security
         public bool   IsActive    { get; set; } = true;
     }
 
-    // Password فارغة = بلا تغيير (DialogRenderer.ApplyFields يتجاهل حقل كلمة المرور الفارغ عند التعديل).
     public class UpdateUserDto
     {
         public int    Id          { get; set; }

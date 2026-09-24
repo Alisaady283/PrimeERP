@@ -5,6 +5,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Display
 {
+    /// <summary>عرض AppEmptyState</summary>
     public partial class AppEmptyState : UserControl
     {
         public static readonly DependencyProperty IconProperty =

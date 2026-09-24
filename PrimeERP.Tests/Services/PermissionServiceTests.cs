@@ -1,42 +1,30 @@
 using System;
 using PrimeERP.Platform.Permissions;
 using Xunit;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>يختبر PermissionService.Can/CanAny/CanAll/LoadForUser/GetUserPermissions مباشرة — كانت
-    /// مبنية بالكامل بلا اختبار مباشر (فقط PermissionDb الخام مُستهلكة عبر TestDatabaseFixture). DevMode
-    /// يُعطَّل صراحة هنا (نفس نمط JournalServiceTests/CustomerServiceTests) لأنه يتخطّى كل هذا المنطق.</summary>
+    /// <summary>فحص الصلاحيات وتحميلها</summary>
     [Collection("Database")]
     public class PermissionServiceTests
     {
         private readonly TestDatabaseFixture _db;
-        private readonly PermissionService _service = new();
+        private readonly PermissionService _service;
 
-        public PermissionServiceTests(TestDatabaseFixture db) => _db = db;
-
-        private static int CreateRole(string name, params string[] permissions)
+        public PermissionServiceTests(TestDatabaseFixture db)
         {
-            var roleId = Db.InsertAndGetId(
-                "INSERT INTO Roles (Name, NameAr, IsSystem) VALUES (@n, @na, @sys)",
-                Db.Params(("@n", name), ("@na", name), ("@sys", false)));
+            _db = db;
+            _service = new PermissionService(db.Permissions);
+        }
 
-            foreach (var key in permissions)
-                Db.Execute("INSERT INTO RolePermissions (RoleId, PermissionKey) VALUES (@r, @k)",
-                    Db.Params(("@r", roleId), ("@k", key)));
-
+        private int CreateRole(string name, params string[] permissions)
+        {
+            var roleId = _db.Permissions.InsertRole(name, name);
+            _db.Permissions.ReplaceRolePermissions(roleId, permissions);
             return roleId;
         }
 
-        private static int CreateUser(string username, int roleId)
-        {
-            var (hash, salt) = PrimeERP.Platform.Security.PasswordHasher.Hash("x");
-            return Db.InsertAndGetId(
-                @"INSERT INTO Users (Username, PasswordHash, Salt, DisplayName, RoleId, IsActive)
-                  VALUES (@u, @h, @s, @d, @r, @a)",
-                Db.Params(("@u", username), ("@h", hash), ("@s", salt), ("@d", username), ("@r", roleId), ("@a", true)));
-        }
+        private int CreateUser(string username, int roleId) => _db.AddUser(username, "x", username, roleId);
 
         [Fact]
         public void GetUserPermissions_ReturnsRolePermissionsOnly_WhenNoUserOverrides()
@@ -56,8 +44,7 @@ namespace PrimeERP.Tests.Services
             var roleId = CreateRole($"Role.{Guid.NewGuid():N}", "Customers.View");
             var userId = CreateUser($"user.{Guid.NewGuid():N}", roleId);
 
-            Db.Execute("INSERT INTO UserPermissions (UserId, PermissionKey, IsGranted) VALUES (@u, @k, 1)",
-                Db.Params(("@u", userId), ("@k", "Suppliers.View")));
+            _db.Permissions.SetUserPermission(userId, "Suppliers.View", granted: true);
 
             var perms = _service.GetUserPermissions(userId);
 
@@ -71,8 +58,7 @@ namespace PrimeERP.Tests.Services
             var roleId = CreateRole($"Role.{Guid.NewGuid():N}", "Customers.View", "Customers.Delete");
             var userId = CreateUser($"user.{Guid.NewGuid():N}", roleId);
 
-            Db.Execute("INSERT INTO UserPermissions (UserId, PermissionKey, IsGranted) VALUES (@u, @k, 0)",
-                Db.Params(("@u", userId), ("@k", "Customers.Delete")));
+            _db.Permissions.SetUserPermission(userId, "Customers.Delete", granted: false);
 
             var perms = _service.GetUserPermissions(userId);
 

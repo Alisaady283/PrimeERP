@@ -1,5 +1,6 @@
 namespace PrimeERP.Application.DTOs.Security
 {
+    /// <summary>بيانات الدور</summary>
     public class RoleDto
     {
         public int    Id       { get; set; }

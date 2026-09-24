@@ -11,11 +11,9 @@ using PrimeERP.UI.Services;
 
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>يجلب المستند الكامل من خدمته ثم يطبعه عبر القالب العام — نقطة واحدة تستهلكها شاشة القائمة
-    /// وصفحة المستند معاً.</summary>
+    /// <summary>يجلب المستند الكامل من خدمته</summary>
     public static class DocumentPrinter
     {
-        /// <summary>النسخ وسطور الصفحة والشروط والباركود — كلها من الإعدادات، فلا قيمة ورقية في الكود.</summary>
         private static PrintDocuments.PaperOptions PaperFrom(PrimeERP.Platform.Settings.ISettingsProvider settings, object doc)
         {
             var labels = settings.Get(PrimeERP.Platform.Settings.SettingKeys.Print.CopyLabels, "");
@@ -62,7 +60,6 @@ namespace PrimeERP.Composition.Renderers
             };
         }
 
-        /// <summary>توقيعات أذون المخزن.</summary>
         public static System.Collections.Generic.List<string> StockSignatures(DocumentDialogDefinition def)
         {
             if (def.AffectsStock == StockEffect.None) return null;
@@ -79,7 +76,6 @@ namespace PrimeERP.Composition.Renderers
             FillShares = new System.Collections.Generic.List<double> { 1 },
         };
 
-        /// <summary>وسمان في سطر: ثُلثان وثُلث.</summary>
         private static PrintSection Pair(string firstLabel, string firstValue, string secondLabel, string secondValue) => new()
         {
             Type = PrintSectionType.Text,
@@ -91,7 +87,7 @@ namespace PrimeERP.Composition.Renderers
         private static string Written(string label, string value) =>
             $"{label} : {(string.IsNullOrWhiteSpace(value) ? "" : "...." + value + " ")}";
 
-        /// <summary>ورقة السند: مؤطَّرة بنصف A4.</summary>
+        /// <summary>ورقة السند</summary>
         private class VoucherPaper : IPrintable
         {
             public string Title { get; init; }
@@ -125,7 +121,6 @@ namespace PrimeERP.Composition.Renderers
                 if (printed.IsFailure) toast.Error(printed.ErrorMessage);
             });
 
-        /// <summary>PDF للمستند المحدَّد وحده — لا للقائمة.</summary>
         public static void ExportSelected(ModuleDefinition definition, IServiceProvider services, object item) =>
             WithDocument(definition, services, item, (printable, toast) =>
             {
@@ -142,7 +137,6 @@ namespace PrimeERP.Composition.Renderers
                 toast.Success($"تم التصدير إلى {System.IO.Path.GetFileName(dialog.FileName)}");
             });
 
-        /// <summary>يجلب المستند الكامل ويبنيه مرة واحدة — الطباعة والتصدير يختلفان في الوجهة فقط.</summary>
         private static void WithDocument(ModuleDefinition definition, IServiceProvider services, object item,
             Action<IPrintable, IToastService> use)
         {
@@ -164,7 +158,6 @@ namespace PrimeERP.Composition.Renderers
             if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
 
             var document = result.GetType().GetProperty("Value").GetValue(result);
-            // اسم المستند لا عنوان نموذجه: "فاتورة مبيعات" لا "إضافة فاتورة بيع".
             var title = def.PrintTitle ?? LocalizationService.Get(definition.TitleKey);
 
             var printable = document is PrimeERP.Application.DTOs.Vouchers.VoucherDetailDto voucher

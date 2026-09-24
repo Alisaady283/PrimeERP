@@ -1,6 +1,8 @@
 <UserControl x:Class="PrimeERP.UI.Components.Display.AppStatCard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- عرض AppStatCard -->
     <Border x:Name="root" Cursor="Arrow"
             Background="{DynamicResource SurfaceDefault}"
             BorderBrush="{DynamicResource OutlineDefault}"
@@ -51,7 +53,7 @@
                     VerticalAlignment="Top"
                     Visibility="Collapsed">
                 <Path x:Name="icon"
-                      Stretch="Uniform" Width="20" Height="20"
+                      Stretch="Uniform" Width="{DynamicResource C.Icon.Size.Md}" Height="{DynamicResource C.Icon.Size.Md}"
                       HorizontalAlignment="Center" VerticalAlignment="Center"
                       StrokeThickness="1.8"
                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>

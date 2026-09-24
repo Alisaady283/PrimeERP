@@ -7,6 +7,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
+    /// <summary>النسخ الاحتياطي والاستعادة</summary>
     [Collection("Database")]
     public class BackupServiceTests : IDisposable
     {

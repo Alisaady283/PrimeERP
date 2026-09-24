@@ -3,6 +3,7 @@ using PrimeERP.Domain.Entities.Common;
 
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان Product</summary>
     public class Product : BaseModel
     {
         public string      Code               { get; set; }
@@ -11,6 +12,8 @@ namespace PrimeERP.Domain.Entities
         public string      NameEn             { get; set; }
         public int?        CategoryId         { get; set; }
         public int?        BrandId            { get; set; }
+        public string      CategoryName       { get; set; }
+        public string      BrandName          { get; set; }
         public int?        UnitId             { get; set; }
         public decimal     CostPrice          { get; set; }
         public decimal     SalePrice          { get; set; }
@@ -28,16 +31,10 @@ namespace PrimeERP.Domain.Entities
         public string      Notes              { get; set; }
         public bool        IsActive           { get; set; } = true;
 
-        /// <summary>
-        /// رصيد وقت الاستعلام في مخزن محدد — ليس عموداً في جدول Products (يُحسب من StockMovements)،
-        /// بل حقل يملؤه مصدر البيانات وقت الجلب (مثل IPickerDataSource&lt;Product&gt;) عند الحاجة لعرضه.
-        /// </summary>
         public decimal CurrentStock { get; set; }
 
-        /// <summary>مثل CurrentStock — يملؤه مصدر البيانات وقت الجلب (اسم الوحدة الافتراضية للصنف)، ليس عموداً في Products.</summary>
         public string UnitName { get; set; }
 
-        /// <summary>مثل UnitName — نسبة الضريبة الافتراضية للصنف (تُشتق فعلياً من TaxGroupId، هنا حقل مسطّح للعرض/التعبئة التلقائية).</summary>
         public decimal TaxRate { get; set; }
     }
 }

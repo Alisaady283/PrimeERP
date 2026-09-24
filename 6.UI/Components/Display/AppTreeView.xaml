@@ -4,18 +4,19 @@
              xmlns:tree="clr-namespace:PrimeERP.UI.Components.Tree"
              xmlns:display="clr-namespace:PrimeERP.UI.Components.Display">
 
+    <!-- عرض AppTreeView -->
+
     <UserControl.Resources>
         <HierarchicalDataTemplate DataType="{x:Type tree:TreeNodeViewModel}" ItemsSource="{Binding VisibleChildren}">
             <StackPanel Orientation="Horizontal">
 
-                <!-- مؤشّر الحالة — يظهر فقط حين CheckMode != None، ويُدوِّر الحالة بالنقر -->
-                <Border x:Name="checkBox" Width="16" Height="16" Margin="0,0,8,0"
+                <Border x:Name="checkBox" Width="16" Height="16" Margin="{DynamicResource C.Field.GapSm}"
                         VerticalAlignment="Center" Cursor="Hand" Visibility="Collapsed"
                         CornerRadius="{DynamicResource P.Radius.Sm}" BorderThickness="1"
                         Background="{DynamicResource SurfaceDefault}"
                         BorderBrush="{DynamicResource OutlineStrong}"
                         MouseLeftButtonUp="CheckBox_Click">
-                    <Path x:Name="checkGlyph" Stretch="Uniform" Width="10" Height="10"
+                    <Path x:Name="checkGlyph" Stretch="Uniform" Width="{DynamicResource C.Icon.Size.Xs}" Height="{DynamicResource C.Icon.Size.Xs}"
                           HorizontalAlignment="Center" VerticalAlignment="Center"
                           StrokeThickness="2" Visibility="Collapsed"
                           Data="{StaticResource IconCheck}"
@@ -25,7 +26,7 @@
                 <Path x:Name="nodeIcon" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,7,0"
                       Width="{DynamicResource C.Icon.Size.Md}" Height="{DynamicResource C.Icon.Size.Md}"
                       Data="{StaticResource IconFolderFilled}"
-                      Fill="{DynamicResource C.Tree.Folder.Fg}"/>
+                      Fill="{DynamicResource TreeFolder}"/>
 
                 <TextBlock x:Name="label" Text="{Binding DisplayText}"
                            VerticalAlignment="Center"
@@ -57,7 +58,7 @@
             <HierarchicalDataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsLeaf}" Value="True">
                     <Setter TargetName="nodeIcon" Property="Data" Value="{StaticResource IconFileFilled}"/>
-                    <Setter TargetName="nodeIcon" Property="Fill" Value="{DynamicResource C.Tree.Leaf.Fg}"/>
+                    <Setter TargetName="nodeIcon" Property="Fill" Value="{DynamicResource TextMuted}"/>
                 </DataTrigger>
 
                 <DataTrigger Binding="{Binding CheckMode, RelativeSource={RelativeSource AncestorType=display:AppTreeView}}" Value="TwoState">
@@ -96,7 +97,6 @@
                     <Setter TargetName="checkGlyph" Property="Visibility" Value="Collapsed"/>
                 </DataTrigger>
 
-                <!-- موروث ومسموح: علامة باهتة مفرّغة — يُقرأ كمسموح، ويُميَّز عن المنح الصريح. -->
                 <MultiDataTrigger>
                     <MultiDataTrigger.Conditions>
                         <Condition Binding="{Binding CheckState}" Value="Inherited"/>

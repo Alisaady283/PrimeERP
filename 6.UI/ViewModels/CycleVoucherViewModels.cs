@@ -7,6 +7,7 @@ using PrimeERP.UI.ViewModels.Base;
 
 namespace PrimeERP.UI.ViewModels
 {
+    /// <summary>نماذج عرض CycleVoucherViewModelBase</summary>
     public abstract class CycleVoucherViewModelBase : CrudViewModelBase<StockAdjustmentDto, StockAdjustmentFilter>
     {
         private readonly IStockInService _docs;

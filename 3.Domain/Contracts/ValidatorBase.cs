@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace PrimeERP.Domain.Contracts
 {
-    /// <summary>قواعد تحقق عامة مشتركة — كل Validator ملموس يرث منها ويستخدمها بدل تكرار نفس المنطق.</summary>
+    /// <summary>قواعد تحقق عامة مشتركة</summary>
     public abstract class ValidatorBase
     {
         protected void Required(ValidationResult result, string field, string value, string label)

@@ -17,6 +17,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
+    /// <summary>تصيير الشجرة</summary>
     [Collection("WpfApplication")]
     public class TreeRendererTests : IDisposable
     {
@@ -32,7 +33,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 PrimeERP.UI.Services.UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var accounts = _db.Services.GetRequiredService<IAccountService>();
                 var parent = accounts.Create(new CreateAccountDto { ParentId = 1, Name = "أب اختباري", IsLeaf = false });
@@ -62,10 +63,7 @@ namespace PrimeERP.Tests.Composition
 
                 Assert.True(((IEnumerable)vm.RootNodes).Cast<object>().Any());
 
-                // ⚠️ هذا الجزء تحديداً كشف الخلل الحقيقي (صفحة فارغة رغم بيانات حقيقية): RootNodes.Any() وحدها
-                // لا تثبت أن AppTreeView نفسها تعرض شيئاً — OnItemsSourceChanged كانت تلتقط لقطة واحدة وقت
-                // الربط (فارغة، قبل اكتمال LoadAsync)، فتبقى شجرة WPF الفعلية فارغة للأبد رغم امتلاء RootNodes
-                // لاحقاً. التحقق هنا يفحص AppTreeView.ItemsSource المُعروضة فعلياً، لا حالة الـVM فقط.
+                // ⚠️ this part caught the real defect
                 var treeView = FindVisualChild<AppTreeView>(element);
                 Assert.NotNull(treeView);
                 Assert.NotNull(treeView.ItemsSource);

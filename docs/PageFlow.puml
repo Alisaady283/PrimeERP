@@ -1,0 +1,46 @@
+@startuml PageFlow
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+
+actor المستخدم as U
+participant "ModuleDefinition\n(8.Modules)" as DEF
+participant "IModuleRegistry\n(7.Composition)" as REG
+participant "PageRenderer\n(7.Composition)" as REN
+participant "ViewModel\n(6.UI)" as VM
+participant "Service\n(4.Application)" as SVC
+participant "Repository\n(2.Data)" as REPO
+database SQLite as DB
+
+== الإقلاع ==
+DEF -> REG : Register(الإعلان)
+REG -> REG : بيان النسخة يرفض ما خارجه
+REG -> REG : بذر الصفحة في BuilderModules
+note right of REG
+  وصفُ ما بناه المستخدم يعلو:
+  صفٌّ بلا عمود = عمود مُضاف،
+  وعمودٌ بلا صفّ = محذوف
+end note
+
+== فتح الشاشة ==
+U -> REN : اختيار الصفحة من الشريط الجانبي
+REN -> REG : Get(المفتاح)
+REN -> REN : التوزيع حسب LayoutKind
+REN -> VM : إنشاء وربط
+
+== تحميل البيانات ==
+VM -> SVC : GetPaged(صفحة، حجم، فلتر)
+SVC -> SVC : Can(View) ثم الفلتر
+SVC -> REPO : Page(where, order, page, size)
+REPO -> DB : SELECT COUNT ثم LIMIT/OFFSET
+DB --> REPO : صفوف
+REPO --> SVC : (عناصر، إجمالي)
+SVC --> VM : Result<PagedResult<Dto>>
+VM --> U : AppDataGrid + AppPagination
+
+== الحفظ ==
+U -> REN : زرّ حفظ في الحوار
+REN -> SVC : Create/Update(Dto)
+SVC -> SVC : Can + Check(validator) + الحُرّاس
+SVC -> REPO : Insert/Update داخل معاملة
+SVC --> REN : Result
+@enduml

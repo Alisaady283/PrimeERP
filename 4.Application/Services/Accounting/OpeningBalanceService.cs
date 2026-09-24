@@ -7,9 +7,11 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Application.Services.Accounting
 {
+    /// <summary>الأرصدة الافتتاحية ليست جدولاً موازياً</summary>
     public interface IOpeningBalanceService
     {
         Result<PagedResult<JournalEntryDto>> GetPaged(int page, int pageSize, JournalFilter filter = null);
@@ -19,15 +21,10 @@ namespace PrimeERP.Application.Services.Accounting
         Result Delete(int id);
     }
 
-    /// <summary>الأرصدة الافتتاحية ليست جدولاً موازياً: الشاشة تُنشئ قيداً عادياً بمصدر OpeningBalance،
-    /// فيُقرأ في كل كشف وتقرير كأي قيد. الفرق بين المدين والدائن يُرحَّل تلقائياً لحساب رأس المال — وهو
-    /// ما يجعل القيد متوازناً بلا أن يحسب المستخدم الفرق بنفسه.</summary>
     public class OpeningBalanceService : ServiceBase, IOpeningBalanceService
     {
         private const string SourceKey = "OpeningBalance";
 
-        /// <summary>بيان القيد الافتتاحي ثابت: قيدٌ واحد للمنشأة لا معنى لبيانٍ يكتبه المستخدم فيه.
-        /// تفرضه الخدمة والشاشة تعرضه للقراءة — فالقيمة واحدة أياً كان مصدر الاستدعاء.</summary>
         public const string FixedDescription = "رصيد أول المدة";
 
         private readonly IJournalService _journals;
@@ -64,8 +61,6 @@ namespace PrimeERP.Application.Services.Accounting
             });
         }
 
-        /// <summary>يُنشئ ويُرحّل معاً: القيد المسودّة لا تقرأه التقارير (تقرأ المُرحَّل فقط)، فرصيد
-        /// افتتاحي غير مُرحَّل يبقى غائباً عن الميزان والكشوف وكأنه لم يُدخَل.</summary>
         public Result<JournalEntryDto> Create(CreateJournalDto dto)
         {
             var balanced = Balance(dto);
@@ -84,11 +79,6 @@ namespace PrimeERP.Application.Services.Accounting
 
         public Result Delete(int id) => _journals.DeleteOwned(id, SourceKey);
 
-        /// <summary>
-        /// التوازن شرط لا تسوية: القيد غير المتزن يُرفض ويُعرَض فرقه. كان الفرق يُرحَّل تلقائياً لحقوق
-        /// الملكية، فيدخل حسابٌ لم يختره المستخدم بمبلغ لم يقصده — وهو كسرٌ صامت في الميزانية.
-        /// والتاريخ من إعداد بدء العمل لا من كتابة المستخدم: تاريخ حديث يجعل الافتتاحي حركةَ فترة.
-        /// </summary>
         private Result<CreateJournalDto> Balance(CreateJournalDto dto)
         {
             dto.Source = SourceKey;

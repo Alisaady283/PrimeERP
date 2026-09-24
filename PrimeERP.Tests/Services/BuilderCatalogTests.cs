@@ -9,7 +9,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>وصف ما بناه المستخدم: الحذف يحذف فعلاً، والكتابة تُرجع صفّها، والصفحة تُقطَع.</summary>
+    /// <summary>وصف ما بناه المستخدم</summary>
     public class BuilderCatalogTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -38,8 +38,8 @@ namespace PrimeERP.Tests.Services
 
         private int NewModule(int sectionId, string key) =>
             Convert.ToInt32(Service<BuilderModulesService>().Create(
-                Row(("Id", 0), ("Key", key), ("Title", key), ("Kind", 0), ("SectionId", sectionId),
-                    ("SortOrder", 10), ("IsActive", true))).Value["Id"]);
+                Row(("Id", 0), ("Key", key), ("Title", key), ("Kind", 1), ("SectionId", sectionId),
+                    ("TableName", $"Built_{key}"), ("SortOrder", 10), ("IsActive", true))).Value["Id"]);
 
         private bool SectionExists(int id) =>
             Service<IBuilderCatalog>().Sections().Any(s => s.Id == id);
@@ -55,7 +55,6 @@ namespace PrimeERP.Tests.Services
             Assert.False(SectionExists(id), "القسم بقي بعد حذفٍ أُعلن نجاحه");
         }
 
-        /// <summary>الرسالة تقول الحقيقة: قسمٌ به صفحات يُرفض حذفه ولا يُعلَن نجاحاً كاذباً.</summary>
         [Fact]
         public void ASectionWithPages_RefusesDeletion()
         {
@@ -68,7 +67,6 @@ namespace PrimeERP.Tests.Services
             Assert.True(SectionExists(id));
         }
 
-        /// <summary>الكتابة تُرجع الصفّ المكتوب — كانت تُرجع صاحب أكبر ترتيب.</summary>
         [Fact]
         public void AddingAColumn_ReturnsTheRowThatWasWritten()
         {
@@ -86,7 +84,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal("First", created.Value["Name"]);
         }
 
-        /// <summary>تعديل عمودٍ لا يُعيد توليد معرّفات إخوته — كان كل حفظٍ يمسح الإخوة ويُدخلهم من جديد.</summary>
         [Fact]
         public void EditingOneColumn_KeepsTheOthersIdentities()
         {
@@ -106,7 +103,6 @@ namespace PrimeERP.Tests.Services
             Assert.Contains(Service<IBuilderCatalog>().Columns(moduleId), c => c.Id == kept);
         }
 
-        /// <summary>صفٌّ جديد بلا رقم ترتيب يقع آخر القائمة — فالسهمان وحدهما ما يُعيد الترتيب.</summary>
         [Fact]
         public void ANewRow_LandsAtTheEnd()
         {
@@ -122,7 +118,6 @@ namespace PrimeERP.Tests.Services
                 "الصفّ الجديد لم يقع بعد سابقه");
         }
 
-        /// <summary>ما يفعله السهم: تبادل رقمين فينقلب موضع الصفّين، بلا إعادة ترقيم القائمة.</summary>
         [Fact]
         public void SwappingTwoOrders_FlipsTheirPlaces()
         {
@@ -150,7 +145,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(before[0].Id, after[1].Id);
         }
 
-        /// <summary>التقرير صفحةٌ كغيرها: أعمدته وفلاتره تُبذَر من إعلانه — كانت تُقرأ من حقلٍ فارغ فتُبذَر صفراً.</summary>
         [Theory]
         [InlineData("TrialBalance")]
         [InlineData("ItemCard")]
@@ -164,7 +158,6 @@ namespace PrimeERP.Tests.Services
             Assert.NotEmpty(catalog.Filters(report.Id));
         }
 
-        /// <summary>صفحةٌ مبذورة بلا أعمدة تُملأ في الإقلاع التالي — البذر كان يتخطّى كل مفتاحٍ موجود.</summary>
         [Fact]
         public void APageSeededEmpty_IsBackfilledOnTheNextStart()
         {
@@ -181,7 +174,6 @@ namespace PrimeERP.Tests.Services
             Assert.NotEmpty(catalog.Columns(report.Id));
         }
 
-        /// <summary>الصفحة الثانية غير الأولى — كانت كل الصفحات تُرجع القائمة كاملةً نفسها.</summary>
         [Fact]
         public void TheSecondPage_DiffersFromTheFirst()
         {
@@ -198,6 +190,87 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(2, second.Value.Items.Count);
             Assert.NotEqual(first.Value.Items[0]["Key"], second.Value.Items[0]["Key"]);
             Assert.Equal(5, first.Value.TotalCount);
+        }
+        [Fact]
+        public void TheProtectedSections_AreSeededWithTheirPages_AndRefuseDeletion()
+        {
+            var catalog = Service<IBuilderCatalog>();
+
+            var accounting = catalog.Sections().FirstOrDefault(s => s.Key == "Accounting");
+            Assert.NotNull(accounting);
+            Assert.True(accounting.IsProtected);
+
+            var pages = catalog.Modules().Where(m => m.SectionId == accounting.Id).Select(m => m.Key).ToList();
+            Assert.Contains("Accounts", pages);
+            Assert.All(pages, key => Assert.NotEmpty(
+                catalog.Columns(catalog.Modules().First(m => m.Key == key).Id)));
+
+            var deleted = Service<BuilderSectionsService>().Delete(accounting.Id);
+            Assert.False(deleted.IsSuccess);
+        }
+
+        [Fact]
+        public void APageThatLeftTheCode_LeavesTheCatalogToo()
+        {
+            var catalog = Service<IBuilderCatalog>();
+            var registry = _db.Services.GetRequiredService<PrimeERP.Composition.Registry.IModuleRegistry>();
+
+            var section = catalog.Sections().First(s => s.Key == "Accounting");
+            catalog.SeedModules(new[]
+            {
+                new CodedPage(section.Key, "GhostPage", "صفحة زائلة", PrimeERP.Domain.Enums.BuilderKind.Record,
+                    new(), new(), new())
+            });
+            Assert.Contains(catalog.Modules(), m => m.Key == "GhostPage");
+
+            PrimeERP.Modules.BuilderModuleLoader.RegisterAll(registry, _db.Services);
+
+            Assert.DoesNotContain(catalog.Modules(), m => m.Key == "GhostPage");
+        }
+        [Fact]
+        public void APageThatSavesRecords_IsRefusedWithoutATable()
+        {
+            var sectionId = NewSection("TestNoTableSection");
+
+            var created = Service<BuilderModulesService>().Create(
+                Row(("Id", 0), ("Key", "TestNoTablePage"), ("Title", "بلا جدول"), ("Kind", 1),
+                    ("SectionId", sectionId), ("SortOrder", 10), ("IsActive", true)));
+
+            Assert.False(created.IsSuccess);
+            Assert.Contains("الجدول", created.ErrorMessage);
+        }
+
+        [Fact]
+        public void APageBuiltByHand_GetsItsTable_AndKeepsTheRowSavedInIt()
+        {
+            var sectionId = NewSection("TestLiveSection");
+            var moduleId = NewModule(sectionId, "TestLivePage");
+            var columns = Service<BuilderColumnsService>();
+
+            columns.Create(Row(("Id", 0), ("ModuleId", moduleId), ("Name", "Title"), ("Header", "العنوان"),
+                ("DataType", 0), ("SortOrder", 10), ("ShowInGrid", true), ("ShowInForm", true)));
+            columns.Create(Row(("Id", 0), ("ModuleId", moduleId), ("Name", "Amount"), ("Header", "المبلغ"),
+                ("DataType", 2), ("SortOrder", 20), ("ShowInGrid", true), ("ShowInForm", true)));
+
+            var catalog = Service<IBuilderCatalog>();
+            var module = catalog.Modules().First(m => m.Id == moduleId);
+            var built = catalog.Columns(moduleId);
+            catalog.EnsureBuiltTable(module, built);
+
+            var rows = new PrimeERP.Application.Services.Builder.DynamicEntityService(module, built,
+                _db.Services.GetRequiredService<IPermissionService>(),
+                _db.Services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>(),
+                _db.Services.GetRequiredService<PrimeERP.Platform.Localization.ILocalizationService>(),
+                _db.Services.GetRequiredService<PrimeERP.Platform.Audit.IAuditLogger>());
+
+            var created = rows.Create(Row(("Title", "سجل حقيقي"), ("Amount", 125.5m)));
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+
+            var page = rows.GetPaged(1, 20, new DynamicFilter());
+            Assert.True(page.IsSuccess, page.ErrorMessage);
+            Assert.Single(page.Value.Items);
+            Assert.Equal("سجل حقيقي", page.Value.Items[0]["Title"]);
+            Assert.Equal(125.5m, Convert.ToDecimal(page.Value.Items[0]["Amount"]));
         }
     }
 }

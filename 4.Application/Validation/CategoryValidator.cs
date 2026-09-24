@@ -5,6 +5,7 @@ using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Application.Validation
 {
+    /// <summary>تحقّق الفئة</summary>
     public class CategoryValidator : IValidator<Category>
     {
         private readonly ICategoryRepository _repo;

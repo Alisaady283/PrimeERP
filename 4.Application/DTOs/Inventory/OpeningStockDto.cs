@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Application.DTOs.Inventory
 {
-    /// <summary>أرصدة الأصناف الافتتاحية: نسخةٌ من القيد الافتتاحي بصنفٍ بدل الحساب، وقيمةٍ محسوبة.</summary>
+    /// <summary>أرصدة الأصناف الافتتاحية</summary>
     public class CreateOpeningStockDto
     {
         public int      Id          { get; set; }

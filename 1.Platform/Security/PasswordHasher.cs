@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 
 namespace PrimeERP.Platform.Security
 {
-    /// <summary>تجزئة كلمات المرور عبر PBKDF2 — لا يُخزَّن أي كلمة مرور كنص صريح في أي مكان.</summary>
+    /// <summary>تجزئة كلمات المرور بـPBKDF2</summary>
     public static class PasswordHasher
     {
         private const int SaltSize   = 16;

@@ -4,6 +4,7 @@ using PrimeERP.Domain.Rules;
 
 namespace PrimeERP.Application.Validation
 {
+    /// <summary>تحقّق المورد</summary>
     public class SupplierValidator : IValidator<Supplier>
     {
         public ValidationResult Validate(Supplier supplier) =>

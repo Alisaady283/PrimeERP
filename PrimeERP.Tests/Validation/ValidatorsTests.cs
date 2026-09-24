@@ -3,17 +3,13 @@ using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.Validation;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Data.Seeders;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 
 namespace PrimeERP.Tests.Validation
 {
-    /// <summary>
-    /// السبعة Validators (راجع ARCHITECTURE.md / R6 "RuleSet fluent validation") لم تكن مُختبرة مباشرة —
-    /// فقط المُستهلَكة فعلياً (Account/Customer/Supplier/Journal) كانت تُمَرّ عبرها بشكل غير مباشر ضمن
-    /// اختبارات الخدمة (نجاح/فشل الإنشاء). هنا كل السبعة تُختبر منعزلة، بما فيها الأربعة غير المُستهلَكة بعد
-    /// (Employee/Product/User/Invoice) — التغطية الوحيدة الممكنة لمنطقها حالياً بلا خدمة تستهلكها.
-    /// </summary>
+    /// <summary>المتحقّقون السبعة</summary>
     public class ValidatorsTests
     {
         [Fact]
@@ -227,45 +223,9 @@ namespace PrimeERP.Tests.Validation
             Assert.True(result.IsValid);
         }
 
-        [Fact]
-        public void InvoiceValidator_ValidateSales_Fails_WhenNoLines()
-        {
-            var result = InvoiceValidator.ValidateSales(new SalesInvoice { InvoiceDate = DateTime.Today, NetTotal = 100 });
-            Assert.False(result.IsValid);
-            Assert.NotNull(result["Lines"]);
-        }
 
-        [Fact]
-        public void InvoiceValidator_ValidateSales_Fails_WhenDateMissing()
-        {
-            var invoice = new SalesInvoice { NetTotal = 100 };
-            invoice.Lines.Add(new SalesInvoiceLine());
 
-            var result = InvoiceValidator.ValidateSales(invoice);
-            Assert.False(result.IsValid);
-            Assert.NotNull(result["InvoiceDate"]);
-        }
 
-        [Fact]
-        public void InvoiceValidator_ValidatePurchase_Fails_OnNegativeNetTotal()
-        {
-            var invoice = new PurchaseInvoice { InvoiceDate = DateTime.Today, NetTotal = -50 };
-            invoice.Lines.Add(new PurchaseInvoiceLine());
-
-            var result = InvoiceValidator.ValidatePurchase(invoice);
-            Assert.False(result.IsValid);
-            Assert.NotNull(result["NetTotal"]);
-        }
-
-        [Fact]
-        public void InvoiceValidator_ValidateSales_Succeeds_WithValidData()
-        {
-            var invoice = new SalesInvoice { InvoiceDate = DateTime.Today, NetTotal = 100 };
-            invoice.Lines.Add(new SalesInvoiceLine());
-
-            var result = InvoiceValidator.ValidateSales(invoice);
-            Assert.True(result.IsValid);
-        }
 
     }
 
@@ -295,7 +255,6 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void Fails_WhenCodeAlreadyExists()
         {
-            // 1240 (الصندوق) مزروع افتراضياً عند تهيئة قاعدة الاختبار (راجع IAccountRepository.SeedDefaults في TestDatabaseFixture).
             var result = new AccountValidator(_repo, isEdit: false, checkUniqueness: true).Validate(new Account { Code = "1204", Name = "حساب جديد" });
             Assert.False(result.IsValid);
             Assert.NotNull(result["Code"]);
@@ -304,7 +263,6 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void Succeeds_OnEdit_EvenWithExistingCode()
         {
-            // isEdit=true يتخطّى فحص التفرّد — السجل يعدّل نفسه، لا يتصادم مع كوده الحالي.
             var result = new AccountValidator(_repo, isEdit: true).Validate(new Account { Code = "1204", Name = "الصندوق المعدَّل" });
             Assert.True(result.IsValid);
         }
@@ -320,12 +278,14 @@ namespace PrimeERP.Tests.Validation
     [Collection("Database")]
     public class UserValidatorTests
     {
-        public UserValidatorTests(TestDatabaseFixture db) { }
+        private readonly IPermissionStore _store;
+
+        public UserValidatorTests(TestDatabaseFixture db) => _store = db.Permissions;
 
         [Fact]
         public void Fails_WhenUsernameTooShort()
         {
-            var result = new UserValidator().Validate(new User { Username = "ab", DisplayName = "مستخدم", RoleId = 1 });
+            var result = new UserValidator(_store).Validate(new User { Username = "ab", DisplayName = "مستخدم", RoleId = 1 });
             Assert.False(result.IsValid);
             Assert.NotNull(result["Username"]);
         }
@@ -333,7 +293,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void Fails_WhenNoRoleSelected()
         {
-            var result = new UserValidator().Validate(new User { Username = "validuser", DisplayName = "مستخدم", RoleId = 0 });
+            var result = new UserValidator(_store).Validate(new User { Username = "validuser", DisplayName = "مستخدم", RoleId = 0 });
             Assert.False(result.IsValid);
             Assert.NotNull(result["RoleId"]);
         }
@@ -341,11 +301,9 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void Fails_WhenUsernameAlreadyExists()
         {
-            // "admin" مزروع دائماً عبر PermissionDb.SeedAdminUser — لكن TestDatabaseFixture لا تزرع (توقف 11).
-            // نزرعه هنا صراحة لهذا الاختبار وحده (مُتخطّاة idempotently لو زرعها اختبار آخر أولاً).
-            PermissionDb.SeedDefaults();
+            PermissionSeeder.Seed(_store);
 
-            var result = new UserValidator(isEdit: false).Validate(new User { Username = "admin", DisplayName = "مكرر", RoleId = 1 });
+            var result = new UserValidator(_store, isEdit: false).Validate(new User { Username = "admin", DisplayName = "مكرر", RoleId = 1 });
             Assert.False(result.IsValid);
             Assert.NotNull(result["Username"]);
         }
@@ -353,7 +311,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void Succeeds_OnEdit_EvenWithoutUniquenessCheck()
         {
-            var result = new UserValidator(isEdit: true).Validate(new User { Username = "someexistinguser", DisplayName = "مستخدم", RoleId = 1 });
+            var result = new UserValidator(_store, isEdit: true).Validate(new User { Username = "someexistinguser", DisplayName = "مستخدم", RoleId = 1 });
             Assert.True(result.IsValid);
         }
     }

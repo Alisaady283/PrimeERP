@@ -1,111 +1,175 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using System.Linq;
-using PrimeERP.Data.Query;
-using Db = PrimeERP.Data.Core.DbHelper;
+using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
+using PrimeERP.Data.Core;
+using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Entities.Common;
+using PrimeERP.Platform.Permissions;
 
 namespace PrimeERP.Data.Repositories.Base
 {
-    /// <summary>
-    /// أساس حقيقي بالتوريث لكل Repository — يمتص التكرار الحقيقي المكتشَف عبر الستة الحالية: كل دالة
-    /// قراءة/كتابة كانت تُكتب مرتين حرفياً (نسخة عادية + نسخة (DbConnection conn, DbTransaction tx)
-    /// للاستدعاء من داخل معاملة مستدعٍ آخر مفتوحة بالفعل — راجع DbHelper.Query(conn,tx,...) لسبب الحاجة
-    /// الحقيقية: اتصال جديد من داخل معاملة أخرى يُعلِّق على SQLite). هنا بدالة واحدة ببارامترين اختياريين
-    /// (conn=null, tx=null) — النسخة العادية تفتح اتصالاً ضمنياً عبر DbHelper، النسخة (conn,tx) تُعيد
-    /// استخدام اتصال المستدعي. Map(DataRow) وTableName فقط ما يبقى خاصاً بكل Repository مشتق.
-    /// </summary>
-    public abstract class RepositoryBase<T>
+    /// <summary>أساس حقيقي بالتوريث لكل Repository</summary>
+    public abstract class RepositoryBase<T> where T : class
     {
         protected abstract string TableName { get; }
-        protected abstract T Map(DataRow row);
 
-        protected List<T> Query(string sql, DbConnection conn = null, DbTransaction tx = null, params (string, object)[] p) =>
-            (conn != null ? Db.Query(conn, tx, sql, Db.Params(p)) : Db.Query(sql, Db.Params(p)))
-                .AsEnumerable().Select(Map).ToList();
-
-        protected T QueryOne(string sql, DbConnection conn = null, DbTransaction tx = null, params (string, object)[] p) =>
-            Query(sql, conn, tx, p).FirstOrDefault();
-
-        protected static void Exec(string sql, DbConnection conn = null, DbTransaction tx = null, params (string, object)[] p)
-        {
-            if (conn != null) { using var cmd = Db.CreateCommand(conn, tx, sql, Db.Params(p)); cmd.ExecuteNonQuery(); }
-            else Db.Execute(sql, Db.Params(p));
-        }
-
-        protected static int InsertGetId(string sql, DbConnection conn = null, DbTransaction tx = null, params (string, object)[] p) =>
-            conn != null ? Db.InsertAndGetId(conn, tx, sql, Db.Params(p)) : Db.InsertAndGetId(sql, Db.Params(p));
-
-        protected static object Scalar(string sql, params (string, object)[] p) => Db.Scalar(sql, Db.Params(p));
-
-        // ===================== الحذف =====================
-
-        /// <summary>
-        /// جدول سطور المستند ومفتاحه فيه. يُعلنهما مستودع المستند، وفارغ = سجلٌّ بلا سطور. المنطق
-        /// والحواجز تبقى في الخدمة — هذا ينفّذ فقط.
-        /// </summary>
         protected virtual string LineTable => null;
         protected virtual string LineForeignKey => "DocumentId";
 
-        /// <summary>حذف ناعم: السجل يبقى ويُخفى — كل استعلامات القراءة ترشّح IsDeleted.</summary>
-        protected void SoftDelete(int id, string deletedBy = null, DbConnection conn = null, DbTransaction tx = null) =>
-            SoftDelete(TableName, id, deletedBy, conn, tx);
+        // ── LINQ
 
-        /// <summary>جدولٌ ثانٍ يديره نفس المستودع — نفس الجملة بلا نسخةٍ منها.</summary>
-        protected void SoftDelete(string table, int id, string deletedBy = null, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec($"UPDATE {table} SET IsDeleted = @deleted, DeletedAt = @at, DeletedBy = @by WHERE Id = @id",
-                conn, tx, ("@deleted", true), ("@at", DateTime.Now), ("@by", deletedBy ?? ""), ("@id", id));
+        /// <summary>مجموعة الكيان</summary>
+        protected DbSet<T> SetOf(PrimeDbContext db) =>
+            db.Model.FindEntityType(TableName) != null ? db.Set<T>(TableName) : db.Set<T>();
 
-        /// <summary>حذف صلب: السجل وسطوره إن كان له سطور — في معاملة المستدعي.</summary>
-        protected void HardDelete(int id, DbConnection conn = null, DbTransaction tx = null)
+        protected IQueryable<T> Rows(PrimeDbContext db) => SetOf(db);
+
+        private static readonly ConcurrentDictionary<string, bool> SoftDeletable = new();
+
+        /// <summary>يستبعد المحذوف منطقياً حيث يعلن</summary>
+        protected IQueryable<T> Live(IQueryable<T> rows) =>
+            SoftDeletable.GetOrAdd(TableName, table =>
+            {
+                using var db = DbContextFactory.Open();
+                var entity = db.Model.FindEntityType(table) ?? db.Model.FindEntityType(typeof(T));
+                return entity?.FindProperty("IsDeleted") != null;
+            })
+                ? rows.Where(e => !EF.Property<bool>(e, "IsDeleted"))
+                : rows;
+
+        /// <summary>المُعار لا يُهدَم</summary>
+        protected static TResult Scope<TResult>(PrimeDbContext db, Func<PrimeDbContext, TResult> work)
         {
-            if (LineTable != null)
-                Exec($"DELETE FROM {LineTable} WHERE {LineForeignKey} = @id", conn, tx, ("@id", id));
+            if (db != null) return work(db);
 
-            Exec($"DELETE FROM {TableName} WHERE Id = @id", conn, tx, ("@id", id));
+            using var owned = DbContextFactory.Open();
+            return work(owned);
         }
 
+        protected List<T> Fetch(Func<IQueryable<T>, IQueryable<T>> shape, PrimeDbContext db = null) =>
+            Scope(db, ctx => shape(Rows(ctx).AsNoTracking()).ToList());
 
-        /// <summary>
-        /// نفس Query أعلاه لكن لنوع سطر آخر غير T — لِـ Repository يدير أكثر من كيان مرتبط (مثال: JournalRepository
-        /// يدير JournalEntry+JournalLine معاً، FiscalPeriodRepository يدير FiscalYear+FiscalPeriod معاً).
-        /// T نفسها تبقى الكيان الأساسي (GetAll/GetById المُوروثتان)؛ هذه لقراءة الكيان الثانوي بنفس آلية الاتصال.
-        /// </summary>
-        protected static List<TOther> QueryAs<TOther>(Func<DataRow, TOther> map, string sql, DbConnection conn = null, DbTransaction tx = null, params (string, object)[] p) =>
-            (conn != null ? Db.Query(conn, tx, sql, Db.Params(p)) : Db.Query(sql, Db.Params(p)))
-                .AsEnumerable().Select(map).ToList();
+        protected T One(Func<IQueryable<T>, IQueryable<T>> shape, PrimeDbContext db = null) =>
+            Fetch(q => shape(q).Take(1), db).FirstOrDefault();
 
-        protected static TOther QueryOneAs<TOther>(Func<DataRow, TOther> map, string sql, DbConnection conn = null, DbTransaction tx = null, params (string, object)[] p) =>
-            QueryAs(map, sql, conn, tx, p).FirstOrDefault();
+        protected int Count(Func<IQueryable<T>, IQueryable<T>> shape, PrimeDbContext db = null) =>
+            Scope(db, ctx => shape(Rows(ctx).AsNoTracking()).Count());
 
-        /// <summary>صفحةٌ واحدة وعددٌ كامل — العدّ والقطع هنا وحدهما، والمستودع يصف شرطه وترتيبه فقط.</summary>
-        protected (List<T> Items, int Total) Page(WhereBuilder where, int page, int pageSize, string order,
-            string from = null, string select = null, DbConnection conn = null, DbTransaction tx = null)
+        /// <summary>نفس البنية لكيانٍ آخر</summary>
+        protected static DbSet<TOther> SetOf<TOther>(PrimeDbContext db, string table) where TOther : class =>
+            db.Model.FindEntityType(table) != null ? db.Set<TOther>(table) : db.Set<TOther>();
+
+        protected static IQueryable<TOther> RowsOf<TOther>(PrimeDbContext db, string table) where TOther : class =>
+            SetOf<TOther>(db, table);
+
+        protected static List<TOther> FetchOf<TOther>(string table, Func<IQueryable<TOther>, IQueryable<TOther>> shape,
+            PrimeDbContext db = null) where TOther : class =>
+            Scope(db, ctx => shape(RowsOf<TOther>(ctx, table).AsNoTracking()).ToList());
+
+        /// <summary>كتابةٌ واحدة</summary>
+        protected int Write(Func<PrimeDbContext, int> work, PrimeDbContext db = null) =>
+            Scope(db, ctx =>
+            {
+                var result = work(ctx);
+                ctx.SaveChanges();
+                return result;
+            });
+
+        protected int Add(T entity, PrimeDbContext db = null) =>
+            Scope(db, ctx =>
+            {
+                SetOf(ctx).Add(entity);
+                Stamp(ctx, entity);
+                ctx.SaveChanges();
+                return (int)(typeof(T).GetProperty("Id")?.GetValue(entity) ?? 0);
+            });
+
+        /// <summary>أسماء الفئات بضمّةٍ واحدة</summary>
+        protected static List<T> WithCategoryNames(List<T> rows,
+            params (Func<T, int?> Id, Action<T, string> Apply)[] links)
         {
-            var table = from ?? TableName;
-            var total = Convert.ToInt32(Scalar($"SELECT COUNT(*) FROM {table} {where.Sql}", where.Parameters));
+            var ids = links.SelectMany(l => rows.Select(l.Id))
+                           .Where(id => id != null).Select(id => id.Value).Distinct().ToList();
+            if (ids.Count == 0) return rows;
 
-            var sql = $@"{select ?? $"SELECT * FROM {table}"} {where.Sql} {order}
-                         {Core.DbFactory.Current.LimitClause(Math.Max(0, page - 1) * pageSize, pageSize)}";
+            var names = FetchOf<Category>("Categories", q => q.Where(c => ids.Contains(c.Id)))
+                            .ToDictionary(c => c.Id, c => c.Name);
 
-            return (Query(sql, conn, tx, where.Parameters), total);
+            foreach (var row in rows)
+                foreach (var (id, apply) in links)
+                    if (id(row) is int key && names.TryGetValue(key, out var name)) apply(row, name);
+
+            return rows;
         }
 
-        /// <summary>أوائل الصفوف لبحثٍ سريع — نفس القطع بلا عدّ.</summary>
-        protected List<T> Top(WhereBuilder where, string order, int max,
-            string from = null, DbConnection conn = null, DbTransaction tx = null) =>
-            Query($"SELECT * FROM {from ?? TableName} {where.Sql} {order} {Core.DbFactory.Current.LimitClause(0, max)}",
-                conn, tx, where.Parameters);
+        /// <summary>ترتيبٌ بعمودٍ واحد</summary>
+        protected static Func<IQueryable<T>, IOrderedQueryable<T>> By<TKey>(Expression<Func<T, TKey>> key, bool descending) =>
+            q => descending ? q.OrderByDescending(key) : q.OrderBy(key);
 
-        /// <summary>عمود الفرز المطلوب إن كان مسموحاً، وإلا الافتراضي — فلا يصل نصٌّ غير مُعلَن إلى SQL.</summary>
-        protected static string SortOf(string requested, string fallback, params string[] allowed) =>
-            allowed.Contains(requested) ? requested : fallback;
+        /// <summary>ترتيب مستند</summary>
+        protected static Func<IQueryable<T>, IOrderedQueryable<T>> DocumentOrder<TKey>(
+            Expression<Func<T, TKey>> head, bool descending, Expression<Func<T, string>> number) =>
+            q => By(head, descending)(q).ThenByDescending(number)
+                                        .ThenByDescending(e => EF.Property<DateTime>(e, "CreatedAt"));
 
-        public virtual List<T> GetAll(DbConnection conn = null, DbTransaction tx = null) =>
-            Query($"SELECT * FROM {TableName}", conn, tx);
+        /// <summary>صفحةٌ من جدول</summary>
+        protected (List<T> Items, int Total) Page(int page, int pageSize,
+            Func<IQueryable<T>, IQueryable<T>> filter, Func<IQueryable<T>, IOrderedQueryable<T>> order,
+            PrimeDbContext db = null) =>
+            (Fetch(q => order(filter(q)).ThenByDescending(e => EF.Property<int>(e, "Id"))
+                                        .Skip(Math.Max(0, page - 1) * pageSize).Take(pageSize), db),
+             Count(filter, db));
 
-        public virtual T GetById(int id, DbConnection conn = null, DbTransaction tx = null) =>
-            QueryOne($"SELECT * FROM {TableName} WHERE Id = @id", conn, tx, ("@id", id));
+        protected void Modify(T entity, PrimeDbContext db = null) =>
+            Write(db =>
+            {
+                if (entity is BaseModel row) row.UpdatedAt = DateTime.Now;
+                SetOf(db).Update(entity);
+                return 0;
+            }, db);
+
+        /// <summary>تعديل صفٍّ قائم</summary>
+        protected int Edit(Expression<Func<T, bool>> match, Action<T> apply,
+            PrimeDbContext db = null) =>
+            Write(db =>
+            {
+                var row = SetOf(db).AsTracking().FirstOrDefault(match);
+                if (row == null) return 0;
+                apply(row);
+                if (row is BaseModel stamped) stamped.UpdatedAt = DateTime.Now;
+                return 1;
+            }, db);
+
+        protected void SoftDelete(int id, string deletedBy, PrimeDbContext db = null) =>
+            Write(db =>
+            {
+                if (SetOf(db).FirstOrDefault(e => EF.Property<int>(e, "Id") == id) is not BaseModel row) return 0;
+                row.IsDeleted = true;
+                row.DeletedAt = DateTime.Now;
+                row.DeletedBy = deletedBy ?? "";
+                return 0;
+            }, db);
+
+        /// <summary>وقت الإنشاء يُختم من النموذج</summary>
+        private static void Stamp(PrimeDbContext db, T entity)
+        {
+            var entry = db.Entry(entity);
+
+            foreach (var name in new[] { "CreatedAt", "UpdatedAt" })
+                if (entry.Metadata.FindProperty(name) != null && Equals(entry.Property(name).CurrentValue, default(DateTime)))
+                    entry.Property(name).CurrentValue = DateTime.Now;
+
+            if (entry.Metadata.FindProperty("CreatedBy") != null && entry.Property("CreatedBy").CurrentValue == null)
+                entry.Property("CreatedBy").CurrentValue = AppSession.Username ?? "";
+        }
+
+        public virtual List<T> GetAll(PrimeDbContext db = null) =>
+            Fetch(q => q, db);
+
+        public virtual T GetById(int id, PrimeDbContext db = null) =>
+            One(q => Live(q).Where(e => EF.Property<int>(e, "Id") == id), db);
     }
 }

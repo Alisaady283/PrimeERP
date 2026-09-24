@@ -10,8 +10,7 @@ using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.Composition.Renderers
 {
-    // المستند كصفحة لا حوار: شريط إجراءات، ثم رأس وسطور قابلة للتمرير، ثم فوتر ثابت.
-    // نفس محرِّر DocumentRenderer بالضبط — الغلاف وحده يختلف.
+    /// <summary>تصيير صفحة المستند</summary>
     public static class DocumentPageRenderer
     {
         public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services)

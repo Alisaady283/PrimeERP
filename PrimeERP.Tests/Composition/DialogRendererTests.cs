@@ -19,6 +19,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
+    /// <summary>تصيير الحوار من تعريفه</summary>
     [Collection("WpfApplication")]
     public class DialogRendererTests : IDisposable
     {
@@ -34,7 +35,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
                 var dialog = registry.Get("Accounts").Dialog;
@@ -56,8 +57,6 @@ namespace PrimeERP.Tests.Composition
                     catch (Exception ex) { thrown = ex; window?.Close(); }
                 }));
 
-                // شبكة أمان — لو تعطّل الحوار لأي سبب (لا يُغلق أبداً) يُعلَّق PushFrame للأبد؛ إغلاق قسري
-                // بعد مهلة يمنع تعليق الاختبار كاملاً بدل ظهور سبب حقيقي.
                 var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
                 timer.Tick += (_, __) => { timer.Stop(); window?.Close(); };
                 timer.Start();
@@ -80,7 +79,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
                 var dialog = registry.Get("Accounts").Dialog;
@@ -119,7 +118,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
                 var dialog = registry.Get("Accounts").Dialog;
@@ -158,8 +157,6 @@ namespace PrimeERP.Tests.Composition
                 Assert.True(saved);
                 Assert.True(statusWasCheckedByDefault);
 
-                // اختبار GetPaged العادي (بلا IncludeInactive) لا يُظهر حسابات غير نشطة عمداً — نفس سلوك حذف
-                // منطقي؛ IncludeInactive=true هنا للتحقق فقط، لا استخدام حقيقي متوقَّع من واجهة عادية.
                 var accounts = _db.Services.GetRequiredService<IAccountService>();
                 var created = accounts.GetPaged(1, 5000, new AccountTreeFilter { IncludeInactive = true })
                     .Value.Items.Single(a => a.Name == "حساب حالة افتراضية");
@@ -174,7 +171,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var accountsService = _db.Services.GetRequiredService<IAccountService>();
                 var created = accountsService.Create(new CreateAccountDto { ParentId = 1, Name = "قبل التعديل", IsLeaf = true });
@@ -196,8 +193,6 @@ namespace PrimeERP.Tests.Composition
                         window = System.Windows.Application.Current.Windows.OfType<Window>().Last();
                         SetTextBoxValue(window, "بعد التعديل");
 
-                        // ترتيب الحقول: ParentId(Picker), Name(Text), IsLeaf(Check), Notes(TextArea),
-                        // IsActive(Check), CreatedAt(ReadOnly), UpdatedAt(ReadOnly) — فهرس 1 هو CreatedAt.
                         var textBoxes = FindAllVisualChildren<AppTextBox>(window).ToList();
                         createdAtShown = textBoxes[1].Text;
 

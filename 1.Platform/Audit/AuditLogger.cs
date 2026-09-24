@@ -1,22 +1,21 @@
 using PrimeERP.Platform.Permissions;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
-using PrimeERP.Data.Core;
-using PrimeERP.Data.Schema;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Platform.Audit
 {
-    /// <summary>
-    /// سجلّ تدقيق كامل (قيم قديمة/جديدة كـ JSON) — قطعة جديدة أوسع من Core/AuditLogger.cs المبسّطة.
-    /// لا يفشل أبداً: أي خطأ أثناء التسجيل يُكتب في ملف احتياطي ولا يوقف العملية الأصلية.
-    /// </summary>
+    /// <summary>سجلّ التدقيق بقيمة قبل وبعد</summary>
     public class AuditLogger : IAuditLogger
     {
+        private readonly IAuditStore _store;
+
+        public AuditLogger(IAuditStore store) => _store = store;
+
         private static readonly HashSet<string> IgnoredColumns = new(StringComparer.OrdinalIgnoreCase)
         {
             "PasswordHash", "Salt", "RowVersion"
@@ -27,56 +26,27 @@ namespace PrimeERP.Platform.Audit
         private static readonly string FallbackLogPath =
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs", "audit-fallback.log");
 
-        private bool _tableEnsured;
-
-        public void CreateTable()
-        {
-            SchemaBuilder.Table("AuditLog")
-                .Id()
-                .Text("TableName", 100, required: true)
-                .Int("RecordId", nullable: false)
-                .Int("Action", nullable: false)
-                .Text("OldValues")
-                .Text("NewValues")
-                .Int("UserId", nullable: true)
-                .Text("UserName", 100)
-                .DateCol("Timestamp")
-                .Text("IpAddress", 50)
-                .Create();
-        }
-
-        /// <summary>يسجّل عملية كتابة. oldValue/newValue أي كائن — يُحوَّل لـ JSON بعد تجاهل الأعمدة الحساسة واقتطاعه لو تجاوز الحد.</summary>
         public void Log(string tableName, int recordId, AuditAction action,
                                object oldValue = null, object newValue = null, string details = null)
         {
             try
             {
-                EnsureTable();
-
-                var oldJson = SerializeSafe(oldValue) ?? details;
-                var newJson = SerializeSafe(newValue);
-
-                Db.Execute(
-                    @"INSERT INTO AuditLog (TableName, RecordId, Action, OldValues, NewValues, UserId, UserName, Timestamp)
-                      VALUES (@t, @r, @a, @old, @new, @uid, @u, @ts)",
-                    Db.Params(
-                        ("@t", tableName), ("@r", recordId), ("@a", (int)action),
-                        ("@old", oldJson), ("@new", newJson),
-                        ("@uid", AppSession.UserId == 0 ? null : (object)AppSession.UserId),
-                        ("@u", AppSession.Username ?? "Admin"),
-                        ("@ts", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))));
+                _store.Insert(new AuditEntry
+                {
+                    TableName = tableName,
+                    RecordId  = recordId,
+                    Action    = ((int)action).ToString(),
+                    OldValues = SerializeSafe(oldValue) ?? details,
+                    NewValues = SerializeSafe(newValue),
+                    UserId    = AppSession.UserId == 0 ? null : AppSession.UserId,
+                    UserName  = AppSession.Username ?? "Admin",
+                    Timestamp = DateTime.Now
+                });
             }
             catch (Exception ex)
             {
                 WriteFallback(tableName, recordId, action, ex);
             }
-        }
-
-        private void EnsureTable()
-        {
-            if (_tableEnsured) return;
-            CreateTable();
-            _tableEnsured = true;
         }
 
         private static string SerializeSafe(object value)
@@ -129,7 +99,6 @@ namespace PrimeERP.Platform.Audit
             }
             catch
             {
-                // لو حتى الكتابة في الملف الاحتياطي فشلت — لا نوقف العملية الأصلية بأي حال
             }
         }
     }

@@ -21,6 +21,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
+    /// <summary>تصيير محرّر المستند</summary>
     [Collection("WpfApplication")]
     public class DocumentRendererTests : IDisposable
     {
@@ -52,7 +53,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var (cashCode, salesCode) = MakeTwoLeafAccounts();
 
@@ -79,7 +80,6 @@ namespace PrimeERP.Tests.Composition
                         FindVisualChild<AppDatePicker>(window).SelectedDate = DateTime.Today;
                         FindVisualChild<AppTextBox>(window).Text = "قيد من الصفحة الحقيقية";
 
-                        // المستند يبدأ بسطرٍ واحد، والقيد يحتاج طرفين — فيُضاف الثاني كما يفعل المستخدم.
                         ClickButton(window, "Str.AddLine");
 
                         var combos = FindAllVisualChildren<AppComboBox>(window).ToList();
@@ -122,7 +122,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var (cashCode, salesCode) = MakeTwoLeafAccounts();
 
@@ -144,7 +144,6 @@ namespace PrimeERP.Tests.Composition
                         FindVisualChild<AppDatePicker>(window).SelectedDate = DateTime.Today;
                         FindVisualChild<AppTextBox>(window).Text = "قيد اختباري";
 
-                        // المستند يبدأ بسطرٍ واحد، والقيد يحتاج طرفين — فيُضاف الثاني كما يفعل المستخدم.
                         ClickButton(window, "Str.AddLine");
 
                         var combos = FindAllVisualChildren<AppComboBox>(window).ToList();
@@ -170,8 +169,6 @@ namespace PrimeERP.Tests.Composition
 
                 Assert.Null(thrown);
                 Assert.True(saved);
-                // إثبات فعلي لإصلاح توقّف 12 (نافذة مقصوصة 420px بغضّ النظر عن عرض صف السطور الحقيقي) —
-                // عرض السطور (حساب220+مدين110+دائن110+ملاحظات180=620) + الهوامش يتجاوز 560، فيُتوقَّع Lg=760.
                 Assert.Equal(760d, windowWidth);
 
                 var journal = _db.Services.GetRequiredService<IJournalService>();
@@ -193,7 +190,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var (cashCode, salesCode) = MakeTwoLeafAccounts();
 
@@ -228,7 +225,6 @@ namespace PrimeERP.Tests.Composition
                         var combos = FindAllVisualChildren<AppComboBox>(window).ToList();
                         lineRowsFoundOnOpen = combos.Count;
 
-                        // السطر يظهر بحسابه لا فارغاً: عدّ الصفوف وحده لا يكشف قائمةً حُمّلت بلا تحديد.
                         accountsShownOnOpen = combos.Select(c => c.SelectedValue as string).ToArray();
 
                         FindVisualChild<AppTextBox>(window).Text = "بعد التعديل";

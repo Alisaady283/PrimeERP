@@ -14,8 +14,9 @@ using PrimeERP.Application.Services.Parties;
 using PrimeERP.Application.Services.Print;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Data.Core;
-using PrimeERP.Data.Migrations;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Domain.Entities;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Data.Seeders;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Platform.Audit;
@@ -26,15 +27,11 @@ using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Services;
 using PrimeERP.UI.ViewModels;
 using PrimeERP.Modules;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.App.Bootstrap
 {
-    /// <summary>
-    /// تسجيل كل خدمة حقيقية في حاوية DI — بديل ServiceLocator (R3، محذوف نهائياً). كل دالة تسجّل طبقة واحدة
-    /// فقط، بنفس ترتيب اعتمادها (Platform أولاً، Modules أخيراً) — يعكس مصفوفة الاعتماد في ARCHITECTURE.md.
-    /// كل خدمة Singleton (مثيل واحد طوال عمر التطبيق) — نفس دلالة "Instance" القديمة، لكن الحاوية تديرها الآن
-    /// لا حقل static يدوي.
-    /// </summary>
+    /// <summary>تسجيل الخدمات في الحاوية</summary>
     public static class DependencyInjection
     {
         public static IServiceCollection AddPlatform(this IServiceCollection services)
@@ -50,9 +47,12 @@ namespace PrimeERP.App.Bootstrap
 
         public static IServiceCollection AddData(this IServiceCollection services)
         {
+            services.AddSingleton<ISettingStore, SettingRepository>();
+            services.AddSingleton<IPermissionStore, PermissionRepository>();
+            services.AddSingleton<IAuditStore, AuditRepository>();
             services.AddSingleton<IAccountRepository, AccountRepository>();
-            services.AddSingleton<ICustomerRepository, CustomerRepository>();
-            services.AddSingleton<ISupplierRepository, SupplierRepository>();
+            services.AddSingleton<IPartyRepository<Customer>, CustomerRepository>();
+            services.AddSingleton<IPartyRepository<Supplier>, SupplierRepository>();
             services.AddSingleton<IJournalRepository, JournalRepository>();
             services.AddSingleton<IFiscalPeriodRepository, FiscalPeriodRepository>();
             services.AddSingleton<INumberSequenceRepository, NumberSequenceRepository>();
@@ -67,10 +67,10 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IAssetDepreciationRepository, AssetDepreciationRepository>();
             services.AddSingleton<IAssetDisposalRepository, AssetDisposalRepository>();
             services.AddSingleton<IEmployeeRepository, EmployeeRepository>();
-            services.AddSingleton<IDepartmentRepository, DepartmentRepository>();
-            services.AddSingleton<IJobTitleRepository, JobTitleRepository>();
-            services.AddSingleton<IUnitRepository, UnitRepository>();
-            services.AddSingleton<IWarehouseRepository, WarehouseRepository>();
+            services.AddSingleton<ILookupRepository<Department>>(_ => new LookupRepository<Department>("Departments"));
+            services.AddSingleton<ILookupRepository<JobTitle>>(_ => new LookupRepository<JobTitle>("JobTitles"));
+            services.AddSingleton<ILookupRepository<Unit>>(_ => new LookupRepository<Unit>("Units"));
+            services.AddSingleton<ILookupRepository<Warehouse>>(_ => new LookupRepository<Warehouse>("Warehouses"));
             services.AddSingleton<IBuilderRepository, BuilderRepository>();
             services.AddSingleton<PrimeERP.Application.Services.Builder.IBuilderCatalog, PrimeERP.Application.Services.Builder.BuilderCatalog>();
             services.AddSingleton<PrimeERP.Application.Services.Builder.BuilderSectionsService>();
@@ -83,10 +83,10 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<ITreasuryRepository, TreasuryRepository>();
             services.AddSingleton<IVoucherRepository, VoucherRepository>();
             services.AddSingleton<IChequeRepository, ChequeRepository>();
-            services.AddSingleton<ISalesInvoiceRepository, SalesInvoiceRepository>();
-            services.AddSingleton<IPurchaseInvoiceRepository, PurchaseInvoiceRepository>();
-            services.AddSingleton<ISalesReturnRepository, SalesReturnRepository>();
-            services.AddSingleton<IPurchaseReturnRepository, PurchaseReturnRepository>();
+            services.AddSingleton<IInvoiceRepository<SalesInvoice, SalesInvoiceLine>, SalesInvoiceRepository>();
+            services.AddSingleton<IInvoiceRepository<PurchaseInvoice, PurchaseInvoiceLine>, PurchaseInvoiceRepository>();
+            services.AddSingleton<IReturnRepository<SalesReturn, SalesReturnLine>, SalesReturnRepository>();
+            services.AddSingleton<IReturnRepository<PurchaseReturn, PurchaseReturnLine>, PurchaseReturnRepository>();
             services.AddSingleton<IStockInRepository, StockInRepository>();
             services.AddSingleton<IStockOutRepository, StockOutRepository>();
             services.AddSingleton<IPurchaseRequestRepository, PurchaseRequestRepository>();
@@ -122,9 +122,9 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<ICustomerService, CustomerService>();
             services.AddSingleton<ISupplierService, SupplierService>();
             services.AddSingleton<IBackupService, BackupService>();
-            services.AddSingleton<PrimeERP.Application.Services.IProgramEditionService, PrimeERP.Application.Services.ProgramEditionService>();
-            services.AddSingleton<PrimeERP.Application.Services.ILicenseService, PrimeERP.Application.Services.LicenseService>();
-            services.AddSingleton<PrimeERP.Application.Services.IUpdateService, PrimeERP.Application.Services.UpdateService>();
+            services.AddSingleton<PrimeERP.Application.Services.Admin.IProgramEditionService, PrimeERP.Application.Services.Admin.ProgramEditionService>();
+            services.AddSingleton<PrimeERP.Application.Services.Admin.ILicenseService, PrimeERP.Application.Services.Admin.LicenseService>();
+            services.AddSingleton<PrimeERP.Application.Services.Admin.IUpdateService, PrimeERP.Application.Services.Admin.UpdateService>();
             services.AddSingleton<IPrintService, PrintService>();
             services.AddSingleton<ICategoryService, CategoryService>();
             services.AddSingleton<IProductService, ProductService>();
@@ -140,7 +140,6 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<PrimeERP.Application.Services.Documents.IDocumentLinkService,
                                   PrimeERP.Application.Services.Documents.DocumentLinkService>();
 
-            // محرّك السحب العام — يخدم الواجهة (IPullService) والتحقق داخل الخدمات (IPullSourceReader) بنسخة واحدة.
             services.AddSingleton<PrimeERP.Composition.Pull.PullService>();
             services.AddSingleton<PrimeERP.Composition.Pull.IPullService>(sp => sp.GetRequiredService<PrimeERP.Composition.Pull.PullService>());
             services.AddSingleton<PrimeERP.Domain.Contracts.IPullSourceReader>(sp => sp.GetRequiredService<PrimeERP.Composition.Pull.PullService>());
@@ -176,8 +175,6 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IRoleService, RoleService>();
             services.AddSingleton<IUserService, UserService>();
 
-            // Lazy<IJournalService> يكسر الدائرية الحقيقية JournalService↔FiscalPeriodService — راجع تعليق
-            // التوثيق أعلى FiscalPeriodService.cs. لا يبني IJournalService الآن، فقط عند أول .Value فعلي.
             services.AddSingleton(sp => new Lazy<IJournalService>(() => sp.GetRequiredService<IJournalService>()));
 
             return services;
@@ -190,15 +187,11 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IToastService, ToastService>();
             services.AddSingleton<INavigationService, NavigationService>();
 
-            // ExportService تنفّذ IExportService و IDocumentExporter معاً — مثيل واحد مشترك بين الاثنين،
-            // لا مثيلان منفصلان (كلاهما يستهلك نفس الحالة الداخلية — لا حالة فعلياً هنا، لكن مبدأ Singleton واحد للنوع).
             services.AddSingleton<ExportService>();
             services.AddSingleton<IExportService>(sp => sp.GetRequiredService<ExportService>());
             services.AddSingleton<IDocumentExporter>(sp => sp.GetRequiredService<ExportService>());
             services.AddSingleton<IPrintDialogHost, PrintDialogHost>();
 
-            // ViewModels: Transient — حالة خاصة بعرض واحد (SelectedItem/Filter/Page)، لا تُشارَك بين فتحات
-            // الصفحة المتعددة عكس الخدمات (Singleton طوال عمر التطبيق).
             services.AddTransient<TreasuriesViewModel>();
             services.AddTransient<ReceiptVouchersViewModel>();
             services.AddTransient<PaymentVouchersViewModel>();
@@ -248,19 +241,42 @@ namespace PrimeERP.App.Bootstrap
             return services;
         }
 
-        /// <summary>7.Composition — IModuleRegistry وحدها حتى الآن (Definitions/Renderers ثابتة، لا تحتاج DI).</summary>
         public static IServiceCollection AddComposition(this IServiceCollection services)
         {
             services.AddSingleton<IModuleRegistry, ModuleRegistry>();
             return services;
         }
 
-        /// <summary>يسجّل الوحدات الفعلية (R8: Customers/Suppliers كإثبات) في IModuleRegistry المبنية في
-        /// AddComposition — يُستدعى بعد BuildServiceProvider في App.xaml.cs (يحتاج IServiceProvider جاهزاً
-        /// لحلّ IModuleRegistry، لا IServiceCollection وقت التسجيل).</summary>
+        private static void ApplyLicenseFile(IServiceProvider services)
+        {
+            var path = System.IO.Path.Combine(AppContext.BaseDirectory, "license.json");
+            if (!System.IO.File.Exists(path)) return;
+
+            try
+            {
+                var file = System.Text.Json.JsonDocument.Parse(System.IO.File.ReadAllText(path)).RootElement;
+                var settings = services.GetRequiredService<ISettingsService>();
+
+                string Read(string name) => file.TryGetProperty(name, out var value) ? value.GetString() ?? "" : "";
+
+                settings.Set(SettingKeys.License.Serial, Read("serial"));
+                settings.Set(SettingKeys.License.Customer, Read("customer"));
+
+                var pages = Read("manifest");
+                if (!string.IsNullOrWhiteSpace(pages)) settings.Set(SettingKeys.UI.Manifest, pages);
+
+                if (file.TryGetProperty("simplified", out var simplified))
+                    settings.Set(SettingKeys.Documents.SimplifiedFlow, simplified.GetBoolean() ? "true" : "false");
+
+                System.IO.File.Delete(path);
+            }
+            catch { }
+        }
+
         public static IServiceProvider RegisterModules(this IServiceProvider services)
         {
-            // بيان النسخة قبل أي تسجيل: الوحدات خارجه لا تُسجَّل أصلاً، فلا تظهر في سايدبار ولا صلاحيات.
+            ApplyLicenseFile(services);
+
             var manifest = services.GetRequiredService<ISettingsService>().Get(SettingKeys.UI.Manifest, "");
             if (!string.IsNullOrWhiteSpace(manifest))
                 services.GetRequiredService<IModuleRegistry>().Manifest =
@@ -274,107 +290,37 @@ namespace PrimeERP.App.Bootstrap
             CycleDocumentRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             TreasuryRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
 
-            // ما بناه المستخدم يُسجَّل بعد المكتوب فيظهر معه بلا تمييز.
             BuilderRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             BuilderModuleLoader.RegisterAll(services.GetRequiredService<IModuleRegistry>(), services);
 
-            // بذر الصلاحيات بعد التسجيل لا قبله: مفاتيح الوحدات المبنيّة وشاشات البناء تُولَّد أثناء
-            // التسجيل، فبذرٌ سابق له لا يراها ولا يمنحها لدور مدير النظام — فتختفي شاشاتها بلا سبب ظاهر.
-            PermissionDb.SeedDefaults();
+            PermissionSeeder.Seed(services.GetRequiredService<IPermissionStore>());
 
-            // PrintService لا تفتح نوافذ بنفسها — تُحقن واجهتها المرئية هنا (نفس نمط IDocumentExporter).
             services.GetRequiredService<IPrintService>().DialogHost = services.GetRequiredService<IPrintDialogHost>();
             return services;
         }
 
-        /// <summary>
-        /// ⚠️ توقف 7 — الحلقة المفقودة: التطبيق الحقيقي (App.xaml.cs.OnStartup) لم يكن يستدعي هذه السلسلة
-        /// إطلاقاً — فقط TestDatabaseFixture كانت تفعل (لكل تشغيلة اختبار). يعني هذا أن أي تشغيل فعلي لـ
-        /// PrimeERP.exe كان سيفشل عند أول قراءة إعداد حقيقية (بما فيها IIdentityService.Initialize نفسها —
-        /// تُكتشِف الآن بمحاولة تشغيل فعلية أولى للتطبيق). نفس تسلسل TestDatabaseFixture بالضبط، حرفياً — لا
-        /// انحراف عن "حاوية اختبار خاصة، لا محاكاة منفصلة قد تنحرف عن تسجيل الإنتاج" لأنها الآن تُستدعى من
-        /// الإنتاج نفسه أولاً. CreateTable آمنة للاستدعاء المتكرر (IF NOT EXISTS)، والزارعون (Seeders) تتحقق من
-        /// عدم التكرار داخلياً — فاستدعاؤها في كل إقلاع فعلي آمن ومطلوب (قاعدة جديدة أو ترقية Schema لاحقة).
-        /// </summary>
         public static IServiceProvider EnsureDatabaseReady(this IServiceProvider services)
         {
-            SettingRepository.CreateTable();
-            SettingSeeder.Seed();
+            SchemaSync.Run();
 
-            services.GetRequiredService<IBackupRepository>().CreateTable();
-            services.GetRequiredService<ILicenseRepository>().CreateTable();
-            services.GetRequiredService<IBuilderRepository>().CreateTables();
+            SettingSeeder.Seed(services.GetRequiredService<ISettingStore>());
+
 
             var accounts = services.GetRequiredService<IAccountRepository>();
-            accounts.CreateTable();
             accounts.SeedDefaults();
 
-            MigrationRunner.Register("2026_08_RenumberAccountCodes", AccountCodeRenumberMigration.Apply);
-            MigrationRunner.Register("2026_09_AssetRevaluedValue", AssetRevaluedValueMigration.Apply);
-            MigrationRunner.Register("2026_09_AssetTreeShape", AssetTreeShapeMigration.Apply);
-            MigrationRunner.Register("2026_09_StockVoucherPermissions", StockVoucherPermissionsMigration.Apply);
-            MigrationRunner.Register("2026_09_OrphanDocumentLinks", OrphanDocumentLinksMigration.Apply);
-            MigrationRunner.Register("2026_09_AssetTreeCleanup", AssetTreeCleanupMigration.Apply);
-
-            services.GetRequiredService<IJournalRepository>().CreateTable();
-            services.GetRequiredService<IFiscalPeriodRepository>().CreateTable();
 
             var numberSequences = services.GetRequiredService<INumberSequenceRepository>();
-            numberSequences.CreateTable();
-            NumberSequenceSeeder.Seed(numberSequences);
+            NumberSequenceSeeder.Seed(numberSequences, services.GetRequiredService<ISettingStore>());
 
-            services.GetRequiredService<ICustomerRepository>().CreateTable();
-            services.GetRequiredService<ISupplierRepository>().CreateTable();
-            services.GetRequiredService<ICategoryRepository>().CreateTable();
-            services.GetRequiredService<IProductRepository>().CreateTable();
-            services.GetRequiredService<IAssetRepository>().CreateTable();
-            services.GetRequiredService<IAssetRevaluationRepository>().CreateTable();
-            services.GetRequiredService<IAssetDepreciationRepository>().CreateTable();
-            services.GetRequiredService<IAssetDisposalRepository>().CreateTable();
-            services.GetRequiredService<IEmployeeRepository>().CreateTable();
-            services.GetRequiredService<IDepartmentRepository>().CreateTable();
-            services.GetRequiredService<IJobTitleRepository>().CreateTable();
-            services.GetRequiredService<IUnitRepository>().CreateTable();
-            services.GetRequiredService<IWarehouseRepository>().CreateTable();
-            services.GetRequiredService<IStockMovementRepository>().CreateTable();
-            services.GetRequiredService<ISalesInvoiceRepository>().CreateTable();
-            services.GetRequiredService<IPurchaseInvoiceRepository>().CreateTable();
-            services.GetRequiredService<ISalesReturnRepository>().CreateTable();
-            services.GetRequiredService<IPurchaseReturnRepository>().CreateTable();
-            services.GetRequiredService<IStockInRepository>().CreateTable();
-            services.GetRequiredService<IStockOutRepository>().CreateTable();
-            services.GetRequiredService<IPurchaseRequestRepository>().CreateTable();
-            services.GetRequiredService<IPurchaseOrderRepository>().CreateTable();
-            services.GetRequiredService<IQuotationRepository>().CreateTable();
-            services.GetRequiredService<ISalesOrderRepository>().CreateTable();
-            services.GetRequiredService<IGoodsReceiptRepository>().CreateTable();
-            services.GetRequiredService<IGoodsIssueRepository>().CreateTable();
-            services.GetRequiredService<IDeliveryNoteRepository>().CreateTable();
-            services.GetRequiredService<ISalesReceiptRepository>().CreateTable();
-            services.GetRequiredService<IStockTransferRepository>().CreateTable();
-            services.GetRequiredService<IPayrollRepository>().CreateTable();
-            services.GetRequiredService<IEmployeeAllowanceRepository>().CreateTable();
-            services.GetRequiredService<IEmployeeDeductionRepository>().CreateTable();
-            services.GetRequiredService<IAttendanceRepository>().CreateTable();
-            services.GetRequiredService<IDocumentLinkRepository>().CreateTable();
-            services.GetRequiredService<ITreasuryRepository>().CreateTable();
             var treasuryService = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>();
             treasuryService.RepairLinkedRoots();
             treasuryService.SeedDefaults();
             treasuryService.RepairMissingAccounts();
-            services.GetRequiredService<IVoucherRepository>().CreateTable();
-            services.GetRequiredService<IChequeRepository>().CreateTable();
 
-            // ⚠️ R9 — نفس درس توقف 7: PermissionDb (جداول Permissions/Roles/RolePermissions/Users/
-            // UserPermissions + بذر دور SystemAdmin ومستخدم admin) كانت مبنية بالكامل منذ وقت طويل بلا أي
-            // استدعاء فعلي من مسار حي — Login/الصلاحيات الحقيقية لم يكونا ممكنَين إطلاقاً قبل هذا السطر.
-            PermissionDb.CreateTables();
 
-            MigrationRunner.RunPending();
 
-            // تسوية الأصول بعد المهاجرات: كل خطوة مشروطة بغياب قيمتها، فتُعاد في كل إقلاع بلا أثر —
-            // ولو تعذّرت مرّةً (صلاحية أو حساب ناقص) أُعيدت في التالية بدل أن تُسجَّل «منفَّذة» وتضيع.
-            AssetBackfill.Apply(services);
+            services.GetRequiredService<PrimeERP.Application.Services.Assets.IAssetService>().SeedDefaults();
 
             return services;
         }

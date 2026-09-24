@@ -1,6 +1,8 @@
 <UserControl x:Class="PrimeERP.UI.Components.Inputs.AppNumericBox"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- حقل إدخال AppNumericBox -->
     <StackPanel>
 
         <StackPanel x:Name="pnlLabel" Orientation="Horizontal" Margin="{DynamicResource P.Space.1.Bottom}" Visibility="Collapsed">
@@ -16,8 +18,8 @@
         </StackPanel>
 
         <Border x:Name="border"
-                Background="{DynamicResource C.Input.Bg}"
-                BorderBrush="{DynamicResource C.Input.Border}"
+                Background="{DynamicResource SurfaceDefault}"
+                BorderBrush="{DynamicResource OutlineDefault}"
                 BorderThickness="{DynamicResource C.Input.BorderThickness}"
                 CornerRadius="{DynamicResource C.Input.Radius}"
                 Height="{DynamicResource C.Input.Height}">
@@ -54,18 +56,18 @@
                 <StackPanel x:Name="pnlSpinner" Grid.Column="2"
                             Orientation="Vertical"
                             Visibility="Collapsed">
-                    <Button x:Name="btnUp" Height="18" Width="24"
+                    <Button x:Name="btnUp" Height="{DynamicResource C.Stepper.Height}" Width="{DynamicResource C.Control.Size.Xs}"
                             Background="Transparent" BorderThickness="0" Cursor="Hand"
                             Click="btnUp_Click">
                         <Path Data="{StaticResource IconChevronUp}" Stretch="Uniform"
-                              Width="10" Height="10" Stroke="{DynamicResource TextMuted}"
+                              Width="{DynamicResource C.Icon.Size.Xs}" Height="{DynamicResource C.Icon.Size.Xs}" Stroke="{DynamicResource TextMuted}"
                               StrokeThickness="2"/>
                     </Button>
-                    <Button x:Name="btnDown" Height="18" Width="24"
+                    <Button x:Name="btnDown" Height="{DynamicResource C.Stepper.Height}" Width="{DynamicResource C.Control.Size.Xs}"
                             Background="Transparent" BorderThickness="0" Cursor="Hand"
                             Click="btnDown_Click">
                         <Path Data="{StaticResource IconChevronDown}" Stretch="Uniform"
-                              Width="10" Height="10" Stroke="{DynamicResource TextMuted}"
+                              Width="{DynamicResource C.Icon.Size.Xs}" Height="{DynamicResource C.Icon.Size.Xs}" Stroke="{DynamicResource TextMuted}"
                               StrokeThickness="2"/>
                     </Button>
                 </StackPanel>
@@ -76,7 +78,7 @@
                    FontSize="{DynamicResource P.Font.Size.200}"
                    FontFamily="{DynamicResource P.Font.Family.Primary}"
                    Foreground="{DynamicResource Danger}"
-                   Margin="2,4,0,0"
+                   Margin="{DynamicResource C.Input.AdornmentMargin}"
                    TextWrapping="Wrap"
                    Visibility="Collapsed"/>
     </StackPanel>

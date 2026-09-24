@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.UI.Components.Shell
 {
-    /// <summary>عنصر تنقّل واحد في AppSidebar — يبنيه المستهلك (Gallery أو AppShell لاحقاً)، لا قاعدة بيانات هنا.</summary>
+    /// <summary>عنصر تنقّل واحد في AppSidebar</summary>
     public class NavItem
     {
         public string Key           { get; set; }
@@ -10,7 +10,6 @@ namespace PrimeERP.UI.Components.Shell
         public string IconKey       { get; set; }
         public string PermissionKey { get; set; }
 
-        /// <summary>نص شارة عددية (مثل عدد الإشعارات لهذا القسم) — فارغ = لا شارة.</summary>
         public string Badge { get; set; }
 
         public bool IsSeparator { get; set; }

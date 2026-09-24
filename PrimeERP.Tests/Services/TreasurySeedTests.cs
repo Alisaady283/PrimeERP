@@ -7,11 +7,11 @@ using PrimeERP.Application.Services.Treasury;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using Xunit;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>قوائم السندات كانت تبدو "لا تتفاعل" لأنها فارغة أصلاً — لا خزائن ولا بنوك. الخزينة الآن
-    /// تُنشئ حسابها الورقي تحت "الصناديق"/"البنوك" تلقائياً، وتُبذَر خزينة وبنك عند أول تشغيل.</summary>
+    /// <summary>قوائم السندات كانت تبدو "لا</summary>
     public class TreasurySeedTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -65,7 +65,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(TreasuryKind.Bank, bank.Kind);
             Assert.Equal("صندوق الفرع", cash.Name);
 
-            // إعادة تسمية الحساب تعيد تسمية الخزينة، وحذفه يعطّلها — نفس سلوك العملاء.
             Assert.True(accounts.Update(new PrimeERP.Application.DTOs.Accounting.UpdateAccountDto
             { Id = cashLeaf.Value.Id, Name = "صندوق الفرع الرئيسي", IsLeaf = true }).IsSuccess);
             Assert.Equal("صندوق الفرع الرئيسي", treasuries.GetAll().Value.Single(t => t.AccountCode == cashLeaf.Value.Code).Name);
@@ -92,7 +91,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void WhenTheRootAccountCannotHoldChildren_CreationFailsWithAReason()
         {
-            var settings = _db.Services.GetRequiredService<PrimeERP.Application.Services.ISettingsService>();
+            var settings = _db.Services.GetRequiredService<PrimeERP.Application.Services.Admin.ISettingsService>();
             var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
 
             settings.Set(PrimeERP.Platform.Settings.SettingKeys.Accounts.Bank, "9999");
@@ -104,11 +103,6 @@ namespace PrimeERP.Tests.Services
             Assert.DoesNotContain(treasuries.GetAll(includeInactive: true).Value, t => t.Name == "بنك بلا أصل");
         }
 
-        /// <summary>
-        /// خزينةٌ حُفظت بلا حساب (سبقت حراسة EnsureAccount) يسقط طرفها الدائن من كل قيدٍ تموّله: يظهر
-        /// «القيد غير متزن» ويُحفَظ المستند بلا قيده. تسوية الإقلاع تُعيد ربطها بحسابها القائم في
-        /// الشجرة — تبنٍّ بالاسم لا إنشاءُ حسابٍ ثانٍ بجواره.
-        /// </summary>
         [Fact]
         public void ATreasuryLeftWithoutItsAccount_IsRelinkedToTheExistingOne_NotGivenASecond()
         {
@@ -120,7 +114,6 @@ namespace PrimeERP.Tests.Services
             Assert.True(created.IsSuccess, created.ErrorMessage);
             var accountCode = created.Value.AccountCode;
 
-            // نفس حالة القاعدة الحيّة: الحساب قائم في الشجرة والصفّ لا يشير إليه.
             var entity = repo.GetById(created.Value.Id);
             entity.AccountCode = "";
             repo.Update(entity);
@@ -133,10 +126,40 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(accountCode, treasuries.GetById(created.Value.Id).Value.AccountCode);
             Assert.Equal(leavesBefore, accounts.GetLeaves().Value.Count);
 
-            // تُعاد بلا أثر — شرطها غياب الكود.
             Assert.True(treasuries.RepairMissingAccounts().IsSuccess);
             Assert.Equal(accountCode, treasuries.GetById(created.Value.Id).Value.AccountCode);
             Assert.Equal(leavesBefore, accounts.GetLeaves().Value.Count);
+        }
+
+        [Fact]
+        public void RenamingATreasuryFromItsPage_RenamesItsAccountToo()
+        {
+            var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
+            var accounts = _db.Services.GetRequiredService<IAccountService>();
+
+            var created = treasuries.Create(new CreateTreasuryDto { Name = "خزينة الفرع", IsBank = false, IsActive = true });
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+
+            var updated = treasuries.Update(new UpdateTreasuryDto
+            { Id = created.Value.Id, Name = "خزينة الفرع الرئيسي", IsBank = false, IsActive = true });
+            Assert.True(updated.IsSuccess, updated.ErrorMessage);
+
+            Assert.Equal("خزينة الفرع الرئيسي", accounts.GetByCode(created.Value.AccountCode).Value.Name);
+        }
+
+        [Fact]
+        public void DeletingATreasuryFromItsPage_RemovesItsAccountFromTheTree()
+        {
+            var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
+            var accounts = _db.Services.GetRequiredService<IAccountService>();
+
+            var created = treasuries.Create(new CreateTreasuryDto { Name = "بنك الفرع", IsBank = true, IsActive = true });
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+            Assert.Contains(accounts.GetLeaves().Value, a => a.Code == created.Value.AccountCode);
+
+            Assert.True(treasuries.Delete(created.Value.Id).IsSuccess);
+
+            Assert.DoesNotContain(accounts.GetLeaves().Value, a => a.Code == created.Value.AccountCode);
         }
 
         [Fact]

@@ -1,6 +1,6 @@
+using PrimeERP.Data.Core;
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using PrimeERP.Application.Services.Common;
 using PrimeERP.Domain.Rules;
@@ -12,12 +12,10 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Application.Services.Inventory
 {
-    // المصدر الوحيد لحركة المخزون — SalesInvoiceService/PurchaseInvoiceService/StockIn/Out/Transfer كلها
-    // تستدعي RecordMovement (نسخة conn,tx لتشارك معاملة المستند نفسها)، لا تكتب SQL مخزون مباشرة أبداً.
+    /// <summary>أرصدة المخزون وحركته</summary>
     public class StockService : ServiceBase, IStockService
     {
         protected override string PermissionPrefix => "Inventory";
@@ -46,51 +44,43 @@ namespace PrimeERP.Application.Services.Inventory
         public Result<List<Domain.Entities.StockMovement>> GetMovements(DateTime from, DateTime to, int? warehouseId = null, int maxResults = 500) =>
             Result.Ok(_movements.GetMovements(from, to, warehouseId, maxResults));
 
-        public Result RecordMovement(DbConnection conn, DbTransaction tx, int productId, int warehouseId, MovementType type,
+        public Result RecordMovement(PrimeDbContext db, int productId, int warehouseId, MovementType type,
             decimal qty, decimal unitCost, string sourceDocType, int? sourceDocId, string sourceDocNo, DateTime? date = null, string notes = null)
         {
             if (type != MovementType.Adjustment && qty <= 0) return Fail("الكمية يجب أن تكون أكبر من صفر", ErrorCode.ValidationFailed);
 
-            // القراءة داخل معاملة المستند لا خارجها: معاملتان متتاليتان تُسلسَلان، فالثانية ترى أثر الأولى
-            // ملتزماً وتُرفض لو لم يبقَ ما يكفي — وهو تتابعٌ صحيح مهما تقارب وقتُ تسجيلهما.
-            var currentBalance = _movements.GetBalance(productId, warehouseId, conn, tx);
+            var currentBalance = _movements.GetBalance(productId, warehouseId, db);
             var signedQty = type == MovementType.Out ? -qty : qty;
 
-            // الحارس على كل ما يُنقص الرصيد لا على الصرف وحده: التسوية بكميةٍ سالبة تُنزله تحت الصفر أيضاً.
             if (currentBalance + signedQty < 0)
                 return Fail("الرصيد المتاح غير كافٍ لإتمام هذه الحركة", ErrorCode.ValidationFailed);
 
             var movement = new StockMovement
             {
-                MovementNo = _numbers.Next(conn, tx, "StockMovement"), MovementDate = date ?? DateTime.Now,
+                MovementNo = _numbers.Next(db, "StockMovement"), MovementDate = date ?? DateTime.Now,
                 ProductId = productId, WarehouseId = warehouseId, MovementType = type, Qty = qty, UnitCost = unitCost,
                 TotalCost = Math.Abs(qty) * unitCost, BalanceAfter = currentBalance + signedQty,
                 SourceDocType = sourceDocType, SourceDocId = sourceDocId, SourceDocNo = sourceDocNo, Notes = notes, CreatedBy = CurrentUser
             };
 
-            _movements.Insert(movement, conn, tx);
+            _movements.Insert(movement, db);
             return Result.Ok();
         }
 
-        public void RemoveMovements(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId) =>
-            _movements.DeleteBySource(conn, tx, sourceDocType, sourceDocId);
+        public void RemoveMovements(PrimeDbContext db, string sourceDocType, int sourceDocId) =>
+            _movements.DeleteBySource(db, sourceDocType, sourceDocId);
 
-        public decimal? SourceUnitCost(DbConnection conn, DbTransaction tx, string sourceDocType, int sourceDocId, int productId) =>
-            _movements.GetSourceUnitCost(sourceDocType, sourceDocId, productId, conn, tx);
+        public decimal? SourceUnitCost(PrimeDbContext db, string sourceDocType, int sourceDocId, int productId) =>
+            _movements.GetSourceUnitCost(sourceDocType, sourceDocId, productId, db);
 
         public Result<List<StockMovement>> GetCostingHistory(int productId) =>
             Result.Ok(_movements.GetForCosting(productId));
 
-        public decimal CurrentUnitCost(DbConnection conn, DbTransaction tx, int productId) =>
-            InventoryCosting.Replay(_movements.GetForCosting(productId, conn, tx)
+        public decimal CurrentUnitCost(PrimeDbContext db, int productId) =>
+            InventoryCosting.Replay(_movements.GetForCosting(productId, db)
                 .Select(m => new InventoryCosting.Entry(m.MovementType, m.Qty, m.UnitCost))).UnitCost;
 
-        /// <summary>
-        /// الطبقات تُشتقّ من سجلّ الحركات لا تُخزَّن — طابورٌ واحد لكل صنف عبر المخازن كلها. تُقرأ مرّةً
-        /// لكل صنف في المستند ثم تُستهلك سطراً سطراً، فلا استعلام لكل سطر ولا ازدواج في التسعير.
-        /// </summary>
-        public Result<List<decimal>> GetIssueCosts(DbConnection conn, DbTransaction tx,
-            List<(int ProductId, decimal Qty)> lines)
+        public Result<List<decimal>> GetIssueCosts(PrimeDbContext db, List<(int ProductId, decimal Qty)> lines)
         {
             var balances = new Dictionary<int, InventoryCosting.Balance>();
             var costs = new List<decimal>(lines.Count);
@@ -99,7 +89,7 @@ namespace PrimeERP.Application.Services.Inventory
             {
                 if (!balances.TryGetValue(productId, out var balance))
                 {
-                    balance = InventoryCosting.Replay(_movements.GetForCosting(productId, conn, tx)
+                    balance = InventoryCosting.Replay(_movements.GetForCosting(productId, db)
                         .Select(m => new InventoryCosting.Entry(m.MovementType, m.Qty, m.UnitCost)));
                     balances[productId] = balance;
                 }
@@ -107,7 +97,6 @@ namespace PrimeERP.Application.Services.Inventory
                 if (!InventoryCosting.TryIssueCost(balance, qty, out var cost))
                     return Fail<List<decimal>>("الرصيد المتاح غير كافٍ لإتمام هذه الحركة", ErrorCode.ValidationFailed);
 
-                // الرصيد يتحرّك مع السطر: سطران لنفس الصنف في مستندٍ واحد يُسعَّر ثانيهما بعد أوّلهما.
                 balances[productId] = InventoryCosting.Apply(balance,
                     new InventoryCosting.Entry(MovementType.Out, qty, 0), out _);
 
@@ -124,13 +113,13 @@ namespace PrimeERP.Application.Services.Inventory
 
             try
             {
-                Db.RunTransaction((conn, tx) =>
+                Tx(db =>
                 {
-                    var no = _numbers.Next(conn, tx, "StockTransfer");
-                    var outResult = RecordMovement(conn, tx, productId, fromWarehouseId, MovementType.Out, qty, 0, "StockTransfer", null, no, notes: notes);
+                    var no = _numbers.Next(db, "StockTransfer");
+                    var outResult = RecordMovement(db, productId, fromWarehouseId, MovementType.Out, qty, 0, "StockTransfer", null, no, notes: notes);
                     if (!outResult.IsSuccess) throw new InvalidOperationException(outResult.ErrorMessage);
 
-                    var inResult = RecordMovement(conn, tx, productId, toWarehouseId, MovementType.In, qty, 0, "StockTransfer", null, no, notes: notes);
+                    var inResult = RecordMovement(db, productId, toWarehouseId, MovementType.In, qty, 0, "StockTransfer", null, no, notes: notes);
                     if (!inResult.IsSuccess) throw new InvalidOperationException(inResult.ErrorMessage);
                 });
             }

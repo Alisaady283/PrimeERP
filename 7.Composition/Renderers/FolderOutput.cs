@@ -1,6 +1,6 @@
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>مسار مجلد من المستخدم — نافذة النظام هي القائمة، بنفس نمط ListOutput.Export.</summary>
+    /// <summary>مسار مجلد من المستخدم</summary>
     public static class FolderOutput
     {
         public static string Pick(string title)

@@ -1,9 +1,6 @@
 namespace PrimeERP.UI.Components.Documents
 {
-    /// <summary>
-    /// عنصر إجمالي واحد في DocumentFooter. Variant يستخدم نفس مفردات AppBadge بالضبط
-    /// ("success"/"danger"/"warning"/"info"/"brand" وأي شيء آخر = محايد) لتوحيد الألوان الدلالية في النظام.
-    /// </summary>
+    /// <summary>عنصر إجمالي واحد في DocumentFooter</summary>
     public class FooterTotal
     {
         public string  Key     { get; set; }

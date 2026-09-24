@@ -2,6 +2,7 @@ using PrimeERP.Domain.Entities.Common;
 
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان Currency</summary>
     public class Currency : BaseModel
     {
         public string Code          { get; set; }

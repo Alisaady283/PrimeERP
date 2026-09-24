@@ -5,8 +5,7 @@ using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Domain.Entities
 {
-    /// <summary>سند قبض/صرف — كيان واحد للاتجاهين (Kind يفرّق)، بسطور تخصيص اختيارية على الفواتير.
-    /// سند بلا تخصيص = دفعة تحت الحساب، صالحة تماماً.</summary>
+    /// <summary>سند قبض/صرف</summary>
     public class Voucher : BaseModel
     {
         public string        VoucherNo   { get; set; }

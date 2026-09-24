@@ -17,18 +17,13 @@ using PrimeERP.UI.Components.Inputs;
 
 namespace PrimeERP.UI.Components.Pickers
 {
-    /// <summary>
-    /// نافذة اختيار بجدول مشتركة لكل الـ Pickers الجدولية (عميل/مورد/صنف/موظف) — تُبنى من C# فقط داخل AppDialogWindow،
-    /// لا XAML خاص بها. لا تعرف شيئاً عن قاعدة البيانات؛ تعمل فقط على PickerResultItem الجاهزة مسبقاً.
-    /// </summary>
+    /// <summary>نافذة اختيار بجدول مشتركة لكل</summary>
     public class PickerGridWindow : AppDialogWindow
     {
         public PickerResultItem SelectedResult { get; private set; }
 
-        /// <summary>يُطلق عند الضغط على "+ جديد" — المستهلك (الـ picker المشتق) يفتح نموذج الإضافة ثم يستدعي CommitSelection بنفسه.</summary>
         public event EventHandler QuickAddRequested;
 
-        /// <summary>دالة تُستدعى لكل صف (بالكائن الأصلي RawData) لتقرر تلوينه: "danger"/"warning"/null. مثال: تجاوز حد الائتمان أو نفاد المخزون.</summary>
         public Func<object, string> RowHighlight
         {
             get => _grid.RowHighlightSelector;
@@ -106,7 +101,6 @@ namespace PrimeERP.UI.Components.Pickers
             RefreshGrid(_allItems);
         }
 
-        /// <summary>يُستدعى بعد إضافة سريعة ناجحة لإدراج/تحديث عنصر في القائمة الحالية دون إعادة فتح النافذة.</summary>
         public void UpsertAndSelect(PickerResultItem item)
         {
             if (item?.RawData != null)

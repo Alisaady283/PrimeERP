@@ -8,11 +8,7 @@ using PrimeERP.UI.Components.Display;
 
 namespace PrimeERP.Modules
 {
-    /// <summary>
-    /// كل مستند مخزني رأسه (تاريخ/مخزن/بيان) وسطوره (صنف/كمية/تكلفة/بيان) — أذون الدورة الأربعة وإذنا
-    /// الإضافة والصرف المبسّطان سواء. يُسجَّل من هنا لا بنسخةٍ لكل وحدة: كان إذنا المبسّط مكتوبين يدوياً
-    /// نسخةً من هذا الشكل، فأي تعديل على الأعمدة أو الحقول كان يلزمه ثلاثة مواضع.
-    /// </summary>
+    /// <summary>رأس المستند المخزني وسطوره</summary>
     internal static class StockDocumentFactory
     {
         internal static void Register(IModuleRegistry registry, string key, string titleKey, Type viewModel, Type service,

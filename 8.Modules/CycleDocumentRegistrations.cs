@@ -10,6 +10,7 @@ using PrimeERP.UI.ViewModels;
 
 namespace PrimeERP.Modules
 {
+    /// <summary>تسجيل مستندات الدورة</summary>
     public static class CycleDocumentRegistrations
     {
         public static void RegisterAll(IModuleRegistry registry)

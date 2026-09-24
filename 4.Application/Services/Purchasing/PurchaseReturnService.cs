@@ -7,6 +7,7 @@ using PrimeERP.Application.Services.Accounting;
 using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Application.Services.Parties;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Helpers;
 using PrimeERP.Domain.Enums;
@@ -15,15 +16,13 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Application.Services.Purchasing
 {
-    // عكس PurchaseInvoiceService: Debit المورد (تخفيض مديونيته)، Credit Inventory/Credit VATInput (عكس ما
-    // سُجِّل عند الشراء). حركة مخزون Out (تتحقق من كفاية الرصيد تلقائياً — لا يمكن إرجاع أكثر مما بالمخزون).
+    /// <summary>مرتجع الشراء وقيده</summary>
     public class PurchaseReturnService : ServiceBase, IPurchaseReturnService
     {
-        private readonly IPurchaseReturnRepository _returns;
+        private readonly IReturnRepository<PurchaseReturn, PurchaseReturnLine> _returns;
         private readonly IProductRepository _products;
         private readonly ISupplierService _suppliers;
         private readonly IStockService _stock;
@@ -32,7 +31,7 @@ namespace PrimeERP.Application.Services.Purchasing
 
         private readonly PrimeERP.Application.Services.Documents.IDocumentLinkService _links;
 
-        public PurchaseReturnService(IPurchaseReturnRepository returns, IProductRepository products, ISupplierService suppliers,
+        public PurchaseReturnService(IReturnRepository<PurchaseReturn, PurchaseReturnLine> returns, IProductRepository products, ISupplierService suppliers,
             IStockService stock, IJournalService journal, INumberSequenceService numbers,
             PrimeERP.Application.Services.Documents.IDocumentLinkService links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
@@ -111,7 +110,6 @@ namespace PrimeERP.Application.Services.Purchasing
                 });
             }
 
-            // المتبقّي على المصدر يُفحص قبل أي كتابة — الواجهة تمنع الخطأ، والخدمة تمنع الالتفاف عليها.
             var pullCheck = _links.ValidatePulls(dto.Lines.Select(l => ((PrimeERP.Application.DTOs.Documents.IPullableLine)l, l.Qty)));
             if (pullCheck.IsFailure) return Result.Fail<PurchaseReturnDetailDto>(pullCheck.ErrorMessage, pullCheck.ErrorCode);
 
@@ -134,31 +132,29 @@ namespace PrimeERP.Application.Services.Purchasing
             try
             {
                 var simplifiedFlow = Settings.Get(SettingKeys.Documents.SimplifiedFlow, true);
-                returnId = Db.RunTransaction((conn, tx) =>
+                returnId = Tx(db =>
                 {
-                    var returnNo = _numbers.Next(conn, tx, "PurchaseReturn");
+                    var returnNo = _numbers.Next(db, "PurchaseReturn");
                     var ret = new PurchaseReturn
                     {
                         ReturnNo = returnNo, ReturnDate = dto.ReturnDate, SupplierId = dto.SupplierId, WarehouseId = dto.WarehouseId,
                         SubTotal = subTotal, DiscountAmount = discountAmount, VatAmount = vatAmount, WithholdingAmount = withholdingAmount, NetTotal = netTotal, Notes = dto.Notes, CreatedBy = AppSession.Username
                     };
-                    var id = _returns.InsertHeader(conn, tx, ret);
+                    var id = _returns.InsertHeader(db, ret);
 
                     var inserted = new List<(PrimeERP.Application.DTOs.Documents.IPullableLine Line, int TargetLineId, decimal Qty)>();
                     for (int i = 0; i < resolvedLines.Count; i++)
                     {
                         var line = resolvedLines[i];
-                        inserted.Add((dto.Lines[i], _returns.InsertLine(conn, tx, id, line), line.Qty));
-                        // الوضع المبسّط: المرتجع تحرّك المخزون بنفسها (لا موظف مخزن ولا أذون). الوضع الشامل:
-                        // إذن الصرف/الاستلام هو من يحرّك المخزون، والمرتجع تُسحب منه — فتحريكها هنا يخصم مرتين.
+                        inserted.Add((dto.Lines[i], _returns.InsertLine(db, id, line), line.Qty));
                         var moveResult = simplifiedFlow
-                            ? _stock.RecordMovement(conn, tx, line.ProductId, dto.WarehouseId, MovementType.Out, line.Qty, line.UnitPrice,
+                            ? _stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.Out, line.Qty, line.UnitPrice,
                             "PurchaseReturn", id, returnNo, dto.ReturnDate)
                             : Result.Ok();
                         if (!moveResult.IsSuccess) throw new InvalidOperationException(moveResult.ErrorMessage);
                     }
 
-                    _links.RecordPulls(conn, tx, EntityName, id, inserted);
+                    _links.RecordPulls(db, EntityName, id, inserted);
 
                     var journalLines = new List<CreateJournalLineDto>
                     {
@@ -172,13 +168,13 @@ namespace PrimeERP.Application.Services.Purchasing
                     {
                         EntryDate = dto.ReturnDate, Description = $"مرتجع شراء {returnNo}", Source = nameof(JournalSource.Purchase), Lines = journalLines
                     };
-                    var createResult = _journal.Create(conn, tx, journalDto);
+                    var createResult = _journal.Create(db, journalDto);
                     if (!createResult.IsSuccess) throw new InvalidOperationException(createResult.ErrorMessage);
 
-                    var postResult = _journal.Post(conn, tx, createResult.Value.Id);
+                    var postResult = _journal.Post(db, createResult.Value.Id);
                     if (!postResult.IsSuccess) throw new InvalidOperationException(postResult.ErrorMessage);
 
-                    _returns.SetJournalEntryId(conn, tx, id, createResult.Value.Id);
+                    _returns.SetJournalEntryId(db, id, createResult.Value.Id);
                     return id;
                 });
             }
@@ -195,10 +191,6 @@ namespace PrimeERP.Application.Services.Purchasing
 
         public Result Update(CreatePurchaseReturnDto dto) => Result.Fail("المرتجع مُرحَّل فور إنشائه — لا يمكن تعديله", ErrorCode.ValidationFailed);
 
-        /// <summary>
-        /// نفس تسلسل السند: صلاحية ثم معاملة تحذف القيد وأثر المخزون والمستند معاً — فلا يبقى قيدٌ
-        /// ولا حركةٌ بلا مستندها. الصلاحية هي البوابة، والحواجز المحاسبية تبقى حيث كانت.
-        /// </summary>
         public Result Delete(int id)
         {
             if (!Can("Delete")) return FailDenied();
@@ -206,17 +198,15 @@ namespace PrimeERP.Application.Services.Purchasing
             var document = _returns.GetById(id);
             if (document == null) return Result.Fail("المرتجع غير موجود", ErrorCode.NotFound);
 
-            // السحب يمنع الحذف: مستندٌ لاحق يقوم عليه، فحذفه يترك الأخير بلا أصل.
             if (_links.GetPulledBySource(EntityName, id).Count > 0)
                 return Result.Fail("سُحب من هذا المستند — احذف ما سُحب إليه أولاً", ErrorCode.ValidationFailed);
 
-            Db.RunTransaction((conn, tx) =>
+            Tx(db =>
             {
-                if (document.JournalEntryId != null) _journal.Delete(conn, tx, document.JournalEntryId.Value);
-                _stock.RemoveMovements(conn, tx, "PurchaseReturn", id);
-                // روابط ما سحبه هذا المستند تُزال معه، وإلّا بقيت تحرس مصدراً عن مستندٍ لم يعد موجوداً.
-                _links.RemovePull(EntityName, id, conn, tx);
-                _returns.DeleteDocument(conn, tx, id);
+                if (document.JournalEntryId != null) _journal.Delete(db, document.JournalEntryId.Value);
+                _stock.RemoveMovements(db, "PurchaseReturn", id);
+                _links.RemovePull(EntityName, id, db);
+                _returns.DeleteDocument(db, id);
             });
 
             Audit.Log(EntityName, id, AuditAction.Delete);

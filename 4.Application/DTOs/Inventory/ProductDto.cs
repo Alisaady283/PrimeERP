@@ -3,8 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.DTOs.Inventory
 {
-    // نطاق مُبسَّط عمداً — الحقول المرتبطة بوحدات لم تُبنَ بعد (وحدة قياس/مجموعة ضريبة/حسابات محاسبية) غير
-    // مكشوفة هنا رغم وجودها في المخطط (راجع ProductRepository)؛ تُضاف حين تُبنى تلك الوحدات.
+    /// <summary>بيانات الصنف</summary>
     public class ProductDto
     {
         public int      Id           { get; set; }

@@ -4,6 +4,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Display
 {
+    /// <summary>عرض AppBadge</summary>
     public partial class AppBadge : UserControl
     {
         public static readonly DependencyProperty TextProperty =
@@ -41,7 +42,6 @@ namespace PrimeERP.UI.Components.Display
         {
             var c = (AppBadge)d;
 
-            // مفاتيح لا فُرَش: FindResource تُثبِّت اللون وقت الاستدعاء فلا يتبع تبديل الوضع الفاتح/الداكن.
             var (bg, fg) = ((string)e.NewValue) switch
             {
                 "success" => ("SuccessSoft", "Success"),

@@ -15,10 +15,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>
-    /// زرّ «جديد» المُصيَّر فعلياً — لا نموذج الإجراء المجرّد. من يملك الصلاحية يجده مفعَّلاً في كل وحدة.
-    /// كان أربع وحدات تعرضه معطَّلاً: بادئة صلاحيتها حقلٌ يُضبط بعد مُنشئ القاعدة، فتجمّد المفتاح ناقصاً.
-    /// </summary>
+    /// <summary>زرّ «جديد» المُصيَّر فعلياً</summary>
     [Collection("WpfApplication")]
     public class AddButtonEnabledTests : IDisposable
     {
@@ -31,10 +28,8 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
-                // صلاحيات حقيقية لا وضع تطوير: البوابة نفسها هي المفحوصة. AppSession حالة ساكنة يتقاسمها
-                // كل الاختبارات، فما يُستعار منها يُعاد — وإلا وجدت اختبارات «بلا صلاحية» صلاحياتٍ ممنوحة.
                 var previousDevMode = AppSession.DevMode;
                 var previousPermissions = AppSession.Permissions.ToList();
                 AppSession.DevMode = false;
@@ -57,7 +52,6 @@ namespace PrimeERP.Tests.Composition
                         var add = Descendants<AppButton>(page).FirstOrDefault(b => b.Text == "جديد");
                         Assert.True(add != null, $"{definition.Key}: زرّ جديد غائب رغم امتلاك الصلاحية");
 
-                        // الزرّ الداخلي هو ما يراه المستخدم؛ IsEnabled عليه يتبع CanExecute للأمر.
                         if (!Descendants<Button>(add).First().IsEnabled)
                             disabled.Add(definition.Key);
                     }

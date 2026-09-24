@@ -5,9 +5,7 @@ using PrimeERP.UI.Components.Tree;
 
 namespace PrimeERP.Composition.Renderers
 {
-    /// <summary>يحوّل قائمة مسطَّحة (أي TDto) لشجرة TreeNodeViewModel عبر Reflection على أسماء الحقول في
-    /// TreeLayoutOptions — منطق واحد يخدم أي كيان هرمي مستقبلي (Departments/Categories...) بلا تكرار نمط
-    /// AccountPicker.BuildTree اليدوي (نفس الفكرة، مُعمَّمة). لا حالة — دالة نقية واحدة.</summary>
+    /// <summary>قائمة مسطَّحة تصير شجرة</summary>
     internal static class TreeBuilder
     {
         private static readonly Regex PlaceholderPattern = new(@"\{(\w+)(:[^}]+)?\}", RegexOptions.Compiled);

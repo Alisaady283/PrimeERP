@@ -5,6 +5,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Inputs
 {
+    /// <summary>حقل إدخال AppTextBox</summary>
     public partial class AppTextBox : UserControl
     {
         public static readonly DependencyProperty LabelProperty =
@@ -52,7 +53,6 @@ namespace PrimeERP.UI.Components.Inputs
         public string   Placeholder { get => (string)GetValue(PlaceholderProperty); set => SetValue(PlaceholderProperty, value); }
         public string   ErrorText   { get => (string)GetValue(ErrorTextProperty);   set => SetValue(ErrorTextProperty, value); }
 
-        /// <summary>محسوبة تلقائياً من ErrorText — الأنماط في Themes/Components/Inputs.xaml تقرأها لإظهار حالة الخطأ (لا لون هنا، فقط منطق).</summary>
         public bool     HasError    { get => (bool)GetValue(HasErrorProperty);      private set => SetValue(HasErrorProperty, value); }
         public bool     IsRequired  { get => (bool)GetValue(IsRequiredProperty);    set => SetValue(IsRequiredProperty, value); }
         public Geometry PrefixIcon  { get => (Geometry)GetValue(PrefixIconProperty);set => SetValue(PrefixIconProperty, value); }
@@ -120,7 +120,6 @@ namespace PrimeERP.UI.Components.Inputs
         {
             var c = (AppTextBox)d;
             var readOnly = (bool)e.NewValue;
-            // للقراءة لا يعني ممنوعاً من التحديد: الحقل يبقى قابلاً للتركيز فيُحدَّد ويُنسخ (السريال مثلاً).
             c.txt.IsReadOnly = readOnly;
             c.txt.IsReadOnlyCaretVisible = readOnly;
         }

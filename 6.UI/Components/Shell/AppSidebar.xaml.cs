@@ -11,10 +11,7 @@ using System.Windows.Media.Animation;
 
 namespace PrimeERP.UI.Components.Shell
 {
-    /// <summary>
-    /// شريط تنقّل جانبي هرمي — يختفي أي عنصر بلا صلاحية تلقائياً (ويختفي الأب لو كل أبنائه محجوبون)،
-    /// ويستمع لـ AppSession.PermissionsChanged لإعادة حساب الظهور حياً بلا إعادة بناء الشجرة.
-    /// </summary>
+    /// <summary>شريط تنقّل جانبي هرمي</summary>
     public partial class AppSidebar : UserControl
     {
         public static readonly DependencyProperty ItemsSourceProperty =
@@ -33,7 +30,6 @@ namespace PrimeERP.UI.Components.Shell
             DependencyProperty.Register(nameof(LogoContent), typeof(object), typeof(AppSidebar),
                 new PropertyMetadata(null, (d, e) => ((AppSidebar)d).logoPresenter.Content = e.NewValue ?? DefaultBrand()));
 
-        /// <summary>اسم البرنامج حين لا يُمرَّر محتوى — رأس السايد بار لا يُترك فارغاً.</summary>
         private static FrameworkElement DefaultBrand()
         {
             var name = new TextBlock

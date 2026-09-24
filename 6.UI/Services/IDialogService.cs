@@ -5,7 +5,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.UI.Services
 {
-    /// <summary>حوار يريد إرجاع نتيجة نمطية عبر ShowDialogAsync&lt;TResult&gt; ينفّذ هذا العقد.</summary>
+    /// <summary>حوار يريد إرجاع نتيجة نمطية</summary>
     public interface IResultDialog<TResult>
     {
         TResult Result { get; }
@@ -13,7 +13,6 @@ namespace PrimeERP.UI.Services
 
     public interface IDialogService
     {
-        /// <summary>confirmText افتراضياً Str.Confirm من Strings — null صريحاً هنا لأن قيمة افتراضية بمتغير غير ممكنة في C#.</summary>
         Task<bool> ConfirmAsync(string title, string message, string confirmText = null, bool isDangerous = false);
         Task ShowMessageAsync(string title, string message, StatusVariant variant = StatusVariant.Info);
         Task ShowErrorAsync(string title, string message, Exception exception = null);

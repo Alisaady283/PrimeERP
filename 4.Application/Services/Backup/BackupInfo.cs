@@ -5,6 +5,7 @@ using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Application.Services.Backup
 {
+    /// <summary>وصف نسخة احتياطية</summary>
     public class BackupInfo
     {
         public string FilePath { get; set; }

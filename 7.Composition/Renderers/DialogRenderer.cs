@@ -17,14 +17,11 @@ using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.Composition.Renderers
 {
-    // ⚠️ لا ShowDialog() — تُعلَّق للأبد في بيئة هذا الجهاز (توقف 10، ARCHITECTURE.md). Show() + DispatcherFrame
-    // يدوية بدلاً منها، نفس نمط App.xaml.cs.LoginWindow بالضبط.
+    // ⚠️ no ShowDialog() — ARCHITECTURE § المصائد
     internal class ComposedDialogWindow : AppDialogWindow
     {
         public bool Saved;
 
-        // العرض الافتراضي C.Dialog.Width.Sm (420) كافٍ لحوار حقول مسطّحة، ويقصّ أي محتوى أعرض (صف سطور
-        // مستند/شبكة متعددة الأعمدة). CardWidth لا Width: الأخيرة تشمل هامش الظل فتُنتج بطاقة أضيق.
         public ComposedDialogWindow(string title, FrameworkElement body, FrameworkElement footer, double? width = null)
         {
             Title = title;
@@ -36,18 +33,12 @@ namespace PrimeERP.Composition.Renderers
             MinHeight = 320;
         }
 
-        // القاعدة AppDialogWindow.OnEscapePressed تضبط DialogResult قبل Close() — صحيح لحوارات ShowDialog()
-        // (AppConfirmDialog/AppMessageDialog) لكن يرمي InvalidOperationException هنا تحديداً (النافذة
-        // مفتوحة عبر Show() لا ShowDialog()، توقف 10) فيسقط الاستثناء بصمت ولا يُنفَّذ Close() إطلاقاً —
-        // زر إغلاق الهيدر (X) ومفتاح Escape يبقيان بلا أثر، النافذة تظل مفتوحة.
         protected override void OnEscapePressed() => Close();
     }
 
+    /// <summary>تصيير الحوار من وصفه</summary>
     public static class DialogRenderer
     {
-        /// <summary>Type.GetMethod على واجهة لا يبحث في الواجهات المُوَرَّثة إطلاقاً — و IQuotationService
-        /// وأخواتها ترث Create/Update/GetById من ICycleDocumentService بلا إعادة تصريح، فكان البحث يُعيد null
-        /// ويسقط الاستدعاء بـ NullReferenceException غير مُعالَج يُنهي التطبيق كله عند الحفظ.</summary>
         internal static System.Reflection.MethodInfo FindMethod(Type serviceType, string name, params Type[] argumentTypes)
         {
             var method = serviceType.GetMethod(name, argumentTypes);
@@ -68,8 +59,6 @@ namespace PrimeERP.Composition.Renderers
             bool isEdit = editItem != null;
             var fields = BuildAndPopulateFields(dialog.Fields, services, editItem, isEdit, addModeDefaultPickerId);
             var width = ComputeDialogWidth(dialog.GridColumns);
-            // الشبكة تتمدّد ولا تُجبَر على عرض البطاقة: مساحة المحتوى أضيق منها بالحدّ (٢) وحشو التمرير
-            // (٤٠)، وإجبارها يدفع العمود الأخير خارج القصّ — فيظهر نصف حقل. العرض تحكمه البطاقة وحدها.
             var grid = BuildGrid(dialog.Fields, dialog.GridColumns, fields, null);
 
             foreach (var field in dialog.Fields.Where(f => f.Kind == FieldKind.Picker && f.PickerType == "Category"))
@@ -98,9 +87,6 @@ namespace PrimeERP.Composition.Renderers
             return window.Saved;
         }
 
-        // Reflection مباشرة لا dynamic — dynamic كان يرمي RuntimeBinderException غامضاً هنا
-        // ("has some invalid arguments") رغم تطابق النوع الفعلي تماماً؛ MethodInfo.Invoke حتمي وواضح.
-        // بوابة واحدة قبل أي حفظ: القواعد مُعلَنة على الحقول، والرسالة تظهر عند الحقل نفسه.
         private static bool TrySave(DialogDefinition dialog, IServiceProvider services, IToastService toast,
             System.Collections.Generic.Dictionary<string, FrameworkElement> fields, object editItem, bool isEdit)
         {
@@ -138,18 +124,6 @@ namespace PrimeERP.Composition.Renderers
             return true;
         }
 
-        /// <summary>
-        /// قراءة قيمة حقل من صفّ: خاصيةً على كيان، أو مفتاحاً في قاموس. الوحدات المبنيّة صفوفها قواميس
-        /// (لا نوع مُصرَّف لجدولٍ يُنشأ وقت التشغيل)، والوحدات المكتوبة كيانات — ونقطةُ القراءة واحدة.
-        /// </summary>
-        /// <summary>
-        /// قيمة الحقل كما تُطابَق في القائمة — بحقل المطابقة المُعلَن (<c>PickerValueField</c>) لا بـ"Id"
-        /// دائماً، كما تفعل <see cref="ApplyPickerFilters"/> عند إعادة التعبئة.
-        ///
-        /// "Id" يُقرأ رقماً، والتعداد رقمَه (صفوف التعداد تُبنى بـConvert.ToInt32 — راجع BuilderPickers.Enum)
-        /// فقراءةٌ نصّية لا تطابق شيئاً. وما عداه (Code/Display) نصٌّ كما هو — تحويله رقماً كان يفرّغ
-        /// حقل الحساب وحقل البنك عند فتح التعديل.
-        /// </summary>
         private static object PickerValue(object value, string valueField) => value switch
         {
             null                      => null,
@@ -166,7 +140,6 @@ namespace PrimeERP.Composition.Renderers
             return source.GetType().GetProperty(key)?.GetValue(source);
         }
 
-        /// <summary>نظيرة ReadValue للكتابة — الكيان بخاصيته، والقاموس بمفتاحه.</summary>
         internal static void WriteValue(object target, string key, object value)
         {
             if (target is IDictionary<string, object> row) { row[key] = value; return; }
@@ -177,8 +150,6 @@ namespace PrimeERP.Composition.Renderers
             property.SetValue(target, Coerce(value, property.PropertyType));
         }
 
-        /// <summary>قيمة القطعة إلى نوع الخاصية — نقطة التحويل الوحيدة: القوائم تُرجع رقماً، والخاصية قد
-        /// تكون تعداداً أو قابلة للإفراغ، وConvert.ChangeType وحدها تسقط على التعداد.</summary>
         internal static object Coerce(object value, Type targetType)
         {
             if (value == null) return null;
@@ -203,7 +174,6 @@ namespace PrimeERP.Composition.Renderers
 
                 var value = GetControlValue(fields[field.Key], field.Kind);
                 if (value == null) continue;
-                // كلمة مرور فارغة = "بلا تغيير" (وضع التعديل بلا حقل خاص يحمل القيمة الحالية أصلاً) — لا تُكتَب فوق الهاش الحالي.
                 if (field.Kind == FieldKind.Password && string.IsNullOrEmpty((string)value)) continue;
 
                 if (row != null) row[field.Key] = value;
@@ -219,8 +189,6 @@ namespace PrimeERP.Composition.Renderers
                 dtoType.GetProperty(key)?.SetValue(dto, value);
         }
 
-        // بناء + تعبئة القيم لقائمة حقول مسطّحة — يخدم كلاً من الحوار العادي (رأس فقط) ورأس المستند
-        // (DocumentRenderer)؛ لا علاقة له بسطور المستند المتكرّرة (تلك منطق DocumentRenderer الخاص).
         internal static Dictionary<string, FrameworkElement> BuildAndPopulateFields(
             List<FieldDefinition> fieldDefs, IServiceProvider services, object editItem, bool isEdit, int? addModeDefaultPickerId = null)
         {
@@ -230,13 +198,9 @@ namespace PrimeERP.Composition.Renderers
             {
                 var control = controls[field.Key];
 
-                // Picker: تحميل العناصر أولاً ثم التحديد بمطابقة Id — SelectedValue وحدها لا تُحدِّد شيئاً في
-                // AppComboBox (لا بحث عكسي من القيمة للعنصر)، فتحتاج SelectedItem الفعلي من القائمة المُحمَّلة.
                 if (field.Kind == FieldKind.Picker)
                 {
                     LoadPickerItems((AppComboBox)control, field, services);
-                    // في وضع الإضافة: القيمة الافتراضية المُعلَنة على الحقل أولاً (طريقة الدفع "نقداً" مثلاً)،
-                    // وإلا الافتراضي المُمرَّر من الشاشة. بلا هذا يبدأ الحقل فارغاً فلا يرشِّح شيئاً.
                     var preset = isEdit
                         ? PickerValue(ReadValue(editItem, field.Key), field.PickerValueField)
                         : field.DefaultValue as int? ?? addModeDefaultPickerId;
@@ -253,8 +217,6 @@ namespace PrimeERP.Composition.Renderers
                 }
                 else if (field.Kind == FieldKind.Date)
                 {
-                    // حقل تاريخ بلا قيمة يُقرأ صفراً فيُحفظ 0001-01-01 — تاريخ اليوم هو الافتراضي الصحيح
-                    // في كل مستند، ويبقى قابلاً للتجاوز بـ DefaultValue على الحقل.
                     SetControlValue(control, field, DateTime.Today);
                 }
 
@@ -267,7 +229,6 @@ namespace PrimeERP.Composition.Renderers
             return controls;
         }
 
-        /// <summary>يخفي حقول الوضع الآخر — والمخفيّ يُعفى من التحقّق.</summary>
         private static void ApplyFlowScope(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> controls, IServiceProvider services)
         {
             var scoped = fieldDefs.Where(f => f.FlowScope != PrimeERP.Composition.Definitions.FlowScope.Both).ToList();
@@ -288,7 +249,6 @@ namespace PrimeERP.Composition.Renderers
             }
         }
 
-        /// <summary>حدث تغيّر القيمة لأي قطعة إدخال — موضعٌ واحد يعرف حدثَ كل نوع، يستورده الحوار وشريط الفلاتر.</summary>
         internal static void OnChanged(FrameworkElement control, Action handler)
         {
             switch (control)
@@ -299,7 +259,6 @@ namespace PrimeERP.Composition.Renderers
             }
         }
 
-        /// <summary>يعيد تعبئة أي قائمة مرتبطة بحقل حاكم كلما تغيّر — بلا كود خاص في كل شاشة.</summary>
         internal static void ApplyPickerFilters(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> controls, IServiceProvider services)
         {
             var filtered = fieldDefs.Where(f => !string.IsNullOrEmpty(f.PickerFilterField) && f.Kind == FieldKind.Picker).ToList();
@@ -312,9 +271,6 @@ namespace PrimeERP.Composition.Renderers
                 var sourceField = fieldDefs.First(f => f.Key == field.PickerFilterField);
                 var captured = field;
 
-                // التعبئة الأولى تحفظ الاختيار المحمَّل من السجل: فتحُ التعديل يملأ الحقول ثم يصل هنا،
-                // وتفريغٌ غير مشروط كان يمسح ما مُلئ. أمّا تغيّر الحقل الحاكم فيُفرّغ التابع فعلاً —
-                // اختيارٌ لا ينتمي للقائمة الجديدة خطأ.
                 void Reload(bool keepSelection)
                 {
                     var selected = combo.SelectedValue;
@@ -331,8 +287,6 @@ namespace PrimeERP.Composition.Renderers
             }
         }
 
-        /// <summary>يُظهر/يُخفي الحقول المشروطة ويعيد التقييم كلما تغيّر الحقل الحاكم — الشرط مُعلَن في التعريف
-        /// لا مكتوب يدوياً لكل شاشة.</summary>
         internal static void ApplyConditionalVisibility(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> controls, IServiceProvider services = null)
         {
             var conditional = fieldDefs.Where(f => !string.IsNullOrEmpty(f.VisibleWhenField) || f.VisibleWhen != null).ToList();
@@ -368,8 +322,6 @@ namespace PrimeERP.Composition.Renderers
             Evaluate();
         }
 
-        // GridColumns=1→Sm(420), 2→Md(560), 3→Lg(760), أكثر→Xl(1000) — حوار الحقول المسطّحة العادي، لا حوار
-        // مستند (ذاك يحسب عرضه من مجموع أعمدة سطوره في DocumentRenderer.ComputeDialogWidth).
         private static double ComputeDialogWidth(int gridColumns)
         {
             var key = gridColumns switch { <= 1 => "C.Dialog.Width.Sm", 2 => "C.Dialog.Width.Md", 3 => "C.Dialog.Width.Lg", _ => "C.Dialog.Width.Xl" };
@@ -457,8 +409,6 @@ namespace PrimeERP.Composition.Renderers
             _ => null
         };
 
-        // matchProperty="Id" افتراضياً (اختيار برقم داخلي) أو "Code" (سطر يحتاج كود الحساب نصاً — راجع
-        // FieldDefinition.PickerValueField).
         internal static void SelectPickerItem(AppComboBox combo, object value, string matchProperty = "Id")
         {
             var match = (combo.ItemsSource as System.Collections.IEnumerable)?.Cast<object>()
@@ -466,8 +416,6 @@ namespace PrimeERP.Composition.Renderers
             if (match != null) combo.SelectedItem = match;
         }
 
-        // PickerType="Account"/"Category" — عبر الخدمة مباشرة، لا IPickerDataSource<T> عام (غير مسجَّل في DI
-        // بعد). نطاق مُبسَّط، راجع تقرير R11.
         internal static void LoadPickerItems(AppComboBox combo, FieldDefinition field, IServiceProvider services, object filterValue = null)
         {
             if (field.PickerType == "Account")
@@ -509,8 +457,6 @@ namespace PrimeERP.Composition.Renderers
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Security.IRoleService>().GetAll();
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Select(r => new PickerRow { Id = r.Id, Code = null, Display = r.NameAr }).ToList();
             }
-            // "Table:<مفتاح الوحدة>:<عمود العرض>" — قائمةٌ عامّة تقرأ جدولها من الوصف، فلا يحتاج جدولٌ
-            // جديد فرعاً مكتوباً هنا. الفروع أدناه للجداول المكتوبة تبقى كما هي.
             else if (field.PickerType?.StartsWith("Table:") == true)
             {
                 var parts = field.PickerType.Split(':');
@@ -549,7 +495,6 @@ namespace PrimeERP.Composition.Renderers
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>().GetAll();
                 if (!result.IsSuccess) return;
 
-                // المرشِّح طريقة دفع لا نوع خزينة: نقداً يعرض الخزن، وتحويلاً بنكياً أو شيكاً يعرض البنوك.
                 var items = result.Value.AsEnumerable();
                 if (filterValue != null && int.TryParse(filterValue.ToString(), out var method) && method > 0)
                 {
@@ -563,8 +508,6 @@ namespace PrimeERP.Composition.Renderers
             }
             else if (field.PickerType == "AssetFunding")
             {
-                // القائمة تتبع طريقة الاقتناء: مورد يعرض الموردين، وخزينة أو بنك يعرضان خزائن نوعهما —
-                // نفس قوائم النظام لا قائمة رابعة.
                 if (!int.TryParse(filterValue?.ToString(), out var method) || method <= 0) return;
 
                 if ((PrimeERP.Domain.Enums.AssetAcquisition)method == PrimeERP.Domain.Enums.AssetAcquisition.Supplier)
@@ -585,7 +528,6 @@ namespace PrimeERP.Composition.Renderers
             }
             else if (field.PickerType == "Bank")
             {
-                // البنوك خزائن من نوع بنك — لا قائمة بنوك مستقلة في النظام.
                 var result = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>().GetAll();
                 if (result.IsSuccess)
                     combo.ItemsSource = result.Value
@@ -632,8 +574,6 @@ namespace PrimeERP.Composition.Renderers
                 var result = services.GetRequiredService<PrimeERP.Application.Services.HR.IEmployeeService>().GetPaged(1, 5000);
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(e => new PickerRow { Id = e.Id, Code = e.Code, Display = $"{e.Code} - {e.Name}" }).ToList();
             }
-            // وما لم يُطابق فرعاً هنا تعرفه BuilderPickers: تعدادات النظام وكتالوج أزراره وقوائم الوصف.
-            // كانت تُستدعى بقائمة أسماء مكتوبة بخطّ اليد، فكل تعدادٍ جديد يُنسى فتظهر قائمته فارغة.
             else
             {
                 var rows = BuilderPickers.Rows(field.PickerType, services, filterValue);
@@ -641,7 +581,6 @@ namespace PrimeERP.Composition.Renderers
             }
         }
 
-        // معرّف اصطناعي بند "+ إضافة فئة" في نهاية قائمة منتقي الفئة — راجع WireCategoryPickerAddOption.
         private const int AddCategorySentinelId = -1;
 
         private static void WireCategoryPickerAddOption(AppComboBox combo, FieldDefinition field, IServiceProvider services, IToastService toast)
@@ -652,8 +591,6 @@ namespace PrimeERP.Composition.Renderers
 
                 ShowAndSave(CategoryDialogFactory.Build(field.PickerCategoryModuleKey), services, toast);
 
-                // إعادة تحميل تشمل أي فئة أُضيفت + بند الإضافة نفسه من جديد؛ التحديد يُترَك فارغاً — المستخدم
-                // يختار الفئة الجديدة من القائمة المُحدَّثة مباشرة (بلا تعقيد لإرجاع الـId المُنشأ من ShowAndSave).
                 LoadPickerItems(combo, field, services);
                 combo.SelectedItem = null;
             };

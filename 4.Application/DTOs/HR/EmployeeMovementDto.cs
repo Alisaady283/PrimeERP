@@ -2,7 +2,7 @@ using System;
 
 namespace PrimeERP.Application.DTOs.HR
 {
-    /// <summary>بدلٌ أو خصمٌ على موظف — شكلٌ واحد لشاشتين، يفترقان في خدمتهما لا في حقولهما.</summary>
+    /// <summary>بدلٌ أو خصمٌ على موظف</summary>
     public class EmployeeMovementDto
     {
         public int      Id           { get; set; }
@@ -61,7 +61,6 @@ namespace PrimeERP.Application.DTOs.HR
         public string   EmployeeCode  { get; set; }
         public DateTime Date          { get; set; } = DateTime.Today;
 
-        /// <summary>نصّاً بصيغة HH:mm — تُحوَّل إلى دقائق في الخدمة، والفارغ غيابٌ بلا توقيت.</summary>
         public string   CheckIn       { get; set; }
         public string   CheckOut      { get; set; }
         public decimal  OvertimeHours { get; set; }

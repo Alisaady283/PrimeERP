@@ -4,7 +4,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.DTOs.Parties
 {
-    /// <summary>للعرض في الجداول — لا Model خام (Supplier) يخرج من الخدمة إطلاقاً. نفس شكل CustomerDto حرفياً + SupplierType.</summary>
+    /// <summary>بيانات المورد</summary>
     public class SupplierDto
     {
         public int    Id              { get; set; }
@@ -92,7 +92,7 @@ namespace PrimeERP.Application.DTOs.Parties
         public bool?  HasBalance      { get; set; }
         public bool?  OverCreditLimit { get; set; }
         public int?   CategoryId      { get; set; }
-        public string SortBy          { get; set; } = "Name";
+        public string SortBy          { get; set; } = "Code";
         public bool   SortDescending  { get; set; }
     }
 }

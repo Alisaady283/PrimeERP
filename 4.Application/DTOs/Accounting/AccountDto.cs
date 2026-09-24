@@ -6,10 +6,9 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.DTOs.Accounting
 {
-    /// <summary>أي حساب مرتبط به تلقائياً (عميل/مورد) — تُقرأ لا تُكتب هنا؛ إنشاؤه الفعلي عبر ICustomerService/ISupplierService.</summary>
-    public enum LinkedEntityType { None, Customer, Supplier }
+    /// <summary>أي حساب مرتبط به تلقائياً</summary>
 
-    /// <summary>للعرض في الجداول — لا Model خام (Account) يخرج من الخدمة إطلاقاً.</summary>
+    /// <summary>للعرض في الجداول</summary>
     public class AccountDto
     {
         public int    Id         { get; set; }
@@ -32,14 +31,13 @@ namespace PrimeERP.Application.DTOs.Accounting
         public bool HasTransactions { get; set; }
         public bool IsSystem        { get; set; }
 
-        /// <summary>Active → Success، Inactive → Danger — من مفردات الحالة الستة فقط.</summary>
         public StatusVariant StatusVariant { get; set; }
         public string   StatusText { get; set; }
         public DateTime CreatedAt  { get; set; }
         public DateTime UpdatedAt  { get; set; }
     }
 
-    /// <summary>للشجرة — نفس حقول AccountDto + أبناء.</summary>
+    /// <summary>للشجرة</summary>
     public class AccountTreeNode : AccountDto
     {
         public List<AccountTreeNode> Children { get; set; } = new();
@@ -63,12 +61,6 @@ namespace PrimeERP.Application.DTOs.Accounting
         public string Notes    { get; set; }
         public LinkedEntityType LinkedEntityType { get; set; } = LinkedEntityType.None;
 
-        /// <summary>
-        /// true يتخطّى الربط التلقائي (حساب↔عميل/مورد) كلياً بصرف النظر عن SettingKeys.Accounts.AutoLinkEnabled —
-        /// إلزامي عند true من CustomerService/SupplierService.Create (اللتين تُنشئان الحساب أولاً ثم العميل/المورد
-        /// نفسه): بدونه AccountService.Create يحاول استدعاء CustomerService.CreateFromAccount ثانية → حلقة لا
-        /// نهائية (CustomerService.Create → AccountService.Create → CustomerService.CreateFromAccount → ...).
-        /// </summary>
         public bool SkipAutoLink { get; set; } = false;
     }
 
@@ -91,7 +83,6 @@ namespace PrimeERP.Application.DTOs.Accounting
         public decimal RunningBalance { get; set; }
         public string SourceType   { get; set; }
 
-        /// <summary>قيمة استعلامية تظهر بالكشف بلا أثر على الرصيد — شيك لم يُسدَّد من البنك بعد.</summary>
         public decimal MemoAmount  { get; set; }
     }
 }

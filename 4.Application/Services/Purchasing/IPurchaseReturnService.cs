@@ -3,6 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Purchasing
 {
+    /// <summary>عقد مرتجع الشراء</summary>
     public interface IPurchaseReturnService
     {
         Result<PagedResult<PurchaseReturnDto>> GetPaged(int page, int pageSize, PurchaseReturnFilter filter = null);

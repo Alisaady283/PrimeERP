@@ -9,7 +9,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>عائلتا المستندات تبنيان من مصدر واحد — لا قالب منسوخ لكل نوع.</summary>
+    /// <summary>عائلتا المستندات تبنيان من مصدر</summary>
     public class PrintDocumentsTests : System.IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -56,7 +56,6 @@ namespace PrimeERP.Tests.Composition
             Assert.Equal("صنف أول", table.Rows[0]["ProductName"]);
             Assert.Equal(5m, table.TotalsRow["Qty"]);
 
-            // سعر الوحدة ليس كمّية تُضاف.
             Assert.Equal("", table.TotalsRow["UnitPrice"]);
         }
 

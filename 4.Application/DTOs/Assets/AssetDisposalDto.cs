@@ -3,6 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.DTOs.Assets
 {
+    /// <summary>بيانات استبعاد الأصل</summary>
     public class AssetDisposalDto
     {
         public int      Id           { get; set; }
@@ -16,7 +17,6 @@ namespace PrimeERP.Application.DTOs.Assets
         public decimal  BookValue    { get; set; }
         public decimal  GainOrLoss   { get; set; }
 
-        /// <summary>«ربح» أو «خسارة» — يُشتقّ من الفرق ولا يُدخَل.</summary>
         public string   KindText     { get; set; }
         public StatusVariant KindVariant { get; set; }
 

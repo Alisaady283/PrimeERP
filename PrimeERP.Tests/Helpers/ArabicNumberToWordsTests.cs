@@ -3,6 +3,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Helpers
 {
+    /// <summary>تفقيط الأرقام بالعربية</summary>
     public class ArabicNumberToWordsTests
     {
         [Theory]

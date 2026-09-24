@@ -5,6 +5,7 @@ using System.Windows.Data;
 
 namespace PrimeERP.UI.Converters
 {
+    /// <summary>محوّل عرض BoolToVisibility</summary>
     public class BoolToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType,

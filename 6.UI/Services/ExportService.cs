@@ -1,5 +1,5 @@
 using PrimeERP.Domain.Contracts;
-using PrimeERP.Domain.Helpers;
+using PrimeERP.Application.Services.Print;
 using PrimeERP.Application.Services;
 using System;
 using System.Collections;
@@ -19,10 +19,12 @@ using PrimeERP.UI.Components.Display;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using PrimeERP.Application.Services.Admin;
+using PrimeERP.Domain.Helpers;
 
 namespace PrimeERP.UI.Services
 {
-    /// <summary>يصدّر بيانات AppDataGrid فعلياً — يحترم ColumnPermissions فلا يصدّر أي عمود محجوب عن المستخدم الحالي.</summary>
+    /// <summary>يصدّر بيانات AppDataGrid فعلياً</summary>
     public class ExportService : IExportService, IDocumentExporter
     {
         private readonly IPermissionService _permissions;
@@ -89,7 +91,6 @@ namespace PrimeERP.UI.Services
                     page.DefaultTextStyle(x => x.FontFamily(ExportTheme.FontFamily).FontSize(ExportTheme.BodyFontSize));
                     page.ContentFromRightToLeft();
 
-                    // التقرير كان بلا ترويسة شركة ولا شعار ولا فوتر — عنوان عارٍ فقط.
                     ComposeCompanyHeader(page.Header(), title, $"{DateTime.Now:yyyy-MM-dd HH:mm}");
 
                     page.Content().PaddingTop(10).Table(table =>
@@ -100,8 +101,6 @@ namespace PrimeERP.UI.Services
                                 def.RelativeColumn();
                         });
 
-                        // نفس شبكة الطباعة: حدّ كامل لكل خلية وعنوان موسَّط — كان التصدير يرسم فاصلاً سفلياً
-                        // فقط فيُقرأ الجدول ككتلة نص، بخلاف الفاتورة المطبوعة.
                         table.Header(header =>
                         {
                             foreach (var col in cols)
@@ -134,7 +133,6 @@ namespace PrimeERP.UI.Services
                 row.RelativeItem().AlignLeft().Text($"{DateTime.Now:yyyy-MM-dd HH:mm}").FontSize(ExportTheme.BodyFontSize);
             });
 
-        /// <summary>الترويسة تُستدعى كقطعة ثم تُنفَّذ — لا تخطيط محلّي هنا، والعنوان وحده فوقها.</summary>
         private void ComposeCompanyHeader(QuestPDF.Infrastructure.IContainer container, string title, string subtitle)
         {
             container.Column(col =>
@@ -148,8 +146,6 @@ namespace PrimeERP.UI.Services
             });
         }
 
-        /// <summary>مترجم PaperNode إلى QuestPDF — عام، لا يعرف عن الترويسة شيئاً. المقاسات وحدتها 96
-        /// لكل بوصة فتُحوَّل لنقاط، والصفّ أوّلُه يمتدّ فيقع يميناً في صفحة RTL وما بعده يلاصق اليسار.</summary>
         private static void RenderNode(QuestPDF.Infrastructure.IContainer container, PaperNode node)
         {
             const float ToPoints = 0.75f;
@@ -195,7 +191,6 @@ namespace PrimeERP.UI.Services
             }
         }
 
-        /// <summary>يبني PDF كامل (عناوين/أقسام متعدّدة/توقيعات) من IPrintable — لا يكرّر Document.Create/الترخيص/إعداد الصفحة، كله هنا في مكان واحد.</summary>
         public Result ExportPrintableToPdf(IPrintable document, string path)
         {
             if (document == null)
@@ -273,7 +268,6 @@ namespace PrimeERP.UI.Services
                     RenderTable(col, section);
                     break;
 
-                // الأربعة التالية كانت تُبنى في المستند وتُسقَط بصمت هنا، فيخرج PDF ناقصاً عن الورق المطبوع.
                 case PrintSectionType.Callout:
                     col.Item().PaddingVertical(8)
                        .Background(ExportTheme.SoftHex(section.Variant ?? StatusVariant.Info))
@@ -327,7 +321,6 @@ namespace PrimeERP.UI.Services
                 string.IsNullOrWhiteSpace(section.Currency) ? "جنيه" : section.Currency,
                 string.IsNullOrWhiteSpace(section.SubUnit) ? "قرش" : section.SubUnit);
 
-        /// <summary>نفس ترميز Code128 المستخدَم في الطباعة — الأشرطة مستطيلات بعرض متناوب.</summary>
         private static void RenderBarcode(QuestPDF.Fluent.ColumnDescriptor col, string text)
         {
             var widths = Code128.Encode(text ?? "");
@@ -380,7 +373,6 @@ namespace PrimeERP.UI.Services
                         (c.Align == "Center" ? cell.AlignCenter() : cell).Text(CellText(row, c));
                     }
 
-                // صفّ إجمالي الأعمدة كان غائباً عن PDF وحده، فيخرج الجدول بلا خلاصة.
                 if (section.TotalsRow is { Count: > 0 })
                     foreach (var c in columns)
                     {
@@ -390,7 +382,6 @@ namespace PrimeERP.UI.Services
                     }
             });
 
-            // سطر لكل إجمالي لا صفّ أفقي واحد يحشرها — نفس ترتيب الورق المطبوع.
             if (section.Totals is { Count: > 0 })
                 foreach (var total in section.Totals)
                     col.Item().PaddingTop(2)

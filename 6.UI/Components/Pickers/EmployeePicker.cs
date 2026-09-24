@@ -6,7 +6,7 @@ using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.UI.Components.Pickers
 {
-    /// <summary>اختيار موظف بجدول بحث — ActiveOnly يستبعد غير النشطين من النتائج المعروضة.</summary>
+    /// <summary>اختيار موظف بجدول بحث</summary>
     public class EmployeePicker : PickerBase<Employee>
     {
         public bool ActiveOnly { get; set; } = true;

@@ -10,10 +10,7 @@ using System.Dynamic;
 
 namespace PrimeERP.UI.ViewModels
 {
-    /// <summary>
-    /// نموذج عرض أي شاشة صفوفها قواميس — الجدول المبنيّ وشاشات الوصف معاً. يرث CrudViewModelBase كأي
-    /// نموذج في النظام، والفرق أن خدمته تُمرَّر جاهزةً بوصفها وبادئةِ صلاحيتها بدل حقنها بالنوع.
-    /// </summary>
+    /// <summary>نموذج عرض أي شاشة صفوفها</summary>
     public class DynamicViewModel : CrudViewModelBase<IDictionary<string, object>, DynamicFilter>
     {
         private readonly IRowService _service;
@@ -41,7 +38,6 @@ namespace PrimeERP.UI.ViewModels
             return index >= 0 && index < Items.Count && Items[index].ContainsKey("SortOrder") ? Items[index] : null;
         }
 
-        /// <summary>السهم يتبادل الترتيب مع جاره — لا يكتب المستخدم رقماً ولا يُعاد ترقيم القائمة كلها.</summary>
         private async void Swap(int step)
         {
             var other = Neighbour(step);

@@ -5,6 +5,7 @@ using System.Windows.Input;
 
 namespace PrimeERP.UI.ViewModels
 {
+    /// <summary>نماذج عرض BaseViewModel</summary>
     public class BaseViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
@@ -27,7 +28,6 @@ namespace PrimeERP.UI.ViewModels
         }
     }
 
-    // Command Helper
     public class RelayCommand : ICommand
     {
         private readonly Action<object> _execute;

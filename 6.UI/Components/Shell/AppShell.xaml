@@ -2,10 +2,9 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:shell="clr-namespace:PrimeERP.UI.Components.Shell">
-    <!--
-        القطعة الجامعة لنهاية المرحلة D — لاحقاً في المرحلة H، MainWindow لن يحتوي شيئاً غير هذه القطعة
-        (Windows/Pages = تركيب قطع + ربط ViewModel فقط، لا منطق ولا عناصر مرئية أصلية بلا استثناء).
-    -->
+
+    <!-- قشرة AppShell -->
+    
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -22,8 +21,6 @@
 
             <shell:AppTopBar Grid.Row="0" x:Name="topBar" SidebarToggled="topBar_SidebarToggled"/>
 
-            <!-- ContentControl لا يرسم خلفيته: قالبه الافتراضي مُقدِّم محتوى بلا حدّ، فالقيمة تُضبَط ولا
-                 تظهر — وكانت أرضية الصفحة تبقى بلون النافذة أياً كان الوضع. الحدّ هو من يرسمها. -->
             <Border Grid.Row="1" Background="{DynamicResource PageBg}"
                     Padding="{DynamicResource P.Space.4.Uniform}">
                 <ContentControl x:Name="pageHost"/>

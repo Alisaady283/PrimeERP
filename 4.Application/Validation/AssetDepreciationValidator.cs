@@ -3,6 +3,7 @@ using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Application.Validation
 {
+    /// <summary>تحقّق قسط الإهلاك</summary>
     public class AssetDepreciationValidator : ValidatorBase, IValidator<AssetDepreciation>
     {
         public ValidationResult Validate(AssetDepreciation charge)

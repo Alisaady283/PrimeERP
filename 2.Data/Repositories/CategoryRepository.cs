@@ -1,68 +1,55 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using PrimeERP.Data.Repositories.Base;
-using PrimeERP.Data.Schema;
+using PrimeERP.Data.Core;
 using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Data.Repositories
 {
-    // فئات مشتركة عبر عدة وحدات (ModuleKey مميّز) — بنفس اتفاقية AccountRepository (بلا SoftDelete/Concurrency،
-    // بيانات هيكلية منخفضة الكتابة).
+    /// <summary>مستودع Category</summary>
+    public interface ICategoryRepository
+    {
+        List<Category> GetAll(string moduleKey, bool includeInactive = false);
+        Category GetById(int id, PrimeDbContext db = null);
+        bool HasChildren(int id);
+        int Insert(Category c, PrimeDbContext db = null);
+        void Update(Category c, PrimeDbContext db = null);
+        void Delete(int id, PrimeDbContext db = null);
+    }
+
     public class CategoryRepository : RepositoryBase<Category>, ICategoryRepository
     {
         protected override string TableName => "Categories";
 
-        public void CreateTable() =>
-            SchemaBuilder.Table("Categories")
-                .Id()
-                .Text("Name", 200, required: true)
-                .Int("ParentId")
-                .Text("ModuleKey", 30, required: true)
-                .Bool("IsActive", defaultValue: true)
-                .Text("Notes")
-                .Text("AccountCode", 30)
-                .Text("DepAccountCode", 30)
-                .Audit()
-                .Index("ModuleKey")
-                .Index("ParentId")
-                .Create();
 
         public List<Category> GetAll(string moduleKey, bool includeInactive = false) =>
-            includeInactive
-                ? Query("SELECT * FROM Categories WHERE ModuleKey = @m ORDER BY Name", null, null, ("@m", moduleKey))
-                : Query("SELECT * FROM Categories WHERE ModuleKey = @m AND IsActive = @a ORDER BY Name", null, null, ("@m", moduleKey), ("@a", true));
+            Fetch(q => q.Where(c => c.ModuleKey == moduleKey && (includeInactive || c.IsActive))
+                       .OrderBy(c => c.Name));
 
-        public bool HasChildren(int id) =>
-            Convert.ToInt64(Scalar("SELECT COUNT(*) FROM Categories WHERE ParentId = @p AND IsActive = @a", ("@p", id), ("@a", true))) > 0;
 
-        public int Insert(Category c, DbConnection conn = null, DbTransaction tx = null) =>
-            InsertGetId(
-                "INSERT INTO Categories (Name, ParentId, ModuleKey, IsActive, Notes, AccountCode, DepAccountCode) VALUES (@name, @parent, @module, @active, @notes, @account, @dep)",
-                conn, tx, ("@name", c.Name), ("@parent", c.ParentId), ("@module", c.ModuleKey), ("@active", c.IsActive),
-                ("@notes", c.Notes ?? ""), ("@account", c.AccountCode ?? ""), ("@dep", c.DepreciationAccountCode ?? ""));
+        public bool HasChildren(int id) => Count(q => q.Where(c => c.ParentId == id && c.IsActive)) > 0;
 
-        public void Update(Category c, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec(@"UPDATE Categories SET Name = @name, ParentId = @parent, IsActive = @active, Notes = @notes,
-                          AccountCode = @account, DepAccountCode = @dep, UpdatedAt = @now WHERE Id = @id",
-                conn, tx, ("@name", c.Name), ("@parent", c.ParentId), ("@active", c.IsActive), ("@notes", c.Notes ?? ""),
-                ("@account", c.AccountCode ?? ""), ("@dep", c.DepreciationAccountCode ?? ""),
-                ("@now", DateTime.Now), ("@id", c.Id));
+        public int Insert(Category c, PrimeDbContext db = null) => Add(c, db);
 
-        public void Delete(int id, DbConnection conn = null, DbTransaction tx = null) =>
-            Exec("UPDATE Categories SET IsActive = @a WHERE Id = @id", conn, tx, ("@a", false), ("@id", id));
+        public void Update(Category c, PrimeDbContext db = null) =>
+            Edit(x => x.Id == c.Id, row =>
+            {
+                row.Name = c.Name;
+                row.ParentId = c.ParentId;
+                row.IsActive = c.IsActive;
+                row.Notes = c.Notes ?? "";
+                row.AccountCode = c.AccountCode ?? "";
+                row.DepreciationAccountCode = c.DepreciationAccountCode ?? "";
+            }, db);
 
-        protected override Category Map(DataRow row) => new()
-        {
-            Id        = Convert.ToInt32(row["Id"]),
-            Name      = row["Name"].ToString(),
-            ParentId  = row["ParentId"] == DBNull.Value ? null : Convert.ToInt32(row["ParentId"]),
-            ModuleKey = row["ModuleKey"].ToString(),
-            AccountCode = row["AccountCode"] == DBNull.Value ? null : row["AccountCode"].ToString(),
-            DepreciationAccountCode = row["DepAccountCode"] == DBNull.Value ? null : row["DepAccountCode"].ToString(),
-            IsActive  = Convert.ToBoolean(row["IsActive"]),
-            Notes     = row["Notes"] == DBNull.Value ? "" : row["Notes"].ToString(),
-        };
+        public void Delete(int id, PrimeDbContext db = null) =>
+            Write(db =>
+            {
+                var row = Rows(db).AsTracking().FirstOrDefault(c => c.Id == id);
+                if (row != null) row.IsActive = false;
+                return 0;
+            }, db);
     }
 }

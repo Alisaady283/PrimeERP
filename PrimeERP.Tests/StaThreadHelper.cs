@@ -4,12 +4,7 @@ using System.Threading;
 
 namespace PrimeERP.Tests
 {
-    /// <summary>
-    /// أنواع WPF (FlowDocument/Table/...) تشتق من DispatcherObject وتفرض تشغيلها على خيط STA — xUnit يشغّل
-    /// الاختبارات على خيط عادي (MTA) افتراضياً. حزمة Xunit.StaFact الحالية مبنية حصراً على xunit v3 وتتعارض
-    /// مع xunit v2 المستخدَمة هنا (CS0433 على FactAttribute/CollectionAttribute...) — هذا الحل اليدوي يعمل
-    /// مع أي إصدار xUnit بلا اعتمادية جديدة.
-    /// </summary>
+    /// <summary>أنواع WPF تفرض خيط STA</summary>
     public static class StaThreadHelper
     {
         public static void Run(Action action)
@@ -29,7 +24,6 @@ namespace PrimeERP.Tests
             capturedException?.Throw();
         }
 
-        /// <summary>نسخة تُعيد قيمة — بناء مستند الطباعة يجري على خيط STA ونتيجته تُفحَص بعده.</summary>
         public static T Run<T>(Func<T> function)
         {
             var result = default(T);

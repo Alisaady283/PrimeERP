@@ -4,12 +4,13 @@ using System.Linq;
 
 namespace PrimeERP.UI.Components.Documents
 {
+    /// <summary>تحقّق سطور المستند</summary>
     public enum DocumentLinesMode
     {
         Journal, SalesInvoice, PurchaseInvoice, Stock
     }
 
-    /// <summary>سياق يمرَّر مع التحقق من سطر واحد — يحمل بقية أسطر المستند (لفحص التكرار) ونمط المستند.</summary>
+    /// <summary>سياق التحقق</summary>
     public class DocumentLinesContext
     {
         public List<DocumentLine> AllLines         { get; set; } = new();
@@ -17,7 +18,7 @@ namespace PrimeERP.UI.Components.Documents
         public DocumentLinesMode  Mode             { get; set; } = DocumentLinesMode.SalesInvoice;
     }
 
-    /// <summary>يتحقق من سطر مستند واحد حسب تعريف أعمدته ونمط المستند — يرجع أخطاء بمفتاح العمود لعرضها في الخلية المناسبة.</summary>
+    /// <summary>يتحقق من سطر مستند واحد</summary>
     public static class LineValidationEngine
     {
         public static Dictionary<string, string> Validate(DocumentLine line, List<LineColumn> columns, DocumentLinesContext context = null)

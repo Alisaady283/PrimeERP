@@ -1,3 +1,5 @@
+using PrimeERP.Platform.Permissions;
+using PrimeERP.Platform.Audit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +11,11 @@ using PrimeERP.Platform.Localization;
 using PrimeERP.Application.Services;
 using PrimeERP.Platform.Settings;
 using F = PrimeERP.Application.Reporting.FinancialStatementFactory;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Application.Reporting
 {
+    /// <summary>القوائم المالية الثلاث</summary>
     public interface IFinancialStatementService
     {
         Result<ReportData> TrialBalance(DateTime from, DateTime to);
@@ -20,16 +24,13 @@ namespace PrimeERP.Application.Reporting
         Result<ReportData> CashFlow(DateTime from, DateTime to);
     }
 
-    /// <summary>
-    /// القوائم المالية الثلاث. كانت أجسامها مكتوبة داخل تسجيل التقارير في 8.Modules — وهي طبقة يمنع
-    /// الأركتكشر أن تحمل منطق أعمال؛ سكنَها المنطق لأن ReportDefinition.Generate كان دالةً تقبل كوداً.
-    /// </summary>
-    public class FinancialStatementService : IFinancialStatementService
+    public class FinancialStatementService : ReportServiceBase, IFinancialStatementService
     {
         private readonly IJournalService _journal;
         private readonly ISettingsService _settingsService;
 
-        public FinancialStatementService(IJournalService journal, ISettingsService settingsService)
+        public FinancialStatementService(IJournalService journal, ISettingsService settingsService, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+        : base(permissions, settings, localization, audit)
         {
             _journal = journal;
             _settingsService = settingsService;
@@ -40,6 +41,8 @@ namespace PrimeERP.Application.Reporting
 
         public Result<ReportData> TrialBalance(DateTime from, DateTime to)
         {
+            var gate = Gate(); if (gate != null) return gate;
+
             var result = _journal.GetTrialBalance(from, to, includeZero: true);
             if (!result.IsSuccess) return Result.Fail<ReportData>(result.ErrorMessage);
 
@@ -65,11 +68,11 @@ namespace PrimeERP.Application.Reporting
 
         public Result<ReportData> IncomeStatement(DateTime from, DateTime to)
         {
+            var gate = Gate(); if (gate != null) return gate;
+
             var result = _journal.GetTrialBalance(from, to, includeZero: true);
             if (!result.IsSuccess) return Result.Fail<ReportData>(result.ErrorMessage);
 
-            // بالوظيفة كما في IFRS 18، وبشكل القائمة الرسمي: البنود في «جزئي» والمجاميع
-            // في «كلي»، فتُقرأ نزولاً حتى صافي الربح.
             var cogsAccount = _settingsService.Get(SettingKeys.Accounts.COGS, "");
 
             var sales     = F.Period(result.Value, AccountType.Revenue, true,  F.StartsWith("41"));
@@ -103,13 +106,11 @@ namespace PrimeERP.Application.Reporting
 
         public Result<ReportData> BalanceSheet(DateTime asOf)
         {
-            // DateTime.MinValue كـfrom يُفجِّر حساب "الرصيد الافتتاحي" داخل GetTrialBalance (طرح يوم
-            // منها يفيض حسابياً) — بداية عملية واسعة بما يكفي عملياً بدلاً منها.
+            var gate = Gate(); if (gate != null) return gate;
+
             var result = _journal.GetTrialBalance(new DateTime(1900, 1, 1), asOf, includeZero: true);
             if (!result.IsSuccess) return Result.Fail<ReportData>(result.ErrorMessage);
 
-            // مصنَّف كما يوجب IAS 1، وبشكل القائمة الرسمي: الأصول ثم مصادر تمويلها، كل
-            // مجموعة بإجمالها الجزئي ثم إجمالها الكلي.
             var currentAssets    = F.Closing(result.Value, AccountType.Asset, false, F.StartsWith("12"));
             var nonCurrentAssets = F.Closing(result.Value, AccountType.Asset, false, F.StartsWith("11"));
             var currentLiab      = F.Closing(result.Value, AccountType.Liability, true, F.StartsWith("21"));
@@ -143,19 +144,18 @@ namespace PrimeERP.Application.Reporting
 
         public Result<ReportData> CashFlow(DateTime from, DateTime to)
         {
+            var gate = Gate(); if (gate != null) return gate;
+
 
             var balance = _journal.GetTrialBalance(from, to, includeZero: true);
             if (!balance.IsSuccess) return Result.Fail<ReportData>(balance.ErrorMessage);
 
-            // النقدية: الصناديق والبنوك.
             bool IsCash(string code) => F.StartsWith("1203", "1204")(code);
 
             var cash = balance.Value.Where(l => l.IsLeaf && IsCash(l.Code)).ToList();
             var openingCash = cash.Sum(l => l.OpeningDebit - l.OpeningCredit);
             var closingCash = cash.Sum(l => l.ClosingDebit - l.ClosingCredit);
 
-            // التشغيلية: أثر الإيرادات والمصروفات وذمم التشغيل. الاستثمارية: الأصول غير
-            // المتداولة. التمويلية: حقوق الملكية والقروض طويلة الأجل.
             var operating = F.Period(balance.Value, AccountType.Revenue, true, _ => true)
             .Concat(F.Period(balance.Value, AccountType.Expense, false, _ => true)
             .Select(l => new F.Line { Statement = l.Statement, Partial = -l.Partial }))

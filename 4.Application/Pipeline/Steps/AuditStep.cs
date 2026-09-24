@@ -5,7 +5,7 @@ using PrimeERP.Platform.Audit;
 
 namespace PrimeERP.Application.Pipeline.Steps
 {
-    /// <summary>يسجّل التدقيق بعد نجاح الخطوات السابقة — recordId/oldValue/newValue تُقرأ من ctx.Items عند التنفيذ (تُملأ بها خطوة الحفظ قبل هذه).</summary>
+    /// <summary>خطوة تسجيل التدقيق</summary>
     public class AuditStep : IStep
     {
         private readonly IAuditLogger _audit;

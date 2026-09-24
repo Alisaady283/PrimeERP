@@ -6,9 +6,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
-    /// <summary>NavigationService لم تكن مُختبرة إطلاقاً رغم كونها حية (مسجَّلة بالـDI ومُستهلَكة من
-    /// AppShell/AppSidebar). UserControl حقيقي يحتاج خيط STA — WpfApplicationFixture نفس نمط بقية اختبارات
-    /// WPF في المشروع.</summary>
+    /// <summary>التنقّل بين الشاشات</summary>
     [Collection("WpfApplication")]
     public class NavigationServiceTests
     {

@@ -1,5 +1,5 @@
+using PrimeERP.Data.Core;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using PrimeERP.Application.DTOs.Documents;
 using PrimeERP.Data.Repositories;
@@ -13,6 +13,7 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.Documents
 {
+    /// <summary>تتبّع السحب بين المستندات</summary>
     public class ChainNode
     {
         public string DocType { get; init; }
@@ -26,21 +27,16 @@ namespace PrimeERP.Application.Services.Documents
         decimal GetRemainingQty(string sourceType, int sourceLineId, decimal originalQty);
         Dictionary<int, decimal> GetPulledBySource(string sourceType, int sourceId);
         Result ValidatePull(string sourceType, int sourceId, int sourceLineId, decimal qty, string sourceNo);
-        Result RecordPull(IEnumerable<DocumentLink> links, DbConnection conn = null, DbTransaction tx = null);
+        Result RecordPull(IEnumerable<DocumentLink> links, PrimeDbContext db = null);
 
-        /// <summary>يتحقّق من متبقّي كل سطر مسحوب قبل أي كتابة — تستوردها كل عائلة مستندات بدل تكرار الحلقة.
-        /// السطر غير المسحوب (SourceLineId ≤ 0) يمرّ بلا فحص.</summary>
         Result ValidatePulls(IEnumerable<(IPullableLine Line, decimal Qty)> lines);
 
-        /// <summary>يبني روابط السطور المسحوبة وحدها ثم يسجّلها — يُستدعى داخل معاملة المستند بعد إدراج سطوره.</summary>
-        Result RecordPulls(DbConnection conn, DbTransaction tx, string targetType, int targetId,
+        Result RecordPulls(PrimeDbContext db, string targetType, int targetId,
             IEnumerable<(IPullableLine Line, int TargetLineId, decimal Qty)> lines);
-        Result RemovePull(string targetType, int targetId, DbConnection conn = null, DbTransaction tx = null);
+        Result RemovePull(string targetType, int targetId, PrimeDbContext db = null);
         Result<List<ChainNode>> GetChain(string docType, int docId);
     }
 
-    /// <summary>تتبّع السحب بين المستندات — جدول واحد لدورتي الشراء والبيع. لا يعرف شيئاً عن نوع مستند بعينه:
-    /// المستندات تمرّر روابطها فقط، فأي مستند جديد يعمل بلا تعديل هنا.</summary>
     public class DocumentLinkService : ServiceBase, IDocumentLinkService
     {
         private readonly IDocumentLinkRepository _links;
@@ -65,8 +61,6 @@ namespace PrimeERP.Application.Services.Documents
         public Dictionary<int, decimal> GetPulledBySource(string sourceType, int sourceId) =>
             _links.GetPulledBySource(sourceType, sourceId);
 
-        /// <summary>يمنع سحب أكثر من المتبقي على مستوى الخدمة — الواجهة تمنع الخطأ، وهذا يمنع الالتفاف عليها.
-        /// بلا IPullSourceReader مسجَّل (اختبارات وحدة معزولة) يمرّ التحقق بلا كسر.</summary>
         public Result ValidatePull(string sourceType, int sourceId, int sourceLineId, decimal qty, string sourceNo)
         {
             if (_sources == null || sourceLineId <= 0) return Result.Ok();
@@ -80,13 +74,13 @@ namespace PrimeERP.Application.Services.Documents
                 : Result.Fail($"الكمية المسحوبة ({qty:N2}) تتجاوز المتبقي ({remaining:N2}) في {sourceNo}", ErrorCode.ValidationFailed);
         }
 
-        public Result RecordPull(IEnumerable<DocumentLink> links, DbConnection conn = null, DbTransaction tx = null)
+        public Result RecordPull(IEnumerable<DocumentLink> links, PrimeDbContext db = null)
         {
             foreach (var link in links)
             {
                 if (link.PulledQty <= 0) continue;
                 link.CreatedBy ??= AppSession.Username;
-                _links.Insert(link, conn, tx);
+                _links.Insert(link, db);
             }
             return Result.Ok();
         }
@@ -103,7 +97,7 @@ namespace PrimeERP.Application.Services.Documents
             return Result.Ok();
         }
 
-        public Result RecordPulls(DbConnection conn, DbTransaction tx, string targetType, int targetId,
+        public Result RecordPulls(PrimeDbContext db, string targetType, int targetId,
             IEnumerable<(IPullableLine Line, int TargetLineId, decimal Qty)> lines) =>
             RecordPull(lines
                 .Where(x => x.Line != null && x.Line.SourceLineId > 0)
@@ -112,15 +106,14 @@ namespace PrimeERP.Application.Services.Documents
                     SourceType = x.Line.SourceType, SourceId = x.Line.SourceId, SourceNo = x.Line.SourceNo,
                     SourceLineId = x.Line.SourceLineId, TargetType = targetType, TargetId = targetId,
                     TargetLineId = x.TargetLineId, PulledQty = x.Qty
-                }), conn, tx);
+                }), db);
 
-        public Result RemovePull(string targetType, int targetId, DbConnection conn = null, DbTransaction tx = null)
+        public Result RemovePull(string targetType, int targetId, PrimeDbContext db = null)
         {
-            _links.DeleteByTarget(targetType, targetId, conn, tx);
+            _links.DeleteByTarget(targetType, targetId, db);
             return Result.Ok();
         }
 
-        /// <summary>سلسلة المستند كاملة في الاتجاهين — ما سُحب منه وما سُحب إليه.</summary>
         public Result<List<ChainNode>> GetChain(string docType, int docId)
         {
             var chain = new List<ChainNode>();

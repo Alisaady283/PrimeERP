@@ -10,9 +10,7 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services
 {
-    /// <summary>القراءة العامة (GetById/GetPaged/Search) لكيان له شكل صفحات + بحث. الإنشاء/التعديل/الحذف
-    /// تبقى في الخدمة الفعلية أو في قاعدة أضيق (PartyServiceBase) — منطق العمل فيها مختلف بين كل كيان
-    /// لدرجة أن قالباً عاماً واحداً يخفي المنطق بدل أن يلخّصه.</summary>
+    /// <summary>القراءة العامة لكيان بصفحات وبحث</summary>
     public abstract class CrudServiceBase<TEntity, TDto, TFilter> : ServiceBase where TEntity : BaseModel
     {
         protected abstract TEntity FindById(int id);
@@ -40,8 +38,6 @@ namespace PrimeERP.Application.Services
 
             var (items, total) = FindPaged(page, pageSize, filter);
 
-            // خدمةٌ رقَّمت في SQL تُرجع صفحةً فتمرّ كما هي؛ وخدمةٌ أرجعت القائمة كاملةً تُقطَع هنا،
-            // فلا تُغرِق الشاشة ولا يُرجع التنقّلُ نفسَ الصفحة.
             var rows = pageSize > 0 && items.Count > pageSize
                 ? items.Skip((page < 1 ? 0 : page - 1) * pageSize).Take(pageSize).ToList()
                 : items;

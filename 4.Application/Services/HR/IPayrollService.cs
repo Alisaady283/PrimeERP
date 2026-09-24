@@ -3,6 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.HR
 {
+    /// <summary>عقد مسير الرواتب</summary>
     public interface IPayrollService
     {
         Result<PagedResult<PayrollDto>> GetPaged(int page, int pageSize, PayrollFilter filter = null);
@@ -11,7 +12,6 @@ namespace PrimeERP.Application.Services.HR
         Result Update(CreatePayrollDto dto);
         Result Delete(int id);
 
-        /// <summary>إثبات استحقاق المسير في القيود — بلا مسٍّ للخزينة، فالصرف سندٌ لاحق.</summary>
         Result Post(int id);
         Result Unpost(int id);
     }

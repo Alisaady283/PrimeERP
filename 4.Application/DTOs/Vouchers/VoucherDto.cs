@@ -4,6 +4,7 @@ using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Application.DTOs.Vouchers
 {
+    /// <summary>بيانات السند وتخصيصه</summary>
     public class VoucherDto
     {
         public int       Id          { get; set; }
@@ -43,7 +44,7 @@ namespace PrimeERP.Application.DTOs.Vouchers
         public string  Notes     { get; set; }
     }
 
-    /// <summary>سند قبض أو صرف — الاتجاه من الخدمة المستدعاة لا من الحقول، فالنموذج واحد للشاشتين.</summary>
+    /// <summary>سند قبض أو صرف</summary>
     public class CreateVoucherDto
     {
         public int       Id          { get; set; }
@@ -56,7 +57,6 @@ namespace PrimeERP.Application.DTOs.Vouchers
         public string    Reference   { get; set; }
         public string    Notes       { get; set; }
 
-        // تُقرأ فقط عندما Method = شيك (3) — عندها يُنشأ الشيك تلقائياً بلا شاشة إدخال ثانية.
         public string    ChequeNo    { get; set; }
         public DateTime? ChequeDueDate { get; set; }
         public string    ChequeBank  { get; set; }

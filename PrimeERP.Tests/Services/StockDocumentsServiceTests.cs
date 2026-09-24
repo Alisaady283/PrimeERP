@@ -9,6 +9,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
+    /// <summary>أذون المخزون</summary>
     public class StockDocumentsServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();

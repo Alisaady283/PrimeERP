@@ -4,10 +4,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Inputs
 {
-    /// <summary>نفس بنية AppTextBox بالضبط (نفس الأنماط: ارتفاع/حشو/حد/نصف قطر/حالات تركيز وخطأ) لكن
-    /// PasswordBox داخلياً — WPF يمنع ربط PasswordBox.Password عبر DependencyProperty عادية لأسباب أمنية
-    /// (ليست DP أصلاً)، فـPassword هنا خاصية CLR للقراءة فقط تُفوَّض للعنصر الداخلي مباشرة، بلا Binding ثنائي
-    /// الاتجاه — نفس ما كان LoginWindow يفعله يدوياً مع PasswordBox الخام (txtPassword.Password) قبل هذه القطعة.</summary>
+    /// <summary>نفس بنية AppTextBox بالضبط</summary>
     public partial class AppPasswordBox : UserControl
     {
         public static readonly DependencyProperty LabelProperty =
@@ -46,7 +43,6 @@ namespace PrimeERP.UI.Components.Inputs
         public Geometry PrefixIcon  { get => (Geometry)GetValue(PrefixIconProperty);set => SetValue(PrefixIconProperty, value); }
         public Geometry SuffixIcon  { get => (Geometry)GetValue(SuffixIconProperty);set => SetValue(SuffixIconProperty, value); }
 
-        /// <summary>للقراءة فقط — راجع تعليق التوثيق أعلى الكلاس.</summary>
         public string Password => pwd.Password;
 
         public event RoutedEventHandler PasswordChanged;

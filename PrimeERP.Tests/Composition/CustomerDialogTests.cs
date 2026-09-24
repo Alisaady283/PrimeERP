@@ -20,9 +20,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Composition
 {
-    // يثبت الحوار الناقص المُبنى حديثاً للعملاء — القائمة/البحث/الحذف الحاليان بلا أي لمس (CrudPageRenderer/
-    // CrudViewModelBase غير مُعدَّلين لهذه الوحدة إطلاقاً)، هذا يتحقق فقط من الحوار الجديد + الربط الخلفي
-    // بحساب ورقي مخفي تحت شجرة الحسابات (AccountCode) يعمل بلا كسر.
+    /// <summary>حوار العميل من الشاشة الحقيقية</summary>
     [Collection("WpfApplication")]
     public class CustomerDialogTests : IDisposable
     {
@@ -38,7 +36,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
                 var dialog = registry.Get("Customers").Dialog;

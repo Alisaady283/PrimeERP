@@ -6,16 +6,12 @@ using System.Windows.Controls;
 
 namespace PrimeERP.UI.Components.Shell
 {
-    /// <summary>شريط علوي عام — عنوان/breadcrumb، تاريخ هجري وميلادي، إشعارات، وقائمة مستخدم منسدلة.</summary>
+    /// <summary>شريط علوي عام</summary>
     public partial class AppTopBar : UserControl
     {
-        private const string NightModeLabel = "الوضع الليلي";
-
-        private static string[] BuildUserMenu(bool darkMode) => new[]
+        private static string[] BuildUserMenu() => new[]
         {
-            "الملف الشخصي", "تغيير كلمة المرور", "تحديث",
-            darkMode ? NightModeLabel + "  ✓" : NightModeLabel,
-            "اللغة", "تسجيل الخروج"
+            "الملف الشخصي", "تغيير كلمة المرور", "تحديث", "اللغة", "تسجيل الخروج"
         };
 
         public static readonly DependencyProperty BreadcrumbProperty =
@@ -37,12 +33,6 @@ namespace PrimeERP.UI.Components.Shell
         public static readonly DependencyProperty ShowDateProperty =
             DependencyProperty.Register(nameof(ShowDate), typeof(bool), typeof(AppTopBar),
                 new PropertyMetadata(true, (d, e) => ((AppTopBar)d).datePanel.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed));
-
-        public static readonly DependencyProperty IsDarkModeProperty =
-            DependencyProperty.Register(nameof(IsDarkMode), typeof(bool), typeof(AppTopBar),
-                new PropertyMetadata(false, (d, e) => ((AppTopBar)d).userMenu.Items = BuildUserMenu((bool)e.NewValue)));
-
-        public bool IsDarkMode { get => (bool)GetValue(IsDarkModeProperty); set => SetValue(IsDarkModeProperty, value); }
 
         public static readonly DependencyProperty NotificationCountProperty =
             DependencyProperty.Register(nameof(NotificationCount), typeof(int), typeof(AppTopBar),
@@ -80,13 +70,12 @@ namespace PrimeERP.UI.Components.Shell
         public event EventHandler PasswordChangeRequested;
         public event EventHandler LogoutRequested;
         public event EventHandler UpdateRequested;
-        public event EventHandler ThemeToggled;
         public event EventHandler LanguageToggled;
 
         public AppTopBar()
         {
             InitializeComponent();
-            userMenu.Items = BuildUserMenu(IsDarkMode);
+            userMenu.Items = BuildUserMenu();
             RefreshDate();
         }
 
@@ -114,9 +103,6 @@ namespace PrimeERP.UI.Components.Shell
         private void userMenu_ItemSelected(object sender, object item)
         {
             var label = item as string ?? "";
-
-            // بادئة لا مطابقة تامة — بند الوضع الليلي يحمل علامة صح حين يكون مفعّلاً.
-            if (label.StartsWith(NightModeLabel)) { ThemeToggled?.Invoke(this, EventArgs.Empty); return; }
 
             switch (label)
             {

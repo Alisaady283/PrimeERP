@@ -6,10 +6,7 @@ using PrimeERP.Application.Services.Builder;
 
 namespace PrimeERP.Composition.Registry
 {
-    /// <summary>
-    /// أقسام الشريط الجانبي كما يراها المستخدم: المحميّ من الكود والباقي من الوصف. مصدرٌ واحد تقرؤه
-    /// النافذة الرئيسية وشاشة إنشاء البرنامج — ولو تعدّد لاختلف ما يُصدَّر عمّا يُعرَض.
-    /// </summary>
+    /// <summary>أقسام الشريط الجانبي كما يراها</summary>
     public static class NavigationSource
     {
         public static (string Key, string Text, string IconKey, string[] Keys)[] Groups(IServiceProvider services)
@@ -17,8 +14,6 @@ namespace PrimeERP.Composition.Registry
             var catalog = services.GetRequiredService<IBuilderCatalog>();
             var modules = catalog.Modules().Where(m => m.IsActive).ToList();
 
-            // البذر جرى إن وُجد صفٌّ واحد. عندها الصفوف هي المصدر وحدها — وقسمٌ حُذفت كل صفحاته يبقى
-            // فارغاً فيختفي، ولا تعود مفاتيح الكود تُحييه. ونصّ العمود احتياطُ قاعدةٍ لم تُبذَر بعد.
             var seeded = modules.Count > 0;
 
             var built = catalog.Sections()

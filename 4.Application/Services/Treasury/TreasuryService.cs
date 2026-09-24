@@ -1,4 +1,4 @@
-using System.Data.Common;
+using PrimeERP.Data.Core;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Treasury;
@@ -13,6 +13,7 @@ using Entity = PrimeERP.Domain.Entities.Treasury;
 
 namespace PrimeERP.Application.Services.Treasury
 {
+    /// <summary>الخزائن والبنوك وحساباتها</summary>
     public class TreasuryService : ServiceBase, ITreasuryService, IAccountLinkedService
     {
         protected override string PermissionPrefix => "Treasuries";
@@ -22,17 +23,17 @@ namespace PrimeERP.Application.Services.Treasury
         private readonly ITreasuryRepository _repo;
         private readonly INumberSequenceService _numbers;
         private readonly PrimeERP.Application.Services.Accounting.IAccountService _accounts;
+        private readonly IJournalRepository _journalRepo;
         private readonly ISettingsProvider _settingsProvider;
 
         public TreasuryService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
             IAuditLogger audit, ITreasuryRepository repo, INumberSequenceService numbers,
-            PrimeERP.Application.Services.Accounting.IAccountService accounts) : base(permissions, settings, localization, audit)
+            PrimeERP.Application.Services.Accounting.IAccountService accounts, IJournalRepository journalRepo)
+            : base(permissions, settings, localization, audit)
         {
-            _repo = repo; _numbers = numbers; _accounts = accounts; _settingsProvider = settings;
+            _repo = repo; _numbers = numbers; _accounts = accounts; _journalRepo = journalRepo; _settingsProvider = settings;
         }
 
-        /// <summary>الخزينة حساب ورقي تحت "الصناديق" والبنك تحت "البنوك" — يُنشأ تلقائياً عند ترك الحساب فارغاً،
-        /// فلا يضطر المستخدم لبناء الحساب يدوياً قبل إنشاء الخزينة.</summary>
         private Result<string> EnsureAccount(string accountCode, string name, bool isBank)
         {
             if (!string.IsNullOrWhiteSpace(accountCode)) return Result.Ok(accountCode);
@@ -50,45 +51,39 @@ namespace PrimeERP.Application.Services.Treasury
             var created = _accounts.Create(new PrimeERP.Application.DTOs.Accounting.CreateAccountDto
             { ParentId = parent.Value.Id, Name = name, IsLeaf = true, SkipAutoLink = true });
 
-            // الفشل هنا كان يمرّ بصمت فتُنشأ خزينة بلا حساب: لا تظهر بالشجرة ولا يعرف المستخدم لماذا.
             return created.IsSuccess
                 ? Result.Ok(created.Value.Code)
                 : Result.Fail<string>($"تعذّر إنشاء حساب «{name}» تحت {rootLabel}: {created.ErrorMessage}", created.ErrorCode);
         }
 
-        /// <summary>الاتجاه المعاكس — إنشاء حساب ورقي تحت "الصناديق"/"البنوك" في الشجرة يُنشئ خزينته هنا.
-        /// النوع يُستنتَج من الأصل الذي وقع تحته الحساب، فلا يحتاج المستخدم لتكرار الاختيار.</summary>
-        public Result CreateFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name, string rootCode)
+        public Result CreateFromAccount(PrimeDbContext db, string accountCode, string name, string rootCode)
         {
-            if (_repo.GetByAccountCode(accountCode, conn, tx) != null) return Result.Ok();
+            if (_repo.GetByAccountCode(accountCode, db) != null) return Result.Ok();
 
             var bankRoot = _settingsProvider.Get(SettingKeys.Accounts.Bank, "1203");
 
             var entity = new Entity
             {
-                Code = _numbers.Next(conn, tx, "Treasury"), Name = name,
+                Code = _numbers.Next(db, "Treasury"), Name = name,
                 Kind = rootCode == bankRoot ? TreasuryKind.Bank : TreasuryKind.Cash,
                 AccountCode = accountCode, IsActive = true
             };
-            entity.Id = _repo.Insert(entity, conn, tx);
+            entity.Id = _repo.Insert(entity, db);
             return Result.Ok();
         }
 
-        public Result UpdateNameFromAccount(DbConnection conn, DbTransaction tx, string accountCode, string name)
+        public Result UpdateNameFromAccount(PrimeDbContext db, string accountCode, string name)
         {
-            _repo.UpdateNameByAccountCode(conn, tx, accountCode, name);
+            _repo.UpdateNameByAccountCode(db, accountCode, name);
             return Result.Ok();
         }
 
-        public Result DeleteByAccountCode(DbConnection conn, DbTransaction tx, string accountCode)
+        public Result DeleteByAccountCode(PrimeDbContext db, string accountCode)
         {
-            _repo.DeleteByAccountCode(conn, tx, accountCode);
+            _repo.DeleteByAccountCode(db, accountCode);
             return Result.Ok();
         }
 
-        /// <summary>قواعد قائمة قد تحمل أصلاً يشير لحساب ورقي (بذر قديم ضبط Accounts.Cash على "الصندوق
-        /// الرئيسي" مثلاً) — عندها لا يتطابق أب أي حساب جديد مع الأصل فلا يحدث ربط إطلاقاً. يُعاد الأصل
-        /// لأب الورقة، وهو ما كان يجب أن يكون منذ البداية.</summary>
         public Result RepairLinkedRoots()
         {
             foreach (var key in SettingKeys.Accounts.LinkedRoots)
@@ -104,14 +99,6 @@ namespace PrimeERP.Application.Services.Treasury
             return Result.Ok();
         }
 
-        /// <summary>
-        /// خزينةٌ نشطة بلا حساب مرتبط تأخذ حسابها: يُتبنّى الموجود باسمها تحت جذرها إن وُجد، وإلا يُنشأ
-        /// بـ<see cref="EnsureAccount"/> نفسها. خزائن سبقت حراسة EnsureAccount حُفظت بلا حساب، فيسقط
-        /// طرفها الدائن من كل قيدٍ تموّله — قيدٌ غير متزن أو مستندٌ بلا قيد.
-        ///
-        /// مشروطةٌ بغياب الكود فتُعاد في كل إقلاع بلا أثر، وعلى النشطة وحدها: المعطَّلة لا تُختار في
-        /// قائمة، وقد تشارك اسمها خزينةً نشطة فتتبنّى حسابها.
-        /// </summary>
         public Result RepairMissingAccounts()
         {
             foreach (var treasury in _repo.GetAll().Where(t => string.IsNullOrWhiteSpace(t.AccountCode)))
@@ -119,9 +106,6 @@ namespace PrimeERP.Application.Services.Treasury
                 var isBank = treasury.Kind == TreasuryKind.Bank;
                 var root = _settingsProvider.Get(isBank ? SettingKeys.Accounts.Bank : SettingKeys.Accounts.Cash, isBank ? "1203" : "1204");
 
-                // بالاسم تحت جذرها، وبشرط ألّا يكون مملوكاً لخزينة أخرى — نفس حارس التملّك الذي يمنع
-                // CreateFromAccount من تكرار كيانٍ لحسابٍ مرتبط. اسمان متطابقان بلا هذا الشرط يجعلان
-                // خزينتين تتقاسمان حساباً واحداً.
                 var existing = _accounts.GetLeaves().Value?
                     .FirstOrDefault(leaf => leaf.Name == treasury.Name
                                          && (leaf.Code ?? "").StartsWith(root)
@@ -137,7 +121,6 @@ namespace PrimeERP.Application.Services.Treasury
             return Result.Ok();
         }
 
-        /// <summary>خزينة وبنك افتراضيان عند أول تشغيل — بلا هذا تبقى قوائم السندات فارغة فيبدو أنها لا تعمل.</summary>
         public Result SeedDefaults()
         {
             if (_repo.GetAll(includeInactive: true).Count > 0) return Result.Ok();
@@ -184,6 +167,8 @@ namespace PrimeERP.Application.Services.Treasury
             var entity = _repo.GetById(dto.Id);
             if (entity == null) return Result.Fail("الخزينة غير موجودة", ErrorCode.NotFound);
 
+            var nameChanged = entity.Name != dto.Name;
+
             entity.Name = dto.Name;
             entity.Kind = dto.IsBank ? TreasuryKind.Bank : TreasuryKind.Cash;
             var updatedAccount = EnsureAccount(dto.AccountCode ?? entity.AccountCode, dto.Name, dto.IsBank);
@@ -192,20 +177,38 @@ namespace PrimeERP.Application.Services.Treasury
             entity.AccountCode = updatedAccount.Value; entity.BankName = dto.BankName;
             entity.AccountNumber = dto.AccountNumber; entity.Notes = dto.Notes; entity.IsActive = dto.IsActive;
 
-            _repo.Update(entity);
+            Tx(db =>
+            {
+                _repo.Update(entity, db);
+
+                if (nameChanged && !string.IsNullOrWhiteSpace(entity.AccountCode))
+                    _accounts.UpdateName(db, entity.AccountCode, entity.Name);
+            });
+
             Audit.Log(EntityName, entity.Id, AuditAction.Update, newValue: new { entity.Name, entity.AccountCode });
             return Result.Ok();
         }
 
         public Result Delete(int id)
         {
-            if (_repo.GetById(id) == null) return Result.Fail("الخزينة غير موجودة", ErrorCode.NotFound);
-            _repo.Delete(id);
+            var entity = _repo.GetById(id);
+            if (entity == null) return Result.Fail("الخزينة غير موجودة", ErrorCode.NotFound);
+
+            if (!string.IsNullOrWhiteSpace(entity.AccountCode) && _journalRepo.HasLinesForAccount(entity.AccountCode))
+                return Result.Fail("لا يمكن حذف خزينة لها قيود مسجَّلة", ErrorCode.ValidationFailed);
+
+            Tx(db =>
+            {
+                _repo.Delete(id, db);
+
+                if (!string.IsNullOrWhiteSpace(entity.AccountCode))
+                    _accounts.Delete(db, entity.AccountCode);
+            });
+
             Audit.Log(EntityName, id, AuditAction.Delete);
             return Result.Ok();
         }
 
-        /// <summary>الرصيد من حساب الخزينة نفسه لا من عمودٍ ثانٍ — ما تعرضه الشجرة هو ما تعرضه الصفحة.</summary>
         private TreasuryDto ToDto(Entity t) => new()
         {
             Id = t.Id, Code = t.Code, Name = t.Name, Kind = t.Kind,

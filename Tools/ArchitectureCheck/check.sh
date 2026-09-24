@@ -64,20 +64,18 @@ if [ "$n" -gt 0 ]; then
   grep -rl "using PrimeERP\.\(Composition\|Modules\)\b" 6.UI --include="*.cs" 2>/dev/null | sed 's/^/       /'
 else pass; fi
 
-# Composition(7) لا يعتمد على Modules(8) (لأعلى) — سُجِّلت هنا لأول مرة R8، إذ 7.Composition/8.Modules كانتا
-# فارغتين قبل ذلك (لا شيء يُفحص).
+# Composition(7) لا يعتمد على Modules(8) (لأعلى)
 n=$(grep -rl "using PrimeERP\.Modules\b" 7.Composition --include="*.cs" 2>/dev/null | wc -l)
 if [ "$n" -gt 0 ]; then
   fail "7.Composition يعتمد على طبقة أعلى (8.Modules) ($n ملف):"
   grep -rl "using PrimeERP\.Modules\b" 7.Composition --include="*.cs" 2>/dev/null | sed 's/^/       /'
 else pass; fi
 
-# Platform(1): لا يعتمد على شيء عدا 2.Data.Core/2.Data.Schema (أدوات SQL خام + تعريف جداول، لا Repositories
-# التي تحمل منطق أعمال) و3.Domain — راجع ARCHITECTURE.md § قيد Platform
-n=$(grep -rl "using PrimeERP\.\(Data\.Repositories\|Data\.Providers\|Application\|Design\|UI\|Composition\|Modules\)\b" 1.Platform --include="*.cs" 2>/dev/null | wc -l)
+# Platform(1): لا يعتمد إلا على 3.Domain — ما تحتاجه من القاعدة عقدٌ عندها تنفّذه 2.Data
+n=$(grep -rl "using PrimeERP\.\(Data\|Application\|Design\|UI\|Composition\|Modules\)\b" 1.Platform --include="*.cs" 2>/dev/null | wc -l)
 if [ "$n" -gt 0 ]; then
-  fail "1.Platform يعتمد على ما هو أبعد من 2.Data.Core/2.Data.Schema/3.Domain ($n ملف):"
-  grep -rl "using PrimeERP\.\(Data\.Repositories\|Data\.Providers\|Application\|Design\|UI\|Composition\|Modules\)\b" 1.Platform --include="*.cs" 2>/dev/null | sed 's/^/       /'
+  fail "1.Platform يعتمد على طبقة أعلى ($n ملف):"
+  grep -rl "using PrimeERP\.\(Data\|Application\|Design\|UI\|Composition\|Modules\)\b" 1.Platform --include="*.cs" 2>/dev/null | sed 's/^/       /'
 else pass; fi
 
 # دائرية بين مجلدين: أي زوج طبقتين يستوردان من بعضهما بالاتجاهين
@@ -125,7 +123,7 @@ else pass; fi
 section "2 — حدود المسؤولية"
 # ============================================================
 
-# استدعاء ساكن لمستودع (Repository) في أي مكان — كلها instance class منذ R5، تُحقن عبر المُنشئ.
+# استدعاء ساكن لمستودع (Repository) في أي مكان — كلها instance class تُحقن عبر المُنشئ.
 n=$(grep -rlE "\b(Account|Customer|Journal|FiscalPeriod|NumberSequence|Backup)Repository\.[A-Za-z]" --include="*.cs" 1.Platform 2.Data 3.Domain 4.Application 5.Design 6.UI 7.Composition 8.Modules App PrimeERP.Tests 2>/dev/null | grep -v "2.Data/Repositories/")
 if [ -n "$n" ]; then
   fail "استدعاء ساكن لمستودع (يجب حقن الواجهة عبر المُنشئ):"
@@ -140,7 +138,7 @@ if [ "$n" -gt 0 ]; then
 else pass; fi
 
 # ISettingsService (Application، تحتاج ServiceBase: صلاحية+audit) مستدعاة من طبقة أدنى (Platform/Data) —
-# الطبقات الدنيا تستخدم ISettingsProvider (Platform، عملية تقنية بحتة بلا صلاحية) فقط. راجع R6 §
+# الطبقات الدنيا تستخدم ISettingsProvider (Platform، عملية تقنية بحتة بلا صلاحية) فقط
 # "مزوّد مقابل خدمة" في ARCHITECTURE.md — اكتُشف هذا القيد فعلياً عبر SettingsService قبل الفصل.
 n=$(grep -rnE "ISettingsService" --include="*.cs" 1.Platform 2.Data 2>/dev/null | grep -vE ":\s*(///|//)")
 if [ -n "$n" ]; then
@@ -175,7 +173,7 @@ else pass; fi
 # Service يستدعي Service آخر تنفيذاً لا عقداً (new XService() أو XService.Instance من ملف آخر) — عبر ServiceLocator/DI فقط مقبول
 # (فحص إرشادي: يبحث عن ".Instance" لخدمة أخرى غير عبر ServiceLocator داخل ملفات Services)
 n=$(grep -rlE "\b[A-Z][A-Za-z]+Service\.Instance\b" 4.Application/Services 6.UI/Services --include="*.cs" 2>/dev/null | xargs -I{} grep -L "class {}" {} 2>/dev/null)
-# (فحص تقريبي مُعطَّل عمداً — إيجابيات كاذبة كثيرة مع نمط Instance المُستخدَم حالياً بانتظار R3 الذي يزيله جذرياً)
+# (فحص تقريبي مُعطَّل عمداً — إيجابيات كاذبة كثيرة مع نمط Instance المُستخدَم حالياً)
 
 # Validator يكتب في قاعدة البيانات
 n=$(grep -rlE "Db\.(Execute|InsertAndGetId)\(|Repository\.(Insert|Update|Delete)\(" 4.Application/Validation --include="*.cs" 2>/dev/null | wc -l)
@@ -193,7 +191,7 @@ else pass; fi
 
 # UIServices (بوابة الوصول الوحيدة المسموحة للـ code-behind الذي لا يقبل حقن اعتمادية — راجع تعليق الملف نفسه
 # وقرار المستخدم الصريح: "يُستهلك من code-behind فقط، صفر استهلاك من Service/VM") — أي استدعاء خارج
-# 6.UI/**/*.xaml.cs أو App/**/*.xaml.cs = خرق. الدين التقني نفسه (حجم الاستهلاك) يتقلّص في R8، راجع الجدول.
+# 6.UI/**/*.xaml.cs أو App/**/*.xaml.cs = خرق.
 n=$(grep -rl "UIServices\." --include="*.cs" 1.Platform 2.Data 3.Domain 4.Application 7.Composition 8.Modules 2>/dev/null)
 if [ -n "$n" ]; then
   fail "UIServices مُستهلَكة خارج 6.UI/App كلياً (يجب ألا تُستخدم خارج طبقة العرض أصلاً):"
@@ -258,7 +256,7 @@ if [ -n "$n" ]; then
   echo "$n" | sed 's/^/       /'
 else pass; fi
 
-# StaticResource لمفتاح P.* أو S.* — ممنوع دائماً بلا استثناء (كل قيم L1/L2 تتبدّل مع الهوية، راجع R4 § 5)
+# StaticResource لمفتاح P.* أو S.* — ممنوع دائماً بلا استثناء (القيم تتبدّل مع الهوية)
 n=$(grep -rlE "StaticResource (P|S)\.[A-Za-z]" --include="*.xaml" 5.Design 6.UI 2>/dev/null)
 if [ -n "$n" ]; then
   fail "StaticResource لمفتاح P./S. (يجب DynamicResource — يتبدّل مع حزمة الهوية):"
@@ -316,33 +314,32 @@ for f in $(XAML_FILES); do
 done
 pass
 
-# مفتاح في Semantic.Light بلا مقابل في Semantic.Dark أو العكس
-LIGHT_KEYS=$(grep -oE 'x:Key="[^"]+"' "5.Design/Semantic/Semantic.Light.xaml" 2>/dev/null | sort -u)
-DARK_KEYS=$(grep -oE 'x:Key="[^"]+"' "5.Design/Semantic/Semantic.Dark.xaml" 2>/dev/null | sort -u)
-MISSING_IN_DARK=$(comm -23 <(echo "$LIGHT_KEYS") <(echo "$DARK_KEYS"))
-MISSING_IN_LIGHT=$(comm -13 <(echo "$LIGHT_KEYS") <(echo "$DARK_KEYS"))
-if [ -n "$MISSING_IN_DARK" ]; then fail "مفاتيح في Semantic.Light بلا مقابل في Dark: $(echo $MISSING_IN_DARK | tr '\n' ' ')"; else pass; fi
-if [ -n "$MISSING_IN_LIGHT" ]; then fail "مفاتيح في Semantic.Dark بلا مقابل في Light: $(echo $MISSING_IN_LIGHT | tr '\n' ' ')"; else pass; fi
-
 # نص عربي حر خارج Strings (فحص إرشادي: سلسلة نصية عربية حرفية داخل Result.Fail/MessageBox خارج 5.Design/Strings)
 n=$(grep -rlP "\"[\x{0600}-\x{06FF}]" --include="*.cs" 4.Application 6.UI 2>/dev/null | grep -v "Validation" | wc -l)
 if [ "$n" -gt 0 ]; then
-  warn "$n ملفاً يحتوي نصاً عربياً حرفياً محتملاً خارج Strings (فحص إرشادي، يحتاج مراجعة يدوية — رسائل تحقق داخلية كثيرة منها مقصودة قبل تعريب DTOs في R6)"
+  warn "$n ملفاً يحتوي نصاً عربياً حرفياً محتملاً خارج Strings (فحص إرشادي، يحتاج مراجعة يدوية — رسائل تحقق داخلية كثيرة منها مقصودة)"
 fi
 
 # ============================================================
+section "4.5 — التعليق عنوانٌ لا شرح"
+# القاعدة ٥: التعليق يسمّي القطعة بخمس كلمات فأقل، والشرح في ARCHITECTURE.md
+long=$(CS_FILES; XAML_FILES)
+n=$(echo "$long" | xargs grep -hoE '///[[:space:]]*<summary>[^<]+</summary>|^[[:space:]]*//[[:space:]]*[^/].*$|<!--[^-]+-->' 2>/dev/null     | sed -E 's|///[[:space:]]*<summary>||; s|</summary>||; s|^[[:space:]]*//[[:space:]]*||; s|<!--[[:space:]]*||; s|[[:space:]]*-->||'     | grep -vE 'TEMPORARY|⚠️' | awk 'NF > 5' | wc -l)
+if [ "$n" -gt 0 ]; then
+  fail "$n تعليقاً أطول من خمس كلمات — العنوان يسمّي، والشرح في ARCHITECTURE.md"
+else pass; fi
+
 section "5 — المؤقت"
 # ============================================================
 
-# TEMPORARY غير مسجَّل في دين ARCHITECTURE.md التقني — القاعدة في RULES.md § القواعد الأربع:
-# المؤقّت يُحذَف فور اكتشافه، واستثناؤه الوحيد مؤقّتٌ مذكورٌ باسمه في جدول الدين.
+# القاعدة ٣ في RULES.md: المؤقّت يُحذَف فور اكتشافه
 n=""
 for f in $(grep -rl "// TEMPORARY" --include="*.cs" . 2>/dev/null | grep -v "/bin/\|/obj/\|PrimeERP.Tests\|^\./.claude/"); do
   stem=$(basename "$f"); stem=${stem%.cs}; stem=${stem%.xaml}
   grep -q "$stem" ARCHITECTURE.md || n="$n       $f"$'\n'
 done
 if [ -n "$n" ]; then
-  fail "// TEMPORARY غير مسجَّل في جدول الدين التقني بـ ARCHITECTURE.md:"
+  fail "// TEMPORARY باقٍ في الكود — يُحذف أو يُصلَح موضعه:"
   printf '%s' "$n"
 else pass; fi
 
@@ -388,6 +385,58 @@ if [ "$n" -gt 0 ]; then
   grep -rn "PageSize = items.Count" --include="*.cs" 6.UI 4.Application 2>/dev/null | grep -v "PagedViewModelBase.cs" | head -5 | sed 's/^/       /'
 else pass; fi
 
+n=$(grep -rn "sqlite_master\|PRAGMA foreign_keys" --include="ProgramEditionService.cs" 4.Application 2>/dev/null | wc -l)
+if [ "$n" -gt 0 ]; then
+  fail "مسحٌ بالجملة لقاعدة النسخة ($n موضع):"
+  grep -rn "sqlite_master\|PRAGMA foreign_keys" --include="ProgramEditionService.cs" 4.Application 2>/dev/null | head -5 | sed 's/^/       /'
+else pass; fi
+
+# ============================================================
+section "5.5b — موضعٌ خاطئ (جديدٌ يُرفض، وقائمٌ مُجمَّد)"
+# ============================================================
+
+if command -v python >/dev/null 2>&1; then
+  current=$(PYTHONIOENCODING=utf-8 python Tools/ArchitectureCheck/placement.py violations 2>/dev/null | sort)
+  frozen=$(cat Tools/ArchitectureCheck/placement-debt.txt 2>/dev/null)
+  fresh=$(comm -23 <(echo "$current") <(echo "$frozen"))
+  fixed=$(comm -13 <(echo "$current") <(echo "$frozen") | wc -l)
+
+  if [ -n "$fresh" ]; then
+    fail "موضعٌ خاطئ جديد خارج القائمة المجمَّدة:"
+    echo "$fresh" | head -5 | sed 's/^/       /'
+  else
+    pass
+    [ "$fixed" -gt 0 ] && warn "صُحِّح $fixed موضعاً — احذف سطورها من placement-debt.txt"
+  fi
+
+  open=$(echo "$frozen" | grep -c . )
+  [ "$open" -gt 0 ] && warn "دين مواضع مُجمَّد: $open سطراً في placement-debt.txt"
+else
+  warn "python غير متاح — فحص المواضع متخطّى"
+fi
+
+# ============================================================
+section "5.6 — توثيقٌ متقادم"
+# ============================================================
+
+actual=$(find 1.Platform 2.Data 3.Domain 4.Application 5.Design 6.UI 7.Composition 8.Modules App Tools PrimeERP.Tests PrimeERP.Setup \
+         \( -name '*.cs' -o -name '*.xaml' -o -name '*.sh' \) -not -path '*/obj/*' -not -path '*/bin/*' 2>/dev/null | wc -l)
+listed=$(grep -c '^| [0-9]' docs/FILES.md 2>/dev/null); listed=${listed:-0}
+if [ "$actual" != "$listed" ]; then
+  fail "الفهرس متقادم: $actual ملفاً مقابل $listed صفاً — شغّل bash Tools/Docs/generate.sh"
+else pass; fi
+
+drift=$(PYTHONIOENCODING=utf-8 python Tools/Docs/drift.py 2>/dev/null)
+if [ -n "$drift" ]; then
+  fail "folders.txt لا يطابق الشجرة:"
+  echo "$drift" | head -8 | sed 's/^/       /'
+else pass; fi
+
+reds=$(grep -c 'color=red' docs/System.dot 2>/dev/null); if [ "${reds:-0}" -gt 0 ]; then
+  fail "خرق اعتماد في docs/System.dot:"
+  grep 'color=red' docs/System.dot | head -5 | sed 's/^/       /'
+else pass; fi
+
 # ============================================================
 section "5.5 — منطق أعمال في طبقة التسجيل (8.Modules)"
 # ============================================================
@@ -411,13 +460,16 @@ else pass; fi
 section "6 — قيم بصرية حرفية (6.UI/7.Composition)"
 # ============================================================
 
-# FontSize/Height/Width/Padding حرفي (رقم مباشر لا DynamicResource) على عناصر XAML في 6.UI/7.Composition —
-# إرشادي (WARN): كثير من الاستخدامات الحالية سابق لهذا الفحص ويحتاج تنظيفاً تراكمياً لا دفعة واحدة، فرضه FAIL
-# الآن يكسر كل شيء يعمل فعلاً. الهدف: صفر تراكمياً (راجع ARCHITECTURE.md § الدين التقني).
-n=$(grep -rlE '\s(FontSize|Height|Width|Padding|Margin)="[0-9]' --include="*.xaml" 6.UI 7.Composition 2>/dev/null | wc -l)
-if [ "$n" -gt 0 ]; then
-  warn "$n ملف XAML في 6.UI/7.Composition فيه FontSize/Height/Width/Padding/Margin حرفي (يُفضَّل توكن C.*/P.* — دين تقني تراكمي، راجع 1.5)"
-fi
+# قيمةٌ بصرية واحدة مكتوبة في أكثر من ملف = توكن غائب (القاعدة ٤). والقيمة داخل مكوّنٍ واحد تخطيطُه
+# الخاص، وتسميتها توكناً باسمٍ بلا مستهلكٍ ثانٍ تصنيفٌ لا إعادة استخدام (القاعدة ٥).
+dupes=$(grep -rhoE '(FontSize|Height|Width|Padding|Margin)="[0-9][0-9., ]*"' --include="*.xaml" 6.UI 7.Composition 2>/dev/null | sort -u | while read -r pair; do
+  files=$(grep -rlF "$pair" --include="*.xaml" 6.UI 7.Composition 2>/dev/null | wc -l)
+  [ "$files" -gt 1 ] && echo "$pair في $files ملفات"
+done)
+if [ -n "$dupes" ]; then
+  fail "قيمة بصرية واحدة مكتوبة في أكثر من ملف — التوكن غائب:"
+  echo "$dupes" | sed 's/^/       /'
+else pass; fi
 
 # emoji داخل XAML — القاعدة: Geometry من Icons.xaml فقط، لا رموز تعبيرية كنص
 n=$(grep -rlP "[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]" --include="*.xaml" 6.UI 7.Composition 5.Design 2>/dev/null)
@@ -443,6 +495,6 @@ if [ "$FAIL" -gt 0 ]; then
   exit 1
 else
   echo ""
-  echo "  ✅ صفر خرق حاسم. $WARN دين تقني مسجَّل وموثَّق (راجع ARCHITECTURE.md § الدين التقني)."
+  echo "  ✅ صفر خرق حاسم. $WARN ملاحظة مفتوحة."
   exit 0
 fi

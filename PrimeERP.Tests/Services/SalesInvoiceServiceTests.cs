@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,13 +17,11 @@ using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Xunit;
-using Db = PrimeERP.Data.Core.DbHelper;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
-    // اختبار حقيقي كامل — يزرع حساباً فرعياً حقيقياً تحت كل جذر (41/51/1201) ويعيد ضبط الإعدادات لتشير
-    // إليها (بالضبط ما يفعله مسؤول النظام يدوياً؛ الجذور الافتراضية IsLeaf=false فلا تقبل ترحيلاً مباشراً —
-    // نفس القيد المطبَّق أصلاً على 1202/2101 وتحله AutoLink للعميل/المورد تلقائياً).
+    /// <summary>فاتورة البيع وقيدها</summary>
     public class SalesInvoiceServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -62,7 +61,7 @@ namespace PrimeERP.Tests.Services
             _customerId = customers.Create(new CreateCustomerDto { Name = "عميل اختبار" }).Value.Id;
 
             var stock = _db.Services.GetRequiredService<IStockService>();
-            Db.RunTransaction((conn, tx) => stock.RecordMovement(conn, tx, _productId, _warehouseId, MovementType.In, 100, 10, "Seed", null, "SEED-1"));
+            DbContextFactory.RunTransaction(db => stock.RecordMovement(db, _productId, _warehouseId, MovementType.In, 100, 10, "Seed", null, "SEED-1"));
         }
 
         public void Dispose() => _db.Dispose();
@@ -87,7 +86,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(287.5m, invoice.NetTotal);
             Assert.Single(invoice.Lines);
 
-            // صافي السطر يُخزَّن ويُقرأ — كان يُحسب ثم يسقط من خريطة الـDTO فيُطبع صفراً.
             var line = invoice.Lines.Single();
             Assert.Equal(250m, line.LineTotal);
             Assert.Equal(37.5m, line.VatAmount);

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Application.DTOs.Inventory
 {
-    // نفس الشكل لِـStockIn وStockOut — الفرق في الاتجاه فقط (Service).
+    /// <summary>بيانات إذن المخزون</summary>
     public class StockAdjustmentDto
     {
         public int      Id            { get; set; }
@@ -22,7 +22,6 @@ namespace PrimeERP.Application.DTOs.Inventory
 
     public class StockAdjustmentLineDto
     {
-        /// <summary>معرّف السطر في قاعدة البيانات — مرجع السحب في DocumentLinks.SourceLineId.</summary>
         public int     Id          { get; set; }
         public int     LineNo      { get; set; }
         public string  ProductCode { get; set; }

@@ -10,6 +10,7 @@ using PrimeERP.UI.ViewModels;
 
 namespace PrimeERP.Modules
 {
+    /// <summary>تسجيل سندات الدورة</summary>
     public static class CycleVoucherRegistrations
     {
         public static void RegisterAll(IModuleRegistry registry)

@@ -4,6 +4,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Services
 {
+    /// <summary>الترقيم التسلسلي</summary>
     [Collection("Database")]
     public class NumberSequenceServiceTests
     {
@@ -38,7 +39,6 @@ namespace PrimeERP.Tests.Services
 
             Assert.Equal(peeked, next);
 
-            // Peek بعد Next لا يجب أن يرى نفس الرقم مرة أخرى — لم يُستهلك.
             var peekedAfter = _service.Peek("Test.Seq.Peek");
             Assert.NotEqual(next, peekedAfter);
         }

@@ -4,7 +4,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.Documents
 {
-    /// <summary>محوَّلة من Views/Controls/Documents/Tests/LineEngineTests.cs (مُشغِّل اختبارات يدوي بلا إطار) إلى xUnit حقيقية.</summary>
+    /// <summary>محرّك سطور المستند</summary>
     public class LineComputeEngineTests
     {
         private static DocumentLine InvoiceLine() => new() { Qty = 10, Price = 100, DiscountPercent = 10, VatPercent = 14 };

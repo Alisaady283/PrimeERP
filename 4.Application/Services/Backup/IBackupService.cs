@@ -6,6 +6,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Backup
 {
+    /// <summary>عقد النسخ الاحتياطي</summary>
     public interface IBackupService
     {
         Result<BackupInfo> Create(string folder = null, string note = null, BackupType type = BackupType.Manual);
@@ -14,7 +15,6 @@ namespace PrimeERP.Application.Services.Backup
         List<BackupInfo> List(string folder = null);
         Result Delete(string filePath);
 
-        /// <summary>يحذف الأقدم من مجلد النسخ ويُبقي آخر keepCount فقط.</summary>
         Result ApplyRetention(string folder, int keepCount);
 
         void StartAutoBackup();

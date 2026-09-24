@@ -11,6 +11,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Composition.Pull
 {
+    /// <summary>محرّك السحب العام</summary>
     public class PullCandidateLine
     {
         public int     SourceLineId { get; init; }
@@ -31,7 +32,6 @@ namespace PrimeERP.Composition.Pull
         public string   PartyName  { get; init; }
         public List<PullCandidateLine> Lines { get; init; } = new();
 
-        /// <summary>قيم رأس المصدر بمفاتيح حقول الهدف — تُنسخ للحقول الفارغة في رأس المستند الجديد.</summary>
         public Dictionary<string, object> HeaderValues { get; init; } = new();
 
         public int     OpenLineCount => Lines.Count;
@@ -44,9 +44,6 @@ namespace PrimeERP.Composition.Pull
         Result<List<PullCandidate>> GetAvailable(PullSource source, IDictionary<string, object> matchValues);
     }
 
-    /// <summary>محرّك السحب العام: يقرأ أي مستند مصدر عبر سجل الوحدات وبالاسم (Id/Lines/Qty/ProductCode…) —
-    /// نفس فلسفة الربط بالاسم في DocumentRenderer. مستند جديد يصبح قابلاً للسحب منه بمجرّد تسجيله، بلا كود هنا.
-    /// المتبقي محسوب دائماً (الأصلي ناقص مجموع الروابط) — لا عمود حالة يُخزَّن ولا يتعارض.</summary>
     public class PullService : IPullService, IPullSourceReader
     {
         private readonly IServiceProvider _services;
@@ -57,8 +54,6 @@ namespace PrimeERP.Composition.Pull
             _services = services; _registry = registry;
         }
 
-        // يُحَل عند الطلب لا في المُنشئ: DocumentLinkService تعتمد على IPullSourceReader (هذه الفئة)، فحقنها
-        // في المُنشئ يصنع دورة تسجيل. الكسر هنا لا في العقد.
         private IDocumentLinkService Links => _services.GetRequiredService<IDocumentLinkService>();
 
         public Result<List<PullCandidate>> GetAvailable(PullSource source, IDictionary<string, object> matchValues)
@@ -130,7 +125,6 @@ namespace PrimeERP.Composition.Pull
             return 0m;
         }
 
-        // الحقول المنقولة من رأس المصدر لرأس الهدف — بالاسم، فأي مستند يحمل نفس الأسماء يعمل بلا كود إضافي.
         private static readonly string[] HeaderKeys = { "PartyId", "CustomerId", "SupplierId", "WarehouseId" };
 
         private static Dictionary<string, object> ReadHeaderValues(object detail)
@@ -142,7 +136,6 @@ namespace PrimeERP.Composition.Pull
                 if (value != null) values[key] = value;
             }
 
-            // الطرف واحد أياً كان اسمه على المصدر أو الهدف — عميل/مورد/طرف عام.
             var party = values.Values.FirstOrDefault();
             if (party != null)
                 foreach (var key in HeaderKeys.Take(3))

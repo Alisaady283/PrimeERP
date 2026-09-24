@@ -9,7 +9,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Print
 {
-    /// <summary>حقل على ورق الشيك بموضع مطلق بالسنتيمتر.</summary>
+    /// <summary>حقل على ورق الشيك بموضع</summary>
     public class ChequeField
     {
         public required string Text { get; init; }
@@ -24,7 +24,6 @@ namespace PrimeERP.Application.Services.Print
         public double PaperWidth { get; init; } = 17.5;
         public double PaperHeight { get; init; } = 8.0;
 
-        /// <summary>معايرة الطابعة — تُحفَظ في الإعدادات وتُضاف لكل حقل.</summary>
         public double OffsetX { get; init; }
         public double OffsetY { get; init; }
 
@@ -35,12 +34,10 @@ namespace PrimeERP.Application.Services.Print
     {
         Result<FixedDocument> Build(ChequeLayout layout);
 
-        /// <summary>شبكة سنتيمترية تُطبَع على ورق فارغ لقياس إزاحة الطابعة.</summary>
         Result<FixedDocument> BuildCalibrationSheet(ChequeLayout layout);
     }
 
-    /// <summary>الشيك يُطبَع على ورق مطبوع مسبقاً: كل حقل بموضع مطلق لا تخطيط تلقائي، فمسار بناؤه مستقلّ
-    /// عن مستندات FlowDocument.</summary>
+    /// <summary>الشيك يُطبَع على ورق مطبوع</summary>
     public class ChequePrinter : IChequePrinter
     {
         private const double CmToDip = 96 / 2.54;

@@ -3,7 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.DTOs.Parties
 {
-    /// <summary>للعرض في الجداول — لا Model خام (Customer) يخرج من الخدمة إطلاقاً.</summary>
+    /// <summary>للعرض في الجداول</summary>
     public class CustomerDto
     {
         public int    Id              { get; set; }
@@ -28,10 +28,8 @@ namespace PrimeERP.Application.DTOs.Parties
 
         public decimal CreditLimit { get; set; }
 
-        /// <summary>قرار أعمال — تحسبه الخدمة (نُقلت من Model في فحص تسريب المنطق قبل F.2.3): CreditLimit>0 && Balance>CreditLimit.</summary>
         public bool IsOverCreditLimit { get; set; }
 
-        /// <summary>CreditLimit - Balance — قد تكون سالبة لو متجاوز الحد.</summary>
         public decimal AvailableCredit { get; set; }
 
         public int    PaymentTermDays { get; set; }
@@ -92,7 +90,7 @@ namespace PrimeERP.Application.DTOs.Parties
         public bool?  HasBalance     { get; set; }
         public bool?  OverCreditLimit{ get; set; }
         public int?   CategoryId     { get; set; }
-        public string SortBy         { get; set; } = "Name";
+        public string SortBy         { get; set; } = "Code";
         public bool   SortDescending { get; set; }
     }
 

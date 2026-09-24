@@ -6,10 +6,7 @@ using System.Threading.Tasks;
 
 namespace PrimeERP.UI.Components.Pickers
 {
-    /// <summary>
-    /// الطبقة المعمَّمة فوق PickerBaseControl — تربط IPickerDataSource&lt;T&gt; بالسلوك المشترك (بحث/كود دقيق/عرض)
-    /// وتعرّف SelectedItem بنوعه الحقيقي T. AccountPicker/CustomerPicker/... ترث من هنا مباشرة.
-    /// </summary>
+    /// <summary>الطبقة المعمَّمة فوق PickerBaseControl</summary>
     public class PickerBase<T> : PickerBaseControl where T : class
     {
         public IPickerDataSource<T> DataSource { get; set; }
@@ -44,7 +41,6 @@ namespace PrimeERP.UI.Components.Pickers
             return item == null ? null : ToResultItem(item, DataSource.GetDisplayConfig());
         }
 
-        /// <summary>تستدعيها الـ picker المشتقة بعد اختيار المستخدم من نافذة العرض الكاملة أو بعد إضافة سريعة.</summary>
         protected void CommitSelection(T item)
         {
             if (item == null)
@@ -56,7 +52,6 @@ namespace PrimeERP.UI.Components.Pickers
             SelectResult(ToResultItem(item, DataSource?.GetDisplayConfig()));
         }
 
-        /// <summary>protected لأن الـ pickers الجدولية المشتقة (CustomerPicker...) تحتاجها لبناء قائمة PickerGridWindow.</summary>
         protected static PickerResultItem ToResultItem(T item, PickerDisplayConfig config)
         {
             var type = typeof(T);
@@ -86,7 +81,6 @@ namespace PrimeERP.UI.Components.Pickers
             };
         }
 
-        /// <summary>يدعم "{Prop}" و"{Prop:Format}" (مثال: "{Balance:N2}") — تنسيق نصي بحت هنا، لا قرار عمل.</summary>
         private static string FormatTemplate(string template, T item)
         {
             var type = typeof(T);

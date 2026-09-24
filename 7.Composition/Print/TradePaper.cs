@@ -3,10 +3,7 @@ using PrimeERP.Composition.Definitions;
 
 namespace PrimeERP.Composition.Print
 {
-    /// <summary>
-    /// شكل الورق التجاري: أعمدة السطر وإجماليات الأسفل. تعريف واحد تستورده فاتورتا البيع والشراء
-    /// ومرتجعاتهما — لا أربع قوائم متطابقة تتفرّق مع أول تعديل.
-    /// </summary>
+    /// <summary>شكل الورق التجاري</summary>
     public static class TradePaper
     {
         public static List<PrintColumnDefinition> Columns() => new()
@@ -23,7 +20,6 @@ namespace PrimeERP.Composition.Print
             new() { Key = "Notes",       Header = "ملاحظات",     Width = 1.6, IsText = true },
         };
 
-        /// <summary>عمود الصافي في نموذج الإدخال — للعرض فقط، تملؤه المعادلة لا المستخدم.</summary>
         public static LineFieldDefinition NetColumn() => new()
         {
             Key = "NetAmount", Header = "صافي المبلغ", Kind = FieldKind.ReadOnly, Width = 110

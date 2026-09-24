@@ -28,10 +28,7 @@ using PrimeERP.Data.Repositories;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>
-    /// مستند الشيكات دفعةُ إدخال لا طرفاً واحداً: كل شيك لطرفه على سطره. الطرف كان مكرَّراً رأساً وسطراً
-    /// من عهد الشيك الواحد، والخدمة تتراجع للرأس — فشيكان لطرفين في مستند واحد كانا يقعان على طرف الرأس.
-    /// </summary>
+    /// <summary>مستند الشيكات دفعةُ إدخال</summary>
     [Collection("WpfApplication")]
     public class ChequeDocumentPartyTests : IDisposable
     {
@@ -42,7 +39,6 @@ namespace PrimeERP.Tests.Composition
         public ChequeDocumentPartyTests()
         {
             AppSession.DevMode = true;
-            // رسالة الرفض تصل للاختبار بدل أن تُبتلَع في الواجهة.
             _services = TestDatabaseFixture.BuildServices(s => s.AddSingleton<IToastService>(_toasts));
         }
 
@@ -60,7 +56,6 @@ namespace PrimeERP.Tests.Composition
         [Fact]
         public void Header_CarriesNoParty_AndEachLineKeepsItsOwn()
         {
-            // بنك في النظام: حقل البنك في السطر قائمةٌ مطلوبة، فبلا بنك لا يُحفظ المستند.
             var accounts = _services.GetRequiredService<IAccountService>();
             var accountRepo = _services.GetRequiredService<IAccountRepository>();
             var bankAccount = accounts.Create(new CreateAccountDto
@@ -76,11 +71,10 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_services);
-                _services.GetRequiredService<IIdentityService>().Apply("Default");
+                _services.GetRequiredService<IIdentityService>().Initialize();
 
                 var def = _services.GetRequiredService<IModuleRegistry>().Get("ChequeReceipts").DocumentDialog;
 
-                // الرأس لا يعرض طرفاً — التاريخ والبيان فقط.
                 Assert.DoesNotContain(def.HeaderFields, f => f.Key == nameof(CreateChequeLineDto.PartyId));
                 Assert.Contains(def.LineFields, f => f.Key == nameof(CreateChequeLineDto.PartyId) && f.Kind == FieldKind.Picker);
 
@@ -95,12 +89,10 @@ namespace PrimeERP.Tests.Composition
 
                         FindVisualChild<AppDatePicker>(window).SelectedDate = DateTime.Today;
 
-                        // كل سطر يحمل قائمتين بترتيب إعلانه: البنك ثم الطرف.
                         var combos = FindAll<AppComboBox>(window).ToList();
                         var texts = FindAll<AppTextBox>(window).ToList();
                         var numbers = FindAll<AppNumericBox>(window).ToList();
 
-                        // ترتيب السطر: البنك ثم الطرف.
                         var bankCombo = combos[0];
                         bankCombo.SelectedItem = ((System.Collections.IEnumerable)bankCombo.ItemsSource).Cast<object>().First();
 

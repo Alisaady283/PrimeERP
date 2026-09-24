@@ -3,6 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Common
 {
+    /// <summary>عقد خدمة الفئات</summary>
     public interface ICategoryService
     {
         Result<System.Collections.Generic.List<CategoryDto>> GetAll(string moduleKey, bool includeInactive = false);

@@ -3,6 +3,7 @@ using System.Linq;
 
 namespace PrimeERP.Domain.Contracts
 {
+    /// <summary>عقد ValidationResult</summary>
     public class ValidationResult
     {
         public Dictionary<string, string> Errors { get; } = new();

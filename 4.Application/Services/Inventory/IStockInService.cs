@@ -3,6 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Inventory
 {
+    /// <summary>عقود أذون المخزون الستة</summary>
     public interface IStockInService
     {
         Result<PagedResult<StockAdjustmentDto>> GetPaged(int page, int pageSize, StockAdjustmentFilter filter = null);

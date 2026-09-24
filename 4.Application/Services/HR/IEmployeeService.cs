@@ -3,6 +3,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.HR
 {
+    /// <summary>عقد الموظفين</summary>
     public interface IEmployeeService
     {
         Result<PagedResult<EmployeeDto>> GetPaged(int page, int pageSize, EmployeeFilter filter = null);

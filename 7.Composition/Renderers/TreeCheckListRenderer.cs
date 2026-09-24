@@ -15,7 +15,7 @@ using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.Composition.Renderers
 {
-    // شجرة قابلة للتأشير مدفوعة بمصدر — تجميع PageHeader/FilterBar/AppTreeView/AppComboBox، صفر عنصر خام.
+    /// <summary>تصيير شجرة التأشير</summary>
     public static class TreeCheckListRenderer
     {
         public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services)
@@ -24,8 +24,6 @@ namespace PrimeERP.Composition.Renderers
                 ?? throw new InvalidOperationException($"الوحدة '{definition.Key}' بتخطيط TreeCheckList بلا TreeCheckListDefinition.");
 
             var toast = services.GetRequiredService<IToastService>();
-            // القائمة تُستبدَل ولا تُفرَّغ: إسناد نفس المرجع لا يُطلق إشعار تغيير في WPF، فتبقى الشجرة
-            // معروضة بعُقد التحميل الأول بينما الأزرار والحفظ يعملان على عُقد جديدة لا يراها أحد.
             var nodes = new List<TreeNodeViewModel>();
             var tree = new AppTreeView { CheckMode = def.Mode };
 
@@ -53,8 +51,6 @@ namespace PrimeERP.Composition.Renderers
             void LoadTree()
             {
                 var sourceId = SelectedSourceId();
-                // الوصف يقرّر ما يُعرض بلا مصدر مختار — شاشة إنشاء البرنامج تعرض الشجرة كاملةً،
-                // وشاشات الصلاحيات تُرجع فارغاً لأن لا دور بعد.
                 nodes = def.BuildTree(services, sourceId) ?? new List<TreeNodeViewModel>();
                 def.ApplyRules?.Invoke(nodes, null);
                 tree.ItemsSource = nodes;
@@ -62,7 +58,6 @@ namespace PrimeERP.Composition.Renderers
             }
 
             sourcePicker.SelectionChanged += (_, __) => LoadTree();
-            // العقدة التي تغيّرت تصل للقاعدة: بلا معرفتها لا يعرف القسم أنه هو من نُقر فيورّث صفحاته.
             tree.CheckStateChanged += (_, changed) =>
             {
                 def.ApplyRules?.Invoke(nodes, changed);
@@ -77,7 +72,6 @@ namespace PrimeERP.Composition.Renderers
                 var button = new Btn { Text = LocalizationService.Get(action.TextKey), Variant = action.Variant, Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
                 button.Click += async (_, __) =>
                 {
-                    // الحارس مُعلَن لا مفروض: ما يحتاج مصدراً يُرفض برسالة، وما لا يحتاجه يمضي.
                     if (action.RequiresSource && SelectedSourceId() == 0)
                     {
                         toast.Info(LocalizationService.Get(def.SourceLabelKey) + " مطلوب أولاً");
@@ -100,7 +94,6 @@ namespace PrimeERP.Composition.Renderers
                     def.ApplyRules?.Invoke(nodes, null);
                     RefreshSummary();
 
-                    // إجراءٌ قد يُضيف مصدراً (عميلاً جديداً) — فالقائمة تُعاد قراءتها بعده لا تبقى قديمة.
                     sourcePicker.ItemsSource = def.SourceItems(services);
                 };
                 actions.Children.Add(button);
@@ -109,14 +102,12 @@ namespace PrimeERP.Composition.Renderers
             var saveButton = new Btn { Text = LocalizationService.Get(def.SaveTextKey), Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
             saveButton.Click += async (_, __) =>
             {
-                // الحفظ يخصّ مصدراً بعينه دائماً — والرفض يُقال ولا يُصمَت عنه.
                 if (SelectedSourceId() == 0)
                 {
                     toast.Info(LocalizationService.Get(def.SourceLabelKey) + " مطلوب أولاً");
                     return;
                 }
 
-                // الزرّ يُعطَّل أثناء العمل: الحفظ قد يطول، ونقرةٌ ثانية تبدأ العملية مرّتين على نفس المسار.
                 saveButton.IsEnabled = false;
                 try
                 {
@@ -169,8 +160,6 @@ namespace PrimeERP.Composition.Renderers
             {
                 var first = def.SourceItems(services).FirstOrDefault();
 
-                // مصدرٌ موجود يُختار فيُحمّل باختياره؛ وبلا مصادر تُحمَّل الشجرة كما يقرّرها الوصف —
-                // وإلّا بقيت الصفحة فارغة إلى أن يوجد أوّل مصدر، وهي أوّل ما يراه المستخدم.
                 if (first != null)
                     sourcePicker.SelectedItem = ((List<SourceOption>)sourcePicker.ItemsSource)
                         .FirstOrDefault(o => o.Id == first.Id);

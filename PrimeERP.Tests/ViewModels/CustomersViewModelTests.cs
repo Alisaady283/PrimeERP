@@ -9,9 +9,7 @@ using Xunit;
 
 namespace PrimeERP.Tests.ViewModels
 {
-    /// <summary>يثبت أن CustomersViewModel — أول مستهلك حقيقي لـCrudViewModelBase — يُبنى فعلياً عبر حاوية
-    /// DI الحقيقية (لا new يدوي) ويعمل فوق ICustomerService حقيقية. يُثبت شرط إغلاق R7 (Gallery/الأساس يعمل
-    /// من طرف لطرف قبل اعتبار البند مكتملاً).</summary>
+    /// <summary>يثبت أن CustomersViewModel</summary>
     public class CustomersViewModelTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();

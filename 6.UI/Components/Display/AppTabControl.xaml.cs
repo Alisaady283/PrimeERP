@@ -6,6 +6,7 @@ using System.Windows.Media;
 
 namespace PrimeERP.UI.Components.Display
 {
+    /// <summary>عرض AppTabControl</summary>
     public partial class AppTabControl : UserControl
     {
         public static readonly DependencyProperty TabsProperty =

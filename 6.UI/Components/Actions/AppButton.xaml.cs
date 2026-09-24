@@ -7,6 +7,7 @@ using PrimeERP.Platform.Permissions;
 
 namespace PrimeERP.UI.Components.Actions
 {
+    /// <summary>أزرار AppButton</summary>
     public partial class AppButton : UserControl
     {
         public static readonly DependencyProperty TextProperty =
@@ -45,7 +46,6 @@ namespace PrimeERP.UI.Components.Actions
             DependencyProperty.Register(nameof(CommandParameter), typeof(object), typeof(AppButton),
                 new PropertyMetadata(null, (d, e) => ((AppButton)d).btn.CommandParameter = e.NewValue));
 
-        /// <summary>تحدّدها AppButtonStyle حسب Size — الأيقونة الداخلية تقرأها بدل حجم مكتوب في القطعة.</summary>
         public static readonly DependencyProperty IconSizeProperty =
             DependencyProperty.Register(nameof(IconSize), typeof(double), typeof(AppButton),
                 new PropertyMetadata(16.0));
@@ -55,14 +55,11 @@ namespace PrimeERP.UI.Components.Actions
         public string   Text            { get => (string)GetValue(TextProperty);            set => SetValue(TextProperty, value); }
         public Geometry Icon            { get => (Geometry)GetValue(IconProperty);           set => SetValue(IconProperty, value); }
 
-        /// <summary>"primary" (افتراضي) / "secondary" / "danger" / "success" / "warning" / "ghost" — الشكل الفعلي في AppButtonStyle.</summary>
         public string   Variant         { get => (string)GetValue(VariantProperty);          set => SetValue(VariantProperty, value); }
 
-        /// <summary>"sm" / "md" (افتراضي) / "lg" — الأبعاد الفعلية في AppButtonStyle.</summary>
         public string   Size            { get => (string)GetValue(SizeProperty);             set => SetValue(SizeProperty, value); }
         public bool     IsLoading       { get => (bool)GetValue(IsLoadingProperty);          set => SetValue(IsLoadingProperty, value); }
 
-        /// <summary>يفرض شكل "danger" بصرف النظر عن Variant — لعمليات الحذف/الإلغاء الحرجة.</summary>
         public bool     IsDangerous     { get => (bool)GetValue(IsDangerousProperty);        set => SetValue(IsDangerousProperty, value); }
         public string   PermissionKey   { get => (string)GetValue(PermissionKeyProperty);    set => SetValue(PermissionKeyProperty, value); }
         public ICommand Command         { get => (ICommand)GetValue(CommandProperty);        set => SetValue(CommandProperty, value); }

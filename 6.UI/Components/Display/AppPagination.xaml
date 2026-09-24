@@ -1,6 +1,8 @@
 <UserControl x:Class="PrimeERP.UI.Components.Display.AppPagination"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- عرض AppPagination -->
     <Grid MinHeight="{DynamicResource C.Pagination.Height}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -14,7 +16,7 @@
                    VerticalAlignment="Center"
                    FontSize="{DynamicResource C.Pagination.Info.FontSize}"
                    FontFamily="{DynamicResource P.Font.Family.Primary}"
-                   Foreground="{DynamicResource C.Pagination.Info.Fg}"/>
+                   Foreground="{DynamicResource TextSecondary}"/>
 
         <StackPanel x:Name="pnlPages" Grid.Column="2"
                     Orientation="Horizontal"
@@ -26,7 +28,7 @@
                        Margin="{DynamicResource P.Space.2.Right}"
                        FontSize="{DynamicResource C.Pagination.Info.FontSize}"
                        FontFamily="{DynamicResource P.Font.Family.Primary}"
-                       Foreground="{DynamicResource C.Pagination.Info.Fg}"/>
+                       Foreground="{DynamicResource TextSecondary}"/>
             <ComboBox x:Name="cmbPageSize"
                       Width="70" Height="{DynamicResource C.Input.Height}"
                       FontSize="{DynamicResource C.Pagination.Info.FontSize}"

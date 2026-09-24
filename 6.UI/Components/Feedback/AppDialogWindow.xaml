@@ -10,9 +10,8 @@
         SizeToContent="Height"
         PreviewKeyDown="AppDialogWindow_PreviewKeyDown">
 
-    <!-- الاستدارة والحدّ والظل على البطاقة لا على النافذة: النافذة شفافة ليقع الظل خارج البطاقة، فتنفصل
-         عمّا خلفها بدل أن تذوب فيه — خصوصاً في الوضع الداكن حيث لا يكفي الظل وحده فيحدّها الإطار.
-         نفس توكنات فورم الدخول، فالشكل واحد لكل نافذة في البرنامج. -->
+    <!-- حوارات وتنبيهات AppDialogWindow -->
+
     <Border x:Name="shell"
             Margin="{DynamicResource C.Dialog.Gutter}"
             Background="{DynamicResource SurfaceOverlay}"
@@ -20,7 +19,6 @@
             CornerRadius="{DynamicResource P.Radius.Lg}"
             Effect="{DynamicResource ShadowLg}">
 
-        <!-- القصّ يُلزم الهيدر الملوّن والفوتر باستدارة البطاقة بدل أن يربّعا زواياها. -->
         <Grid x:Name="card">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -28,7 +26,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-        <!-- ===== Header ===== -->
+        <!-- Header -->
         <Border x:Name="headerBorder" Grid.Row="0" Style="{StaticResource DialogHeaderStyle}"
                 MouseLeftButtonDown="headerBorder_MouseLeftButtonDown">
             <Grid>
@@ -57,12 +55,12 @@
             </Grid>
         </Border>
 
-        <!-- ===== Content ===== -->
+        <!-- Content -->
         <ScrollViewer Grid.Row="1" x:Name="contentScroll" Style="{StaticResource DialogContentScrollStyle}">
             <ContentPresenter x:Name="contentHost"/>
         </ScrollViewer>
 
-        <!-- ===== Footer ===== -->
+        <!-- Footer -->
         <Border Grid.Row="2" Style="{StaticResource DialogFooterStyle}">
             <ContentPresenter x:Name="footerHost" HorizontalAlignment="Left"/>
         </Border>

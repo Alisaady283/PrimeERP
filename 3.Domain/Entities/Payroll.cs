@@ -4,6 +4,7 @@ using PrimeERP.Domain.Entities.Common;
 
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان Payroll</summary>
     public class Payroll : BaseModel
     {
         public string   PayrollNo       { get; set; }

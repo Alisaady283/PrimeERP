@@ -7,10 +7,12 @@ using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Permissions;
 using Xunit;
-using Db = PrimeERP.Data.Core.DbHelper;
+using Microsoft.EntityFrameworkCore;
+using PrimeERP.Data.Core;
 
 namespace PrimeERP.Tests.Pipeline
 {
+    /// <summary>بنية الـPipeline بكيان وهمي</summary>
     public class TestEntity
     {
         public int Id { get; set; }
@@ -44,7 +46,7 @@ namespace PrimeERP.Tests.Pipeline
             => CallCount++;
     }
 
-    /// <summary>يختبر البنية التحتية للـ Pipeline بكيان وهمي قبل استخدامها مع أي كيان محاسبي حقيقي (شرط إلزامي في R6).</summary>
+    /// <summary>بنية الـPipeline بكيان وهمي</summary>
     [Collection("Database")]
     public class PipelineTests
     {
@@ -134,16 +136,14 @@ namespace PrimeERP.Tests.Pipeline
         [Fact]
         public void TransactionStep_commits_when_all_inner_steps_succeed()
         {
-            Db.Execute("CREATE TABLE IF NOT EXISTS PipelineTestScratch (Id INTEGER PRIMARY KEY, Name TEXT)");
-            Db.Execute("DELETE FROM PipelineTestScratch");
+            Raw("CREATE TABLE IF NOT EXISTS PipelineTestScratch (Id INTEGER PRIMARY KEY, Name TEXT)");
+            Raw("DELETE FROM PipelineTestScratch");
 
             var step = new TransactionStep(new List<IStep>
             {
                 new FuncStep("Insert", ctx =>
                 {
-                    using var cmd = Db.CreateCommand(ctx.Conn, ctx.Tx,
-                        "INSERT INTO PipelineTestScratch (Name) VALUES (@n)", Db.Params(("@n", "committed")));
-                    cmd.ExecuteNonQuery();
+                    Raw("INSERT INTO PipelineTestScratch (Name) VALUES ('committed')", ctx.Db);
                     return Result.Ok();
                 })
             });
@@ -151,22 +151,20 @@ namespace PrimeERP.Tests.Pipeline
             var result = step.Execute(new PipelineContext());
 
             Assert.True(result.IsSuccess);
-            Assert.Equal(1L, (long)Db.Scalar("SELECT COUNT(*) FROM PipelineTestScratch"));
+            Assert.Equal(1L, Count());
         }
 
         [Fact]
         public void TransactionStep_rolls_back_when_an_inner_step_fails()
         {
-            Db.Execute("CREATE TABLE IF NOT EXISTS PipelineTestScratch (Id INTEGER PRIMARY KEY, Name TEXT)");
-            Db.Execute("DELETE FROM PipelineTestScratch");
+            Raw("CREATE TABLE IF NOT EXISTS PipelineTestScratch (Id INTEGER PRIMARY KEY, Name TEXT)");
+            Raw("DELETE FROM PipelineTestScratch");
 
             var step = new TransactionStep(new List<IStep>
             {
                 new FuncStep("Insert", ctx =>
                 {
-                    using var cmd = Db.CreateCommand(ctx.Conn, ctx.Tx,
-                        "INSERT INTO PipelineTestScratch (Name) VALUES (@n)", Db.Params(("@n", "rolledback")));
-                    cmd.ExecuteNonQuery();
+                    Raw("INSERT INTO PipelineTestScratch (Name) VALUES ('rolledback')", ctx.Db);
                     return Result.Ok();
                 }),
                 new FuncStep("Fail", ctx => Result.Fail("boom"))
@@ -175,43 +173,41 @@ namespace PrimeERP.Tests.Pipeline
             var result = step.Execute(new PipelineContext());
 
             Assert.True(result.IsFailure);
-            Assert.Equal(0L, (long)Db.Scalar("SELECT COUNT(*) FROM PipelineTestScratch"));
+            Assert.Equal(0L, Count());
         }
 
         [Fact]
         public void TransactionStep_reuses_existing_connection_instead_of_opening_a_new_one()
         {
-            Db.Execute("CREATE TABLE IF NOT EXISTS PipelineTestScratch (Id INTEGER PRIMARY KEY, Name TEXT)");
-            Db.Execute("DELETE FROM PipelineTestScratch");
+            Raw("CREATE TABLE IF NOT EXISTS PipelineTestScratch (Id INTEGER PRIMARY KEY, Name TEXT)");
+            Raw("DELETE FROM PipelineTestScratch");
 
-            using var conn = Db.GetConnection();
-            using var tx = conn.BeginTransaction();
+            using var db = DbContextFactory.Open();
+            using var tx = db.Database.BeginTransaction();
 
             var step = new TransactionStep(new List<IStep>
             {
                 new FuncStep("Insert", ctx =>
                 {
-                    Assert.Same(conn, ctx.Conn); // نفس الاتصال الخارجي — لم يُفتح اتصال جديد
-                    using var cmd = Db.CreateCommand(ctx.Conn, ctx.Tx,
-                        "INSERT INTO PipelineTestScratch (Name) VALUES (@n)", Db.Params(("@n", "outer")));
-                    cmd.ExecuteNonQuery();
+                    Assert.Same(db, ctx.Db);   // نفس السياق الخارجي — لم يُفتح سياقٌ جديد
+                    Raw("INSERT INTO PipelineTestScratch (Name) VALUES ('outer')", ctx.Db);
                     return Result.Ok();
                 })
             });
 
-            var ctx2 = new PipelineContext { Conn = conn, Tx = tx };
+            var ctx2 = new PipelineContext { Db = db };
             var result = step.Execute(ctx2);
             tx.Commit();
 
             Assert.True(result.IsSuccess);
-            Assert.Equal(1L, (long)Db.Scalar("SELECT COUNT(*) FROM PipelineTestScratch"));
+            Assert.Equal(1L, Count());
         }
 
         [Fact]
         public void FullPipeline_permission_validate_transaction_audit_endtoend()
         {
-            Db.Execute("CREATE TABLE IF NOT EXISTS PipelineTestScratch (Id INTEGER PRIMARY KEY, Name TEXT)");
-            Db.Execute("DELETE FROM PipelineTestScratch");
+            Raw("CREATE TABLE IF NOT EXISTS PipelineTestScratch (Id INTEGER PRIMARY KEY, Name TEXT)");
+            Raw("DELETE FROM PipelineTestScratch");
 
             var audit = new FakeAuditLogger();
             var pipeline = new Pipeline<TestEntity>()
@@ -220,9 +216,7 @@ namespace PrimeERP.Tests.Pipeline
                 .InTransaction(tx => tx.Save("Save", ctx =>
                 {
                     var entity = ctx.InputAs<TestEntity>();
-                    using var cmd = Db.CreateCommand(ctx.Conn, ctx.Tx,
-                        "INSERT INTO PipelineTestScratch (Name) VALUES (@n)", Db.Params(("@n", entity.Name)));
-                    cmd.ExecuteNonQuery();
+                    Raw($"INSERT INTO PipelineTestScratch (Name) VALUES ('{entity.Name}')", ctx.Db);
                     entity.Id = 1;
                     ctx.Output = entity;
                     ctx.Items["AuditRecordId"] = entity.Id;
@@ -235,7 +229,27 @@ namespace PrimeERP.Tests.Pipeline
             Assert.True(result.IsSuccess);
             Assert.Equal("fake", result.Value.Name);
             Assert.Equal(1, audit.CallCount);
-            Assert.Equal(1L, (long)Db.Scalar("SELECT COUNT(*) FROM PipelineTestScratch"));
+            Assert.Equal(1L, Count());
+        }
+
+        /// <summary>جدول خردةٍ للاختبار</summary>
+        private static void Raw(string sql, PrimeDbContext borrowed = null)
+        {
+            if (borrowed != null) { borrowed.Database.ExecuteSqlRaw(sql); return; }
+
+            using var db = DbContextFactory.Open();
+            db.Database.ExecuteSqlRaw(sql);
+        }
+
+        private static long Count()
+        {
+            using var db = DbContextFactory.Open();
+            using var command = db.Database.GetDbConnection().CreateCommand();
+
+            command.CommandText = "SELECT COUNT(*) FROM PipelineTestScratch";
+            if (command.Connection.State != System.Data.ConnectionState.Open) command.Connection.Open();
+
+            return Convert.ToInt64(command.ExecuteScalar());
         }
     }
 }

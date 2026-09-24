@@ -4,10 +4,7 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Application.Services.Print
 {
-    /// <summary>
-    /// ترويسة الشركة كقطعة واحدة تُستدعى — ماذا يظهر وبأي ترتيب وبأي مقاس يُقرَّر هنا وحده.
-    /// الطباعة والتصدير يستدعيانها ثم ينفّذان ما تعيده، فلا يملك أيّهما قراراً عنها.
-    /// </summary>
+    /// <summary>ترويسة الشركة كقطعة واحدة تُستدعى</summary>
     public static class CompanyHeaderComponent
     {
         private static readonly (string Key, string Label)[] Fields =
@@ -35,7 +32,6 @@ namespace PrimeERP.Application.Services.Print
                 });
             }
 
-            // الأول يمتدّ فيقع على حافة اليمين في تخطيط RTL، والشعار بحجمه فيلاصق حافة اليسار.
             var row = new PaperRow();
             row.Children.Add(info);
 

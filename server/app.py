@@ -161,6 +161,7 @@ def update():
     data = request.get_json(silent=True) or {}
     serial = (data.get("serial") or "").strip().upper()
     current = (data.get("version") or "").strip()
+    machine = (data.get("machine") or "").strip()
 
     with db() as connection:
         row = connection.execute(
@@ -169,6 +170,10 @@ def update():
 
     if row is None:
         return jsonify(error="سريال غير معروف"), HTTPStatus.NOT_FOUND
+
+    # السريال مقيَّدٌ بجهازه: نسخةٌ على جهازٍ آخر لا تُحدَّث
+    if row["machine"] and machine and not hmac.compare_digest(row["machine"], machine):
+        return jsonify(error="هذا السريال مُفعَّل على جهاز آخر"), HTTPStatus.FORBIDDEN
 
     release = latest_release()
     if release is None or release["version"] == current:

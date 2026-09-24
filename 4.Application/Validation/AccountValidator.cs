@@ -5,14 +5,13 @@ using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Application.Validation
 {
-    /// <summary>ينفّذ IValidator&lt;Account&gt; عبر RuleSet — فوق AccountRepository.</summary>
+    /// <summary>ينفّذ IValidator&lt;Account&gt; عبر RuleSet</summary>
     public class AccountValidator : IValidator<Account>
     {
         private readonly IAccountRepository _repo;
         private readonly bool _isEdit;
         private readonly bool _checkUniqueness;
 
-        /// <summary>checkUniqueness=false يتخطّى قراءة IAccountRepository.GetByCode — للاستدعاء من داخل معاملة (conn,tx) قائمة (AccountService.Create(conn,tx,...)) حيث اتصال منفصل يُعلِّق (deadlock)، ولا حاجة فعلية له أصلاً: الكود مولَّد برمجياً (GenerateChildCodeInternal) لا يمكن أن يتصادم بحكم طريقة توليده.</summary>
         public AccountValidator(IAccountRepository repo, bool isEdit = false, bool checkUniqueness = true)
         {
             _repo = repo;

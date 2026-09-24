@@ -4,6 +4,7 @@ using PrimeERP.Domain.Rules;
 
 namespace PrimeERP.Application.Validation
 {
+    /// <summary>تحقّق العميل</summary>
     public class CustomerValidator : IValidator<Customer>
     {
         public ValidationResult Validate(Customer customer) =>

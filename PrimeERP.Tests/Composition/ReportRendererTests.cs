@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System;
 using System.Collections;
 using System.Linq;
@@ -23,12 +24,11 @@ using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Services;
 using Xunit;
+using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Composition
 {
-    // يثبت أن ReportRenderer (النمط 4، مبني حديثاً) يعمل فعلياً عبر PageRenderer العام — يزرع فاتورة بيع
-    // حقيقية (تُنشئ رصيداً للعميل عبر القيد المُرحَّل)، يُصيِّر تقرير أرصدة العملاء (بلا معايير)، ويتحقق أن
-    // Loaded يُشغِّل التقرير تلقائياً وأن النتيجة تعرض العميل بالرصيد الصحيح.
+    /// <summary>تصيير التقرير</summary>
     [Collection("WpfApplication")]
     public class ReportRendererTests : IDisposable
     {
@@ -42,7 +42,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var accounts = _db.Services.GetRequiredService<IAccountService>();
                 var settings = _db.Services.GetRequiredService<ISettingsService>();
@@ -69,8 +69,8 @@ namespace PrimeERP.Tests.Composition
                 var customer = customers.Create(new CreateCustomerDto { Name = "عميل التقرير" }).Value;
 
                 var stock = _db.Services.GetRequiredService<IStockService>();
-                Data.Core.DbHelper.RunTransaction((conn, tx) =>
-                    stock.RecordMovement(conn, tx, product.Id, warehouseId, Domain.Enums.MovementType.In, 50, 10, "Seed", null, "SEED"));
+                Data.Core.DbContextFactory.RunTransaction(db =>
+                    stock.RecordMovement(db, product.Id, warehouseId, Domain.Enums.MovementType.In, 50, 10, "Seed", null, "SEED"));
 
                 var invoices = _db.Services.GetRequiredService<ISalesInvoiceService>();
                 var invoiceResult = invoices.Create(new CreateSalesInvoiceDto
@@ -100,7 +100,6 @@ namespace PrimeERP.Tests.Composition
                 var rows = ((IEnumerable)grid.ItemsSource).Cast<object>().ToList();
                 Assert.Single(rows);
 
-                // الشكل الرسمي: أول المدة ثم حركتا الفترة ثم آخر المدة — لا عمود رصيد واحد.
                 decimal Value(string name) => (decimal)rows[0].GetType().GetProperty(name).GetValue(rows[0]);
 
                 Assert.Equal(125, Value("Charged"));
@@ -115,7 +114,7 @@ namespace PrimeERP.Tests.Composition
             WpfApplicationFixture.Run(() =>
             {
                 UIServices.Initialize(_db.Services);
-                _db.Services.GetRequiredService<IIdentityService>().Apply("Default");
+                _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var accounts = _db.Services.GetRequiredService<IAccountService>();
 
@@ -161,7 +160,6 @@ namespace PrimeERP.Tests.Composition
                 var grid = FindVisualChild<AppDataGrid>(element);
                 var rows = ((IEnumerable)grid.ItemsSource).Cast<object>().ToList();
 
-                // رصيد افتتاحي + السطر المُرحَّل + رصيد آخر المدة
                 Assert.Equal(3, rows.Count);
 
                 object Cell(int row, string name) => rows[row].GetType().GetProperty(name).GetValue(rows[row]);

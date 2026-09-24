@@ -4,6 +4,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Treasury
 {
+    /// <summary>عقد الخزائن والبنوك</summary>
     public interface ITreasuryService
     {
         Result<List<TreasuryDto>> GetAll(bool includeInactive = false);

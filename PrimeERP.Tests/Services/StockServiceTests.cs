@@ -1,3 +1,4 @@
+using PrimeERP.Data.Core;
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Common;
@@ -7,10 +8,10 @@ using PrimeERP.Application.Services.Inventory;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using Xunit;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Tests.Services
 {
+    /// <summary>أرصدة المخزون</summary>
     public class StockServiceTests : IDisposable
     {
         private readonly TestDatabaseFixture _db = new();
@@ -39,17 +40,17 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void RecordMovement_InThenOut_BalanceReflectsBoth()
         {
-            Db.RunTransaction((conn, tx) =>
+            DbContextFactory.RunTransaction(db =>
             {
-                var inResult = _stock.RecordMovement(conn, tx, _productId, _warehouseAId, MovementType.In, 100, 10, "Test", null, "T-1");
+                var inResult = _stock.RecordMovement(db, _productId, _warehouseAId, MovementType.In, 100, 10, "Test", null, "T-1");
                 Assert.True(inResult.IsSuccess);
             });
 
             Assert.Equal(100, _stock.GetBalance(_productId, _warehouseAId).Value);
 
-            Db.RunTransaction((conn, tx) =>
+            DbContextFactory.RunTransaction(db =>
             {
-                var outResult = _stock.RecordMovement(conn, tx, _productId, _warehouseAId, MovementType.Out, 30, 10, "Test", null, "T-2");
+                var outResult = _stock.RecordMovement(db, _productId, _warehouseAId, MovementType.Out, 30, 10, "Test", null, "T-2");
                 Assert.True(outResult.IsSuccess);
             });
 
@@ -59,9 +60,9 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void RecordMovement_OutExceedingBalance_Fails()
         {
-            Db.RunTransaction((conn, tx) =>
+            DbContextFactory.RunTransaction(db =>
             {
-                var result = _stock.RecordMovement(conn, tx, _productId, _warehouseAId, MovementType.Out, 5, 10, "Test", null, "T-1");
+                var result = _stock.RecordMovement(db, _productId, _warehouseAId, MovementType.Out, 5, 10, "Test", null, "T-1");
                 Assert.False(result.IsSuccess);
             });
 
@@ -71,8 +72,8 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Transfer_MovesBalanceBetweenWarehouses()
         {
-            Db.RunTransaction((conn, tx) =>
-                _stock.RecordMovement(conn, tx, _productId, _warehouseAId, MovementType.In, 50, 10, "Test", null, "T-1"));
+            DbContextFactory.RunTransaction(db =>
+                _stock.RecordMovement(db, _productId, _warehouseAId, MovementType.In, 50, 10, "Test", null, "T-1"));
 
             var transferResult = _stock.Transfer(_productId, _warehouseAId, _warehouseBId, 20);
             Assert.True(transferResult.IsSuccess);

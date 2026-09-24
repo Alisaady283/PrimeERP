@@ -7,7 +7,7 @@ using PrimeERP.UI.ViewModels.Base;
 
 namespace PrimeERP.UI.ViewModels
 {
-    /// <summary>البدل والخصم شاشةٌ واحدة بخدمتين — النموذج يرث المشترك، والوارثان يمرّران خدمتهما.</summary>
+    /// <summary>البدل والخصم شاشةٌ واحدة بخدمتين</summary>
     public abstract class EmployeeMovementViewModel : CrudViewModelBase<EmployeeMovementDto, EmployeeMovementFilter>
     {
         private readonly IEmployeeMovementService _service;

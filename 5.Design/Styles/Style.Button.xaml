@@ -3,20 +3,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:actions="clr-namespace:PrimeERP.UI.Components.Actions">
 
-    <!--
-        L4 — كل البصري لـ AppButton/ActionToolbar. يستهلك C.Button.* (L3) حصراً لكل لون/بُعد مكوّن مستقل،
-        و P.Space.*/P.Radius.* (L1) مباشرة للحشو الأفقي/نصف القطر (استثناء موثَّق — راجع ⚠️ توقف 4 في
-        ARCHITECTURE.md: القيم القياسية لا يمكن استعارتها تحت اسم L3 جديد مع بقاء التبديل الحي، فالإشارة
-        المباشرة لـ L1 هنا صحيحة معمارياً لا انحرافاً عنها).
-    -->
+    <!-- أنماط الأزرار -->
+
 
     <Style x:Key="AppButtonStyle" TargetType="Button">
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Background" Value="{DynamicResource C.Button.Primary.Bg}"/>
-        <Setter Property="Foreground" Value="{DynamicResource C.Button.Primary.Fg}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource C.Button.Primary.Border}"/>
+        <Setter Property="Background" Value="{DynamicResource BrandDefault}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BrandDefault}"/>
         <Setter Property="Height" Value="{DynamicResource C.Button.Height.Md}"/>
-        <!-- C.Button.PaddingX -->
         <Setter Property="Padding" Value="16,0,16,0"/>
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
@@ -45,7 +40,7 @@
         </Setter>
 
         <Style.Triggers>
-            <!-- ===== Size ===== -->
+            <!-- Size -->
             <DataTrigger Binding="{Binding Size, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="sm">
                 <Setter Property="Height" Value="{DynamicResource C.Button.Height.Sm}"/>
                 <Setter Property="Padding" Value="12,0,12,0"/>
@@ -57,46 +52,45 @@
                 <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.500}"/>
             </DataTrigger>
 
-            <!-- ===== Variant ===== -->
+            <!-- Variant -->
             <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="secondary">
-                <Setter Property="Background" Value="{DynamicResource C.Button.Secondary.Bg}"/>
-                <Setter Property="Foreground" Value="{DynamicResource C.Button.Secondary.Fg}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Button.Secondary.Border}"/>
+                <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
                 <Setter Property="BorderThickness" Value="1"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="success">
-                <Setter Property="Background" Value="{DynamicResource C.Button.Success.Bg}"/>
-                <Setter Property="Foreground" Value="{DynamicResource C.Button.Success.Fg}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Button.Success.Border}"/>
+                <Setter Property="Background" Value="{DynamicResource Success}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Success}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="warning">
-                <Setter Property="Background" Value="{DynamicResource C.Button.Warning.Bg}"/>
-                <Setter Property="Foreground" Value="{DynamicResource C.Button.Warning.Fg}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Button.Warning.Border}"/>
+                <Setter Property="Background" Value="{DynamicResource Warning}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Warning}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="ghost">
                 <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="Foreground" Value="{DynamicResource C.Button.Ghost.Fg}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Button.Ghost.Border}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
                 <Setter Property="BorderThickness" Value="1"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="danger">
-                <Setter Property="Background" Value="{DynamicResource C.Button.Danger.Bg}"/>
-                <Setter Property="Foreground" Value="{DynamicResource C.Button.Danger.Fg}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Button.Danger.Border}"/>
+                <Setter Property="Background" Value="{DynamicResource Danger}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
             </DataTrigger>
 
-            <!-- ===== IsDangerous يفرض شكل danger بصرف النظر عن Variant — آخر شرط عمداً ليطغى ===== -->
+            <!-- Danger -->
             <DataTrigger Binding="{Binding IsDangerous, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="True">
-                <Setter Property="Background" Value="{DynamicResource C.Button.Danger.Bg}"/>
-                <Setter Property="Foreground" Value="{DynamicResource C.Button.Danger.Fg}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Button.Danger.Border}"/>
+                <Setter Property="Background" Value="{DynamicResource Danger}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
                 <Setter Property="BorderThickness" Value="0"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>
 
-    <!-- الأيقونة الداخلية: حجمها من IconSize (تحدّدها AppButtonStyle حسب Size)، لونها من Foreground الزر نفسه. -->
     <Style x:Key="AppButtonIconStyle" TargetType="Path">
         <Setter Property="Margin" Value="0,0,8,0"/>
         <Setter Property="StrokeThickness" Value="2"/>
@@ -108,8 +102,6 @@
         <Setter Property="Stroke" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
     </Style>
 
-    <!-- تحدّد الحجم فعلياً حسب Size (تُقرأ IconSize من AppButton نفسها عبر Trigger مطابق في AppButtonStyle، لكن بما أن
-         IconSize خاصية على AppButton لا على Button، نضبطها هنا مباشرة على مستوى AppButton نفسها. -->
     <Style TargetType="{x:Type actions:AppButton}">
         <Setter Property="IconSize" Value="{DynamicResource C.Button.IconSize.Md}"/>
         <Style.Triggers>
@@ -122,9 +114,8 @@
         </Style.Triggers>
     </Style>
 
-    <!-- ===== ActionToolbar (فاصل + تباعد بين الأزرار المُولَّدة برمجياً) ===== -->
+    <!-- ActionToolbar -->
 
-    <!-- يفصل مستوى إجراءات الصفحة عن إجراءات المستند المحدَّد — الفراغ حوله هو ما يجعله يُقرأ كفصل. -->
     <Style x:Key="ActionToolbarSeparatorStyle" TargetType="Border">
         <Setter Property="Width" Value="1"/>
         <Setter Property="Height" Value="22"/>

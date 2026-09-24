@@ -6,12 +6,7 @@ using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Application.Reporting
 {
-    /// <summary>
-    /// القوائم المالية بشكلها الرسمي: البيان، جزئي، كلي. البنود تُكتب في «جزئي» والمجاميع في «كلي»،
-    /// والتدرّج بالإزاحة — فتُقرأ كقائمة محاسبية لا كجدول أرصدة. قطعة واحدة تستوردها قائمة الدخل
-    /// والمركز المالي والتدفقات، فلا يبقى لكلٍّ تخطيطه. تسكن طبقة التطبيق لأنها منطق محاسبي — تصنيفُ
-    /// الحسابات بطبيعتها المدينة/الدائنة وتجميعُها عند مستوى القراءة — لا تخطيطَ شاشة.
-    /// </summary>
+    /// <summary>القوائم المالية بشكلها الرسمي</summary>
     public static class FinancialStatementFactory
     {
         public class Line
@@ -19,26 +14,18 @@ namespace PrimeERP.Application.Reporting
             public string   Statement { get; set; }
             public decimal? Partial   { get; set; }
             public decimal? Total     { get; set; }
-            /// <summary>heading لعنوان قسم، total لمجموع، فارغ لبند — تُميَّز الثلاثة بصرياً.</summary>
             public string   Kind      { get; set; }
         }
 
-        /// <summary>يُمرَّر لـ ReportResult.RowKind فتُلوّن الشبكة العناوين والمجاميع.</summary>
         public static readonly Func<object, string> RowKind = row => (row as Line)?.Kind;
 
         private const string Indent = "      ";
 
-        /// <summary>عنوان قسم بلا مبلغ.</summary>
         public static Line Heading(string title) => new() { Statement = title, Kind = "heading" };
 
-        /// <summary>مجموع في عمود «كلي».</summary>
         public static Line Grand(string label, decimal amount, int level = 0) =>
             new() { Statement = Repeat(level) + label, Total = amount, Kind = "total" };
 
-        /// <summary>
-        /// قسم كامل: عنوانه، ثم بنوده في «جزئي»، ثم مجموعه في «كلي». يُعرض دائماً ولو بصفر — القائمة
-        /// تُعرَّف ببنيتها لا بأرصدتها، وحذف قسم لأنه صفر يخفي عن القارئ أنه صفر أصلاً.
-        /// </summary>
         public static IEnumerable<Line> Group(string title, List<Line> items, string totalLabel = null, int level = 1)
         {
             yield return new Line { Statement = Repeat(level) + title, Kind = "heading" };
@@ -56,23 +43,15 @@ namespace PrimeERP.Application.Reporting
 
         public static decimal Sum(List<Line> items) => items.Sum(i => i.Partial ?? 0);
 
-        // ===== قراءة الأرصدة =====
 
-        /// <summary>الحسابات الورقية ذات الرصيد الختامي — لقوائم اللحظة (المركز المالي).</summary>
         public static List<Line> Closing(IEnumerable<TrialBalanceLine> balance, AccountType type, bool creditNatured,
             Func<string, bool> matches) =>
             Read(balance, type, matches, l => creditNatured ? l.ClosingCredit - l.ClosingDebit : l.ClosingDebit - l.ClosingCredit);
 
-        /// <summary>الحسابات الورقية ذات حركة الفترة — لقوائم الفترة (الدخل والتدفقات).</summary>
         public static List<Line> Period(IEnumerable<TrialBalanceLine> balance, AccountType type, bool creditNatured,
             Func<string, bool> matches) =>
             Read(balance, type, matches, l => creditNatured ? l.PeriodCredit - l.PeriodDebit : l.PeriodDebit - l.PeriodCredit);
 
-        /// <summary>
-        /// القراءة عند مستوى التجميع لا عند الورقة: الشجرة ثلاث طبقات — رئيسي (١..٥)، وتجميعي بينهما،
-        /// وتفصيلي هو الورقة. القائمة تعرض «ذمم مدينة» سطراً واحداً لا اسم كل عميل، فتُجمَع أرصدة
-        /// الأوراق عند أبيها التجميعي. وحسابٌ ورقةٌ بذاته (كالأرباح المحتجزة) يظهر باسمه.
-        /// </summary>
         private static List<Line> Read(IEnumerable<TrialBalanceLine> balance, AccountType type,
             Func<string, bool> matches, Func<TrialBalanceLine, decimal> amount)
         {
@@ -84,7 +63,6 @@ namespace PrimeERP.Application.Reporting
                 .ToList();
         }
 
-        /// <summary>أب الورقة التجميعي، أو الورقة نفسها إن كانت رئيسية أو بلا أب.</summary>
         private static (string Code, string Name) GroupOf(TrialBalanceLine leaf) =>
             string.IsNullOrEmpty(leaf.ParentCode) || leaf.Level <= 2
                 ? (leaf.Code, leaf.Name)

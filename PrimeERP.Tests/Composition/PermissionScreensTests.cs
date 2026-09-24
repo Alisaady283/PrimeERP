@@ -7,12 +7,10 @@ using PrimeERP.Modules;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Components.Tree;
 using Xunit;
-using Db = PrimeERP.Data.Core.DbHelper;
 
 namespace PrimeERP.Tests.Composition
 {
-    /// <summary>شاشتا الصلاحيات تكوين فوق TreeCheckListRenderer — يُختبر منطق التكوين نفسه (بناء الشجرة والحفظ)
-    /// لا التصيير: هو موضع السلوك الفعلي.</summary>
+    /// <summary>شاشتا الصلاحيات تكوين فوق TreeCheckListRenderer</summary>
     [Collection("Database")]
     public class PermissionScreensTests
     {
@@ -25,27 +23,14 @@ namespace PrimeERP.Tests.Composition
             PermissionModuleRegistrations.RegisterAll(_registry);
         }
 
-        private static int CreateRole(string name, params string[] permissions)
+        private int CreateRole(string name, params string[] permissions)
         {
-            var roleId = Db.InsertAndGetId(
-                "INSERT INTO Roles (Name, NameAr, IsSystem) VALUES (@n, @na, @sys)",
-                Db.Params(("@n", name), ("@na", name), ("@sys", false)));
-
-            foreach (var key in permissions)
-                Db.Execute("INSERT INTO RolePermissions (RoleId, PermissionKey) VALUES (@r, @k)",
-                    Db.Params(("@r", roleId), ("@k", key)));
-
+            var roleId = _db.Permissions.InsertRole(name, name);
+            _db.Permissions.ReplaceRolePermissions(roleId, permissions);
             return roleId;
         }
 
-        private static int CreateUser(string username, int roleId)
-        {
-            var (hash, salt) = PrimeERP.Platform.Security.PasswordHasher.Hash("x");
-            return Db.InsertAndGetId(
-                @"INSERT INTO Users (Username, PasswordHash, Salt, DisplayName, RoleId, IsActive)
-                  VALUES (@u, @h, @s, @d, @r, @a)",
-                Db.Params(("@u", username), ("@h", hash), ("@s", salt), ("@d", username), ("@r", roleId), ("@a", true)));
-        }
+        private int CreateUser(string username, int roleId) => _db.AddUser(username, "x", username, roleId);
 
         [Fact]
         public void PermissionTree_IsBuiltFromPermissionKeys_NotAHandWrittenList()
@@ -76,11 +61,10 @@ namespace PrimeERP.Tests.Composition
 
             Assert.True(def.Save(_db.Services, roleId, nodes).Result.IsSuccess);
 
-            var saved = PermissionDb.GetRolePermissions(roleId);
+            var saved = _db.Permissions.GetRolePermissions(roleId);
             Assert.Contains("Customers.Delete", saved);
             Assert.Contains("Customers.Edit", saved);
 
-            // العرض بوّابة القسم: حذف بلا عرض يعني قسماً محجوباً وصلاحية معطَّلة، فيلحق العرض بالحفظ.
             Assert.Contains("Customers.View", saved);
         }
 

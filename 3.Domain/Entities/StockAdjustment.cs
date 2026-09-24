@@ -4,7 +4,7 @@ using PrimeERP.Domain.Entities.Common;
 
 namespace PrimeERP.Domain.Entities
 {
-    // يخدم StockIn وStockOut معاً — Direction (In/Out من MovementType) يحدد اتجاه كل حركة سطر عند الترحيل.
+    /// <summary>كيان StockAdjustment</summary>
     public class StockAdjustment : BaseModel
     {
         public string   DocNo         { get; set; }

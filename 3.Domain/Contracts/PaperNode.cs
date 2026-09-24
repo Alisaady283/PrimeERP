@@ -2,12 +2,10 @@ using System.Collections.Generic;
 
 namespace PrimeERP.Domain.Contracts
 {
+    /// <summary>شجرة الورق: نصٌّ وصورةٌ وجدول</summary>
     public enum PaperTextRole { Name, Detail }
 
-    /// <summary>
-    /// قطعة ورق كبنية مجرّدة. القطعة تُبنى مرة واحدة، وكل مُصيِّر ينفّذها بمترجم عام لا يعرف عنها شيئاً —
-    /// فإضافة حقل أو تغيير ترتيب تمسّ موضعاً واحداً، ولا يبقى للطباعة تخطيط وللتصدير آخر.
-    /// </summary>
+    /// <summary>قطعة ورق كبنية مجرّدة</summary>
     public abstract class PaperNode { }
 
     public sealed class PaperText : PaperNode
@@ -23,19 +21,19 @@ namespace PrimeERP.Domain.Contracts
         public double MaxHeight { get; init; }
     }
 
-    /// <summary>ترتيب عمودي.</summary>
+    /// <summary>ترتيب عمودي</summary>
     public sealed class PaperStack : PaperNode
     {
         public List<PaperNode> Children { get; init; } = new();
     }
 
-    /// <summary>ترتيب أفقي: الأول يمتدّ ليملأ الفراغ والباقي بحجمه، فيلتصق كلٌّ بحافته.</summary>
+    /// <summary>ترتيب أفقي</summary>
     public sealed class PaperRow : PaperNode
     {
         public List<PaperNode> Children { get; init; } = new();
     }
 
-    /// <summary>خطّ فاصل بلون الهوية.</summary>
+    /// <summary>خطّ فاصل بلون الهوية</summary>
     public sealed class PaperRule : PaperNode
     {
         public double Thickness { get; init; }

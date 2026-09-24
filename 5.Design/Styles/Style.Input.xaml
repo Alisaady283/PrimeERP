@@ -3,13 +3,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:inputs="clr-namespace:PrimeERP.UI.Components.Inputs">
 
-    <!--
-        L4 — كل البصري لقطع Inputs. يستهلك C.Input.* (L3) للألوان/الحالات، و P.Font.*/P.Space.*/P.Radius.*
-        (L1) مباشرة للطباعة/الحشو/نصف القطر (استثناء موثَّق، راجع Tokens.Button.xaml وARCHITECTURE.md ⚠️ توقف 4).
-        القطع نفسها بنية+منطق فقط، تربط عناصرها الداخلية بمفاتيح هنا عبر Style="{StaticResource ...}".
-    -->
+    <!-- أنماط حقول الإدخال -->
 
-    <!-- ===== أجزاء مشتركة ===== -->
+
+    <!-- Shared -->
 
     <Style x:Key="FieldLabelRowStyle" TargetType="StackPanel">
         <Setter Property="Margin" Value="{DynamicResource C.Input.Label.Gap.Margin}"/>
@@ -18,21 +15,21 @@
     <Style x:Key="FieldLabelTextStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.200}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
-        <Setter Property="Foreground" Value="{DynamicResource C.Input.Label.Fg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
     </Style>
 
     <Style x:Key="FieldRequiredMarkStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.200}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
-        <Setter Property="Foreground" Value="{DynamicResource C.Input.Required.Fg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
     </Style>
 
     <Style x:Key="FieldInnerTextBoxStyle" TargetType="TextBox">
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="FontSize" Value="{DynamicResource C.Input.FontSize}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
-        <Setter Property="Foreground" Value="{DynamicResource C.Input.Fg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Padding" Value="{DynamicResource C.Input.Padding}"/>
     </Style>
@@ -40,9 +37,9 @@
     <Style x:Key="FieldInnerPasswordBoxStyle" TargetType="PasswordBox">
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="FontSize" Value="{DynamicResource C.Input.FontSize}"/>
+        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
-        <Setter Property="Foreground" Value="{DynamicResource C.Input.Fg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Padding" Value="{DynamicResource C.Input.Padding}"/>
     </Style>
@@ -52,13 +49,13 @@
         <Setter Property="Margin" Value="10,0"/>
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
-        <Setter Property="Foreground" Value="{DynamicResource C.Input.Placeholder}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
     </Style>
 
     <Style x:Key="FieldErrorTextStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.200}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
-        <Setter Property="Foreground" Value="{DynamicResource C.Input.Error.Text}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
         <Setter Property="Margin" Value="2,4,0,0"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
@@ -68,7 +65,7 @@
         <Setter Property="Width" Value="14"/>
         <Setter Property="Height" Value="14"/>
         <Setter Property="Margin" Value="10,0,0,0"/>
-        <Setter Property="Fill" Value="{DynamicResource C.Input.Hint.Fg}"/>
+        <Setter Property="Fill" Value="{DynamicResource TextMuted}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
@@ -89,66 +86,66 @@
         <Setter Property="Stretch" Value="Uniform"/>
         <Setter Property="Width" Value="10"/>
         <Setter Property="Height" Value="10"/>
-        <Setter Property="Stroke" Value="{DynamicResource C.Input.Hint.Fg}"/>
+        <Setter Property="Stroke" Value="{DynamicResource TextMuted}"/>
         <Setter Property="StrokeThickness" Value="2"/>
     </Style>
 
-    <!-- ===== AppTextBox ===== -->
+    <!-- AppTextBox -->
 
     <Style x:Key="AppTextBox_FieldBorder" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource C.Input.Bg}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Border}"/>
+        <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="{DynamicResource C.Input.BorderThickness}"/>
-        <Setter Property="CornerRadius" Value="{DynamicResource C.Input.Radius}"/>
+        <Setter Property="CornerRadius" Value="{DynamicResource P.Radius.Md}"/>
         <Setter Property="Height" Value="{DynamicResource C.Input.Height}"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppTextBox}}}" Value="False">
-                <Setter Property="Background" Value="{DynamicResource C.Input.ReadOnly.Bg}"/>
+                <Setter Property="Background" Value="{DynamicResource SurfaceSunken}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource OutlineSubtle}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppTextBox}}}" Value="True">
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Focus.Border}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource OutlineFocus}"/>
                 <Setter Property="BorderThickness" Value="{DynamicResource C.Input.Focus.BorderWidth}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding HasError, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppTextBox}}}" Value="True">
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Error.Border}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>
 
-    <!-- ===== AppPasswordBox (نفس مواصفة AppTextBox بالضبط — ارتفاع/حشو/حد/نصف قطر/حالات) ===== -->
+    <!-- AppPasswordBox -->
 
     <Style x:Key="AppPasswordBox_FieldBorder" TargetType="Border" BasedOn="{StaticResource AppTextBox_FieldBorder}">
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppPasswordBox}}}" Value="False">
-                <Setter Property="Background" Value="{DynamicResource C.Input.ReadOnly.Bg}"/>
+                <Setter Property="Background" Value="{DynamicResource SurfaceSunken}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource OutlineSubtle}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppPasswordBox}}}" Value="True">
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Focus.Border}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource OutlineFocus}"/>
                 <Setter Property="BorderThickness" Value="{DynamicResource C.Input.Focus.BorderWidth}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding HasError, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppPasswordBox}}}" Value="True">
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Error.Border}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>
 
-    <!-- ===== AppSearchBox (حقل أقصر بلا تسمية/خطأ، حشو أضيق) ===== -->
+    <!-- AppSearchBox -->
 
     <Style x:Key="AppSearchBox_FieldBorder" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource C.Input.Bg}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Border}"/>
+        <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="{DynamicResource C.Input.BorderThickness}"/>
-        <Setter Property="CornerRadius" Value="{DynamicResource C.Input.Radius}"/>
+        <Setter Property="CornerRadius" Value="{DynamicResource P.Radius.Md}"/>
         <Setter Property="Height" Value="{DynamicResource C.Input.Height.Sm}"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppSearchBox}}}" Value="False">
-                <Setter Property="Background" Value="{DynamicResource C.Input.ReadOnly.Bg}"/>
+                <Setter Property="Background" Value="{DynamicResource SurfaceSunken}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource OutlineSubtle}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppSearchBox}}}" Value="True">
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Focus.Border}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource OutlineFocus}"/>
                 <Setter Property="BorderThickness" Value="{DynamicResource C.Input.Focus.BorderWidth}"/>
             </DataTrigger>
         </Style.Triggers>
@@ -159,7 +156,7 @@
         <Setter Property="Width" Value="14"/>
         <Setter Property="Height" Value="14"/>
         <Setter Property="Margin" Value="10,0,0,0"/>
-        <Setter Property="Stroke" Value="{DynamicResource C.Input.Hint.Fg}"/>
+        <Setter Property="Stroke" Value="{DynamicResource TextMuted}"/>
         <Setter Property="StrokeThickness" Value="2"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
@@ -172,20 +169,20 @@
         <Setter Property="Margin" Value="8,0"/>
     </Style>
 
-    <!-- ===== AppComboBox ===== -->
+    <!-- AppComboBox -->
 
     <Style x:Key="AppComboBox_FieldBorder" TargetType="Border" BasedOn="{StaticResource AppTextBox_FieldBorder}">
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppComboBox}}}" Value="False">
-                <Setter Property="Background" Value="{DynamicResource C.Input.ReadOnly.Bg}"/>
+                <Setter Property="Background" Value="{DynamicResource SurfaceSunken}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource OutlineSubtle}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppComboBox}}}" Value="True">
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Focus.Border}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource OutlineFocus}"/>
                 <Setter Property="BorderThickness" Value="{DynamicResource C.Input.Focus.BorderWidth}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding HasError, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppComboBox}}}" Value="True">
-                <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Error.Border}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>
@@ -195,14 +192,14 @@
         <Setter Property="Width" Value="12"/>
         <Setter Property="Height" Value="12"/>
         <Setter Property="Margin" Value="0,0,10,0"/>
-        <Setter Property="Stroke" Value="{DynamicResource C.Input.Hint.Fg}"/>
+        <Setter Property="Stroke" Value="{DynamicResource TextMuted}"/>
         <Setter Property="StrokeThickness" Value="2"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
     <Style x:Key="ComboPopupBorderStyle" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource SurfaceRaised}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource C.Input.Border}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="{DynamicResource P.Radius.Md}"/>
         <Setter Property="MaxHeight" Value="240"/>
@@ -210,7 +207,6 @@
         <Setter Property="Effect" Value="{DynamicResource ShadowMd}"/>
     </Style>
 
-    <!-- بلا هذا القالب يرث العنصر فُرَش النظام: خلفية زرقاء ونصّ أسود تحت أي ثيم. -->
     <Style x:Key="ComboPopupItemStyle" TargetType="ListBoxItem">
         <Setter Property="Padding" Value="10,7"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -247,7 +243,7 @@
         <Setter Property="ItemContainerStyle" Value="{StaticResource ComboPopupItemStyle}"/>
     </Style>
 
-    <!-- ===== AppCheckBox ===== -->
+    <!-- AppCheckBox -->
 
     <Style TargetType="{x:Type inputs:AppCheckBox}">
         <Setter Property="Cursor" Value="Hand"/>
@@ -266,7 +262,7 @@
         <Setter Property="CornerRadius" Value="{DynamicResource P.Radius.Sm}"/>
         <Setter Property="BorderThickness" Value="1.5"/>
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineStrong}"/>
-        <Setter Property="Background" Value="{DynamicResource C.Input.Bg}"/>
+        <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type inputs:AppCheckBox}}}" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource BrandDefault}"/>
@@ -304,14 +300,14 @@
     <Style x:Key="CheckBoxLabelStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
-        <Setter Property="Foreground" Value="{DynamicResource C.Input.Fg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
 
     <Style x:Key="CheckBoxDescriptionStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.200}"/>
         <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
-        <Setter Property="Foreground" Value="{DynamicResource C.Input.Label.Fg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="Margin" Value="0,2,0,0"/>
     </Style>

@@ -9,13 +9,12 @@ using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Composition.Print
 {
-    /// <summary>عائلتا المستندات: تجاري (جدول سطور) وسردي (نصّ إقراري). الترويسة والتذييل والتوقيعات
-    /// موحّدة بحكم البناء لا بحكم النسخ، وكل مستند سطر استدعاء واحد.</summary>
+    /// <summary>عائلتا المستندات</summary>
     public static class PrintDocuments
     {
         private static readonly string[] TradeSignatures = { "المُعِد", "المراجع", "المستلم" };
 
-        /// <summary>خيارات الورق المشتركة — تُقرأ من الإعدادات مرة، وتسري على كل العائلات.</summary>
+        /// <summary>خيارات الورق المشتركة</summary>
         public class PaperOptions
         {
             public List<string> CopyLabels { get; init; } = new();
@@ -75,7 +74,6 @@ namespace PrimeERP.Composition.Print
             };
         }
 
-        /// <summary>تقرير: نفس جدول العائلة التجارية بأعمدة التقرير وصفوفه.</summary>
         public static IPrintable Report(Definitions.ReportResult result, PrintOrientation orientation = PrintOrientation.Portrait)
         {
             var columns = result.Columns
@@ -138,7 +136,6 @@ namespace PrimeERP.Composition.Print
             };
         }
 
-        /// <summary>{Key} يُستبدل من القيم — محرّك واحد لكل النصوص الإنشائية.</summary>
         internal static string Fill(string template, IReadOnlyDictionary<string, string> values)
         {
             if (string.IsNullOrEmpty(template)) return "";
@@ -146,7 +143,6 @@ namespace PrimeERP.Composition.Print
             return values.Aggregate(template, (text, pair) => text.Replace("{" + pair.Key + "}", pair.Value ?? ""));
         }
 
-        /// <summary>ما ظهر في صندوق الأطراف لا يُعاد في صندوق الرأس — الطرف والرقم والتاريخ مرة واحدة.</summary>
         private static Dictionary<string, string> HeaderFields(DocumentDialogDefinition definition, DocumentReader doc, params string[] shown)
         {
             var result = new Dictionary<string, string>();
@@ -163,7 +159,6 @@ namespace PrimeERP.Composition.Print
             return result;
         }
 
-        /// <summary>الكود عمود والاسم عمود — يُحدَّد مرة واحدة من أول سطر.</summary>
         private static HashSet<string> SplitFields(DocumentDialogDefinition definition, object sampleLine)
         {
             var type = sampleLine.GetType();
@@ -218,7 +213,6 @@ namespace PrimeERP.Composition.Print
         private static int ColumnCount(DocumentDialogDefinition definition) =>
             definition.PrintColumns is { Count: > 0 } ? definition.PrintColumns.Count : definition.LineFields.Count;
 
-        /// <summary>جدول من أعمدة الورق — يقرأ خصائص السطر المخزَّن، فتظهر القيم المحسوبة كما تظهر المُدخَلة.</summary>
         private static PrintSection BuildTable(List<PrintColumnDefinition> definitions, List<object> lines)
         {
             var columns = definitions.Select(d => new PrintColumn
@@ -239,7 +233,6 @@ namespace PrimeERP.Composition.Print
             };
         }
 
-        /// <summary>صندوق إجماليات المستند — من رأس المستند لا من جمع السطور، فهو ما رُحِّل فعلاً.</summary>
         private static List<PrintTotal> DocumentTotalsOf(DocumentDialogDefinition definition, DocumentReader doc)
         {
             if (definition.PrintTotals is not { Count: > 0 }) return null;
@@ -285,7 +278,7 @@ namespace PrimeERP.Composition.Print
         private static decimal ToDecimal(Dictionary<string, object> row, string key) =>
             row.TryGetValue(key, out var value) && value != null ? Convert.ToDecimal(value) : 0m;
 
-        /// <summary>قراءة كائن البيانات بالاسم — الاسم المرافق يُفضَّل على المعرّف.</summary>
+        /// <summary>قراءة كائن البيانات بالاسم</summary>
         private class DocumentReader
         {
             private readonly object _doc;
@@ -351,7 +344,7 @@ namespace PrimeERP.Composition.Print
         }
     }
 
-    /// <summary>وصف مستند سردي — سند قبض/صرف، أمر دفع، إشعار.</summary>
+    /// <summary>وصف مستند سردي</summary>
     public class NarrativeDocument
     {
         public required string Title { get; init; }
@@ -368,7 +361,6 @@ namespace PrimeERP.Composition.Print
         public PrintSection Table { get; init; }
         public List<string> Signatures { get; init; } = new();
 
-        /// <summary>ورقةٌ مؤطَّرة بنصف A4 — السند يُقصّ ولا يُطبع على صفحةٍ كاملة.</summary>
         public bool Framed { get; init; }
         public bool HalfPage { get; init; }
     }

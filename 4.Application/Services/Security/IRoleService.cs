@@ -4,6 +4,7 @@ using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Services.Security
 {
+    /// <summary>عقد الأدوار</summary>
     public interface IRoleService
     {
         Result<List<RoleDto>> GetAll();

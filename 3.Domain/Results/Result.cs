@@ -3,6 +3,7 @@ using System.Linq;
 
 namespace PrimeERP.Domain.Results
 {
+    /// <summary>نتيجة العملية وحالتها</summary>
     public enum ErrorCode
     {
         None = 0,
@@ -14,7 +15,7 @@ namespace PrimeERP.Domain.Results
         Unexpected
     }
 
-    /// <summary>نتيجة عملية بلا قيمة راجعة — كل Service يرجعها بدل رمي استثناءات للتحكّم في تدفّق البرنامج.</summary>
+    /// <summary>نتيجة عملية بلا قيمة راجعة</summary>
     public class Result
     {
         public bool       IsSuccess    { get; protected set; }
@@ -47,7 +48,10 @@ namespace PrimeERP.Domain.Results
         public static Result<T> Fail<T>(string message, ErrorCode code = ErrorCode.Unexpected) =>
             Result<T>.Fail(message, code);
 
-        /// <summary>يجمع نتائج متعددة — ناجحة فقط لو كل العمليات نجحت، وإلا يجمع كل رسائل الفشل معاً.</summary>
+        /// <summary>يحمل الفشل نفسه إلى نوعٍ</summary>
+        public Result<TOut> As<TOut>() =>
+            Result<TOut>.Carry(ErrorMessage, ErrorCode, Errors);
+
         public static Result Combine(params Result[] results)
         {
             var failed = results.Where(r => r != null && r.IsFailure).ToList();
@@ -58,7 +62,7 @@ namespace PrimeERP.Domain.Results
         }
     }
 
-    /// <summary>نتيجة عملية ترجع قيمة عند النجاح.</summary>
+    /// <summary>نتيجة بقيمة</summary>
     public class Result<T> : Result
     {
         public T Value { get; private set; }
@@ -67,5 +71,8 @@ namespace PrimeERP.Domain.Results
 
         public new static Result<T> Fail(string message, ErrorCode code = ErrorCode.Unexpected) =>
             new() { IsSuccess = false, ErrorMessage = message, ErrorCode = code, Errors = { message } };
+
+        internal static Result<T> Carry(string message, ErrorCode code, List<string> errors) =>
+            new() { IsSuccess = false, ErrorMessage = message, ErrorCode = code, Errors = errors };
     }
 }

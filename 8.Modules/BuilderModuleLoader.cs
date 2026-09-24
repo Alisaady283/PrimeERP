@@ -20,27 +20,18 @@ using System.Dynamic;
 
 namespace PrimeERP.Modules
 {
-    /// <summary>
-    /// وصفُ ما بناه المستخدم ← ModuleDefinition ← تسجيل. لا مُصيِّر جديد ولا نمط جديد: الوحدة المبنيّة
-    /// تصل إلى PageRenderer بنفس شكل الوحدات المكتوبة، فتأخذ الشبكة والحوار والأزرار والفلاتر والصلاحيات
-    /// والتدقيق كما تأخذها أي شاشة. المصنعان (ViewModelFactory/ServiceFactory) هما ما يجعل نسخةً واحدة
-    /// من الخدمة تعرف جدولها.
-    /// </summary>
+    /// <summary>وصفُ ما بناه المستخدم ←</summary>
     public static class BuilderModuleLoader
     {
         public static void RegisterAll(IModuleRegistry registry, IServiceProvider services)
         {
             var repo = services.GetRequiredService<IBuilderCatalog>();
 
-            // أقسام الكود غير المحميّة تصير صفوفاً تُعدَّل — نسخٌ من الخريطة لا بناء.
             repo.SeedSections(NavigationMap.Coded, NavigationMap.Protected);
 
-            // وصفحاتها كذلك: كل صفحة مكتوبة تصير صفّاً بأعمدتها وأزرارها وفلاترها — تُقرأ من تسجيلها
-            // نفسه لا تُكتب هنا. المبذور مؤشَّر IsCoded فلا يُسجَّل ثانيةً فوق أصله ولا يُنشأ له جدول.
             repo.SeedModules(Coded(repo, registry));
 
             var modules = repo.Modules().Where(m => m.IsActive).ToList();
-            // فلترٌ يشير إلى جدولٍ مبنيّ يصير قائمةَ صفوفه؛ وما عداه نوعُ قائمةٍ من قوائم النظام كما هو.
             var built = modules.Where(m => !m.IsCoded).Select(m => m.Key).ToHashSet();
 
             foreach (var module in modules)
@@ -56,22 +47,14 @@ namespace PrimeERP.Modules
                     continue;
                 }
 
-                // الترحيل يتبع النوع: التقرير بلا جدول فلا شيء يُنشأ، والسجل والحركة يُنشآن ويُتابَعان
-                // في كل إقلاع — CreateTable آمنة للتكرار (IF NOT EXISTS)، فترقية النسخة لا تُسقط جدولاً.
                 repo.EnsureBuiltTable(module, columns);
 
-                // الوحدة المبنيّة تدخل شجرة الصلاحيات كأي وحدة مكتوبة.
                 PermissionKeys.RegisterBuilt(module.Key);
 
                 registry.Register(Build(module, columns, actions, filters, built));
             }
         }
 
-        /// <summary>
-        /// الصفحة المكتوبة تبقى صفحتها — نموذج عرضها وحوارها من الكود — ووصفُها يعلو على أعمدتها
-        /// وأزرارها وفلاترها: تعديل عمود أو إضافته أو حذف زرّ يظهر في الصفحة الحقيقية وفي أي نسخة منها.
-        /// إعادة التسجيل تستبدل بالمفتاح، فلا نسخة ثانية ولا مسار تصييرٍ ثانٍ.
-        /// </summary>
         private static void Overlay(IModuleRegistry registry, BuilderModule module, List<BuilderColumn> columns,
             List<BuilderAction> actions, List<BuilderFilter> filters, HashSet<string> built)
         {
@@ -90,14 +73,11 @@ namespace PrimeERP.Modules
             });
         }
 
-        /// <summary>صفحات الكود كما تصفها تسجيلاتها: القسم من الخريطة، والنوع من حوارها، والقطع من إعلانها.</summary>
         private static List<CodedPage> Coded(IBuilderCatalog repo, IModuleRegistry registry)
         {
             var pages = new List<CodedPage>();
             var sections = repo.Sections().Select(section => section.Key).ToHashSet();
 
-            // مفاتيح القسم من الخريطة لا من عمود الصفّ المبذور: صفحةٌ تُضاف بعد أول بذر تُبذَر في
-            // الإقلاع التالي فتصل وحدة البناء والنسخ. ولو قُرئ العمود لبقيت خارجهما إلى الأبد.
             foreach (var (key, _, _, modules) in NavigationMap.Coded)
             {
                 if (!sections.Contains(key)) continue;   // قسمٌ محميّ أو حذفه المستخدم
@@ -120,7 +100,6 @@ namespace PrimeERP.Modules
             : m.DocumentDialog != null        ? BuilderKind.Movement
                                               : BuilderKind.Record;
 
-        /// <summary>عكسُ Columns أدناه: الشكل المُعلَن يعود وصفاً، فما يُعرَض هو ما يُحرَّر.</summary>
         private static List<BuilderColumn> CodedColumns(ModuleDefinition m) =>
             (m.Report?.Columns ?? m.Columns ?? new List<GridColumn>()).Select((c, i) => new BuilderColumn
             {
@@ -132,7 +111,6 @@ namespace PrimeERP.Modules
                 ShowInGrid = c.IsVisible, ShowInForm = false
             }).ToList();
 
-        /// <summary>بلا تأشير = كل أزرار الكتالوج، وهو ما يقرؤه ActionToolbar فعلاً — فيُبذَر كما هو.</summary>
         private static List<BuilderAction> CodedActions(ModuleDefinition m) =>
             (m.EnabledActions ?? ToolbarAction.Catalogue.Keys.ToArray())
                 .Select((key, i) => new BuilderAction { ActionKey = key, SortOrder = (i + 1) * 10 })
@@ -170,7 +148,6 @@ namespace PrimeERP.Modules
                 s.GetRequiredService<IPermissionService>(), s.GetRequiredService<ISettingsProvider>(),
                 s.GetRequiredService<ILocalizationService>(), s.GetRequiredService<IAuditLogger>());
 
-            // التقرير المبنيّ يمرّ من ReportRenderer نفسه: خدمة ودالة ووسائط وأعمدة — لا مسار ثانٍ.
             if (module.Kind == BuilderKind.Report)
                 return new ModuleDefinition
                 {
@@ -199,15 +176,12 @@ namespace PrimeERP.Modules
                     s.GetRequiredService<UI.Services.IDialogService>()),
                 Columns = Columns(columns),
                 Filters = Filters(filters, built, null),
-                // بلا تأشير = كل أزرار الكتالوج، وهو حال كل وحدة مكتوبة.
                 EnabledActions = actions.Count == 0 ? null : actions.Select(a => a.ActionKey).ToArray(),
-                // السجل حوارُ حقول، والحركة رأسٌ وسطور، والتقرير بلا حوار — النوع يحكم.
                 Dialog = module.Kind != BuilderKind.Record ? null : new DialogDefinition
                 {
                     TitleKey = module.Title, TitleEditKey = module.Title,
                     ServiceType = typeof(DynamicEntityService),
                     ServiceFactory = s => Service(s),
-                    // الصفّ قاموسٌ لا كيان، فنوعا الإنشاء والتعديل واحد — ApplyFields تكتب بالاسم لا بالخاصية.
                     CreateDtoType = typeof(ExpandoObject),
                     UpdateDtoType = typeof(ExpandoObject),
                     Fields = Fields(columns)
@@ -229,11 +203,6 @@ namespace PrimeERP.Modules
 
         private static List<GridColumn> Columns(List<BuilderColumn> columns) => Grid(columns, null);
 
-        /// <summary>
-        /// أعمدة الصفحة المكتوبة كما وصفها المستخدم: عمودٌ له صفّ يأخذ منه عنوانه وعرضه وإجماليه
-        /// ويحتفظ بما لا يصفه الوصف (قالب الخلية، المحاذاة، العرض النجمي)؛ وصفٌّ بلا عمودٍ في الكود
-        /// عمودٌ أضافه المستخدم؛ وعمودٌ بلا صفّ حذفه. والترتيب ترتيب الصفوف.
-        /// </summary>
         private static List<GridColumn> Columns(List<BuilderColumn> columns, List<GridColumn> coded) =>
             Grid(columns, coded);
 
@@ -245,8 +214,6 @@ namespace PrimeERP.Modules
 
             var rows = Shown(columns).ToList();
 
-            // النِّسب من خدمتها لا محسوبةً هنا: الجدول نسبيٌّ إن أُدخلت نسبة، والعرض النجميّ يوزّع
-            // المتاح بها فيبقى التناسب واحداً على أي عرض شاشة وفي أي نسخة.
             var proportional = ColumnWidths.Proportional(rows);
             var shares = ColumnWidths.Shares(rows);
 
@@ -290,11 +257,9 @@ namespace PrimeERP.Modules
                     Kind = Kind(c.DataType),
                     IsRequired = c.IsRequired,
                     MaxLength = c.MaxLength ?? 0,
-                    // «من جدول»: نوع قائمة واحد عام يقرأ جدوله من اسمه، بدل فرعٍ مكتوب لكل جدول.
                     PickerType = c.DataType == BuilderDataType.Reference ? $"Table:{c.RefModule}:{c.RefDisplay}" : null
                 }).ToList();
 
-        /// <summary>سطور الحركة: نفس أعمدة الوصف المؤشَّرة سطراً، بعناوينها وعرضها.</summary>
         private static List<LineFieldDefinition> LineFields(List<BuilderColumn> columns) =>
             columns.Where(c => c.IsLine && c.Aggregate == BuilderAggregate.None)
                 .Select(c => new LineFieldDefinition
@@ -307,7 +272,6 @@ namespace PrimeERP.Modules
                     PickerType = c.DataType == BuilderDataType.Reference ? $"Table:{c.RefModule}:{c.RefDisplay}" : null
                 }).ToList();
 
-        /// <summary>إجماليات حيّة أسفل السطور لكل عمود أُعلن له إجمالي — نفس LineTotals في القيود.</summary>
         private static LineTotalsDefinition Totals(List<BuilderColumn> columns)
         {
             var keys = columns.Where(c => c.IsLine && !string.IsNullOrWhiteSpace(c.Footer) && c.Footer != "None")
@@ -330,11 +294,6 @@ namespace PrimeERP.Modules
             ModuleDefinition page) =>
             filters.Count == 0 ? null : filters.Select(f => Filter(f, built, page)).ToList();
 
-        /// <summary>
-        /// قائمة الفلتر تُستورَد من الصفحة نفسها: العمود الذي له حقلٌ مُعلَن في حوارها يأخذ قائمة ذلك
-        /// الحقل وعنوانه — فالفلتر يقرأ من مصدر الشاشة ولا يُعلن مصدراً ثانياً. وإن لم يكن للعمود حقل،
-        /// فالمرجع المخزَّن: جدولٌ مبنيّ يصير قائمةَ صفوفه، وما عداه نوعُ قائمةٍ من قوائم النظام كما هو.
-        /// </summary>
         private static FilterDefinition Filter(BuilderFilter filter, HashSet<string> built, ModuleDefinition page)
         {
             var declared = Declared(page).FirstOrDefault(field => field.Key == filter.Key);

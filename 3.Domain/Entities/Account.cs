@@ -2,6 +2,7 @@ using System;
 
 namespace PrimeERP.Domain.Entities
 {
+    /// <summary>كيان Account</summary>
     public class Account
     {
         public int      Id         { get; set; }

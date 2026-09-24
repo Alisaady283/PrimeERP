@@ -3,15 +3,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <!--
-        ثيم الطباعة — منطقة تصميم مستقلة، لا تُدمَج في App.Resources إطلاقاً. يحمّلها PrintService بنفسه
-        (ResourceDictionary مستقلة تُضاف لموارد FlowDocument وقت البناء فقط). ثابتة دائماً (قيم الوضع الفاتح
-        من Colors.xaml حرفياً) — لو قرأ القالب من Themes/*.xaml بدل هذا الملف، ستطبع الأوراق بخلفية سوداء
-        عند تفعيل الوضع الداكن في التطبيق. نفس المجموعات الدلالية الست الموجودة في Themes وExportTheme، بنفس القيم.
-    -->
+    <!-- ألوان ومقاسات الورق المطبوع -->
 
-    <!-- هندسة الورق: رقم واحد يخدم الطباعة والتصدير معاً. الوحدة 96 لكل بوصة (وحدة الطباعة)،
-         والتصدير يحوّلها لنقاط PDF عبر PaperTheme.Points. -->
     <sys:Double x:Key="PageMargin">40</sys:Double>
     <sys:Double x:Key="LogoMaxWidth">170</sys:Double>
     <sys:Double x:Key="LogoMaxHeight">72</sys:Double>
@@ -31,16 +24,16 @@
     <FontWeight x:Key="FontWeightSemiBold">SemiBold</FontWeight>
     <FontWeight x:Key="FontWeightBold">Bold</FontWeight>
 
-    <!-- ===== أساس الصفحة ===== -->
+    <!-- Page -->
     <SolidColorBrush x:Key="SurfaceDefault" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="TextPrimary"    Color="#0F172A"/>
     <SolidColorBrush x:Key="TextSecondary"  Color="#475569"/>
     <SolidColorBrush x:Key="TextMuted"      Color="#94A3B8"/>
     <SolidColorBrush x:Key="OutlineDefault" Color="#E2E8F0"/>
-    <SolidColorBrush x:Key="OutlineSubtle" Color="#EDF1F6"/>  <!-- شبكة الجداول: أخفّ من الحدّ العام -->
+    <SolidColorBrush x:Key="OutlineSubtle" Color="#EDF1F6"/>  
     <SolidColorBrush x:Key="HeaderBackground" Color="#F1F5F9"/>
 
-    <!-- ===== المجموعات الدلالية الست — Solid / Soft / SoftText (لا Hover ولا حالة مرور على ورق) ===== -->
+    <!-- Status -->
     <SolidColorBrush x:Key="NeutralSolid"    Color="#64748B"/>
     <SolidColorBrush x:Key="NeutralSoft"     Color="#F1F5F9"/>
     <SolidColorBrush x:Key="NeutralSoftText" Color="#475569"/>
