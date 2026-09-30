@@ -18,7 +18,12 @@ namespace PrimeERP.Application.Services.Ledger
             dto.Description = description;
             dto.EntryDate = startDate;
             dto.Lines = dto.Lines?.Where(l => !string.IsNullOrWhiteSpace(l.AccountCode)).ToList() ?? new List<CreateJournalLineDto>();
-            return Result.Ok(dto);
+
+            var (debit, credit) = (dto.Lines.Sum(l => l.Debit), dto.Lines.Sum(l => l.Credit));
+            return debit == credit
+                ? Result.Ok(dto)
+                : Result.Fail<CreateJournalDto>(LocalizationService.Get("Str.Journal.Unbalanced", debit, credit, Math.Abs(debit - credit)),
+                    ErrorCode.ValidationFailed);
         }
     }
 }
