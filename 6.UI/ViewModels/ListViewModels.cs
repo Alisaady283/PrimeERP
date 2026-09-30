@@ -25,7 +25,7 @@ namespace PrimeERP.UI.ViewModels
 
 
 
-    public class ProductsViewModel : CrudViewModelBase<ProductDto, ProductFilter>
+    public class ProductsViewModel : CrudViewModelBase<Product, ProductFilter>
     {
         private readonly IProductService _products;
 
@@ -35,14 +35,14 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "Products";
 
-        protected override Result<PagedResult<ProductDto>> FetchPage(int page, int pageSize, ProductFilter filter)
+        protected override Result<PagedResult<Product>> FetchPage(int page, int pageSize, ProductFilter filter)
         {
             var f = filter ?? new ProductFilter();
             f.SearchText = SearchText;
             return _products.GetPaged(page, pageSize, f);
         }
 
-        protected override int IdOf(ProductDto item) => item.Id;
+        protected override int IdOf(Product item) => item.Id;
 
         protected override Result DeleteItem(int id) => _products.Delete(id);
     }

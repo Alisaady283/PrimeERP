@@ -1,13 +1,10 @@
-using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Services.Core;
 using System.Collections.Generic;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.Validation;
 using PrimeERP.Data.Core;
 using PrimeERP.Data.Repositories;
-using PrimeERP.Domain.Contracts;
 using PrimeERP.Domain.Entities;
-using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
@@ -17,7 +14,7 @@ using PrimeERP.Platform.Settings;
 namespace PrimeERP.Application.Legacy.Inventory
 {
     /// <summary>خدمة الأصناف</summary>
-    public class ProductService : EntityService<Product, ProductDto, CreateProductDto, UpdateProductDto, ProductFilter>, IProductService
+    public class ProductService : EntityService<Product, Product, Product, Product, ProductFilter>, IProductService
     {
         protected override string PermissionPrefix => "Products";
         protected override string StringPrefix => "Str.Product";
@@ -48,12 +45,12 @@ namespace PrimeERP.Application.Legacy.Inventory
 
         protected override Product FindById(int id) => _products.GetById(id);
 
-        public Result<ProductDto> GetByCode(string code)
+        public Result<Product> GetByCode(string code)
         {
-            if (!Can("View")) return FailDenied<ProductDto>();
+            if (!Can("View")) return FailDenied<Product>();
 
             var product = _products.GetByCode(code);
-            return product == null ? Fail<ProductDto>("NotFound", ErrorCode.NotFound) : Ok(ToDto(product));
+            return product == null ? Fail<Product>("NotFound", ErrorCode.NotFound) : Ok(product);
         }
 
         protected override (List<Product> Items, int Total) FindPaged(int page, int pageSize, ProductFilter filter)
@@ -64,13 +61,8 @@ namespace PrimeERP.Application.Legacy.Inventory
 
         protected override List<Product> FindSearch(string term, int maxResults) => _products.Search(term, maxResults);
 
-        protected override Product New(CreateProductDto dto) => Rows.Copy<Product>(dto, new());
-
         protected override void Number(Product p, string code) => p.Code = code;
 
-        protected override void Apply(Product p, UpdateProductDto dto) => Rows.Copy(dto, p);
-
-        protected override int IdOf(UpdateProductDto dto) => dto.Id;
         protected override int Insert(PrimeDbContext db, Product p) => _products.Insert(p, db);
         protected override void Save(PrimeDbContext db, Product p) => _products.Update(p, db);
         protected override void Erase(PrimeDbContext db, Product p) => _products.Delete(p.Id, CurrentUser, db);
@@ -81,16 +73,6 @@ namespace PrimeERP.Application.Legacy.Inventory
         protected override object AuditValue(Product p) => new { p.Code, p.Name };
         protected override string DeleteDetails(Product p) => p.Code;
 
-        protected override ProductDto ToDto(Product p)
-        {
-            var (variant, status) = Rows.Active(p.IsActive);
-            return Rows.Copy(p, new ProductDto(), to =>
-            {
-                to.StatusVariant = variant;
-                to.StatusText = status;
-                to.CanEdit = Can("Edit");
-                to.CanDelete = Can("Delete");
-            });
-        }
+        protected override Product ToDto(Product p) => p;
     }
 }

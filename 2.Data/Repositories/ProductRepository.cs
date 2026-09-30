@@ -83,7 +83,7 @@ namespace PrimeERP.Data.Repositories
         public int Insert(Product p, PrimeDbContext db = null) => Add(p, db);
 
         public void Update(Product p, PrimeDbContext db = null) =>
-            Modify(p, db);
+            Modify(p, db, nameof(Product.Code));
 
         public void Delete(int id, string deletedBy, PrimeDbContext db = null) =>
             SoftDelete(id, deletedBy, db);

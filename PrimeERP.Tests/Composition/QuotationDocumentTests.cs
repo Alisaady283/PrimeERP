@@ -52,7 +52,7 @@ namespace PrimeERP.Tests.Composition
                 UIServices.Initialize(_services);
                 _services.GetRequiredService<IIdentityService>().Initialize();
 
-                var product = _services.GetRequiredService<IProductService>().Create(new CreateProductDto
+                var product = _services.GetRequiredService<IProductService>().Create(new PrimeERP.Domain.Entities.Product
                 { Name = "صنف عرض سعر", CostPrice = 10, SalePrice = 25, IsActive = true });
                 Assert.True(product.IsSuccess, product.ErrorMessage);
 

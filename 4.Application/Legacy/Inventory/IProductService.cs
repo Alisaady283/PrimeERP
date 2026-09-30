@@ -1,4 +1,5 @@
 using PrimeERP.Application.DTOs.Inventory;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Legacy.Inventory
@@ -6,11 +7,11 @@ namespace PrimeERP.Application.Legacy.Inventory
     /// <summary>عقد الأصناف</summary>
     public interface IProductService
     {
-        Result<PagedResult<ProductDto>> GetPaged(int page, int pageSize, ProductFilter filter = null);
-        Result<ProductDto> GetById(int id);
-        Result<ProductDto> GetByCode(string code);
-        Result<ProductDto> Create(CreateProductDto dto);
-        Result Update(UpdateProductDto dto);
+        Result<PagedResult<Product>> GetPaged(int page, int pageSize, ProductFilter filter = null);
+        Result<Product> GetById(int id);
+        Result<Product> GetByCode(string code);
+        Result<Product> Create(Product product);
+        Result Update(Product product);
         Result Delete(int id);
     }
 }

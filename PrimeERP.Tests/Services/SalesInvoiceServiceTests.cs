@@ -56,7 +56,7 @@ namespace PrimeERP.Tests.Services
             var category = categories.Create(new CreateCategoryDto { Name = "فئة اختبار", ModuleKey = "Products" }).Value;
 
             var products = _db.Services.GetRequiredService<IProductService>();
-            _productId = products.Create(new CreateProductDto { Name = "صنف اختبار", CategoryId = category.Id, CostPrice = 10, SalePrice = 25 }).Value.Id;
+            _productId = products.Create(new Product { Name = "صنف اختبار", CategoryId = category.Id, CostPrice = 10, SalePrice = 25 }).Value.Id;
 
             var warehouses = _db.Services.GetRequiredService<Lookup<Warehouse>>();
             _warehouseId = warehouses.Add("مخزن اختبار");

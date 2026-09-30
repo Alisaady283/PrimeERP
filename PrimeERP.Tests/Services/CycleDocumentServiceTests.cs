@@ -27,7 +27,7 @@ namespace PrimeERP.Tests.Services
         private string SeedProduct()
         {
             var products = _db.Services.GetRequiredService<IProductService>();
-            return products.Create(new CreateProductDto
+            return products.Create(new PrimeERP.Domain.Entities.Product
             {
                 Name = $"صنف {Guid.NewGuid():N}", CostPrice = 10, SalePrice = 15, IsActive = true
             }).Value.Code;
@@ -65,7 +65,7 @@ namespace PrimeERP.Tests.Services
         public void CycleDocumentsDoNotTouchStock()
         {
             var products = _db.Services.GetRequiredService<IProductService>();
-            var product = products.Create(new CreateProductDto
+            var product = products.Create(new PrimeERP.Domain.Entities.Product
             { Name = $"صنف {Guid.NewGuid():N}", CostPrice = 10, SalePrice = 15, IsActive = true }).Value;
 
             var stock = _db.Services.GetRequiredService<IStockMove>();

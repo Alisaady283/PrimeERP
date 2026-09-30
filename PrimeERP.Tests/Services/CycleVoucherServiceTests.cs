@@ -32,7 +32,7 @@ namespace PrimeERP.Tests.Services
 
             var warehouseId = warehouses.Add($"مخزن {Guid.NewGuid():N}");
 
-            var product = products.Create(new CreateProductDto
+            var product = products.Create(new Product
             {
                 Name = $"صنف {Guid.NewGuid():N}", CostPrice = 10, SalePrice = 15, IsActive = true
             }).Value;

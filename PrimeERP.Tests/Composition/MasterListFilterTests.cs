@@ -42,8 +42,8 @@ namespace PrimeERP.Tests.Composition
                 var catB = categories.Create(new CreateCategoryDto { Name = "فئة ب", ModuleKey = "Products" }).Value;
 
                 var products = _db.Services.GetRequiredService<IProductService>();
-                products.Create(new CreateProductDto { Name = "منتج أ", CategoryId = catA.Id, CostPrice = 1, SalePrice = 2 });
-                products.Create(new CreateProductDto { Name = "منتج ب", CategoryId = catB.Id, CostPrice = 1, SalePrice = 2 });
+                products.Create(new PrimeERP.Domain.Entities.Product { Name = "منتج أ", CategoryId = catA.Id, CostPrice = 1, SalePrice = 2 });
+                products.Create(new PrimeERP.Domain.Entities.Product { Name = "منتج ب", CategoryId = catB.Id, CostPrice = 1, SalePrice = 2 });
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
                 var definition = registry.Get("Products");

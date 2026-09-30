@@ -53,7 +53,7 @@ namespace PrimeERP.Tests.Services
             var warehouseId = _db.Services.GetRequiredService<Lookup<Warehouse>>().Add("مخزن الاختبار");
 
             var product = _db.Services.GetRequiredService<IProductService>()
-                .Create(new CreateProductDto { Name = "صنف", CostPrice = 5, SalePrice = 20, IsActive = true });
+                .Create(new Product { Name = "صنف", CostPrice = 5, SalePrice = 20, IsActive = true });
             Assert.True(product.IsSuccess, product.ErrorMessage);
 
             var customer = _db.Services.GetRequiredService<ICustomerService>()

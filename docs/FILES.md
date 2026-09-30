@@ -207,7 +207,7 @@
 | 4.18 | PayrollDto.cs | بيانات مسير الرواتب |
 | | **DTOs/Inventory/** | بيانات المخزون |
 | 4.19 | OpeningStockDto.cs | أرصدة الأصناف الافتتاحية |
-| 4.20 | ProductDto.cs | بيانات الصنف |
+| 4.20 | ProductFilter.cs | مرشّح الأصناف |
 | 4.21 | StockAdjustmentDto.cs | بيانات إذن المخزون |
 | 4.22 | StockTransferDto.cs | بيانات التحويل المخزني |
 | | **DTOs/Parties/** | مرشّحا العملاء والموردين |

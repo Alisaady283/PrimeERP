@@ -207,11 +207,11 @@ namespace PrimeERP.Modules
                 ViewModelType = typeof(ProductsViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(ProductDto.Code), Width = 90, Align = ColumnAlign.Center },
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(ProductDto.Name), Width = 220, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(ProductDto.CategoryName), Width = 140 },
-                    new() { Header = LocalizationService.Get("Str.CostPrice"), Binding = nameof(ProductDto.CostPrice), Width = 110, Align = ColumnAlign.Center, Format = "N2", PermissionKey = PermissionKeys.Products.ColumnCostPrice },
-                    new() { Header = LocalizationService.Get("Str.SalePrice"), Binding = nameof(ProductDto.SalePrice), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Product.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Product.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(Product.CategoryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.CostPrice"), Binding = nameof(Product.CostPrice), Width = 110, Align = ColumnAlign.Center, Format = "N2", PermissionKey = PermissionKeys.Products.ColumnCostPrice },
+                    new() { Header = LocalizationService.Get("Str.SalePrice"), Binding = nameof(Product.SalePrice), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
                 },
                 Filters = new()
                 {
@@ -223,17 +223,17 @@ namespace PrimeERP.Modules
                     TitleEditKey = "Str.Products.Edit",
                     GridColumns = 2,
                     ServiceType = typeof(IProductService),
-                    CreateDtoType = typeof(CreateProductDto),
-                    UpdateDtoType = typeof(UpdateProductDto),
+                    CreateDtoType = typeof(Product),
+                    UpdateDtoType = typeof(Product),
                     Fields = new List<FieldDefinition>
                     {
-                        new() { Key = nameof(CreateProductDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateProductDto.Barcode), LabelKey = "Str.Barcode", Kind = FieldKind.Text, MaxLength = 60 },
-                        new() { Key = nameof(CreateProductDto.CostPrice), LabelKey = "Str.CostPrice", Kind = FieldKind.Number, IsRequired = true },
-                        new() { Key = nameof(CreateProductDto.SalePrice), LabelKey = "Str.SalePrice", Kind = FieldKind.Number, IsRequired = true },
-                        new() { Key = nameof(CreateProductDto.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Products" },
-                        new() { Key = nameof(CreateProductDto.BrandId), LabelKey = "Str.Brand", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Brands" },
-                        new() { Key = nameof(CreateProductDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                        new() { Key = nameof(Product.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(Product.Barcode), LabelKey = "Str.Barcode", Kind = FieldKind.Text, MaxLength = 60 },
+                        new() { Key = nameof(Product.CostPrice), LabelKey = "Str.CostPrice", Kind = FieldKind.Number, IsRequired = true },
+                        new() { Key = nameof(Product.SalePrice), LabelKey = "Str.SalePrice", Kind = FieldKind.Number, IsRequired = true },
+                        new() { Key = nameof(Product.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Products" },
+                        new() { Key = nameof(Product.BrandId), LabelKey = "Str.Brand", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Brands" },
+                        new() { Key = nameof(Product.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }.Concat(StandardFields.DialogFields()).ToList()
                 }
             });
