@@ -1,7 +1,7 @@
 using PrimeERP.Application.DTOs.Cheques;
 using PrimeERP.Application.DTOs.Treasury;
 using PrimeERP.Application.DTOs.Vouchers;
-using PrimeERP.Application.Services.Vouchers;
+using PrimeERP.Application.Legacy.Vouchers;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Composition.Registry;
@@ -32,7 +32,7 @@ namespace PrimeERP.Modules
                 Dialog = new DialogDefinition
                 {
                     TitleKey = "Str.Treasuries.Add", TitleEditKey = "Str.Treasuries.Edit", GridColumns = 2,
-                    ServiceType = typeof(PrimeERP.Application.Services.Treasury.ITreasuryService),
+                    ServiceType = typeof(PrimeERP.Application.Legacy.Treasury.ITreasuryService),
                     CreateDtoType = typeof(CreateTreasuryDto), UpdateDtoType = typeof(UpdateTreasuryDto),
                     Fields = new()
                     {
@@ -50,9 +50,9 @@ namespace PrimeERP.Modules
             RegisterVoucher(registry, "Payments", "Str.Module.Payments", typeof(PaymentVouchersViewModel), typeof(IPaymentVoucherService), "Str.Supplier", "Supplier", "PurchaseInvoice");
 
             RegisterChequeDocument(registry, "ChequeReceipts", "Str.Module.ChequeReceipts", typeof(ChequeReceiptsViewModel),
-                typeof(PrimeERP.Application.Services.Cheques.IChequeReceiptDocumentService), "Str.Customer", "Customer");
+                typeof(PrimeERP.Application.Legacy.Cheques.IChequeReceiptDocumentService), "Str.Customer", "Customer");
             RegisterChequeDocument(registry, "ChequeIssues", "Str.Module.ChequeIssues", typeof(ChequeIssuesViewModel),
-                typeof(PrimeERP.Application.Services.Cheques.IChequeIssueDocumentService), "Str.Supplier", "Supplier");
+                typeof(PrimeERP.Application.Legacy.Cheques.IChequeIssueDocumentService), "Str.Supplier", "Supplier");
 
             registry.Register(new ModuleDefinition
             {

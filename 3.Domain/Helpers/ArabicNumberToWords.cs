@@ -30,8 +30,10 @@ namespace PrimeERP.Domain.Helpers
             ["قرش"] = "قروش", ["ريال"] = "ريالات", ["درهم"] = "دراهم", ["دينار"] = "دنانير", ["فلس"] = "فلوس",
         };
 
-        public static string Convert(decimal amount, string currency = "جنيه", string subUnit = "قرش", int decimals = 2)
+        public static string Convert(decimal amount, string currency = null, string subUnit = null, int decimals = 2)
         {
+            currency = string.IsNullOrWhiteSpace(currency) ? "جنيه" : currency;
+            subUnit = string.IsNullOrWhiteSpace(subUnit) ? "قرش" : subUnit;
             if (amount < 0) return "سالب " + Convert(-amount, currency, subUnit, decimals);
 
             var whole = (long)decimal.Truncate(amount);

@@ -1,7 +1,7 @@
+using PrimeERP.Application.Legacy.Print;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Domain.Entities;
-using PrimeERP.Application.Services.Print;
 using Xunit;
 
 namespace PrimeERP.Tests.Services

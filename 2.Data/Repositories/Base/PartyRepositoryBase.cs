@@ -1,10 +1,10 @@
+using PrimeERP.Domain.Calculations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using PrimeERP.Data.Core;
 using PrimeERP.Domain.Entities.Common;
-using PrimeERP.Domain.Rules;
 
 namespace PrimeERP.Data.Repositories.Base
 {
@@ -12,16 +12,16 @@ namespace PrimeERP.Data.Repositories.Base
     public abstract class PartyRepositoryBase<T> : RepositoryBase<T> where T : PartyBase, new()
     {
 
-        public T GetByCode(string code) => One(q => Live(q).Where(p => p.Code == code));
+        public T GetByCode(string code) => One(q => q.Where(p => p.Code == code));
 
         public T GetByAccountCode(string accountCode, PrimeDbContext db = null) =>
-            One(q => Live(q).Where(p => p.AccountCode == accountCode), db);
+            One(q => q.Where(p => p.AccountCode == accountCode), db);
 
         public List<T> GetAll(bool activeOnly = true) =>
-            Fetch(q => Live(q).Where(p => !activeOnly || p.IsActive).OrderBy(p => p.Name));
+            Fetch(q => q.Where(p => !activeOnly || p.IsActive).OrderBy(p => p.Name));
 
         public List<T> Search(string term, int maxResults) =>
-            Fetch(q => Live(q)
+            Fetch(q => q
                 .Where(p => p.IsActive && (EF.Functions.Like(p.Name, $"%{term}%")
                                         || EF.Functions.Like(p.Code, $"%{term}%")
                                         || EF.Functions.Like(p.Phone, $"%{term}%")))
@@ -29,17 +29,17 @@ namespace PrimeERP.Data.Repositories.Base
                 .Take(maxResults));
 
         public int CountAll(bool activeOnly = true) =>
-            Count(q => Live(q).Where(p => !activeOnly || p.IsActive));
+            Count(q => q.Where(p => !activeOnly || p.IsActive));
 
         public bool ExistsCode(string code, int? excludeId = null) =>
-            Count(q => Live(q).Where(p => p.Code == code && (excludeId == null || p.Id != excludeId))) > 0;
+            Any(q => q.Where(p => p.Code == code && (excludeId == null || p.Id != excludeId)));
 
         public bool ExistsPhone(string phone, int? excludeId = null) =>
             !string.IsNullOrWhiteSpace(phone) &&
-            Count(q => Live(q).Where(p => p.Phone == phone && (excludeId == null || p.Id != excludeId))) > 0;
+            Any(q => q.Where(p => p.Phone == phone && (excludeId == null || p.Id != excludeId)));
 
         public bool ExistsName(string name, int? excludeId = null) =>
-            Count(q => Live(q).Where(p => p.Name == name && (excludeId == null || p.Id != excludeId))) > 0;
+            Any(q => q.Where(p => p.Name == name && (excludeId == null || p.Id != excludeId)));
 
         public (List<T> Items, int Total) GetPaged(
             int page, int pageSize,
@@ -48,7 +48,7 @@ namespace PrimeERP.Data.Repositories.Base
         {
             IQueryable<T> Shape(IQueryable<T> rows)
             {
-                var q = Live(rows);
+                var q = rows;
                 if (!string.IsNullOrWhiteSpace(searchText))
                     q = q.Where(p => EF.Functions.Like(p.Name, $"%{searchText}%")
                                   || EF.Functions.Like(p.Code, $"%{searchText}%")
@@ -56,7 +56,7 @@ namespace PrimeERP.Data.Repositories.Base
                 if (isActive != null) q = q.Where(p => p.IsActive == isActive);
                 if (hasBalance == true) q = q.Where(p => p.Balance != 0);
                 if (hasBalance == false) q = q.Where(p => p.Balance == 0);
-                if (overCreditLimit != null) q = q.Where(PartyRules.OverCreditLimit<T>(overCreditLimit.Value));
+                if (overCreditLimit != null) q = q.Where(PartyCalc.OverCreditLimit<T>(overCreditLimit.Value));
                 if (categoryId != null) q = q.Where(p => p.CategoryId == categoryId);
                 return q;
             }
@@ -81,20 +81,12 @@ namespace PrimeERP.Data.Repositories.Base
             Modify(party, db);
 
         public void UpdateNameByAccountCode(PrimeDbContext db, string accountCode, string name) =>
-            Write(db =>
-            {
-                foreach (var row in Rows(db).AsTracking().Where(p => p.AccountCode == accountCode))
-                {
-                    row.Name = name;
-                    row.UpdatedAt = DateTime.Now;
-                }
-                return 0;
-            }, db);
+            Set(p => p.AccountCode == accountCode, s => s.SetProperty(r => r.Name, name), db);
 
         public void Delete(int id, string deletedBy, PrimeDbContext db = null) =>
             SoftDelete(id, deletedBy, db);
 
         public void SetBalance(int id, decimal balance, PrimeDbContext db = null) =>
-            Edit(p => p.Id == id, row => row.Balance = balance, db);
+            Set(p => p.Id == id, s => s.SetProperty(r => r.Balance, balance), db);
     }
 }

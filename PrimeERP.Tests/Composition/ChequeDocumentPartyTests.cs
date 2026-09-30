@@ -1,3 +1,4 @@
+using PrimeERP.Application.Services.Ledger;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,8 +10,8 @@ using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Cheques;
 using PrimeERP.Application.DTOs.Parties;
-using PrimeERP.Application.Services.Cheques;
-using PrimeERP.Application.Services.Parties;
+using PrimeERP.Application.Legacy.Cheques;
+using PrimeERP.Application.Legacy.Parties;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
@@ -21,9 +22,9 @@ using PrimeERP.UI.Components.Inputs;
 using PrimeERP.UI.Services;
 using Xunit;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Legacy.Accounting;
 using PrimeERP.Application.DTOs.Treasury;
-using PrimeERP.Application.Services.Treasury;
+using PrimeERP.Application.Legacy.Treasury;
 using PrimeERP.Data.Repositories;
 
 namespace PrimeERP.Tests.Composition

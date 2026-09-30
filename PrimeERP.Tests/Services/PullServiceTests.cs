@@ -1,11 +1,12 @@
+using PrimeERP.Tests.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Documents;
 using PrimeERP.Application.DTOs.Inventory;
-using PrimeERP.Application.Services.Documents;
-using PrimeERP.Application.Services.Inventory;
+using PrimeERP.Application.Legacy.Documents;
+using PrimeERP.Application.Legacy.Inventory;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Pull;
 using PrimeERP.Platform.Permissions;
@@ -137,7 +138,7 @@ namespace PrimeERP.Tests.Services
             });
 
             Assert.False(overPull.IsSuccess);
-            Assert.Contains("المتبقي", overPull.ErrorMessage);
+            Assert.True(Localized.Says(overPull.ErrorMessage, "Str.Document.PullExceeds"), overPull.ErrorMessage);
         }
     }
 }

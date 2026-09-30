@@ -1,14 +1,13 @@
+using PrimeERP.Application.Legacy.Print;
+using PrimeERP.Application.Legacy.Admin;
 using System;
 using System.Linq;
 using System.Windows.Documents;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services;
-using PrimeERP.Application.Services.Print;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Xunit;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {

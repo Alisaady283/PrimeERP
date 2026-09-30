@@ -1,3 +1,5 @@
+using PrimeERP.Domain.Calculations;
+using PrimeERP.Application.Legacy.Builder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +9,6 @@ using PrimeERP.Domain.Enums;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Components.Actions;
-using PrimeERP.Application.Services.Builder;
 
 namespace PrimeERP.Composition.Renderers
 {

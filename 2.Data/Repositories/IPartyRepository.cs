@@ -7,6 +7,7 @@ namespace PrimeERP.Data.Repositories
     public interface IPartyRepository<TEntity>
     {
         TEntity GetById(int id, PrimeDbContext db = null);
+        Dictionary<int, string> NamesOf(IEnumerable<int> ids, PrimeDbContext db = null);
         TEntity GetByCode(string code);
         TEntity GetByAccountCode(string accountCode, PrimeDbContext db = null);
         List<TEntity> GetAll(bool activeOnly = true);

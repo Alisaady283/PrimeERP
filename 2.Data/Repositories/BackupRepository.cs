@@ -17,6 +17,7 @@ namespace PrimeERP.Data.Repositories
         List<BackupHistoryRecord> GetRecent(int count);
         BackupHistoryRecord GetById(int id, PrimeDbContext db = null);
         int Insert(BackupHistoryRecord record);
+        BackupHistoryRecord Snapshot(string folder, string note, BackupType type);
         int Insert(PrimeDbContext db, BackupHistoryRecord record);
         void Delete(int id);
         void DeleteOlderThan(DateTime cutoff);
@@ -141,21 +142,30 @@ namespace PrimeERP.Data.Repositories
 
         public int Insert(BackupHistoryRecord record) => Insert(null, record);
 
+        /// <summary>نسخة القاعدة وسجلّها</summary>
+        public BackupHistoryRecord Snapshot(string folder, string note, BackupType type)
+        {
+            System.IO.Directory.CreateDirectory(folder);
+
+            var fileName = $"PrimeERP_{DateTime.Now:yyyyMMdd_HHmmss}{FileExtension}";
+            var path = System.IO.Path.Combine(folder, fileName);
+            CopyTo(path);
+
+            var record = new BackupHistoryRecord
+            {
+                FileName = fileName, FilePath = path, SizeBytes = new System.IO.FileInfo(path).Length, CreatedAt = DateTime.Now,
+                Note = note, BackupType = type, DatabaseProvider = DbConfig.Current.Provider.ToString(), IsValid = true
+            };
+            record.Id = Insert(record);
+            return record;
+        }
+
         public int Insert(PrimeDbContext db, BackupHistoryRecord record) => Add(record, db);
 
         public void Delete(int id) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(b => b.Id == id);
-                if (row != null) SetOf(db).Remove(row);
-                return 0;
-            });
+            Remove(b => b.Id == id);
 
         public void DeleteOlderThan(DateTime cutoff) =>
-            Write(db =>
-            {
-                SetOf(db).RemoveRange(Rows(db).Where(b => b.CreatedAt < cutoff));
-                return 0;
-            });
+            Remove(b => b.CreatedAt < cutoff);
     }
 }

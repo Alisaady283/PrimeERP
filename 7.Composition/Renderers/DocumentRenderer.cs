@@ -1,3 +1,4 @@
+using PrimeERP.Domain.Calculations;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -309,7 +310,7 @@ namespace PrimeERP.Composition.Renderers
             decimal Value(string key) =>
                 key != null && controls.TryGetValue(key, out var control) && control is AppNumericBox box ? box.Value : 0m;
 
-            void Recalculate() => net.Text = DocumentTotals.ForLine(
+            void Recalculate() => net.Text = LineCalc.ForLine(
                 Value(math.QtyKey), Value(math.PriceKey),
                 Value(math.DiscountPercentKey), Value(math.VatPercentKey), Value(math.WithholdingPercentKey))
                 .Net.ToString("N2");

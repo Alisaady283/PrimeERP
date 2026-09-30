@@ -1,9 +1,9 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using PrimeERP.Data.Core;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Entities.Common;
@@ -27,19 +27,6 @@ namespace PrimeERP.Data.Repositories.Base
 
         protected IQueryable<T> Rows(PrimeDbContext db) => SetOf(db);
 
-        private static readonly ConcurrentDictionary<string, bool> SoftDeletable = new();
-
-        /// <summary>يستبعد المحذوف منطقياً حيث يعلن</summary>
-        protected IQueryable<T> Live(IQueryable<T> rows) =>
-            SoftDeletable.GetOrAdd(TableName, table =>
-            {
-                using var db = DbContextFactory.Open();
-                var entity = db.Model.FindEntityType(table) ?? db.Model.FindEntityType(typeof(T));
-                return entity?.FindProperty("IsDeleted") != null;
-            })
-                ? rows.Where(e => !EF.Property<bool>(e, "IsDeleted"))
-                : rows;
-
         /// <summary>المُعار لا يُهدَم</summary>
         protected static TResult Scope<TResult>(PrimeDbContext db, Func<PrimeDbContext, TResult> work)
         {
@@ -58,6 +45,9 @@ namespace PrimeERP.Data.Repositories.Base
         protected int Count(Func<IQueryable<T>, IQueryable<T>> shape, PrimeDbContext db = null) =>
             Scope(db, ctx => shape(Rows(ctx).AsNoTracking()).Count());
 
+        protected bool Any(Func<IQueryable<T>, IQueryable<T>> shape, PrimeDbContext db = null) =>
+            Scope(db, ctx => shape(Rows(ctx).AsNoTracking()).Any());
+
         /// <summary>نفس البنية لكيانٍ آخر</summary>
         protected static DbSet<TOther> SetOf<TOther>(PrimeDbContext db, string table) where TOther : class =>
             db.Model.FindEntityType(table) != null ? db.Set<TOther>(table) : db.Set<TOther>();
@@ -75,6 +65,7 @@ namespace PrimeERP.Data.Repositories.Base
             {
                 var result = work(ctx);
                 ctx.SaveChanges();
+                ctx.ChangeTracker.Clear();
                 return result;
             });
 
@@ -82,27 +73,81 @@ namespace PrimeERP.Data.Repositories.Base
             Scope(db, ctx =>
             {
                 SetOf(ctx).Add(entity);
-                Stamp(ctx, entity);
                 ctx.SaveChanges();
+                ctx.ChangeTracker.Clear();
                 return (int)(typeof(T).GetProperty("Id")?.GetValue(entity) ?? 0);
             });
 
         /// <summary>أسماء الفئات بضمّةٍ واحدة</summary>
         protected static List<T> WithCategoryNames(List<T> rows,
-            params (Func<T, int?> Id, Action<T, string> Apply)[] links)
-        {
-            var ids = links.SelectMany(l => rows.Select(l.Id))
-                           .Where(id => id != null).Select(id => id.Value).Distinct().ToList();
-            if (ids.Count == 0) return rows;
+            params (Func<T, int?> Id, Action<T, string> Apply)[] links) =>
+            WithNames<Category>("Categories", rows, links);
 
-            var names = FetchOf<Category>("Categories", q => q.Where(c => ids.Contains(c.Id)))
-                            .ToDictionary(c => c.Id, c => c.Name);
+        /// <summary>أسماء جدولٍ آخر بضمّةٍ واحدة</summary>
+        protected static List<T> WithNames<TOther>(string table, List<T> rows,
+            params (Func<T, int?> Id, Action<T, string> Apply)[] links) where TOther : class
+        {
+            var names = NamesIn<TOther>(table, links.SelectMany(l => rows.Select(l.Id))
+                                                    .Where(id => id != null).Select(id => id.Value));
+            if (names.Count == 0) return rows;
 
             foreach (var row in rows)
                 foreach (var (id, apply) in links)
                     if (id(row) is int key && names.TryGetValue(key, out var name)) apply(row, name);
 
             return rows;
+        }
+
+        /// <summary>كود المرجع واسمه بضمّة</summary>
+        protected static List<T> WithCodeNames<TOther>(string table, List<T> rows, Func<T, int> id,
+            Action<T, string, string> apply) where TOther : class
+        {
+            var wanted = rows.Select(id).Distinct().ToList();
+            if (wanted.Count == 0) return rows;
+
+            var found = Scope(null, db => RowsOf<TOther>(db, table).AsNoTracking()
+                .Where(o => wanted.Contains(EF.Property<int>(o, "Id")))
+                .Select(o => new { Id = EF.Property<int>(o, "Id"), Code = EF.Property<string>(o, "Code"), Name = EF.Property<string>(o, "Name") })
+                .ToDictionary(o => o.Id));
+
+            foreach (var row in rows)
+                if (found.TryGetValue(id(row), out var other)) apply(row, other.Code, other.Name);
+
+            return rows;
+        }
+
+        /// <summary>أسماء صفوف جدولٍ بمعرّفاتها</summary>
+        protected static Dictionary<int, string> NamesIn<TOther>(string table, IEnumerable<int> ids,
+            PrimeDbContext db = null) where TOther : class
+        {
+            var wanted = ids.Distinct().ToList();
+            if (wanted.Count == 0) return new Dictionary<int, string>();
+
+            return Scope(db, ctx => RowsOf<TOther>(ctx, table).AsNoTracking()
+                .Where(o => wanted.Contains(EF.Property<int>(o, "Id")))
+                .Select(o => new { Id = EF.Property<int>(o, "Id"), Name = EF.Property<string>(o, "Name") })
+                .ToDictionary(o => o.Id, o => o.Name));
+        }
+
+        public Dictionary<int, string> NamesOf(IEnumerable<int> ids, PrimeDbContext db = null) =>
+            NamesIn<T>(TableName, ids, db);
+
+        public List<T> GetByIds(IEnumerable<int> ids, PrimeDbContext db = null)
+        {
+            var wanted = ids.Distinct().ToList();
+            return wanted.Count == 0 ? new List<T>() : Fetch(q => q.Where(e => wanted.Contains(EF.Property<int>(e, "Id"))), db);
+        }
+
+        /// <summary>صفوفٌ بأكوادها في ضمّةٍ واحدة</summary>
+        public Dictionary<string, T> ByCodes(IEnumerable<string> codes, PrimeDbContext db = null)
+        {
+            var wanted = codes.Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().ToList();
+            return wanted.Count == 0
+                ? new Dictionary<string, T>()
+                : Scope(db, ctx => Rows(ctx).AsNoTracking()
+                    .Where(e => wanted.Contains(EF.Property<string>(e, "Code")))
+                    .Select(e => new { Code = EF.Property<string>(e, "Code"), Row = e })
+                    .ToDictionary(x => x.Code, x => x.Row));
         }
 
         /// <summary>ترتيبٌ بعمودٍ واحد</summary>
@@ -126,7 +171,6 @@ namespace PrimeERP.Data.Repositories.Base
         protected void Modify(T entity, PrimeDbContext db = null) =>
             Write(db =>
             {
-                if (entity is BaseModel row) row.UpdatedAt = DateTime.Now;
                 SetOf(db).Update(entity);
                 return 0;
             }, db);
@@ -139,37 +183,49 @@ namespace PrimeERP.Data.Repositories.Base
                 var row = SetOf(db).AsTracking().FirstOrDefault(match);
                 if (row == null) return 0;
                 apply(row);
-                if (row is BaseModel stamped) stamped.UpdatedAt = DateTime.Now;
                 return 1;
             }, db);
 
-        protected void SoftDelete(int id, string deletedBy, PrimeDbContext db = null) =>
-            Write(db =>
+        /// <summary>تعديلٌ بجملةٍ واحدة</summary>
+        protected int Set(Expression<Func<T, bool>> match, Action<UpdateSettersBuilder<T>> setters, PrimeDbContext db = null) =>
+            SetIn(TableName, match, setters, db);
+
+        protected static int SetIn<TOther>(string table, Expression<Func<TOther, bool>> match,
+            Action<UpdateSettersBuilder<TOther>> setters, PrimeDbContext db = null) where TOther : class =>
+            Scope(db, ctx =>
             {
-                if (SetOf(db).FirstOrDefault(e => EF.Property<int>(e, "Id") == id) is not BaseModel row) return 0;
-                row.IsDeleted = true;
-                row.DeletedAt = DateTime.Now;
-                row.DeletedBy = deletedBy ?? "";
-                return 0;
-            }, db);
+                var entity = ctx.Model.FindEntityType(table) ?? ctx.Model.FindEntityType(typeof(TOther));
+                var stamped = entity?.FindProperty("UpdatedAt")?.ClrType == typeof(DateTime);
+                return RowsOf<TOther>(ctx, table).Where(match).ExecuteUpdate(s =>
+                {
+                    setters(s);
+                    if (stamped) s.SetProperty(e => EF.Property<DateTime>(e, "UpdatedAt"), DateTime.Now);
+                });
+            });
 
-        /// <summary>وقت الإنشاء يُختم من النموذج</summary>
-        private static void Stamp(PrimeDbContext db, T entity)
-        {
-            var entry = db.Entry(entity);
+        /// <summary>حذفٌ بجملةٍ واحدة</summary>
+        protected int Remove(Expression<Func<T, bool>> match, PrimeDbContext db = null) =>
+            RemoveIn(TableName, match, db);
 
-            foreach (var name in new[] { "CreatedAt", "UpdatedAt" })
-                if (entry.Metadata.FindProperty(name) != null && Equals(entry.Property(name).CurrentValue, default(DateTime)))
-                    entry.Property(name).CurrentValue = DateTime.Now;
+        protected static int RemoveIn<TOther>(string table, Expression<Func<TOther, bool>> match,
+            PrimeDbContext db = null) where TOther : class =>
+            Scope(db, ctx => RowsOf<TOther>(ctx, table).Where(match).ExecuteDelete());
 
-            if (entry.Metadata.FindProperty("CreatedBy") != null && entry.Property("CreatedBy").CurrentValue == null)
-                entry.Property("CreatedBy").CurrentValue = AppSession.Username ?? "";
-        }
+        protected void SoftDelete(int id, string deletedBy, PrimeDbContext db = null) =>
+            SoftDeleteIn<T>(TableName, id, deletedBy, db);
+
+        protected static void SoftDeleteIn<TOther>(string table, int id, string deletedBy, PrimeDbContext db = null)
+            where TOther : class =>
+            SetIn<TOther>(table, e => EF.Property<int>(e, "Id") == id, s => s
+                .SetProperty(e => EF.Property<bool>(e, "IsDeleted"), true)
+                .SetProperty(e => EF.Property<DateTime?>(e, "DeletedAt"), DateTime.Now)
+                .SetProperty(e => EF.Property<string>(e, "DeletedBy"), deletedBy ?? ""), db);
+
 
         public virtual List<T> GetAll(PrimeDbContext db = null) =>
             Fetch(q => q, db);
 
         public virtual T GetById(int id, PrimeDbContext db = null) =>
-            One(q => Live(q).Where(e => EF.Property<int>(e, "Id") == id), db);
+            One(q => q.Where(e => EF.Property<int>(e, "Id") == id), db);
     }
 }

@@ -1,8 +1,9 @@
+using PrimeERP.Application.Services.Ledger;
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Legacy.Accounting;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Modules;
 using PrimeERP.Platform.Permissions;

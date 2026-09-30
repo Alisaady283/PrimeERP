@@ -1,10 +1,10 @@
+using PrimeERP.Application.Legacy.Admin;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Platform.Design;
@@ -14,7 +14,6 @@ using PrimeERP.UI.Components.Actions;
 using PrimeERP.UI.Components.Inputs;
 using PrimeERP.UI.Services;
 using Xunit;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Composition
 {

@@ -49,15 +49,15 @@ namespace PrimeERP.Data.Repositories
 
         public List<BuilderSection> Sections() =>
             FetchOf<BuilderSection>("BuilderSections",
-                q => q.Where(s => !s.IsDeleted).OrderBy(s => s.SortOrder).ThenBy(s => s.Title));
+                q => q.OrderBy(s => s.SortOrder).ThenBy(s => s.Title));
 
         public List<BuilderModule> Modules() =>
-            Fetch(q => q.Where(m => !m.IsDeleted).OrderBy(m => m.SortOrder).ThenBy(m => m.Title));
+            Fetch(q => q.OrderBy(m => m.SortOrder).ThenBy(m => m.Title));
 
         public List<string> SectionKeys() =>
-            FetchOf<BuilderSection>("BuilderSections", q => q).Select(s => s.Key).ToList();
+            FetchOf<BuilderSection>("BuilderSections", q => q.IgnoreQueryFilters()).Select(s => s.Key).ToList();
 
-        public List<string> ModuleKeys() => Fetch(q => q).Select(m => m.Key).ToList();
+        public List<string> ModuleKeys() => Fetch(q => q.IgnoreQueryFilters()).Select(m => m.Key).ToList();
 
         public List<BuilderColumn> Columns(int moduleId = 0) =>
             FetchOf<BuilderColumn>("BuilderColumns", q => Children(q, moduleId).OrderBy(c => c.SortOrder));
@@ -70,13 +70,12 @@ namespace PrimeERP.Data.Repositories
 
         /// <summary>أبناء وحدةٍ بعينها</summary>
         private static IQueryable<T> Children<T>(IQueryable<T> rows, int moduleId) where T : BuilderChild =>
-            rows.Where(x => !x.IsDeleted && (moduleId == 0 || x.ModuleId == moduleId));
+            rows.Where(x => moduleId == 0 || x.ModuleId == moduleId);
 
         public List<(int Id, string Display)> PickerRows(string table, string displayColumn)
         {
             using var db = DbContextFactory.Open();
             return db.Rows(table)
-                .Where(r => !(bool)r["IsDeleted"])
                 .OrderBy(r => r[displayColumn])
                 .AsEnumerable()
                 .Select(r => ((int)r["Id"], r[displayColumn]?.ToString()))
@@ -89,7 +88,6 @@ namespace PrimeERP.Data.Repositories
                 var set = SetOf<BuilderSection>(db, "BuilderSections");
                 if (s.Id == 0)
                 {
-                    s.CreatedAt = DateTime.Now;
                     set.Add(s);
                     return 0;
                 }
@@ -101,7 +99,6 @@ namespace PrimeERP.Data.Repositories
                 row.IconKey = s.IconKey ?? "";
                 row.SortOrder = s.SortOrder;
                 row.Modules = s.Modules ?? "";
-                row.UpdatedAt = DateTime.Now;
                 return 0;
             }) is var _ ? s.Id : s.Id;
 
@@ -110,7 +107,6 @@ namespace PrimeERP.Data.Repositories
             {
                 if (m.Id == 0)
                 {
-                    m.CreatedAt = DateTime.Now;
                     SetOf(db).Add(m);
                     return 0;
                 }
@@ -128,7 +124,6 @@ namespace PrimeERP.Data.Repositories
                 row.SortOrder = m.SortOrder;
                 row.IsActive = m.IsActive;
                 row.IsCoded = m.IsCoded;
-                row.UpdatedAt = DateTime.Now;
                 return 0;
             }) is var _ ? m.Id : m.Id;
 
@@ -145,7 +140,6 @@ namespace PrimeERP.Data.Repositories
                 var set = SetOf<T>(db, table);
                 if (child.Id == 0)
                 {
-                    child.CreatedAt = DateTime.Now;
                     set.Add(child);
                     return 0;
                 }
@@ -173,33 +167,17 @@ namespace PrimeERP.Data.Repositories
         }
 
         private void Clear<T>(string table, int moduleId) where T : BuilderChild =>
-            Write(db =>
-            {
-                SetOf<T>(db, table).RemoveRange(RowsOf<T>(db, table).Where(x => x.ModuleId == moduleId));
-                return 0;
-            });
+            RemoveIn<T>(table, x => x.ModuleId == moduleId);
 
         public void DeleteColumn(int id) => Remove<BuilderColumn>("BuilderColumns", id);
         public void DeleteAction(int id) => Remove<BuilderAction>("BuilderActions", id);
         public void DeleteFilter(int id) => Remove<BuilderFilter>("BuilderFilters", id);
 
         private void Remove<T>(string table, int id) where T : class =>
-            Write(db =>
-            {
-                var row = RowsOf<T>(db, table).AsTracking().FirstOrDefault(x => EF.Property<int>(x, "Id") == id);
-                if (row != null) SetOf<T>(db, table).Remove(row);
-                return 0;
-            });
+            RemoveIn<T>(table, x => EF.Property<int>(x, "Id") == id);
 
         public void DeleteSection(int sectionId) =>
-            Write(db =>
-            {
-                var row = RowsOf<BuilderSection>(db, "BuilderSections").AsTracking().FirstOrDefault(s => s.Id == sectionId);
-                if (row == null) return 0;
-                row.IsDeleted = true;
-                row.DeletedAt = DateTime.Now;
-                return 0;
-            });
+            SoftDeleteIn<BuilderSection>("BuilderSections", sectionId, null);
 
         public void DeleteModule(int moduleId)
         {
@@ -207,14 +185,7 @@ namespace PrimeERP.Data.Repositories
             Clear<BuilderAction>("BuilderActions", moduleId);
             Clear<BuilderFilter>("BuilderFilters", moduleId);
 
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(m => m.Id == moduleId);
-                if (row == null) return 0;
-                row.IsDeleted = true;
-                row.DeletedAt = DateTime.Now;
-                return 0;
-            });
+            SoftDelete(moduleId, null);
         }
 
         public void EnsureBuiltTable(BuilderModule module, List<BuilderColumn> columns)

@@ -15,12 +15,15 @@ namespace PrimeERP.Data.Repositories
         JournalEntry GetByEntryNo(string entryNo);
         List<JournalLine> GetLines(int entryId, PrimeDbContext db = null);
         bool IsPosted(int entryId);
-        bool HasLinesForAccount(string accountCode, int? exceptEntryId = null);
+        bool HasLinesForAccount(string accountCode, int? exceptEntryId = null, PrimeDbContext db = null);
         List<(string EntryDate, string EntryNo, string Description, decimal Debit, decimal Credit)> GetPostedLinesForAccount(
             string accountCode, DateTime? from, DateTime? to, PrimeDbContext db = null);
         (int TotalEntries, decimal TotalDebit, decimal TotalCredit) GetSummary();
         int CountUnpostedBetween(DateTime from, DateTime to);
-        List<(string AccountCode, decimal SumDebit, decimal SumCredit)> GetAccountSums(DateTime? from, DateTime to, bool postedOnly);
+        decimal SumPosted(string accountCode, DateTime? from, DateTime? to, PrimeDbContext db = null);
+        List<(string AccountCode, decimal SumDebit, decimal SumCredit)> GetAccountSums(DateTime? from, DateTime? to, bool postedOnly,
+            PrimeDbContext db = null);
+        HashSet<string> AccountsWithLines(IEnumerable<string> accountCodes);
         Dictionary<int, int> GetLineCounts(IEnumerable<int> entryIds);
         (List<JournalEntry> Items, int Total) GetPaged(
             int page, int pageSize,
@@ -57,31 +60,66 @@ namespace PrimeERP.Data.Repositories
 
         public bool IsPosted(int entryId) => One(q => q.Where(e => e.Id == entryId))?.IsPosted ?? false;
 
-        public bool HasLinesForAccount(string accountCode, int? exceptEntryId = null)
+        public bool HasLinesForAccount(string accountCode, int? exceptEntryId = null, PrimeDbContext db = null) =>
+            Scope(db, ctx => RowsOf<JournalLine>(ctx, LinesOf).AsNoTracking()
+                .Any(l => l.AccountCode == accountCode && (exceptEntryId == null || l.EntryId != exceptEntryId)));
+
+        /// <summary>سطرٌ بقيده</summary>
+        private sealed class DatedLine
         {
-            using var db = DbContextFactory.Open();
-            return RowsOf<JournalLine>(db, LinesOf).AsNoTracking()
-                .Any(l => l.AccountCode == accountCode && (exceptEntryId == null || l.EntryId != exceptEntryId));
+            public int EntryId { get; init; }
+            public string EntryDate { get; init; }
+            public string EntryNo { get; init; }
+            public string Description { get; init; }
+            public DateTime CreatedAt { get; init; }
+            public int LineNo { get; init; }
+            public string AccountCode { get; init; }
+            public decimal Debit { get; init; }
+            public decimal Credit { get; init; }
         }
 
-        public List<(string EntryDate, string EntryNo, string Description, decimal Debit, decimal Credit)>
-            GetPostedLinesForAccount(string accountCode, DateTime? from, DateTime? to,
-                                     PrimeDbContext db = null)
+        /// <summary>سطور القيود في مدى</summary>
+        private IQueryable<DatedLine> Dated(PrimeDbContext ctx, DateTime? from, DateTime? to, bool postedOnly)
         {
             var since = from?.ToString("yyyy-MM-dd");
             var until = to?.ToString("yyyy-MM-dd");
 
-            return Scope(db, ctx =>
-                   (from l in RowsOf<JournalLine>(ctx, LinesOf).AsNoTracking()
-                    join e in Rows(ctx).AsNoTracking() on l.EntryId equals e.Id
-                    where l.AccountCode == accountCode && e.IsPosted
-                       && (since == null || string.Compare(e.EntryDate, since) >= 0)
-                       && (until == null || string.Compare(e.EntryDate, until) <= 0)
-                    orderby e.EntryDate, l.LineNo, e.EntryNo, e.CreatedAt, e.Id
-                    select new { e.EntryDate, e.EntryNo, e.Description, l.Debit, l.Credit })
+            return from l in RowsOf<JournalLine>(ctx, LinesOf).AsNoTracking()
+                   join e in Rows(ctx).AsNoTracking() on l.EntryId equals e.Id
+                   where (!postedOnly || e.IsPosted)
+                      && (since == null || string.Compare(e.EntryDate, since) >= 0)
+                      && (until == null || string.Compare(e.EntryDate, until) <= 0)
+                   select new DatedLine
+                   {
+                       EntryId = e.Id, EntryDate = e.EntryDate, EntryNo = e.EntryNo, Description = e.Description,
+                       CreatedAt = e.CreatedAt, LineNo = l.LineNo, AccountCode = l.AccountCode, Debit = l.Debit, Credit = l.Credit
+                   };
+        }
+
+        public List<(string EntryDate, string EntryNo, string Description, decimal Debit, decimal Credit)>
+            GetPostedLinesForAccount(string accountCode, DateTime? from, DateTime? to,
+                                     PrimeDbContext db = null) =>
+            Scope(db, ctx => Dated(ctx, from, to, postedOnly: true)
+                .Where(l => l.AccountCode == accountCode)
+                .OrderBy(l => l.EntryDate).ThenBy(l => l.LineNo).ThenBy(l => l.EntryNo).ThenBy(l => l.CreatedAt).ThenBy(l => l.EntryId)
+                .Select(l => new { l.EntryDate, l.EntryNo, l.Description, l.Debit, l.Credit })
                 .AsEnumerable()
                 .Select(x => (x.EntryDate, x.EntryNo, x.Description ?? "", x.Debit, x.Credit))
                 .ToList());
+
+        public decimal SumPosted(string accountCode, DateTime? from, DateTime? to, PrimeDbContext db = null) =>
+            Scope(db, ctx => Dated(ctx, from, to, postedOnly: true)
+                .Where(l => l.AccountCode == accountCode)
+                .Sum(l => (decimal?)(l.Debit - l.Credit)) ?? 0m);
+
+        public HashSet<string> AccountsWithLines(IEnumerable<string> accountCodes)
+        {
+            var codes = accountCodes.Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().ToList();
+            if (codes.Count == 0) return new HashSet<string>();
+
+            return Scope(null, ctx => RowsOf<JournalLine>(ctx, LinesOf).AsNoTracking()
+                .Where(l => codes.Contains(l.AccountCode))
+                .Select(l => l.AccountCode).Distinct().ToHashSet());
         }
 
         public (int TotalEntries, decimal TotalDebit, decimal TotalCredit) GetSummary()
@@ -101,23 +139,13 @@ namespace PrimeERP.Data.Repositories
         }
 
         public List<(string AccountCode, decimal SumDebit, decimal SumCredit)> GetAccountSums(
-            DateTime? from, DateTime to, bool postedOnly)
-        {
-            var since = from?.ToString("yyyy-MM-dd");
-            var until = to.ToString("yyyy-MM-dd");
-
-            using var db = DbContextFactory.Open();
-            return (from l in RowsOf<JournalLine>(db, LinesOf).AsNoTracking()
-                    join e in Rows(db).AsNoTracking() on l.EntryId equals e.Id
-                    where string.Compare(e.EntryDate, until) <= 0
-                       && (since == null || string.Compare(e.EntryDate, since) >= 0)
-                       && (!postedOnly || e.IsPosted)
-                    group l by l.AccountCode into g
-                    select new { Code = g.Key, Debit = g.Sum(x => x.Debit), Credit = g.Sum(x => x.Credit) })
+            DateTime? from, DateTime? to, bool postedOnly, PrimeDbContext db = null) =>
+            Scope(db, ctx => Dated(ctx, from, to, postedOnly)
+                .GroupBy(l => l.AccountCode)
+                .Select(g => new { Code = g.Key, Debit = g.Sum(x => x.Debit), Credit = g.Sum(x => x.Credit) })
                 .AsEnumerable()
                 .Select(x => (x.Code, x.Debit, x.Credit))
-                .ToList();
-        }
+                .ToList());
 
         public Dictionary<int, int> GetLineCounts(IEnumerable<int> entryIds)
         {
@@ -142,22 +170,24 @@ namespace PrimeERP.Data.Repositories
             var until = dateTo?.ToString("yyyy-MM-dd");
 
             using var db = DbContextFactory.Open();
-            var q = Rows(db).AsNoTracking();
 
-            if (!string.IsNullOrWhiteSpace(searchText))
-                q = q.Where(e => EF.Functions.Like(e.EntryNo, $"%{searchText}%")
-                              || EF.Functions.Like(e.Description, $"%{searchText}%"));
-            if (since != null) q = q.Where(e => string.Compare(e.EntryDate, since) >= 0);
-            if (until != null) q = q.Where(e => string.Compare(e.EntryDate, until) <= 0);
-            if (!string.IsNullOrWhiteSpace(source)) q = q.Where(e => e.Source == source);
-            if (isPosted != null) q = q.Where(e => e.IsPosted == isPosted);
-            if (!string.IsNullOrWhiteSpace(accountCode))
-                q = q.Where(e => RowsOf<JournalLine>(db, LinesOf).Any(l => l.EntryId == e.Id && l.AccountCode == accountCode));
-            if (minAmount != null) q = q.Where(e => e.TotalDebit >= minAmount);
-            if (maxAmount != null) q = q.Where(e => e.TotalDebit <= maxAmount);
+            IQueryable<JournalEntry> Shape(IQueryable<JournalEntry> q)
+            {
+                if (!string.IsNullOrWhiteSpace(searchText))
+                    q = q.Where(e => EF.Functions.Like(e.EntryNo, $"%{searchText}%")
+                                  || EF.Functions.Like(e.Description, $"%{searchText}%"));
+                if (since != null) q = q.Where(e => string.Compare(e.EntryDate, since) >= 0);
+                if (until != null) q = q.Where(e => string.Compare(e.EntryDate, until) <= 0);
+                if (!string.IsNullOrWhiteSpace(source)) q = q.Where(e => e.Source == source);
+                if (isPosted != null) q = q.Where(e => e.IsPosted == isPosted);
+                if (!string.IsNullOrWhiteSpace(accountCode))
+                    q = q.Where(e => RowsOf<JournalLine>(db, LinesOf).Any(l => l.EntryId == e.Id && l.AccountCode == accountCode));
+                if (minAmount != null) q = q.Where(e => e.TotalDebit >= minAmount);
+                if (maxAmount != null) q = q.Where(e => e.TotalDebit <= maxAmount);
+                return q;
+            }
 
-            var total = q.Count();
-            var ordered = (sortColumn switch
+            return Page(page, pageSize, Shape, sortColumn switch
             {
                 "EntryNo"     => By(e => e.EntryNo,     sortDescending),
                 "TotalDebit"  => By(e => e.TotalDebit,  sortDescending),
@@ -165,12 +195,7 @@ namespace PrimeERP.Data.Repositories
                 "IsPosted"    => By(e => e.IsPosted,    sortDescending),
                 "CreatedAt"   => By(e => e.CreatedAt,   sortDescending),
                 _             => By(e => e.EntryDate,   sortDescending),
-            })(q);
-
-            var items = ordered.ThenByDescending(e => e.Id).ThenByDescending(e => e.EntryNo)
-                               .ThenByDescending(e => e.CreatedAt)
-                               .Skip(Math.Max(0, page - 1) * pageSize).Take(pageSize).ToList();
-            return (items, total);
+            }, db);
         }
 
         public int InsertHeader(PrimeDbContext db, JournalEntry entry)
@@ -206,30 +231,13 @@ namespace PrimeERP.Data.Repositories
             }, db);
 
         public void DeleteLines(int entryId, PrimeDbContext db = null) =>
-            Write(db =>
-            {
-                SetOf<JournalLine>(db, LinesOf)
-                    .RemoveRange(RowsOf<JournalLine>(db, LinesOf).Where(l => l.EntryId == entryId));
-                return 0;
-            }, db);
+            RemoveIn<JournalLine>(LinesOf, l => l.EntryId == entryId, db);
 
         public void DeleteHeader(int entryId, PrimeDbContext db = null) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(e => e.Id == entryId);
-                if (row != null) SetOf(db).Remove(row);
-                return 0;
-            }, db);
+            Remove(e => e.Id == entryId, db);
 
         public void SetPosted(int entryId, bool isPosted) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(e => e.Id == entryId);
-                if (row == null) return 0;
-                row.IsPosted = isPosted;
-                row.UpdatedAt = DateTime.Now;
-                return 0;
-            });
+            Set(e => e.Id == entryId, s => s.SetProperty(r => r.IsPosted, isPosted));
 
         public void SetPosted(PrimeDbContext db, int entryId, DateTime postedAt, string postedBy) =>
             Edit(e => e.Id == entryId, row =>

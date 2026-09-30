@@ -20,6 +20,7 @@ namespace PrimeERP.Data.Repositories.Base
         int InsertHeader(PrimeDbContext db, TInvoice invoice);
         int InsertLine(PrimeDbContext db, int invoiceId, TLine line);
         void SetJournalEntryId(PrimeDbContext db, int invoiceId, int journalEntryId);
+        List<TInvoice> Between(DateTime from, DateTime to);
     }
 
     /// <summary>أساس فاتورة: رأس وسطور</summary>
@@ -40,18 +41,9 @@ namespace PrimeERP.Data.Repositories.Base
 
         public void DeleteDocument(PrimeDbContext db, int id)
         {
-            Write(db =>          // السطور أولاً: النموذج بلا علاقة، فترتيب الحذف يدويّ
-            {
-                SetOf<TLine>(db, LinesTable).RemoveRange(RowsOf<TLine>(db, LinesTable).Where(l => l.InvoiceId == id));
-                return 0;
-            }, db);
+            RemoveIn<TLine>(LinesTable, l => l.InvoiceId == id, db);
 
-            Write(db =>
-            {
-                var head = Rows(db).AsTracking().FirstOrDefault(i => i.Id == id);
-                if (head != null) SetOf(db).Remove(head);
-                return 0;
-            }, db);
+            Remove(i => i.Id == id, db);
         }
 
 
@@ -81,6 +73,10 @@ namespace PrimeERP.Data.Repositories.Base
             _           => DocumentOrder(i => i.InvoiceDate, descending, i => i.InvoiceNo),
         };
 
+        public List<TInvoice> Between(DateTime from, DateTime to) =>
+            Fetch(q => q.Where(i => i.InvoiceDate >= from.Date && i.InvoiceDate < to.Date.AddDays(1))
+                        .OrderBy(i => i.InvoiceDate).ThenBy(i => i.InvoiceNo));
+
         public int InsertHeader(PrimeDbContext db, TInvoice invoice) => Add(invoice, db);
 
         public int InsertLine(PrimeDbContext db, int invoiceId, TLine line)
@@ -91,11 +87,6 @@ namespace PrimeERP.Data.Repositories.Base
         }
 
         public void SetJournalEntryId(PrimeDbContext db, int invoiceId, int journalEntryId) =>
-            Write(db =>
-            {
-                var head = Rows(db).AsTracking().FirstOrDefault(i => i.Id == invoiceId);
-                if (head != null) head.JournalEntryId = journalEntryId;
-                return 0;
-            }, db);
+            Set(i => i.Id == invoiceId, s => s.SetProperty(r => r.JournalEntryId, journalEntryId), db);
     }
 }

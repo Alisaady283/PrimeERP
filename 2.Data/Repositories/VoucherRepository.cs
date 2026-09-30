@@ -67,19 +67,9 @@ namespace PrimeERP.Data.Repositories
 
         public void Delete(PrimeDbContext db, int id)
         {
-            Write(db =>          // التخصيصات أولاً: النموذج بلا علاقة، فترتيب الحذف يدويّ
-            {
-                SetOf<VoucherAllocation>(db, Allocations)
-                    .RemoveRange(RowsOf<VoucherAllocation>(db, Allocations).Where(a => a.VoucherId == id));
-                return 0;
-            }, db);
+            RemoveIn<VoucherAllocation>(Allocations, a => a.VoucherId == id, db);
 
-            Write(db =>
-            {
-                var head = Rows(db).AsTracking().FirstOrDefault(v => v.Id == id);
-                if (head != null) SetOf(db).Remove(head);
-                return 0;
-            }, db);
+            Remove(v => v.Id == id, db);
         }
     }
 }

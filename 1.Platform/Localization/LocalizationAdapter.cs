@@ -6,6 +6,6 @@ namespace PrimeERP.Platform.Localization
         public string Get(string key) => LocalizationService.Get(key);
 
         public string Get(string key, params object[] args) =>
-            string.Format(LocalizationService.Get(key), args);
+            LocalizationService.Get(key, args);
     }
 }

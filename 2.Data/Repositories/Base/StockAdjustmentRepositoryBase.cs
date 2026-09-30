@@ -24,24 +24,25 @@ namespace PrimeERP.Data.Repositories.Base
 
         public void DeleteDocument(PrimeDbContext db, int id)
         {
-            Write(db =>          // السطور أولاً: النموذج بلا علاقة، فترتيب الحذف يدويّ
-            {
-                SetOf<StockAdjustmentLine>(db, _lineTable).RemoveRange(RowsOf<StockAdjustmentLine>(db, _lineTable).Where(l => l.DocumentId == id));
-                return 0;
-            }, db);
+            RemoveIn<StockAdjustmentLine>(_lineTable, l => l.DocumentId == id, db);
 
-            Write(db =>
-            {
-                var head = Rows(db).AsTracking().FirstOrDefault(d => d.Id == id);
-                if (head != null) SetOf(db).Remove(head);
-                return 0;
-            }, db);
+            Remove(d => d.Id == id, db);
         }
 
 
         public List<StockAdjustmentLine> GetLines(int documentId, PrimeDbContext db = null) =>
             FetchOf<StockAdjustmentLine>(_lineTable,
                 q => q.Where(l => l.DocumentId == documentId).OrderBy(l => l.LineNo), db);
+
+        public Dictionary<int, decimal> TotalQty(IEnumerable<int> documentIds)
+        {
+            var ids = documentIds.Distinct().ToList();
+            return Scope(null, ctx => RowsOf<StockAdjustmentLine>(ctx, _lineTable).AsNoTracking()
+                .Where(l => ids.Contains(l.DocumentId))
+                .GroupBy(l => l.DocumentId)
+                .Select(g => new { g.Key, Qty = g.Sum(l => l.Qty) })
+                .ToDictionary(x => x.Key, x => x.Qty));
+        }
 
         public (List<StockAdjustment> Items, int Total) GetPaged(int page, int pageSize, string searchText,
                                                                  string sortColumn, bool sortDescending)

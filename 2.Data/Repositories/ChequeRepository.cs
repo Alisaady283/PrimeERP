@@ -22,6 +22,7 @@ namespace PrimeERP.Data.Repositories
         void Delete(PrimeDbContext db, int id);
         void DeleteMovements(PrimeDbContext db, int chequeId);
         void InsertMovement(PrimeDbContext db, ChequeMovement m);
+        void ClearMovementEntry(PrimeDbContext db, int movementId);
     }
 
     public class ChequeRepository : RepositoryBase<Cheque>, IChequeRepository
@@ -55,6 +56,9 @@ namespace PrimeERP.Data.Repositories
                                  && c.IssueDate >= from && c.IssueDate <= to)
                         .OrderBy(c => c.DueDate));
 
+        public void ClearMovementEntry(PrimeDbContext db, int movementId) =>
+            SetIn<ChequeMovement>(Movements, m => m.Id == movementId, s => s.SetProperty(m => m.JournalEntryId, (int?)null), db);
+
         public List<ChequeMovement> GetMovements(int chequeId) =>
             FetchOf<ChequeMovement>(Movements, q => q.Where(m => m.ChequeId == chequeId).OrderBy(m => m.Id));
 
@@ -80,20 +84,10 @@ namespace PrimeERP.Data.Repositories
             }, db);
 
         public void Delete(PrimeDbContext db, int id) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(c => c.Id == id);
-                if (row != null) SetOf(db).Remove(row);
-                return 0;
-            }, db);
+            Remove(c => c.Id == id, db);
 
         public void DeleteMovements(PrimeDbContext db, int chequeId) =>
-            Write(db =>
-            {
-                SetOf<ChequeMovement>(db, Movements)
-                    .RemoveRange(RowsOf<ChequeMovement>(db, Movements).Where(m => m.ChequeId == chequeId));
-                return 0;
-            }, db);
+            RemoveIn<ChequeMovement>(Movements, m => m.ChequeId == chequeId, db);
 
         public void InsertMovement(PrimeDbContext db, ChequeMovement m) =>
             Write(db =>

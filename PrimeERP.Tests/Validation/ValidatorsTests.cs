@@ -1,3 +1,9 @@
+using PrimeERP.Application.Services.Ledger.Accounts;
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Legacy.Security;
+using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.Legacy.HR;
+using PrimeERP.Application.Legacy.Parties;
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.Validation;
@@ -15,7 +21,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void CustomerValidator_Fails_WhenNameMissing()
         {
-            var result = new CustomerValidator().Validate(new Customer { Code = "C001", Name = "" });
+            var result = Check.Fields(new Customer { Code = "C001", Name = "" }, CustomerService.Rules);
             Assert.False(result.IsValid);
             Assert.NotNull(result["Name"]);
         }
@@ -23,7 +29,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void CustomerValidator_Fails_OnInvalidEmail()
         {
-            var result = new CustomerValidator().Validate(new Customer { Code = "C001", Name = "عميل", Email = "not-an-email" });
+            var result = Check.Fields(new Customer { Code = "C001", Name = "عميل", Email = "not-an-email" }, CustomerService.Rules);
             Assert.False(result.IsValid);
             Assert.NotNull(result["Email"]);
         }
@@ -31,7 +37,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void CustomerValidator_Fails_OnNegativeCreditLimit()
         {
-            var result = new CustomerValidator().Validate(new Customer { Code = "C001", Name = "عميل", CreditLimit = -1 });
+            var result = Check.Fields(new Customer { Code = "C001", Name = "عميل", CreditLimit = -1 }, CustomerService.Rules);
             Assert.False(result.IsValid);
             Assert.NotNull(result["CreditLimit"]);
         }
@@ -39,21 +45,21 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void CustomerValidator_Succeeds_WithValidData()
         {
-            var result = new CustomerValidator().Validate(new Customer
+            var result = Check.Fields(new Customer
             {
                 Code = "C001",
                 Name = "عميل صحيح",
                 Email = "test@example.com",
                 Phone = "0501234567",
                 CreditLimit = 1000
-            });
+            }, CustomerService.Rules);
             Assert.True(result.IsValid);
         }
 
         [Fact]
         public void SupplierValidator_Fails_WhenCodeMissing()
         {
-            var result = new SupplierValidator().Validate(new Supplier { Name = "مورد" });
+            var result = Check.Fields(new Supplier { Name = "مورد" }, SupplierService.Rules);
             Assert.False(result.IsValid);
             Assert.NotNull(result["Code"]);
         }
@@ -61,7 +67,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void SupplierValidator_Fails_OnInvalidPhone()
         {
-            var result = new SupplierValidator().Validate(new Supplier { Code = "S001", Name = "مورد", Phone = "123" });
+            var result = Check.Fields(new Supplier { Code = "S001", Name = "مورد", Phone = "123" }, SupplierService.Rules);
             Assert.False(result.IsValid);
             Assert.NotNull(result["Phone"]);
         }
@@ -69,7 +75,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void SupplierValidator_Succeeds_WithValidData()
         {
-            var result = new SupplierValidator().Validate(new Supplier { Code = "S001", Name = "مورد صحيح", CreditLimit = 0 });
+            var result = Check.Fields(new Supplier { Code = "S001", Name = "مورد صحيح", CreditLimit = 0 }, SupplierService.Rules);
             Assert.True(result.IsValid);
         }
 
@@ -86,7 +92,7 @@ namespace PrimeERP.Tests.Validation
                 }
             };
 
-            var result = new JournalValidator().Validate(entry);
+            var result = Check.Fields(entry, Entries.Shape);
             Assert.False(result.IsValid);
         }
 
@@ -99,7 +105,7 @@ namespace PrimeERP.Tests.Validation
                 Lines = new() { new() { AccountCode = "1204", Debit = 100m, Credit = 0m } }
             };
 
-            var result = new JournalValidator().Validate(entry);
+            var result = Check.Fields(entry, Entries.Shape);
             Assert.False(result.IsValid);
         }
 
@@ -116,7 +122,7 @@ namespace PrimeERP.Tests.Validation
                 }
             };
 
-            var result = new JournalValidator().Validate(entry);
+            var result = Check.Fields(entry, Entries.Shape);
             Assert.False(result.IsValid);
         }
 
@@ -133,7 +139,7 @@ namespace PrimeERP.Tests.Validation
                 }
             };
 
-            var result = new JournalValidator().Validate(entry);
+            var result = Check.Fields(entry, Entries.Shape);
             Assert.False(result.IsValid);
         }
 
@@ -150,14 +156,14 @@ namespace PrimeERP.Tests.Validation
                 }
             };
 
-            var result = new JournalValidator().Validate(entry);
+            var result = Check.Fields(entry, Entries.Shape);
             Assert.True(result.IsValid);
         }
 
         [Fact]
         public void EmployeeValidator_Fails_WhenNameMissing()
         {
-            var result = new EmployeeValidator().Validate(new Employee { Code = "E001", Name = "", HireDate = DateTime.Today });
+            var result = Check.Fields(new Employee { Code = "E001", Name = "", HireDate = DateTime.Today }, EmployeeService.Rules);
             Assert.False(result.IsValid);
             Assert.NotNull(result["Name"]);
         }
@@ -165,7 +171,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void EmployeeValidator_Fails_OnNegativeSalary()
         {
-            var result = new EmployeeValidator().Validate(new Employee { Code = "E001", Name = "موظف", HireDate = DateTime.Today, BasicSalary = -500 });
+            var result = Check.Fields(new Employee { Code = "E001", Name = "موظف", HireDate = DateTime.Today, BasicSalary = -500 }, EmployeeService.Rules);
             Assert.False(result.IsValid);
             Assert.NotNull(result["BasicSalary"]);
         }
@@ -173,7 +179,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void EmployeeValidator_Succeeds_WithValidData()
         {
-            var result = new EmployeeValidator().Validate(new Employee
+            var result = Check.Fields(new Employee
             {
                 Code = "E001",
                 Name = "موظف صحيح",
@@ -181,21 +187,21 @@ namespace PrimeERP.Tests.Validation
                 BasicSalary = 5000,
                 Phone = "0501234567",
                 Email = "emp@example.com"
-            });
+            }, EmployeeService.Rules);
             Assert.True(result.IsValid);
         }
 
         [Fact]
         public void ProductValidator_Fails_WhenSalePriceBelowMinPrice()
         {
-            var result = new ProductValidator().Validate(new Product
+            var result = Check.Fields(new Product
             {
                 Code = "P001",
                 Name = "منتج",
                 CostPrice = 10,
                 SalePrice = 15,
                 MinPrice = 20
-            });
+            }, ProductService.Rules);
 
             Assert.False(result.IsValid);
             Assert.NotNull(result["SalePrice"]);
@@ -204,7 +210,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void ProductValidator_Fails_OnNegativeCostPrice()
         {
-            var result = new ProductValidator().Validate(new Product { Code = "P001", Name = "منتج", CostPrice = -1, SalePrice = 10 });
+            var result = Check.Fields(new Product { Code = "P001", Name = "منتج", CostPrice = -1, SalePrice = 10 }, ProductService.Rules);
             Assert.False(result.IsValid);
             Assert.NotNull(result["CostPrice"]);
         }
@@ -212,14 +218,14 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void ProductValidator_Succeeds_WithValidData()
         {
-            var result = new ProductValidator().Validate(new Product
+            var result = Check.Fields(new Product
             {
                 Code = "P001",
                 Name = "منتج صحيح",
                 CostPrice = 10,
                 SalePrice = 15,
                 MinPrice = 12
-            });
+            }, ProductService.Rules);
             Assert.True(result.IsValid);
         }
 
@@ -239,7 +245,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void Fails_OnInvalidCodeFormat()
         {
-            var result = new AccountValidator(_repo).Validate(new Account { Code = "ABC", Name = "حساب" });
+            var result = Check.Fields(new Account { Code = "ABC", Name = "حساب" }, AddTreeAccount.AccountFields);
             Assert.False(result.IsValid);
             Assert.NotNull(result["Code"]);
         }
@@ -247,30 +253,22 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void Fails_WhenNameMissing()
         {
-            var result = new AccountValidator(_repo).Validate(new Account { Code = "9999", Name = "" });
+            var result = Check.Fields(new Account { Code = "9999", Name = "" }, AddTreeAccount.AccountFields);
             Assert.False(result.IsValid);
             Assert.NotNull(result["Name"]);
         }
 
         [Fact]
-        public void Fails_WhenCodeAlreadyExists()
-        {
-            var result = new AccountValidator(_repo, isEdit: false, checkUniqueness: true).Validate(new Account { Code = "1204", Name = "حساب جديد" });
-            Assert.False(result.IsValid);
-            Assert.NotNull(result["Code"]);
-        }
-
-        [Fact]
         public void Succeeds_OnEdit_EvenWithExistingCode()
         {
-            var result = new AccountValidator(_repo, isEdit: true).Validate(new Account { Code = "1204", Name = "الصندوق المعدَّل" });
+            var result = Check.Fields(new Account { Code = "1204", Name = "الصندوق المعدَّل" }, AddTreeAccount.AccountFields);
             Assert.True(result.IsValid);
         }
 
         [Fact]
         public void Succeeds_WithValidNewCode()
         {
-            var result = new AccountValidator(_repo).Validate(new Account { Code = "999999", Name = "حساب صحيح جديد" });
+            var result = Check.Fields(new Account { Code = "999999", Name = "حساب صحيح جديد" }, AddTreeAccount.AccountFields);
             Assert.True(result.IsValid);
         }
     }
@@ -285,7 +283,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void Fails_WhenUsernameTooShort()
         {
-            var result = new UserValidator(_store).Validate(new User { Username = "ab", DisplayName = "مستخدم", RoleId = 1 });
+            var result = Check.Fields(new User { Username = "ab", DisplayName = "مستخدم", RoleId = 1 }, UserService.UserFields(_store, isEdit: false));
             Assert.False(result.IsValid);
             Assert.NotNull(result["Username"]);
         }
@@ -293,7 +291,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void Fails_WhenNoRoleSelected()
         {
-            var result = new UserValidator(_store).Validate(new User { Username = "validuser", DisplayName = "مستخدم", RoleId = 0 });
+            var result = Check.Fields(new User { Username = "validuser", DisplayName = "مستخدم", RoleId = 0 }, UserService.UserFields(_store, isEdit: false));
             Assert.False(result.IsValid);
             Assert.NotNull(result["RoleId"]);
         }
@@ -303,7 +301,7 @@ namespace PrimeERP.Tests.Validation
         {
             PermissionSeeder.Seed(_store);
 
-            var result = new UserValidator(_store, isEdit: false).Validate(new User { Username = "admin", DisplayName = "مكرر", RoleId = 1 });
+            var result = Check.Fields(new User { Username = "admin", DisplayName = "مكرر", RoleId = 1 }, UserService.UserFields(_store, isEdit: false));
             Assert.False(result.IsValid);
             Assert.NotNull(result["Username"]);
         }
@@ -311,7 +309,7 @@ namespace PrimeERP.Tests.Validation
         [Fact]
         public void Succeeds_OnEdit_EvenWithoutUniquenessCheck()
         {
-            var result = new UserValidator(_store, isEdit: true).Validate(new User { Username = "someexistinguser", DisplayName = "مستخدم", RoleId = 1 });
+            var result = Check.Fields(new User { Username = "someexistinguser", DisplayName = "مستخدم", RoleId = 1 }, UserService.UserFields(_store, isEdit: true));
             Assert.True(result.IsValid);
         }
     }

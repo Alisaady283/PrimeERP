@@ -1,9 +1,13 @@
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Application.Services.Documents;
+using PrimeERP.Tests.Helpers;
+using PrimeERP.Domain.Entities;
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.DTOs.Inventory;
-using PrimeERP.Application.Services.Common;
-using PrimeERP.Application.Services.Inventory;
+using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Application.Legacy.Inventory;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 
@@ -26,9 +30,9 @@ namespace PrimeERP.Tests.Services
             var product = products.Create(new CreateProductDto { Name = "صنف", CategoryId = category.Id, CostPrice = 10, SalePrice = 25 }).Value;
             _productId = product.Id; _productCode = product.Code;
 
-            var warehouses = _db.Services.GetRequiredService<IWarehouseService>();
-            _warehouseAId = warehouses.Create(new CreateWarehouseDto { Name = "مخزن أ" }).Value.Id;
-            _warehouseBId = warehouses.Create(new CreateWarehouseDto { Name = "مخزن ب" }).Value.Id;
+            var warehouses = _db.Services.GetRequiredService<Lookup<Warehouse>>();
+            _warehouseAId = warehouses.Add("مخزن أ");
+            _warehouseBId = warehouses.Add("مخزن ب");
         }
 
         public void Dispose() => _db.Dispose();
@@ -44,7 +48,7 @@ namespace PrimeERP.Tests.Services
             });
             Assert.True(inResult.IsSuccess, inResult.ErrorMessage);
 
-            var stock = _db.Services.GetRequiredService<IStockService>();
+            var stock = _db.Services.GetRequiredService<IStockMove>();
             Assert.Equal(50, stock.GetBalance(_productId, _warehouseAId).Value);
 
             var stockOut = _db.Services.GetRequiredService<IStockOutService>();

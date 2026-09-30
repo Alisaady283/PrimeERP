@@ -1,8 +1,9 @@
+using PrimeERP.Application.Validation;
+using PrimeERP.Domain.Calculations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Domain.Entities;
-using PrimeERP.Domain.Rules;
 
 namespace PrimeERP.UI.Components.Pickers
 {
@@ -21,7 +22,7 @@ namespace PrimeERP.UI.Components.Pickers
 
             var window = new PickerGridWindow("اختيار عميل", config, results, allowQuickAdd: AllowQuickAdd)
             {
-                RowHighlight = raw => raw is Customer c && PartyRules.IsOverCreditLimit(c.Balance, c.CreditLimit) ? "danger" : null
+                RowHighlight = raw => raw is Customer c && PartyCalc.IsOverCreditLimit(c.Balance, c.CreditLimit) ? "danger" : null
             };
             window.QuickAddRequested += (s, e) => RaiseQuickAddRequested();
 

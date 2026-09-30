@@ -1,3 +1,7 @@
+using PrimeERP.Application.Legacy.Security;
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Domain.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -7,19 +11,18 @@ using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Assets;
-using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Legacy.Accounting;
 using PrimeERP.Application.DTOs.HR;
-using PrimeERP.Application.Services.Assets;
-using PrimeERP.Application.Services.Common;
+using PrimeERP.Application.Legacy.Assets;
+using PrimeERP.Application.Legacy.Common;
 using PrimeERP.Application.DTOs.Security;
 using PrimeERP.Application.DTOs.Sales;
-using PrimeERP.Application.Services.HR;
+using PrimeERP.Application.Legacy.HR;
 using PrimeERP.Application.DTOs.Purchasing;
-using PrimeERP.Application.Services.Purchasing;
-using PrimeERP.Application.Services.Sales;
-using PrimeERP.Application.Services.Security;
-using PrimeERP.Application.Services.Inventory;
-using PrimeERP.Application.Services.Parties;
+using PrimeERP.Application.Legacy.Purchasing;
+using PrimeERP.Application.Legacy.Sales;
+using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.Legacy.Parties;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Print;
 using PrimeERP.Composition.Registry;
@@ -241,88 +244,72 @@ namespace PrimeERP.Modules
 
             registry.Register(new ModuleDefinition
             {
-                Key = "Departments", TitleKey = "Str.Module.Departments", PermissionPrefix = "Departments", ViewModelType = typeof(DepartmentsViewModel),
+                Key = "Departments", TitleKey = "Str.Module.Departments", PermissionPrefix = "Departments",
+                ViewModelFactory = s => RowPage.ViewModel<Lookup<Department>>(s, "Departments"),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(DepartmentDto.Name), Width = 220, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(DepartmentDto.IsActive), Width = 80, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Department.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(Department.IsActive), Width = 80, Align = ColumnAlign.Center },
                 },
-                Dialog = new DialogDefinition
+                Dialog = RowPage.Dialog<Lookup<Department>>("Str.Departments.Add", new List<FieldDefinition>
                 {
-                    TitleKey = "Str.Departments.Add", TitleEditKey = "Str.Departments.Edit", GridColumns = 1,
-                    ServiceType = typeof(IDepartmentService), CreateDtoType = typeof(CreateDepartmentDto), UpdateDtoType = typeof(UpdateDepartmentDto),
-                    Fields = new List<FieldDefinition>
-                    {
-                        new() { Key = nameof(CreateDepartmentDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateDepartmentDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
-                    }
-                }
+                    new() { Key = nameof(Department.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                    new() { Key = nameof(Department.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                }, "Str.Departments.Edit", gridColumns: 1)
             });
 
             registry.Register(new ModuleDefinition
             {
-                Key = "JobTitles", TitleKey = "Str.Module.JobTitles", PermissionPrefix = "JobTitles", ViewModelType = typeof(JobTitlesViewModel),
+                Key = "JobTitles", TitleKey = "Str.Module.JobTitles", PermissionPrefix = "JobTitles",
+                ViewModelFactory = s => RowPage.ViewModel<Lookup<JobTitle>>(s, "JobTitles"),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(JobTitleDto.Name), Width = 220, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(JobTitleDto.IsActive), Width = 80, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(JobTitle.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(JobTitle.IsActive), Width = 80, Align = ColumnAlign.Center },
                 },
-                Dialog = new DialogDefinition
+                Dialog = RowPage.Dialog<Lookup<JobTitle>>("Str.JobTitles.Add", new List<FieldDefinition>
                 {
-                    TitleKey = "Str.JobTitles.Add", TitleEditKey = "Str.JobTitles.Edit", GridColumns = 1,
-                    ServiceType = typeof(IJobTitleService), CreateDtoType = typeof(CreateJobTitleDto), UpdateDtoType = typeof(UpdateJobTitleDto),
-                    Fields = new List<FieldDefinition>
-                    {
-                        new() { Key = nameof(CreateJobTitleDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateJobTitleDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
-                    }
-                }
+                    new() { Key = nameof(JobTitle.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                    new() { Key = nameof(JobTitle.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                }, "Str.JobTitles.Edit", gridColumns: 1)
             });
 
             registry.Register(new ModuleDefinition
             {
-                Key = "Units", TitleKey = "Str.Module.Units", PermissionPrefix = "Units", ViewModelType = typeof(UnitsViewModel),
+                Key = "Units", TitleKey = "Str.Module.Units", PermissionPrefix = "Units",
+                ViewModelFactory = s => RowPage.ViewModel<Lookup<Unit>>(s, "Units"),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(UnitDto.Name), Width = 200, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Symbol"), Binding = nameof(UnitDto.Symbol), Width = 100 },
-                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(UnitDto.IsActive), Width = 80, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Unit.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Symbol"), Binding = nameof(Unit.Symbol), Width = 100 },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(Unit.IsActive), Width = 80, Align = ColumnAlign.Center },
                 },
-                Dialog = new DialogDefinition
+                Dialog = RowPage.Dialog<Lookup<Unit>>("Str.Units.Add", new List<FieldDefinition>
                 {
-                    TitleKey = "Str.Units.Add", TitleEditKey = "Str.Units.Edit", GridColumns = 1,
-                    ServiceType = typeof(IUnitService), CreateDtoType = typeof(CreateUnitDto), UpdateDtoType = typeof(UpdateUnitDto),
-                    Fields = new List<FieldDefinition>
-                    {
-                        new() { Key = nameof(CreateUnitDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateUnitDto.Symbol), LabelKey = "Str.Symbol", Kind = FieldKind.Text, MaxLength = 20 },
-                        new() { Key = nameof(CreateUnitDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
-                    }
-                }
+                    new() { Key = nameof(Unit.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                    new() { Key = nameof(Unit.Symbol), LabelKey = "Str.Symbol", Kind = FieldKind.Text, MaxLength = 20 },
+                    new() { Key = nameof(Unit.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                }, "Str.Units.Edit", gridColumns: 1)
             });
 
             registry.Register(new ModuleDefinition
             {
-                Key = "Warehouses", TitleKey = "Str.Module.Warehouses", PermissionPrefix = "Warehouses", ViewModelType = typeof(WarehousesViewModel),
+                Key = "Warehouses", TitleKey = "Str.Module.Warehouses", PermissionPrefix = "Warehouses",
+                ViewModelFactory = s => RowPage.ViewModel<Lookup<Warehouse>>(s, "Warehouses"),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(WarehouseDto.Code), Width = 90, Align = ColumnAlign.Center },
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(WarehouseDto.Name), Width = 200, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Location"), Binding = nameof(WarehouseDto.Location), Width = 160 },
-                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(WarehouseDto.IsActive), Width = 80, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Warehouse.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Warehouse.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Location"), Binding = nameof(Warehouse.Location), Width = 160 },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(Warehouse.IsActive), Width = 80, Align = ColumnAlign.Center },
                 },
-                Dialog = new DialogDefinition
+                Dialog = RowPage.Dialog<Lookup<Warehouse>>("Str.Warehouses.Add", new List<FieldDefinition>
                 {
-                    TitleKey = "Str.Warehouses.Add", TitleEditKey = "Str.Warehouses.Edit", GridColumns = 1,
-                    ServiceType = typeof(IWarehouseService), CreateDtoType = typeof(CreateWarehouseDto), UpdateDtoType = typeof(UpdateWarehouseDto),
-                    Fields = new List<FieldDefinition>
-                    {
-                        new() { Key = nameof(CreateWarehouseDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateWarehouseDto.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
-                        new() { Key = nameof(CreateWarehouseDto.ManagerName), LabelKey = "Str.ManagerName", Kind = FieldKind.Text, MaxLength = 150 },
-                        new() { Key = nameof(CreateWarehouseDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
-                    }
-                }
+                    new() { Key = nameof(Warehouse.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                    new() { Key = nameof(Warehouse.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
+                    new() { Key = nameof(Warehouse.ManagerName), LabelKey = "Str.ManagerName", Kind = FieldKind.Text, MaxLength = 150 },
+                    new() { Key = nameof(Warehouse.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                }, "Str.Warehouses.Edit", gridColumns: 1)
             });
 
             registry.Register(new ModuleDefinition
@@ -382,7 +369,7 @@ namespace PrimeERP.Modules
                         Label = "احتساب الإهلاك", Variant = "primary", PermissionKey = "Assets.Create",
                         RequiresSelection = false,
                         Execute = (services, _) => services
-                            .GetRequiredService<PrimeERP.Application.Services.Assets.IAssetDepreciationService>()
+                            .GetRequiredService<PrimeERP.Application.Legacy.Assets.IAssetDepreciationService>()
                             .RunFor(DateTime.Today)
                     }
                 },
@@ -856,14 +843,14 @@ namespace PrimeERP.Modules
                 {
                     PrintTitle = "قيد أرصدة افتتاحية",
                     TitleKey = "Str.Module.OpeningBalances", TitleEditKey = "Str.Module.OpeningBalances",
-                    ServiceType = typeof(PrimeERP.Application.Services.Accounting.IOpeningBalanceService),
+                    ServiceType = typeof(PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService),
                     DtoType = typeof(CreateJournalDto), LineDtoType = typeof(CreateJournalLineDto),
                     LinesPropertyName = nameof(CreateJournalDto.Lines), DocumentKind = "OpeningBalances",
                     HeaderFields = new()
                     {
                         new() { Key = nameof(CreateJournalDto.EntryDate), LabelKey = "Str.StartDate", Kind = FieldKind.Date, IsReadOnly = true },
                         new() { Key = nameof(CreateJournalDto.Description), LabelKey = "Str.Description", Kind = FieldKind.Text, IsReadOnly = true,
-                                DefaultValue = PrimeERP.Application.Services.Accounting.OpeningBalanceService.FixedDescription },
+                                DefaultValue = PrimeERP.Application.Legacy.Accounting.OpeningBalanceService.FixedDescription },
                     },
                     LineFields = new()
                     {
@@ -886,7 +873,7 @@ namespace PrimeERP.Modules
         private static DocumentDialogDefinition OpeningStockDialog() => new()
         {
             TitleKey = "أرصدة الأصناف الافتتاحية", TitleEditKey = "أرصدة الأصناف الافتتاحية",
-            ServiceType = typeof(PrimeERP.Application.Services.Inventory.IOpeningStockService),
+            ServiceType = typeof(PrimeERP.Application.Legacy.Inventory.IOpeningStockService),
             DtoType = typeof(CreateOpeningStockDto), LineDtoType = typeof(CreateOpeningStockLineDto),
             LinesPropertyName = nameof(CreateOpeningStockDto.Lines), DocumentKind = "OpeningStock",
             AllowPost = false,

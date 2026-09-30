@@ -1,4 +1,4 @@
-using PrimeERP.Application.Services;
+using PrimeERP.Application.Services.Core;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;

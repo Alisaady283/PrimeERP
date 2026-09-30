@@ -55,6 +55,9 @@ namespace PrimeERP.Platform.Localization
         public static void Toggle() =>
             Apply(CurrentLanguage == AppLanguage.Ar ? AppLanguage.En : AppLanguage.Ar);
 
+        public static string Get(string key, params object[] args) =>
+            args == null || args.Length == 0 ? Get(key) : string.Format(Get(key), args);
+
         public static string Get(string key)
         {
             if (System.Windows.Application.Current?.Resources.Contains(key) == true)

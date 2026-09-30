@@ -34,51 +34,36 @@ namespace PrimeERP.Data.Repositories
 
 
         /// <summary>اسم الموظف وكوده عرضٌ فقط</summary>
-        private static List<Attendance> WithEmployee(PrimeDbContext db, IQueryable<Attendance> rows) =>
-            (from a in rows
-             join e in db.Employees.AsNoTracking() on a.EmployeeId equals e.Id into found
-             from e in found.DefaultIfEmpty()
-             select new { Row = a, e.Name, e.Code })
-            .AsEnumerable()
-            .Select(x =>
-            {
-                x.Row.EmployeeName = x.Name;
-                x.Row.EmployeeCode = x.Code;
-                return x.Row;
-            })
-            .ToList();
+        private static List<Attendance> WithEmployee(List<Attendance> rows) =>
+            WithCodeNames<Employee>("Employees", rows, a => a.EmployeeId, (a, code, name) => (a.EmployeeCode, a.EmployeeName) = (code, name));
 
-        public override Attendance GetById(int id, PrimeDbContext db = null)
-        {
-            return Scope(db, ctx =>
-            {
-                return WithEmployee(ctx, Live(Rows(ctx).AsNoTracking()).Where(a => a.Id == id)).FirstOrDefault();
-            });
-        }
+        public override Attendance GetById(int id, PrimeDbContext db = null) =>
+            WithEmployee(Fetch(q => q.Where(a => a.Id == id), db)).FirstOrDefault();
 
         public (List<Attendance> Items, int Total) GetPaged(int page, int pageSize, string searchText, int? employeeId,
             string sortColumn, bool sortDescending)
         {
             using var db = DbContextFactory.Open();
-            var rows = Rows(db).AsNoTracking().Where(a => !a.IsDeleted);
-            if (employeeId != null) rows = rows.Where(a => a.EmployeeId == employeeId);
-            if (!string.IsNullOrWhiteSpace(searchText))
-                rows = rows.Where(a => db.Employees.Any(e => e.Id == a.EmployeeId
-                                                          && EF.Functions.Like(e.Name, $"%{searchText}%")));
 
-            var total = rows.Count();
-            var ordered = (sortColumn == "OvertimeHours" ? By(a => a.OvertimeHours, sortDescending)
-                                                        : By(a => a.Date,          sortDescending))(rows);
+            IQueryable<Attendance> Shape(IQueryable<Attendance> rows)
+            {
+                var q = rows;
+                if (employeeId != null) q = q.Where(a => a.EmployeeId == employeeId);
+                if (!string.IsNullOrWhiteSpace(searchText))
+                    q = q.Where(a => db.Employees.Any(e => e.Id == a.EmployeeId && EF.Functions.Like(e.Name, $"%{searchText}%")));
+                return q;
+            }
 
-            var page_ = ordered.ThenByDescending(a => a.Id).Skip(Math.Max(0, page - 1) * pageSize).Take(pageSize);
-            return (WithEmployee(db, page_), total);
+            var (items, total) = Page(page, pageSize, Shape,
+                sortColumn == "OvertimeHours" ? By(a => a.OvertimeHours, sortDescending) : By(a => a.Date, sortDescending), db);
+            return (WithEmployee(items), total);
         }
 
         public Dictionary<int, decimal> OvertimeByEmployee(DateTime from, DateTime to)
         {
             using var db = DbContextFactory.Open();
             return Rows(db).AsNoTracking()
-                .Where(a => !a.IsDeleted && a.Date >= from && a.Date <= to)
+                .Where(a => a.Date >= from && a.Date <= to)
                 .GroupBy(a => a.EmployeeId)
                 .Select(g => new { g.Key, Total = g.Sum(a => a.OvertimeHours) })
                 .ToDictionary(x => x.Key, x => x.Total);
@@ -88,7 +73,7 @@ namespace PrimeERP.Data.Repositories
         {
             using var db = DbContextFactory.Open();
             return Rows(db).AsNoTracking()
-                .Where(a => !a.IsDeleted && a.IsAbsent && a.Date >= from && a.Date <= to)
+                .Where(a => a.IsAbsent && a.Date >= from && a.Date <= to)
                 .GroupBy(a => a.EmployeeId)
                 .Select(g => new { g.Key, Days = g.Count() })
                 .ToDictionary(x => x.Key, x => x.Days);

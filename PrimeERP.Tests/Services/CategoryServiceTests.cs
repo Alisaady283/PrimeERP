@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Common;
-using PrimeERP.Application.Services.Common;
+using PrimeERP.Application.Legacy.Common;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using Xunit;

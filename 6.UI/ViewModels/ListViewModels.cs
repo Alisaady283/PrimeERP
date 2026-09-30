@@ -1,3 +1,4 @@
+using PrimeERP.Application.Legacy.Security;
 using System.Linq;
 using System;
 using PrimeERP.Application.DTOs.Assets;
@@ -6,12 +7,11 @@ using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Security;
 using PrimeERP.Application.DTOs.Treasury;
-using PrimeERP.Application.Services.Assets;
-using PrimeERP.Application.Services.HR;
-using PrimeERP.Application.Services.Inventory;
-using PrimeERP.Application.Services.Parties;
-using PrimeERP.Application.Services.Security;
-using PrimeERP.Application.Services.Treasury;
+using PrimeERP.Application.Legacy.Assets;
+using PrimeERP.Application.Legacy.HR;
+using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.Legacy.Treasury;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
@@ -22,37 +22,7 @@ namespace PrimeERP.UI.ViewModels
     // نماذج عرض القوائم
 /// <summary>نماذج عرض UnitsViewModel</summary>
 
-    public class UnitsViewModel : CrudViewModelBase<UnitDto, UnitFilter>
-    {
-        private readonly IUnitService _units;
 
-        public UnitsViewModel(IUnitService units, IPermissionService permissions, IToastService toast, IDialogService dialogs)
-            : base(permissions, toast, dialogs) => _units = units;
-
-        protected override string PermissionPrefix => "Units";
-
-        protected override Result<PagedResult<UnitDto>> FetchPage(int page, int pageSize, UnitFilter filter) =>
-            AllRows(_units.GetAll(), u => u.Name);
-
-        protected override int IdOf(UnitDto item) => item.Id;
-        protected override Result DeleteItem(int id) => _units.Delete(id);
-    }
-
-    public class WarehousesViewModel : CrudViewModelBase<WarehouseDto, WarehouseFilter>
-    {
-        private readonly IWarehouseService _warehouses;
-
-        public WarehousesViewModel(IWarehouseService warehouses, IPermissionService permissions, IToastService toast, IDialogService dialogs)
-            : base(permissions, toast, dialogs) => _warehouses = warehouses;
-
-        protected override string PermissionPrefix => "Warehouses";
-
-        protected override Result<PagedResult<WarehouseDto>> FetchPage(int page, int pageSize, WarehouseFilter filter) =>
-            AllRows(_warehouses.GetAll(), w => w.Name);
-
-        protected override int IdOf(WarehouseDto item) => item.Id;
-        protected override Result DeleteItem(int id) => _warehouses.Delete(id);
-    }
 
     public class ProductsViewModel : CrudViewModelBase<ProductDto, ProductFilter>
     {
@@ -134,37 +104,7 @@ namespace PrimeERP.UI.ViewModels
         protected override Result DeleteItem(int id) => _employees.Delete(id);
     }
 
-    public class DepartmentsViewModel : CrudViewModelBase<DepartmentDto, DepartmentFilter>
-    {
-        private readonly IDepartmentService _departments;
 
-        public DepartmentsViewModel(IDepartmentService departments, IPermissionService permissions, IToastService toast, IDialogService dialogs)
-            : base(permissions, toast, dialogs) => _departments = departments;
-
-        protected override string PermissionPrefix => "Departments";
-
-        protected override Result<PagedResult<DepartmentDto>> FetchPage(int page, int pageSize, DepartmentFilter filter) =>
-            AllRows(_departments.GetAll(), d => d.Name);
-
-        protected override int IdOf(DepartmentDto item) => item.Id;
-        protected override Result DeleteItem(int id) => _departments.Delete(id);
-    }
-
-    public class JobTitlesViewModel : CrudViewModelBase<JobTitleDto, JobTitleFilter>
-    {
-        private readonly IJobTitleService _jobTitles;
-
-        public JobTitlesViewModel(IJobTitleService jobTitles, IPermissionService permissions, IToastService toast, IDialogService dialogs)
-            : base(permissions, toast, dialogs) => _jobTitles = jobTitles;
-
-        protected override string PermissionPrefix => "JobTitles";
-
-        protected override Result<PagedResult<JobTitleDto>> FetchPage(int page, int pageSize, JobTitleFilter filter) =>
-            AllRows(_jobTitles.GetAll(), j => j.Name);
-
-        protected override int IdOf(JobTitleDto item) => item.Id;
-        protected override Result DeleteItem(int id) => _jobTitles.Delete(id);
-    }
 
     public class RolesViewModel : CrudViewModelBase<RoleDto, RoleFilter>
     {

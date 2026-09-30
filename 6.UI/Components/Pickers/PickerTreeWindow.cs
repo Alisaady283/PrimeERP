@@ -6,8 +6,6 @@ using System.Windows.Media;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Services;
-using PrimeERP.Application;
-using PrimeERP.Application.Services;
 using Btn = PrimeERP.UI.Components.Actions.AppButton;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Components.Feedback;

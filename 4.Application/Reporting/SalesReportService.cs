@@ -1,9 +1,12 @@
+using PrimeERP.Data.Repositories;
+using PrimeERP.Data.Repositories.Base;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Audit;
 using System;
 using System.Linq;
-using PrimeERP.Application.Services.Sales;
+using PrimeERP.Application.Legacy.Sales;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Localization;
 
@@ -17,24 +20,28 @@ namespace PrimeERP.Application.Reporting
 
     public class SalesReportService : ReportServiceBase, ISalesReportService
     {
-        private readonly ISalesInvoiceService _invoices;
+        private readonly IInvoiceRepository<SalesInvoice, SalesInvoiceLine> _invoices;
+        private readonly IPartyRepository<Customer> _customers;
 
-        public SalesReportService(ISalesInvoiceService invoices, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
-            : base(permissions, settings, localization, audit) => _invoices = invoices;
+        public SalesReportService(IInvoiceRepository<SalesInvoice, SalesInvoiceLine> invoices, IPartyRepository<Customer> customers,
+            IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+            : base(permissions, settings, localization, audit)
+        {
+            _invoices = invoices;
+            _customers = customers;
+        }
 
         public Result<ReportData> Invoices(DateTime from, DateTime to)
         {
             var gate = Gate(); if (gate != null) return gate;
 
-            var result = _invoices.GetPaged(1, 5000);
-            if (!result.IsSuccess) return Result.Fail<ReportData>(result.ErrorMessage);
-
-            var rows = result.Value.Items
-                .Where(i => i.InvoiceDate.Date >= from.Date && i.InvoiceDate.Date <= to.Date)
+            var invoices = _invoices.Between(from, to);
+            var names = _customers.NamesOf(invoices.Select(i => i.CustomerId));
+            var rows = invoices
                 .Select(i => new SalesReportRow
                 {
                     InvoiceNo = i.InvoiceNo, Date = i.InvoiceDate.ToString("yyyy-MM-dd"),
-                    PartyName = i.CustomerName, NetTotal = i.NetTotal
+                    PartyName = names.GetValueOrDefault(i.CustomerId), NetTotal = i.NetTotal
                 })
                 .ToList();
 

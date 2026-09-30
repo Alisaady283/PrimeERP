@@ -1,8 +1,8 @@
+using PrimeERP.Application.Legacy.Builder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services.Builder;
 
 namespace PrimeERP.Composition.Registry
 {

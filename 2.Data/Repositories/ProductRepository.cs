@@ -14,6 +14,8 @@ namespace PrimeERP.Data.Repositories
     {
         Product GetById(int id, PrimeDbContext db = null);
         Product GetByCode(string code, PrimeDbContext db = null);
+        Dictionary<string, Product> ByCodes(IEnumerable<string> codes, PrimeDbContext db = null);
+        List<Product> GetByIds(IEnumerable<int> ids, PrimeDbContext db = null);
         List<Product> Search(string term, int maxResults);
         bool ExistsCode(string code, int? excludeId = null);
         (List<Product> Items, int Total) GetPaged(
@@ -32,17 +34,17 @@ namespace PrimeERP.Data.Repositories
 
 
         public Product GetByCode(string code, PrimeDbContext db = null) =>
-            One(q => q.Where(p => p.Code == code && !p.IsDeleted), db);
+            One(q => q.Where(p => p.Code == code), db);
 
         public List<Product> Search(string term, int maxResults) =>
-            Fetch(q => q.Where(p => !p.IsDeleted && p.IsActive
+            Fetch(q => q.Where(p => p.IsActive
                                  && (EF.Functions.Like(p.Name, $"%{term}%")
                                   || EF.Functions.Like(p.Code, $"%{term}%")
                                   || EF.Functions.Like(p.Barcode, $"%{term}%")))
                         .OrderBy(p => p.Name).Take(maxResults));
 
         public bool ExistsCode(string code, int? excludeId = null) =>
-            Count(q => q.Where(p => p.Code == code && !p.IsDeleted
+            Count(q => q.Where(p => p.Code == code
                                  && (excludeId == null || p.Id != excludeId))) > 0;
 
         public (List<Product> Items, int Total) GetPaged(
@@ -51,7 +53,7 @@ namespace PrimeERP.Data.Repositories
         {
             IQueryable<Product> Shape(IQueryable<Product> rows)
             {
-                var q = rows.Where(p => !p.IsDeleted);
+                var q = rows;
                 if (!string.IsNullOrWhiteSpace(searchText))
                     q = q.Where(p => EF.Functions.Like(p.Name, $"%{searchText}%")
                                   || EF.Functions.Like(p.Code, $"%{searchText}%")

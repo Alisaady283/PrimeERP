@@ -14,6 +14,8 @@ namespace PrimeERP.Data.Repositories
     {
         Employee GetById(int id, PrimeDbContext db = null);
         Employee GetByCode(string code, PrimeDbContext db = null);
+        Dictionary<string, Employee> ByCodes(IEnumerable<string> codes, PrimeDbContext db = null);
+        List<Employee> GetByIds(IEnumerable<int> ids, PrimeDbContext db = null);
 
         Employee GetByAccountCode(string accountCode, PrimeDbContext db = null);
         void UpdateNameByAccountCode(PrimeDbContext db, string accountCode, string name);
@@ -36,18 +38,18 @@ namespace PrimeERP.Data.Repositories
 
 
         public Employee GetByCode(string code, PrimeDbContext db = null) =>
-            One(q => q.Where(e => e.Code == code && !e.IsDeleted), db);
+            One(q => q.Where(e => e.Code == code), db);
 
         public Employee GetByAccountCode(string accountCode, PrimeDbContext db = null) =>
-            One(q => q.Where(e => e.AccountCode == accountCode && !e.IsDeleted), db);
+            One(q => q.Where(e => e.AccountCode == accountCode), db);
 
         public List<Employee> Search(string term, int maxResults) =>
-            Fetch(q => q.Where(e => !e.IsDeleted && (EF.Functions.Like(e.Name, $"%{term}%")
+            Fetch(q => q.Where(e => (EF.Functions.Like(e.Name, $"%{term}%")
                                                   || EF.Functions.Like(e.Code, $"%{term}%")))
                         .OrderBy(e => e.Name).Take(maxResults));
 
         public List<Employee> GetAll(bool activeOnly = true) =>
-            Fetch(q => q.Where(e => !e.IsDeleted && (!activeOnly || e.Status == EmployeeStatus.Active))
+            Fetch(q => q.Where(e => !activeOnly || e.Status == EmployeeStatus.Active)
                         .OrderBy(e => e.Code));
 
         public (List<Employee> Items, int Total) GetPaged(
@@ -56,7 +58,7 @@ namespace PrimeERP.Data.Repositories
         {
             IQueryable<Employee> Shape(IQueryable<Employee> rows)
             {
-                var q = rows.Where(e => !e.IsDeleted);
+                var q = rows;
                 if (!string.IsNullOrWhiteSpace(searchText))
                     q = q.Where(e => EF.Functions.Like(e.Name, $"%{searchText}%")
                                   || EF.Functions.Like(e.Code, $"%{searchText}%"));
@@ -64,13 +66,16 @@ namespace PrimeERP.Data.Repositories
                 return q;
             }
 
-            return Page(page, pageSize, Shape, sortColumn switch
+            var (items, total) = Page(page, pageSize, Shape, sortColumn switch
             {
                 "Name"      => By(e => e.Name, sortDescending),
                 "HireDate"  => By(e => e.HireDate, sortDescending),
                 "CreatedAt" => By(e => e.CreatedAt, sortDescending),
                 _           => By(e => e.Code, sortDescending),
             });
+
+            WithNames<Department>("Departments", items, (e => e.DepartmentId, (e, name) => e.DepartmentName = name));
+            return (WithNames<JobTitle>("JobTitles", items, (e => e.JobTitleId, (e, name) => e.JobTitleName = name)), total);
         }
 
         public int Insert(Employee e, PrimeDbContext db = null) => Add(e, db);
@@ -79,15 +84,7 @@ namespace PrimeERP.Data.Repositories
             Modify(e, db);
 
         public void UpdateNameByAccountCode(PrimeDbContext db, string accountCode, string name) =>
-            Write(db =>
-            {
-                foreach (var row in Rows(db).AsTracking().Where(e => e.AccountCode == accountCode))
-                {
-                    row.Name = name;
-                    row.UpdatedAt = DateTime.Now;
-                }
-                return 0;
-            }, db);
+            Set(e => e.AccountCode == accountCode, s => s.SetProperty(r => r.Name, name), db);
 
         public void Delete(int id, string deletedBy, PrimeDbContext db = null) =>
             SoftDelete(id, deletedBy, db);

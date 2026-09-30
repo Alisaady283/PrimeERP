@@ -70,7 +70,7 @@ namespace PrimeERP.Data.Repositories
 
             IQueryable<Dictionary<string, object>> Shape(IQueryable<Dictionary<string, object>> rows)
             {
-                var q = rows.Where(r => !(bool)r["IsDeleted"]);
+                var q = rows;
                 if (!string.IsNullOrWhiteSpace(searchText) && searchable.Count > 0)
                     q = q.Where(r => searchable.Any(name => EF.Functions.Like((string)r[name], $"%{searchText}%")));
                 return q;
@@ -100,13 +100,11 @@ namespace PrimeERP.Data.Repositories
         public IDictionary<string, object> GetById(int id) =>
             Read(q => q.Where(r => (int)r["Id"] == id).Take(1)).FirstOrDefault();
 
-        public int Insert(IDictionary<string, object> values, string user)
+        public int Insert(IDictionary<string, object> values)
         {
             using var db = DbContextFactory.Open();
             var row = Blank();
             foreach (var c in Stored) row[c.Name] = values.TryGetValue(c.Name, out var v) ? v : null;
-            row["CreatedAt"] = DateTime.Now;
-            row["CreatedBy"] = user ?? "";
 
             db.BuiltSet(_table).Add(row);
             db.SaveChanges();
@@ -122,7 +120,6 @@ namespace PrimeERP.Data.Repositories
             foreach (var c in Stored)
                 if (values.TryGetValue(c.Name, out var v)) row[c.Name] = v;
 
-            row["UpdatedAt"] = DateTime.Now;
             db.SaveChanges();
         }
 
@@ -133,7 +130,6 @@ namespace PrimeERP.Data.Repositories
             if (row == null) return;
 
             row["IsDeleted"] = true;
-            row["DeletedAt"] = DateTime.Now;
             db.SaveChanges();
         }
 
@@ -141,7 +137,7 @@ namespace PrimeERP.Data.Repositories
         {
             using var db = DbContextFactory.Open();
             return db.Rows(_table).AsNoTracking()
-                .Any(r => r[column].Equals(value) && (int)r["Id"] != exceptId && !(bool)r["IsDeleted"]);
+                .Any(r => r[column].Equals(value) && (int)r["Id"] != exceptId);
         }
 
         private Dictionary<string, object> Blank()

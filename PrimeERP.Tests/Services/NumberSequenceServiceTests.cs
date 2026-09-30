@@ -1,5 +1,5 @@
+using PrimeERP.Application.Services.Core;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services;
 using Xunit;
 
 namespace PrimeERP.Tests.Services

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.HR;
-using PrimeERP.Application.Services.HR;
+using PrimeERP.Application.Legacy.HR;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Platform.Localization;

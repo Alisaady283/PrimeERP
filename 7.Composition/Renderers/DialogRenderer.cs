@@ -1,3 +1,7 @@
+using PrimeERP.Application.Legacy.Security;
+using PrimeERP.Application.Legacy.Builder;
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Services.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Legacy.Accounting;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Localization;
@@ -434,7 +438,7 @@ namespace PrimeERP.Composition.Renderers
             }
             else if (field.PickerType == "Category")
             {
-                var categoryService = services.GetRequiredService<PrimeERP.Application.Services.Common.ICategoryService>();
+                var categoryService = services.GetRequiredService<PrimeERP.Application.Legacy.Common.ICategoryService>();
                 var result = categoryService.GetAll(field.PickerCategoryModuleKey);
                 if (!result.IsSuccess) return;
 
@@ -444,17 +448,15 @@ namespace PrimeERP.Composition.Renderers
             }
             else if (field.PickerType == "Department")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.HR.IDepartmentService>().GetAll();
-                if (result.IsSuccess) combo.ItemsSource = result.Value.Select(d => new PickerRow { Id = d.Id, Code = null, Display = d.Name }).ToList();
+                combo.ItemsSource = LookupRows<PrimeERP.Domain.Entities.Department>(services, withCode: false);
             }
             else if (field.PickerType == "JobTitle")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.HR.IJobTitleService>().GetAll();
-                if (result.IsSuccess) combo.ItemsSource = result.Value.Select(j => new PickerRow { Id = j.Id, Code = null, Display = j.Name }).ToList();
+                combo.ItemsSource = LookupRows<PrimeERP.Domain.Entities.JobTitle>(services, withCode: false);
             }
             else if (field.PickerType == "Role")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.Security.IRoleService>().GetAll();
+                var result = services.GetRequiredService<PrimeERP.Application.Legacy.Security.IRoleService>().GetAll();
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Select(r => new PickerRow { Id = r.Id, Code = null, Display = r.NameAr }).ToList();
             }
             else if (field.PickerType?.StartsWith("Table:") == true)
@@ -463,7 +465,7 @@ namespace PrimeERP.Composition.Renderers
                 var moduleKey = parts.Length > 1 ? parts[1] : null;
                 var display = parts.Length > 2 && !string.IsNullOrWhiteSpace(parts[2]) ? parts[2] : "Name";
 
-                var builder = services.GetRequiredService<PrimeERP.Application.Services.Builder.IBuilderCatalog>();
+                var builder = services.GetRequiredService<PrimeERP.Application.Legacy.Builder.IBuilderCatalog>();
                 var target = builder.Modules().FirstOrDefault(m => m.Key == moduleKey);
                 if (target == null || string.IsNullOrWhiteSpace(target.TableName)) return;
 
@@ -472,27 +474,27 @@ namespace PrimeERP.Composition.Renderers
             }
             else if (field.PickerType == "Customer")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.Parties.ICustomerService>().GetPaged(1, 5000);
+                var result = services.GetRequiredService<PrimeERP.Application.Legacy.Parties.ICustomerService>().GetPaged(1, 5000);
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(c => new PickerRow { Id = c.Id, Code = c.Code, Display = $"{c.Code} - {c.Name}" }).ToList();
             }
             else if (field.PickerType == "Supplier")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.Parties.ISupplierService>().GetPaged(1, 5000);
+                var result = services.GetRequiredService<PrimeERP.Application.Legacy.Parties.ISupplierService>().GetPaged(1, 5000);
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(s => new PickerRow { Id = s.Id, Code = s.Code, Display = $"{s.Code} - {s.Name}" }).ToList();
             }
             else if (field.PickerType == "Asset")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.Assets.IAssetService>().GetPaged(1, 5000);
+                var result = services.GetRequiredService<PrimeERP.Application.Legacy.Assets.IAssetService>().GetPaged(1, 5000);
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(a => new PickerRow { Id = a.Id, Code = a.Code, Display = $"{a.Code} - {a.Name}" }).ToList();
             }
             else if (field.PickerType == "Product")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.Inventory.IProductService>().GetPaged(1, 5000);
+                var result = services.GetRequiredService<PrimeERP.Application.Legacy.Inventory.IProductService>().GetPaged(1, 5000);
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(p => new PickerRow { Id = p.Id, Code = p.Code, Display = $"{p.Code} - {p.Name}" }).ToList();
             }
             else if (field.PickerType == "Treasury")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>().GetAll();
+                var result = services.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>().GetAll();
                 if (!result.IsSuccess) return;
 
                 var items = result.Value.AsEnumerable();
@@ -512,7 +514,7 @@ namespace PrimeERP.Composition.Renderers
 
                 if ((PrimeERP.Domain.Enums.AssetAcquisition)method == PrimeERP.Domain.Enums.AssetAcquisition.Supplier)
                 {
-                    var suppliers = services.GetRequiredService<PrimeERP.Application.Services.Parties.ISupplierService>().GetPaged(1, 5000);
+                    var suppliers = services.GetRequiredService<PrimeERP.Application.Legacy.Parties.ISupplierService>().GetPaged(1, 5000);
                     if (suppliers.IsSuccess)
                         combo.ItemsSource = suppliers.Value.Items
                             .Select(s => new PickerRow { Id = s.Id, Code = s.Code, Display = $"{s.Code} - {s.Name}" }).ToList();
@@ -520,7 +522,7 @@ namespace PrimeERP.Composition.Renderers
                     return;
                 }
 
-                var treasuries = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>().GetAll();
+                var treasuries = services.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>().GetAll();
                 if (treasuries.IsSuccess)
                     combo.ItemsSource = treasuries.Value
                         .Where(t => t.Kind == (PrimeERP.Domain.Enums.TreasuryKind)method)
@@ -528,7 +530,7 @@ namespace PrimeERP.Composition.Renderers
             }
             else if (field.PickerType == "Bank")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>().GetAll();
+                var result = services.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>().GetAll();
                 if (result.IsSuccess)
                     combo.ItemsSource = result.Value
                         .Where(t => t.Kind == PrimeERP.Domain.Enums.TreasuryKind.Bank)
@@ -544,14 +546,14 @@ namespace PrimeERP.Composition.Renderers
             }
             else if (field.PickerType == "SalesInvoice")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.Sales.ISalesInvoiceService>().GetPaged(1, 2000);
+                var result = services.GetRequiredService<PrimeERP.Application.Legacy.Sales.ISalesInvoiceService>().GetPaged(1, 2000);
                 if (result.IsSuccess)
                     combo.ItemsSource = result.Value.Items
                         .Select(i => new PickerRow { Id = i.Id, Code = i.InvoiceNo, Display = $"{i.InvoiceNo} — {i.CustomerName} ({i.NetTotal:N2})" }).ToList();
             }
             else if (field.PickerType == "PurchaseInvoice")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.Purchasing.IPurchaseInvoiceService>().GetPaged(1, 2000);
+                var result = services.GetRequiredService<PrimeERP.Application.Legacy.Purchasing.IPurchaseInvoiceService>().GetPaged(1, 2000);
                 if (result.IsSuccess)
                     combo.ItemsSource = result.Value.Items
                         .Select(i => new PickerRow { Id = i.Id, Code = i.InvoiceNo, Display = $"{i.InvoiceNo} — {i.SupplierName} ({i.NetTotal:N2})" }).ToList();
@@ -566,12 +568,11 @@ namespace PrimeERP.Composition.Renderers
             }
             else if (field.PickerType == "Warehouse")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.Inventory.IWarehouseService>().GetAll();
-                if (result.IsSuccess) combo.ItemsSource = result.Value.Select(w => new PickerRow { Id = w.Id, Code = w.Code, Display = w.Name }).ToList();
+                combo.ItemsSource = LookupRows<PrimeERP.Domain.Entities.Warehouse>(services, withCode: true);
             }
             else if (field.PickerType == "Employee")
             {
-                var result = services.GetRequiredService<PrimeERP.Application.Services.HR.IEmployeeService>().GetPaged(1, 5000);
+                var result = services.GetRequiredService<PrimeERP.Application.Legacy.HR.IEmployeeService>().GetPaged(1, 5000);
                 if (result.IsSuccess) combo.ItemsSource = result.Value.Items.Select(e => new PickerRow { Id = e.Id, Code = e.Code, Display = $"{e.Code} - {e.Name}" }).ToList();
             }
             else
@@ -597,5 +598,11 @@ namespace PrimeERP.Composition.Renderers
         }
 
         internal class PickerRow { public int Id { get; set; } public string Code { get; set; } public string Display { get; set; } }
+
+        private static List<PickerRow> LookupRows<T>(IServiceProvider services, bool withCode)
+            where T : PrimeERP.Domain.Entities.Common.BaseModel, new() =>
+            services.GetRequiredService<PrimeERP.Application.Services.Entities.Lookup<T>>().GetAll().Value
+                .Select(r => new PickerRow { Id = Convert.ToInt32(r["Id"]), Code = withCode ? r["Code"] as string : null, Display = r["Name"] as string })
+                .ToList();
     }
 }

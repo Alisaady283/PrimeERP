@@ -1,3 +1,7 @@
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Application.Services.Documents;
+using PrimeERP.Tests.Helpers;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Data.Core;
 using System;
 using System.Collections.Generic;
@@ -6,8 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.Reporting;
-using PrimeERP.Application.Services.Common;
-using PrimeERP.Application.Services.Inventory;
+using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Application.Legacy.Inventory;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using Xunit;
@@ -32,15 +36,15 @@ namespace PrimeERP.Tests.Services
             _productId = _db.Services.GetRequiredService<IProductService>()
                 .Create(new CreateProductDto { Name = "صنف", CategoryId = category.Id, CostPrice = 1, SalePrice = 2 }).Value.Id;
 
-            _warehouseId = _db.Services.GetRequiredService<IWarehouseService>()
-                .Create(new CreateWarehouseDto { Name = "مخزن" }).Value.Id;
+            _warehouseId = _db.Services.GetRequiredService<Lookup<Warehouse>>()
+                .Add("مخزن");
         }
 
         public void Dispose() => _db.Dispose();
 
         private void Move(MovementType type, decimal qty, decimal unitCost, int day)
         {
-            var stock = _db.Services.GetRequiredService<IStockService>();
+            var stock = _db.Services.GetRequiredService<IStockMove>();
             DbContextFactory.RunTransaction(db => stock.RecordMovement(db, _productId, _warehouseId,
                 type, qty, unitCost, "Test", null, $"T{day}", new DateTime(2026, 1, day)));
         }

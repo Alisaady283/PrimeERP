@@ -791,6 +791,8 @@ namespace PrimeERP.Data.Core
 
             foreach (var (table, columns) in BuiltTables.All)
                 BuiltTables.Shape(model, table, columns);
+
+            ModelConventions.HideDeleted(model);
         }
     }
 }

@@ -1,3 +1,4 @@
+using PrimeERP.Domain.Calculations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,27 +12,15 @@ namespace PrimeERP.UI.Components.Documents
 
         static LineComputeEngine()
         {
-            RegisterFormula("LineSubTotal", line => line.Qty * line.Price);
-
-            RegisterFormula("DiscountAmount", line => line.Qty * line.Price * line.DiscountPercent / 100m);
-
-            RegisterFormula("VatAmount", line =>
-            {
-                var subTotal = line.Qty * line.Price;
-                var discount = subTotal * line.DiscountPercent / 100m;
-                return (subTotal - discount) * line.VatPercent / 100m;
-            });
-
-            RegisterFormula("LineTotal", line =>
-            {
-                var subTotal = line.Qty * line.Price;
-                var discount = subTotal * line.DiscountPercent / 100m;
-                var tax = (subTotal - discount) * line.VatPercent / 100m;
-                return subTotal - discount + tax;
-            });
-
-            RegisterFormula("StockTotal", line => line.Qty * line.Price);
+            RegisterFormula("LineSubTotal", line => Amounts(line).Gross);
+            RegisterFormula("DiscountAmount", line => Amounts(line).Discount);
+            RegisterFormula("VatAmount", line => Amounts(line).Vat);
+            RegisterFormula("LineTotal", line => Amounts(line).Net);
+            RegisterFormula("StockTotal", line => Amounts(line).Gross);
         }
+
+        private static LineAmounts Amounts(DocumentLine line) =>
+            LineCalc.ForLine(line.Qty, line.Price, line.DiscountPercent, line.VatPercent, 0);
 
         public static void RegisterFormula(string key, Func<DocumentLine, decimal> formula) => _formulas[key] = formula;
 

@@ -12,6 +12,7 @@ namespace PrimeERP.Data.Repositories
     {
         CycleDocument GetById(int id, PrimeDbContext db = null);
         List<CycleDocumentLine> GetLines(int documentId, PrimeDbContext db = null);
+        Dictionary<int, (decimal Qty, decimal Total)> Totals(IEnumerable<int> documentIds);
         (List<CycleDocument> Items, int Total) GetPaged(int page, int pageSize, string searchText, string sortColumn, bool sortDescending);
         int InsertHeader(PrimeDbContext db, CycleDocument doc);
         int InsertLine(PrimeDbContext db, int documentId, CycleDocumentLine line);

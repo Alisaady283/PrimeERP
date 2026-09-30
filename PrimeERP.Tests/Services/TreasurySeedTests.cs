@@ -1,13 +1,14 @@
+using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.Services.Ledger;
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Treasury;
-using PrimeERP.Application.Services.Accounting;
-using PrimeERP.Application.Services.Treasury;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Legacy.Treasury;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using Xunit;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
@@ -91,7 +92,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void WhenTheRootAccountCannotHoldChildren_CreationFailsWithAReason()
         {
-            var settings = _db.Services.GetRequiredService<PrimeERP.Application.Services.Admin.ISettingsService>();
+            var settings = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Admin.ISettingsService>();
             var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
 
             settings.Set(PrimeERP.Platform.Settings.SettingKeys.Accounts.Bank, "9999");

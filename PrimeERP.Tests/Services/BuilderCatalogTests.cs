@@ -1,9 +1,10 @@
+using PrimeERP.Application.Legacy.Builder;
+using PrimeERP.Tests.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services.Builder;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 
@@ -237,7 +238,7 @@ namespace PrimeERP.Tests.Services
                     ("SectionId", sectionId), ("SortOrder", 10), ("IsActive", true)));
 
             Assert.False(created.IsSuccess);
-            Assert.Contains("الجدول", created.ErrorMessage);
+            Assert.True(Localized.Says(created.ErrorMessage, "Str.Builder.TableRequired"), created.ErrorMessage);
         }
 
         [Fact]
@@ -257,7 +258,7 @@ namespace PrimeERP.Tests.Services
             var built = catalog.Columns(moduleId);
             catalog.EnsureBuiltTable(module, built);
 
-            var rows = new PrimeERP.Application.Services.Builder.DynamicEntityService(module, built,
+            var rows = new PrimeERP.Application.Legacy.Builder.DynamicEntityService(module, built,
                 _db.Services.GetRequiredService<IPermissionService>(),
                 _db.Services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>(),
                 _db.Services.GetRequiredService<PrimeERP.Platform.Localization.ILocalizationService>(),

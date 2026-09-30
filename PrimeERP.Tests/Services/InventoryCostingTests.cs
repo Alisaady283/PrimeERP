@@ -1,9 +1,10 @@
+using PrimeERP.Application.Validation;
+using PrimeERP.Domain.Calculations;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Domain.Enums;
-using PrimeERP.Domain.Rules;
 using Xunit;
-using Entry = PrimeERP.Domain.Rules.InventoryCosting.Entry;
+using Entry = PrimeERP.Domain.Calculations.InventoryCosting.Entry;
 
 namespace PrimeERP.Tests.Services
 {

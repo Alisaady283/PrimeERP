@@ -39,18 +39,9 @@ namespace PrimeERP.Data.Repositories.Base
 
         public void DeleteDocument(PrimeDbContext db, int id)
         {
-            Write(db =>          // السطور أولاً: النموذج بلا علاقة، فترتيب الحذف يدويّ
-            {
-                SetOf<TLine>(db, LinesTable).RemoveRange(RowsOf<TLine>(db, LinesTable).Where(l => l.ReturnId == id));
-                return 0;
-            }, db);
+            RemoveIn<TLine>(LinesTable, l => l.ReturnId == id, db);
 
-            Write(db =>
-            {
-                var head = Rows(db).AsTracking().FirstOrDefault(r => r.Id == id);
-                if (head != null) SetOf(db).Remove(head);
-                return 0;
-            }, db);
+            Remove(r => r.Id == id, db);
         }
 
 
@@ -90,11 +81,6 @@ namespace PrimeERP.Data.Repositories.Base
         }
 
         public void SetJournalEntryId(PrimeDbContext db, int returnId, int journalEntryId) =>
-            Write(db =>
-            {
-                var head = Rows(db).AsTracking().FirstOrDefault(r => r.Id == returnId);
-                if (head != null) head.JournalEntryId = journalEntryId;
-                return 0;
-            }, db);
+            Set(r => r.Id == returnId, s => s.SetProperty(r => r.JournalEntryId, journalEntryId), db);
     }
 }

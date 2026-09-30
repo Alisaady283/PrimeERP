@@ -16,6 +16,7 @@ namespace PrimeERP.Data.Repositories
         List<DocumentLink> GetByTarget(string targetType, int targetId, PrimeDbContext db = null);
         decimal GetPulledQty(string sourceType, int sourceLineId, PrimeDbContext db = null);
         Dictionary<int, decimal> GetPulledBySource(string sourceType, int sourceId, PrimeDbContext db = null);
+        bool AnyPulledFrom(string sourceType, int sourceId);
         void DeleteByTarget(string targetType, int targetId, PrimeDbContext db = null);
     }
 
@@ -45,6 +46,9 @@ namespace PrimeERP.Data.Repositories
             });
         }
 
+        public bool AnyPulledFrom(string sourceType, int sourceId) =>
+            Any(q => q.Where(l => l.SourceType == sourceType && l.SourceId == sourceId));
+
         public Dictionary<int, decimal> GetPulledBySource(string sourceType, int sourceId,
             PrimeDbContext db = null)
         {
@@ -60,10 +64,6 @@ namespace PrimeERP.Data.Repositories
 
         public void DeleteByTarget(string targetType, int targetId,
             PrimeDbContext db = null) =>
-            Write(db =>
-            {
-                SetOf(db).RemoveRange(Rows(db).Where(l => l.TargetType == targetType && l.TargetId == targetId));
-                return 0;
-            }, db);
+            Remove(l => l.TargetType == targetType && l.TargetId == targetId, db);
     }
 }

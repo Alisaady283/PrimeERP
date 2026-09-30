@@ -1,3 +1,4 @@
+using PrimeERP.Application.Services.Ledger;
 using System;
 using System.Linq;
 using System.Windows;
@@ -6,8 +7,8 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services.Accounting;
-using PrimeERP.Application.Services.Parties;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Legacy.Parties;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Platform.Design;

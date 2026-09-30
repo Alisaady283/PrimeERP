@@ -29,19 +29,9 @@ namespace PrimeERP.Data.Repositories
 
         public void DeleteDocument(PrimeDbContext db, int id)
         {
-            Write(db =>          // السطور أولاً: النموذج بلا علاقة، فترتيب الحذف يدويّ
-            {
-                SetOf<StockTransferLine>(db, LineTable)
-                    .RemoveRange(RowsOf<StockTransferLine>(db, LineTable).Where(l => l.DocumentId == id));
-                return 0;
-            }, db);
+            RemoveIn<StockTransferLine>(LineTable, l => l.DocumentId == id, db);
 
-            Write(db =>
-            {
-                var head = Rows(db).AsTracking().FirstOrDefault(d => d.Id == id);
-                if (head != null) SetOf(db).Remove(head);
-                return 0;
-            }, db);
+            Remove(d => d.Id == id, db);
         }
 
 

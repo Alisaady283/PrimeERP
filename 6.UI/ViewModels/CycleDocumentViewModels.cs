@@ -1,5 +1,5 @@
 using PrimeERP.Application.DTOs.Documents;
-using PrimeERP.Application.Services.Documents;
+using PrimeERP.Application.Legacy.Documents;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;

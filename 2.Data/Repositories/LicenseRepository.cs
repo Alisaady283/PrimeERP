@@ -33,7 +33,6 @@ namespace PrimeERP.Data.Repositories
 
         public int Insert(License l)
         {
-            l.CreatedAt = DateTime.Now;
             return Add(l);
         }
 
@@ -48,26 +47,14 @@ namespace PrimeERP.Data.Repositories
                 row.Simplified = l.Simplified;
                 row.MachineHash = l.MachineHash ?? "";
                 row.IsActive = l.IsActive;
-                row.UpdatedAt = DateTime.Now;
                 return 0;
             });
 
         public void Delete(int id) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(l => l.Id == id);
-                if (row == null) return 0;
-                row.IsDeleted = true;
-                row.DeletedAt = DateTime.Now;
-                return 0;
-            });
+            SoftDelete(id, null);
 
         public void Clear(PrimeDbContext db = null) =>
-            Write(ctx =>
-            {
-                SetOf(ctx).RemoveRange(Rows(ctx));
-                return 0;
-            }, db);
+            Scope(db, ctx => Rows(ctx).IgnoreQueryFilters().ExecuteDelete());
 
     }
 }

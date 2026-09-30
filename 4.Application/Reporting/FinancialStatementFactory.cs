@@ -1,3 +1,4 @@
+using PrimeERP.Platform.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,7 +36,7 @@ namespace PrimeERP.Application.Reporting
 
             yield return new Line
             {
-                Statement = Repeat(level + 1) + (totalLabel ?? $"إجمالي {title}"),
+                Statement = Repeat(level + 1) + (totalLabel ?? LocalizationService.Get("Str.Statement.TotalOf", title)),
                 Total = items.Sum(i => i.Partial ?? 0),
                 Kind = "total"
             };

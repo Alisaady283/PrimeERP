@@ -1,17 +1,23 @@
+using PrimeERP.Application.Services.Ledger.Accounts;
+using PrimeERP.Application.Legacy.Security;
+using PrimeERP.Application.Legacy.Print;
+using PrimeERP.Application.Legacy.Builder;
+using PrimeERP.Application.Legacy.Backup;
+using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Application.Services.Documents;
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Services.Core;
 using System;
-using PrimeERP.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services.Accounting;
-using PrimeERP.Application.Services.Common;
-using PrimeERP.Application.Services.Inventory;
-using PrimeERP.Application.Services.Assets;
-using PrimeERP.Application.Services.HR;
-using PrimeERP.Application.Services.Security;
-using PrimeERP.Application.Services.Sales;
-using PrimeERP.Application.Services.Purchasing;
-using PrimeERP.Application.Services.Backup;
-using PrimeERP.Application.Services.Parties;
-using PrimeERP.Application.Services.Print;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.Legacy.Assets;
+using PrimeERP.Application.Legacy.HR;
+using PrimeERP.Application.Legacy.Sales;
+using PrimeERP.Application.Legacy.Purchasing;
+using PrimeERP.Application.Legacy.Parties;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Data.Core;
 using PrimeERP.Data.Repositories;
@@ -27,7 +33,6 @@ using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Services;
 using PrimeERP.UI.ViewModels;
 using PrimeERP.Modules;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.App.Bootstrap
 {
@@ -72,12 +77,12 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<ILookupRepository<Unit>>(_ => new LookupRepository<Unit>("Units"));
             services.AddSingleton<ILookupRepository<Warehouse>>(_ => new LookupRepository<Warehouse>("Warehouses"));
             services.AddSingleton<IBuilderRepository, BuilderRepository>();
-            services.AddSingleton<PrimeERP.Application.Services.Builder.IBuilderCatalog, PrimeERP.Application.Services.Builder.BuilderCatalog>();
-            services.AddSingleton<PrimeERP.Application.Services.Builder.BuilderSectionsService>();
-            services.AddSingleton<PrimeERP.Application.Services.Builder.BuilderModulesService>();
-            services.AddSingleton<PrimeERP.Application.Services.Builder.BuilderColumnsService>();
-            services.AddSingleton<PrimeERP.Application.Services.Builder.BuilderActionsService>();
-            services.AddSingleton<PrimeERP.Application.Services.Builder.BuilderFiltersService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Builder.IBuilderCatalog, PrimeERP.Application.Legacy.Builder.BuilderCatalog>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Builder.BuilderSectionsService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Builder.BuilderModulesService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Builder.BuilderColumnsService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Builder.BuilderActionsService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Builder.BuilderFiltersService>();
             services.AddSingleton<IStockMovementRepository, StockMovementRepository>();
             services.AddSingleton<IDocumentLinkRepository, DocumentLinkRepository>();
             services.AddSingleton<ITreasuryRepository, TreasuryRepository>();
@@ -109,6 +114,29 @@ namespace PrimeERP.App.Bootstrap
         {
             services.AddSingleton<ISettingsService, SettingsService>();
             services.AddSingleton<INumberSequenceService, NumberSequenceService>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Guards>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.PeriodGate>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.AccountBalances>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Entries>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Statement>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.TrialBalance>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.PartyByKind>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.AddTreeAccount>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.AddEntityAccount>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.AddLinkedAccount>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.RenameAccount>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.CloseAccount>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.EditTreeAccount>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.EditLinkedAccount>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.CloseLinkedAccount>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.AccountCases>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.LinkedAccounts>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.AccountOf>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.SettingAccounts>();
+            services.AddSingleton<IAccountLinkedService>(sp => (IAccountLinkedService)sp.GetRequiredService<ICustomerService>());
+            services.AddSingleton<IAccountLinkedService>(sp => (IAccountLinkedService)sp.GetRequiredService<ISupplierService>());
+            services.AddSingleton<IAccountLinkedService>(sp => (IAccountLinkedService)sp.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>());
+            services.AddSingleton<IAccountLinkedService>(sp => (IAccountLinkedService)sp.GetRequiredService<IEmployeeService>());
             services.AddSingleton<IAccountService, AccountService>();
             services.AddSingleton<IJournalService, JournalService>();
             services.AddSingleton<PrimeERP.Application.Reporting.IFinancialStatementService, PrimeERP.Application.Reporting.FinancialStatementService>();
@@ -122,23 +150,23 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<ICustomerService, CustomerService>();
             services.AddSingleton<ISupplierService, SupplierService>();
             services.AddSingleton<IBackupService, BackupService>();
-            services.AddSingleton<PrimeERP.Application.Services.Admin.IProgramEditionService, PrimeERP.Application.Services.Admin.ProgramEditionService>();
-            services.AddSingleton<PrimeERP.Application.Services.Admin.ILicenseService, PrimeERP.Application.Services.Admin.LicenseService>();
-            services.AddSingleton<PrimeERP.Application.Services.Admin.IUpdateService, PrimeERP.Application.Services.Admin.UpdateService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Admin.IProgramEditionService, PrimeERP.Application.Legacy.Admin.ProgramEditionService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Admin.ILicenseService, PrimeERP.Application.Legacy.Admin.LicenseService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Admin.IUpdateService, PrimeERP.Application.Legacy.Admin.UpdateService>();
             services.AddSingleton<IPrintService, PrintService>();
             services.AddSingleton<ICategoryService, CategoryService>();
             services.AddSingleton<IProductService, ProductService>();
             services.AddSingleton<IAssetService, AssetService>();
-            services.AddSingleton<PrimeERP.Application.Services.Assets.IAssetRevaluationService, PrimeERP.Application.Services.Assets.AssetRevaluationService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Assets.IAssetRevaluationService, PrimeERP.Application.Legacy.Assets.AssetRevaluationService>();
             services.AddSingleton<IEmployeeService, EmployeeService>();
-            services.AddSingleton<IDepartmentService, DepartmentService>();
-            services.AddSingleton<IJobTitleService, JobTitleService>();
-            services.AddSingleton<IUnitService, UnitService>();
-            services.AddSingleton<IWarehouseService, WarehouseService>();
-            services.AddSingleton<IStockService, StockService>();
-            services.AddSingleton<PrimeERP.Application.Services.Inventory.IOpeningStockService, PrimeERP.Application.Services.Inventory.OpeningStockService>();
-            services.AddSingleton<PrimeERP.Application.Services.Documents.IDocumentLinkService,
-                                  PrimeERP.Application.Services.Documents.DocumentLinkService>();
+            services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<Department>>(sp, LookupPages.Departments));
+            services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<JobTitle>>(sp, LookupPages.JobTitles));
+            services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<Unit>>(sp, LookupPages.Units));
+            services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<Warehouse>>(sp, LookupPages.Warehouses));
+            services.AddSingleton<IStockMove, StockMove>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Inventory.IOpeningStockService, PrimeERP.Application.Legacy.Inventory.OpeningStockService>();
+            services.AddSingleton<PrimeERP.Application.Services.Documents.IDocumentPull,
+                                  PrimeERP.Application.Services.Documents.DocumentPull>();
 
             services.AddSingleton<PrimeERP.Composition.Pull.PullService>();
             services.AddSingleton<PrimeERP.Composition.Pull.IPullService>(sp => sp.GetRequiredService<PrimeERP.Composition.Pull.PullService>());
@@ -149,25 +177,25 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IPurchaseReturnService, PurchaseReturnService>();
             services.AddSingleton<IStockInService, StockInService>();
             services.AddSingleton<IStockOutService, StockOutService>();
-            services.AddSingleton<PrimeERP.Application.Services.Documents.IPurchaseRequestService, PrimeERP.Application.Services.Documents.PurchaseRequestService>();
-            services.AddSingleton<PrimeERP.Application.Services.Documents.IPurchaseOrderService, PrimeERP.Application.Services.Documents.PurchaseOrderService>();
-            services.AddSingleton<PrimeERP.Application.Services.Documents.IQuotationService, PrimeERP.Application.Services.Documents.QuotationService>();
-            services.AddSingleton<PrimeERP.Application.Services.Documents.ISalesOrderService, PrimeERP.Application.Services.Documents.SalesOrderService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Documents.IPurchaseRequestService, PrimeERP.Application.Legacy.Documents.PurchaseRequestService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Documents.IPurchaseOrderService, PrimeERP.Application.Legacy.Documents.PurchaseOrderService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Documents.IQuotationService, PrimeERP.Application.Legacy.Documents.QuotationService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Documents.ISalesOrderService, PrimeERP.Application.Legacy.Documents.SalesOrderService>();
             services.AddSingleton<IGoodsReceiptService, GoodsReceiptService>();
             services.AddSingleton<IGoodsIssueService, GoodsIssueService>();
             services.AddSingleton<IDeliveryNoteService, DeliveryNoteService>();
             services.AddSingleton<ISalesReceiptService, SalesReceiptService>();
             services.AddSingleton<IStockTransferService, StockTransferService>();
-            services.AddSingleton<PrimeERP.Application.Services.Treasury.ITreasuryService, PrimeERP.Application.Services.Treasury.TreasuryService>();
-            services.AddSingleton<PrimeERP.Application.Services.Vouchers.IReceiptVoucherService, PrimeERP.Application.Services.Vouchers.ReceiptVoucherService>();
-            services.AddSingleton<PrimeERP.Application.Services.Vouchers.IPaymentVoucherService, PrimeERP.Application.Services.Vouchers.PaymentVoucherService>();
-            services.AddSingleton<PrimeERP.Application.Services.Print.IChequePrinter, PrimeERP.Application.Services.Print.ChequePrinter>();
-            services.AddSingleton<PrimeERP.Application.Services.Assets.IAssetDepreciationService, PrimeERP.Application.Services.Assets.AssetDepreciationService>();
-            services.AddSingleton<PrimeERP.Application.Services.Assets.IAssetDisposalService, PrimeERP.Application.Services.Assets.AssetDisposalService>();
-            services.AddSingleton<PrimeERP.Application.Services.Accounting.IOpeningBalanceService, PrimeERP.Application.Services.Accounting.OpeningBalanceService>();
-            services.AddSingleton<PrimeERP.Application.Services.Cheques.IChequeService, PrimeERP.Application.Services.Cheques.ChequeService>();
-            services.AddSingleton<PrimeERP.Application.Services.Cheques.IChequeReceiptDocumentService, PrimeERP.Application.Services.Cheques.ChequeReceiptDocumentService>();
-            services.AddSingleton<PrimeERP.Application.Services.Cheques.IChequeIssueDocumentService, PrimeERP.Application.Services.Cheques.ChequeIssueDocumentService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Treasury.ITreasuryService, PrimeERP.Application.Legacy.Treasury.TreasuryService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Vouchers.IReceiptVoucherService, PrimeERP.Application.Legacy.Vouchers.ReceiptVoucherService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Vouchers.IPaymentVoucherService, PrimeERP.Application.Legacy.Vouchers.PaymentVoucherService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Print.IChequePrinter, PrimeERP.Application.Legacy.Print.ChequePrinter>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Assets.IAssetDepreciationService, PrimeERP.Application.Legacy.Assets.AssetDepreciationService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Assets.IAssetDisposalService, PrimeERP.Application.Legacy.Assets.AssetDisposalService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService, PrimeERP.Application.Legacy.Accounting.OpeningBalanceService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Cheques.IChequeService, PrimeERP.Application.Legacy.Cheques.ChequeService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Cheques.IChequeReceiptDocumentService, PrimeERP.Application.Legacy.Cheques.ChequeReceiptDocumentService>();
+            services.AddSingleton<PrimeERP.Application.Legacy.Cheques.IChequeIssueDocumentService, PrimeERP.Application.Legacy.Cheques.ChequeIssueDocumentService>();
             services.AddSingleton<IPayrollService, PayrollService>();
             services.AddSingleton<IAllowanceService, AllowanceService>();
             services.AddSingleton<IDeductionService, DeductionService>();
@@ -175,7 +203,6 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<IRoleService, RoleService>();
             services.AddSingleton<IUserService, UserService>();
 
-            services.AddSingleton(sp => new Lazy<IJournalService>(() => sp.GetRequiredService<IJournalService>()));
 
             return services;
         }
@@ -206,11 +233,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddTransient<ProductsViewModel>();
             services.AddTransient<CategoriesLookupViewModel>();
             services.AddTransient<BrandsViewModel>();
-            services.AddTransient<UnitsViewModel>();
-            services.AddTransient<WarehousesViewModel>();
             services.AddTransient<AssetCategoriesViewModel>();
-            services.AddTransient<DepartmentsViewModel>();
-            services.AddTransient<JobTitlesViewModel>();
             services.AddTransient<AssetsViewModel>();
             services.AddTransient<AssetRevaluationsViewModel>();
             services.AddTransient<AssetDepreciationsViewModel>();
@@ -313,14 +336,14 @@ namespace PrimeERP.App.Bootstrap
             var numberSequences = services.GetRequiredService<INumberSequenceRepository>();
             NumberSequenceSeeder.Seed(numberSequences, services.GetRequiredService<ISettingStore>());
 
-            var treasuryService = services.GetRequiredService<PrimeERP.Application.Services.Treasury.ITreasuryService>();
-            treasuryService.RepairLinkedRoots();
+            services.GetRequiredService<SettingAccounts>().RepairRoots(PrimeERP.Platform.Settings.SettingKeys.Accounts.LinkedRoots);
+            var treasuryService = services.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>();
             treasuryService.SeedDefaults();
             treasuryService.RepairMissingAccounts();
 
 
 
-            services.GetRequiredService<PrimeERP.Application.Services.Assets.IAssetService>().SeedDefaults();
+            services.GetRequiredService<PrimeERP.Application.Legacy.Assets.IAssetService>().SeedDefaults();
 
             return services;
         }

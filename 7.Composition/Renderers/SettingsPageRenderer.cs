@@ -1,3 +1,8 @@
+using PrimeERP.Application.Legacy.Print;
+using PrimeERP.Application.Legacy.Backup;
+using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Services.Ledger;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -5,8 +10,6 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services;
-using PrimeERP.Application.Services.Backup;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Settings;
@@ -15,7 +18,6 @@ using PrimeERP.UI.Components.Inputs;
 using PrimeERP.UI.Components.Layout;
 using PrimeERP.UI.Services;
 using Btn = PrimeERP.UI.Components.Actions.AppButton;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Composition.Renderers
 {
@@ -94,7 +96,7 @@ namespace PrimeERP.Composition.Renderers
                 foreach (var (key, (field, control)) in controls)
                     values[key] = DialogRenderer.GetControlValue(control, field.Kind);
 
-                var accounts = services.GetRequiredService<PrimeERP.Application.Services.Accounting.IAccountService>();
+                var accounts = services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IAccountService>();
                 foreach (var rootKey in SettingKeys.Accounts.LinkedRoots)
                 {
                     if (!values.TryGetValue(rootKey, out var code) || code is not string text || string.IsNullOrWhiteSpace(text)) continue;
@@ -132,7 +134,7 @@ namespace PrimeERP.Composition.Renderers
             button.Click += (_, __) =>
             {
                 var settings = services.GetRequiredService<ISettingsService>();
-                var layout = new PrimeERP.Application.Services.Print.ChequeLayout
+                var layout = new PrimeERP.Application.Legacy.Print.ChequeLayout
                 {
                     OffsetX = ReadNumber(settings, SettingKeys.Print.ChequeOffsetX),
                     OffsetY = ReadNumber(settings, SettingKeys.Print.ChequeOffsetY),
@@ -145,10 +147,10 @@ namespace PrimeERP.Composition.Renderers
                     }
                 };
 
-                var sheet = services.GetRequiredService<PrimeERP.Application.Services.Print.IChequePrinter>().BuildCalibrationSheet(layout);
+                var sheet = services.GetRequiredService<PrimeERP.Application.Legacy.Print.IChequePrinter>().BuildCalibrationSheet(layout);
                 if (sheet.IsFailure) { toast.Error(sheet.ErrorMessage); return; }
 
-                services.GetRequiredService<PrimeERP.Application.Services.Print.IPrintService>()
+                services.GetRequiredService<PrimeERP.Application.Legacy.Print.IPrintService>()
                     .DialogHost?.ShowPreview(sheet.Value, "معايرة الشيك");
             };
 

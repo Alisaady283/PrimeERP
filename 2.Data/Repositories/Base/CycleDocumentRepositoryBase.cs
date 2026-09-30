@@ -27,6 +27,16 @@ namespace PrimeERP.Data.Repositories.Base
             FetchOf<CycleDocumentLine>(_lineTable,
                 q => q.Where(l => l.DocumentId == documentId).OrderBy(l => l.LineNo), db);
 
+        public Dictionary<int, (decimal Qty, decimal Total)> Totals(IEnumerable<int> documentIds)
+        {
+            var ids = documentIds.Distinct().ToList();
+            return Scope(null, ctx => RowsOf<CycleDocumentLine>(ctx, _lineTable).AsNoTracking()
+                .Where(l => ids.Contains(l.DocumentId))
+                .GroupBy(l => l.DocumentId)
+                .Select(g => new { g.Key, Qty = g.Sum(l => l.Qty), Total = g.Sum(l => l.Qty * l.UnitPrice) })
+                .ToDictionary(x => x.Key, x => (x.Qty, x.Total)));
+        }
+
         public (List<CycleDocument> Items, int Total) GetPaged(int page, int pageSize, string searchText,
                                                                string sortColumn, bool sortDescending)
         {
@@ -55,18 +65,9 @@ namespace PrimeERP.Data.Repositories.Base
 
         public void DeleteDocument(PrimeDbContext db, int id)
         {
-            Write(db =>          // السطور أولاً: النموذج بلا علاقة، فترتيب الحذف يدويّ
-            {
-                SetOf<CycleDocumentLine>(db, _lineTable).RemoveRange(RowsOf<CycleDocumentLine>(db, _lineTable).Where(l => l.DocumentId == id));
-                return 0;
-            }, db);
+            RemoveIn<CycleDocumentLine>(_lineTable, l => l.DocumentId == id, db);
 
-            Write(db =>
-            {
-                var head = Rows(db).AsTracking().FirstOrDefault(d => d.Id == id);
-                if (head != null) SetOf(db).Remove(head);
-                return 0;
-            }, db);
+            Remove(d => d.Id == id, db);
         }
     }
 }

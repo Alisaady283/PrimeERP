@@ -7,7 +7,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Inventory;
-using PrimeERP.Application.Services.Inventory;
+using PrimeERP.Application.Legacy.Inventory;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Platform.Design;
@@ -103,7 +103,7 @@ namespace PrimeERP.Tests.Composition
                     Dispatcher.PushFrame(frame);
                 }
 
-                var saved = _services.GetRequiredService<PrimeERP.Application.Services.Documents.IQuotationService>().GetPaged(1, 50);
+                var saved = _services.GetRequiredService<PrimeERP.Application.Legacy.Documents.IQuotationService>().GetPaged(1, 50);
                 Assert.True(saved.Value.Items.Count > 0, "لم يُحفظ عرض السعر");
                 Assert.NotEmpty(((System.Collections.IEnumerable)vm.Items).Cast<object>().ToList());
             });

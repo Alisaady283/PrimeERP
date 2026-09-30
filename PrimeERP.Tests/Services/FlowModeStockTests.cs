@@ -1,17 +1,22 @@
+using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Application.Services.Documents;
+using PrimeERP.Tests.Helpers;
+using PrimeERP.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Sales;
-using PrimeERP.Application.Services.Inventory;
-using PrimeERP.Application.Services.Parties;
-using PrimeERP.Application.Services.Sales;
+using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.Legacy.Sales;
 using PrimeERP.Platform.Permissions;
-using PrimeERP.Application.Services;
 using PrimeERP.Platform.Settings;
 using Xunit;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
@@ -29,7 +34,7 @@ namespace PrimeERP.Tests.Services
         [InlineData(false, 10)]  // شامل: الفاتورة لا تمسّ الرصيد
         public void SalesInvoice_MovesStock_OnlyInSimplifiedFlow(bool simplified, decimal expectedOnHand)
         {
-            var accounts = _db.Services.GetRequiredService<PrimeERP.Application.Services.Accounting.IAccountService>();
+            var accounts = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IAccountService>();
             var settings = _db.Services.GetRequiredService<ISettingsService>();
 
             string LeafUnder(string parentCode, string name)
@@ -45,9 +50,7 @@ namespace PrimeERP.Tests.Services
             settings.Set(SettingKeys.Accounts.VATOutput, LeafUnder("21", "ضريبة مخرجات"));
             settings.SetMany(new Dictionary<string, object> { [SettingKeys.Documents.SimplifiedFlow] = simplified });
 
-            var warehouse = _db.Services.GetRequiredService<IWarehouseService>()
-                .Create(new CreateWarehouseDto { Name = "مخزن الاختبار", IsActive = true });
-            Assert.True(warehouse.IsSuccess, warehouse.ErrorMessage);
+            var warehouseId = _db.Services.GetRequiredService<Lookup<Warehouse>>().Add("مخزن الاختبار");
 
             var product = _db.Services.GetRequiredService<IProductService>()
                 .Create(new CreateProductDto { Name = "صنف", CostPrice = 5, SalePrice = 20, IsActive = true });
@@ -59,7 +62,7 @@ namespace PrimeERP.Tests.Services
 
             var stockIn = _db.Services.GetRequiredService<IGoodsReceiptService>().Create(new CreateStockAdjustmentDto
             {
-                WarehouseId = warehouse.Value.Id,
+                WarehouseId = warehouseId,
                 MovementDate = DateTime.Today,
                 Lines = { new CreateStockAdjustmentLineDto { ProductCode = product.Value.Code, Qty = 10, UnitCost = 5 } }
             });
@@ -68,14 +71,14 @@ namespace PrimeERP.Tests.Services
             var invoice = _db.Services.GetRequiredService<ISalesInvoiceService>().Create(new CreateSalesInvoiceDto
             {
                 CustomerId = customer.Value.Id,
-                WarehouseId = warehouse.Value.Id,
+                WarehouseId = warehouseId,
                 InvoiceDate = DateTime.Today,
                 Lines = { new CreateSalesInvoiceLineDto { ProductCode = product.Value.Code, Qty = 4, UnitPrice = 20 } }
             });
             Assert.True(invoice.IsSuccess, invoice.ErrorMessage);
 
-            var onHand = _db.Services.GetRequiredService<IStockService>()
-                .GetBalance(product.Value.Id, warehouse.Value.Id);
+            var onHand = _db.Services.GetRequiredService<IStockMove>()
+                .GetBalance(product.Value.Id, warehouseId);
             Assert.True(onHand.IsSuccess, onHand.ErrorMessage);
             Assert.Equal(expectedOnHand, onHand.Value);
         }

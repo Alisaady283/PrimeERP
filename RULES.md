@@ -1,6 +1,6 @@
 # RULES.md — ما يُلزم وما يُمنع
 
-## القواعد الست
+## القواعد الثماني
 
 **١. لا كتابة يدوية.** القطع والخدمات والقواعد والصلاحيات والتحقق والتصميم كلها مبنيّة. العمل الجديد إعلانٌ يجمعها. أيّ سطر يُكتب مرّتين خطأٌ في الموضع: المصدر المشترك غائب فيُبنى أولاً ثم يُستورَد مرّتين. لا تُكتب نسخةٌ أولى على نيّة تعميمها لاحقاً.
 
@@ -14,12 +14,16 @@
 
 **٦. الطبقة الوسيطة تُقاس بالسطور لا بالتصنيف.** تُبنى حين تمرّ بها قطعةٌ كثيرة الاستعمال فتُكتب مرّة بدل مئة — كالتحقق والصلاحية والتدقيق والمعاملة تمرّ كلها ببوابة واحدة. وتُحذَف حين تكون مجرّد تصنيف: مفتاحٌ يشير إلى مفتاح، أو مجلّدٌ يعيد تصدير ما تحته، أو آلةٌ بلا محتوى — فظاهرها ترتيبٌ وحقيقتها تعقيد. والمقياس واحد في الحالتين: أيّهما أقلّ سطراً وأقصر طريقاً إلى القطعة.
 
+**٧. المنطق عامٌّ بالمعاملات.** كل منطقٍ يُنشأ في `Services` أو `Validation` أو `Calculations` يُكتب عامّاً يعمل على أكثر من كيانٍ وصفحة، وما يختلف بينها معاملٌ يمرّره المستدعي — لا دالةٌ باسم صفحة، ولا دالةٌ لكل حالة، ولا نسخةٌ معدَّلة. والصفحة تجمعه بالاستدعاء فقط.
+
+**٨. الجاهز لا يُعاد بناؤه.** ما يقدّمه LINQ وEF وMath والإطار (`Count` · `Sum` · `Max` · `Min` · `Any` · `All` · `Where` · `FirstOrDefault` · `GroupBy` · `Math.Abs/Round/Max`…) يُستعمل مباشرةً سلسلةً نظيفة (`items.Where(…).Sum(…)`) حيث يُحتاج، ولا يُغلَّف في دالّة باسمٍ جديد في `Calculations` ولا `Services` ولا غيرهما. الغلاف لا يُكتب إلا حين يضيف قاعدةَ أعمالٍ لها اسم (رصيدٌ جارٍ، تجميع الأب من أبنائه، حدٌّ صفره بلا حد) — لا حين يعيد تسمية عمليةٍ جاهزة.
+
 ## الأسئلة الخمسة قبل أي إضافة
 
 تُطرح بالترتيب، ولا يُكتب حرف قبل الإجابة:
 
 1. **هل يوجد مثيله؟** ابحث بالمفهوم لا بالنصّ. إن وُجد فاستورده.
-2. **هل يوجد أساس يرثه؟** خدمة ← `ServiceBase` · نموذج عرض ← `CrudViewModelBase` · مستودع ← `RepositoryBase` · تحقق ← `IValidator<T>`.
+2. **هل يوجد أساس يرثه؟** خدمة ← جدول الأسس في § إضافة خدمة · نموذج عرض ← `CrudViewModelBase` · مستودع ← `RepositoryBase` · تحقق ← `Check.Valid(item, Field<T>…)` · منطق ← `Services/…` · صيغة ← `3.Domain/Calculations`.
 3. **هل يوجد مصنع يبنيه؟** راجع جدول المصانع في § إضافة شاشة.
 4. **أي طبقة يسكنها؟** غيابُ موضعٍ واضح يعني أن التصميم خاطئ لا أن الملف خاطئ.
 5. **هل يمكن وصفه إعلاناً بدل كود؟** في طبقتَي التكوين والوحدات الجواب دائماً نعم.
@@ -33,21 +37,84 @@
 | # | الخطوة | الموضع | الشرط |
 |---|---|---|---|
 | ١ | الكيان | `3.Domain/Entities` | خصائص فقط — بلا سلوك ولا استدعاء |
-| ٢ | المستودع | `2.Data/Repositories` | يرث `RepositoryBase<T>`، شرطه `Shape` وترتيبه `By`/`DocumentOrder` — LINQ فوق `PrimeDbContext`، بلا SQL مكتوب |
+| ٢ | المستودع | `2.Data/Repositories` | يرث `RepositoryBase<T>`، شرطه `Shape` وترتيبه `By`/`DocumentOrder` — LINQ فوق `PrimeDbContext`، بلا SQL مكتوب، والمجموع في الاستعلام لا بعد التحميل |
 | ٣ | الـDTOs | `4.Application/DTOs` | `XDto` قراءة · `CreateXDto` كتابة · `XFilter` ترشيح |
-| ٤ | المتحقّق | `4.Application/Validation` | `IValidator<T>` عبر `Rules.For<T>()` |
-| ٥ | الخدمة | `4.Application/Services/<القسم>` | ترث `ServiceBase` وتُعلن `PermissionPrefix` و `StringPrefix` و `EntityName` |
+| ٤ | التحقق | `4.Application/Validation` | لا ملفّ للكيان: شروطه معاملاتُ `Field<T>` تمرّرها الصفحة إلى `Check.Valid` |
+| ٥ | الخدمة | منطقها حالة استخدام في `4.Application/Services/…`، وخدمة الصفحة في `Legacy/<القسم>` تستدعيها | ترث أساسها من الجدول أدناه وتُعلن `PermissionPrefix` و `StringPrefix` و `EntityName` |
 | ٦ | التسجيل | `App/Bootstrap/DependencyInjection.cs` | سطر واحد |
 
-**ما تأتي به الوراثة فلا يُكتب يدوياً**: `Can("Create")` و `FailDenied()` للصلاحية ورسالتها · `Check(validator, dto)` للتحقق · `Audit.Log(...)` للتدقيق · `Tx(...)` للمعاملة الذرّية · `Msg(key)` للنصوص · `SoftDelete`/`HardDelete` للحذف.
+**أسس الخدمات** — الخدمة تُعلن ما يخصّها، والأساس يكتب الصلاحية والمعاملة والتدقيق والحرّاس:
 
-**قواعد `Rules.For<T>()`**: `Required` · `MinLength` · `MaxLength` · `Range` · `Positive` · `Email` · `Phone` · `DateValid` · `Unique` · `Custom`.
+| الخدمة | ترث | تُعلن |
+|---|---|---|
+| قائمة بسيطة (كود/اسم/نشط) | `Lookup<T>` في `Services/Entities` بلا صنفٍ يرثه | `EntitySpec`: المفتاح، بادئة النصوص، تسمية الاسم، مفتاح الترقيم |
+| كيانٌ له صفحة، وربما حسابٌ في الشجرة | `EntityService<TEntity,TDto,TCreate,TUpdate,TFilter>` | `New`/`Apply`/`Insert`/`Save`/`Erase`، و`Accounts` مصفوفة `AccountSpec` لحساباته، و`CanErase` لحارسٍ يخصّه |
+| طرفٌ (عميل، مورد) | `PartyServiceBase<…>` فوق `EntityService` | `IdOf` و`FindPaged` فقط |
+| مستند رأس وسطور | `DocumentService<THead,TRow,TDetail,TCreate,TFilter>` | `Plan` (تحقّقٌ ثم دالة كتابة) و`Remove` و`EntryOf` لقيده و`Editable` إن كان يُعدَّل |
+| حركة أصل | `AssetMovementServiceBase<…>` | `Write` في المعاملة و`Undo` و`EntryOf` |
+| ما سواها | `ServiceBase` | — |
 
-**يُمنَع داخل الخدمة**: رسالة بلغة بشرية خارج `Strings.*.xaml` · شرط تحقق خارج المتحقّق · فحص صلاحية خارج `Can` · استعلام خارج المستودع.
+والقطع المشتركة في `Services/Ledger`: `Posting` (قيدٌ يُنشأ مُرحَّلاً، وعكسه، وحارسه) · `JournalLines` (سطور القيد) · `Guards` (له أبناء، له قيود، النقدية) · `Accounts/*` (الحساب: في الشجرة، للكيان، بالاتجاهين، ومع مجمّعه) · `PartyBalance` (رصيد الطرف من حسابه). وفي `Services/Documents`: `TradeEntry` و`TwoSided` في `Ledger` لأطراف القيد بالمعاملات، و`StatusChange` للحالة التي تعمل كترحيل، و`TradeLines.Prepare` يحلّ سطور الفاتورة أو المرتجع ومجاميعها ثم سحبها ثم حساباتها من `TradeAccounts` بدالةٍ تمرّرها الخدمة.
 
-**حسابٌ تستعمله خدمتان يُخرَج إلى `3.Domain/Rules/`** — كـ `DepreciationRules` تستوردها خدمة الاحتساب وتقرير الأصول، فيبقى الرقم واحداً.
+**ما تأتي به الوراثة فلا يُكتب يدوياً**: `Can("Create")` و `FailDenied()` للصلاحية ورسالتها · `Audit.Log(...)` للتدقيق · `Commit(db => …)` لمعاملةٍ تُلغى بنتيجتها الفاشلة أو باستثناء `InvalidOperationException` · `Tx(...)` لمعاملةٍ بلا فشل · `Msg(key)` للنصوص · `SoftDelete`/`HardDelete` للحذف.
+
+**التحقق دالةٌ واحدة**: `Check.Valid(item, params Field<T>[])` و`Check.Fields` لنتيجة الحقول. كل شرطٍ معاملٌ في `Field<T>`: `Required` · `Min` · `Max` · `From`/`To` · `Format` (`Phone`/`Email`/`Date`/`Digits`) · `Must` · `Message`/`Args`. رسائلها `Str.Rule.*`. لا دالةٌ لكل نوع تحقق، ولا ملفّ متحقّقٍ لكل كيان، ولا تحقّقُ مدخلٍ مكتوبٌ بـ`if` في الخدمة. وسطور المستند بـ`DocumentLines.Check` فوقها. وقاعدة الأعمال على حالة البيانات ليست تحقّق مدخل: تُكتب شرطَ حمايةٍ صريحاً يُرجع `Result` في العملية المالكة لها، ولا تُحشر في `Check`.
+
+**يُمنَع داخل الخدمة**: رسالة بلغة بشرية خارج `Strings.*.xaml` · شرط تحقق خارج المتحقّق · فحص صلاحية خارج `Can` · استعلام خارج المستودع · استعلامٌ لكل صفّ في `ToDto` أو داخل حلقة (الصفحة تُجلب بـ`ToDtos` والمستند يحلّ أكواده بـ`ByCodes`) · ختم `CreatedBy`/`UpdatedBy` يدوي · `try/catch` حول معاملة (`Commit` يلغيها) · إنشاء قيدٍ وترحيله بيده (`Posting.Entry`) · تعديلٌ بحذفٍ ثم إنشاءٍ في معاملتين (الأساس يستبدل في معاملةٍ واحدة) · رصيد طرفٍ يُحسب خارج `PartyBalance` · حساب كيانٍ يُفتح أو يُسمّى أو يُغلق خارج `Services/Ledger/Accounts`.
+
+**كل صيغة حساب في `3.Domain/Calculations/`** — لا في كيان ولا خدمة ولا واجهة ولا تقرير. الخدمة تجلب ثم تستدعي الصيغة، ولا دالةٌ تجلب وتحسب معاً.
 
 **العملية الطويلة** (كل ما يتجاوز ثانية) تتبع الآلية الواحدة الموصوفة في `ARCHITECTURE.md § العمليات الطويلة`.
+
+## الصفحة والمنطق
+
+**صفحة `Legacy` استدعاءٌ لا منطق.** جسم دالّتها: صلاحية ← جلبٌ من المستودع ← استدعاء قطعةٍ من `Services` أو صيغةٍ من `Calculations` بمعاملاتها ← تدقيق ← نتيجة. وما تجمعه صفحةٌ أخرى تستدعيه منها أو ترثه، ولا تعيد استدعاء خدماته واحدةً واحدة. يُمنَع فيها: حلقةُ حساب أو تجميع، بناءُ شجرة أو تصفيتها، جدولُ ربطٍ أو قرارٌ بحسب إعداد، نسخُ كيانٍ إلى DTO حقلاً حقلاً، `if … return Fail` لتحقّق المدخل (موضعه `Check`). أما شرط حالة العملية (سبق ترحيله، له أبناء) فشرطُ حمايةٍ صريح في أول دالّتها.
+
+**القطعة العامّة** اسمها فعلها لا صفحتها، ومعاملاتها ما يختلف بين مستدعيها. تُكتب مرّةً وتستدعيها كل صفحةٍ تحتاجها.
+
+**القطعة مهمّةٌ واحدة — في `Services` و`Validation` و`Calculations` سواء.** الفعل المركّب يستدعي القطع الصغيرة ولا يعيد كتابتها، فتُفحَص كل مهمّةٍ وحدها ولا تنشأ دالّةٌ طويلة تفعل كل شيء. مثالها الحساب، ثلاث قطعٍ لا واحدةٌ شاملة:
+
+| القطعة | مهمّتها | يستدعيها |
+|---|---|---|
+| `AddTreeAccount` | حسابٌ في الشجرة وحدها: الأب، الكود، المستوى، التحقق | صفحة الشجرة، والقطعتان التاليتان |
+| `AddEntityAccount` | حسابٌ لكيان صفحة (عميل، مورد، خزينة، موظف، أصل، فئة) تحت جذره | صفحات الكيانات عبر `EntityService` |
+| `AddLinkedAccount` | المزدوج: `AddTreeAccount` ثم ينشئ الكيان المرتبط بجذره | صفحة الشجرة حين يكون الأب جذراً مرتبطاً |
+
+وعلى مثالها التعديل والحذف، كلٌّ بقطعته والمزدوج يستدعيها:
+
+| الفعل | الشجرة وحدها | لكيان صفحة | المزدوج |
+|---|---|---|---|
+| إضافة | `AddTreeAccount` | `AddEntityAccount` | `AddLinkedAccount` |
+| تعديل | `EditTreeAccount` | `RenameAccount` | `EditLinkedAccount` |
+| حذف | `CloseAccount` | `CloseAccount` بمواصفات الكيان | `CloseLinkedAccount` |
+
+والحسابان معاً (`AddMirroredAccount`) للأصل والفئة، و`LinkedAccounts` يعيد الكيان المرتبط بالجذر لتمرّره الصفحة للمزدوج.
+
+**قبل البناء — بالترتيب:**
+1. ابحث في `Services` و`3.Domain/Calculations` بالمفهوم. موجودٌ ⇐ استدعِه. ينقصه فرقٌ ⇐ أضِف معاملاً، لا نسخة.
+2. غائبٌ ⇐ يُبنى عامّاً في موضع نوعه: الصيغة في ملفّ `Calc` الذي يشبهها، والمنطق في مجلّد `Services` الذي يشبهه. لا مجلّدٌ ولا ملفٌّ جديد ولنوعه موضع.
+3. يُحوَّل إليه **كل** من يكتب المنطق نفسه في الخطوة ذاتها، ويُحذف المكتوب في الصفحات.
+
+## مرجع المواضع
+
+المرجع الوحيد لموضع كل قطعة. يُقرأ قبل البناء والنقل: القطعة تدخل المجلد الذي يطابق وصفَها، وما لا يطابق وصفَ مجلدٍ يُسأل عنه ولا يُخمَّن. وما نُقل ثم خالف هذا الجدول يُعاد إلى أصله قبل أي عملٍ آخر.
+
+| المجلد | يدخله | لا يدخله | قطعه الآن |
+|---|---|---|---|
+| `3.Domain/Calculations` | صيغةٌ نقيّة لها معنى أعمال: مدخلاتٌ ← رقمٌ أو قرار. رصيد، تجميع من الأبناء، إهلاك، تكلفة، قاعدة فترة، مقياس عرض | جلبٌ من قاعدة، نصٌّ مترجَم، `Result`، أي طبقةٍ أعلى، وغلافٌ لعمليةٍ جاهزة في LINQ أو Math (القاعدة ٨) | `LineCalc` السطر ومجاميعه · `StatementCalc` القوائم والرصيد الجاري والتجميع وسطر الميزان · `AssetCalc` الإهلاك والقيمة · `PayrollCalc` · `InventoryCosting` · `FiscalPeriodCalc` الفترات وقواعدها · `PartyCalc` الحدّ والمتاح · `LayoutCalc` نسب الأعمدة |
+| `3.Domain/Enums` | تعدادٌ يتقاسمه أكثر من ملف | — | ومنها `FieldFormat` |
+| `4.Application/Validation` | التحقق من **المدخل** وحده: الدالة الواحدة `Check` وشروط حقول الـDTO معاملاتٍ في `Field<T>` (`Required` · `Min`/`Max` · `From`/`To` · `Format` · `Must` على قيمة المدخل) | قاعدة أعمال على حالة البيانات (له أبناء، سبق ترحيله، الفترة مقفلة، الرصيد لا يكفي): هذه شرطُ حمايةٍ صريح يُرجع `Result` في الخدمة أو الصفحة المالكة للعملية، لا شرطٌ في `Check` · ملفّ متحقّقٍ لكيان · دالّةٌ لكل نوع تحقق | `Check` · `Field` · `DocumentLines` · `ValidationResult` |
+| `4.Application/Services/Core` | أسس الخدمات والترقيم | منطقُ مجالٍ بعينه | `ServiceBase` · `CrudServiceBase` · `EntityService` · `NumberSequenceService` |
+| `4.Application/Services/Ledger` | القيد: إنشاؤه وترحيله وعكسه وحرّاسه وعرضه، والأرصدة | حساب الشجرة (مجلده التالي)، صيغة حساب | `Entries` · `Posting` · `PeriodGate` · `JournalLines` · `TradeEntry` · `TwoSided` · `OpeningEntry` · `Guards` · `PartyBalance` (`Refresh`/`RefreshAll`) · `PartyByKind` الطرف بنوعه: اسمه وحسابه ورصيده · `Statement` (ومعه `WithCheques`) · `TrialBalance` ميزان المراجعة |
+| `4.Application/Services/Ledger/Accounts` | الحساب في الشجرة: إضافة وتعديل وحذف بقطعٍ منفصلة، وحساب الكيان أو الإعداد | قيدٌ أو رصيد | `AddTreeAccount` · `AddEntityAccount` · `AddLinkedAccount` · `AddMirroredAccount` · `EditTreeAccount` · `EditLinkedAccount` · `RenameAccount` · `CloseAccount` · `CloseLinkedAccount` · `LinkedAccounts` · `AccountOf` · `SettingAccounts` · `AccountCases` · `AccountSpec` |
+| `4.Application/Services/Documents` | المستند: رأسٌ وسطور، سحبه، أثره المخزني، حالته كترحيل، حساباته | صيغة المبالغ (`LineCalc`) | `DocumentService` · `DocumentPull` · `StockMove` · `StatusChange` · `TradeLines` · `TradeAccounts` (المبيعات ومرتجعاتها والمشتريات) · `ProductLines` |
+| `4.Application/Services/Entities` | شكلٌ عامّ للبيانات لا يخصّ مجالاً: قائمة بسيطة، شجرة، نسخ بالاسم، حالة بلونها، سطورٌ بكودها | ما يعرف قيداً أو مستنداً أو حساباً | `Lookup<T>` · `EntitySpec` · `Rows` · `Tree` · `ByCode` |
+| `4.Application/Legacy/<القسم>` | الصفحة: صلاحية، جلب، استدعاء خدماتها بالمعاملات، تدقيق، نتيجة، وإعلاناتها (`AccountSpec`، جدول الحالات، شروط `Field`). وتستدعي صفحةً أخرى أو ترثها حين تجمع تلك ما تحتاجه — استدعاءٌ واحد أقلّ من إعادة استدعاء خدماتها | كل ما في الصفوف أعلاه، وإعادة بناء ما تجمعه صفحةٌ أخرى | — |
+| `2.Data/Repositories` | الاستعلام والكتابة والملف: شرطٌ، ترتيب، مجموعٌ في SQL، نسخة القاعدة | قرار أعمال | ومنها `BackupRepository.Snapshot` نسخة القاعدة وسجلّها |
+
+**قبل النقل يُسأل:** هل يطابق وصفُه صفّاً واحداً؟ هل في ذلك الصف قطعةٌ تفعله فيُضاف إليها معامل؟ هل تستدعيه صفحتان فأكثر أو صفحةٌ ومستند؟ وبعد النقل: هل خلت الصفحة منه؟ يُقرأ الملف نفسه للتأكد، لا عدّادٌ ولا مولّد.
+
+**لا قطعة بلا مستدعٍ.** ما يُبنى ولا تستدعيه صفحةٌ يُحذف؛ والخطوة لا تُعدّ منتهيةً إلا حين تخلو الصفحة من المنطق المنقول.
 
 ---
 
@@ -110,17 +177,29 @@ registry.Register(new ModuleDefinition
 | لون — أيّ لون | `5.Design/Colors.xaml` |
 | مسافة، خطّ، ظلّ، استدارة، مقاس مكوّن | `5.Design/Sizes.xaml` |
 | شكل عنصر WPF | `5.Design/Styles/Style.<النوع>.xaml` |
-| نصّ ظاهر للمستخدم | `5.Design/Strings/Strings.{ar,en}.xaml` |
+| نصّ ظاهر للمستخدم | `5.Design/Strings/Strings.{ar,en}.xaml`. الخدمة تقرؤه بـ`Msg(key)` تحت بادئتها أو `Localization.Get(key)` لغيرها، وما ليس خدمةً (متحقّق، طباعة، دالّة ساكنة) بـ`LocalizationService.Get(key, args)`. الثقوب `{0}` مرقَّمة بصيغتها (`{0:N2}`) |
 | أيقونة | `5.Design/Icons/Icons.xaml` |
 | لون طباعة أو تصدير | `5.Design/Surfaces/PrintTheme.xaml` · `5.Design/Surfaces/ExportTheme.cs` |
-| منطق أعمال أو حساب | `4.Application/Services/…` |
-| قاعدة تحقق | `4.Application/Validation/…` |
-| قاعدة محاسبية نقية | `3.Domain/Rules/…` |
+| منطق أعمال أو حساب | `4.Application/Services/…` — لا يُكتب في `Legacy` |
+| قاعدة تحقق | معاملات `Field<T>` في الصفحة، والدالة الوحيدة `4.Application/Validation/Check` |
+| صيغة حساب | `3.Domain/Calculations/…` في ملفّ نوعها |
+| منطقٌ في صفحة `Legacy` | يُنقل إلى قطعةٍ عامّة في `Services/…` وتستدعيها الصفحة بمعاملاتها — § الصفحة والمنطق |
 | استعلام، ترتيب، ترشيح | `2.Data/Repositories` + `Base/RepositoryBase.{Fetch,Page,By,DocumentOrder}` |
-| جملة الحذف (ناعم أو صلب) | `2.Data/Repositories/Base/RepositoryBase` — `SoftDelete` / `HardDelete` |
+| جملة الحذف الناعم | `2.Data/Repositories/Base/RepositoryBase` — `SoftDelete` |
+| ختم الإنشاء والتعديل والحذف | `2.Data/Core/ModelConventions.cs` — `SaveChanges` |
+| تعديل حقلٍ أو حذفٌ بلا تحميل | `RepositoryBase.Set`/`Remove` (`SetIn`/`RemoveIn` لجدولٍ آخر) |
+| اسم مرجعٍ أو إجماليٌّ في قائمة | المستودع: `WithNames`/`WithCodeNames`/`NamesOf`/مجاميع بالمعرّفات، والخدمة: `ToDtos` |
+| استبعاد المحذوف من القراءة | `2.Data/Core/ModelConventions.cs` — مرشِّحٌ عامّ واحد؛ لا `!IsDeleted` في مستودع، ورؤية المحذوف بـ`IgnoreQueryFilters()` صراحةً |
 | كتابة إعداد (ولو في قاعدة أخرى) | `ISettingStore.Upsert` — تنفيذه `2.Data/Repositories/SettingRepository` |
 | تجميد الواجهة في عملية طويلة | `IDialogService.ShowProgress` + `Task.Run` + `IProgress<T>` |
-| حواجز الحذف (مرحَّل، سُحب منه، له أبناء) | خدمة الكيان في `4.Application` |
+| حواجز الحذف (سُحب منه، قيدٌ في فترةٍ مقفلة، له قيود أو حركات) | المستند: `DocumentService.Removable` و`Guard` · الكيان: `EntityService.CanErase` و`Guards.HasEntries` |
+| القيد: إنشاؤه مُرحَّلاً وعكسه وباب الفترة المقفلة وملكية مصدره | `4.Application/Services/Ledger/Entries` (`CreatePosted` · `CanUpdate` · `CanDelete` · `CanPost` · `CanUnpost` · `Owned`) و`Posting` |
+| أطراف قيد مستند وسطوره | `TradeEntry` · `TwoSided` · `JournalLines` في `4.Application/Services/Ledger`، تستدعيها الصفحة بمعاملاتها |
+| حارس «له أبناء» أو «له قيود» أو رصيد النقدية | `4.Application/Services/Ledger/Guards` |
+| حالةٌ تعمل كترحيل (الشيك) | `4.Application/Services/Documents/StatusChange`، وجدول انتقالاتها معاملةٌ في صفحتها |
+| حساب في الشجرة أو لكيان أو ومجمّعه | `4.Application/Services/Ledger/Accounts/*` — `AccountSpec<T>` في الصفحة |
+| رصيد العميل والمورد | `4.Application/Services/Ledger/PartyBalance` — داخل معاملة المستند |
+| سطور الفواتير والمرتجعات ومجاميعها وحساباتها من الإعدادات | `4.Application/Services/Documents/TradeLines` و`TradeAccounts` |
 | صلاحية | `1.Platform/Permissions/PermissionKeys.cs` |
 | حقول شاشة أو أعمدتها | `8.Modules/*Registrations.cs` |
 | شاشة لا تظهر في الشريط أو البناء أو إنشاء برنامج | مفتاحها غائب عن `NavigationMap.Coded` |
@@ -156,3 +235,4 @@ registry.Register(new ModuleDefinition
 - الاختبار الجديد يُثبَت بإعادة الكسر: إن لم يسقط على الكود المكسور فهو لا يحرس شيئاً.
 - لا حالة ساكنة مُستعارة بلا إعادة — `AppSession` يتقاسمها كل الاختبارات.
 - لا اعتماد على «أول عنصر» في قائمة مرتَّبة؛ يُختار السجلّ بمعرّفه.
+- رسالة الخدمة تُقارَن بمفتاحها لا بنصّها: `Localized.Says(message, key)`، لأن القاموس لا يُحمَّل إلا بعد أول اختبار WPF.

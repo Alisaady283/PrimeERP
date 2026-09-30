@@ -9,7 +9,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Cheques;
-using PrimeERP.Application.Services.Cheques;
+using PrimeERP.Application.Legacy.Cheques;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Localization;

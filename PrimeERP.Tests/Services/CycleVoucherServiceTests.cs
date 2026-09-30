@@ -1,9 +1,13 @@
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Application.Services.Documents;
+using PrimeERP.Tests.Helpers;
+using PrimeERP.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Inventory;
-using PrimeERP.Application.Services.Inventory;
+using PrimeERP.Application.Legacy.Inventory;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 
@@ -24,17 +28,16 @@ namespace PrimeERP.Tests.Services
         private (int productId, string code, int warehouseId) Seed()
         {
             var products = _db.Services.GetRequiredService<IProductService>();
-            var warehouses = _db.Services.GetRequiredService<IWarehouseService>();
+            var warehouses = _db.Services.GetRequiredService<Lookup<Warehouse>>();
 
-            var wh = warehouses.GetAll().Value.FirstOrDefault()
-                     ?? warehouses.Create(new CreateWarehouseDto { Name = $"مخزن {Guid.NewGuid():N}", IsActive = true }).Value;
+            var warehouseId = warehouses.Add($"مخزن {Guid.NewGuid():N}");
 
             var product = products.Create(new CreateProductDto
             {
                 Name = $"صنف {Guid.NewGuid():N}", CostPrice = 10, SalePrice = 15, IsActive = true
             }).Value;
 
-            return (product.Id, product.Code, wh.Id);
+            return (product.Id, product.Code, warehouseId);
         }
 
         private static CreateStockAdjustmentDto Doc(string code, int warehouseId, decimal qty) => new()
@@ -51,7 +54,7 @@ namespace PrimeERP.Tests.Services
         public void GoodsReceiptAddsStock_AndDeliveryNoteRemovesIt()
         {
             var (productId, code, warehouseId) = Seed();
-            var stock = _db.Services.GetRequiredService<IStockService>();
+            var stock = _db.Services.GetRequiredService<IStockMove>();
 
             var receipt = _db.Services.GetRequiredService<IGoodsReceiptService>()
                 .Create(Doc(code, warehouseId, 12));
@@ -68,7 +71,7 @@ namespace PrimeERP.Tests.Services
         public void GoodsIssueRemovesStock_AndSalesReceiptReturnsIt()
         {
             var (productId, code, warehouseId) = Seed();
-            var stock = _db.Services.GetRequiredService<IStockService>();
+            var stock = _db.Services.GetRequiredService<IStockMove>();
 
             _db.Services.GetRequiredService<IGoodsReceiptService>().Create(Doc(code, warehouseId, 20));
 

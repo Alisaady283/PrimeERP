@@ -1,10 +1,11 @@
+using PrimeERP.Application.Services.Ledger;
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Parties;
-using PrimeERP.Application.Services.Accounting;
-using PrimeERP.Application.Services.Parties;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Legacy.Parties;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Platform.Permissions;

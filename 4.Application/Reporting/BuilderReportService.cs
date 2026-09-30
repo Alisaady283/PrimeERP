@@ -31,7 +31,7 @@ namespace PrimeERP.Application.Reporting
 
             var module = _repo.Modules().FirstOrDefault(m => m.Key == moduleKey);
             if (module == null || string.IsNullOrWhiteSpace(module.TableName))
-                return Result.Fail<ReportData>("مصدر التقرير غير موجود", ErrorCode.NotFound);
+                return Result.Fail<ReportData>(Msg("SourceMissing"), ErrorCode.NotFound);
 
             var columns = _repo.Columns(module.Id);
             var (rows, _) = new DynamicRepository(module.TableName, columns).GetPaged(1, int.MaxValue, null, null, false);

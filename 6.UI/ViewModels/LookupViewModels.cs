@@ -1,4 +1,4 @@
-using PrimeERP.Application.Services.Common;
+using PrimeERP.Application.Legacy.Common;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
 

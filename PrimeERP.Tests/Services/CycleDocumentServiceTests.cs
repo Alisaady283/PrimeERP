@@ -1,11 +1,12 @@
+using PrimeERP.Application.Services.Documents;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Documents;
 using PrimeERP.Application.DTOs.Inventory;
-using PrimeERP.Application.Services.Documents;
-using PrimeERP.Application.Services.Inventory;
+using PrimeERP.Application.Legacy.Documents;
+using PrimeERP.Application.Legacy.Inventory;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 
@@ -67,7 +68,7 @@ namespace PrimeERP.Tests.Services
             var product = products.Create(new CreateProductDto
             { Name = $"صنف {Guid.NewGuid():N}", CostPrice = 10, SalePrice = 15, IsActive = true }).Value;
 
-            var stock = _db.Services.GetRequiredService<IStockService>();
+            var stock = _db.Services.GetRequiredService<IStockMove>();
             var before = stock.GetBalance(product.Id, null).Value;
 
             _db.Services.GetRequiredService<IQuotationService>().Create(Doc(product.Code, null, 9, 20));

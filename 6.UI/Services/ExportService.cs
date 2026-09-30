@@ -1,6 +1,6 @@
+using PrimeERP.Application.Legacy.Print;
+using PrimeERP.Application.Legacy.Admin;
 using PrimeERP.Domain.Contracts;
-using PrimeERP.Application.Services.Print;
-using PrimeERP.Application.Services;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,13 +13,11 @@ using ClosedXML.Excel;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Design.Surfaces;
-using PrimeERP.Application.Services.Print;
 using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Components.Display;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using PrimeERP.Application.Services.Admin;
 using PrimeERP.Domain.Helpers;
 
 namespace PrimeERP.UI.Services

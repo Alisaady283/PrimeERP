@@ -110,7 +110,7 @@ namespace PrimeERP.Tests.Composition
                 .Where(type => type != null)
                 .Distinct()
                 .Select(type => _db.Services.GetService(type))
-                .OfType<PrimeERP.Application.Services.Inventory.IPermissionGated>()
+                .OfType<PrimeERP.Application.Legacy.Inventory.IPermissionGated>()
                 .Select(service => service.PermissionKey)
                 .Distinct()
                 .Where(key => !defined.Contains(key))

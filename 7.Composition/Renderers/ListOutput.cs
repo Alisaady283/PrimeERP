@@ -1,8 +1,8 @@
+using PrimeERP.Application.Legacy.Print;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services.Print;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.UI.Components.Display;

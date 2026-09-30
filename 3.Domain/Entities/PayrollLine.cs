@@ -20,8 +20,5 @@ namespace PrimeERP.Domain.Entities
 
         public decimal NetSalary    { get; set; }
         public string  Notes        { get; set; }
-
-        public decimal GrossPay    => BasicSalary + Allowances + Overtime;
-        public decimal TotalWithheld => Deductions + Advances + Insurance + Tax;
     }
 }

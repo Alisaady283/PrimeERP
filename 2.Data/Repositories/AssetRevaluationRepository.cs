@@ -32,7 +32,7 @@ namespace PrimeERP.Data.Repositories
         {
             IQueryable<AssetRevaluation> Shape(IQueryable<AssetRevaluation> rows)
             {
-                var q = rows.Where(x => !x.IsDeleted);
+                var q = rows;
                 if (!string.IsNullOrWhiteSpace(searchText))
                     q = q.Where(x => EF.Functions.Like(x.Notes, $"%{searchText}%"));
                 if (assetId != null) q = q.Where(x => x.AssetId == assetId);
@@ -52,7 +52,6 @@ namespace PrimeERP.Data.Repositories
                 row.OldValue = r.OldValue;
                 row.NewValue = r.NewValue;
                 row.Notes = r.Notes ?? "";
-                row.UpdatedAt = DateTime.Now;
                 row.UpdatedBy = r.UpdatedBy;
             }, db);
 
@@ -60,11 +59,6 @@ namespace PrimeERP.Data.Repositories
             SoftDelete(id, deletedBy, db);
 
         public void SetJournalEntryId(PrimeDbContext db, int id, int journalEntryId) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(x => x.Id == id);
-                if (row != null) row.JournalEntryId = journalEntryId;
-                return 0;
-            }, db);
+            Set(x => x.Id == id, s => s.SetProperty(r => r.JournalEntryId, journalEntryId), db);
     }
 }

@@ -7,8 +7,8 @@ PrimeERP/
 ├── App.xaml(.cs)      يبقيان في الجذر — قيد مُصرِّف XAML
 ├── 1.Platform/        Security/ Permissions/ Audit/ Localization/ Settings/ Net/ Design/
 ├── 2.Data/            Core/ Repositories/ Seeders/
-├── 3.Domain/          Entities/ Enums/ Rules/ Results/ Contracts/ Helpers/
-├── 4.Application/     Pipeline/ Services/ Validation/ DTOs/ Reporting/
+├── 3.Domain/          Entities/ Enums/ Calculations/ Results/ Contracts/ Helpers/
+├── 4.Application/     Services/ (المنطق العامّ) Legacy/ (الصفحات تستدعيه) Validation/ (Check) DTOs/ Reporting/
 ├── 5.Design/          Colors.xaml Sizes.xaml Theme.xaml + Styles/ Icons/ Strings/ Surfaces/
 ├── 6.UI/              Components/ Converters/ Services/ ViewModels/
 ├── 7.Composition/     Definitions/ Renderers/ Registry/ Pull/ Print/
@@ -27,8 +27,8 @@ PrimeERP/
 |---|---|---|
 | **1.Platform** | بنية تحتية عابرة: صلاحيات، تدقيق، لغة، إعدادات، هوية بصرية | منطق أعمال، أي مرجع لـ 4-8 |
 | **2.Data** | مزوّدو القواعد، نموذج EF، المستودعات، أشكال الاستعلام | أي قرار أعمال |
-| **3.Domain** | كيانات، تعدادات، قواعد محاسبية نقية، `Result`، عقود التحقق | أي استدعاء قاعدة بيانات، أي مرجع لأي طبقة — النقيّة الوحيدة |
-| **4.Application** | خدمات الأعمال، DTOs، المتحقّقون، Pipeline، التقارير | أي مرجع لـ 5-8 |
+| **3.Domain** | كيانات، تعدادات، صيغ الحساب النقية (`Calculations`)، `Result` | أي استدعاء قاعدة بيانات، أي مرجع لأي طبقة — النقيّة الوحيدة |
+| **4.Application** | المنطق العامّ (`Services`)، الصفحات التي تستدعيه (`Legacy`)، التحقق، DTOs، التقارير | أي مرجع لـ 5-8 |
 | **5.Design** | XAML فقط: رموز بصرية | أي C# منطقي |
 | **6.UI** | القطع المرئية، محوّلات، خدمات واجهة، أسس ViewModel | استدعاء مستودع، منطق أعمال |
 | **7.Composition** | التعريفات (بيانات)، المُصيِّرات (تجميع)، السجلّ | منطق أعمال، XAML لصفحة بعينها |
@@ -66,7 +66,7 @@ IModuleRegistry.Register ─── بيان النسخة (UI.Manifest) يرفض 
 
 **علوّ الوصف على الصفحة المكتوبة**: `ModuleDefinition` و `GridColumn` سجلّان (`record`)، فتُعاد الصفحة المكتوبة إلى التسجيل بـ `with` وقد أُخذت أعمدتها وأزرارها وفلاترها من صفوف الوصف، بينما يبقى نموذج عرضها وحوارها من الكود. العمود الذي له صفّ يأخذ منه عنوانه وعرضه وإجماليه ويحتفظ بما لا يصفه الوصف (قالب الخلية، المحاذاة)؛ وصفٌّ بلا عمود عمودٌ مُضاف؛ وعمودٌ بلا صفّ محذوف.
 
-**عرض العمود نسبةً**: نسبةٌ واحدة مُدخَلة تجعل الجدول كلَّه نجميّاً (`IsStarWidth`)، فيبقى تناسبه واحداً على أي عرض شاشة وفي أي نسخة. الحساب في `ColumnWidths` (4.Application) تقرؤه الشاشة والمُحمِّل معاً، فالمعروض هو المطبَّق.
+**عرض العمود نسبةً**: نسبةٌ واحدة مُدخَلة تجعل الجدول كلَّه نجميّاً (`IsStarWidth`)، فيبقى تناسبه واحداً على أي عرض شاشة وفي أي نسخة. الحساب في `LayoutCalc.Shares` (3.Domain/Calculations) تقرؤه الشاشة والمُحمِّل معاً، فالمعروض هو المطبَّق.
 
 ---
 
@@ -86,7 +86,9 @@ PagedViewModelBase.FetchPage       ← يملك الصفحة والحجم وال
 AppDataGrid + AppPagination
 ```
 
-**`RepositoryBase.Page(page, pageSize, filter, order)`**: العدّ ثم `Skip/Take` بتنفيذٍ واحد لكل المستودعات، و`Id` فاصلٌ أخير يُضاف هنا. المستودع يمرّر فرقه وحده: شرطه دالة `Shape`، وترتيبه `By(key, descending)` أو `DocumentOrder(key, descending, number)`. وعمود فرزٍ غير مُعلَن يسقط على الحالة الافتراضية في `switch` فلا يصل إلى الاستعلام.
+**`RepositoryBase.Page(page, pageSize, filter, order)`**: العدّ ثم `Skip/Take` بتنفيذٍ واحد لكل المستودعات، و`Id` فاصلٌ أخير يُضاف هنا. المستودع يمرّر فرقه وحده: شرطه دالة `Shape`، وترتيبه `By(key, descending)` أو `DocumentOrder(key, descending, number)`. وعمود فرزٍ غير مُعلَن يسقط على الحالة الافتراضية في `switch` فلا يصل إلى الاستعلام. وشرطٌ يحتاج جدولاً آخر (البحث باسم الموظف مثلاً) يفتح السياق ويمرّره إلى `Page` فيبقى المسار واحداً.
+
+**الصفحة تُحوَّل دفعةً واحدة**: `CrudServiceBase.ToDtos` يحوّل الصفحة كلها، والخدمة التي يحتاج عرضها جدولاً آخر تجلبه للصفحة باستعلامٍ واحد (`NamesOf` · `GetByIds` · `ByCodes` · `AccountsWithLines` · مجاميع السطور) ثم تحوّل. فلا `ToDto` يستعلم لكل صفّ، ولا يُنادى من داخل التحويل خدمةٌ أخرى.
 
 **قطعٌ مضمون في الأساس**: `CrudServiceBase.GetPaged` يقطع ما أرجعته الخدمة إن تجاوز حجم الصفحة، قبل `ToDto`. فخدمةٌ ترقّم في الاستعلام تمرّ كما هي، وخدمةٌ تُرجع القائمة كاملة لا تستطيع إغراق شاشة ولا إرجاع نفس الصفحة عند التنقّل.
 
@@ -129,7 +131,10 @@ AppDataGrid + AppPagination
 إعادة تقييم → زيادة: مدين الأصل / دائن «أرباح رأسمالية»
               نقص:  مدين «خسائر رأسمالية» / دائن الأصل
 حذف         → يعكس قيد الحركة نفسها في معاملة واحدة
+تعديل       → عكس الحركة القديمة وإنشاء الجديدة في معاملةٍ واحدة: فشل الجديدة يُبقي القديمة
 ```
+
+تشغيلة الإهلاك معاملةٌ واحدة: كل الأقساط المستحقّة أو لا شيء.
 
 | القيمة | كيف تُحدَّد |
 |---|---|
@@ -139,7 +144,7 @@ AppDataGrid + AppPagination
 | مجمّع الإهلاك | محسوب من التشغيلات المُرحَّلة |
 | القيمة الدفترية | محسوبة: المُعاد تقييمها − مجمّع الإهلاك. لا تُدخَل ولا تُعدَّل بحقل |
 
-القواعد النقيّة في `DepreciationRules` (3.Domain) — قسطٌ ودفتريّةٌ وقابلٌ للإهلاك وفرقُ تقييم — تستوردها خدمةُ الاحتساب وخدمةُ إعادة التقييم والتقارير، فيبقى الرقم واحداً. والترحيل والعكس في خدمة كل حركة: `AssetService` للاقتناء، و`AssetDepreciationService` و`AssetRevaluationService` و`AssetDisposalService` لما بعده.
+الصيغ النقيّة في `AssetCalc` (`3.Domain/Calculations`) — قسطٌ ودفتريّةٌ وقابلٌ للإهلاك وفرقُ تقييم — تستوردها خدمةُ الاحتساب وخدمةُ إعادة التقييم والتقارير، فيبقى الرقم واحداً. والترحيل والعكس في خدمة كل حركة: `AssetService` للاقتناء، و`AssetDepreciationService` و`AssetRevaluationService` و`AssetDisposalService` لما بعده.
 
 **شجرة الحسابات**: `1101` صافي الأصول الثابتة، أبٌ لجذرَين تجميعيَّين — `1101001` (التكلفة) تسكنه الفئات وتحتها أصولها، و `1101002` (مجمّع الإهلاك) تسكنه مرايا الفئات وتحتها مجمّعات أصولها. الجذران مضبوطان في `SettingKeys.Accounts.FixedAssets` و `AccumulatedDepreciation`.
 
@@ -162,6 +167,13 @@ AppDataGrid + AppPagination
 | بناءٌ قديم يمرّ | البرنامج المفتوح يقفل الـDLL فيفشل البناء بصمت ويُختبَر كودٌ قديم. وملفٌّ يُستعاد بطابع وقتٍ أقدم من الـDLL يتخطّاه البناء — يُحدَّث طابعه |
 | حقلٌ لا يُنسَخ | `Focusable = false` يمنع النسخ من حقل للقراءة فقط |
 | حلقة الربط | إنشاء حساب من خدمة طرف يلزمه `SkipAutoLink = true`، وإلا نادى الحسابُ الطرفَ الذي ناداه |
+| نموذجٌ مولَّد | `PrimeDbContext.cs` يولّده `Tools/Docs/context.py`: تعديله وحده يضيع عند التوليد. الاتفاقيات العامّة في `ModelConventions.cs`، وسطر استدعائها في الملف المولَّد وقالبه معاً |
+| جملةٌ بلا ختم | `ExecuteUpdate`/`ExecuteDelete` لا يمرّان بـ`SaveChanges`: `Set` يختم `UpdatedAt` بنفسه، والحذف الناعم يمرّ بـ`SoftDelete`/`SoftDeleteIn` لا بـ`Set(IsDeleted)` حتى يُختم وقت الحذف ومنفّذه |
+| تتبّعٌ باقٍ | سياقٌ مُعار يبقى متتبّعاً ما كتبه، فكتابة الصفّ نفسه مرّتين بنسختين في معاملة واحدة ترفع `InvalidOperationException` يحوّلها `Commit` رسالةً صامتة. لذا `Write` و`Add` يُفرغان التتبّع بعد `SaveChanges` |
+| نصٌّ بلا قاموس | `LocalizationService.Get` يُرجع المفتاح نفسه ما لم يُحمَّل `Strings.*.xaml` في `Application.Current`. في الاختبارات يُحمَّل عند أول اختبار WPF ويبقى للعملية كلها، فالرسالة عربيةٌ أو مفتاحٌ بحسب الترتيب. لذا تُقارَن الرسالة بقالبها عبر `Localized.Says` |
+| قيمةٌ مخزَّنة لا نصّ | `"يدوي"` في `Entries.ManualSources` مصدر قيودٍ قديمة يُطابَق عليه، لا نصٌّ يُعرض، فيبقى حرفياً. وألفاظ العملة الافتراضية للتفقيط داخل `ArabicNumberToWords` لأنها مدخل نحوٍ عربي لا واجهة |
+| نسخٌ بالاسم | `Rows.Copy` تقرأ الخصائص بالانعكاس: عناصر الـtuple ليست خصائص فلا يُنسخ منها شيء، وعناصر WPF تحمل عشرات الخصائص القابلة للكتابة فلا تُنسخ بها. والـDTO لا يعطي الكيان معرّفه — `Id` يُنسخ من كيانٍ لا إليه من DTO — وما يُحسب يُكتب في دالّة `Copy` الثالثة بعد النسخ فلا تطمسه |
+| رؤية المحذوف | `IgnoreQueryFilters()` يسري على الاستعلام كلّه لا على جدولٍ داخله، فضمّةٌ تريد اسم مرجعٍ محذوف تُظهر معه صفوف الجدول الأصلي المحذوفة. يُستعمل حيث يُقصد المحذوف كلّه: مفاتيح البذر (`SectionKeys`/`ModuleKeys`)، ومسح جدولٍ كاملاً |
 
 ---
 
@@ -177,7 +189,13 @@ AppDataGrid + AppPagination
 | الوصف يعلو على الصفحة المكتوبة | صفٌّ بلا عمود = عمودٌ مُضاف، وعمودٌ بلا صفّ = محذوف. فما يبنيه المستخدم يحكم ما كتبه المبرمج |
 | العدّ والقطع في موضع واحد | `RepositoryBase.Page` وحده، و`CrudServiceBase.GetPaged` يقطع ما تجاوز الصفحة — فلا ترقيم موازٍ ولا شاشة تُغرَق |
 | الكيان المرتبط يكتب الطرفين | خزينةٌ أو عميلٌ يُعدَّل أو يُحذف من صفحته يكتب حسابه في المعاملة نفسها — منطق الشجرة والصفحة واحد، لا اتجاه واحد |
+| الصفحة تستدعي الصفحة | مستند الشيكات يستدعي صفحة الشيكات باتجاهه، والأرصدة الافتتاحية تستدعي صفحة القيود بمصدرها، والتقرير يستدعي الصفحة التي تجمع بياناته: استدعاءٌ واحد بدل إعادة استدعاء خدماتها، والمنطق نفسه في `Services` |
 | الحذف تعطيل لا إزالة | الصفّ يبقى وكوده محجوز، فلا يُعاد استخدام كودٍ محذوف. وحذف آخر ابنٍ يعيد الأب لحالته: بلا أبناء ⇒ يقبل القيود |
+| التمويل شرطٌ في الإنشاء والتعديل | تعديل الأصل يرفض تمويلاً لا يُحلّ حسابه كما يرفضه الإنشاء، فلا يُعاد ترحيل قيد الاقتناء على تمويلٍ قديمٍ غير الذي اختاره المستخدم |
+| التعديل استبدالٌ ذرّي | المستند وحركة الأصل يُعدَّلان بعكس القديم وإنشاء الجديد في معاملةٍ واحدة (`DocumentService.Update` · `AssetMovementServiceBase.Replace`)، فلا يضيع المستند إن فشل الجديد |
+| القيد بابه الفترة | `Entries.Create(db, …)` يرفض تاريخاً في فترةٍ مقفلة إلا قيد إقفال السنة، و`Entries.CanRemove`/`CanUpdate`/`CanUnpost` ترفض عكسه أو تعديله؛ فكل مستندٍ يمرّ بالباب نفسه لا بنسخته |
+| رصيد الطرف من حسابه | `PartyBalance.Refresh` يكتب مجموع حساب الطرف المرحَّل داخل معاملة المستند نفسها عند الإنشاء والحذف، بلا صلاحية شاشة العملاء |
+| إقفال السنة من حركتها | قيد الإقفال يُبنى من `GetAccountSums` بين بداية السنة ونهايتها، لا من الرصيد التراكمي، فقيدٌ بتاريخ السنة التالية لا يدخله |
 | الترتيب قطعيّ | المستند بتاريخه ثم رقمه ثم وقت إنشائه، و`Id` آخر فاصل دائماً — فلا ترتيبٌ يتبدّل بين تشغيلتين. موضعه `RepositoryBase.DocumentOrder`، وفرز المستخدم يسبقه ولا يُلغي فواصله |
 
 ---
@@ -185,23 +203,43 @@ AppDataGrid + AppPagination
 ## المبنيّ فعلاً
 
 ### 3.Domain
-كيانات صرفة · تعدادات · `Result`/`PagedResult` · `Rules.For<T>()` · `IValidator<T>` · `ValidationResult` · `StatusVariant` · `DepreciationRules` و `AccountingRules`.
+كيانات صرفة · تعدادات · `Result`/`PagedResult` · `StatusVariant` · `Calculations/` — الموضع الوحيد لصيغ الحساب، تستدعيها الخدمة بعد الجلب ولا تجلب شيئاً، والصيغة الجديدة تدخل ملفّ نوعها: `LineCalc` (السطر ومجاميعه) · `PayrollCalc` · `AssetCalc` · `InventoryCosting` · `StatementCalc` (القوائم، والرصيد الجاري `Running`، وتجميع الأبناء `Rollup`) · `FiscalPeriodCalc` · `PartyCalc`. الكيان بيانات فقط بلا خصائص محسوبة، والتحقق ليس هنا.
 
 ### 2.Data
-`PrimeDbContext` (نموذج EF لكل الجداول) · `DbContextFactory` (سياقٌ فوق `(conn, tx)` القائمين) · `BuiltTables` (جداول المستخدم ككيس خصائص وقت التشغيل) · `RepositoryBase<T>` بأشكاله المشتركة (`Fetch`/`One`/`Count`/`Live`/`Write`/`Add`/`Edit`/`Modify`/`SoftDelete`/`Page`/`By`/`DocumentOrder`) · `SchemaSync` (يُلحق بالقاعدة ما نقص من النموذج جدولاً وعموداً) · `DbConfig` (الإعداد وسلسلة الاتصال لكل محرّك: `Sqlite`/`SqlServer`/`PostgreSql`، ويختار EF محرّكه منها).
+`PrimeDbContext` (نموذج EF لكل الجداول) · `DbContextFactory` (سياقٌ فوق `(conn, tx)` القائمين، وخياراته مخزَّنة لكل محرّكٍ واتصال) · `BuiltTables` (جداول المستخدم ككيس خصائص وقت التشغيل) · `RepositoryBase<T>` بأشكاله المشتركة (`Fetch`/`One`/`Count`/`Any`/`Write`/`Add`/`Edit`/`Modify`/`Set`/`Remove`/`SoftDelete`/`Page`/`By`/`DocumentOrder`/`NamesOf`/`GetByIds`/`ByCodes`/`WithNames`/`WithCodeNames`) · `ModelConventions` (اتفاقيات النموذج: المحذوف منطقياً خارج كل استعلام بمرشِّحٍ عامّ واحد فلا `!IsDeleted` في مستودع، وأختام الإنشاء والتعديل والحذف في `SaveChanges` فلا `CreatedBy`/`UpdatedAt` يدوي في مستودع ولا خدمة)
+
+**الكتابة بجملةٍ واحدة**: `Set(match, setters)` فوق `ExecuteUpdate` و`Remove(match)` فوق `ExecuteDelete` (ونظيراهما `SetIn`/`RemoveIn` لجدولٍ آخر) — لا تحميل صفٍّ لتعديل حقلٍ أو حذفه. وتعديل صفٍّ بعدة حقول من كيانٍ يبقى `Edit`/`Modify` بالتتبّع.
+
+**المجاميع في SQL**: رصيد الحساب `IJournalRepository.SumPosted`، ومجاميع الحسابات `GetAccountSums`، وكلاهما فوق استعلام السطور المؤرَّخة الواحد؛ وشبكة أرصدة المخزون `IStockMovementRepository.BalanceGrid`. لا تحميل سطورٍ لجمعها في الذاكرة. · `SchemaSync` (يُلحق بالقاعدة ما نقص من النموذج جدولاً وعموداً) · `DbConfig` (الإعداد وسلسلة الاتصال لكل محرّك: `Sqlite`/`SqlServer`/`PostgreSql`، ويختار EF محرّكه منها).
 
 **عقودٌ عامّة بدل عقدٍ لكل كيان**: `ILookupRepository<T>` (+`LookupRepository<T>` بجدوله) للقوائم · `IPartyRepository<T>` للعملاء والموردين · `IInvoiceRepository<TInvoice,TLine>` و `IReturnRepository<TReturn,TLine>` للمستندات — فالمستودع الخاص لا يُكتب إلا لاستعلامٍ يخصّه.
 
-**أسماء المراجع بضمّةٍ واحدة**: `RepositoryBase.WithCategoryNames` يملأ اسم الفئة للصفحة كلها باستعلامٍ واحد، لا باستعلامٍ لكل صفّ.
+**أسماء المراجع بضمّةٍ واحدة**: `RepositoryBase.WithNames<T>` يملأ اسم المرجع (فئة، قسم، وظيفة…) للصفحة كلها باستعلامٍ واحد لكل جدول، لا باستعلامٍ لكل صفّ. و`WithCategoryNames` حالته للفئات.
 
 **أساسان مشتركان للمستندات**: `StockAdjustmentRepositoryBase` (رأس+سطور بمخزن وتكلفة) و `CycleDocumentRepositoryBase` (رأس+سطور بطرف وسعر بلا أثر مخزني) — يُمرَّر لكلٍّ اسما جدوليه، فكل مستند جديد وارثٌ بسطر.
 
 ### 4.Application
-`ServiceBase` — كل خدمة ترثه: `Can` · `FailDenied` · `Check` · `Audit` · `Tx` · `Msg` · `Settings`.
-`CrudServiceBase` · `PartyServiceBase` · `CycleDocumentServiceBase` · `StockAdjustmentServiceBase` · `ChequeDocumentServiceBase` · `VoucherServiceBase`.
-`Pipeline/{Steps,Operations}` لتركيب العمليات متعددة الخطوات · `Validation/` متحقّق لكل كيان · `Reporting/` خدمات التقارير.
+**فصل المنطق عن الصفحة**: كل خدمةٍ تستدعيها صفحة (`8.Modules` أو مُصيِّر أو نموذج عرض) تبقى كاملةً في `Legacy/`. و`Services/` منطقٌ عامّ وحده، يُستدعى بالمعاملات ولا يحمل اسم صفحة. يُنقل المنطق من خدمة الصفحة إلى `Services` وتستدعيه، ولا تُنقل الصفحة نفسها.
 
-**الأقسام**: Accounting · Parties · Inventory · Sales · Purchasing · Documents · Cheques · Vouchers · HR · Assets · Treasury · Security · Backup · Print.
+| المجلد | ما فيه |
+|---|---|
+| `Services/Core` | `ServiceBase` · `CrudServiceBase` · `EntityService` · الترقيم |
+| `Services/Ledger` | `Entries` قلب القيد وأرصدة الحسابات (`Refresh`/`RefreshAll`) · `PeriodGate` · `Posting` · `JournalLines` · `TradeEntry` · `TwoSided` · `OpeningEntry` · `Guards` (له أبناء، له قيود، النقدية، حساب النظام، حسابٌ تديره صفحة) · `PartyBalance` · `PartyByKind` اختيار العميل أو المورد مرّةً للاسم والحساب والرصيد · `Statement` كشف الحساب برصيده الجاري · `TrialBalance` ميزان المراجعة |
+| `Services/Ledger/Accounts` | `AccountOf` حساب الخزينة أو الطرف أو الإعداد · `SettingAccounts` حساب إعدادٍ يُعتمد أو يُنشأ أو يُصلَح · `AccountCases.Root` جذرٌ موجودٌ يقبل الأبناء · `AddTreeAccount` · `AddEntityAccount` · `AddLinkedAccount` · `AddMirroredAccount` · `EditTreeAccount` · `RenameAccount` · `EditLinkedAccount` · `CloseAccount` · `CloseLinkedAccount`، وإعدادها `AccountSpec<T>`، و`LinkedAccounts` كيان الجذر المرتبط — كل كيانٍ مرتبط يعلن `RootKeys` |
+| `Services/Documents` | `DocumentService` · `DocumentPull` السحب · `StockMove` حركة المخزون · `StatusChange` الحالة كترحيل · `TradeLines` · `TradeAccounts` · `ProductLines` سطور المستند بأصنافها |
+| `Services/Entities` | `Lookup<T>` القائمة البسيطة بإعدادها `EntitySpec` · `Rows` (الكيان صفّاً، `Copy` نسخ الحقول بالاسم، `State` أول حالةٍ يصدق شرطها، `Active` حالة النشاط) · `Tree` (المطابق وأسلافه، والعقد بأبنائها) · `ByCode` سطورٌ تُحلّ بكود كيانها |
+
+`ServiceBase` — كل خدمة ترثه: `Can` · `FailDenied` · `Audit` · `Tx` · `Commit` · `Msg` · `Settings`.
+
+**الأسس**: `CrudServiceBase` (قراءة) ← `EntityService` (كيانٌ وحساباته: إنشاء وتعديل وحذف بحرّاسها) ← `Lookup<T>` (القوائم) و`PartyServiceBase` (العميل والمورد). و`DocumentService` للمستندات: `Plan` يتحقّق ويُرجع دالة الكتابة، والأساس ينفّذها في `Commit`، والتعديل يستبدل في معاملةٍ واحدة، والحذف يمرّ بحرّاسه (سُحب منه، قيده قابلٌ للعكس، `Guard`). عليه: الدورة الأربعة والأذون الستة والتحويل والفواتير والمرتجعات الأربع والسندات والرواتب. والفواتير والمرتجعات تتقاسم تحضيرها في `TradeLines.Prepare` (السطور ثم السحب ثم `TradeAccounts`)، ويبقى لكلٍّ منها جسم قيده وأثره المخزني. و`AssetMovementServiceBase` لحركات الأصول: `Record`/`Replace`/`Delete` فوق `Write` و`Undo`.
+
+**المنطق بالمعاملات**: صفحة `Legacy` تجمع منطقها باستدعاء `Services` ومعاملاتها. القيد: `Entries` يتحقّق ويرقّم ويُدرج ويُرحّل ويحذف ويعيد الأرصدة ويحرس الفترة والنقدية، و`Posting` يستدعيه بسطورٍ أو بطرفين، و`TradeEntry.Lines(partyDebit, …)` قيد البيع والشراء وعكسهما، و`TwoSided` طرفا القبض والصرف والزيادة والنقص. الحساب: `AddTreeAccount` في الشجرة وحدها، `AddEntityAccount` لكيان صفحة، `AddLinkedAccount` من الشجرة فينشأ كيانه، `AddMirroredAccount` حسابٌ ومجمّعه للأصل والفئة، ومعها `RenameAccount` و`CloseAccount` (يعيد الأب ورقياً). والحرّاس في `Guards`.
+
+`Validation/` دالةٌ واحدة: `Check.Valid(item, Field<T>…)`، والشرط معاملٌ في `Field<T>` لا دالةٌ ولا ملفّ لكل كيان · `Reporting/` خدمات التقارير.
+
+**الصفحة استدعاء**: صفحة `Legacy` لا تحسب ولا تبني شجرةً ولا تحمل جدول ربط ولا تنسخ حقلاً حقلاً — كلّها قطعٌ عامّة في `Services` أو `Calculations` تستدعيها بمعاملاتها (`RULES.md § الصفحة والمنطق`).
+
+**أقسام `Legacy`**: Accounting · Admin · Assets · Backup · Builder · Cheques · Common · Documents · HR · Inventory · Parties · Print · Purchasing · Sales · Security · Treasury · Vouchers.
 
 ### 5.Design
 ملفّان يحملان كل القيم، وملفٌّ يدمج: **`Colors.xaml`** (٧٧ فرشاة بقيمة Hex صريحة) و**`Sizes.xaml`** (المقاسات: خطّ ومسافة واستدارة وظلّ، ثم مقاس كل مكوّن) ← **`Theme.xaml`** يدمج الأيقونات والأنماط ← **`Styles/`** (أنماط WPF، منها ضمنية بلا `x:Key` تُطبَّق تلقائياً). كلها تُستهلَك بـ`DynamicResource` حصراً.

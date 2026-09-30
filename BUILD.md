@@ -48,7 +48,7 @@
 |---|---|
 | الوصف | `BuilderSection`/`Module`/`Column`/`Action`/`Filter` + `BuilderKind`/`DataType`/`Aggregate` فوق `BuiltTables` و `RepositoryBase` |
 | البيانات | `DynamicRepository` — كيسُ خصائص فوق EF، والعمود المحسوب يُجمَع بعد القراءة |
-| الخدمة | `DynamicEntityService` (يرث `ServiceBase`) · `BuilderRowValidator` · خدمات الوصف الخمس فوق `CrudServiceBase` |
+| الخدمة | `DynamicEntityService` (يرث `ServiceBase`) · شروط الصفّ `RowFields` إلى `Check.Valid` · خدمات الوصف الخمس فوق `CrudServiceBase` |
 | العرض | `DynamicViewModel` — نموذجٌ واحد للجدول المبنيّ ولشاشات الوصف عبر `IRowService` |
 | التحميل | `BuilderModuleLoader` — وصف ← تعريف ← تسجيل، بالنوع |
 | الشاشات | خمس شاشات إعلاناً فوق `CrudPageRenderer`، وشاشة إنشاء برنامج فوق `TreeCheckListRenderer` |
@@ -57,7 +57,7 @@
 
 - **الأزرار من كتالوج واحد**: `ToolbarAction.Catalogue` تقرأ منه المصانع والمعالج، و `EnabledActions` ترشّحه. لا زرّ يُبنى.
 - **الفلتر يقرأ قائمته من حقل الصفحة المُعلَن بنفس المفتاح** — لا مصدر ثانٍ يُعلَن للعمود نفسه.
-- **حذف القسم يبقى محذوفاً** (`SectionKeys`)، والشريط يقرأ الصفوف بعد البذر.
+- **حذف القسم أو الصفحة يبقى محذوفاً** (`SectionKeys`/`ModuleKeys` تقرأ المحذوف بـ`IgnoreQueryFilters`)، والشريط يقرأ الصفوف بعد البذر.
 - **البذر يقرأ مفاتيح القسم من الخريطة** لا من عمود الصفّ المبذور — وإلا بقيت كل شاشة جديدة خارج الوحدة وخارج النسخ.
 - **بيان النسخة يُكتب بـ `ISettingStore.Upsert`** على اتصال قاعدة النسخة، لا بجملة `UPDATE` مكتوبة.
 - **`SchemaSync`/`CreateBuiltTable` آمنة للتكرار**، فترقية النسخة لا تُسقط جدولاً.
@@ -67,6 +67,6 @@
 | الحارس | الموضع |
 |---|---|
 | القسم المحميّ يُبذَر بصفحاته ولا يُحذف | `BuilderSection.IsProtected` — يُكتب عند البذر، ويرفضه `BuilderSectionsService.Erase` |
-| صفحةٌ تحفظ سجلات بلا جدول تُرفض | `BuilderModuleValidator` عبر بوابة `BuilderCrudServiceBase.Validate` |
+| صفحةٌ تحفظ سجلات بلا جدول تُرفض | `ModuleFields` إلى `Check.Valid` عبر بوابة `BuilderCrudServiceBase.Validate` |
 | صفٌّ مبذورٌ لصفحةٍ زال تسجيلها يُحذف | `SeedModules` يقارن المسجَّل بالمبذور في كل إقلاع |
-| صفّ الجدول المبنيّ يمرّ بقواعد أعمدته | `BuilderRowValidator` عبر `DynamicEntityService.Check` |
+| صفّ الجدول المبنيّ يمرّ بقواعد أعمدته | `RowFields` إلى `Check.Valid` عبر `DynamicEntityService.Validate` |

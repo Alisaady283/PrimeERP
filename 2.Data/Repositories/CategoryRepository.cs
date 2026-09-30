@@ -29,7 +29,7 @@ namespace PrimeERP.Data.Repositories
                        .OrderBy(c => c.Name));
 
 
-        public bool HasChildren(int id) => Count(q => q.Where(c => c.ParentId == id && c.IsActive)) > 0;
+        public bool HasChildren(int id) => Any(q => q.Where(c => c.ParentId == id && c.IsActive));
 
         public int Insert(Category c, PrimeDbContext db = null) => Add(c, db);
 
@@ -45,11 +45,6 @@ namespace PrimeERP.Data.Repositories
             }, db);
 
         public void Delete(int id, PrimeDbContext db = null) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(c => c.Id == id);
-                if (row != null) row.IsActive = false;
-                return 0;
-            }, db);
+            Set(c => c.Id == id, s => s.SetProperty(r => r.IsActive, false), db);
     }
 }

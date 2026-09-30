@@ -1,8 +1,9 @@
+using PrimeERP.Domain.Calculations;
+using PrimeERP.Application.Legacy.Builder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services.Builder;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Domain.Entities;
@@ -214,8 +215,8 @@ namespace PrimeERP.Modules
 
             var rows = Shown(columns).ToList();
 
-            var proportional = ColumnWidths.Proportional(rows);
-            var shares = ColumnWidths.Shares(rows);
+            var proportional = LayoutCalc.Proportional(rows);
+            var shares = LayoutCalc.Shares(rows);
 
             return rows.Select(row =>
             {

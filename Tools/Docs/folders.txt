@@ -12,13 +12,13 @@
 2.Data/Repositories/Base|أسس المستودعات: الصفحة والترتيب والحذف والمستندات
 2.Data/Seeders|بذر عدّادات الترقيم
 3.Domain|الطبقة النقيّة: بلا قاعدة بيانات وبلا مراجع
-3.Domain/Contracts|العقود ومفرداتها: تحقق وطباعة وتصدير وسحب
+3.Domain/Contracts|العقود ومفرداتها: طباعة وتصدير وسحب
 3.Domain/Entities|كيانات صرفة: خصائص فقط بلا سلوك
 3.Domain/Entities/Common|أسس الكيانات المشتركة
 3.Domain/Enums|تعدادات النظام
+3.Domain/Calculations|كل صيغة حساب نقية: السطر والراتب والأصل والتكلفة والقوائم والفترات
 3.Domain/Helpers|أدوات نقية صغيرة
 3.Domain/Results|نتيجة العملية وحالتها
-3.Domain/Rules|قواعد محاسبية نقية تستوردها الخدمات والتقارير
 4.Application|منطق الأعمال كله
 4.Application/DTOs|بيانات الدخول والخروج لكل قسم
 4.Application/DTOs/Accounting|بيانات المحاسبة
@@ -34,29 +34,32 @@
 4.Application/DTOs/Security|بيانات المستخدمين والأدوار
 4.Application/DTOs/Treasury|بيانات الخزائن والبنوك
 4.Application/DTOs/Vouchers|بيانات السندات
-4.Application/Pipeline|تركيب العمليات متعددة الخطوات
-4.Application/Pipeline/Operations|عمليات جاهزة مركّبة
-4.Application/Pipeline/Steps|خطوة واحدة قابلة للتركيب
 4.Application/Reporting|خدمات التقارير
-4.Application/Services|خدمة لكل كيان، ترث ServiceBase
-4.Application/Services/Accounting|الحسابات والقيود والفترات المالية
-4.Application/Services/Admin|الإعدادات والتراخيص والنسخ والتحديث
-4.Application/Services/Assets|الأصل: اقتناءً وإهلاكاً وتقييماً واستبعاداً
-4.Application/Services/Backup|النسخ الاحتياطي والاستعادة
-4.Application/Services/Builder|ما يبنيه المستخدم من شاشات
-4.Application/Services/Cheques|دورة الشيك
-4.Application/Services/Common|الفئات وحساباتها
-4.Application/Services/Documents|مستندات الدورة وروابط السحب
-4.Application/Services/HR|الموظفون والرواتب والحضور
-4.Application/Services/Inventory|الأصناف والمخازن والأرصدة
-4.Application/Services/Parties|العملاء والموردون
-4.Application/Services/Print|بناء المستندات المطبوعة
-4.Application/Services/Purchasing|فواتير الشراء ومرتجعاتها
-4.Application/Services/Sales|فواتير البيع ومرتجعاتها
-4.Application/Services/Security|المستخدمون والأدوار
-4.Application/Services/Treasury|الخزائن والبنوك
-4.Application/Services/Vouchers|سندات القبض والصرف
-4.Application/Validation|متحقّق لكل كيان عبر Rules.For
+4.Application/Services|المنطق العامّ وحده: حالات استخدام تُستدعى بالمعاملات
+4.Application/Services/Core|أساس كل خدمة: الصلاحية والمعاملة والكيان والترقيم
+4.Application/Services/Ledger|قلب القيد، الفترة، القيد بطرفيه والتجارة، الحرّاس، رصيد الطرف
+4.Application/Services/Ledger/Accounts|الحساب: في الشجرة، للكيان، بالاتجاهين، ومع مجمّعه
+4.Application/Services/Entities|الكيان من إعداده: القائمة البسيطة وتحويل الصفّ
+4.Application/Services/Documents|المستند والسحب وحركة المخزون وتغيير الحالة وسطور التجارة
+4.Application/Legacy|خدمات الصفحات: كل صفحة كاملةً هنا، وتستدعي منطقها من Services
+4.Application/Legacy/Accounting|الحسابات والقيود والفترات المالية
+4.Application/Legacy/Admin|الإعدادات والتراخيص والنسخ والتحديث
+4.Application/Legacy/Backup|النسخ الاحتياطي والاستعادة
+4.Application/Legacy/Builder|ما يبنيه المستخدم من شاشات
+4.Application/Legacy/Assets|الأصل: اقتناءً وإهلاكاً وتقييماً واستبعاداً
+4.Application/Legacy/Cheques|دورة الشيك
+4.Application/Legacy/Common|الفئات وحساباتها
+4.Application/Legacy/Documents|مستندات الدورة وروابط السحب
+4.Application/Legacy/HR|الموظفون والرواتب والحضور
+4.Application/Legacy/Inventory|الأصناف والمخازن والأرصدة
+4.Application/Legacy/Parties|العملاء والموردون
+4.Application/Legacy/Print|بناء المستندات المطبوعة
+4.Application/Legacy/Purchasing|فواتير الشراء ومرتجعاتها
+4.Application/Legacy/Sales|فواتير البيع ومرتجعاتها
+4.Application/Legacy/Security|المستخدمون والأدوار
+4.Application/Legacy/Treasury|الخزائن والبنوك
+4.Application/Legacy/Vouchers|سندات القبض والصرف
+4.Application/Validation|دالة التحقق الوحيدة Check بشروطٍ معاملاتٍ في Field، وسطور المستند
 5.Design|رموز بصرية: XAML للشاشة وثوابت للتصدير
 5.Design/Icons|الأيقونات
 5.Design/Strings|النصوص الظاهرة بالعربية والإنجليزية
@@ -93,7 +96,6 @@ PrimeERP.Tests/Composition|تصيير الشاشات الحقيقية
 PrimeERP.Tests/Design|الألوان والرموز والنصوص
 PrimeERP.Tests/Documents|المستندات ودوراتها
 PrimeERP.Tests/Helpers|أدوات الاختبار
-PrimeERP.Tests/Pipeline|خطوات العمليات
 PrimeERP.Tests/Services|الخدمات ومنطقها
 PrimeERP.Tests/Services/Design|التصميم والنصوص
 PrimeERP.Tests/Validation|قواعد التحقق

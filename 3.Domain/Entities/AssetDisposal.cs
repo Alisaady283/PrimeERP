@@ -17,8 +17,5 @@ namespace PrimeERP.Domain.Entities
         public string   Notes        { get; set; }
         public int?     JournalEntryId { get; set; }
 
-        public decimal  BookValue  => AssetValue - AccumulatedDepreciation;
-
-        public decimal  GainOrLoss => SalePrice - BookValue;
     }
 }

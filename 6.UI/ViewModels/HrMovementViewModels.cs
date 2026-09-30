@@ -1,5 +1,5 @@
 using PrimeERP.Application.DTOs.HR;
-using PrimeERP.Application.Services.HR;
+using PrimeERP.Application.Legacy.HR;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;

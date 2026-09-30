@@ -1,6 +1,7 @@
+using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Data.Core;
 using System;
-using PrimeERP.Application.Services;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Permissions;
@@ -10,10 +11,9 @@ using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Services;
-using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Legacy.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
 using Xunit;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {

@@ -1,0 +1,16 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using PrimeERP.Domain.Results;
+
+namespace PrimeERP.Application.Validation
+{
+    /// <summary>سطور المستند بشروط Check</summary>
+    public static class DocumentLines
+    {
+        public static Result Check<T>(IReadOnlyCollection<T> lines, Func<T, decimal> qty, string noLinesKey = "Str.Document.NoLines") =>
+            Validation.Check.Valid(lines ?? Array.Empty<T>(),
+                new Field<IReadOnlyCollection<T>>(x => x, "", Name: "Lines", Required: true, Message: noLinesKey),
+                new Field<IReadOnlyCollection<T>>(x => x, "", Name: "Lines", Must: x => x.All(l => qty(l) > 0), Message: "Str.Document.QtyPositive"));
+    }
+}

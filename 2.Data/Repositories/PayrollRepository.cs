@@ -31,19 +31,9 @@ namespace PrimeERP.Data.Repositories
 
         public void DeleteDocument(PrimeDbContext db, int id)
         {
-            Write(db =>          // السطور أولاً: النموذج بلا علاقة، فترتيب الحذف يدويّ
-            {
-                SetOf<PayrollLine>(db, LineTable)
-                    .RemoveRange(RowsOf<PayrollLine>(db, LineTable).Where(l => l.PayrollId == id));
-                return 0;
-            }, db);
+            RemoveIn<PayrollLine>(LineTable, l => l.PayrollId == id, db);
 
-            Write(db =>
-            {
-                var head = Rows(db).AsTracking().FirstOrDefault(p => p.Id == id);
-                if (head != null) SetOf(db).Remove(head);
-                return 0;
-            }, db);
+            Remove(p => p.Id == id, db);
         }
 
 
@@ -74,19 +64,9 @@ namespace PrimeERP.Data.Repositories
             }, db);
 
         public void SetJournalEntryId(PrimeDbContext db, int payrollId, int? journalEntryId) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(p => p.Id == payrollId);
-                if (row != null) row.JournalEntryId = journalEntryId;
-                return 0;
-            }, db);
+            Set(p => p.Id == payrollId, s => s.SetProperty(r => r.JournalEntryId, journalEntryId), db);
 
         public void SetPosted(PrimeDbContext db, int payrollId, bool posted) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(p => p.Id == payrollId);
-                if (row != null) row.IsPosted = posted;
-                return 0;
-            }, db);
+            Set(p => p.Id == payrollId, s => s.SetProperty(r => r.IsPosted, posted), db);
     }
 }

@@ -14,6 +14,7 @@ namespace PrimeERP.Data.Repositories
     {
         List<Treasury> GetAll(bool includeInactive = false);
         Treasury GetById(int id, PrimeDbContext db = null);
+        Dictionary<int, string> NamesOf(IEnumerable<int> ids, PrimeDbContext db = null);
         int Insert(Treasury t, PrimeDbContext db = null);
         void Update(Treasury t, PrimeDbContext db = null);
         void Delete(int id, PrimeDbContext db = null);
@@ -49,27 +50,12 @@ namespace PrimeERP.Data.Repositories
             }, db);
 
         public void UpdateNameByAccountCode(PrimeDbContext db, string accountCode, string name) =>
-            Write(db =>
-            {
-                foreach (var row in Rows(db).AsTracking().Where(t => t.AccountCode == (accountCode ?? "")))
-                    row.Name = name ?? "";
-                return 0;
-            }, db);
+            Set(t => t.AccountCode == (accountCode ?? ""), s => s.SetProperty(r => r.Name, name ?? ""), db);
 
         public void DeleteByAccountCode(PrimeDbContext db, string accountCode) =>
-            Write(db =>
-            {
-                foreach (var row in Rows(db).AsTracking().Where(t => t.AccountCode == (accountCode ?? "")))
-                    row.IsActive = false;
-                return 0;
-            }, db);
+            Set(t => t.AccountCode == (accountCode ?? ""), s => s.SetProperty(r => r.IsActive, false), db);
 
         public void Delete(int id, PrimeDbContext db = null) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(t => t.Id == id);
-                if (row != null) row.IsActive = false;
-                return 0;
-            }, db);
+            Set(t => t.Id == id, s => s.SetProperty(r => r.IsActive, false), db);
     }
 }

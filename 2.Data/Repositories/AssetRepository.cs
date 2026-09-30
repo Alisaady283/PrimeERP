@@ -12,6 +12,9 @@ namespace PrimeERP.Data.Repositories
     public interface IAssetRepository
     {
         Asset GetById(int id, PrimeDbContext db = null);
+        List<Asset> GetByIds(IEnumerable<int> ids, PrimeDbContext db = null);
+        List<Asset> Depreciable(PrimeDbContext db = null);
+        bool AnyInCategory(int categoryId);
         List<Asset> Search(string term, int maxResults);
         (List<Asset> Items, int Total) GetPaged(
             int page, int pageSize, string searchText = null, bool? isActive = null, int? categoryId = null,
@@ -31,7 +34,7 @@ namespace PrimeERP.Data.Repositories
 
 
         public List<Asset> Search(string term, int maxResults) =>
-            Fetch(q => q.Where(a => !a.IsDeleted && a.IsActive
+            Fetch(q => q.Where(a => a.IsActive
                                  && (EF.Functions.Like(a.Name, $"%{term}%") || EF.Functions.Like(a.Code, $"%{term}%")))
                         .OrderBy(a => a.Name).Take(maxResults));
 
@@ -41,7 +44,7 @@ namespace PrimeERP.Data.Repositories
         {
             IQueryable<Asset> Shape(IQueryable<Asset> rows)
             {
-                var q = rows.Where(a => !a.IsDeleted);
+                var q = rows;
                 if (!string.IsNullOrWhiteSpace(searchText))
                     q = q.Where(a => EF.Functions.Like(a.Name, $"%{searchText}%")
                                   || EF.Functions.Like(a.Code, $"%{searchText}%"));
@@ -61,6 +64,12 @@ namespace PrimeERP.Data.Repositories
             return (WithCategoryNames(items, (a => a.CategoryId, (a, name) => a.CategoryName = name)), total);
         }
 
+        public List<Asset> Depreciable(PrimeDbContext db = null) =>
+            Fetch(q => q.Where(a => a.IsActive && a.UsefulLifeYears > 0
+                                 && a.DepreciationAccountCode != null && a.DepreciationAccountCode != ""), db);
+
+        public bool AnyInCategory(int categoryId) => Any(q => q.Where(a => a.CategoryId == categoryId));
+
         public int Insert(Asset a, PrimeDbContext db = null) => Add(a, db);
 
         public void Update(Asset a, PrimeDbContext db = null) =>
@@ -70,11 +79,6 @@ namespace PrimeERP.Data.Repositories
             SoftDelete(id, deletedBy, db);
 
         public void SetJournalEntryId(PrimeDbContext db, int id, int journalEntryId) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(a => a.Id == id);
-                if (row != null) row.JournalEntryId = journalEntryId;
-                return 0;
-            }, db);
+            Set(a => a.Id == id, s => s.SetProperty(r => r.JournalEntryId, journalEntryId), db);
     }
 }

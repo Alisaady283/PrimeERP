@@ -1,16 +1,14 @@
+using PrimeERP.Application.Legacy.Admin;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using ClosedXML.Excel;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services;
-using PrimeERP.Application.Services.Print;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Services;
 using Xunit;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {

@@ -1,5 +1,6 @@
+using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Legacy.Accounting;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;

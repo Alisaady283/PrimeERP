@@ -25,40 +25,9 @@ namespace PrimeERP.Application.DTOs.Sales
         public List<SalesReturnLineDto> Lines { get; set; } = new();
     }
 
-    public class SalesReturnLineDto
-    {
-        public int     LineNo      { get; set; }
-        public string  ProductCode { get; set; }
-        public string  ProductName { get; set; }
-        public decimal Qty         { get; set; }
-        public decimal UnitPrice   { get; set; }
-        public decimal DiscountPercent  { get; set; }
-        public decimal DiscountAmount  { get; set; }
-        public decimal VatPercent  { get; set; }
-        public decimal VatAmount  { get; set; }
-        public decimal WithholdingPercent  { get; set; }
-        public decimal WithholdingAmount  { get; set; }
-        public decimal LineTotal   { get; set; }
-        public decimal NetAmount   { get; set; }
-        public string  Notes       { get; set; }
-    }
+    public class SalesReturnLineDto : PrimeERP.Application.DTOs.Documents.TradeLineDto { }
 
-    public class CreateSalesReturnLineDto : PrimeERP.Application.DTOs.Documents.IPullableLine
-    {
-        public int     LineNo      { get; set; }
-        public string  ProductCode { get; set; }
-        public decimal Qty         { get; set; }
-        public decimal UnitPrice   { get; set; }
-        public decimal DiscountPercent  { get; set; }
-        public decimal VatPercent  { get; set; }
-        public decimal WithholdingPercent  { get; set; }
-        public string  Notes       { get; set; }
-
-        public string  SourceType   { get; set; }
-        public int     SourceId     { get; set; }
-        public string  SourceNo     { get; set; }
-        public int     SourceLineId { get; set; }
-    }
+    public class CreateSalesReturnLineDto : PrimeERP.Application.DTOs.Documents.CreateTradeLineDto { }
 
     public class CreateSalesReturnDto
     {

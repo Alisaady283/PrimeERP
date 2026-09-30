@@ -1,3 +1,4 @@
+using PrimeERP.Application.Services.Ledger;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,8 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Treasury;
 using PrimeERP.Application.DTOs.Vouchers;
-using PrimeERP.Application.Services.Accounting;
-using PrimeERP.Application.Services.Treasury;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Legacy.Treasury;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Platform.Design;

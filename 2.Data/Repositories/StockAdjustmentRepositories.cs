@@ -12,6 +12,7 @@ namespace PrimeERP.Data.Repositories
         void DeleteDocument(PrimeDbContext db, int id);
         StockAdjustment GetById(int id, PrimeDbContext db = null);
         List<StockAdjustmentLine> GetLines(int documentId, PrimeDbContext db = null);
+        Dictionary<int, decimal> TotalQty(IEnumerable<int> documentIds);
         (List<StockAdjustment> Items, int Total) GetPaged(int page, int pageSize, string searchText, string sortColumn, bool sortDescending);
         int InsertHeader(PrimeDbContext db, StockAdjustment doc);
         int InsertLine(PrimeDbContext db, int documentId, StockAdjustmentLine line);

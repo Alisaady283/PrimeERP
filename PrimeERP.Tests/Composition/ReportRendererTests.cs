@@ -1,3 +1,9 @@
+using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Application.Services.Documents;
+using PrimeERP.Tests.Helpers;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Data.Core;
 using System;
 using System.Collections;
@@ -10,12 +16,11 @@ using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Sales;
-using PrimeERP.Application.Services;
-using PrimeERP.Application.Services.Accounting;
-using PrimeERP.Application.Services.Common;
-using PrimeERP.Application.Services.Inventory;
-using PrimeERP.Application.Services.Parties;
-using PrimeERP.Application.Services.Sales;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.Legacy.Sales;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Platform.Design;
@@ -24,7 +29,6 @@ using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Services;
 using Xunit;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Composition
 {
@@ -62,13 +66,13 @@ namespace PrimeERP.Tests.Composition
                 var products = _db.Services.GetRequiredService<IProductService>();
                 var product = products.Create(new CreateProductDto { Name = "صنف", CategoryId = category.Id, CostPrice = 10, SalePrice = 25 }).Value;
 
-                var warehouses = _db.Services.GetRequiredService<IWarehouseService>();
-                var warehouseId = warehouses.Create(new CreateWarehouseDto { Name = "مخزن" }).Value.Id;
+                var warehouses = _db.Services.GetRequiredService<Lookup<Warehouse>>();
+                var warehouseId = warehouses.Add("مخزن");
 
                 var customers = _db.Services.GetRequiredService<ICustomerService>();
                 var customer = customers.Create(new CreateCustomerDto { Name = "عميل التقرير" }).Value;
 
-                var stock = _db.Services.GetRequiredService<IStockService>();
+                var stock = _db.Services.GetRequiredService<IStockMove>();
                 Data.Core.DbContextFactory.RunTransaction(db =>
                     stock.RecordMovement(db, product.Id, warehouseId, Domain.Enums.MovementType.In, 50, 10, "Seed", null, "SEED"));
 

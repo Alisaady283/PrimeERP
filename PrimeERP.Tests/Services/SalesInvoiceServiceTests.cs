@@ -1,3 +1,9 @@
+using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Application.Services.Documents;
+using PrimeERP.Tests.Helpers;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Data.Core;
 using System;
 using System.Linq;
@@ -7,17 +13,15 @@ using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Sales;
-using PrimeERP.Application.Services;
-using PrimeERP.Application.Services.Accounting;
-using PrimeERP.Application.Services.Common;
-using PrimeERP.Application.Services.Inventory;
-using PrimeERP.Application.Services.Parties;
-using PrimeERP.Application.Services.Sales;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.Legacy.Sales;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Xunit;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
@@ -54,13 +58,13 @@ namespace PrimeERP.Tests.Services
             var products = _db.Services.GetRequiredService<IProductService>();
             _productId = products.Create(new CreateProductDto { Name = "صنف اختبار", CategoryId = category.Id, CostPrice = 10, SalePrice = 25 }).Value.Id;
 
-            var warehouses = _db.Services.GetRequiredService<IWarehouseService>();
-            _warehouseId = warehouses.Create(new CreateWarehouseDto { Name = "مخزن اختبار" }).Value.Id;
+            var warehouses = _db.Services.GetRequiredService<Lookup<Warehouse>>();
+            _warehouseId = warehouses.Add("مخزن اختبار");
 
             var customers = _db.Services.GetRequiredService<ICustomerService>();
             _customerId = customers.Create(new CreateCustomerDto { Name = "عميل اختبار" }).Value.Id;
 
-            var stock = _db.Services.GetRequiredService<IStockService>();
+            var stock = _db.Services.GetRequiredService<IStockMove>();
             DbContextFactory.RunTransaction(db => stock.RecordMovement(db, _productId, _warehouseId, MovementType.In, 100, 10, "Seed", null, "SEED-1"));
         }
 
@@ -91,7 +95,7 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(37.5m, line.VatAmount);
             Assert.Equal(287.5m, line.NetAmount);
 
-            var stock = _db.Services.GetRequiredService<IStockService>();
+            var stock = _db.Services.GetRequiredService<IStockMove>();
             Assert.Equal(90, stock.GetBalance(_productId, _warehouseId).Value);
 
             var journal = _db.Services.GetRequiredService<IJournalService>();
@@ -116,7 +120,7 @@ namespace PrimeERP.Tests.Services
 
             Assert.False(result.IsSuccess);
 
-            var stock = _db.Services.GetRequiredService<IStockService>();
+            var stock = _db.Services.GetRequiredService<IStockMove>();
             Assert.Equal(100, stock.GetBalance(_productId, _warehouseId).Value);
         }
 

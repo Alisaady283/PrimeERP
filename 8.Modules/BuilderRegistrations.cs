@@ -1,11 +1,11 @@
+using PrimeERP.Application.Legacy.Builder;
+using PrimeERP.Application.Legacy.Admin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Common;
-using PrimeERP.Application.Services;
-using PrimeERP.Application.Services.Builder;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Domain.Results;
 using PrimeERP.Composition.Definitions;
@@ -17,7 +17,6 @@ using PrimeERP.UI.Components.Tree;
 using PrimeERP.UI.ViewModels;
 using PrimeERP.Platform.Permissions;
 using System.Dynamic;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Modules
 {
@@ -40,14 +39,14 @@ namespace PrimeERP.Modules
         private static void Section(IModuleRegistry registry) => registry.Register(new ModuleDefinition
         {
             Key = "BuilderSections", Reorderable = true, TitleKey = "Str.Builder.Sections", PermissionPrefix = "BuilderSections",
-            ViewModelFactory = s => Vm<BuilderSectionsService>(s, "BuilderSections"),
+            ViewModelFactory = s => RowPage.ViewModel<BuilderSectionsService>(s, "BuilderSections"),
             Columns = new()
             {
                 new() { Header = LocalizationService.Get("Str.Builder.Key"), Binding = nameof(BuilderSection.Key), Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Title"), Binding = nameof(BuilderSection.Title), Width = 240, IsStarWidth = true },
                 new() { Header = LocalizationService.Get("Str.Builder.Order"), Binding = nameof(BuilderSection.SortOrder), Width = 90, Align = ColumnAlign.Center },
             },
-            Dialog = Dialog<BuilderSectionsService>("Str.Builder.Section", new()
+            Dialog = RowPage.Dialog<BuilderSectionsService>("Str.Builder.Section", new()
             {
                 new() { Key = nameof(BuilderSection.Key), LabelKey = "Str.Builder.Key", Kind = FieldKind.Text, IsRequired = true, MaxLength = 60 },
                 new() { Key = nameof(BuilderSection.Title), LabelKey = "Str.Builder.Title", Kind = FieldKind.Text, IsRequired = true, MaxLength = 120 },
@@ -58,7 +57,7 @@ namespace PrimeERP.Modules
         private static void Module(IModuleRegistry registry) => registry.Register(new ModuleDefinition
         {
             Key = "BuilderModules", Reorderable = true, TitleKey = "Str.Builder.Modules", PermissionPrefix = "BuilderModules",
-            ViewModelFactory = s => Vm<BuilderModulesService>(s, "BuilderModules"),
+            ViewModelFactory = s => RowPage.ViewModel<BuilderModulesService>(s, "BuilderModules"),
             Filters = new()
             {
                 new() { Key = nameof(DynamicFilter.SectionId), LabelKey = "Str.Builder.Sections", PickerType = "BuilderSection" },
@@ -72,7 +71,7 @@ namespace PrimeERP.Modules
                 new() { Header = LocalizationService.Get("Str.Builder.Order"), Binding = nameof(BuilderModule.SortOrder), Width = 80, Align = ColumnAlign.Center },
                 new() { Header = LocalizationService.Get("Str.Builder.Table"), Binding = nameof(BuilderModule.TableName), Width = 160 },
             },
-            Dialog = Dialog<BuilderModulesService>("Str.Builder.Module", new()
+            Dialog = RowPage.Dialog<BuilderModulesService>("Str.Builder.Module", new()
             {
                 new() { Key = nameof(BuilderModule.Kind), LabelKey = "Str.Builder.Kind", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderKind" },
                 new() { Key = nameof(BuilderModule.SectionId), LabelKey = "Str.Builder.Sections", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderSection" },
@@ -92,7 +91,7 @@ namespace PrimeERP.Modules
         private static void Column(IModuleRegistry registry) => registry.Register(new ModuleDefinition
         {
             Key = "BuilderColumns", Reorderable = true, TitleKey = "Str.Builder.Columns", PermissionPrefix = "BuilderColumns",
-            ViewModelFactory = s => Vm<BuilderColumnsService>(s, "BuilderColumns"),
+            ViewModelFactory = s => RowPage.ViewModel<BuilderColumnsService>(s, "BuilderColumns"),
             Filters = new()
             {
                 new() { Key = nameof(DynamicFilter.SectionId), LabelKey = "Str.Builder.Sections", PickerType = "BuilderSection" },
@@ -109,7 +108,7 @@ namespace PrimeERP.Modules
                 new() { Header = LocalizationService.Get("Str.Builder.WidthPercent"), Binding = nameof(BuilderColumn.WidthPercent), Width = 90, Align = ColumnAlign.Center, Format = "N1" },
                 new() { Header = LocalizationService.Get("Str.Builder.Footer"), Binding = nameof(BuilderColumn.Footer), Width = 90, Align = ColumnAlign.Center },
             },
-            Dialog = Dialog<BuilderColumnsService>("Str.Builder.Column", new()
+            Dialog = RowPage.Dialog<BuilderColumnsService>("Str.Builder.Column", new()
             {
                 new() { Key = nameof(BuilderColumn.ModuleId), LabelKey = "Str.Builder.Modules", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderModule" },
                 new() { Key = nameof(BuilderColumn.Header), LabelKey = "Str.Builder.Header", Kind = FieldKind.Text, IsRequired = true, MaxLength = 120 },
@@ -138,7 +137,7 @@ namespace PrimeERP.Modules
         private static void Action(IModuleRegistry registry) => registry.Register(new ModuleDefinition
         {
             Key = "BuilderActions", Reorderable = true, TitleKey = "Str.Builder.Actions", PermissionPrefix = "BuilderActions",
-            ViewModelFactory = s => Vm<BuilderActionsService>(s, "BuilderActions"),
+            ViewModelFactory = s => RowPage.ViewModel<BuilderActionsService>(s, "BuilderActions"),
             Filters = new()
             {
                 new() { Key = nameof(DynamicFilter.SectionId), LabelKey = "Str.Builder.Sections", PickerType = "BuilderSection" },
@@ -152,7 +151,7 @@ namespace PrimeERP.Modules
                 new() { Header = LocalizationService.Get("Str.Builder.Sections"), Binding = "SectionName", Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.OnRow"), Binding = nameof(BuilderAction.OnTable), Width = 100, Align = ColumnAlign.Center },
             },
-            Dialog = Dialog<BuilderActionsService>("Str.Builder.Action", new()
+            Dialog = RowPage.Dialog<BuilderActionsService>("Str.Builder.Action", new()
             {
                 new() { Key = nameof(BuilderAction.ModuleId), LabelKey = "Str.Builder.Modules", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderModule" },
                 new() { Key = nameof(BuilderAction.ActionKey), LabelKey = "Str.Builder.Button", Kind = FieldKind.Picker, IsRequired = true, PickerType = "ToolbarAction" },
@@ -163,7 +162,7 @@ namespace PrimeERP.Modules
         private static void Filter(IModuleRegistry registry) => registry.Register(new ModuleDefinition
         {
             Key = "BuilderFilters", Reorderable = true, TitleKey = "Str.Builder.Filters", PermissionPrefix = "BuilderFilters",
-            ViewModelFactory = s => Vm<BuilderFiltersService>(s, "BuilderFilters"),
+            ViewModelFactory = s => RowPage.ViewModel<BuilderFiltersService>(s, "BuilderFilters"),
             Filters = new()
             {
                 new() { Key = nameof(DynamicFilter.SectionId), LabelKey = "Str.Builder.Sections", PickerType = "BuilderSection" },
@@ -178,7 +177,7 @@ namespace PrimeERP.Modules
                 new() { Header = LocalizationService.Get("Str.Builder.Sections"), Binding = "SectionName", Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Kind"), Binding = nameof(BuilderFilter.Kind), Width = 110, Align = ColumnAlign.Center },
             },
-            Dialog = Dialog<BuilderFiltersService>("Str.Builder.Filter", new()
+            Dialog = RowPage.Dialog<BuilderFiltersService>("Str.Builder.Filter", new()
             {
                 new() { Key = nameof(BuilderFilter.ModuleId), LabelKey = "Str.Builder.Modules", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderModule" },
                 new() { Key = nameof(BuilderFilter.Key), LabelKey = "Str.Builder.Key", Kind = FieldKind.Text, IsRequired = true, MaxLength = 60 },
@@ -379,21 +378,6 @@ namespace PrimeERP.Modules
         }
 
 
-        private static object Vm<TService>(IServiceProvider services, string permissionPrefix)
-            where TService : class, IRowService =>
-            new DynamicViewModel(services.GetRequiredService<TService>(), permissionPrefix,
-                services.GetRequiredService<Platform.Permissions.IPermissionService>(),
-                services.GetRequiredService<UI.Services.IToastService>(),
-                services.GetRequiredService<UI.Services.IDialogService>());
 
-        private static DialogDefinition Dialog<TService>(string title, List<FieldDefinition> fields)
-            where TService : class => new()
-        {
-            TitleKey = title, TitleEditKey = title,
-            ServiceType = typeof(TService),
-            CreateDtoType = typeof(ExpandoObject),
-            UpdateDtoType = typeof(ExpandoObject),
-            Fields = fields
-        };
     }
 }

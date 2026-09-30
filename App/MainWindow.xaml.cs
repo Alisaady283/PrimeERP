@@ -1,9 +1,9 @@
+using PrimeERP.Application.Legacy.Admin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Platform.Design;
@@ -11,7 +11,6 @@ using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Components.Shell;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.App
 {

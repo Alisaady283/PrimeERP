@@ -1,7 +1,9 @@
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Tests.Helpers;
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Legacy.Accounting;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 
@@ -67,7 +69,7 @@ namespace PrimeERP.Tests.Services
             var refused = _accounts.Create(new CreateAccountDto { ParentId = branch.Id, Name = "ابن مرفوض", SkipAutoLink = true });
 
             Assert.True(refused.IsFailure);
-            Assert.Contains("قيود", refused.ErrorMessage);
+            Assert.True(Localized.Says(refused.ErrorMessage, "Str.Accounts.ParentHasEntries"), refused.ErrorMessage);
         }
     }
 }

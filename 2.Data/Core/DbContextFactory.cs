@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -8,17 +9,21 @@ namespace PrimeERP.Data.Core
     /// <summary>سياقٌ فوق الاتصال والمعاملة القائمين</summary>
     public static class DbContextFactory
     {
+        private static readonly ConcurrentDictionary<(DatabaseProvider, string), DbContextOptions<PrimeDbContext>> Options = new();
+
         /// <summary>سياقٌ جديد</summary>
         public static PrimeDbContext Open(PrimeDbContext borrowed = null)
         {
             if (borrowed != null) return borrowed;
 
             var config = DbConfig.Current;
-            var options = new DbContextOptionsBuilder<PrimeDbContext>()
-                .ReplaceService<IModelCacheKeyFactory, BuiltModelCacheKeyFactory>();
-
-            Use(options, config.Provider, config.ConnectionString());
-            return new PrimeDbContext(options.Options);
+            return new PrimeDbContext(Options.GetOrAdd((config.Provider, config.ConnectionString()), key =>
+            {
+                var options = new DbContextOptionsBuilder<PrimeDbContext>()
+                    .ReplaceService<IModelCacheKeyFactory, BuiltModelCacheKeyFactory>();
+                Use(options, key.Item1, key.Item2);
+                return options.Options;
+            }));
         }
 
         /// <summary>سياقٌ فوق اتصالٍ أجنبي</summary>

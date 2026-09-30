@@ -30,52 +30,37 @@ namespace PrimeERP.Data.Repositories
     {
 
         /// <summary>اسم الموظف وكوده عرضٌ فقط</summary>
-        private static List<T> WithEmployee(PrimeDbContext db, IQueryable<T> rows) =>
-            (from m in rows
-             join e in db.Employees.AsNoTracking() on m.EmployeeId equals e.Id into found
-             from e in found.DefaultIfEmpty()
-             select new { Row = m, e.Name, e.Code })
-            .AsEnumerable()
-            .Select(x =>
-            {
-                x.Row.EmployeeName = x.Name;
-                x.Row.EmployeeCode = x.Code;
-                return x.Row;
-            })
-            .ToList();
+        private static List<T> WithEmployee(List<T> rows) =>
+            WithCodeNames<Employee>("Employees", rows, m => m.EmployeeId, (m, code, name) => (m.EmployeeCode, m.EmployeeName) = (code, name));
 
-        public override T GetById(int id, PrimeDbContext db = null)
-        {
-            return Scope(db, ctx =>
-            {
-                return WithEmployee(ctx, Live(Rows(ctx).AsNoTracking()).Where(m => m.Id == id)).FirstOrDefault();
-            });
-        }
+        public override T GetById(int id, PrimeDbContext db = null) =>
+            WithEmployee(Fetch(q => q.Where(m => m.Id == id), db)).FirstOrDefault();
 
         public (List<T> Items, int Total) GetPaged(int page, int pageSize, string searchText, int? employeeId,
             string sortColumn, bool sortDescending)
         {
             using var db = DbContextFactory.Open();
-            var rows = Rows(db).AsNoTracking().Where(m => !m.IsDeleted);
-            if (employeeId != null) rows = rows.Where(m => m.EmployeeId == employeeId);
-            if (!string.IsNullOrWhiteSpace(searchText))
-                rows = rows.Where(m => EF.Functions.Like(m.Reason, $"%{searchText}%")
-                                    || db.Employees.Any(e => e.Id == m.EmployeeId
-                                                          && EF.Functions.Like(e.Name, $"%{searchText}%")));
 
-            var total = rows.Count();
-            var ordered = (sortColumn == "Amount" ? By(m => m.Amount, sortDescending)
-                                                 : By(m => m.Date,   sortDescending))(rows);
+            IQueryable<T> Shape(IQueryable<T> rows)
+            {
+                var q = rows;
+                if (employeeId != null) q = q.Where(m => m.EmployeeId == employeeId);
+                if (!string.IsNullOrWhiteSpace(searchText))
+                    q = q.Where(m => EF.Functions.Like(m.Reason, $"%{searchText}%")
+                                  || db.Employees.Any(e => e.Id == m.EmployeeId && EF.Functions.Like(e.Name, $"%{searchText}%")));
+                return q;
+            }
 
-            return (WithEmployee(db, ordered.ThenByDescending(m => m.Id)
-                                            .Skip(Math.Max(0, page - 1) * pageSize).Take(pageSize)), total);
+            var (items, total) = Page(page, pageSize, Shape,
+                sortColumn == "Amount" ? By(m => m.Amount, sortDescending) : By(m => m.Date, sortDescending), db);
+            return (WithEmployee(items), total);
         }
 
         public Dictionary<int, decimal> SumByEmployee(int month, int year)
         {
             using var db = DbContextFactory.Open();
             return Rows(db).AsNoTracking()
-                .Where(m => !m.IsDeleted && m.Month == month && m.Year == year)
+                .Where(m => m.Month == month && m.Year == year)
                 .GroupBy(m => m.EmployeeId)
                 .Select(g => new { g.Key, Total = g.Sum(m => m.Amount) })
                 .ToDictionary(x => x.Key, x => x.Total);

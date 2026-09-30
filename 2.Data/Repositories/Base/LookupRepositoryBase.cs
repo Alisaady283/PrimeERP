@@ -9,10 +9,11 @@ namespace PrimeERP.Data.Repositories.Base
     public interface ILookupRepository<T>
     {
         T GetById(int id, PrimeDbContext db = null);
+        Dictionary<int, string> NamesOf(IEnumerable<int> ids, PrimeDbContext db = null);
         List<T> GetAll(bool includeInactive = false);
-        int Insert(T row);
-        void Update(T row);
-        void Delete(int id);
+        int Insert(T row, PrimeDbContext db = null);
+        void Update(T row, PrimeDbContext db = null);
+        void Delete(int id, PrimeDbContext db = null);
     }
 
     /// <summary>قائمةٌ بجدولها</summary>
@@ -32,17 +33,12 @@ namespace PrimeERP.Data.Repositories.Base
                        .OrderBy(x => EF.Property<string>(x, "Name")));
 
 
-        public int Insert(T row) => Add(row);
+        public int Insert(T row, PrimeDbContext db = null) => Add(row, db);
 
-        public void Update(T row) => Write(db => { SetOf(db).Update(row); return 0; });
+        public void Update(T row, PrimeDbContext db = null) => Modify(row, db);
 
-        public void Delete(int id) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(x => EF.Property<int>(x, "Id") == id);
-                if (row != null) db.Entry(row).Property("IsActive").CurrentValue = false;
-                return 0;
-            });
+        public void Delete(int id, PrimeDbContext db = null) =>
+            Set(x => EF.Property<int>(x, "Id") == id, s => s.SetProperty(x => EF.Property<bool>(x, "IsActive"), false), db);
 
     }
 }

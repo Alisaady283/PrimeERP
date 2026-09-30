@@ -1,7 +1,7 @@
+using PrimeERP.Application.Legacy.Admin;
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services.Admin;
 using PrimeERP.Platform;
 
 namespace PrimeERP.UI.Services

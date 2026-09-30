@@ -1,7 +1,8 @@
+using PrimeERP.Application.Services.Documents;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services.Documents;
+using PrimeERP.Application.Legacy.Documents;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Permissions;
 using Xunit;
@@ -12,12 +13,12 @@ namespace PrimeERP.Tests.Services
     [Collection("Database")]
     public class DocumentLinkServiceTests
     {
-        private readonly IDocumentLinkService _service;
+        private readonly IDocumentPull _service;
 
         public DocumentLinkServiceTests(TestDatabaseFixture db)
         {
             AppSession.DevMode = true;
-            _service = db.Services.GetRequiredService<IDocumentLinkService>();
+            _service = db.Services.GetRequiredService<IDocumentPull>();
         }
 
         private static DocumentLink Link(int sourceLineId, int targetId, decimal qty) => new()

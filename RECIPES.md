@@ -23,7 +23,7 @@
 | ١ | الكيان | `3.Domain/Entities/Treasury.cs` — خصائص فقط |
 | ٢ | المستودع | `2.Data/Repositories/TreasuryRepository.cs` — يرث `RepositoryBase<T>` بـLINQ |
 | ٣ | البيانات | `4.Application/DTOs/Treasury/TreasuryDto.cs` — `Dto`/`Create`/`Update`/`Filter` |
-| ٤ | الخدمة | `4.Application/Services/Treasury/TreasuryService.cs` — المنطق والحُرّاس |
+| ٤ | الخدمة | `4.Application/Legacy/Treasury/TreasuryService.cs` خدمة الصفحة، ومنطقها في `4.Application/Services/…` |
 | ٥ | نموذج العرض | `6.UI/ViewModels/TreasuriesViewModel.cs` — يرث `CrudViewModelBase` ويُعلن `PermissionPrefix` |
 | ٦ | الإعلان | `8.Modules/TreasuryRegistrations.cs:21` |
 | ٧ | الشروط الثلاثة | `NavigationMap.cs:19` · `Strings.ar.xaml:217` · `DependencyInjection.cs:162` |
@@ -101,8 +101,8 @@ RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Ed
 | ١ | `3.Domain/Entities/` | كيان: خصائص فقط |
 | ٢ | `2.Data/Repositories/` | يرث `RepositoryBase<T>` · `Shape` شرطاً · `By`/`DocumentOrder` ترتيباً — LINQ فقط |
 | ٣ | `4.Application/DTOs/` | `XDto` · `CreateXDto` · `UpdateXDto` · `XFilter` |
-| ٤ | `4.Application/Validation/` | `IValidator<T>` عبر `Rules.For<T>()` |
-| ٥ | `4.Application/Services/<القسم>/` | يرث `ServiceBase` ويُعلن الثلاثة |
+| ٤ | `4.Application/Validation/` | لا ملفّ: شروط `Field<T>` معاملاتٌ إلى `Check.Valid` |
+| ٥ | `4.Application/Legacy/<القسم>/` خدمة الصفحة، ومنطقها حالة استخدام في `4.Application/Services/` | يرث `ServiceBase` ويُعلن الثلاثة |
 | ٦ | `6.UI/ViewModels/` | يرث `CrudViewModelBase<TDto,TFilter>` ويُعلن `PermissionPrefix` فقط |
 | ٧ | `8.Modules/ModuleRegistrations.cs` | `ModuleDefinition` بأعمدتها وحوارها |
 | ٨ | الشروط الثلاثة | الخريطة + القاموسان + التسجيل |
@@ -155,7 +155,7 @@ RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Ed
 
 - **دائم**: `Columns` في الإعلان.
 - **من وحدة البناء**: صفٌّ في `BuilderColumns` — يعلو على الإعلان: تعديله أو إضافته أو حذفه يظهر في الشاشة الحقيقية وفي أي نسخة، والعمود يحتفظ بما لا يصفه الوصف (قالب الخلية، المحاذاة).
-- **عرضه نسبةً**: `WidthPercent` — نسبةٌ واحدة تجعل الجدول نجميّاً. الحساب في `ColumnWidths` تقرؤه الشاشة والمُحمِّل معاً.
+- **عرضه نسبةً**: `WidthPercent` — نسبةٌ واحدة تجعل الجدول نجميّاً. الحساب في `LayoutCalc.Shares` تقرؤه الشاشة والمُحمِّل معاً.
 
 ---
 

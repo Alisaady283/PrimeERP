@@ -1,3 +1,10 @@
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Application.Services.Documents;
+using PrimeERP.Domain.Entities;
+using PrimeERP.Tests.Helpers;
+using PrimeERP.Domain.Results;
 using PrimeERP.Data.Core;
 using System;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,11 +13,11 @@ using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Treasury;
 using PrimeERP.Application.DTOs.Vouchers;
-using PrimeERP.Application.Services.Common;
-using PrimeERP.Application.Services.Inventory;
-using PrimeERP.Application.Services.Parties;
-using PrimeERP.Application.Services.Treasury;
-using PrimeERP.Application.Services.Vouchers;
+using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.Legacy.Treasury;
+using PrimeERP.Application.Legacy.Vouchers;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using Xunit;
@@ -33,15 +40,15 @@ namespace PrimeERP.Tests.Services
             _productId = _db.Services.GetRequiredService<IProductService>()
                 .Create(new CreateProductDto { Name = "صنف", CategoryId = category.Id, CostPrice = 10, SalePrice = 20 }).Value.Id;
 
-            _warehouseId = _db.Services.GetRequiredService<IWarehouseService>()
-                .Create(new CreateWarehouseDto { Name = "مخزن" }).Value.Id;
+            _warehouseId = _db.Services.GetRequiredService<Lookup<Warehouse>>()
+                .Add("مخزن");
         }
 
         public void Dispose() => _db.Dispose();
 
         private PrimeERP.Domain.Results.Result Move(MovementType type, decimal qty)
         {
-            var stock = _db.Services.GetRequiredService<IStockService>();
+            var stock = _db.Services.GetRequiredService<IStockMove>();
             return DbContextFactory.RunTransaction(db => stock.RecordMovement(db, _productId, _warehouseId, type, qty, 10, "Test", null, "T"));
         }
 
@@ -56,7 +63,7 @@ namespace PrimeERP.Tests.Services
             var second = Move(MovementType.Out, 50);
             Assert.False(second.IsSuccess, "الصرف الثاني كان يجب أن يُرفض — لم يبقَ إلا عشرون");
 
-            Assert.Equal(20m, _db.Services.GetRequiredService<IStockService>()
+            Assert.Equal(20m, _db.Services.GetRequiredService<IStockMove>()
                 .GetBalance(_productId, _warehouseId).Value);
         }
 
@@ -67,7 +74,7 @@ namespace PrimeERP.Tests.Services
             Move(MovementType.Out, 50);
 
             Assert.True(Move(MovementType.Out, 20).IsSuccess);
-            Assert.Equal(0m, _db.Services.GetRequiredService<IStockService>()
+            Assert.Equal(0m, _db.Services.GetRequiredService<IStockMove>()
                 .GetBalance(_productId, _warehouseId).Value);
         }
 
@@ -83,14 +90,21 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void ATransferOutOfAnEmptyWarehouse_IsRefused()
         {
-            var other = _db.Services.GetRequiredService<IWarehouseService>()
-                .Create(new CreateWarehouseDto { Name = "مخزن ثانٍ" }).Value.Id;
+            var other = _db.Services.GetRequiredService<Lookup<Warehouse>>()
+                .Add("مخزن ثانٍ");
 
             Move(MovementType.In, 70);
 
-            var stock = _db.Services.GetRequiredService<IStockService>();
-            Assert.False(stock.Transfer(_productId, other, _warehouseId, 10).IsSuccess, "التحويل من مخزنٍ فارغ مرّ");
-            Assert.True(stock.Transfer(_productId, _warehouseId, other, 10).IsSuccess);
+            var code = _db.Services.GetRequiredService<IProductService>().GetById(_productId).Value.Code;
+            var transfers = _db.Services.GetRequiredService<IStockTransferService>();
+            Result<StockTransferDetailDto> Transfer(int from, int to) => transfers.Create(new CreateStockTransferDto
+            {
+                FromWarehouseId = from, ToWarehouseId = to,
+                Lines = { new CreateStockTransferLineDto { LineNo = 1, ProductCode = code, Qty = 10 } }
+            });
+
+            Assert.False(Transfer(other, _warehouseId).IsSuccess, "التحويل من مخزنٍ فارغ مرّ");
+            Assert.True(Transfer(_warehouseId, other).IsSuccess);
         }
 
 
@@ -121,7 +135,7 @@ namespace PrimeERP.Tests.Services
             var result = Pay(treasuryId, supplierId, 1000);
 
             Assert.False(result.IsSuccess, "صُرف من خزينةٍ فارغة");
-            Assert.Contains("لا يكفي", result.ErrorMessage);
+            Assert.True(Localized.Says(result.ErrorMessage, "Str.Journal.CashShort"), result.ErrorMessage);
         }
 
 
@@ -132,11 +146,11 @@ namespace PrimeERP.Tests.Services
         }
 
         private string OtherLeafAccount(string cashCode) =>
-            _db.Services.GetRequiredService<PrimeERP.Application.Services.Accounting.IAccountService>()
+            _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IAccountService>()
                 .GetLeaves().Value.First(a => a.Code != cashCode && !a.Code.StartsWith("12")).Code;
 
         private int OpeningBalance(string cashCode, string otherCode, decimal amount) =>
-            _db.Services.GetRequiredService<PrimeERP.Application.Services.Accounting.IOpeningBalanceService>()
+            _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService>()
                 .Create(new PrimeERP.Application.DTOs.Accounting.CreateJournalDto
                 {
                     EntryDate = DateTime.Today, Description = "افتتاحي",
@@ -153,7 +167,7 @@ namespace PrimeERP.Tests.Services
             var treasury = CashTreasury();
             var other = OtherLeafAccount(treasury.AccountCode);
 
-            var created = _db.Services.GetRequiredService<PrimeERP.Application.Services.Accounting.IJournalService>()
+            var created = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IJournalService>()
                 .Create(new PrimeERP.Application.DTOs.Accounting.CreateJournalDto
                 {
                     EntryDate = DateTime.Today, Description = "صرف من فارغة",
@@ -165,7 +179,7 @@ namespace PrimeERP.Tests.Services
                 });
 
             Assert.False(created.IsSuccess, "قيدٌ أنزل الخزينة تحت الصفر ومرّ");
-            Assert.Contains("لا يكفي", created.ErrorMessage);
+            Assert.True(Localized.Says(created.ErrorMessage, "Str.Journal.CashShort"), created.ErrorMessage);
         }
 
         [Fact]
@@ -174,7 +188,7 @@ namespace PrimeERP.Tests.Services
             var treasury = CashTreasury();
             var other = OtherLeafAccount(treasury.AccountCode);
 
-            var created = _db.Services.GetRequiredService<PrimeERP.Application.Services.Accounting.IOpeningBalanceService>()
+            var created = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService>()
                 .Create(new PrimeERP.Application.DTOs.Accounting.CreateJournalDto
                 {
                     EntryDate = DateTime.Today, Description = "افتتاحي سالب",
@@ -208,7 +222,7 @@ namespace PrimeERP.Tests.Services
             var deleted = _db.Services.GetRequiredService<IReceiptVoucherService>().Delete(received.Value.Id);
 
             Assert.False(deleted.IsSuccess, "حُذف قبضٌ صُرف منه");
-            Assert.Contains("لا يكفي", deleted.ErrorMessage);
+            Assert.True(Localized.Says(deleted.ErrorMessage, "Str.Journal.CashShort"), deleted.ErrorMessage);
         }
 
         [Fact]
@@ -218,7 +232,7 @@ namespace PrimeERP.Tests.Services
             var other = OtherLeafAccount(treasury.AccountCode);
             var id = OpeningBalance(treasury.AccountCode, other, 1000);
 
-            var edited = _db.Services.GetRequiredService<PrimeERP.Application.Services.Accounting.IOpeningBalanceService>()
+            var edited = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService>()
                 .Update(new PrimeERP.Application.DTOs.Accounting.CreateJournalDto
                 {
                     Id = id, EntryDate = DateTime.Today, Description = "افتتاحي",
@@ -230,7 +244,7 @@ namespace PrimeERP.Tests.Services
                 });
 
             Assert.True(edited.IsSuccess, edited.ErrorMessage);
-            Assert.Equal(1500m, _db.Services.GetRequiredService<PrimeERP.Application.Services.Accounting.IAccountService>()
+            Assert.Equal(1500m, _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IAccountService>()
                 .GetByCode(treasury.AccountCode).Value.Balance);
         }
 
@@ -245,7 +259,7 @@ namespace PrimeERP.Tests.Services
                 .Create(new CreateSupplierDto { Name = "مورد" }).Value.Id;
             Assert.True(Pay(treasury.TreasuryId, supplierId, 400).IsSuccess);
 
-            var opening = _db.Services.GetRequiredService<PrimeERP.Application.Services.Accounting.IOpeningBalanceService>();
+            var opening = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService>();
 
             var shrunk = opening.Update(new PrimeERP.Application.DTOs.Accounting.CreateJournalDto
             {

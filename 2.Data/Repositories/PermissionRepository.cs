@@ -35,20 +35,18 @@ namespace PrimeERP.Data.Repositories
         public void SetUserPermission(int userId, string key, bool? granted) =>
             Write(db =>
             {
-                var rows = SetOf<UserPermission>(db, UserKeys);
-                rows.RemoveRange(rows.Where(p => p.UserId == userId && p.PermissionKey == key));
+                RemoveIn<UserPermission>(UserKeys, p => p.UserId == userId && p.PermissionKey == key, db);
                 if (granted != null)
-                    rows.Add(new UserPermission { UserId = userId, PermissionKey = key, IsGranted = granted.Value });
+                    SetOf<UserPermission>(db, UserKeys).Add(new UserPermission { UserId = userId, PermissionKey = key, IsGranted = granted.Value });
                 return 0;
             });
 
         public void ReplaceRolePermissions(int roleId, IEnumerable<string> keys) =>
             Write(db =>
             {
-                var rows = SetOf<RolePermission>(db, RoleKeys);
-                rows.RemoveRange(rows.Where(p => p.RoleId == roleId));
+                RemoveIn<RolePermission>(RoleKeys, p => p.RoleId == roleId, db);
                 foreach (var key in keys.Distinct())
-                    rows.Add(new RolePermission { RoleId = roleId, PermissionKey = key });
+                    SetOf<RolePermission>(db, RoleKeys).Add(new RolePermission { RoleId = roleId, PermissionKey = key });
                 return 0;
             });
 
@@ -70,7 +68,7 @@ namespace PrimeERP.Data.Repositories
         public int InsertRole(string name, string nameAr, bool isSystem = false) =>
             Write(db =>
             {
-                var role = new Role { Name = name, NameAr = nameAr, IsSystem = isSystem, CreatedAt = DateTime.Now };
+                var role = new Role { Name = name, NameAr = nameAr, IsSystem = isSystem };
                 SetOf<Role>(db, Roles).Add(role);
                 db.SaveChanges();
                 return role.Id;
@@ -83,22 +81,16 @@ namespace PrimeERP.Data.Repositories
                 if (role == null) return 0;
                 role.Name = name;
                 role.NameAr = nameAr;
-                role.UpdatedAt = DateTime.Now;
                 return 1;
             });
 
         public bool IsSystemRole(int id) =>
             FetchOf<Role>(Roles, q => q.Where(r => r.Id == id && r.IsSystem).Take(1)).Count > 0;
 
-        public bool RoleHasUsers(int id) => Count(q => q.Where(u => u.RoleId == id)) > 0;
+        public bool RoleHasUsers(int id) => Any(q => q.Where(u => u.RoleId == id));
 
         public void DeleteRole(int id) =>
-            Write(db =>
-            {
-                var rows = SetOf<Role>(db, Roles);
-                rows.RemoveRange(rows.Where(r => r.Id == id && !r.IsSystem));
-                return 0;
-            });
+            RemoveIn<Role>(Roles, r => r.Id == id && !r.IsSystem);
 
         public int? FindRoleId(string name) =>
             FetchOf<Role>(Roles, q => q.Where(r => r.Name == name).Take(1)).FirstOrDefault()?.Id;
@@ -110,7 +102,7 @@ namespace PrimeERP.Data.Repositories
         public User FindByUsername(string username) =>
             WithRole(q => q.Where(u => u.Username == username).Take(1)).FirstOrDefault();
 
-        public bool UsernameExists(string username) => Count(q => q.Where(u => u.Username == username)) > 0;
+        public bool UsernameExists(string username) => Any(q => q.Where(u => u.Username == username));
 
         public int InsertUser(User user) => Add(user);
 
@@ -130,9 +122,9 @@ namespace PrimeERP.Data.Repositories
             });
 
         public void UpdateLastLogin(int userId) =>
-            Edit(u => u.Id == userId, user => user.LastLoginAt = DateTime.Now);
+            Set(u => u.Id == userId, s => s.SetProperty(r => r.LastLoginAt, DateTime.Now));
 
-        public void DeleteUser(int id) => Edit(u => u.Id == id, user => user.IsActive = false);
+        public void DeleteUser(int id) => Set(u => u.Id == id, s => s.SetProperty(r => r.IsActive, false));
 
         // ── مشترك ──────────────────────────────────────────────────
 

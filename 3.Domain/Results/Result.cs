@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -52,6 +53,10 @@ namespace PrimeERP.Domain.Results
         public Result<TOut> As<TOut>() =>
             Result<TOut>.Carry(ErrorMessage, ErrorCode, Errors);
 
+        public Result Then(Func<Result> next) => IsSuccess ? next() : this;
+
+        public Result<TOut> Then<TOut>(Func<Result<TOut>> next) => IsSuccess ? next() : As<TOut>();
+
         public static Result Combine(params Result[] results)
         {
             var failed = results.Where(r => r != null && r.IsFailure).ToList();
@@ -68,6 +73,10 @@ namespace PrimeERP.Domain.Results
         public T Value { get; private set; }
 
         public static Result<T> Ok(T value) => new() { IsSuccess = true, Value = value };
+
+        public Result<TOut> Then<TOut>(Func<T, Result<TOut>> next) => IsSuccess ? next(Value) : As<TOut>();
+
+        public Result Then(Func<T, Result> next) => IsSuccess ? next(Value) : this;
 
         public new static Result<T> Fail(string message, ErrorCode code = ErrorCode.Unexpected) =>
             new() { IsSuccess = false, ErrorMessage = message, ErrorCode = code, Errors = { message } };

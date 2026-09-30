@@ -1,9 +1,10 @@
+using PrimeERP.Application.Services.Documents;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services.Documents;
+using PrimeERP.Application.Legacy.Documents;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Domain.Contracts;
@@ -54,7 +55,7 @@ namespace PrimeERP.Composition.Pull
             _services = services; _registry = registry;
         }
 
-        private IDocumentLinkService Links => _services.GetRequiredService<IDocumentLinkService>();
+        private IDocumentPull Links => _services.GetRequiredService<IDocumentPull>();
 
         public Result<List<PullCandidate>> GetAvailable(PullSource source, IDictionary<string, object> matchValues)
         {

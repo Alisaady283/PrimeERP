@@ -24,6 +24,7 @@ namespace PrimeERP.Data.Repositories
         void SetCurrentYear(PrimeDbContext db, int id);
 
         List<FiscalPeriod> GetPeriods(int yearId);
+        List<FiscalPeriod> GetAllPeriods();
         FiscalPeriod GetPeriodById(int id);
         FiscalPeriod GetPeriodContaining(string date);
         void InsertPeriod(PrimeDbContext db, FiscalPeriod period);
@@ -44,20 +45,18 @@ namespace PrimeERP.Data.Repositories
         private const string Periods = "FiscalPeriods";
 
         public List<FiscalYear> GetAllYears() =>
-            Fetch(q => q.Where(y => !y.IsDeleted).OrderByDescending(y => y.StartDate));
+            Fetch(q => q.OrderByDescending(y => y.StartDate));
 
         public FiscalYear GetYearById(int id) => GetById(id);
 
-        public FiscalYear GetCurrentYear() => One(q => q.Where(y => y.IsCurrent && !y.IsDeleted));
+        public FiscalYear GetCurrentYear() => One(q => q.Where(y => y.IsCurrent));
 
         public FiscalYear GetYearContaining(string date) =>
-            One(q => q.Where(y => !y.IsDeleted
-                               && string.Compare(date, y.StartDate) >= 0
+            One(q => q.Where(y => string.Compare(date, y.StartDate) >= 0
                                && string.Compare(date, y.EndDate) <= 0));
 
         public bool AnyYearOverlapping(string start, string end, int? excludeId) =>
-            Count(q => q.Where(y => !y.IsDeleted
-                                 && string.Compare(y.StartDate, end) <= 0
+            Count(q => q.Where(y => string.Compare(y.StartDate, end) <= 0
                                  && string.Compare(y.EndDate, start) >= 0
                                  && (excludeId == null || y.Id != excludeId))) > 0;
 
@@ -91,12 +90,10 @@ namespace PrimeERP.Data.Repositories
             }, db);
 
         public void SetCurrentYear(PrimeDbContext db, int id) =>
-            Write(db =>
-            {
-                foreach (var row in Rows(db).AsTracking())
-                    row.IsCurrent = row.Id == id;
-                return 0;
-            }, db);
+            Set(y => true, s => s.SetProperty(r => r.IsCurrent, r => r.Id == id), db);
+
+        public List<FiscalPeriod> GetAllPeriods() =>
+            FetchOf<FiscalPeriod>(Periods, q => q.OrderBy(p => p.StartDate));
 
         public List<FiscalPeriod> GetPeriods(int yearId) =>
             FetchOf<FiscalPeriod>(Periods, q => q.Where(p => p.FiscalYearId == yearId).OrderBy(p => p.PeriodNo));

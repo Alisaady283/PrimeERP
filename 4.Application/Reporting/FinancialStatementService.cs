@@ -1,17 +1,18 @@
+using PrimeERP.Domain.Calculations;
+using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Audit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.Reporting;
-using PrimeERP.Application.Services.Accounting;
+using PrimeERP.Application.Legacy.Accounting;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Localization;
-using PrimeERP.Application.Services;
 using PrimeERP.Platform.Settings;
 using F = PrimeERP.Application.Reporting.FinancialStatementFactory;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Application.Reporting
 {
@@ -59,9 +60,9 @@ namespace PrimeERP.Application.Reporting
                 Rows = rows,
                 Totals = new()
                 {
-                    ["Opening"] = $"افتتاحي: {rows.Sum(r => r.OpeningDebit):N2} / {rows.Sum(r => r.OpeningCredit):N2}",
-                    ["Period"]  = $"الفترة: {rows.Sum(r => r.PeriodDebit):N2} / {rows.Sum(r => r.PeriodCredit):N2}",
-                    ["Closing"] = $"ختامي: {rows.Sum(r => r.ClosingDebit):N2} / {rows.Sum(r => r.ClosingCredit):N2}",
+                    ["Opening"] = Localization.Get("Str.Statement.OpeningTotals", rows.Sum(r => r.OpeningDebit), rows.Sum(r => r.OpeningCredit)),
+                    ["Period"]  = Localization.Get("Str.Statement.PeriodTotals", rows.Sum(r => r.PeriodDebit), rows.Sum(r => r.PeriodCredit)),
+                    ["Closing"] = Localization.Get("Str.Statement.ClosingTotals", rows.Sum(r => r.ClosingDebit), rows.Sum(r => r.ClosingCredit)),
                 }
             });
         }
@@ -83,23 +84,23 @@ namespace PrimeERP.Application.Reporting
             var otherIn   = F.Period(result.Value, AccountType.Revenue, true,  F.StartsWith("42"));
             var otherOut  = F.Period(result.Value, AccountType.Expense, false, F.StartsWithBut("52", cogsAccount));
 
-            var grossProfit     = F.Sum(sales) - F.Sum(cogs);
-            var operatingProfit = grossProfit - F.Sum(operating);
-            var netIncome       = operatingProfit + F.Sum(otherIn) - F.Sum(otherOut);
+            var grossProfit     = StatementCalc.GrossProfit(F.Sum(sales), F.Sum(cogs));
+            var operatingProfit = StatementCalc.OperatingProfit(grossProfit, F.Sum(operating));
+            var netIncome       = StatementCalc.NetIncome(operatingProfit, F.Sum(otherIn), F.Sum(otherOut));
 
-            var rows = F.Group("الإيرادات", sales, "إجمالي الإيرادات")
-            .Concat(F.Group("تكلفة البضاعة المباعة", cogs, "إجمالي التكلفة"))
-            .Append(F.Grand("مجمل الربح", grossProfit))
-            .Concat(F.Group("المصروفات التشغيلية", operating, "إجمالي المصروفات التشغيلية"))
-            .Append(F.Grand("الربح التشغيلي", operatingProfit))
-            .Concat(F.Group("إيرادات أخرى", otherIn, "إجمالي الإيرادات الأخرى"))
-            .Concat(F.Group("مصروفات أخرى", otherOut, "إجمالي المصروفات الأخرى"))
+            var rows = F.Group(Localization.Get("Str.Revenue"), sales, Localization.Get("Str.Statement.TotalRevenue"))
+            .Concat(F.Group(Localization.Get("Str.Statement.Cogs"), cogs, Localization.Get("Str.Statement.TotalCost")))
+            .Append(F.Grand(Localization.Get("Str.Statement.GrossProfit"), grossProfit))
+            .Concat(F.Group(Localization.Get("Str.Statement.OperatingExpenses"), operating, Localization.Get("Str.Statement.TotalOperatingExpenses")))
+            .Append(F.Grand(Localization.Get("Str.Statement.OperatingProfit"), operatingProfit))
+            .Concat(F.Group(Localization.Get("Str.Statement.OtherRevenue"), otherIn, Localization.Get("Str.Statement.TotalOtherRevenue")))
+            .Concat(F.Group(Localization.Get("Str.Statement.OtherExpenses"), otherOut, Localization.Get("Str.Statement.TotalOtherExpenses")))
             .Append(F.Grand(LocalizationService.Get("Str.NetIncome"), netIncome))
             .ToList();
             return Ok(rows, new Dictionary<string, string>
             {
-            ["Gross"] = $"مجمل الربح: {grossProfit:N2}",
-            ["Operating"] = $"الربح التشغيلي: {operatingProfit:N2}",
+            ["Gross"] = Localization.Get("Str.Statement.GrossProfitIs", grossProfit),
+            ["Operating"] = Localization.Get("Str.Statement.OperatingProfitIs", operatingProfit),
             ["Net"] = $"{LocalizationService.Get("Str.NetIncome")}: {netIncome:N2}"
             });
         }
@@ -121,24 +122,24 @@ namespace PrimeERP.Application.Reporting
             var liabilitiesTotal = F.Sum(currentLiab) + F.Sum(longTermLiab);
             var equityTotal      = F.Sum(equity);
 
-            var rows = new List<F.Line> { F.Heading("الأصول") }
-            .Concat(F.Group("الأصول المتداولة", currentAssets, "إجمالي الأصول المتداولة"))
-            .Concat(F.Group("الأصول غير المتداولة", nonCurrentAssets, "إجمالي الأصول غير المتداولة"))
-            .Append(F.Grand("إجمالي الأصول", assetsTotal))
-            .Append(F.Heading("الخصوم وحقوق الملكية"))
-            .Concat(F.Group("الخصوم المتداولة", currentLiab, "إجمالي الخصوم المتداولة"))
-            .Concat(F.Group("الخصوم طويلة الأجل", longTermLiab, "إجمالي الخصوم طويلة الأجل"))
-            .Append(F.Grand("إجمالي الخصوم", liabilitiesTotal, 1))
-            .Concat(F.Group("حقوق الملكية", equity, "إجمالي حقوق الملكية"))
-            .Append(F.Grand("إجمالي الخصوم وحقوق الملكية", liabilitiesTotal + equityTotal))
+            var rows = new List<F.Line> { F.Heading(Localization.Get("Str.Assets")) }
+            .Concat(F.Group(Localization.Get("Str.Statement.CurrentAssets"), currentAssets, Localization.Get("Str.Statement.TotalCurrentAssets")))
+            .Concat(F.Group(Localization.Get("Str.Statement.NonCurrentAssets"), nonCurrentAssets, Localization.Get("Str.Statement.TotalNonCurrentAssets")))
+            .Append(F.Grand(Localization.Get("Str.Statement.TotalAssets"), assetsTotal))
+            .Append(F.Heading(Localization.Get("Str.Statement.LiabilitiesAndEquity")))
+            .Concat(F.Group(Localization.Get("Str.Statement.CurrentLiabilities"), currentLiab, Localization.Get("Str.Statement.TotalCurrentLiabilities")))
+            .Concat(F.Group(Localization.Get("Str.Statement.LongTermLiabilities"), longTermLiab, Localization.Get("Str.Statement.TotalLongTermLiabilities")))
+            .Append(F.Grand(Localization.Get("Str.Statement.TotalLiabilities"), liabilitiesTotal, 1))
+            .Concat(F.Group(Localization.Get("Str.Equity"), equity, Localization.Get("Str.Statement.TotalEquity")))
+            .Append(F.Grand(Localization.Get("Str.Statement.TotalLiabilitiesAndEquity"), liabilitiesTotal + equityTotal))
             .ToList();
             return Ok(rows, new Dictionary<string, string>
             {
-            ["Assets"] = $"إجمالي الأصول: {assetsTotal:N2}",
-            ["Sources"] = $"الخصوم وحقوق الملكية: {(liabilitiesTotal + equityTotal):N2}",
-            ["Check"] = assetsTotal == liabilitiesTotal + equityTotal
-            ? "الميزانية متوازنة"
-            : $"فرق غير متوازن: {(assetsTotal - liabilitiesTotal - equityTotal):N2}"
+            ["Assets"] = Localization.Get("Str.Statement.TotalAssetsIs", assetsTotal),
+            ["Sources"] = Localization.Get("Str.Statement.LiabilitiesAndEquityIs", (liabilitiesTotal + equityTotal)),
+            ["Check"] = StatementCalc.BalanceGap(assetsTotal, liabilitiesTotal, equityTotal) == 0
+            ? Localization.Get("Str.Statement.Balanced")
+            : Localization.Get("Str.Statement.Unbalanced", StatementCalc.BalanceGap(assetsTotal, liabilitiesTotal, equityTotal))
             });
         }
 
@@ -173,20 +174,20 @@ namespace PrimeERP.Application.Reporting
 
             var netChange = F.Sum(operating) + F.Sum(investing) + F.Sum(financing);
 
-            var rows = F.Group("التدفقات النقدية من الأنشطة التشغيلية", operating, "صافي التدفق التشغيلي")
-            .Concat(F.Group("التدفقات النقدية من الأنشطة الاستثمارية", investing, "صافي التدفق الاستثماري"))
-            .Concat(F.Group("التدفقات النقدية من الأنشطة التمويلية", financing, "صافي التدفق التمويلي"))
-            .Append(F.Grand("صافي التغيّر في النقدية", netChange))
-            .Append(F.Grand("النقدية أول المدة", openingCash))
-            .Append(F.Grand("النقدية آخر المدة", openingCash + netChange))
+            var rows = F.Group(Localization.Get("Str.Statement.OperatingCashFlows"), operating, Localization.Get("Str.Statement.NetOperatingFlow"))
+            .Concat(F.Group(Localization.Get("Str.Statement.InvestingCashFlows"), investing, Localization.Get("Str.Statement.NetInvestingFlow")))
+            .Concat(F.Group(Localization.Get("Str.Statement.FinancingCashFlows"), financing, Localization.Get("Str.Statement.NetFinancingFlow")))
+            .Append(F.Grand(Localization.Get("Str.Statement.NetCashChange"), netChange))
+            .Append(F.Grand(Localization.Get("Str.Statement.OpeningCash"), openingCash))
+            .Append(F.Grand(Localization.Get("Str.Statement.ClosingCash"), openingCash + netChange))
             .ToList();
             return Ok(rows, new Dictionary<string, string>
             {
-            ["Net"] = $"صافي التغيّر: {netChange:N2}",
-            ["Closing"] = $"النقدية آخر المدة: {(openingCash + netChange):N2}",
-            ["Check"] = Math.Round(openingCash + netChange, 2) == Math.Round(closingCash, 2)
-            ? "مطابق لرصيد النقدية"
-            : $"فرق عن رصيد النقدية: {(openingCash + netChange - closingCash):N2}"
+            ["Net"] = Localization.Get("Str.Statement.NetChangeIs", netChange),
+            ["Closing"] = Localization.Get("Str.Statement.ClosingCashIs", (openingCash + netChange)),
+            ["Check"] = StatementCalc.CashGap(openingCash, netChange, closingCash) == 0
+            ? Localization.Get("Str.Statement.CashMatches")
+            : Localization.Get("Str.Statement.CashDifference", StatementCalc.CashGap(openingCash, netChange, closingCash))
             });
         }
     }

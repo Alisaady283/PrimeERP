@@ -1,11 +1,14 @@
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Tests.Helpers;
+using PrimeERP.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.HR;
-using PrimeERP.Application.Services;
-using PrimeERP.Application.Services.Accounting;
-using PrimeERP.Application.Services.HR;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Legacy.HR;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 
@@ -21,10 +24,10 @@ namespace PrimeERP.Tests.Services
         {
             AppSession.DevMode = true;
 
-            var departments = _db.Services.GetRequiredService<IDepartmentService>();
-            var jobTitles = _db.Services.GetRequiredService<IJobTitleService>();
-            var deptId = departments.Create(new CreateDepartmentDto { Name = "قسم" }).Value.Id;
-            var jobId = jobTitles.Create(new CreateJobTitleDto { Name = "وظيفة" }).Value.Id;
+            var departments = _db.Services.GetRequiredService<Lookup<Department>>();
+            var jobTitles = _db.Services.GetRequiredService<Lookup<JobTitle>>();
+            var deptId = departments.Add("قسم");
+            var jobId = jobTitles.Add("وظيفة");
 
             _employeeCode = _db.Services.GetRequiredService<IEmployeeService>().Create(new CreateEmployeeDto
             { Name = "موظف", DepartmentId = deptId, JobTitleId = jobId, HireDate = DateTime.Today, BasicSalary = 5000 }).Value.Code;

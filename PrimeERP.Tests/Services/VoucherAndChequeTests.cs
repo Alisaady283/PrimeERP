@@ -1,3 +1,6 @@
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Platform.Localization;
+using PrimeERP.Tests.Helpers;
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
@@ -5,12 +8,11 @@ using PrimeERP.Application.DTOs.Cheques;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Treasury;
 using PrimeERP.Application.DTOs.Vouchers;
-using PrimeERP.Application.Services;
-using PrimeERP.Application.Services.Accounting;
-using PrimeERP.Application.Services.Cheques;
-using PrimeERP.Application.Services.Parties;
-using PrimeERP.Application.Services.Treasury;
-using PrimeERP.Application.Services.Vouchers;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Legacy.Cheques;
+using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.Legacy.Treasury;
+using PrimeERP.Application.Legacy.Vouchers;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
@@ -95,7 +97,7 @@ namespace PrimeERP.Tests.Services
             });
 
             Assert.False(voucher.IsSuccess);
-            Assert.Contains("يتجاوز", voucher.ErrorMessage);
+            Assert.True(Localized.Says(voucher.ErrorMessage, "Str.Voucher.AllocationsExceed"), voucher.ErrorMessage);
         }
 
         [Fact]
@@ -104,7 +106,7 @@ namespace PrimeERP.Tests.Services
             var cheque = SeedIncomingCheque(out _);
 
             Assert.Equal(ChequeStatus.InHand, cheque.Status);
-            Assert.Equal("وارد", cheque.DirectionName);
+            Assert.Equal(LocalizationService.Get("Str.Cheque.Incoming"), cheque.DirectionName);
             Assert.Single(cheque.Movements);
         }
 
@@ -158,7 +160,7 @@ namespace PrimeERP.Tests.Services
                 new CreateChequeLineDto { ChequeNo = "CHQ-AGAIN", Amount = 900m, BankName = "بنك آخر", PartyId = cheque.PartyId },
                 DateTime.Today);
             Assert.True(refused.IsFailure);
-            Assert.Contains("أعِده", refused.ErrorMessage);
+            Assert.True(Localized.Says(refused.ErrorMessage, "Str.Cheque.MovedLocked"), refused.ErrorMessage);
             Assert.True(service.DeleteUnmoved(cheque.Id).IsFailure);
         }
         private ChequeDetailDto SeedIncomingCheque(out TreasuryDto treasury)

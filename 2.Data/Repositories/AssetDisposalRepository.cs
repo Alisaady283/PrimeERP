@@ -12,6 +12,7 @@ namespace PrimeERP.Data.Repositories
     public interface IAssetDisposalRepository
     {
         AssetDisposal GetById(int id, PrimeDbContext db = null);
+        bool AnyForAsset(int assetId, PrimeDbContext db = null);
         (List<AssetDisposal> Items, int Total) GetPaged(int page, int pageSize, string searchText = null,
             int? assetId = null, string sortColumn = "DisposalDate", bool sortDescending = true);
 
@@ -32,7 +33,7 @@ namespace PrimeERP.Data.Repositories
         {
             IQueryable<AssetDisposal> Shape(IQueryable<AssetDisposal> rows)
             {
-                var q = rows.Where(x => !x.IsDeleted);
+                var q = rows;
                 if (!string.IsNullOrWhiteSpace(searchText))
                     q = q.Where(x => EF.Functions.Like(x.Notes, $"%{searchText}%"));
                 if (assetId != null) q = q.Where(x => x.AssetId == assetId);
@@ -41,6 +42,8 @@ namespace PrimeERP.Data.Repositories
 
             return Page(page, pageSize, Shape, q => (By(x => x.DisposalDate, sortDescending))(q).ThenByDescending(x => x.Id));
         }
+
+        public bool AnyForAsset(int assetId, PrimeDbContext db = null) => Any(q => q.Where(x => x.AssetId == assetId), db);
 
         public int Insert(AssetDisposal d, PrimeDbContext db = null) => Add(d, db);
 
@@ -54,7 +57,6 @@ namespace PrimeERP.Data.Repositories
                 row.AssetValue = d.AssetValue;
                 row.AccumulatedDepreciation = d.AccumulatedDepreciation;
                 row.Notes = d.Notes ?? "";
-                row.UpdatedAt = DateTime.Now;
                 row.UpdatedBy = d.UpdatedBy;
             }, db);
 
@@ -62,11 +64,6 @@ namespace PrimeERP.Data.Repositories
             SoftDelete(id, deletedBy, db);
 
         public void SetJournalEntryId(PrimeDbContext db, int id, int journalEntryId) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(x => x.Id == id);
-                if (row != null) row.JournalEntryId = journalEntryId;
-                return 0;
-            }, db);
+            Set(x => x.Id == id, s => s.SetProperty(r => r.JournalEntryId, journalEntryId), db);
     }
 }

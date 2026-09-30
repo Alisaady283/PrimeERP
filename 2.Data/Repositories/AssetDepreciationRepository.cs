@@ -56,19 +56,9 @@ namespace PrimeERP.Data.Repositories
         public int Insert(AssetDepreciation c, PrimeDbContext db = null) => Add(c, db);
 
         public void Delete(int id, PrimeDbContext db = null) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(c => c.Id == id);
-                if (row != null) SetOf(db).Remove(row);
-                return 0;
-            }, db);
+            Remove(c => c.Id == id, db);
 
         public void SetJournalEntryId(PrimeDbContext db, int id, int journalEntryId) =>
-            Write(db =>
-            {
-                var row = Rows(db).AsTracking().FirstOrDefault(c => c.Id == id);
-                if (row != null) row.JournalEntryId = journalEntryId;
-                return 0;
-            }, db);
+            Set(c => c.Id == id, s => s.SetProperty(r => r.JournalEntryId, journalEntryId), db);
     }
 }

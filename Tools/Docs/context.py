@@ -58,6 +58,8 @@ def build():
 
     out += ['            foreach (var (table, columns) in BuiltTables.All)',
             '                BuiltTables.Shape(model, table, columns);',
+            "",
+            "            ModelConventions.HideDeleted(model);",
             "        }",
             "    }",
             "}"]

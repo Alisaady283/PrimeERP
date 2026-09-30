@@ -44,138 +44,138 @@
 | 2.01 | BuiltTables.cs | جداول يبنيها المستخدم |
 | 2.02 | DbConfig.cs | قاعدة البيانات DbConfig |
 | 2.03 | DbContextFactory.cs | سياقٌ فوق الاتصال والمعاملة القائمين |
-| 2.04 | PrimeDbContext.cs | نموذج EF مولَّد |
-| 2.05 | SchemaSync.cs | إلحاق ناقص النموذج بالقاعدة |
+| 2.04 | ModelConventions.cs | اتفاقيات النموذج العامّة |
+| 2.05 | PrimeDbContext.cs | نموذج EF مولَّد |
+| 2.06 | SchemaSync.cs | إلحاق ناقص النموذج بالقاعدة |
 | | **Repositories/** | مستودع لكل جدول: SQL فقط |
-| 2.06 | AccountRepository.cs | طبقة وصول بيانات شجرة الحسابات |
-| 2.07 | AssetDepreciationRepository.cs | مستودع AssetDepreciation |
-| 2.08 | AssetDisposalRepository.cs | مستودع AssetDisposal |
-| 2.09 | AssetRepository.cs | مستودع Asset |
-| 2.10 | AssetRevaluationRepository.cs | مستودع AssetRevaluation |
-| 2.11 | AttendanceRepository.cs | مستودع Attendance |
-| 2.12 | AuditRepository.cs | مستودع AuditLog |
-| 2.13 | BackupRepository.cs | طبقة وصول بيانات سجل النسخ |
+| 2.07 | AccountRepository.cs | طبقة وصول بيانات شجرة الحسابات |
+| 2.08 | AssetDepreciationRepository.cs | مستودع AssetDepreciation |
+| 2.09 | AssetDisposalRepository.cs | مستودع AssetDisposal |
+| 2.10 | AssetRepository.cs | مستودع Asset |
+| 2.11 | AssetRevaluationRepository.cs | مستودع AssetRevaluation |
+| 2.12 | AttendanceRepository.cs | مستودع Attendance |
+| 2.13 | AuditRepository.cs | مستودع AuditLog |
+| 2.14 | BackupRepository.cs | طبقة وصول بيانات سجل النسخ |
 | | **Repositories/Base/** | أسس المستودعات: الصفحة والترتيب والحذف والمستندات |
-| 2.14 | CycleDocumentRepositoryBase.cs | أساس مستودع CycleDocument |
-| 2.15 | InvoiceRepositoryBase.cs | أساس فاتورة: رأس وسطور |
-| 2.16 | LookupRepositoryBase.cs | ما يتقاسمه مستودعات القوائم |
-| 2.17 | PartyRepositoryBase.cs | ما يتقاسمه مستودعا العملاء والموردين |
-| 2.18 | RepositoryBase.cs | أساس حقيقي بالتوريث لكل Repository |
-| 2.19 | ReturnRepositoryBase.cs | أساس مرتجع: رأس وسطور |
-| 2.20 | StockAdjustmentRepositoryBase.cs | أساس مستودع StockAdjustment |
+| 2.15 | CycleDocumentRepositoryBase.cs | أساس مستودع CycleDocument |
+| 2.16 | InvoiceRepositoryBase.cs | أساس فاتورة: رأس وسطور |
+| 2.17 | LookupRepositoryBase.cs | ما يتقاسمه مستودعات القوائم |
+| 2.18 | PartyRepositoryBase.cs | ما يتقاسمه مستودعا العملاء والموردين |
+| 2.19 | RepositoryBase.cs | أساس حقيقي بالتوريث لكل Repository |
+| 2.20 | ReturnRepositoryBase.cs | أساس مرتجع: رأس وسطور |
+| 2.21 | StockAdjustmentRepositoryBase.cs | أساس مستودع StockAdjustment |
 | | **Repositories/** | مستودع لكل جدول: SQL فقط |
-| 2.21 | BuilderRepository.cs | مستودع ما بناه المستخدم |
-| 2.22 | CategoryRepository.cs | مستودع Category |
-| 2.23 | ChequeRepository.cs | مستودع Cheque |
-| 2.24 | CustomerRepository.cs | طبقة وصول بيانات العملاء |
-| 2.25 | CycleDocumentRepositories.cs | مستودع CycleDocument |
-| 2.26 | DocumentLinkRepository.cs | مستودع DocumentLink |
-| 2.27 | DynamicRepository.cs | مستودع أي جدول بناه المستخدم |
-| 2.28 | EditionRepository.cs | اتصالٌ بقاعدة نسخةٍ أخرى |
-| 2.29 | EmployeeMovementRepository.cs | البدل والخصم جدولان بشكلٍ واحد |
-| 2.30 | EmployeeRepository.cs | مستودع Employee |
-| 2.31 | FiscalPeriodRepository.cs | طبقة وصول بيانات السنوات/الفترات المالية |
-| 2.32 | IPartyRepository.cs | الشكل المشترك بين ICustomerRepository/ISupplierReposito |
-| 2.33 | JournalRepository.cs | طبقة وصول بيانات قيود اليومية |
-| 2.34 | LicenseRepository.cs | مستودع License |
-| 2.35 | NumberSequenceRepository.cs | طبقة وصول بيانات تسلسل الأرقام |
-| 2.36 | PayrollRepository.cs | مستودع Payroll |
-| 2.37 | PermissionRepository.cs | مستودع الصلاحيات والأدوار والمستخدمين |
-| 2.38 | ProductRepository.cs | مستودع Product |
-| 2.39 | PurchaseInvoiceRepository.cs | مستودع PurchaseInvoice |
-| 2.40 | PurchaseReturnRepository.cs | مستودع PurchaseReturn |
-| 2.41 | SalesInvoiceRepository.cs | مستودع SalesInvoice |
-| 2.42 | SalesReturnRepository.cs | مستودع SalesReturn |
-| 2.43 | SettingRepository.cs | مستودع AppSettings |
-| 2.44 | StockAdjustmentRepositories.cs | مستودع StockIn |
-| 2.45 | StockMovementRepository.cs | مستودع StockMovement |
-| 2.46 | StockTransferRepository.cs | مستودع StockTransfer |
-| 2.47 | SupplierRepository.cs | طبقة وصول بيانات الموردين |
-| 2.48 | TreasuryRepository.cs | مستودع Treasury |
-| 2.49 | VoucherRepository.cs | مستودع Voucher |
+| 2.22 | BuilderRepository.cs | مستودع ما بناه المستخدم |
+| 2.23 | CategoryRepository.cs | مستودع Category |
+| 2.24 | ChequeRepository.cs | مستودع Cheque |
+| 2.25 | CustomerRepository.cs | طبقة وصول بيانات العملاء |
+| 2.26 | CycleDocumentRepositories.cs | مستودع CycleDocument |
+| 2.27 | DocumentLinkRepository.cs | مستودع DocumentLink |
+| 2.28 | DynamicRepository.cs | مستودع أي جدول بناه المستخدم |
+| 2.29 | EditionRepository.cs | اتصالٌ بقاعدة نسخةٍ أخرى |
+| 2.30 | EmployeeMovementRepository.cs | البدل والخصم جدولان بشكلٍ واحد |
+| 2.31 | EmployeeRepository.cs | مستودع Employee |
+| 2.32 | FiscalPeriodRepository.cs | طبقة وصول بيانات السنوات/الفترات المالية |
+| 2.33 | IPartyRepository.cs | الشكل المشترك بين ICustomerRepository/ISupplierReposito |
+| 2.34 | JournalRepository.cs | طبقة وصول بيانات قيود اليومية |
+| 2.35 | LicenseRepository.cs | مستودع License |
+| 2.36 | NumberSequenceRepository.cs | طبقة وصول بيانات تسلسل الأرقام |
+| 2.37 | PayrollRepository.cs | مستودع Payroll |
+| 2.38 | PermissionRepository.cs | مستودع الصلاحيات والأدوار والمستخدمين |
+| 2.39 | ProductRepository.cs | مستودع Product |
+| 2.40 | PurchaseInvoiceRepository.cs | مستودع PurchaseInvoice |
+| 2.41 | PurchaseReturnRepository.cs | مستودع PurchaseReturn |
+| 2.42 | SalesInvoiceRepository.cs | مستودع SalesInvoice |
+| 2.43 | SalesReturnRepository.cs | مستودع SalesReturn |
+| 2.44 | SettingRepository.cs | مستودع AppSettings |
+| 2.45 | StockAdjustmentRepositories.cs | مستودع StockIn |
+| 2.46 | StockMovementRepository.cs | مستودع StockMovement |
+| 2.47 | StockTransferRepository.cs | مستودع StockTransfer |
+| 2.48 | SupplierRepository.cs | طبقة وصول بيانات الموردين |
+| 2.49 | TreasuryRepository.cs | مستودع Treasury |
+| 2.50 | VoucherRepository.cs | مستودع Voucher |
 | | **Seeders/** | بذر عدّادات الترقيم |
-| 2.50 | NumberSequenceSeeder.cs | يزرع تسلسلات الأرقام ذات بادئة |
-| 2.51 | PermissionSeeder.cs | زرع المفاتيح ودور مدير النظام |
-| 2.52 | SettingSeeder.cs | زرع المفاتيح الافتراضية بلا استبدال |
+| 2.51 | NumberSequenceSeeder.cs | يزرع تسلسلات الأرقام ذات بادئة |
+| 2.52 | PermissionSeeder.cs | زرع المفاتيح ودور مدير النظام |
+| 2.53 | SettingSeeder.cs | زرع المفاتيح الافتراضية بلا استبدال |
 
 ## 3. 3.Domain
 
 | # | الملف | الوظيفة |
 |---|---|---|
-| | **Contracts/** | العقود ومفرداتها: تحقق وطباعة وتصدير وسحب |
-| 3.01 | IDocumentExporter.cs | عقد تصدير مستند قابل للطباعة |
-| 3.02 | IPrintable.cs | أي مستند قابل للطباعة ينفّذ |
-| 3.03 | IPullSourceReader.cs | يقرأ كمية سطر مستند مصدر |
-| 3.04 | IValidator.cs | عقد Validator |
-| 3.05 | PaperNode.cs | قطعة ورق كبنية مجرّدة |
-| 3.06 | ValidationResult.cs | عقد ValidationResult |
-| 3.07 | ValidatorBase.cs | قواعد تحقق عامة مشتركة |
+| | **Calculations/** | كل صيغة حساب نقية: السطر والراتب والأصل والتكلفة والقوائم والفترات |
+| 3.01 | AssetCalc.cs | قواعد الإهلاك النقيّة |
+| 3.02 | FiscalPeriodCalc.cs | حسابات تواريخ السنة/الفترات المالية |
+| 3.03 | InventoryCosting.cs | تسعير المخزون بالمتوسط المرجَّح المتحرّك |
+| 3.04 | LayoutCalc.cs | مقاييس العرض والطباعة |
+| 3.05 | LineCalc.cs | مصدر واحد لحساب مبالغ المستندات |
+| 3.06 | PartyCalc.cs | قواعد الطرف النقيّة |
+| 3.07 | PayrollCalc.cs | حساب الراتب |
+| 3.08 | StatementCalc.cs | مقاييس القوائم المالية |
+| | **Contracts/** | العقود ومفرداتها: طباعة وتصدير وسحب |
+| 3.09 | IDocumentExporter.cs | عقد تصدير مستند قابل للطباعة |
+| 3.10 | IPrintable.cs | أي مستند قابل للطباعة ينفّذ |
+| 3.11 | IPullSourceReader.cs | يقرأ كمية سطر مستند مصدر |
+| 3.12 | PaperNode.cs | قطعة ورق كبنية مجرّدة |
 | | **Entities/** | كيانات صرفة: خصائص فقط بلا سلوك |
-| 3.08 | Account.cs | كيان Account |
-| 3.09 | Asset.cs | كيان Asset |
-| 3.10 | AssetDepreciation.cs | قسط إهلاكٍ واحد |
-| 3.11 | AssetDisposal.cs | بيع أصل واستبعاده |
-| 3.12 | AssetRevaluation.cs | إعادة تقييم أصل |
-| 3.13 | BackupHistoryRecord.cs | سجل نسخة احتياطية |
-| 3.14 | Builder.cs | ما يتقاسمه أبناء الوحدة |
-| 3.15 | Category.cs | كيان Category |
-| 3.16 | Cheque.cs | شيك وارد أو صادر |
+| 3.13 | Account.cs | كيان Account |
+| 3.14 | Asset.cs | كيان Asset |
+| 3.15 | AssetDepreciation.cs | قسط إهلاكٍ واحد |
+| 3.16 | AssetDisposal.cs | بيع أصل واستبعاده |
+| 3.17 | AssetRevaluation.cs | إعادة تقييم أصل |
+| 3.18 | BackupHistoryRecord.cs | سجل نسخة احتياطية |
+| 3.19 | Builder.cs | ما يتقاسمه أبناء الوحدة |
+| 3.20 | Category.cs | كيان Category |
+| 3.21 | Cheque.cs | شيك وارد أو صادر |
 | | **Entities/Common/** | أسس الكيانات المشتركة |
-| 3.17 | BaseModel.cs | القاعدة المشتركة لكل الكيانات الرئيسية |
-| 3.18 | InvoiceBase.cs | ما تتقاسمه فاتورتا البيع والشراء |
-| 3.19 | PartyBase.cs | ما يتقاسمه كل طرف |
-| 3.20 | ReturnBase.cs | ما يتقاسمه مرتجعا البيع والشراء |
+| 3.22 | BaseModel.cs | القاعدة المشتركة لكل الكيانات الرئيسية |
+| 3.23 | InvoiceBase.cs | ما تتقاسمه فاتورتا البيع والشراء |
+| 3.24 | PartyBase.cs | ما يتقاسمه كل طرف |
+| 3.25 | ReturnBase.cs | ما يتقاسمه مرتجعا البيع والشراء |
 | | **Entities/** | كيانات صرفة: خصائص فقط بلا سلوك |
-| 3.21 | Company.cs | كيان Company |
-| 3.22 | Currency.cs | كيان Currency |
-| 3.23 | Customer.cs | كيان Customer |
-| 3.24 | CycleDocument.cs | كيان CycleDocument |
-| 3.25 | Department.cs | كيان Department |
-| 3.26 | DocumentLink.cs | ربط سحب واحد |
-| 3.27 | Employee.cs | كيان Employee |
-| 3.28 | EmployeeMovement.cs | البدل والخصم سواء |
-| 3.29 | ExchangeRate.cs | كيان ExchangeRate |
-| 3.30 | FiscalPeriod.cs | كيان FiscalPeriod |
-| 3.31 | FiscalYear.cs | كيان FiscalYear |
-| 3.32 | JobTitle.cs | كيان JobTitle |
-| 3.33 | JournalEntry.cs | كيان JournalEntry |
-| 3.34 | JournalLine.cs | كيان JournalLine |
-| 3.35 | License.cs | ترخيص عميل |
-| 3.36 | NumberSequence.cs | عدّاد ترقيم لكل مفتاح |
-| 3.37 | Payroll.cs | كيان Payroll |
-| 3.38 | PayrollLine.cs | استحقاق موظفٍ في مسير |
-| 3.39 | Product.cs | كيان Product |
-| 3.40 | PurchaseInvoice.cs | كيان PurchaseInvoice |
-| 3.41 | PurchaseReturn.cs | كيان PurchaseReturn |
-| 3.42 | SalesInvoice.cs | كيان SalesInvoice |
-| 3.43 | SalesReturn.cs | كيان SalesReturn |
-| 3.44 | Security.cs | دورٌ ومفاتيحه |
-| 3.45 | Setting.cs | كيان Setting |
-| 3.46 | StockAdjustment.cs | كيان StockAdjustment |
-| 3.47 | StockMovement.cs | كيان StockMovement |
-| 3.48 | StockTransferDocument.cs | كيان StockTransferDocument |
-| 3.49 | Supplier.cs | كيان Supplier |
-| 3.50 | Treasury.cs | خزينة/صندوق أو حساب بنكي |
-| 3.51 | Unit.cs | كيان Unit |
-| 3.52 | User.cs | كيان User |
-| 3.53 | Voucher.cs | سند قبض/صرف |
-| 3.54 | Warehouse.cs | كيان Warehouse |
+| 3.26 | Company.cs | كيان Company |
+| 3.27 | Currency.cs | كيان Currency |
+| 3.28 | Customer.cs | كيان Customer |
+| 3.29 | CycleDocument.cs | كيان CycleDocument |
+| 3.30 | Department.cs | كيان Department |
+| 3.31 | DocumentLink.cs | ربط سحب واحد |
+| 3.32 | Employee.cs | كيان Employee |
+| 3.33 | EmployeeMovement.cs | البدل والخصم سواء |
+| 3.34 | ExchangeRate.cs | كيان ExchangeRate |
+| 3.35 | FiscalPeriod.cs | كيان FiscalPeriod |
+| 3.36 | FiscalYear.cs | كيان FiscalYear |
+| 3.37 | JobTitle.cs | كيان JobTitle |
+| 3.38 | JournalEntry.cs | كيان JournalEntry |
+| 3.39 | JournalLine.cs | كيان JournalLine |
+| 3.40 | License.cs | ترخيص عميل |
+| 3.41 | NumberSequence.cs | عدّاد ترقيم لكل مفتاح |
+| 3.42 | Payroll.cs | كيان Payroll |
+| 3.43 | PayrollLine.cs | استحقاق موظفٍ في مسير |
+| 3.44 | Product.cs | كيان Product |
+| 3.45 | PurchaseInvoice.cs | كيان PurchaseInvoice |
+| 3.46 | PurchaseReturn.cs | كيان PurchaseReturn |
+| 3.47 | SalesInvoice.cs | كيان SalesInvoice |
+| 3.48 | SalesReturn.cs | كيان SalesReturn |
+| 3.49 | Security.cs | دورٌ ومفاتيحه |
+| 3.50 | Setting.cs | كيان Setting |
+| 3.51 | StockAdjustment.cs | كيان StockAdjustment |
+| 3.52 | StockMovement.cs | كيان StockMovement |
+| 3.53 | StockTransferDocument.cs | كيان StockTransferDocument |
+| 3.54 | Supplier.cs | كيان Supplier |
+| 3.55 | Treasury.cs | خزينة/صندوق أو حساب بنكي |
+| 3.56 | Unit.cs | كيان Unit |
+| 3.57 | User.cs | كيان User |
+| 3.58 | Voucher.cs | سند قبض/صرف |
+| 3.59 | Warehouse.cs | كيان Warehouse |
 | | **Enums/** | تعدادات النظام |
-| 3.55 | Enums.cs | تعدادات النظام |
+| 3.60 | Enums.cs | تعدادات النظام |
+| 3.61 | FieldFormat.cs | صيغة الحقل |
 | | **Helpers/** | أدوات نقية صغيرة |
-| 3.56 | ArabicNumberToWords.cs | التفقيط بالعربية |
-| 3.57 | DocumentTotals.cs | مصدر واحد لحساب مبالغ المستندات |
+| 3.62 | ArabicNumberToWords.cs | التفقيط بالعربية |
 | | **Results/** | نتيجة العملية وحالتها |
-| 3.58 | PagedResult.cs | نتيجة صفحة واحدة من قائمة |
-| 3.59 | Result.cs | نتيجة عملية بلا قيمة راجعة |
-| 3.60 | StatusVariant.cs | مفردات حالة الأعمال المقفلة |
-| | **Rules/** | قواعد محاسبية نقية تستوردها الخدمات والتقارير |
-| 3.61 | AccountingRules.cs | قواعد تحقق محاسبية جاهزة |
-| 3.62 | DepreciationRules.cs | قواعد الإهلاك النقيّة |
-| 3.63 | FiscalPeriodCalculator.cs | حسابات تواريخ السنة/الفترات المالية |
-| 3.64 | InventoryCosting.cs | تسعير المخزون بالمتوسط المرجَّح المتحرّك |
-| 3.65 | PartyRules.cs | قواعد الطرف النقيّة |
-| 3.66 | RuleSet.cs | قواعد التحقق ومجموعتها |
+| 3.63 | PagedResult.cs | نتيجة صفحة واحدة من قائمة |
+| 3.64 | Result.cs | نتيجة عملية بلا قيمة راجعة |
+| 3.65 | StatusVariant.cs | مفردات حالة الأعمال المقفلة |
 
 ## 4. 4.Application
 
@@ -200,185 +200,189 @@
 | 4.12 | CycleDocumentDto.cs | بيانات مستند الدورة |
 | 4.13 | IPullableLine.cs | سطرٌ قابل للسحب |
 | 4.14 | PullLinkFields.cs |  |
+| 4.15 | TradeLineDto.cs | سطر فاتورةٍ أو مرتجع |
 | | **DTOs/HR/** | بيانات الموارد البشرية |
-| 4.15 | DepartmentDto.cs | بيانات القسم |
 | 4.16 | EmployeeDto.cs | بيانات الموظف |
 | 4.17 | EmployeeMovementDto.cs | بدلٌ أو خصمٌ على موظف |
-| 4.18 | JobTitleDto.cs | بيانات المسمّى الوظيفي |
-| 4.19 | PayrollDto.cs | بيانات مسير الرواتب |
+| 4.18 | PayrollDto.cs | بيانات مسير الرواتب |
 | | **DTOs/Inventory/** | بيانات المخزون |
-| 4.20 | OpeningStockDto.cs | أرصدة الأصناف الافتتاحية |
-| 4.21 | ProductDto.cs | بيانات الصنف |
-| 4.22 | StockAdjustmentDto.cs | بيانات إذن المخزون |
-| 4.23 | StockTransferDto.cs | بيانات التحويل المخزني |
-| 4.24 | UnitDto.cs | بيانات الوحدة |
-| 4.25 | WarehouseDto.cs | بيانات المخزن |
+| 4.19 | OpeningStockDto.cs | أرصدة الأصناف الافتتاحية |
+| 4.20 | ProductDto.cs | بيانات الصنف |
+| 4.21 | StockAdjustmentDto.cs | بيانات إذن المخزون |
+| 4.22 | StockTransferDto.cs | بيانات التحويل المخزني |
 | | **DTOs/Parties/** | بيانات العملاء والموردين |
-| 4.26 | CustomerDto.cs | للعرض في الجداول |
-| 4.27 | SupplierDto.cs | بيانات المورد |
+| 4.23 | CustomerDto.cs | للعرض في الجداول |
+| 4.24 | PartyDto.cs | عرض الطرف في الجداول |
+| 4.25 | SupplierDto.cs | بيانات المورد |
 | | **DTOs/Purchasing/** | بيانات المشتريات |
-| 4.28 | PurchaseInvoiceDto.cs | بيانات فاتورة الشراء |
-| 4.29 | PurchaseReturnDto.cs | بيانات مرتجع الشراء |
+| 4.26 | PurchaseInvoiceDto.cs | بيانات فاتورة الشراء |
+| 4.27 | PurchaseReturnDto.cs | بيانات مرتجع الشراء |
 | | **DTOs/Sales/** | بيانات المبيعات |
-| 4.30 | SalesInvoiceDto.cs | بيانات فاتورة البيع |
-| 4.31 | SalesReturnDto.cs | بيانات مرتجع البيع |
+| 4.28 | SalesInvoiceDto.cs | بيانات فاتورة البيع |
+| 4.29 | SalesReturnDto.cs | بيانات مرتجع البيع |
 | | **DTOs/Security/** | بيانات المستخدمين والأدوار |
-| 4.32 | RoleDto.cs | بيانات الدور |
-| 4.33 | UserDto.cs | بيانات المستخدم |
+| 4.30 | RoleDto.cs | بيانات الدور |
+| 4.31 | UserDto.cs | بيانات المستخدم |
 | | **DTOs/Treasury/** | بيانات الخزائن والبنوك |
-| 4.34 | TreasuryDto.cs | بيانات الخزينة |
+| 4.32 | TreasuryDto.cs | بيانات الخزينة |
 | | **DTOs/Vouchers/** | بيانات السندات |
-| 4.35 | VoucherDto.cs | بيانات السند وتخصيصه |
-| | **Pipeline/** | تركيب العمليات متعددة الخطوات |
-| 4.36 | IStep.cs | عقد الخطوة الواحدة |
-| 4.37 | Pipeline.cs | مؤلِّف خطوات للعمليات غير النمطية |
-| 4.38 | PipelineContext.cs | سياق يمرّ بين الخطوات |
-| | **Pipeline/Steps/** | خطوة واحدة قابلة للتركيب |
-| 4.39 | AuditStep.cs | خطوة تسجيل التدقيق |
-| 4.40 | FuncStep.cs | غلاف خطوة بسطر واحد |
-| 4.41 | PermissionStep.cs | خطوة فحص الصلاحية |
-| 4.42 | TransactionStep.cs | خطوة فتح المعاملة أو إعادة |
-| 4.43 | ValidationStep.cs | خطوة التحقق |
+| 4.33 | VoucherDto.cs | بيانات السند وتخصيصه |
+| | **Legacy/Accounting/** | الحسابات والقيود والفترات المالية |
+| 4.34 | AccountService.cs | صفحة شجرة الحسابات |
+| 4.35 | FiscalPeriodService.cs | المالك الوحيد لمنطق السنوات/الفترات المالية |
+| 4.36 | IAccountService.cs | عقد خدمة الحسابات |
+| 4.37 | IFiscalPeriodService.cs | عقد الفترات المالية |
+| 4.38 | IJournalService.cs | المالك الوحيد لمنطق قيود اليومية |
+| 4.39 | JournalService.cs | صفحة قيود اليومية |
+| 4.40 | OpeningBalanceService.cs | الأرصدة الافتتاحية ليست جدولاً موازياً |
+| | **Legacy/Admin/** | الإعدادات والتراخيص والنسخ والتحديث |
+| 4.41 | ISettingsService.cs | عقد الإعدادات |
+| 4.42 | LicenseService.cs | تراخيص العملاء |
+| 4.43 | ProgramEditionService.cs | نسخةُ برنامجٍ مستقلّة في مسارٍ |
+| 4.44 | SettingsService.cs | طبقة الأعمال فوق ISettingsProvider |
+| 4.45 | UpdateService.cs | التحديث سؤالٌ واحد |
+| | **Legacy/Assets/** | الأصل: اقتناءً وإهلاكاً وتقييماً واستبعاداً |
+| 4.46 | AssetDepreciationService.cs | قسط الإهلاك سجلٌّ مستقلّ |
+| 4.47 | AssetDisposalService.cs | بيع الأصل واستبعاده |
+| 4.48 | AssetMovementServiceBase.cs | أساس حركات الأصول |
+| 4.49 | AssetRevaluationService.cs | إعادة تقييم الأصل |
+| 4.50 | AssetService.cs | الأصل: إنشاءً وتعديلاً وبذراً |
+| 4.51 | IAssetService.cs | عقد خدمة الأصول |
+| | **Legacy/Backup/** | النسخ الاحتياطي والاستعادة |
+| 4.52 | BackupInfo.cs | وصف نسخة احتياطية |
+| 4.53 | BackupService.cs | المكان الوحيد لأخذ/استعادة/التحقق من النسخ |
+| 4.54 | IBackupService.cs | عقد النسخ الاحتياطي |
+| | **Legacy/Builder/** | ما يبنيه المستخدم من شاشات |
+| 4.55 | BuilderCatalogService.cs | وصفُ ما بناه المستخدم كما |
+| 4.56 | BuilderCrudServices.cs | خدمة صفوف |
+| 4.57 | DynamicEntityService.cs | خدمة أي جدول بناه المستخدم |
+| | **Legacy/Cheques/** | دورة الشيك |
+| 4.58 | ChequeDocumentService.cs | مستند "استلام/صرف شيكات" |
+| 4.59 | ChequeService.cs | دورة الشيك كاملة |
+| | **Legacy/Common/** | الفئات وحساباتها |
+| 4.60 | CategoryService.cs | فئات الوحدات وحساباتها |
+| 4.61 | ICategoryService.cs | عقد خدمة الفئات |
+| | **Legacy/Documents/** | مستندات الدورة وروابط السحب |
+| 4.62 | CycleDocumentServiceBase.cs | مستندات الدورة: أساسٌ وستّ خدمات |
+| | **Legacy/HR/** | الموظفون والرواتب والحضور |
+| 4.63 | AttendanceService.cs | الحضور والانصراف |
+| 4.64 | EmployeeMovementService.cs | البدل والخصم خدمةٌ واحدة بجدولين |
+| 4.65 | EmployeeService.cs | خدمة الموظفين |
+| 4.66 | IEmployeeService.cs | عقد الموظفين |
+| 4.67 | IPayrollService.cs | عقد مسير الرواتب |
+| 4.68 | PayrollService.cs | مسير الرواتب |
+| | **Legacy/Inventory/** | الأصناف والمخازن والأرصدة |
+| 4.69 | IProductService.cs | عقد الأصناف |
+| 4.70 | IStockInService.cs | عقود أذون المخزون الستة |
+| 4.71 | IStockTransferService.cs | عقد التحويل المخزني |
+| 4.72 | OpeningStockService.cs | رصيد أول المدة للأصناف |
+| 4.73 | ProductService.cs | خدمة الأصناف |
+| 4.74 | StockAdjustmentServiceBase.cs | خدمةٌ بوّابتها مفتاحٌ واحد مُعلَن |
+| 4.75 | StockTransferService.cs | التحويل بين المخازن |
+| | **Legacy/Parties/** | العملاء والموردون |
+| 4.76 | CustomerService.cs | المالك الوحيد لمنطق العملاء |
+| 4.77 | ICustomerService.cs | المالك الوحيد لمنطق العملاء |
+| 4.78 | ISupplierService.cs | المالك الوحيد لمنطق الموردين |
+| 4.79 | PartyServiceBase.cs | المنطق المشترك بين العملاء والموردين |
+| 4.80 | SupplierService.cs | المالك الوحيد لمنطق الموردين |
+| | **Legacy/Print/** | بناء المستندات المطبوعة |
+| 4.81 | ChequePrinter.cs | الشيك يُطبَع على ورق مطبوع |
+| 4.82 | Code128.cs | ترميز Code128-B |
+| 4.83 | CompanyHeaderComponent.cs | ترويسة الشركة كقطعة واحدة تُستدعى |
+| 4.84 | IPrintDialogHost.cs | تنفّذه طبقة الواجهة |
+| 4.85 | IPrintService.cs | عقد الطباعة |
+| 4.86 | ImageData.cs | تحويل صورة ↔ Base64 |
+| 4.87 | PaperNodeRenderer.cs | مترجم PaperNode إلى عناصر WPF |
+| 4.88 | PaperTheme.cs | قيم الورق كلها من PrintTheme.xaml |
+| 4.89 | PrintService.cs | يبني مستندات الطباعة من IPrintable |
+| | **Legacy/Purchasing/** | فواتير الشراء ومرتجعاتها |
+| 4.90 | IPurchaseInvoiceService.cs | عقد فاتورة الشراء |
+| 4.91 | IPurchaseReturnService.cs | عقد مرتجع الشراء |
+| 4.92 | PurchaseInvoiceService.cs | فاتورة الشراء وقيدها |
+| 4.93 | PurchaseReturnService.cs | مرتجع الشراء وقيده |
+| | **Legacy/Sales/** | فواتير البيع ومرتجعاتها |
+| 4.94 | ISalesInvoiceService.cs | عقد فاتورة البيع |
+| 4.95 | ISalesReturnService.cs | عقد مرتجع البيع |
+| 4.96 | SalesInvoiceService.cs | فاتورة البيع وقيدها |
+| 4.97 | SalesReturnService.cs | مرتجع البيع وقيده |
+| | **Legacy/Security/** | المستخدمون والأدوار |
+| 4.98 | IRoleService.cs | عقد الأدوار |
+| 4.99 | IUserService.cs | عقد المستخدمين |
+| 4.100 | RoleService.cs | الأدوار وصلاحياتها |
+| 4.101 | UserService.cs | المستخدمون وكلمات مرورهم |
+| | **Legacy/Treasury/** | الخزائن والبنوك |
+| 4.102 | ITreasuryService.cs | عقد الخزائن والبنوك |
+| 4.103 | TreasuryService.cs | الخزائن والبنوك وحساباتها |
+| | **Legacy/Vouchers/** | سندات القبض والصرف |
+| 4.104 | VoucherServiceBase.cs | سند قبض/صرف |
 | | **Reporting/** | خدمات التقارير |
-| 4.44 | AssetReportService.cs | تقريرا الأصول |
-| 4.45 | BuilderReportService.cs | تقرير مبنيّ |
-| 4.46 | FinancialStatementFactory.cs | القوائم المالية بشكلها الرسمي |
-| 4.47 | FinancialStatementService.cs | القوائم المالية الثلاث |
-| 4.48 | PartyReportService.cs | أرصدة الأطراف وكشوفها |
-| 4.49 | PayslipReportService.cs | قسيمة راتب موظف |
-| 4.50 | ReportData.cs | مخرَج التقرير |
-| 4.51 | ReportRows.cs | ميزان المراجعة القياسي |
-| 4.52 | ReportServiceBase.cs | ما يتقاسمه كل تقرير |
-| 4.53 | SalesReportService.cs | تقرير المبيعات |
-| 4.54 | StockReportService.cs | تقارير المخزون |
-| | **Services/Accounting/** | الحسابات والقيود والفترات المالية |
-| 4.55 | AccountService.cs | المالك الوحيد لمنطق شجرة الحسابات |
-| 4.56 | FiscalPeriodService.cs | المالك الوحيد لمنطق السنوات/الفترات المالية |
-| 4.57 | IAccountService.cs | عقد خدمة الحسابات |
-| 4.58 | IFiscalPeriodService.cs | عقد الفترات المالية |
-| 4.59 | IJournalService.cs | المالك الوحيد لمنطق قيود اليومية |
-| 4.60 | JournalService.cs | المالك الوحيد لمنطق قيود اليومية |
-| 4.61 | OpeningBalanceService.cs | الأرصدة الافتتاحية ليست جدولاً موازياً |
-| | **Services/Admin/** | الإعدادات والتراخيص والنسخ والتحديث |
-| 4.62 | ISettingsService.cs | عقد الإعدادات |
-| 4.63 | LicenseService.cs | تراخيص العملاء |
-| 4.64 | ProgramEditionService.cs | نسخةُ برنامجٍ مستقلّة في مسارٍ |
-| 4.65 | SettingsService.cs | طبقة الأعمال فوق ISettingsProvider |
-| 4.66 | UpdateService.cs | التحديث سؤالٌ واحد |
-| | **Services/Assets/** | الأصل: اقتناءً وإهلاكاً وتقييماً واستبعاداً |
-| 4.67 | AssetDepreciationService.cs | قسط الإهلاك سجلٌّ مستقلّ |
-| 4.68 | AssetDisposalService.cs | بيع الأصل واستبعاده |
-| 4.69 | AssetMovementServiceBase.cs | أساس حركات الأصول |
-| 4.70 | AssetRevaluationService.cs | إعادة تقييم الأصل |
-| 4.71 | AssetService.cs | الأصل: إنشاءً وتعديلاً وبذراً |
-| 4.72 | IAssetService.cs | عقد خدمة الأصول |
-| | **Services/Backup/** | النسخ الاحتياطي والاستعادة |
-| 4.73 | BackupInfo.cs | وصف نسخة احتياطية |
-| 4.74 | BackupService.cs | المكان الوحيد لأخذ/استعادة/التحقق من النسخ |
-| 4.75 | IBackupService.cs | عقد النسخ الاحتياطي |
-| | **Services/Builder/** | ما يبنيه المستخدم من شاشات |
-| 4.76 | BuilderCatalogService.cs | وصفُ ما بناه المستخدم كما |
-| 4.77 | BuilderCrudServices.cs | خدمة صفوف |
-| 4.78 | ColumnWidths.cs | نِسَب عرض أعمدة الجدول |
-| 4.79 | DynamicEntityService.cs | خدمة أي جدول بناه المستخدم |
-| | **Services/Cheques/** | دورة الشيك |
-| 4.80 | ChequeDocumentService.cs | مستند "استلام/صرف شيكات" |
-| 4.81 | ChequeService.cs | دورة الشيك كاملة |
-| | **Services/Common/** | الفئات وحساباتها |
-| 4.82 | CategoryService.cs | فئات الوحدات وحساباتها |
-| 4.83 | ICategoryService.cs | عقد خدمة الفئات |
-| | **Services/** | خدمة لكل كيان، ترث ServiceBase |
-| 4.84 | CrudServiceBase.cs | القراءة العامة لكيان بصفحات وبحث |
-| | **Services/Documents/** | مستندات الدورة وروابط السحب |
-| 4.85 | CycleDocumentServiceBase.cs | مستندات الدورة: أساسٌ وستّ خدمات |
-| 4.86 | DocumentLinkService.cs | تتبّع السحب بين المستندات |
-| | **Services/HR/** | الموظفون والرواتب والحضور |
-| 4.87 | AttendanceService.cs | الحضور والانصراف |
-| 4.88 | DepartmentService.cs | خدمة الأقسام |
-| 4.89 | EmployeeMovementService.cs | البدل والخصم خدمةٌ واحدة بجدولين |
-| 4.90 | EmployeeService.cs | خدمة الموظفين |
-| 4.91 | IDepartmentService.cs | عقد الأقسام |
-| 4.92 | IEmployeeService.cs | عقد الموظفين |
-| 4.93 | IJobTitleService.cs | عقد المسمّيات الوظيفية |
-| 4.94 | IPayrollService.cs | عقد مسير الرواتب |
-| 4.95 | JobTitleService.cs | خدمة المسمّيات الوظيفية |
-| 4.96 | PayrollService.cs | مسير الرواتب |
-| | **Services/** | خدمة لكل كيان، ترث ServiceBase |
-| 4.97 | IAccountLinkedService.cs | كيان يعيش ورقةً في شجرة |
-| 4.98 | INumberSequenceService.cs | عقد الترقيم التسلسلي |
-| | **Services/Inventory/** | الأصناف والمخازن والأرصدة |
-| 4.99 | IProductService.cs | عقد الأصناف |
-| 4.100 | IStockInService.cs | عقود أذون المخزون الستة |
-| 4.101 | IStockService.cs | عقد أرصدة المخزون |
-| 4.102 | IStockTransferService.cs | عقد التحويل المخزني |
-| 4.103 | IUnitService.cs | عقد الوحدات |
-| 4.104 | IWarehouseService.cs | عقد المخازن |
-| 4.105 | OpeningStockService.cs | رصيد أول المدة للأصناف |
-| 4.106 | ProductService.cs | خدمة الأصناف |
-| 4.107 | StockAdjustmentServiceBase.cs | خدمةٌ بوّابتها مفتاحٌ واحد مُعلَن |
-| 4.108 | StockService.cs | أرصدة المخزون وحركته |
-| 4.109 | StockTransferService.cs | التحويل بين المخازن |
-| 4.110 | UnitService.cs | خدمة الوحدات |
-| 4.111 | WarehouseService.cs | خدمة المخازن |
-| | **Services/** | خدمة لكل كيان، ترث ServiceBase |
-| 4.112 | NumberSequenceService.cs | أرقام متسلسلة لكل مفتاح |
-| | **Services/Parties/** | العملاء والموردون |
-| 4.113 | CustomerService.cs | المالك الوحيد لمنطق العملاء |
-| 4.114 | ICustomerService.cs | المالك الوحيد لمنطق العملاء |
-| 4.115 | ISupplierService.cs | المالك الوحيد لمنطق الموردين |
-| 4.116 | PartyServiceBase.cs | المنطق المشترك بين العملاء والموردين |
-| 4.117 | SupplierService.cs | المالك الوحيد لمنطق الموردين |
-| | **Services/** | خدمة لكل كيان، ترث ServiceBase |
-| 4.118 | Posting.cs | القيد يُنشأ مُرحَّلاً ويُعكس بحذفه |
-| | **Services/Print/** | بناء المستندات المطبوعة |
-| 4.119 | ChequePrinter.cs | الشيك يُطبَع على ورق مطبوع |
-| 4.120 | Code128.cs | ترميز Code128-B |
-| 4.121 | CompanyHeaderComponent.cs | ترويسة الشركة كقطعة واحدة تُستدعى |
-| 4.122 | IPrintDialogHost.cs | تنفّذه طبقة الواجهة |
-| 4.123 | IPrintService.cs | عقد الطباعة |
-| 4.124 | ImageData.cs | تحويل صورة ↔ Base64 |
-| 4.125 | PaperNodeRenderer.cs | مترجم PaperNode إلى عناصر WPF |
-| 4.126 | PaperTheme.cs | قيم الورق كلها من PrintTheme.xaml |
-| 4.127 | PrintService.cs | يبني مستندات الطباعة من IPrintable |
-| | **Services/Purchasing/** | فواتير الشراء ومرتجعاتها |
-| 4.128 | IPurchaseInvoiceService.cs | عقد فاتورة الشراء |
-| 4.129 | IPurchaseReturnService.cs | عقد مرتجع الشراء |
-| 4.130 | PurchaseInvoiceService.cs | فاتورة الشراء وقيدها |
-| 4.131 | PurchaseReturnService.cs | مرتجع الشراء وقيده |
-| | **Services/Sales/** | فواتير البيع ومرتجعاتها |
-| 4.132 | ISalesInvoiceService.cs | عقد فاتورة البيع |
-| 4.133 | ISalesReturnService.cs | عقد مرتجع البيع |
-| 4.134 | SalesInvoiceService.cs | فاتورة البيع وقيدها |
-| 4.135 | SalesReturnService.cs | مرتجع البيع وقيده |
-| | **Services/Security/** | المستخدمون والأدوار |
-| 4.136 | IRoleService.cs | عقد الأدوار |
-| 4.137 | IUserService.cs | عقد المستخدمين |
-| 4.138 | RoleService.cs | الأدوار وصلاحياتها |
-| 4.139 | UserService.cs | المستخدمون وكلمات مرورهم |
-| | **Services/** | خدمة لكل كيان، ترث ServiceBase |
-| 4.140 | ServiceBase.cs | القاعدة المشتركة لكل خدمة |
-| | **Services/Treasury/** | الخزائن والبنوك |
-| 4.141 | ITreasuryService.cs | عقد الخزائن والبنوك |
-| 4.142 | TreasuryService.cs | الخزائن والبنوك وحساباتها |
-| | **Services/Vouchers/** | سندات القبض والصرف |
-| 4.143 | VoucherServiceBase.cs | سند قبض/صرف |
-| | **Validation/** | متحقّق لكل كيان عبر Rules.For |
-| 4.144 | AccountValidator.cs | ينفّذ IValidator&lt;Account&gt; عبر RuleSet |
-| 4.145 | AssetDepreciationValidator.cs | تحقّق قسط الإهلاك |
-| 4.146 | AssetDisposalValidator.cs | تحقّق استبعاد الأصل |
-| 4.147 | AssetRevaluationValidator.cs | تحقّق إعادة التقييم |
-| 4.148 | AssetValidator.cs | تحقّق الأصل |
-| 4.149 | BuilderModuleValidator.cs | قواعد وصف الصفحة المبنيّة |
-| 4.150 | BuilderRowValidator.cs | قواعد صفٍّ في جدول مبنيّ |
-| 4.151 | CategoryValidator.cs | تحقّق الفئة |
-| 4.152 | ChequeLineValidator.cs | ما يجعل سطر المستند شيكاً |
-| 4.153 | CustomerValidator.cs | تحقّق العميل |
-| 4.154 | EditionValidator.cs | تحقّق نسخة البرنامج |
-| 4.155 | EmployeeValidator.cs | تحقّق الموظف |
-| 4.156 | JournalValidator.cs | تحقّق القيد وسطوره |
-| 4.157 | ProductValidator.cs | تحقّق الصنف |
-| 4.158 | SupplierValidator.cs | تحقّق المورد |
-| 4.159 | UserValidator.cs | تحقّق المستخدم |
+| 4.105 | AssetReportService.cs | تقريرا الأصول |
+| 4.106 | BuilderReportService.cs | تقرير مبنيّ |
+| 4.107 | FinancialStatementFactory.cs | القوائم المالية بشكلها الرسمي |
+| 4.108 | FinancialStatementService.cs | القوائم المالية الثلاث |
+| 4.109 | PartyReportService.cs | أرصدة الأطراف وكشوفها |
+| 4.110 | PayslipReportService.cs | قسيمة راتب موظف |
+| 4.111 | ReportData.cs | مخرَج التقرير |
+| 4.112 | ReportRows.cs | ميزان المراجعة القياسي |
+| 4.113 | ReportServiceBase.cs | ما يتقاسمه كل تقرير |
+| 4.114 | SalesReportService.cs | تقرير المبيعات |
+| 4.115 | StockReportService.cs | تقارير المخزون |
+| | **Services/Core/** | أساس كل خدمة: الصلاحية والمعاملة والكيان والترقيم |
+| 4.116 | CrudServiceBase.cs | القراءة العامة لكيان بصفحات وبحث |
+| 4.117 | EntityService.cs | إضافة الكيان وتعديله وحذفه |
+| 4.118 | INumberSequenceService.cs | عقد الترقيم التسلسلي |
+| 4.119 | NumberSequenceService.cs | أرقام متسلسلة لكل مفتاح |
+| 4.120 | ServiceBase.cs | القاعدة المشتركة لكل خدمة |
+| | **Services/Documents/** | المستند والسحب وحركة المخزون وتغيير الحالة وسطور التجارة |
+| 4.121 | DocumentPull.cs | تتبّع السحب بين المستندات |
+| 4.122 | DocumentService.cs | المستند: قراءةً وإنشاءً واستبدالاً وحذفاً |
+| 4.123 | IStockMove.cs | عقد أرصدة المخزون |
+| 4.124 | ProductLines.cs | سطور المستند بأصنافها |
+| 4.125 | StatusChange.cs | الحالة كترحيل |
+| 4.126 | StockMove.cs | أرصدة المخزون وحركته |
+| 4.127 | TradeAccounts.cs | حسابات البيع والشراء |
+| 4.128 | TradeLines.cs | سطور الفواتير والمرتجعات ومجاميعها |
+| | **Services/Entities/** | الكيان من إعداده: القائمة البسيطة وتحويل الصفّ |
+| 4.129 | ByCode.cs | سطورٌ تُحلّ بكود كيانها |
+| 4.130 | EntitySpec.cs | إعلان صفحة كيان |
+| 4.131 | Lookup.cs | صفحة قائمةٍ من إعلانها |
+| 4.132 | Rows.cs | الكيان صفّاً والصفّ كياناً |
+| 4.133 | Tree.cs | الشجرة من صفوفٍ مسطّحة |
+| | **Services/Ledger/Accounts/** | الحساب: في الشجرة، للكيان، بالاتجاهين، ومع مجمّعه |
+| 4.134 | AccountCases.cs | حالات الحساب التي يستدعيها الكيان |
+| 4.135 | AccountOf.cs | حساب الكيان أو الإعداد |
+| 4.136 | AccountSpec.cs | حساب كيانٍ بمعاملاته |
+| 4.137 | AddEntityAccount.cs | إضافة حساب لكيان صفحة |
+| 4.138 | AddLinkedAccount.cs | حسابٌ في الشجرة ينشئ كيانه |
+| 4.139 | AddMirroredAccount.cs | حسابٌ ومجمّعه لأي كيان |
+| 4.140 | AddTreeAccount.cs | إضافة حساب في الشجرة |
+| 4.141 | CloseAccount.cs | حذف الحساب وإعادة أبيه ورقياً |
+| 4.142 | CloseLinkedAccount.cs | حذف الحساب وكيانه |
+| 4.143 | EditLinkedAccount.cs | تعديل الحساب واسم كيانه |
+| 4.144 | EditTreeAccount.cs | تعديل حساب في الشجرة |
+| 4.145 | IAccountLinkedService.cs | كيان يعيش ورقةً في شجرة |
+| 4.146 | LinkedAccounts.cs | كيان الجذر المرتبط |
+| 4.147 | RenameAccount.cs | تسمية الحساب |
+| 4.148 | SettingAccounts.cs | حسابات الإعدادات |
+| | **Services/Ledger/** | قلب القيد، أرصدة الحسابات، الفترة، القيد بطرفيه والتجارة، الحرّاس، رصيد الطرف |
+| 4.149 | AccountBalances.cs | أرصدة الحسابات من قيودها |
+| 4.150 | Entries.cs | قلب القيد لكل مستدعٍ |
+| 4.151 | Guards.cs | حرّاس الشجرة والنقدية |
+| 4.152 | JournalLines.cs | سطور قيدٍ بطرفيها |
+| 4.153 | OpeningEntry.cs | القيد الافتتاحي متعدّد الأسطر |
+| 4.154 | PartyBalance.cs | رصيد الطرف من حسابه |
+| 4.155 | PartyByKind.cs | الطرف بنوعه |
+| 4.156 | PeriodGate.cs | التاريخ في فترةٍ مفتوحة |
+| 4.157 | Posting.cs | القيد يُنشأ مُرحَّلاً ويُعكس بحذفه |
+| 4.158 | Statement.cs | كشف الحساب برصيده الجاري |
+| 4.159 | TradeEntry.cs | قيد البيع والشراء وعكسهما |
+| 4.160 | TrialBalance.cs | ميزان المراجعة لفترة |
+| 4.161 | TwoSided.cs | طرفا القيد باتجاهه |
+| | **Validation/** | دالة التحقق الوحيدة Check بشروطٍ معاملاتٍ في Field، وسطور المستند |
+| 4.162 | Check.cs | الدالة الوحيدة للتحقق |
+| 4.163 | DocumentLines.cs | سطور المستند بشروط Check |
+| 4.164 | Field.cs | شرطُ حقلٍ بكل معاملاته |
+| 4.165 | ValidationResult.cs | عقد ValidationResult |
 
 ## 5. 5.Design
 
@@ -579,40 +583,41 @@
 | 7.08 | PullSource.cs | مصدر السحب وأثره المخزني |
 | 7.09 | ReportDefinition.cs | وصف التقرير ومعاملاته |
 | 7.10 | RowAction.cs | إجراء إضافي على السجل المحدَّد |
-| 7.11 | StandardFields.cs | حقول تتكرر في كل حوار |
-| 7.12 | TreeCheckListDefinition.cs | شاشة شجرة قابلة للتأشير مدفوعة |
+| 7.11 | RowPage.cs | صفحة صفوفٍ من خدمتها |
+| 7.12 | StandardFields.cs | حقول تتكرر في كل حوار |
+| 7.13 | TreeCheckListDefinition.cs | شاشة شجرة قابلة للتأشير مدفوعة |
 | | **Print/** | جسر الطباعة للشاشات |
-| 7.13 | PrintDocuments.cs | عائلتا المستندات |
-| 7.14 | TradePaper.cs | شكل الورق التجاري |
+| 7.14 | PrintDocuments.cs | عائلتا المستندات |
+| 7.15 | TradePaper.cs | شكل الورق التجاري |
 | | **Pull/** | سحب مستند من مستند |
-| 7.15 | PullService.cs | محرّك السحب العام |
+| 7.16 | PullService.cs | محرّك السحب العام |
 | | **Registry/** | سجلّ الوحدات وخريطة التنقّل |
-| 7.16 | IModuleRegistry.cs | سجل الوحدات المُفعَّلة |
-| 7.17 | ModuleRegistry.cs | سجلّ الوحدات |
-| 7.18 | NavigationMap.cs | خريطة الشريط الجانبي |
-| 7.19 | NavigationSource.cs | أقسام الشريط الجانبي كما يراها |
+| 7.17 | IModuleRegistry.cs | سجل الوحدات المُفعَّلة |
+| 7.18 | ModuleRegistry.cs | سجلّ الوحدات |
+| 7.19 | NavigationMap.cs | خريطة الشريط الجانبي |
+| 7.20 | NavigationSource.cs | أقسام الشريط الجانبي كما يراها |
 | | **Renderers/** | تحويل التعريف إلى شاشة عاملة |
-| 7.20 | BuilderPickers.cs | قوائم تعدادات النظام وكتالوج أزراره |
-| 7.21 | ChequeBoardRenderer.cs | شاشة الشيكات |
-| 7.22 | CrudPageRenderer.cs | تصيير صفحة القائمة وCRUD |
-| 7.23 | DialogRenderer.cs | تصيير الحوار من وصفه |
-| 7.24 | DocumentPageRenderer.cs | تصيير صفحة المستند |
-| 7.25 | DocumentPrinter.cs | يجلب المستند الكامل من خدمته |
-| 7.26 | DocumentRenderer.cs | تصيير محرّر المستند |
-| 7.27 | FieldValidation.cs | تحقّق واجهة واحد لكل الشاشات |
-| 7.28 | FilterControls.cs | شريط فلاتر الصفحة المُعلَنة |
-| 7.29 | FolderOutput.cs | مسار مجلد من المستخدم |
-| 7.30 | ListOutput.cs | طباعة أي قائمة معروضة وتصديرها |
-| 7.31 | PageRenderer.cs | نقطة التوزيع الوحيدة حسب ModuleDefinition.LayoutKind |
-| 7.32 | PaginationBar.cs | شريط الترقيم مربوطاً بنموذج العرض |
-| 7.33 | PullDialog.cs | نافذة "سحب من" |
-| 7.34 | ReportRenderer.cs | تصيير التقرير |
-| 7.35 | Resolve.cs | حلّ نموذج العرض والخدمة |
-| 7.36 | SettingsPageRenderer.cs | تصيير صفحة الإعدادات |
-| 7.37 | ToolbarActions.cs | أزرار الصفحة بعد ترشيحها بما |
-| 7.38 | TreeBuilder.cs | قائمة مسطَّحة تصير شجرة |
-| 7.39 | TreeCheckListRenderer.cs | تصيير شجرة التأشير |
-| 7.40 | TreeRenderer.cs | تصيير الشجرة |
+| 7.21 | BuilderPickers.cs | قوائم تعدادات النظام وكتالوج أزراره |
+| 7.22 | ChequeBoardRenderer.cs | شاشة الشيكات |
+| 7.23 | CrudPageRenderer.cs | تصيير صفحة القائمة وCRUD |
+| 7.24 | DialogRenderer.cs | تصيير الحوار من وصفه |
+| 7.25 | DocumentPageRenderer.cs | تصيير صفحة المستند |
+| 7.26 | DocumentPrinter.cs | يجلب المستند الكامل من خدمته |
+| 7.27 | DocumentRenderer.cs | تصيير محرّر المستند |
+| 7.28 | FieldValidation.cs | تحقّق واجهة واحد لكل الشاشات |
+| 7.29 | FilterControls.cs | شريط فلاتر الصفحة المُعلَنة |
+| 7.30 | FolderOutput.cs | مسار مجلد من المستخدم |
+| 7.31 | ListOutput.cs | طباعة أي قائمة معروضة وتصديرها |
+| 7.32 | PageRenderer.cs | نقطة التوزيع الوحيدة حسب ModuleDefinition.LayoutKind |
+| 7.33 | PaginationBar.cs | شريط الترقيم مربوطاً بنموذج العرض |
+| 7.34 | PullDialog.cs | نافذة "سحب من" |
+| 7.35 | ReportRenderer.cs | تصيير التقرير |
+| 7.36 | Resolve.cs | حلّ نموذج العرض والخدمة |
+| 7.37 | SettingsPageRenderer.cs | تصيير صفحة الإعدادات |
+| 7.38 | ToolbarActions.cs | أزرار الصفحة بعد ترشيحها بما |
+| 7.39 | TreeBuilder.cs | قائمة مسطَّحة تصير شجرة |
+| 7.40 | TreeCheckListRenderer.cs | تصيير شجرة التأشير |
+| 7.41 | TreeRenderer.cs | تصيير الشجرة |
 
 ## 8. 8.Modules
 
@@ -625,11 +630,12 @@
 | 8.05 | CycleVoucherRegistrations.cs | تسجيل سندات الدورة |
 | 8.06 | FinancialStatementColumns.cs | أعمدة القوائم المالية |
 | 8.07 | HrRegistrations.cs | شاشات الموارد البشرية التي يجمع |
-| 8.08 | ModuleRegistrations.cs | يسجّل كل وحدة عمل فعلية |
-| 8.09 | PermissionModuleRegistrations.cs | شاشتا الصلاحيات |
-| 8.10 | ReportRegistrations.cs | التقارير الثلاثة عشر |
-| 8.11 | StockDocumentFactory.cs | رأس المستند المخزني وسطوره |
-| 8.12 | TreasuryRegistrations.cs | الخزائن والسندات والشيكات |
+| 8.08 | LookupPages.cs | إعلانات صفحات القوائم |
+| 8.09 | ModuleRegistrations.cs | يسجّل كل وحدة عمل فعلية |
+| 8.10 | PermissionModuleRegistrations.cs | شاشتا الصلاحيات |
+| 8.11 | ReportRegistrations.cs | التقارير الثلاثة عشر |
+| 8.12 | StockDocumentFactory.cs | رأس المستند المخزني وسطوره |
+| 8.13 | TreasuryRegistrations.cs | الخزائن والسندات والشيكات |
 
 ## 9. App
 
@@ -697,57 +703,59 @@
 | 11.36 | LineEngineTests.cs | محرّك سطور المستند |
 | | **Helpers/** | أدوات الاختبار |
 | 11.37 | ArabicNumberToWordsTests.cs | تفقيط الأرقام بالعربية |
-| | **Pipeline/** | خطوات العمليات |
-| 11.38 | PipelineTests.cs | بنية الـPipeline بكيان وهمي |
+| 11.38 | Localized.cs | رسالةٌ من القاموس |
+| 11.39 | LookupRows.cs | صفٌّ في صفحة قائمة |
 | | **Services/** | الخدمات ومنطقها |
-| 11.39 | AccountLeafStateTests.cs | الحساب إمّا أب وإمّا يقبل |
-| 11.40 | AccountServiceTests.cs | قاعدة معزولة لكل اختبار |
-| 11.41 | BackupServiceTests.cs | النسخ الاحتياطي والاستعادة |
-| 11.42 | BuilderCatalogTests.cs | وصف ما بناه المستخدم |
-| 11.43 | CategoryServiceTests.cs | الفئات وحساباتها |
-| 11.44 | CustomerServiceTests.cs | قاعدة بيانات خاصة معزولة لكل |
-| 11.45 | CycleDocumentServiceTests.cs | مستندات الدورة |
-| 11.46 | CycleVoucherServiceTests.cs | سندات الدورة |
+| 11.40 | AccountLeafStateTests.cs | الحساب إمّا أب وإمّا يقبل |
+| 11.41 | AccountServiceTests.cs | قاعدة معزولة لكل اختبار |
+| 11.42 | BackupServiceTests.cs | النسخ الاحتياطي والاستعادة |
+| 11.43 | BuilderCatalogTests.cs | وصف ما بناه المستخدم |
+| 11.44 | CategoryServiceTests.cs | الفئات وحساباتها |
+| 11.45 | CustomerServiceTests.cs | قاعدة بيانات خاصة معزولة لكل |
+| 11.46 | CycleDocumentServiceTests.cs | مستندات الدورة |
+| 11.47 | CycleVoucherServiceTests.cs | سندات الدورة |
 | | **Services/Design/** | التصميم والنصوص |
-| 11.47 | IdentityServiceTests.cs | تحميل موارد التصميم |
-| 11.48 | LocalizationServiceTests.cs | تبديل قاموس النصوص الحقيقي |
+| 11.48 | IdentityServiceTests.cs | تحميل موارد التصميم |
+| 11.49 | LocalizationServiceTests.cs | تبديل قاموس النصوص الحقيقي |
 | | **Services/** | الخدمات ومنطقها |
-| 11.49 | DocumentLinkServiceTests.cs | تتبّع السحب |
-| 11.50 | ExportServiceTests.cs | تصدير CSV وExcel وPDF فعلي |
-| 11.51 | FiscalPeriodServiceTests.cs | قاعدة معزولة لكل اختبار |
-| 11.52 | FlowModeStockTests.cs | الفرق بين الوضعين |
-| 11.53 | InventoryCostingTests.cs | المتوسط المرجَّح المتحرّك |
-| 11.54 | ItemCardReportTests.cs | تقرير حركة الصنف بالمتوسط المرجَّح |
-| 11.55 | JournalServiceTests.cs | قاعدة بيانات خاصة معزولة لكل |
-| 11.56 | JournalToStatementTests.cs | المعاملات كلها تصبّ في القيود |
-| 11.57 | NavigationServiceTests.cs | التنقّل بين الشاشات |
-| 11.58 | NegativeBalanceGuardTests.cs | المخزن والخزينة والبنك لا يقبلون |
-| 11.59 | NumberSequenceServiceTests.cs | الترقيم التسلسلي |
-| 11.60 | OpeningBalanceAndDepreciationTests.cs | الأرصدة الافتتاحية والإهلاك |
-| 11.61 | PayrollServiceTests.cs | المسير يُنشأ مسوّدةً ثم يُرحَّل |
-| 11.62 | PermissionServiceTests.cs | فحص الصلاحيات وتحميلها |
-| 11.63 | PrintFormattingTests.cs | الشعار ومحاذاة الجدول في الورق |
-| 11.64 | PrintServiceTests.cs | الطباعة |
-| 11.65 | PullServiceTests.cs | سلوك السحب كما طُلب حرفياً |
-| 11.66 | PurchaseInvoiceServiceTests.cs | فاتورة الشراء وقيدها |
-| 11.67 | ReportsGenerateTests.cs | توليد التقارير |
-| 11.68 | ReturnsServiceTests.cs | المرتجعات |
-| 11.69 | SalesInvoiceServiceTests.cs | فاتورة البيع وقيدها |
-| 11.70 | SettingsServiceTests.cs | الإعدادات |
-| 11.71 | StatementGroupingTests.cs | مستوى التجميع في القائمة |
-| 11.72 | StockDocumentsServiceTests.cs | أذون المخزون |
-| 11.73 | StockServiceTests.cs | أرصدة المخزون |
-| 11.74 | TreasurySeedTests.cs | قوائم السندات كانت تبدو "لا |
-| 11.75 | VoucherAndChequeTests.cs | السندات والشيكات |
-| 11.76 | VoucherPrintTests.cs | سند القبض والصرف |
-| 11.77 | StaThreadHelper.cs | أنواع WPF تفرض خيط STA |
-| 11.78 | TestDatabaseFixture.cs | ملف SQLite مؤقت مستقل لكل |
+| 11.50 | DocumentLinkServiceTests.cs | تتبّع السحب |
+| 11.51 | EmployeeListTests.cs | القائمة تحمل اسمَي القسم والوظيفة |
+| 11.52 | ExportServiceTests.cs | تصدير CSV وExcel وPDF فعلي |
+| 11.53 | FiscalPeriodServiceTests.cs | قاعدة معزولة لكل اختبار |
+| 11.54 | FlowModeStockTests.cs | الفرق بين الوضعين |
+| 11.55 | InventoryCostingTests.cs | المتوسط المرجَّح المتحرّك |
+| 11.56 | ItemCardReportTests.cs | تقرير حركة الصنف بالمتوسط المرجَّح |
+| 11.57 | JournalServiceTests.cs | قاعدة بيانات خاصة معزولة لكل |
+| 11.58 | JournalToStatementTests.cs | المعاملات كلها تصبّ في القيود |
+| 11.59 | NavigationServiceTests.cs | التنقّل بين الشاشات |
+| 11.60 | NegativeBalanceGuardTests.cs | المخزن والخزينة والبنك لا يقبلون |
+| 11.61 | NumberSequenceServiceTests.cs | الترقيم التسلسلي |
+| 11.62 | OpeningBalanceAndDepreciationTests.cs | الأرصدة الافتتاحية والإهلاك |
+| 11.63 | PayrollServiceTests.cs | المسير يُنشأ مسوّدةً ثم يُرحَّل |
+| 11.64 | PermissionServiceTests.cs | فحص الصلاحيات وتحميلها |
+| 11.65 | PrintFormattingTests.cs | الشعار ومحاذاة الجدول في الورق |
+| 11.66 | PrintServiceTests.cs | الطباعة |
+| 11.67 | PullServiceTests.cs | سلوك السحب كما طُلب حرفياً |
+| 11.68 | PurchaseInvoiceServiceTests.cs | فاتورة الشراء وقيدها |
+| 11.69 | ReportsGenerateTests.cs | توليد التقارير |
+| 11.70 | ReturnsServiceTests.cs | المرتجعات |
+| 11.71 | SalesInvoiceServiceTests.cs | فاتورة البيع وقيدها |
+| 11.72 | SettingsServiceTests.cs | الإعدادات |
+| 11.73 | SoftDeleteTests.cs | المحذوف منطقياً خارج القراءة |
+| 11.74 | StatementGroupingTests.cs | مستوى التجميع في القائمة |
+| 11.75 | StockDocumentsServiceTests.cs | أذون المخزون |
+| 11.76 | StockServiceTests.cs | أرصدة المخزون |
+| 11.77 | TreasurySeedTests.cs | قوائم السندات كانت تبدو "لا |
+| 11.78 | VoucherAndChequeTests.cs | السندات والشيكات |
+| 11.79 | VoucherPrintTests.cs | سند القبض والصرف |
+| 11.80 | StaThreadHelper.cs | أنواع WPF تفرض خيط STA |
+| 11.81 | TestDatabaseFixture.cs | ملف SQLite مؤقت مستقل لكل |
 | | **Validation/** | قواعد التحقق |
-| 11.79 | ValidatorsTests.cs | المتحقّقون السبعة |
+| 11.82 | ValidatorsTests.cs | المتحقّقون السبعة |
 | | **ViewModels/** | نماذج العرض |
-| 11.80 | CrudViewModelBaseTests.cs | نماذج العرض فوق خدمة حقيقية |
-| 11.81 | CustomersViewModelTests.cs | يثبت أن CustomersViewModel |
-| 11.82 | WpfApplicationFixture.cs | تطبيق WPF لخيط STA |
+| 11.83 | CrudViewModelBaseTests.cs | نماذج العرض فوق خدمة حقيقية |
+| 11.84 | CustomersViewModelTests.cs | يثبت أن CustomersViewModel |
+| 11.85 | WpfApplicationFixture.cs | تطبيق WPF لخيط STA |
 
 ## 12. PrimeERP.Setup
 

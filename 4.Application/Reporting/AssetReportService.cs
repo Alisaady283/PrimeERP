@@ -4,7 +4,7 @@ using PrimeERP.Platform.Audit;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Assets;
-using PrimeERP.Application.Services.Assets;
+using PrimeERP.Application.Legacy.Assets;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Localization;
 
@@ -73,7 +73,7 @@ namespace PrimeERP.Application.Reporting
 
         private Result<List<AssetDto>> Load(int? categoryId)
         {
-            var result = _assets.GetPaged(1, 5000, new AssetFilter { CategoryId = categoryId, SortBy = "Code" });
+            var result = _assets.GetPaged(1, int.MaxValue, new AssetFilter { CategoryId = categoryId, SortBy = "Code" });
 
             return result.IsSuccess
                 ? Result.Ok(result.Value.Items.ToList())

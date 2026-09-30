@@ -1,3 +1,9 @@
+using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Application.Services.Documents;
+using PrimeERP.Tests.Helpers;
+using PrimeERP.Domain.Entities;
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,16 +12,14 @@ using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Purchasing;
-using PrimeERP.Application.Services;
-using PrimeERP.Application.Services.Accounting;
-using PrimeERP.Application.Services.Common;
-using PrimeERP.Application.Services.Inventory;
-using PrimeERP.Application.Services.Parties;
-using PrimeERP.Application.Services.Purchasing;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.Legacy.Purchasing;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Xunit;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {
@@ -50,8 +54,8 @@ namespace PrimeERP.Tests.Services
             var products = _db.Services.GetRequiredService<IProductService>();
             _productId = products.Create(new CreateProductDto { Name = "صنف اختبار", CategoryId = category.Id, CostPrice = 10, SalePrice = 25 }).Value.Id;
 
-            var warehouses = _db.Services.GetRequiredService<IWarehouseService>();
-            _warehouseId = warehouses.Create(new CreateWarehouseDto { Name = "مخزن اختبار" }).Value.Id;
+            var warehouses = _db.Services.GetRequiredService<Lookup<Warehouse>>();
+            _warehouseId = warehouses.Add("مخزن اختبار");
 
             var suppliers = _db.Services.GetRequiredService<ISupplierService>();
             _supplierId = suppliers.Create(new CreateSupplierDto { Name = "مورد اختبار" }).Value.Id;
@@ -78,7 +82,7 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(24, invoice.VatAmount);
             Assert.Equal(184, invoice.NetTotal);
 
-            var stock = _db.Services.GetRequiredService<IStockService>();
+            var stock = _db.Services.GetRequiredService<IStockMove>();
             Assert.Equal(20, stock.GetBalance(_productId, _warehouseId).Value);
 
             var journal = _db.Services.GetRequiredService<IJournalService>();

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Common;
-using PrimeERP.Application.Services.Common;
+using PrimeERP.Application.Legacy.Common;
 
 namespace PrimeERP.Composition.Definitions
 {

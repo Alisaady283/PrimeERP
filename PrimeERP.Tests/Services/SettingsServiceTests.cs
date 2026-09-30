@@ -1,8 +1,7 @@
+using PrimeERP.Application.Legacy.Admin;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Services;
 using PrimeERP.Platform.Settings;
 using Xunit;
-using PrimeERP.Application.Services.Admin;
 
 namespace PrimeERP.Tests.Services
 {

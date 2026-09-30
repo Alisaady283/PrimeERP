@@ -1,3 +1,6 @@
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Data.Repositories;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Localization;
@@ -6,8 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.Services.Accounting;
-using PrimeERP.Application.Services.Parties;
+using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Legacy.Parties;
 using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Reporting
@@ -28,11 +31,16 @@ namespace PrimeERP.Application.Reporting
         private readonly ICustomerService _customers;
         private readonly ISupplierService _suppliers;
         private readonly IAccountService _accounts;
+        private readonly IPartyRepository<Customer> _customerRows;
+        private readonly IPartyRepository<Supplier> _supplierRows;
 
         public PartyReportService(IJournalService journal, ICustomerService customers,
-                                   ISupplierService suppliers, IAccountService accounts, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+                                   ISupplierService suppliers, IAccountService accounts, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
+                                   IPartyRepository<Customer> customerRows, IPartyRepository<Supplier> supplierRows)
         : base(permissions, settings, localization, audit)
         {
+            _customerRows = customerRows;
+            _supplierRows = supplierRows;
             _journal = journal;
             _customers = customers;
             _suppliers = suppliers;
@@ -43,22 +51,16 @@ namespace PrimeERP.Application.Reporting
         {
             var gate = Gate(); if (gate != null) return gate;
 
-            var result = _customers.GetPaged(1, 5000);
-            if (!result.IsSuccess) return Result.Fail<ReportData>(result.ErrorMessage);
-
-            return Balances(result.Value.Items.Select(c => (c.Code, c.Name, c.AccountCode)).ToList(),
-                from, to, debitIsCharge: true, "المبيعات", "المقبوضات");
+            return Balances(_customerRows.GetAll(activeOnly: false).OrderBy(c => c.Code).Select(c => (c.Code, c.Name, c.AccountCode)).ToList(),
+                from, to, debitIsCharge: true, Msg("Sales"), Msg("Receipts"));
         }
 
         public Result<ReportData> SupplierBalances(DateTime from, DateTime to)
         {
             var gate = Gate(); if (gate != null) return gate;
 
-            var result = _suppliers.GetPaged(1, 5000);
-            if (!result.IsSuccess) return Result.Fail<ReportData>(result.ErrorMessage);
-
-            return Balances(result.Value.Items.Select(s => (s.Code, s.Name, s.AccountCode)).ToList(),
-                from, to, debitIsCharge: false, "المشتريات", "المدفوعات");
+            return Balances(_supplierRows.GetAll(activeOnly: false).OrderBy(s => s.Code).Select(s => (s.Code, s.Name, s.AccountCode)).ToList(),
+                from, to, debitIsCharge: false, Msg("Purchases"), Msg("Payments"));
         }
 
         private Result<ReportData> Balances(IReadOnlyList<(string Code, string Name, string AccountCode)> parties,
@@ -92,10 +94,10 @@ namespace PrimeERP.Application.Reporting
                 Rows = rows,
                 Totals = new()
                 {
-                    ["Opening"] = $"أول المدة: {rows.Sum(r => r.Opening):N2}",
+                    ["Opening"] = Msg("OpeningIs", rows.Sum(r => r.Opening)),
                     ["Charged"] = $"{chargeLabel}: {rows.Sum(r => r.Charged):N2}",
                     ["Settled"] = $"{settleLabel}: {rows.Sum(r => r.Settled):N2}",
-                    ["Closing"] = $"آخر المدة: {rows.Sum(r => r.Closing):N2}",
+                    ["Closing"] = Msg("ClosingIs", rows.Sum(r => r.Closing)),
                 }
             });
         }
@@ -118,7 +120,7 @@ namespace PrimeERP.Application.Reporting
         {
             var gate = Gate(); if (gate != null) return gate;
 
-            if (accountId == 0) return Result.Fail<ReportData>("اختر حساباً");
+            if (accountId == 0) return Result.Fail<ReportData>(Msg("PickAccount"));
 
             var account = _accounts.GetById(accountId);
             if (!account.IsSuccess) return Result.Fail<ReportData>(account.ErrorMessage);
@@ -129,7 +131,7 @@ namespace PrimeERP.Application.Reporting
         private static Result<ReportData> Statement(int id, DateTime from, DateTime to,
             Func<Result<List<AccountStatementLine>>> getStatement)
         {
-            if (id == 0) return Result.Fail<ReportData>("اختر عميلاً أو مورداً");
+            if (id == 0) return Result.Fail<ReportData>(LocalizationService.Get("Str.Reports.PickParty"));
 
             var result = getStatement();
             if (!result.IsSuccess) return Result.Fail<ReportData>(result.ErrorMessage);
@@ -141,7 +143,7 @@ namespace PrimeERP.Application.Reporting
                 rows.Add(new StatementRow
                 {
                     Date = to.ToString("yyyy-MM-dd"),
-                    Description = "رصيد آخر المدة",
+                    Description = LocalizationService.Get("Str.Reports.ClosingBalance"),
                     RunningBalance = rows[^1].RunningBalance
                 });
 
@@ -150,9 +152,9 @@ namespace PrimeERP.Application.Reporting
                 Rows = rows,
                 Totals = new()
                 {
-                    ["Debit"]   = $"إجمالي المدين: {rows.Sum(r => r.Debit):N2}",
-                    ["Credit"]  = $"إجمالي الدائن: {rows.Sum(r => r.Credit):N2}",
-                    ["Closing"] = $"الرصيد: {(rows.Count > 0 ? rows[^1].RunningBalance : 0):N2}",
+                    ["Debit"]   = LocalizationService.Get("Str.Reports.TotalDebitIs", rows.Sum(r => r.Debit)),
+                    ["Credit"]  = LocalizationService.Get("Str.Reports.TotalCreditIs", rows.Sum(r => r.Credit)),
+                    ["Closing"] = LocalizationService.Get("Str.Reports.BalanceIs", (rows.Count > 0 ? rows[^1].RunningBalance : 0)),
                 }
             });
         }
