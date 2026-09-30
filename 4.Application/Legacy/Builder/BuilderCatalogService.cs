@@ -58,12 +58,11 @@ namespace PrimeERP.Application.Legacy.Builder
                 order += 10;
                 if (existing.Contains(section.Key)) continue;
 
-                _repo.SaveSection(Rows.Copy(section, new BuilderSection(), row =>
+                _repo.SaveSection(new BuilderSection
                 {
-                    row.SortOrder = order;
-                    row.IsProtected = protectedKeys.Contains(section.Key);
-                    row.Modules = string.Join(",", section.Modules);
-                }));
+                    Key = section.Key, Title = section.Title, IconKey = section.IconKey, SortOrder = order,
+                    IsProtected = protectedKeys.Contains(section.Key), Modules = string.Join(",", section.Modules)
+                });
             }
         }
 
