@@ -22,9 +22,9 @@
 |---|---|---|
 | ١ | الكيان | `3.Domain/Entities/Treasury.cs` — خصائص فقط |
 | ٢ | المستودع | `2.Data/Repositories/TreasuryRepository.cs` — يرث `RepositoryBase<T>` بـLINQ |
-| ٣ | البيانات | `4.Application/DTOs/Treasury/TreasuryDto.cs` — `Dto`/`Create`/`Update`/`Filter` |
+| ٣ | المرشِّح | `4.Application/DTOs/Treasury/TreasuryFilter.cs` — الكيان هو الصفّ والمُدخل، وحقلا العرض `AccountBalance`/`KindName` عليه في `DERIVED` |
 | ٤ | الخدمة | `4.Application/Legacy/Treasury/TreasuryService.cs` خدمة الصفحة، ومنطقها في `4.Application/Services/…` |
-| ٥ | نموذج العرض | `6.UI/ViewModels/TreasuriesViewModel.cs` — يرث `CrudViewModelBase` ويُعلن `PermissionPrefix` |
+| ٥ | نموذج العرض | `TreasuriesViewModel` في `6.UI/ViewModels/ListViewModels.cs` — يرث `CrudViewModelBase` ويُعلن `PermissionPrefix` |
 | ٦ | الإعلان | `8.Modules/TreasuryRegistrations.cs:21` |
 | ٧ | الشروط الثلاثة | `NavigationMap.cs:19` · `Strings.ar.xaml:217` · `DependencyInjection.cs:162` |
 
@@ -37,20 +37,20 @@ registry.Register(new ModuleDefinition
     ViewModelType = typeof(TreasuriesViewModel),
     Columns = new()
     {
-        new() { Header = "الكود", Binding = nameof(TreasuryDto.Code), Width = 100, Align = ColumnAlign.Center },
-        new() { Header = "الرصيد", Binding = nameof(TreasuryDto.Balance), Width = 130,
+        new() { Header = "الكود", Binding = nameof(Treasury.Code), Width = 100, Align = ColumnAlign.Center },
+        new() { Header = "الرصيد", Binding = nameof(Treasury.AccountBalance), Width = 130,
                 Format = "N2", Footer = FooterAggregate.Sum },
     },
     Dialog = new DialogDefinition
     {
         TitleKey = "Str.Treasuries.Add", TitleEditKey = "Str.Treasuries.Edit", GridColumns = 2,
         ServiceType = typeof(ITreasuryService),
-        CreateDtoType = typeof(CreateTreasuryDto), UpdateDtoType = typeof(UpdateTreasuryDto),
+        CreateDtoType = typeof(Treasury), UpdateDtoType = typeof(Treasury),
         Fields = new()
         {
-            new() { Key = nameof(CreateTreasuryDto.Kind), LabelKey = "النوع", Kind = FieldKind.Picker,
+            new() { Key = nameof(Treasury.Kind), LabelKey = "النوع", Kind = FieldKind.Picker,
                     PickerType = "TreasuryKind", IsRequired = true, IsReadOnlyOnEdit = true },
-            new() { Key = nameof(CreateTreasuryDto.Name), LabelKey = "الاسم", Kind = FieldKind.Text, IsRequired = true },
+            new() { Key = nameof(Treasury.Name), LabelKey = "الاسم", Kind = FieldKind.Text, IsRequired = true },
         }
     }
 });
@@ -60,7 +60,7 @@ registry.Register(new ModuleDefinition
 
 | المطلوب | أين | كيف |
 |---|---|---|
-| عمود جديد | `Columns` | `new() { Header = "…", Binding = nameof(Dto.X), Width = 120 }` — والحقل موجودٌ في الـDto أولاً |
+| عمود جديد | `Columns` | `new() { Header = "…", Binding = nameof(Treasury.X), Width = 120 }` — والحقل على الكيان أولاً، وحقل العرض بلا عمود يُعلَن في `DERIVED` |
 | زرّ | `EnabledActions` | من كتالوج `ToolbarAction` — لا يُبنى زرّ جديد |
 | فلتر | `Filters` | ولا يعمل إلا إذا قرأه المستودع من `XFilter` |
 | القسم الذي تظهر فيه | `NavigationMap.Coded` | مفتاح الصفحة داخل مصفوفة قسمها |
@@ -100,7 +100,7 @@ RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Ed
 |---|---|---|
 | ١ | `3.Domain/Entities/` | كيان: خصائص فقط |
 | ٢ | `2.Data/Repositories/` | يرث `RepositoryBase<T>` · `Shape` شرطاً · `By`/`DocumentOrder` ترتيباً — LINQ فقط |
-| ٣ | `4.Application/DTOs/` | `XDto` · `CreateXDto` · `UpdateXDto` · `XFilter` |
+| ٣ | `4.Application/DTOs/` | `XFilter` وحده — الكيان هو الصفّ والمُدخل (`ARCHITECTURE.md § الكيان والـDTO`) |
 | ٤ | `4.Application/Validation/` | لا ملفّ: شروط `Field<T>` معاملاتٌ إلى `Check.Valid` |
 | ٥ | `4.Application/Legacy/<القسم>/` خدمة الصفحة، ومنطقها حالة استخدام في `4.Application/Services/` | يرث `ServiceBase` ويُعلن الثلاثة |
 | ٦ | `6.UI/ViewModels/` | يرث `CrudViewModelBase<TDto,TFilter>` ويُعلن `PermissionPrefix` فقط |
@@ -142,12 +142,12 @@ RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Ed
 السلسلة كاملة وإلا ظهر الحقل ولم يُحفظ:
 
 ```
-الكيان (خاصية) → المستودع إن لزم شرطٌ جديد
-       → DTOs (Dto/Create/Update) → الخدمة: بناء الكيان + ToDto
+الكيان (خاصية) → المستودع إن لزم شرطٌ جديد أو حمايته من التعديل (Modify keep)
+       → الخدمة إن حُسب (ToDtos)
        → المتحقّق إن لزم → حقل في الحوار → عمود في الشبكة → نصّان
 ```
 
-خاصيةٌ على الكيان تكفي: `PrimeDbContext` يُولَّد من الجداول القائمة، و`SchemaSync` يُلحق العمود الناقص عند الإقلاع — فلا مهاجرة يدوية ولا `INSERT`/`UPDATE` تُكتب.
+خاصيةٌ على الكيان تكفي: `PrimeDbContext` يُولَّد من الجداول القائمة، و`SchemaSync` يُلحق العمود الناقص عند الإقلاع — فلا مهاجرة يدوية ولا `INSERT`/`UPDATE` تُكتب. وحقل العرض الذي لا عمود له يُعلَن في `DERIVED` بسطر `Ignore` في `PrimeDbContext`.
 
 ---
 

@@ -20,24 +20,24 @@
 3.Domain/Helpers|أدوات نقية صغيرة
 3.Domain/Results|نتيجة العملية وحالتها
 4.Application|منطق الأعمال كله
-4.Application/DTOs|بيانات الدخول والخروج لكل قسم
+4.Application/DTOs|مُدخلٌ يختلف شكله عن الكيان، ومرشّحات القوائم
 4.Application/DTOs/Accounting|بيانات المحاسبة
-4.Application/DTOs/Assets|بيانات الأصول
+4.Application/DTOs/Assets|مرشّحات الأصول وحركاتها
 4.Application/DTOs/Cheques|بيانات الشيكات
-4.Application/DTOs/Common|بيانات مشتركة: فئة وترخيص ونسخة
+4.Application/DTOs/Common|بيانات مشتركة: ترخيص ونسخة
 4.Application/DTOs/Documents|بيانات مستندات الدورة
 4.Application/DTOs/HR|بيانات الموارد البشرية
 4.Application/DTOs/Inventory|بيانات المخزون
-4.Application/DTOs/Parties|بيانات العملاء والموردين
+4.Application/DTOs/Parties|مرشّحا العملاء والموردين
 4.Application/DTOs/Purchasing|بيانات المشتريات
 4.Application/DTOs/Sales|بيانات المبيعات
-4.Application/DTOs/Security|بيانات المستخدمين والأدوار
-4.Application/DTOs/Treasury|بيانات الخزائن والبنوك
+4.Application/DTOs/Security|بيانات المستخدم ومرشّح الأدوار
+4.Application/DTOs/Treasury|مرشّح الخزائن والبنوك
 4.Application/DTOs/Vouchers|بيانات السندات
 4.Application/Reporting|خدمات التقارير
 4.Application/Services|المنطق العامّ وحده: حالات استخدام تُستدعى بالمعاملات
 4.Application/Services/Core|أساس كل خدمة: الصلاحية والمعاملة والكيان والترقيم
-4.Application/Services/Ledger|قلب القيد، الفترة، القيد بطرفيه والتجارة، الحرّاس، رصيد الطرف
+4.Application/Services/Ledger|قلب القيد، أرصدة الحسابات، الفترة، القيد بطرفيه والتجارة، الحرّاس، رصيد الطرف
 4.Application/Services/Ledger/Accounts|الحساب: في الشجرة، للكيان، بالاتجاهين، ومع مجمّعه
 4.Application/Services/Entities|الكيان من إعداده: القائمة البسيطة وتحويل الصفّ
 4.Application/Services/Documents|المستند والسحب وحركة المخزون وتغيير الحالة وسطور التجارة

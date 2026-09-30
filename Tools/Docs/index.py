@@ -69,7 +69,7 @@ rows = folders = 0
 for index, layer in enumerate((l for l in LAYERS if Path(l).is_dir()), start=1):
     found = sorted((f for f in Path(layer).rglob("*")
                     if f.suffix in CODE and not {"bin", "obj"} & set(f.parts)),
-                   key=lambda f: str(f).replace("\\", "/"))
+                   key=lambda f: (str(f.parent).replace("\\", "/"), f.name))
     if not found: continue
 
     for out, head in ((three, "| # | الملف | الوظيفة |\n|---|---|---|"),

@@ -38,7 +38,7 @@
 |---|---|---|---|
 | ١ | الكيان | `3.Domain/Entities` | خصائص فقط — بلا سلوك ولا استدعاء |
 | ٢ | المستودع | `2.Data/Repositories` | يرث `RepositoryBase<T>`، شرطه `Shape` وترتيبه `By`/`DocumentOrder` — LINQ فوق `PrimeDbContext`، بلا SQL مكتوب، والمجموع في الاستعلام لا بعد التحميل |
-| ٣ | الـDTOs | `4.Application/DTOs` | `XDto` قراءة · `CreateXDto` كتابة · `XFilter` ترشيح |
+| ٣ | المُدخل والمرشِّح | الكيان نفسه، و`XFilter` في `4.Application/DTOs` | الكيان هو الصفّ والمُدخل، وحقل عرضه عليه في `DERIVED`. الـDTO للمستند وللمُدخل المختلف شكلاً ولإخفاء السرّ وحدها — `ARCHITECTURE.md § الكيان والـDTO` |
 | ٤ | التحقق | `4.Application/Validation` | لا ملفّ للكيان: شروطه معاملاتُ `Field<T>` تمرّرها الصفحة إلى `Check.Valid` |
 | ٥ | الخدمة | منطقها حالة استخدام في `4.Application/Services/…`، وخدمة الصفحة في `Legacy/<القسم>` تستدعيها | ترث أساسها من الجدول أدناه وتُعلن `PermissionPrefix` و `StringPrefix` و `EntityName` |
 | ٦ | التسجيل | `App/Bootstrap/DependencyInjection.cs` | سطر واحد |
@@ -48,8 +48,8 @@
 | الخدمة | ترث | تُعلن |
 |---|---|---|
 | قائمة بسيطة (كود/اسم/نشط) | `Lookup<T>` في `Services/Entities` بلا صنفٍ يرثه | `EntitySpec`: المفتاح، بادئة النصوص، تسمية الاسم، مفتاح الترقيم |
-| كيانٌ له صفحة، وربما حسابٌ في الشجرة | `EntityService<TEntity,TDto,TCreate,TUpdate,TFilter>` | `New`/`Apply`/`Insert`/`Save`/`Erase`، و`Accounts` مصفوفة `AccountSpec` لحساباته، و`CanErase` لحارسٍ يخصّه |
-| طرفٌ (عميل، مورد) | `PartyServiceBase<…>` فوق `EntityService` | `IdOf` و`FindPaged` فقط |
+| كيانٌ له صفحة، وربما حسابٌ في الشجرة | `EntityService<TEntity,TDto,TCreate,TUpdate,TFilter>` | `Insert`/`Save`/`Erase`، و`New`/`Apply`/`IdOf` حين يختلف المُدخل عن الكيان، و`Accounts` مصفوفة `AccountSpec` لحساباته، و`CanErase` لحارسٍ يخصّه |
+| طرفٌ (عميل، مورد) | `PartyServiceBase<…>` فوق `EntityService` | `FindPaged` فقط |
 | مستند رأس وسطور | `DocumentService<THead,TRow,TDetail,TCreate,TFilter>` | `Plan` (تحقّقٌ ثم دالة كتابة) و`Remove` و`EntryOf` لقيده و`Editable` إن كان يُعدَّل |
 | حركة أصل | `AssetMovementServiceBase<…>` | `Write` في المعاملة و`Undo` و`EntryOf` |
 | ما سواها | `ServiceBase` | — |
@@ -68,7 +68,7 @@
 
 ## الصفحة والمنطق
 
-**صفحة `Legacy` استدعاءٌ لا منطق.** جسم دالّتها: صلاحية ← جلبٌ من المستودع ← استدعاء قطعةٍ من `Services` أو صيغةٍ من `Calculations` بمعاملاتها ← تدقيق ← نتيجة. وما تجمعه صفحةٌ أخرى تستدعيه منها أو ترثه، ولا تعيد استدعاء خدماته واحدةً واحدة. يُمنَع فيها: حلقةُ حساب أو تجميع، بناءُ شجرة أو تصفيتها، جدولُ ربطٍ أو قرارٌ بحسب إعداد، نسخُ كيانٍ إلى DTO حقلاً حقلاً، `if … return Fail` لتحقّق المدخل (موضعه `Check`). أما شرط حالة العملية (سبق ترحيله، له أبناء) فشرطُ حمايةٍ صريح في أول دالّتها.
+**صفحة `Legacy` استدعاءٌ لا منطق.** جسم دالّتها: صلاحية ← جلبٌ من المستودع ← استدعاء قطعةٍ من `Services` أو صيغةٍ من `Calculations` بمعاملاتها ← تدقيق ← نتيجة. وما تجمعه صفحةٌ أخرى تستدعيه منها أو ترثه، ولا تعيد استدعاء خدماته واحدةً واحدة. يُمنَع فيها: حلقةُ حساب أو تجميع، بناءُ شجرة أو تصفيتها، جدولُ ربطٍ أو قرارٌ بحسب إعداد، نسخُ كيانٍ إلى DTO حقلاً حقلاً أو DTO يكرّر حقوله (`ARCHITECTURE.md § الكيان والـDTO`)، `if … return Fail` لتحقّق المدخل (موضعه `Check`). أما شرط حالة العملية (سبق ترحيله، له أبناء) فشرطُ حمايةٍ صريح في أول دالّتها.
 
 **القطعة العامّة** اسمها فعلها لا صفحتها، ومعاملاتها ما يختلف بين مستدعيها. تُكتب مرّةً وتستدعيها كل صفحةٍ تحتاجها.
 
@@ -103,7 +103,7 @@
 |---|---|---|---|
 | `3.Domain/Calculations` | صيغةٌ نقيّة لها معنى أعمال: مدخلاتٌ ← رقمٌ أو قرار. رصيد، تجميع من الأبناء، إهلاك، تكلفة، قاعدة فترة، مقياس عرض | جلبٌ من قاعدة، نصٌّ مترجَم، `Result`، أي طبقةٍ أعلى، وغلافٌ لعمليةٍ جاهزة في LINQ أو Math (القاعدة ٨) | `LineCalc` السطر ومجاميعه · `StatementCalc` القوائم والرصيد الجاري والتجميع وسطر الميزان · `AssetCalc` الإهلاك والقيمة · `PayrollCalc` · `InventoryCosting` · `FiscalPeriodCalc` الفترات وقواعدها · `PartyCalc` الحدّ والمتاح · `LayoutCalc` نسب الأعمدة |
 | `3.Domain/Enums` | تعدادٌ يتقاسمه أكثر من ملف | — | ومنها `FieldFormat` |
-| `4.Application/Validation` | التحقق من **المدخل** وحده: الدالة الواحدة `Check` وشروط حقول الـDTO معاملاتٍ في `Field<T>` (`Required` · `Min`/`Max` · `From`/`To` · `Format` · `Must` على قيمة المدخل) | قاعدة أعمال على حالة البيانات (له أبناء، سبق ترحيله، الفترة مقفلة، الرصيد لا يكفي): هذه شرطُ حمايةٍ صريح يُرجع `Result` في الخدمة أو الصفحة المالكة للعملية، لا شرطٌ في `Check` · ملفّ متحقّقٍ لكيان · دالّةٌ لكل نوع تحقق | `Check` · `Field` · `DocumentLines` · `ValidationResult` |
+| `4.Application/Validation` | التحقق من **المدخل** وحده: الدالة الواحدة `Check` وشروط حقول المُدخل معاملاتٍ في `Field<T>` (`Required` · `Min`/`Max` · `From`/`To` · `Format` · `Must` على قيمة المدخل) | قاعدة أعمال على حالة البيانات (له أبناء، سبق ترحيله، الفترة مقفلة، الرصيد لا يكفي): هذه شرطُ حمايةٍ صريح يُرجع `Result` في الخدمة أو الصفحة المالكة للعملية، لا شرطٌ في `Check` · ملفّ متحقّقٍ لكيان · دالّةٌ لكل نوع تحقق | `Check` · `Field` · `DocumentLines` · `ValidationResult` |
 | `4.Application/Services/Core` | أسس الخدمات والترقيم | منطقُ مجالٍ بعينه | `ServiceBase` · `CrudServiceBase` · `EntityService` · `NumberSequenceService` |
 | `4.Application/Services/Ledger` | القيد: إنشاؤه وترحيله وعكسه وحرّاسه وعرضه، والأرصدة | حساب الشجرة (مجلده التالي)، صيغة حساب | `Entries` · `Posting` · `PeriodGate` · `JournalLines` · `TradeEntry` · `TwoSided` · `OpeningEntry` · `Guards` · `PartyBalance` (`Refresh`/`RefreshAll`) · `PartyByKind` الطرف بنوعه: اسمه وحسابه ورصيده · `Statement` (ومعه `WithCheques`) · `TrialBalance` ميزان المراجعة |
 | `4.Application/Services/Ledger/Accounts` | الحساب في الشجرة: إضافة وتعديل وحذف بقطعٍ منفصلة، وحساب الكيان أو الإعداد | قيدٌ أو رصيد | `AddTreeAccount` · `AddEntityAccount` · `AddLinkedAccount` · `AddMirroredAccount` · `EditTreeAccount` · `EditLinkedAccount` · `RenameAccount` · `CloseAccount` · `CloseLinkedAccount` · `LinkedAccounts` · `AccountOf` · `SettingAccounts` · `AccountCases` · `AccountSpec` |
@@ -188,7 +188,8 @@ registry.Register(new ModuleDefinition
 | جملة الحذف الناعم | `2.Data/Repositories/Base/RepositoryBase` — `SoftDelete` |
 | ختم الإنشاء والتعديل والحذف | `2.Data/Core/ModelConventions.cs` — `SaveChanges` |
 | تعديل حقلٍ أو حذفٌ بلا تحميل | `RepositoryBase.Set`/`Remove` (`SetIn`/`RemoveIn` لجدولٍ آخر) |
-| اسم مرجعٍ أو إجماليٌّ في قائمة | المستودع: `WithNames`/`WithCodeNames`/`NamesOf`/مجاميع بالمعرّفات، والخدمة: `ToDtos` |
+| حقل عرضٍ في قائمة (اسم مرجع، إجمالي، فرق، نصّ نوع) | خاصيةٌ على الكيان في `DERIVED` (`Tools/Docs/context.py` وسطر `Ignore` في `PrimeDbContext`)، يملؤها المستودع: `WithNames`/`WithCodeNames`/`NamesOf`/مجاميع بالمعرّفات، أو الخدمة: `ToDtos` |
+| حقل نظامٍ يُطمَس عند تعديل المستخدم (رصيد، كود، قيد) | المستودع: `Modify(entity, db, keep…)` |
 | استبعاد المحذوف من القراءة | `2.Data/Core/ModelConventions.cs` — مرشِّحٌ عامّ واحد؛ لا `!IsDeleted` في مستودع، ورؤية المحذوف بـ`IgnoreQueryFilters()` صراحةً |
 | كتابة إعداد (ولو في قاعدة أخرى) | `ISettingStore.Upsert` — تنفيذه `2.Data/Repositories/SettingRepository` |
 | تجميد الواجهة في عملية طويلة | `IDialogService.ShowProgress` + `Task.Run` + `IProgress<T>` |
