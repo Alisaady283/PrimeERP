@@ -17,7 +17,7 @@ using PrimeERP.Platform.Settings;
 namespace PrimeERP.Application.Legacy.Parties
 {
     /// <summary>المالك الوحيد لمنطق الموردين</summary>
-    public class SupplierService : PartyServiceBase<Supplier, SupplierDto, CreateSupplierDto, UpdateSupplierDto, SupplierFilter>, ISupplierService
+    public class SupplierService : PartyServiceBase<Supplier, SupplierFilter>, ISupplierService
     {
         protected override string PermissionPrefix => "Suppliers";
         protected override string StringPrefix => "Str.Supplier";
@@ -43,15 +43,13 @@ namespace PrimeERP.Application.Legacy.Parties
         protected override Cheques.IChequeService Cheques => _cheques;
 
         public SupplierService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
-            Statement statement, INumberSequenceService numbers, IPartyRepository<Supplier> suppliers, IAccountRepository accountRepo,
+            Statement statement, INumberSequenceService numbers, IPartyRepository<Supplier> suppliers,
             IJournalRepository journalRepo, Cheques.IChequeService cheques, AccountCases tree)
-            : base(permissions, settings, localization, audit, statement, numbers, accountRepo, journalRepo, tree)
+            : base(permissions, settings, localization, audit, statement, numbers, journalRepo, tree)
         {
             _suppliers = suppliers;
             _cheques = cheques;
         }
-
-        protected override int IdOf(UpdateSupplierDto dto) => dto.Id;
 
         protected override (List<Supplier> Items, int Total) FindPaged(int page, int pageSize, SupplierFilter filter)
         {

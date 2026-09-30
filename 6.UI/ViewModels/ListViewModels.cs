@@ -12,6 +12,7 @@ using PrimeERP.Application.Legacy.HR;
 using PrimeERP.Application.Legacy.Inventory;
 using PrimeERP.Application.Legacy.Parties;
 using PrimeERP.Application.Legacy.Treasury;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
@@ -46,7 +47,7 @@ namespace PrimeERP.UI.ViewModels
         protected override Result DeleteItem(int id) => _products.Delete(id);
     }
 
-    public class CustomersViewModel : CrudViewModelBase<CustomerDto, CustomerFilter>
+    public class CustomersViewModel : CrudViewModelBase<Customer, CustomerFilter>
     {
         private readonly ICustomerService _customers;
 
@@ -56,15 +57,15 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "Customers";
 
-        protected override Result<PagedResult<CustomerDto>> FetchPage(int page, int pageSize, CustomerFilter filter)
+        protected override Result<PagedResult<Customer>> FetchPage(int page, int pageSize, CustomerFilter filter)
             => _customers.GetPaged(page, pageSize, filter);
 
-        protected override int IdOf(CustomerDto item) => item.Id;
+        protected override int IdOf(Customer item) => item.Id;
 
         protected override Result DeleteItem(int id) => _customers.Delete(id);
     }
 
-    public class SuppliersViewModel : CrudViewModelBase<SupplierDto, SupplierFilter>
+    public class SuppliersViewModel : CrudViewModelBase<Supplier, SupplierFilter>
     {
         private readonly ISupplierService _suppliers;
 
@@ -74,10 +75,10 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "Suppliers";
 
-        protected override Result<PagedResult<SupplierDto>> FetchPage(int page, int pageSize, SupplierFilter filter)
+        protected override Result<PagedResult<Supplier>> FetchPage(int page, int pageSize, SupplierFilter filter)
             => _suppliers.GetPaged(page, pageSize, filter);
 
-        protected override int IdOf(SupplierDto item) => item.Id;
+        protected override int IdOf(Supplier item) => item.Id;
 
         protected override Result DeleteItem(int id) => _suppliers.Delete(id);
     }

@@ -70,7 +70,7 @@ namespace PrimeERP.Tests.Composition
                 var warehouseId = warehouses.Add("مخزن");
 
                 var customers = _db.Services.GetRequiredService<ICustomerService>();
-                var customer = customers.Create(new CreateCustomerDto { Name = "عميل التقرير" }).Value;
+                var customer = customers.Create(new Customer { Name = "عميل التقرير" }).Value;
 
                 var stock = _db.Services.GetRequiredService<IStockMove>();
                 Data.Core.DbContextFactory.RunTransaction(db =>

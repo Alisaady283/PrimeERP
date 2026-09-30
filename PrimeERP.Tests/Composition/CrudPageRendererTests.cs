@@ -9,6 +9,7 @@ using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.Legacy.Parties;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Design;
 using PrimeERP.Platform.Permissions;
 using Xunit;
@@ -29,7 +30,7 @@ namespace PrimeERP.Tests.Composition
         public void Render_BuildsPage_AndLoadsRealDataOnLoaded()
         {
             _db.Services.GetRequiredService<ICustomerService>()
-               .Create(new CreateCustomerDto { Name = "عميل Renderer" });
+               .Create(new Customer { Name = "عميل Renderer" });
 
             WpfApplicationFixture.Run(() =>
             {

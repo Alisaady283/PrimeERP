@@ -2,6 +2,7 @@ using PrimeERP.Application.Validation;
 using PrimeERP.Application.Services.Ledger.Accounts;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Data.Core;
 using PrimeERP.Domain.Contracts;
@@ -52,7 +53,7 @@ namespace PrimeERP.Application.Services.Core
         /// <summary>الإنشاء بلا صلاحية للبذر</summary>
         protected Result<TDto> Add(TCreate dto)
         {
-            var entity = Fresh(dto);
+            var entity = New(dto);
             if (SequenceKey != null) Number(entity, Numbers.Next(SequenceKey));
 
             var saved = Valid(entity).Then(() => Commit(db => CreateCore(db, entity)));
@@ -65,7 +66,7 @@ namespace PrimeERP.Application.Services.Core
         /// <summary>الإنشاء في معاملة المستدعي</summary>
         public Result<TDto> Create(PrimeDbContext db, TCreate dto)
         {
-            var entity = Fresh(dto);
+            var entity = New(dto);
             if (SequenceKey != null) Number(entity, Numbers.Next(db, SequenceKey));
             return Valid(entity).Then(() => CreateCore(db, entity)).Then(() => Result.Ok(ToDto(entity)));
         }
@@ -122,15 +123,6 @@ namespace PrimeERP.Application.Services.Core
             return Result.Ok();
         }
 
-        /// <summary>الكيان المُدخل بلا حساباته</summary>
-        private TEntity Fresh(TCreate dto)
-        {
-            var entity = New(dto);
-            if (dto is TEntity)
-                foreach (var account in Accounts) account.Set(entity, null);
-            return entity;
-        }
-
         /// <summary>المُدخل كياناً بحسابات المخزَّن</summary>
         private TEntity Edited(TEntity stored, TUpdate dto)
         {
@@ -140,7 +132,8 @@ namespace PrimeERP.Application.Services.Core
                 return stored;
             }
 
-            foreach (var account in Accounts) account.Set(input, account.Get(stored));
+            foreach (var account in Accounts.Where(a => string.IsNullOrWhiteSpace(a.Get(input))))
+                account.Set(input, account.Get(stored));
             return input;
         }
 

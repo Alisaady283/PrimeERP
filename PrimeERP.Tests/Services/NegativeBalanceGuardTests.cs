@@ -130,7 +130,7 @@ namespace PrimeERP.Tests.Services
         {
             var treasuryId = Treasury(kind);
             var supplierId = _db.Services.GetRequiredService<ISupplierService>()
-                .Create(new CreateSupplierDto { Name = "مورد" }).Value.Id;
+                .Create(new Supplier { Name = "مورد" }).Value.Id;
 
             var result = Pay(treasuryId, supplierId, 1000);
 
@@ -207,9 +207,9 @@ namespace PrimeERP.Tests.Services
         {
             var treasury = CashTreasury();
             var customerId = _db.Services.GetRequiredService<ICustomerService>()
-                .Create(new CreateCustomerDto { Name = "عميل" }).Value.Id;
+                .Create(new Customer { Name = "عميل" }).Value.Id;
             var supplierId = _db.Services.GetRequiredService<ISupplierService>()
-                .Create(new CreateSupplierDto { Name = "مورد" }).Value.Id;
+                .Create(new Supplier { Name = "مورد" }).Value.Id;
 
             var received = _db.Services.GetRequiredService<IReceiptVoucherService>().Create(new CreateVoucherDto
             {
@@ -256,7 +256,7 @@ namespace PrimeERP.Tests.Services
             var id = OpeningBalance(treasury.AccountCode, other, 1000);
 
             var supplierId = _db.Services.GetRequiredService<ISupplierService>()
-                .Create(new CreateSupplierDto { Name = "مورد" }).Value.Id;
+                .Create(new Supplier { Name = "مورد" }).Value.Id;
             Assert.True(Pay(treasury.TreasuryId, supplierId, 400).IsSuccess);
 
             var opening = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService>();

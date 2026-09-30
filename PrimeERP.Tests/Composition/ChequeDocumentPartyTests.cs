@@ -26,6 +26,7 @@ using PrimeERP.Application.Legacy.Accounting;
 using PrimeERP.Application.DTOs.Treasury;
 using PrimeERP.Application.Legacy.Treasury;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Tests.Composition
 {
@@ -66,8 +67,8 @@ namespace PrimeERP.Tests.Composition
             Assert.True(bank.IsSuccess, bank.ErrorMessage);
 
             var customers = _services.GetRequiredService<ICustomerService>();
-            var first = customers.Create(new CreateCustomerDto { Name = "عميل الشيك الأول" }).Value;
-            var second = customers.Create(new CreateCustomerDto { Name = "عميل الشيك الثاني" }).Value;
+            var first = customers.Create(new Customer { Name = "عميل الشيك الأول" }).Value;
+            var second = customers.Create(new Customer { Name = "عميل الشيك الثاني" }).Value;
 
             WpfApplicationFixture.Run(() =>
             {

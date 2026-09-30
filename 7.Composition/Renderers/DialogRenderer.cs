@@ -185,7 +185,7 @@ namespace PrimeERP.Composition.Renderers
 
             foreach (var field in fieldDefs)
             {
-                if (editOnly && field.IsReadOnlyOnEdit) continue;
+                if (field.Kind == FieldKind.ReadOnly || editOnly && field.IsReadOnlyOnEdit) continue;
 
                 var prop = row == null ? dtoType.GetProperty(field.Key) : null;
                 if (row == null && (prop == null || !prop.CanWrite)) continue;

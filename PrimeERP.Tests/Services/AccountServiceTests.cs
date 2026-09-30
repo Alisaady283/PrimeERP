@@ -69,10 +69,10 @@ namespace PrimeERP.Tests.Services
             Result IAccountLinkedService.CreateFromAccount(PrimeDbContext db, string accountCode, string name, string rootCode) =>
                 CreateFromAccount(db, accountCode, name);
 
-            public Result<CustomerDto> CreateFromAccount(PrimeDbContext db, string accountCode, string name)
+            public Result<Customer> CreateFromAccount(PrimeDbContext db, string accountCode, string name)
             {
                 LastCreatedFor = (accountCode, name);
-                return Result.Ok(new CustomerDto { Id = 999, Code = "C-TEST", AccountCode = accountCode, Name = name });
+                return Result.Ok(new Customer { Id = 999, Code = "C-TEST", AccountCode = accountCode, Name = name });
             }
 
             public Result DeleteByAccountCode(PrimeDbContext db, string accountCode)
@@ -87,14 +87,14 @@ namespace PrimeERP.Tests.Services
                 return Result.Ok();
             }
 
-            public Result<PagedResult<CustomerDto>> GetPaged(int page, int pageSize, CustomerFilter filter = null) => throw new NotImplementedException();
-            public Result<CustomerDto> GetById(int id) => throw new NotImplementedException();
-            public Result<CustomerDto> GetByCode(string code) => throw new NotImplementedException();
-            public Result<System.Collections.Generic.List<CustomerDto>> Search(string term, int maxResults = 50) => throw new NotImplementedException();
+            public Result<PagedResult<Customer>> GetPaged(int page, int pageSize, CustomerFilter filter = null) => throw new NotImplementedException();
+            public Result<Customer> GetById(int id) => throw new NotImplementedException();
+            public Result<Customer> GetByCode(string code) => throw new NotImplementedException();
+            public Result<System.Collections.Generic.List<Customer>> Search(string term, int maxResults = 50) => throw new NotImplementedException();
             public Result<System.Collections.Generic.List<AccountStatementLine>> GetStatement(int id, DateTime from, DateTime to) => throw new NotImplementedException();
-            public Result<CustomerDto> Create(CreateCustomerDto dto) => throw new NotImplementedException();
-            public Result<CustomerDto> Create(PrimeDbContext db, CreateCustomerDto dto) => throw new NotImplementedException();
-            public Result Update(UpdateCustomerDto dto) => throw new NotImplementedException();
+            public Result<Customer> Create(Customer dto) => throw new NotImplementedException();
+            public Result<Customer> Create(PrimeDbContext db, Customer dto) => throw new NotImplementedException();
+            public Result Update(Customer dto) => throw new NotImplementedException();
             public Result Delete(int id) => throw new NotImplementedException();
             public Result RecalculateBalance(int id) => throw new NotImplementedException();
             public Result RecalculateAllBalances() => throw new NotImplementedException();
@@ -111,10 +111,10 @@ namespace PrimeERP.Tests.Services
             Result IAccountLinkedService.CreateFromAccount(PrimeDbContext db, string accountCode, string name, string rootCode) =>
                 CreateFromAccount(db, accountCode, name);
 
-            public Result<SupplierDto> CreateFromAccount(PrimeDbContext db, string accountCode, string name)
+            public Result<Supplier> CreateFromAccount(PrimeDbContext db, string accountCode, string name)
             {
                 LastCreatedFor = (accountCode, name);
-                return Result.Ok(new SupplierDto { Id = 999, Code = "S-TEST", AccountCode = accountCode, Name = name });
+                return Result.Ok(new Supplier { Id = 999, Code = "S-TEST", AccountCode = accountCode, Name = name });
             }
 
             public Result DeleteByAccountCode(PrimeDbContext db, string accountCode)
@@ -129,14 +129,14 @@ namespace PrimeERP.Tests.Services
                 return Result.Ok();
             }
 
-            public Result<PagedResult<SupplierDto>> GetPaged(int page, int pageSize, SupplierFilter filter = null) => throw new NotImplementedException();
-            public Result<SupplierDto> GetById(int id) => throw new NotImplementedException();
-            public Result<SupplierDto> GetByCode(string code) => throw new NotImplementedException();
-            public Result<System.Collections.Generic.List<SupplierDto>> Search(string term, int maxResults = 50) => throw new NotImplementedException();
+            public Result<PagedResult<Supplier>> GetPaged(int page, int pageSize, SupplierFilter filter = null) => throw new NotImplementedException();
+            public Result<Supplier> GetById(int id) => throw new NotImplementedException();
+            public Result<Supplier> GetByCode(string code) => throw new NotImplementedException();
+            public Result<System.Collections.Generic.List<Supplier>> Search(string term, int maxResults = 50) => throw new NotImplementedException();
             public Result<System.Collections.Generic.List<AccountStatementLine>> GetStatement(int id, DateTime from, DateTime to) => throw new NotImplementedException();
-            public Result<SupplierDto> Create(CreateSupplierDto dto) => throw new NotImplementedException();
-            public Result<SupplierDto> Create(PrimeDbContext db, CreateSupplierDto dto) => throw new NotImplementedException();
-            public Result Update(UpdateSupplierDto dto) => throw new NotImplementedException();
+            public Result<Supplier> Create(Supplier dto) => throw new NotImplementedException();
+            public Result<Supplier> Create(PrimeDbContext db, Supplier dto) => throw new NotImplementedException();
+            public Result Update(Supplier dto) => throw new NotImplementedException();
             public Result Delete(int id) => throw new NotImplementedException();
             public Result RecalculateBalance(int id) => throw new NotImplementedException();
             public Result RecalculateAllBalances() => throw new NotImplementedException();

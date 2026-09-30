@@ -28,7 +28,7 @@ namespace PrimeERP.Tests.Services
         public void ADeletedCustomer_LeavesEveryRead()
         {
             var customers = Service<ICustomerService>();
-            var created = customers.Create(new CreateCustomerDto { Name = "عميل يُحذف" });
+            var created = customers.Create(new Customer { Name = "عميل يُحذف" });
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
             Assert.True(customers.Delete(created.Value.Id).IsSuccess);

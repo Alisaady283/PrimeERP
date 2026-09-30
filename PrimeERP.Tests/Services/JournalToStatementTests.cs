@@ -8,6 +8,7 @@ using PrimeERP.Application.Legacy.Accounting;
 using PrimeERP.Application.Legacy.Parties;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 
@@ -29,7 +30,7 @@ namespace PrimeERP.Tests.Services
             var journals = _db.Services.GetRequiredService<IJournalService>();
 
             var customer = _db.Services.GetRequiredService<ICustomerService>()
-                .Create(new CreateCustomerDto { Name = "عميل الكشف", IsActive = true });
+                .Create(new Customer { Name = "عميل الكشف", IsActive = true });
             Assert.True(customer.IsSuccess, customer.ErrorMessage);
 
             var salesAccount = accounts.Create(new CreateAccountDto

@@ -60,9 +60,9 @@ namespace PrimeERP.Tests.Services
             _warehouseId = warehouses.Add("مخزن");
 
             var customers = _db.Services.GetRequiredService<ICustomerService>();
-            _customerId = customers.Create(new CreateCustomerDto { Name = "عميل" }).Value.Id;
+            _customerId = customers.Create(new Customer { Name = "عميل" }).Value.Id;
             var suppliers = _db.Services.GetRequiredService<ISupplierService>();
-            _supplierId = suppliers.Create(new CreateSupplierDto { Name = "مورد" }).Value.Id;
+            _supplierId = suppliers.Create(new Supplier { Name = "مورد" }).Value.Id;
 
             var stock = _db.Services.GetRequiredService<IStockMove>();
             DbContextFactory.RunTransaction(db => stock.RecordMovement(db, _productId, _warehouseId, Domain.Enums.MovementType.In, 100, 10, "Seed", null, "SEED"));

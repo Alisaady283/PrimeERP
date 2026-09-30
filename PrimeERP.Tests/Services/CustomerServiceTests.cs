@@ -5,6 +5,7 @@ using PrimeERP.Data.Core;
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Permissions;
+using PrimeERP.Domain.Calculations;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Data.Repositories;
@@ -47,7 +48,7 @@ namespace PrimeERP.Tests.Services
 
         private int CustomersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("1202").Id;
 
-        private static CreateCustomerDto BasicDto(string name = "عميل اختباري") => new()
+        private static Customer Basic(string name = "عميل اختباري") => new()
         {
             Name = name, Phone = "0100000000", Email = "test@example.com", CreditLimit = 1000m, PaymentTermDays = 30
         };
@@ -71,7 +72,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Create_CreatesLinkedAccount_UnderCustomersRoot()
         {
-            var result = _service.Create(BasicDto());
+            var result = _service.Create(Basic());
 
             Assert.True(result.IsSuccess, result.ErrorMessage);
             Assert.False(string.IsNullOrWhiteSpace(result.Value.AccountCode));
@@ -87,7 +88,7 @@ namespace PrimeERP.Tests.Services
         {
             var before = _accountRepo.GetChildren("1202").Count;
 
-            var result = _service.Create(BasicDto());
+            var result = _service.Create(Basic());
             Assert.True(result.IsSuccess, result.ErrorMessage);
 
             Assert.Equal(before + 1, _accountRepo.GetChildren("1202").Count);
@@ -118,14 +119,11 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Update_CustomerName_ChangesAccountName()
         {
-            var created = _service.Create(BasicDto("اسم قديم"));
+            var created = _service.Create(Basic("اسم قديم"));
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
-            var update = new UpdateCustomerDto
-            {
-                Id = created.Value.Id, Name = "اسم جديد", Phone = created.Value.Phone,
-                CreditLimit = created.Value.CreditLimit, PaymentTermDays = created.Value.PaymentTermDays, IsActive = true
-            };
+            var update = _service.GetById(created.Value.Id).Value;
+            update.Name = "اسم جديد";
             var result = _service.Update(update);
             Assert.True(result.IsSuccess, result.ErrorMessage);
 
@@ -135,7 +133,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Update_AccountName_ChangesCustomerName()
         {
-            var created = _service.Create(BasicDto("اسم قديم 2"));
+            var created = _service.Create(Basic("اسم قديم 2"));
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
             var account = _accountRepo.GetByCode(created.Value.AccountCode);
@@ -148,7 +146,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Delete_Customer_DeletesAccount()
         {
-            var created = _service.Create(BasicDto("سيُحذف"));
+            var created = _service.Create(Basic("سيُحذف"));
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
             var result = _service.Delete(created.Value.Id);
@@ -160,7 +158,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Delete_Account_DeletesCustomer()
         {
-            var created = _service.Create(BasicDto("سيُحذف عبر الحساب"));
+            var created = _service.Create(Basic("سيُحذف عبر الحساب"));
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
             var account = _accountRepo.GetByCode(created.Value.AccountCode);
@@ -176,7 +174,7 @@ namespace PrimeERP.Tests.Services
         {
             _settings.Set(SettingKeys.Accounts.Customers, "");
 
-            var result = _service.Create(BasicDto());
+            var result = _service.Create(Basic());
 
             Assert.False(result.IsSuccess);
         }
@@ -184,8 +182,8 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Create_GeneratesSequentialCodes()
         {
-            var first = _service.Create(BasicDto("الأول"));
-            var second = _service.Create(BasicDto("الثاني"));
+            var first = _service.Create(Basic("الأول"));
+            var second = _service.Create(Basic("الثاني"));
 
             Assert.True(first.IsSuccess, first.ErrorMessage);
             Assert.True(second.IsSuccess, second.ErrorMessage);
@@ -201,7 +199,7 @@ namespace PrimeERP.Tests.Services
 
             _settings.Set(SettingKeys.Accounts.Customers, leafAccount.Value.Code);
 
-            var result = _service.Create(BasicDto());
+            var result = _service.Create(Basic());
 
             Assert.False(result.IsSuccess);
         }
@@ -214,7 +212,7 @@ namespace PrimeERP.Tests.Services
 
             var accountsBefore = _accountRepo.GetChildren("1202").Count;
 
-            var result = _service.Create(BasicDto("سيفشل بسبب تصادم كود العميل"));
+            var result = _service.Create(Basic("سيفشل بسبب تصادم كود العميل"));
 
             Assert.False(result.IsSuccess);
             Assert.Single(_customerRepo.GetAll(activeOnly: false)); // العميل المزروع فقط، لا عميل إضافي معلَّق
@@ -225,7 +223,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void CheckCreditLimit_ZeroLimit_AlwaysAllows()
         {
-            var created = _service.Create(new CreateCustomerDto { Name = "بلا حد" });
+            var created = _service.Create(new Customer { Name = "بلا حد" });
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
             var result = _service.CheckCreditLimit(created.Value.Id, 1_000_000m);
@@ -237,7 +235,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void CheckCreditLimit_ExceedsLimit_FailsWithAmount()
         {
-            var created = _service.Create(new CreateCustomerDto { Name = "له حد", CreditLimit = 500m });
+            var created = _service.Create(new Customer { Name = "له حد", CreditLimit = 500m });
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
             var result = _service.CheckCreditLimit(created.Value.Id, 600m);
@@ -248,9 +246,9 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
-        public void IsOverCreditLimit_ComputedCorrectlyInDto()
+        public void IsOverCreditLimit_FromStoredBalance()
         {
-            var created = _service.Create(new CreateCustomerDto { Name = "متجاوز", CreditLimit = 100m });
+            var created = _service.Create(new Customer { Name = "متجاوز", CreditLimit = 100m });
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
             DbContextFactory.RunTransaction(db => _customerRepo.SetBalance(created.Value.Id, 500m, db));
@@ -258,15 +256,30 @@ namespace PrimeERP.Tests.Services
             var reloaded = _service.GetById(created.Value.Id);
 
             Assert.True(reloaded.IsSuccess, reloaded.ErrorMessage);
-            Assert.True(reloaded.Value.IsOverCreditLimit);
-            Assert.Equal(StatusVariant.Danger, reloaded.Value.StatusVariant);
+            Assert.True(PartyCalc.IsOverCreditLimit(reloaded.Value.Balance, reloaded.Value.CreditLimit));
+        }
+
+        [Fact]
+        public void Update_KeepsStoredBalance()
+        {
+            var created = _service.Create(Basic("رصيد محفوظ"));
+            Assert.True(created.IsSuccess, created.ErrorMessage);
+
+            var edited = _service.GetById(created.Value.Id).Value;
+            DbContextFactory.RunTransaction(db => _customerRepo.SetBalance(created.Value.Id, 250m, db));
+
+            edited.Name = "اسم بعد الرصيد";
+            var result = _service.Update(edited);
+
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.Equal(250m, _customerRepo.GetById(created.Value.Id).Balance);
         }
 
 
         [Fact]
         public void RecalculateBalance_MatchesAccountBalance()
         {
-            var created = _service.Create(BasicDto("رصيد مطابق"));
+            var created = _service.Create(Basic("رصيد مطابق"));
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
             SeedPostedEntry("2026-01-05", (created.Value.AccountCode, 300m, 0m), ("1204", 0m, 300m));
@@ -281,7 +294,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void PostedEntry_ChangesCustomerBalance_AfterRecalculate()
         {
-            var created = _service.Create(BasicDto("قبل وبعد"));
+            var created = _service.Create(Basic("قبل وبعد"));
             Assert.True(created.IsSuccess, created.ErrorMessage);
             Assert.Equal(0m, _customerRepo.GetById(created.Value.Id).Balance);
 
@@ -298,7 +311,7 @@ namespace PrimeERP.Tests.Services
             AppSession.DevMode = false;
             try
             {
-                var result = _service.Create(BasicDto());
+                var result = _service.Create(Basic());
                 Assert.False(result.IsSuccess);
                 Assert.Equal(ErrorCode.Unauthorized, result.ErrorCode);
             }
@@ -308,13 +321,13 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Update_WithoutPermission_Fails()
         {
-            var created = _service.Create(BasicDto("قبل التعديل"));
+            var created = _service.Create(Basic("قبل التعديل"));
             Assert.True(created.IsSuccess);
 
             AppSession.DevMode = false;
             try
             {
-                var result = _service.Update(new UpdateCustomerDto { Id = created.Value.Id, Name = "بعد", IsActive = true });
+                var result = _service.Update(new Customer { Id = created.Value.Id, Name = "بعد" });
                 Assert.False(result.IsSuccess);
                 Assert.Equal(ErrorCode.Unauthorized, result.ErrorCode);
             }
@@ -324,7 +337,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Delete_WithoutPermission_Fails()
         {
-            var created = _service.Create(BasicDto("قبل الحذف"));
+            var created = _service.Create(Basic("قبل الحذف"));
             Assert.True(created.IsSuccess);
 
             AppSession.DevMode = false;

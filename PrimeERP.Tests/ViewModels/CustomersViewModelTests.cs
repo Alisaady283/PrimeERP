@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.ViewModels;
 using Xunit;
@@ -26,7 +27,7 @@ namespace PrimeERP.Tests.ViewModels
         [Fact]
         public async Task ResolvedFromContainer_LoadsRealCustomers()
         {
-            _customers.Create(new CreateCustomerDto { Name = "عميل DI" });
+            _customers.Create(new Customer { Name = "عميل DI" });
 
             var vm = _db.Services.GetRequiredService<CustomersViewModel>();
             await vm.LoadAsync();

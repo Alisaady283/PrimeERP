@@ -58,7 +58,7 @@ namespace PrimeERP.Tests.Services
             _warehouseId = warehouses.Add("مخزن اختبار");
 
             var suppliers = _db.Services.GetRequiredService<ISupplierService>();
-            _supplierId = suppliers.Create(new CreateSupplierDto { Name = "مورد اختبار" }).Value.Id;
+            _supplierId = suppliers.Create(new Supplier { Name = "مورد اختبار" }).Value.Id;
         }
 
         public void Dispose() => _db.Dispose();

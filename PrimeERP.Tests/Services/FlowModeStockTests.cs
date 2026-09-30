@@ -57,7 +57,7 @@ namespace PrimeERP.Tests.Services
             Assert.True(product.IsSuccess, product.ErrorMessage);
 
             var customer = _db.Services.GetRequiredService<ICustomerService>()
-                .Create(new CreateCustomerDto { Name = "عميل", IsActive = true });
+                .Create(new Customer { Name = "عميل", IsActive = true });
             Assert.True(customer.IsSuccess, customer.ErrorMessage);
 
             var stockIn = _db.Services.GetRequiredService<IGoodsReceiptService>().Create(new CreateStockAdjustmentDto

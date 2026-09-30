@@ -13,6 +13,7 @@ using PrimeERP.Application.Legacy.Cheques;
 using PrimeERP.Application.Legacy.Parties;
 using PrimeERP.Application.Legacy.Treasury;
 using PrimeERP.Application.Legacy.Vouchers;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
@@ -52,10 +53,10 @@ namespace PrimeERP.Tests.Services
             return result.Value;
         }
 
-        private CustomerDto SeedCustomer()
+        private Customer SeedCustomer()
         {
             var result = _db.Services.GetRequiredService<ICustomerService>()
-                .Create(new CreateCustomerDto { Name = $"عميل {Guid.NewGuid():N}" });
+                .Create(new Customer { Name = $"عميل {Guid.NewGuid():N}" });
             Assert.True(result.IsSuccess, result.ErrorMessage);
             return result.Value;
         }

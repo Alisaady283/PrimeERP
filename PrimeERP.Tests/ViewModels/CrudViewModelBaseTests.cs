@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
@@ -35,8 +36,8 @@ namespace PrimeERP.Tests.ViewModels
         [Fact]
         public async Task LoadAsync_PopulatesItemsAndTotalCount_FromRealService()
         {
-            _customers.Create(new CreateCustomerDto { Name = "عميل 1" });
-            _customers.Create(new CreateCustomerDto { Name = "عميل 2" });
+            _customers.Create(new Customer { Name = "عميل 1" });
+            _customers.Create(new Customer { Name = "عميل 2" });
 
             var vm = MakeVm();
             await vm.LoadAsync();
@@ -49,7 +50,7 @@ namespace PrimeERP.Tests.ViewModels
         [Fact]
         public async Task DeleteCommand_RemovesEntity_AfterConfirmation_ThenReloads()
         {
-            var created = _customers.Create(new CreateCustomerDto { Name = "للحذف" });
+            var created = _customers.Create(new Customer { Name = "للحذف" });
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
             var vm = MakeVm();
@@ -73,7 +74,7 @@ namespace PrimeERP.Tests.ViewModels
             Assert.False(vm.DeleteCommand.CanExecute(null));
         }
 
-        private class TestCustomersViewModel : CrudViewModelBase<CustomerDto, CustomerFilter>
+        private class TestCustomersViewModel : CrudViewModelBase<Customer, CustomerFilter>
         {
             private readonly ICustomerService _service;
 
@@ -82,10 +83,10 @@ namespace PrimeERP.Tests.ViewModels
 
             protected override string PermissionPrefix => "Customers";
 
-            protected override Result<PagedResult<CustomerDto>> FetchPage(int page, int pageSize, CustomerFilter filter)
+            protected override Result<PagedResult<Customer>> FetchPage(int page, int pageSize, CustomerFilter filter)
                 => _service.GetPaged(page, pageSize, filter);
 
-            protected override int IdOf(CustomerDto item) => item.Id;
+            protected override int IdOf(Customer item) => item.Id;
             protected override Result DeleteItem(int id) => _service.Delete(id);
 
             public Task DeleteSelectedForTestAsync() => DeleteSelectedAsync();

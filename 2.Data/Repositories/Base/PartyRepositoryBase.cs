@@ -78,7 +78,7 @@ namespace PrimeERP.Data.Repositories.Base
         public int Insert(T party, PrimeDbContext db = null) => Add(party, db);
 
         public void Update(T party, PrimeDbContext db = null) =>
-            Modify(party, db);
+            Modify(party, db, nameof(PartyBase.Balance), nameof(PartyBase.Code));
 
         public void UpdateNameByAccountCode(PrimeDbContext db, string accountCode, string name) =>
             Set(p => p.AccountCode == accountCode, s => s.SetProperty(r => r.Name, name), db);

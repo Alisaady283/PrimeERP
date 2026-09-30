@@ -18,7 +18,7 @@ using PrimeERP.Platform.Settings;
 namespace PrimeERP.Application.Legacy.Parties
 {
     /// <summary>المالك الوحيد لمنطق العملاء</summary>
-    public class CustomerService : PartyServiceBase<Customer, CustomerDto, CreateCustomerDto, UpdateCustomerDto, CustomerFilter>, ICustomerService
+    public class CustomerService : PartyServiceBase<Customer, CustomerFilter>, ICustomerService
     {
         protected override string PermissionPrefix => "Customers";
         protected override string StringPrefix => "Str.Customer";
@@ -44,15 +44,13 @@ namespace PrimeERP.Application.Legacy.Parties
         protected override Cheques.IChequeService Cheques => _cheques;
 
         public CustomerService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
-            Statement statement, INumberSequenceService numbers, IPartyRepository<Customer> customers, IAccountRepository accountRepo,
+            Statement statement, INumberSequenceService numbers, IPartyRepository<Customer> customers,
             IJournalRepository journalRepo, Cheques.IChequeService cheques, AccountCases tree)
-            : base(permissions, settings, localization, audit, statement, numbers, accountRepo, journalRepo, tree)
+            : base(permissions, settings, localization, audit, statement, numbers, journalRepo, tree)
         {
             _customers = customers;
             _cheques = cheques;
         }
-
-        protected override int IdOf(UpdateCustomerDto dto) => dto.Id;
 
         protected override (List<Customer> Items, int Total) FindPaged(int page, int pageSize, CustomerFilter filter)
         {

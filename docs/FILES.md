@@ -210,10 +210,9 @@
 | 4.20 | ProductDto.cs | بيانات الصنف |
 | 4.21 | StockAdjustmentDto.cs | بيانات إذن المخزون |
 | 4.22 | StockTransferDto.cs | بيانات التحويل المخزني |
-| | **DTOs/Parties/** | بيانات العملاء والموردين |
-| 4.23 | CustomerDto.cs | للعرض في الجداول |
-| 4.24 | PartyDto.cs | عرض الطرف في الجداول |
-| 4.25 | SupplierDto.cs | بيانات المورد |
+| | **DTOs/Parties/** | مرشّحا العملاء والموردين |
+| 4.23 | CustomerFilter.cs | مرشّح العملاء |
+| 4.24 | SupplierFilter.cs | مرشّح الموردين |
 | | **DTOs/Purchasing/** | بيانات المشتريات |
 | 4.26 | PurchaseInvoiceDto.cs | بيانات فاتورة الشراء |
 | 4.27 | PurchaseReturnDto.cs | بيانات مرتجع الشراء |

@@ -47,12 +47,12 @@ namespace PrimeERP.Modules
                 ViewModelType = typeof(CustomersViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(CustomerDto.Code), Width = 110, Align = ColumnAlign.Center },
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(CustomerDto.Name), Width = 220, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(CustomerDto.CategoryName), Width = 140 },
-                    new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(CustomerDto.Phone), Width = 130 },
-                    new() { Header = LocalizationService.Get("Str.CreditLimit"), Binding = nameof(CustomerDto.CreditLimit), Width = 120, Align = ColumnAlign.Center, Format = "N2", PermissionKey = PermissionKeys.Customers.ColumnCreditLimit },
-                    new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(CustomerDto.Balance), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Customer.Code), Width = 110, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Customer.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(Customer.CategoryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(Customer.Phone), Width = 130 },
+                    new() { Header = LocalizationService.Get("Str.CreditLimit"), Binding = nameof(Customer.CreditLimit), Width = 120, Align = ColumnAlign.Center, Format = "N2", PermissionKey = PermissionKeys.Customers.ColumnCreditLimit },
+                    new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(Customer.Balance), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
                 },
                 Dialog = new DialogDefinition
                 {
@@ -60,16 +60,16 @@ namespace PrimeERP.Modules
                     TitleEditKey = "Str.Customers.Edit",
                     GridColumns = 2,
                     ServiceType = typeof(ICustomerService),
-                    CreateDtoType = typeof(CreateCustomerDto),
-                    UpdateDtoType = typeof(UpdateCustomerDto),
+                    CreateDtoType = typeof(Customer),
+                    UpdateDtoType = typeof(Customer),
                     Fields = new List<FieldDefinition>
                     {
-                        new() { Key = nameof(CreateCustomerDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateCustomerDto.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
-                        new() { Key = nameof(CreateCustomerDto.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 150 },
-                        new() { Key = nameof(CreateCustomerDto.CreditLimit), LabelKey = "Str.CreditLimit", Kind = FieldKind.Number },
-                        new() { Key = nameof(CreateCustomerDto.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Customers" },
-                        new() { Key = nameof(CreateCustomerDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                        new() { Key = nameof(Customer.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(Customer.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
+                        new() { Key = nameof(Customer.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 150 },
+                        new() { Key = nameof(Customer.CreditLimit), LabelKey = "Str.CreditLimit", Kind = FieldKind.Number },
+                        new() { Key = nameof(Customer.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Customers" },
+                        new() { Key = nameof(Customer.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }.Concat(StandardFields.DialogFields()).ToList()
                 }
             });
@@ -82,10 +82,10 @@ namespace PrimeERP.Modules
                 ViewModelType = typeof(SuppliersViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(SupplierDto.Code), Width = 110, Align = ColumnAlign.Center },
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(SupplierDto.Name), Width = 220, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(SupplierDto.CategoryName), Width = 140 },
-                    new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(SupplierDto.Phone), Width = 130 },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Supplier.Code), Width = 110, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Supplier.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(Supplier.CategoryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(Supplier.Phone), Width = 130 },
                 },
                 Dialog = new DialogDefinition
                 {
@@ -93,16 +93,16 @@ namespace PrimeERP.Modules
                     TitleEditKey = "Str.Suppliers.Edit",
                     GridColumns = 2,
                     ServiceType = typeof(ISupplierService),
-                    CreateDtoType = typeof(CreateSupplierDto),
-                    UpdateDtoType = typeof(UpdateSupplierDto),
+                    CreateDtoType = typeof(Supplier),
+                    UpdateDtoType = typeof(Supplier),
                     Fields = new List<FieldDefinition>
                     {
-                        new() { Key = nameof(CreateSupplierDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateSupplierDto.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
-                        new() { Key = nameof(CreateSupplierDto.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 150 },
-                        new() { Key = nameof(CreateSupplierDto.CreditLimit), LabelKey = "Str.CreditLimit", Kind = FieldKind.Number },
-                        new() { Key = nameof(CreateSupplierDto.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Suppliers" },
-                        new() { Key = nameof(CreateSupplierDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                        new() { Key = nameof(Supplier.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(Supplier.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
+                        new() { Key = nameof(Supplier.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 150 },
+                        new() { Key = nameof(Supplier.CreditLimit), LabelKey = "Str.CreditLimit", Kind = FieldKind.Number },
+                        new() { Key = nameof(Supplier.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Suppliers" },
+                        new() { Key = nameof(Supplier.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }.Concat(StandardFields.DialogFields()).ToList()
                 }
             });
