@@ -100,9 +100,13 @@ namespace PrimeERP.Composition.Renderers
 
             if (isEdit)
             {
-                var updateDto = Activator.CreateInstance(dialog.UpdateDtoType);
+                var loaded = Loaded(dialog, service, ReadValue(editItem, "Id"));
+                if (loaded != null && !loaded.IsSuccess) { toast.Error(loaded.ErrorMessage); return false; }
+
+                var updateDto = loaded?.GetType().GetProperty(nameof(Result<object>.Value))?.GetValue(loaded)
+                                ?? Activator.CreateInstance(dialog.UpdateDtoType);
                 WriteValue(updateDto, "Id", ReadValue(editItem, "Id"));
-                ApplyFields(dialog.Fields, fields, updateDto, editOnly: true);
+                ApplyFields(dialog.Fields, fields, updateDto, editOnly: true, writeEmpty: loaded != null);
                 ApplyFixedValues(dialog, updateDto);
 
                 var method = FindMethod(dialog.ServiceType, "Update", dialog.UpdateDtoType);
@@ -126,6 +130,15 @@ namespace PrimeERP.Composition.Renderers
 
             toast.Success(LocalizationService.Get("Str.Success"));
             return true;
+        }
+
+        /// <summary>السجل المحمَّل للتعديل</summary>
+        private static Result Loaded(DialogDefinition dialog, object service, object id)
+        {
+            var getById = FindMethod(dialog.ServiceType, "GetById", typeof(int));
+            return getById?.ReturnType == typeof(Result<>).MakeGenericType(dialog.UpdateDtoType) && id is int key
+                ? (Result)getById.Invoke(service, new object[] { key })
+                : null;
         }
 
         private static object PickerValue(object value, string valueField) => value switch
@@ -164,7 +177,8 @@ namespace PrimeERP.Composition.Renderers
             return type.IsEnum ? Enum.ToObject(type, value) : Convert.ChangeType(value, type);
         }
 
-        internal static void ApplyFields(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> fields, object dto, bool editOnly)
+        internal static void ApplyFields(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> fields, object dto, bool editOnly,
+            bool writeEmpty = false)
         {
             var row = dto as IDictionary<string, object>;
             var dtoType = dto.GetType();
@@ -177,7 +191,7 @@ namespace PrimeERP.Composition.Renderers
                 if (row == null && (prop == null || !prop.CanWrite)) continue;
 
                 var value = GetControlValue(fields[field.Key], field.Kind);
-                if (value == null) continue;
+                if (value == null && !writeEmpty) continue;
                 if (field.Kind == FieldKind.Password && string.IsNullOrEmpty((string)value)) continue;
 
                 if (row != null) row[field.Key] = value;

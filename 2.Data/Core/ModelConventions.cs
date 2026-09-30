@@ -39,6 +39,8 @@ namespace PrimeERP.Data.Core
                 }
                 else if (entry.State == EntityState.Modified)
                 {
+                    Keep(entry, "CreatedAt");
+                    Keep(entry, "CreatedBy");
                     Put(entry, "UpdatedAt", now);
                     Put(entry, "UpdatedBy", user);
 
@@ -64,6 +66,11 @@ namespace PrimeERP.Data.Core
         private static void Put(EntityEntry entry, string property, object value)
         {
             if (entry.Metadata.FindProperty(property) != null) entry.Property(property).CurrentValue = value;
+        }
+
+        private static void Keep(EntityEntry entry, string property)
+        {
+            if (entry.Metadata.FindProperty(property) != null) entry.Property(property).IsModified = false;
         }
     }
 

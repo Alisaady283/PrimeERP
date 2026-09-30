@@ -30,9 +30,9 @@ namespace PrimeERP.Application.Services.Core
             Tree = tree;
         }
 
-        protected abstract TEntity New(TCreate dto);
-        protected abstract void Apply(TEntity entity, TUpdate dto);
-        protected abstract int IdOf(TUpdate dto);
+        protected virtual TEntity New(TCreate dto) => dto as TEntity;
+        protected virtual void Apply(TEntity entity, TUpdate dto) { }
+        protected virtual int IdOf(TUpdate dto) => (dto as TEntity)?.Id ?? 0;
         protected abstract int Insert(PrimeDbContext db, TEntity entity);
         protected abstract void Save(PrimeDbContext db, TEntity entity);
         protected abstract void Erase(PrimeDbContext db, TEntity entity);
@@ -52,7 +52,7 @@ namespace PrimeERP.Application.Services.Core
         /// <summary>الإنشاء بلا صلاحية للبذر</summary>
         protected Result<TDto> Add(TCreate dto)
         {
-            var entity = New(dto);
+            var entity = Fresh(dto);
             if (SequenceKey != null) Number(entity, Numbers.Next(SequenceKey));
 
             var saved = Valid(entity).Then(() => Commit(db => CreateCore(db, entity)));
@@ -65,7 +65,7 @@ namespace PrimeERP.Application.Services.Core
         /// <summary>الإنشاء في معاملة المستدعي</summary>
         public Result<TDto> Create(PrimeDbContext db, TCreate dto)
         {
-            var entity = New(dto);
+            var entity = Fresh(dto);
             if (SequenceKey != null) Number(entity, Numbers.Next(db, SequenceKey));
             return Valid(entity).Then(() => CreateCore(db, entity)).Then(() => Result.Ok(ToDto(entity)));
         }
@@ -82,11 +82,11 @@ namespace PrimeERP.Application.Services.Core
         {
             if (!Can("Edit")) return FailDenied();
 
-            var entity = FindById(IdOf(dto));
-            if (entity == null) return Fail("NotFound", ErrorCode.NotFound);
+            var stored = FindById(IdOf(dto));
+            if (stored == null) return Fail("NotFound", ErrorCode.NotFound);
 
-            var names = AddEntityAccount.Names(entity, Accounts);
-            Apply(entity, dto);
+            var names = AddEntityAccount.Names(stored, Accounts);
+            var entity = Edited(stored, dto);
 
             var saved = Valid(entity).Then(() => Commit(db => OpenAccounts(db, entity).Then(() =>
             {
@@ -120,6 +120,28 @@ namespace PrimeERP.Application.Services.Core
 
             Audit.Log(EntityName, id, AuditAction.Delete, details: DeleteDetails(entity));
             return Result.Ok();
+        }
+
+        /// <summary>الكيان المُدخل بلا حساباته</summary>
+        private TEntity Fresh(TCreate dto)
+        {
+            var entity = New(dto);
+            if (dto is TEntity)
+                foreach (var account in Accounts) account.Set(entity, null);
+            return entity;
+        }
+
+        /// <summary>المُدخل كياناً بحسابات المخزَّن</summary>
+        private TEntity Edited(TEntity stored, TUpdate dto)
+        {
+            if (dto is not TEntity input)
+            {
+                Apply(stored, dto);
+                return stored;
+            }
+
+            foreach (var account in Accounts) account.Set(input, account.Get(stored));
+            return input;
         }
 
         private Result OpenAccounts(PrimeDbContext db, TEntity entity) =>

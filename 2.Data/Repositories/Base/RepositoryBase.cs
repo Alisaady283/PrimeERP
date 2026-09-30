@@ -168,10 +168,12 @@ namespace PrimeERP.Data.Repositories.Base
                                         .Skip(Math.Max(0, page - 1) * pageSize).Take(pageSize), db),
              Count(filter, db));
 
-        protected void Modify(T entity, PrimeDbContext db = null) =>
+        /// <summary>تعديل الصفّ عدا المحميّ</summary>
+        protected void Modify(T entity, PrimeDbContext db = null, params string[] keep) =>
             Write(db =>
             {
-                SetOf(db).Update(entity);
+                var entry = SetOf(db).Update(entity);
+                foreach (var field in keep) entry.Property(field).IsModified = false;
                 return 0;
             }, db);
 
