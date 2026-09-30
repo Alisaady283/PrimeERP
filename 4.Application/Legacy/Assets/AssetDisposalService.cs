@@ -1,5 +1,4 @@
 using PrimeERP.Application.Services.Ledger.Accounts;
-using PrimeERP.Application.Services.Entities;
 using PrimeERP.Domain.Calculations;
 using PrimeERP.Application.Legacy.Admin;
 using PrimeERP.Application.Services.Ledger;
@@ -26,15 +25,15 @@ namespace PrimeERP.Application.Legacy.Assets
     /// <summary>بيع الأصل واستبعاده</summary>
     public interface IAssetDisposalService
     {
-        Result<PagedResult<AssetDisposalDto>> GetPaged(int page, int pageSize, AssetDisposalFilter filter = null);
-        Result<AssetDisposalDto> GetById(int id);
-        Result<AssetDisposalDto> Create(CreateAssetDisposalDto dto);
-        Result Update(UpdateAssetDisposalDto dto);
+        Result<PagedResult<AssetDisposal>> GetPaged(int page, int pageSize, AssetDisposalFilter filter = null);
+        Result<AssetDisposal> GetById(int id);
+        Result<AssetDisposal> Create(AssetDisposal disposal);
+        Result Update(AssetDisposal disposal);
         Result Delete(int id);
     }
 
     public class AssetDisposalService
-        : AssetMovementServiceBase<AssetDisposal, AssetDisposalDto, AssetDisposalFilter>, IAssetDisposalService
+        : AssetMovementServiceBase<AssetDisposal, AssetDisposal, AssetDisposalFilter>, IAssetDisposalService
     {
         protected override string EntityName => "AssetDisposals";
 
@@ -63,9 +62,9 @@ namespace PrimeERP.Application.Legacy.Assets
         protected override List<AssetDisposal> FindSearch(string term, int maxResults) =>
             _disposals.GetPaged(1, maxResults, term).Items;
 
-        public Result<AssetDisposalDto> Create(CreateAssetDisposalDto dto) => Record(db => Write(db, dto));
+        public Result<AssetDisposal> Create(AssetDisposal disposal) => Record(db => Write(db, disposal));
 
-        public Result Update(UpdateAssetDisposalDto dto) => Replace(dto.Id, db => Write(db, Rows.Copy(dto, new CreateAssetDisposalDto())));
+        public Result Update(AssetDisposal disposal) => Replace(disposal, Write);
 
         public static readonly Field<AssetDisposal>[] DisposalFields =
         {
@@ -78,19 +77,16 @@ namespace PrimeERP.Application.Legacy.Assets
         protected override int? EntryOf(AssetDisposal d) => d.JournalEntryId;
         protected override object AuditOf(AssetDisposal d) => new { d.AssetId, d.SalePrice, GainOrLoss = AssetCalc.GainOrLoss(d) };
 
-        private Result<AssetDisposal> Write(PrimeDbContext db, CreateAssetDisposalDto dto)
+        private Result<AssetDisposal> Write(PrimeDbContext db, AssetDisposal disposal)
         {
-            var asset = _assets.GetById(dto.AssetId, db);
+            var asset = _assets.GetById(disposal.AssetId, db);
             if (asset == null) return Fail<AssetDisposal>("NotFound", ErrorCode.NotFound);
 
-            if (_disposals.AnyForAsset(dto.AssetId, db))
+            if (_disposals.AnyForAsset(disposal.AssetId, db))
                 return Fail<AssetDisposal>("AlreadyDisposed", ErrorCode.ValidationFailed);
 
-            var disposal = Rows.Copy(dto, new AssetDisposal(), to =>
-            {
-                to.AssetValue = asset.RevaluedValue > 0 ? asset.RevaluedValue : asset.PurchaseCost;
-                to.AccumulatedDepreciation = asset.AccumulatedDepreciation;
-            });
+            disposal.AssetValue = asset.RevaluedValue > 0 ? asset.RevaluedValue : asset.PurchaseCost;
+            disposal.AccumulatedDepreciation = asset.AccumulatedDepreciation;
 
             return Check.Valid(disposal, DisposalFields)
                 .Then(() => Lines(asset, disposal))
@@ -144,32 +140,23 @@ namespace PrimeERP.Application.Legacy.Assets
             _assets.Update(asset, db);
         }
 
-        protected override AssetDisposalDto ToDto(AssetDisposal d) =>
+        protected override AssetDisposal ToDto(AssetDisposal d) =>
             ToDto(d, _assets.GetById(d.AssetId), _treasuryRows.NamesOf(new[] { d.TreasuryId }));
 
-        protected override List<AssetDisposalDto> ToDtos(List<AssetDisposal> rows)
+        protected override List<AssetDisposal> ToDtos(List<AssetDisposal> rows)
         {
             var treasuries = _treasuryRows.NamesOf(rows.Select(d => d.TreasuryId));
             return WithAssets(rows, _assets, d => d.AssetId, (d, asset) => ToDto(d, asset, treasuries));
         }
 
-        private AssetDisposalDto ToDto(AssetDisposal d, Asset asset, IReadOnlyDictionary<int, string> treasuries)
+        private static AssetDisposal ToDto(AssetDisposal d, Asset asset, IReadOnlyDictionary<int, string> treasuries)
         {
-            var gain = AssetCalc.GainOrLoss(d) >= 0;
-
-            var kind = Rows.State((gain, StatusVariant.Success, "Str.Asset.Gain"), (true, StatusVariant.Danger, "Str.Asset.Loss"));
-            return Rows.Copy(d, new AssetDisposalDto(), to =>
-            {
-                to.AssetCode = asset?.Code;
-                to.AssetName = asset?.Name;
-                to.TreasuryName = treasuries.GetValueOrDefault(d.TreasuryId);
-                to.BookValue = AssetCalc.BookValue(d);
-                to.GainOrLoss = AssetCalc.GainOrLoss(d);
-                to.KindText = kind.Text;
-                to.KindVariant = kind.Variant;
-                to.CanEdit = Can("Edit");
-                to.CanDelete = Can("Delete");
-            });
+            (d.AssetCode, d.AssetName) = (asset?.Code, asset?.Name);
+            d.TreasuryName = treasuries.GetValueOrDefault(d.TreasuryId);
+            d.BookValue = AssetCalc.BookValue(d);
+            d.GainOrLoss = AssetCalc.GainOrLoss(d);
+            d.KindName = LocalizationService.Get(d.GainOrLoss >= 0 ? "Str.Asset.Gain" : "Str.Asset.Loss");
+            return d;
         }
     }
 }

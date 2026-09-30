@@ -1,5 +1,4 @@
 using PrimeERP.Application.Services.Ledger.Accounts;
-using PrimeERP.Application.Services.Entities;
 using PrimeERP.Domain.Calculations;
 using PrimeERP.Application.Legacy.Admin;
 using PrimeERP.Application.Services.Ledger;
@@ -23,15 +22,15 @@ namespace PrimeERP.Application.Legacy.Assets
     /// <summary>إعادة تقييم الأصل</summary>
     public interface IAssetRevaluationService
     {
-        Result<PagedResult<AssetRevaluationDto>> GetPaged(int page, int pageSize, AssetRevaluationFilter filter = null);
-        Result<AssetRevaluationDto> GetById(int id);
-        Result<AssetRevaluationDto> Create(CreateAssetRevaluationDto dto);
-        Result Update(UpdateAssetRevaluationDto dto);
+        Result<PagedResult<AssetRevaluation>> GetPaged(int page, int pageSize, AssetRevaluationFilter filter = null);
+        Result<AssetRevaluation> GetById(int id);
+        Result<AssetRevaluation> Create(AssetRevaluation revaluation);
+        Result Update(AssetRevaluation revaluation);
         Result Delete(int id);
     }
 
     public class AssetRevaluationService
-        : AssetMovementServiceBase<AssetRevaluation, AssetRevaluationDto, AssetRevaluationFilter>, IAssetRevaluationService
+        : AssetMovementServiceBase<AssetRevaluation, AssetRevaluation, AssetRevaluationFilter>, IAssetRevaluationService
     {
         protected override string EntityName => "AssetRevaluations";
 
@@ -58,9 +57,9 @@ namespace PrimeERP.Application.Legacy.Assets
         protected override List<AssetRevaluation> FindSearch(string term, int maxResults) =>
             _revaluations.GetPaged(1, maxResults, term).Items;
 
-        public Result<AssetRevaluationDto> Create(CreateAssetRevaluationDto dto) => Record(db => Write(db, dto));
+        public Result<AssetRevaluation> Create(AssetRevaluation revaluation) => Record(db => Write(db, revaluation));
 
-        public Result Update(UpdateAssetRevaluationDto dto) => Replace(dto.Id, db => Write(db, Rows.Copy(dto, new CreateAssetRevaluationDto())));
+        public Result Update(AssetRevaluation revaluation) => Replace(revaluation, Write);
 
         public static readonly Field<AssetRevaluation>[] RevaluationFields =
         {
@@ -73,15 +72,12 @@ namespace PrimeERP.Application.Legacy.Assets
         protected override int? EntryOf(AssetRevaluation r) => r.JournalEntryId;
         protected override object AuditOf(AssetRevaluation r) => new { r.AssetId, r.OldValue, r.NewValue };
 
-        private Result<AssetRevaluation> Write(PrimeDbContext db, CreateAssetRevaluationDto dto)
+        private Result<AssetRevaluation> Write(PrimeDbContext db, AssetRevaluation revaluation)
         {
-            var asset = _assets.GetById(dto.AssetId, db);
+            var asset = _assets.GetById(revaluation.AssetId, db);
             if (asset == null) return Fail<AssetRevaluation>("NotFound", ErrorCode.NotFound);
 
-            var revaluation = Rows.Copy(dto, new AssetRevaluation(), to =>
-            {
-                to.OldValue = asset.RevaluedValue;
-            });
+            revaluation.OldValue = asset.RevaluedValue;
 
             return Check.Valid(revaluation, RevaluationFields)
                 .Then(() => Sides(asset, AssetCalc.Difference(revaluation)))
@@ -127,26 +123,17 @@ namespace PrimeERP.Application.Legacy.Assets
             _assets.Update(asset, db);
         }
 
-        protected override AssetRevaluationDto ToDto(AssetRevaluation r) => ToDto(r, _assets.GetById(r.AssetId));
+        protected override AssetRevaluation ToDto(AssetRevaluation r) => ToDto(r, _assets.GetById(r.AssetId));
 
-        protected override List<AssetRevaluationDto> ToDtos(List<AssetRevaluation> rows) =>
+        protected override List<AssetRevaluation> ToDtos(List<AssetRevaluation> rows) =>
             WithAssets(rows, _assets, r => r.AssetId, ToDto);
 
-        private AssetRevaluationDto ToDto(AssetRevaluation r, Asset asset)
+        private static AssetRevaluation ToDto(AssetRevaluation r, Asset asset)
         {
-            var increase = AssetCalc.Difference(r) >= 0;
-
-            var kind = Rows.State((increase, StatusVariant.Success, "Str.Asset.Increase"), (true, StatusVariant.Danger, "Str.Asset.Decrease"));
-            return Rows.Copy(r, new AssetRevaluationDto(), to =>
-            {
-                to.AssetCode = asset?.Code;
-                to.AssetName = asset?.Name;
-                to.Difference = AssetCalc.Difference(r);
-                to.KindText = kind.Text;
-                to.KindVariant = kind.Variant;
-                to.CanEdit = Can("Edit");
-                to.CanDelete = Can("Delete");
-            });
+            (r.AssetCode, r.AssetName) = (asset?.Code, asset?.Name);
+            r.Difference = AssetCalc.Difference(r);
+            r.KindName = LocalizationService.Get(r.Difference >= 0 ? "Str.Asset.Increase" : "Str.Asset.Decrease");
+            return r;
         }
     }
 }

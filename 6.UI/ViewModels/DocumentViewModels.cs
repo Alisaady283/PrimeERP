@@ -11,6 +11,7 @@ using PrimeERP.Application.Legacy.HR;
 using PrimeERP.Application.Legacy.Inventory;
 using PrimeERP.Application.Legacy.Purchasing;
 using PrimeERP.Application.Legacy.Sales;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
@@ -207,7 +208,7 @@ namespace PrimeERP.UI.ViewModels
         protected override Result DeleteItem(int id) => _payrolls.Delete(id);
     }
 
-    public class AssetDepreciationsViewModel : CrudViewModelBase<AssetDepreciationDto, AssetDepreciationFilter>
+    public class AssetDepreciationsViewModel : CrudViewModelBase<AssetDepreciation, AssetDepreciationFilter>
     {
         private readonly IAssetDepreciationService _depreciation;
 
@@ -217,19 +218,19 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "Assets";
 
-        protected override Result<PagedResult<AssetDepreciationDto>> FetchPage(int page, int pageSize, AssetDepreciationFilter filter)
+        protected override Result<PagedResult<AssetDepreciation>> FetchPage(int page, int pageSize, AssetDepreciationFilter filter)
         {
             var f = filter ?? new AssetDepreciationFilter();
             f.SearchText = SearchText;
             return _depreciation.GetPaged(page, pageSize, f);
         }
 
-        protected override int IdOf(AssetDepreciationDto item) => item.Id;
+        protected override int IdOf(AssetDepreciation item) => item.Id;
 
         protected override Result DeleteItem(int id) => _depreciation.Delete(id);
     }
 
-    public class AssetDisposalsViewModel : CrudViewModelBase<AssetDisposalDto, AssetDisposalFilter>
+    public class AssetDisposalsViewModel : CrudViewModelBase<AssetDisposal, AssetDisposalFilter>
     {
         private readonly IAssetDisposalService _disposals;
 
@@ -239,19 +240,19 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "Assets";
 
-        protected override Result<PagedResult<AssetDisposalDto>> FetchPage(int page, int pageSize, AssetDisposalFilter filter)
+        protected override Result<PagedResult<AssetDisposal>> FetchPage(int page, int pageSize, AssetDisposalFilter filter)
         {
             var f = filter ?? new AssetDisposalFilter();
             f.SearchText = SearchText;
             return _disposals.GetPaged(page, pageSize, f);
         }
 
-        protected override int IdOf(AssetDisposalDto item) => item.Id;
+        protected override int IdOf(AssetDisposal item) => item.Id;
 
         protected override Result DeleteItem(int id) => _disposals.Delete(id);
     }
 
-    public class AssetRevaluationsViewModel : CrudViewModelBase<AssetRevaluationDto, AssetRevaluationFilter>
+    public class AssetRevaluationsViewModel : CrudViewModelBase<AssetRevaluation, AssetRevaluationFilter>
     {
         private readonly IAssetRevaluationService _revaluations;
 
@@ -261,14 +262,14 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "Assets";
 
-        protected override Result<PagedResult<AssetRevaluationDto>> FetchPage(int page, int pageSize, AssetRevaluationFilter filter)
+        protected override Result<PagedResult<AssetRevaluation>> FetchPage(int page, int pageSize, AssetRevaluationFilter filter)
         {
             var f = filter ?? new AssetRevaluationFilter();
             f.SearchText = SearchText;
             return _revaluations.GetPaged(page, pageSize, f);
         }
 
-        protected override int IdOf(AssetRevaluationDto item) => item.Id;
+        protected override int IdOf(AssetRevaluation item) => item.Id;
 
         protected override Result DeleteItem(int id) => _revaluations.Delete(id);
     }

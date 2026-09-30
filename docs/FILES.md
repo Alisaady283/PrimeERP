@@ -186,10 +186,10 @@
 | 4.02 | FiscalPeriodDto.cs | بيانات السنة والفترة المالية |
 | 4.03 | JournalDto.cs | للجداول/القوائم |
 | | **DTOs/Assets/** | بيانات الأصول |
-| 4.04 | AssetDepreciationDto.cs | قسط إهلاكٍ كما يُعرَض |
-| 4.05 | AssetDisposalDto.cs | بيانات استبعاد الأصل |
+| 4.04 | AssetDepreciationFilter.cs | مرشّح أقساط الإهلاك |
+| 4.05 | AssetDisposalFilter.cs | مرشّح استبعاد الأصول |
 | 4.06 | AssetFilter.cs | مرشّح الأصول |
-| 4.07 | AssetRevaluationDto.cs | بيانات إعادة التقييم |
+| 4.07 | AssetRevaluationFilter.cs | مرشّح إعادة التقييم |
 | | **DTOs/Cheques/** | بيانات الشيكات |
 | 4.08 | ChequeDto.cs | بيانات الشيك وحركته |
 | | **DTOs/Common/** | بيانات مشتركة: فئة وترخيص ونسخة |

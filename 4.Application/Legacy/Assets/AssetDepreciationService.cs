@@ -1,4 +1,3 @@
-using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Services.Ledger.Accounts;
 using PrimeERP.Domain.Calculations;
 using PrimeERP.Application.Legacy.Admin;
@@ -29,15 +28,15 @@ namespace PrimeERP.Application.Legacy.Assets
 
         Result<int> RunFor(DateTime upTo);
 
-        Result<PagedResult<AssetDepreciationDto>> GetPaged(int page, int pageSize, AssetDepreciationFilter filter = null);
-        Result<AssetDepreciationDto> GetById(int id);
-        Result<AssetDepreciationDto> Create(CreateAssetDepreciationDto dto);
-        Result Update(UpdateAssetDepreciationDto dto);
+        Result<PagedResult<AssetDepreciation>> GetPaged(int page, int pageSize, AssetDepreciationFilter filter = null);
+        Result<AssetDepreciation> GetById(int id);
+        Result<AssetDepreciation> Create(AssetDepreciation charge);
+        Result Update(AssetDepreciation charge);
         Result Delete(int id);
     }
 
     public class AssetDepreciationService
-        : AssetMovementServiceBase<AssetDepreciation, AssetDepreciationDto, AssetDepreciationFilter>, IAssetDepreciationService
+        : AssetMovementServiceBase<AssetDepreciation, AssetDepreciation, AssetDepreciationFilter>, IAssetDepreciationService
     {
         protected override string EntityName => "AssetDepreciation";
 
@@ -74,9 +73,9 @@ namespace PrimeERP.Application.Legacy.Assets
                 : Result.Ok(AssetCalc.PerMonth(Base(asset), asset.SalvageValue, asset.UsefulLifeYears));
         }
 
-        public Result<AssetDepreciationDto> Create(CreateAssetDepreciationDto dto) => Record(db => Write(db, dto));
+        public Result<AssetDepreciation> Create(AssetDepreciation charge) => Record(db => Write(db, charge));
 
-        public Result Update(UpdateAssetDepreciationDto dto) => Replace(dto.Id, db => Write(db, Rows.Copy(dto, new CreateAssetDepreciationDto())));
+        public Result Update(AssetDepreciation charge) => Replace(charge, Write);
 
         public static readonly Field<AssetDepreciation>[] ChargeFields =
         {
@@ -88,21 +87,18 @@ namespace PrimeERP.Application.Legacy.Assets
         protected override int? EntryOf(AssetDepreciation charge) => charge.JournalEntryId;
         protected override object AuditOf(AssetDepreciation charge) => new { charge.AssetId, charge.PeriodDate, charge.Amount };
 
-        private Result<AssetDepreciation> Write(PrimeDbContext db, CreateAssetDepreciationDto dto)
+        private Result<AssetDepreciation> Write(PrimeDbContext db, AssetDepreciation charge)
         {
             var expense = Account(SettingKeys.Accounts.DepreciationExpense);
             if (expense.IsFailure) return expense.As<AssetDepreciation>();
 
-            var asset = _assets.GetById(dto.AssetId, db);
+            var asset = _assets.GetById(charge.AssetId, db);
             if (asset == null) return Fail<AssetDepreciation>("NotFound", ErrorCode.NotFound);
             if (string.IsNullOrWhiteSpace(asset.DepreciationAccountCode))
                 return Fail<AssetDepreciation>("MirrorMissing", ErrorCode.ValidationFailed);
 
-            var charge = Rows.Copy(dto, new AssetDepreciation(), to =>
-            {
-                to.PeriodDate = AssetCalc.EndOfMonth(dto.PeriodDate);
-                to.Notes = string.IsNullOrWhiteSpace(dto.Notes) ? Msg("DepreciationNote", asset.Name, dto.PeriodDate) : dto.Notes;
-            });
+            if (string.IsNullOrWhiteSpace(charge.Notes)) charge.Notes = Msg("DepreciationNote", asset.Name, charge.PeriodDate);
+            charge.PeriodDate = AssetCalc.EndOfMonth(charge.PeriodDate);
 
             return Check.Valid(charge, ChargeFields).Then(() =>
             {
@@ -179,21 +175,15 @@ namespace PrimeERP.Application.Legacy.Assets
             _assets.Update(asset, db);
         }
 
-        protected override AssetDepreciationDto ToDto(AssetDepreciation charge) => ToDto(charge, _assets.GetById(charge.AssetId));
+        protected override AssetDepreciation ToDto(AssetDepreciation charge) => ToDto(charge, _assets.GetById(charge.AssetId));
 
-        protected override List<AssetDepreciationDto> ToDtos(List<AssetDepreciation> charges) =>
+        protected override List<AssetDepreciation> ToDtos(List<AssetDepreciation> charges) =>
             WithAssets(charges, _assets, c => c.AssetId, ToDto);
 
-        private AssetDepreciationDto ToDto(AssetDepreciation charge, Asset asset)
+        private static AssetDepreciation ToDto(AssetDepreciation charge, Asset asset)
         {
-
-            return Rows.Copy(charge, new AssetDepreciationDto(), to =>
-            {
-                to.AssetCode = asset?.Code;
-                to.AssetName = asset?.Name;
-                to.CanEdit = Can("Edit");
-                to.CanDelete = Can("Delete");
-            });
+            (charge.AssetCode, charge.AssetName) = (asset?.Code, asset?.Name);
+            return charge;
         }
     }
 }

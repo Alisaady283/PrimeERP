@@ -375,11 +375,11 @@ namespace PrimeERP.Modules
                 },
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(AssetDepreciationDto.PeriodDate), Width = 110, Format = "yyyy-MM-dd" },
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetDepreciationDto.AssetCode), Width = 110, Align = ColumnAlign.Center },
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetDepreciationDto.AssetName), Width = 200, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Description"), Binding = nameof(AssetDepreciationDto.Notes), Width = 240 },
-                    new() { Header = LocalizationService.Get("Str.Amount"), Binding = nameof(AssetDepreciationDto.Amount), Width = 130, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(AssetDepreciation.PeriodDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetDepreciation.AssetCode), Width = 110, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetDepreciation.AssetName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Description"), Binding = nameof(AssetDepreciation.Notes), Width = 240 },
+                    new() { Header = LocalizationService.Get("Str.Amount"), Binding = nameof(AssetDepreciation.Amount), Width = 130, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
                 },
                 Filters = new()
                 {
@@ -391,14 +391,14 @@ namespace PrimeERP.Modules
                     TitleEditKey = "Str.Module.AssetDepreciations",
                     GridColumns = 2,
                     ServiceType = typeof(IAssetDepreciationService),
-                    CreateDtoType = typeof(CreateAssetDepreciationDto),
-                    UpdateDtoType = typeof(UpdateAssetDepreciationDto),
+                    CreateDtoType = typeof(AssetDepreciation),
+                    UpdateDtoType = typeof(AssetDepreciation),
                     Fields = new List<FieldDefinition>
                     {
-                        new() { Key = nameof(CreateAssetDepreciationDto.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
-                        new() { Key = nameof(CreateAssetDepreciationDto.PeriodDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
-                        new() { Key = nameof(CreateAssetDepreciationDto.Amount), LabelKey = "Str.Amount", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
-                        new() { Key = nameof(CreateAssetDepreciationDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                        new() { Key = nameof(AssetDepreciation.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
+                        new() { Key = nameof(AssetDepreciation.PeriodDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(AssetDepreciation.Amount), LabelKey = "Str.Amount", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
+                        new() { Key = nameof(AssetDepreciation.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }
                 }
             });
@@ -411,13 +411,13 @@ namespace PrimeERP.Modules
                 ViewModelType = typeof(AssetRevaluationsViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(AssetRevaluationDto.RevaluationDate), Width = 110, Format = "yyyy-MM-dd" },
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetRevaluationDto.AssetCode), Width = 100, Align = ColumnAlign.Center },
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetRevaluationDto.AssetName), Width = 200, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Asset.OldValue"), Binding = nameof(AssetRevaluationDto.OldValue), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
-                    new() { Header = LocalizationService.Get("Str.Asset.NewValue"), Binding = nameof(AssetRevaluationDto.NewValue), Width = 140, Align = ColumnAlign.Center, Format = "N2" },
-                    new() { Header = LocalizationService.Get("Str.Asset.Difference"), Binding = nameof(AssetRevaluationDto.Difference), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
-                    new() { Header = LocalizationService.Get("Str.Asset.RevaluationKind"), Binding = nameof(AssetRevaluationDto.KindText), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(AssetRevaluation.RevaluationDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetRevaluation.AssetCode), Width = 100, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetRevaluation.AssetName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Asset.OldValue"), Binding = nameof(AssetRevaluation.OldValue), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.NewValue"), Binding = nameof(AssetRevaluation.NewValue), Width = 140, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.Difference"), Binding = nameof(AssetRevaluation.Difference), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.RevaluationKind"), Binding = nameof(AssetRevaluation.KindName), Width = 90, Align = ColumnAlign.Center },
                 },
                 Filters = new()
                 {
@@ -429,14 +429,14 @@ namespace PrimeERP.Modules
                     TitleEditKey = "Str.Asset.Revaluation",
                     GridColumns = 2,
                     ServiceType = typeof(IAssetRevaluationService),
-                    CreateDtoType = typeof(CreateAssetRevaluationDto),
-                    UpdateDtoType = typeof(UpdateAssetRevaluationDto),
+                    CreateDtoType = typeof(AssetRevaluation),
+                    UpdateDtoType = typeof(AssetRevaluation),
                     Fields = new List<FieldDefinition>
                     {
-                        new() { Key = nameof(CreateAssetRevaluationDto.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
-                        new() { Key = nameof(CreateAssetRevaluationDto.RevaluationDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
-                        new() { Key = nameof(CreateAssetRevaluationDto.NewValue), LabelKey = "Str.Asset.NewValue", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
-                        new() { Key = nameof(CreateAssetRevaluationDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                        new() { Key = nameof(AssetRevaluation.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
+                        new() { Key = nameof(AssetRevaluation.RevaluationDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(AssetRevaluation.NewValue), LabelKey = "Str.Asset.NewValue", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
+                        new() { Key = nameof(AssetRevaluation.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }
                 }
             });
@@ -449,14 +449,14 @@ namespace PrimeERP.Modules
                 ViewModelType = typeof(AssetDisposalsViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(AssetDisposalDto.DisposalDate), Width = 110, Format = "yyyy-MM-dd" },
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetDisposalDto.AssetCode), Width = 100, Align = ColumnAlign.Center },
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetDisposalDto.AssetName), Width = 200, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Treasury"), Binding = nameof(AssetDisposalDto.TreasuryName), Width = 140 },
-                    new() { Header = LocalizationService.Get("Str.Asset.SalePrice"), Binding = nameof(AssetDisposalDto.SalePrice), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
-                    new() { Header = LocalizationService.Get("Str.Asset.BookValue"), Binding = nameof(AssetDisposalDto.BookValue), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
-                    new() { Header = LocalizationService.Get("Str.Asset.GainOrLoss"), Binding = nameof(AssetDisposalDto.GainOrLoss), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
-                    new() { Header = LocalizationService.Get("Str.Asset.DisposalKind"), Binding = nameof(AssetDisposalDto.KindText), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(AssetDisposal.DisposalDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetDisposal.AssetCode), Width = 100, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetDisposal.AssetName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Treasury"), Binding = nameof(AssetDisposal.TreasuryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Asset.SalePrice"), Binding = nameof(AssetDisposal.SalePrice), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.BookValue"), Binding = nameof(AssetDisposal.BookValue), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.GainOrLoss"), Binding = nameof(AssetDisposal.GainOrLoss), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.DisposalKind"), Binding = nameof(AssetDisposal.KindName), Width = 90, Align = ColumnAlign.Center },
                 },
                 Filters = new()
                 {
@@ -468,15 +468,15 @@ namespace PrimeERP.Modules
                     TitleEditKey = "Str.Asset.Disposal",
                     GridColumns = 2,
                     ServiceType = typeof(IAssetDisposalService),
-                    CreateDtoType = typeof(CreateAssetDisposalDto),
-                    UpdateDtoType = typeof(UpdateAssetDisposalDto),
+                    CreateDtoType = typeof(AssetDisposal),
+                    UpdateDtoType = typeof(AssetDisposal),
                     Fields = new List<FieldDefinition>
                     {
-                        new() { Key = nameof(CreateAssetDisposalDto.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
-                        new() { Key = nameof(CreateAssetDisposalDto.DisposalDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
-                        new() { Key = nameof(CreateAssetDisposalDto.TreasuryId), LabelKey = "Str.Treasury", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Treasury" },
-                        new() { Key = nameof(CreateAssetDisposalDto.SalePrice), LabelKey = "Str.Asset.SalePrice", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
-                        new() { Key = nameof(CreateAssetDisposalDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                        new() { Key = nameof(AssetDisposal.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
+                        new() { Key = nameof(AssetDisposal.DisposalDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(AssetDisposal.TreasuryId), LabelKey = "Str.Treasury", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Treasury" },
+                        new() { Key = nameof(AssetDisposal.SalePrice), LabelKey = "Str.Asset.SalePrice", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
+                        new() { Key = nameof(AssetDisposal.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }
                 }
             });

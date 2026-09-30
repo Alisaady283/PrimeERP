@@ -282,7 +282,7 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(1300, beforeSale.AccumulatedDepreciation);
 
             var disposals = _db.Services.GetRequiredService<IAssetDisposalService>();
-            var sold = disposals.Create(new CreateAssetDisposalDto
+            var sold = disposals.Create(new AssetDisposal
             {
                 AssetId = created.Value.Id, DisposalDate = DateTime.Today,
                 TreasuryId = treasury.Value.Id, SalePrice = 11500
@@ -304,7 +304,7 @@ namespace PrimeERP.Tests.Services
 
             Assert.False(assets.GetById(created.Value.Id).Value.IsActive);
             Assert.Equal(0, depreciation.RunFor(DateTime.Today.AddMonths(2)).Value);
-            Assert.True(disposals.Create(new CreateAssetDisposalDto
+            Assert.True(disposals.Create(new AssetDisposal
             { AssetId = created.Value.Id, DisposalDate = DateTime.Today, TreasuryId = treasury.Value.Id, SalePrice = 100 }).IsFailure);
 
             Assert.True(disposals.Delete(sold.Value.Id).IsSuccess);
@@ -328,7 +328,7 @@ namespace PrimeERP.Tests.Services
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
             var revaluations = _db.Services.GetRequiredService<IAssetRevaluationService>();
-            var up = revaluations.Create(new CreateAssetRevaluationDto
+            var up = revaluations.Create(new AssetRevaluation
             { AssetId = created.Value.Id, RevaluationDate = DateTime.Today, NewValue = 12000 });
             Assert.True(up.IsSuccess, up.ErrorMessage);
 
@@ -343,7 +343,7 @@ namespace PrimeERP.Tests.Services
             Assert.Contains(entry.Lines, l => l.Debit == 2000 && l.AccountCode != gains);
             Assert.Contains(entry.Lines, l => l.Credit == 2000 && l.AccountCode == gains);
 
-            var down = revaluations.Create(new CreateAssetRevaluationDto
+            var down = revaluations.Create(new AssetRevaluation
             { AssetId = created.Value.Id, RevaluationDate = DateTime.Today, NewValue = 9000 });
             Assert.True(down.IsSuccess, down.ErrorMessage);
 

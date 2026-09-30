@@ -7,6 +7,8 @@ namespace PrimeERP.Domain.Entities
     public class AssetDepreciation : BaseModel
     {
         public int      AssetId        { get; set; }
+        public string   AssetCode      { get; set; }
+        public string   AssetName      { get; set; }
 
         public DateTime PeriodDate     { get; set; }
         public decimal  Amount         { get; set; }

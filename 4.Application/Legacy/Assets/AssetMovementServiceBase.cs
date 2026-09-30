@@ -63,19 +63,26 @@ namespace PrimeERP.Application.Legacy.Assets
         }
 
         /// <summary>عكسٌ وإنشاءٌ في معاملةٍ واحدة</summary>
-        protected Result Replace(int id, Func<PrimeDbContext, Result<TEntity>> write)
+        protected Result Replace(TEntity input, Func<PrimeDbContext, TEntity, Result<TEntity>> write)
         {
             if (!Can("Edit")) return FailDenied();
 
-            var old = FindById(id);
+            var old = FindById(input.Id);
             if (old == null) return Fail("NotFound", ErrorCode.NotFound);
 
             var replaced = EnsureReversible(EntryOf(old))
-                .Then(() => Commit(db => Undo(db, old).Then(() => write(db))));
+                .Then(() => Commit(db => Undo(db, old).Then(() => write(db, Fresh(input)))));
             if (replaced.IsFailure) return replaced;
 
             Audit.Log(EntityName, replaced.Value.Id, AuditAction.Update, oldValue: AuditOf(old), newValue: AuditOf(replaced.Value));
             return Result.Ok();
+        }
+
+        /// <summary>البديل صفٌّ جديد</summary>
+        private static TEntity Fresh(TEntity entity)
+        {
+            (entity.Id, entity.CreatedAt, entity.CreatedBy, entity.UpdatedAt, entity.UpdatedBy) = (0, default, null, default, null);
+            return entity;
         }
 
         public Result Delete(int id)

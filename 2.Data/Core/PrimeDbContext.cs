@@ -89,6 +89,8 @@ namespace PrimeERP.Data.Core
                 e.ToTable("AssetDepreciations");
                 e.HasKey(x => x.Id);
                 e.Property(x => x.Amount).HasPrecision(18, 4);
+                e.Ignore(x => x.AssetCode);
+                e.Ignore(x => x.AssetName);
                 e.HasIndex("AssetId").HasDatabaseName("IX_AssetDepreciations_AssetId");
             });
 
@@ -97,8 +99,14 @@ namespace PrimeERP.Data.Core
                 e.ToTable("AssetDisposals");
                 e.HasKey(x => x.Id);
                 e.Property(x => x.AccumulatedDepreciation).HasPrecision(18, 4);
+                e.Ignore(x => x.AssetCode);
+                e.Ignore(x => x.AssetName);
                 e.Property(x => x.AssetValue).HasPrecision(18, 4);
+                e.Ignore(x => x.BookValue);
+                e.Ignore(x => x.GainOrLoss);
+                e.Ignore(x => x.KindName);
                 e.Property(x => x.SalePrice).HasPrecision(18, 4);
+                e.Ignore(x => x.TreasuryName);
                 e.HasIndex("AssetId").HasDatabaseName("IX_AssetDisposals_AssetId");
             });
 
@@ -106,6 +114,10 @@ namespace PrimeERP.Data.Core
             {
                 e.ToTable("AssetRevaluations");
                 e.HasKey(x => x.Id);
+                e.Ignore(x => x.AssetCode);
+                e.Ignore(x => x.AssetName);
+                e.Ignore(x => x.Difference);
+                e.Ignore(x => x.KindName);
                 e.Property(x => x.NewValue).HasPrecision(18, 4);
                 e.Property(x => x.OldValue).HasPrecision(18, 4);
                 e.HasIndex("AssetId").HasDatabaseName("IX_AssetRevaluations_AssetId");
@@ -192,8 +204,8 @@ namespace PrimeERP.Data.Core
             {
                 e.ToTable("Categories");
                 e.HasKey(x => x.Id);
-                e.Ignore(x => x.ParentName);
                 e.Property(x => x.DepreciationAccountCode).HasColumnName("DepAccountCode");
+                e.Ignore(x => x.ParentName);
                 e.HasIndex("ParentId").HasDatabaseName("IX_Categories_ParentId");
                 e.HasIndex("ModuleKey").HasDatabaseName("IX_Categories_ModuleKey");
             });
