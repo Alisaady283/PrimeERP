@@ -2,7 +2,6 @@ using PrimeERP.Application.Validation;
 using PrimeERP.Application.Services.Ledger.Accounts;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Data.Core;
 using PrimeERP.Domain.Contracts;
@@ -132,8 +131,7 @@ namespace PrimeERP.Application.Services.Core
                 return stored;
             }
 
-            foreach (var account in Accounts.Where(a => string.IsNullOrWhiteSpace(a.Get(input))))
-                account.Set(input, account.Get(stored));
+            AddEntityAccount.Keep(input, stored, Accounts);
             return input;
         }
 

@@ -320,12 +320,12 @@ namespace PrimeERP.Modules
                 ViewModelType = typeof(AssetsViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetDto.Code), Width = 90, Align = ColumnAlign.Center },
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetDto.Name), Width = 200, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(AssetDto.CategoryName), Width = 140 },
-                    new() { Header = LocalizationService.Get("Str.PurchaseDate"), Binding = nameof(AssetDto.PurchaseDate), Width = 110, Format = "yyyy-MM-dd" },
-                    new() { Header = LocalizationService.Get("Str.Asset.Cost"), Binding = nameof(AssetDto.PurchaseCost), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
-                    new() { Header = LocalizationService.Get("Str.Asset.BookValue"), Binding = nameof(AssetDto.CurrentValue), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Asset.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Asset.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(Asset.CategoryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.PurchaseDate"), Binding = nameof(Asset.PurchaseDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Asset.Cost"), Binding = nameof(Asset.PurchaseCost), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.BookValue"), Binding = nameof(Asset.CurrentValue), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
                 },
                 Filters = new()
                 {
@@ -337,21 +337,21 @@ namespace PrimeERP.Modules
                     TitleEditKey = "Str.Assets.Edit",
                     GridColumns = 2,
                     ServiceType = typeof(IAssetService),
-                    CreateDtoType = typeof(CreateAssetDto),
-                    UpdateDtoType = typeof(UpdateAssetDto),
+                    CreateDtoType = typeof(Asset),
+                    UpdateDtoType = typeof(Asset),
                     Fields = new List<FieldDefinition>
                     {
-                        new() { Key = nameof(CreateAssetDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateAssetDto.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "AssetCategories" },
-                        new() { Key = nameof(CreateAssetDto.PurchaseDate), LabelKey = "Str.PurchaseDate", Kind = FieldKind.Date },
-                        new() { Key = nameof(CreateAssetDto.PurchaseCost), LabelKey = "Str.PurchaseCost", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
-                        new() { Key = nameof(CreateAssetDto.AcquisitionMethod), LabelKey = "Str.Asset.Acquisition", Kind = FieldKind.Picker, IsRequired = true, PickerType = "AssetAcquisition" },
-                        new() { Key = nameof(CreateAssetDto.FundingId), LabelKey = "Str.Asset.Funding", Kind = FieldKind.Picker, IsRequired = true, PickerType = "AssetFunding",
-                                PickerFilterField = nameof(CreateAssetDto.AcquisitionMethod) },
-                        new() { Key = nameof(CreateAssetDto.UsefulLifeYears), LabelKey = "Str.Asset.Life", Kind = FieldKind.Number, Min = 0, Max = 100 },
-                        new() { Key = nameof(CreateAssetDto.SalvageValue), LabelKey = "Str.Asset.Salvage", Kind = FieldKind.Number, Min = 0 },
-                        new() { Key = nameof(CreateAssetDto.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
-                        new() { Key = nameof(CreateAssetDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                        new() { Key = nameof(Asset.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(Asset.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "AssetCategories" },
+                        new() { Key = nameof(Asset.PurchaseDate), LabelKey = "Str.PurchaseDate", Kind = FieldKind.Date },
+                        new() { Key = nameof(Asset.PurchaseCost), LabelKey = "Str.PurchaseCost", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
+                        new() { Key = nameof(Asset.AcquisitionMethod), LabelKey = "Str.Asset.Acquisition", Kind = FieldKind.Picker, IsRequired = true, PickerType = "AssetAcquisition" },
+                        new() { Key = nameof(Asset.FundingId), LabelKey = "Str.Asset.Funding", Kind = FieldKind.Picker, IsRequired = true, PickerType = "AssetFunding",
+                                PickerFilterField = nameof(Asset.AcquisitionMethod) },
+                        new() { Key = nameof(Asset.UsefulLifeYears), LabelKey = "Str.Asset.Life", Kind = FieldKind.Number, Min = 0, Max = 100 },
+                        new() { Key = nameof(Asset.SalvageValue), LabelKey = "Str.Asset.Salvage", Kind = FieldKind.Number, Min = 0 },
+                        new() { Key = nameof(Asset.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
+                        new() { Key = nameof(Asset.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }.Concat(StandardFields.DialogFields()).ToList()
                 }
             });

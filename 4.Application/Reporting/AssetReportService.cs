@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Assets;
 using PrimeERP.Application.Legacy.Assets;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Localization;
 
@@ -71,16 +72,16 @@ namespace PrimeERP.Application.Reporting
             });
         }
 
-        private Result<List<AssetDto>> Load(int? categoryId)
+        private Result<List<Asset>> Load(int? categoryId)
         {
             var result = _assets.GetPaged(1, int.MaxValue, new AssetFilter { CategoryId = categoryId, SortBy = "Code" });
 
             return result.IsSuccess
                 ? Result.Ok(result.Value.Items.ToList())
-                : Result.Fail<List<AssetDto>>(result.ErrorMessage);
+                : Result.Fail<List<Asset>>(result.ErrorMessage);
         }
 
-        private static AssetRegisterRow Row(AssetDto asset) => new()
+        private static AssetRegisterRow Row(Asset asset) => new()
         {
             Code = asset.Code,
             Name = asset.Name,

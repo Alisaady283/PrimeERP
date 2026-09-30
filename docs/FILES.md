@@ -188,7 +188,7 @@
 | | **DTOs/Assets/** | بيانات الأصول |
 | 4.04 | AssetDepreciationDto.cs | قسط إهلاكٍ كما يُعرَض |
 | 4.05 | AssetDisposalDto.cs | بيانات استبعاد الأصل |
-| 4.06 | AssetDto.cs | بيانات الأصل |
+| 4.06 | AssetFilter.cs | مرشّح الأصول |
 | 4.07 | AssetRevaluationDto.cs | بيانات إعادة التقييم |
 | | **DTOs/Cheques/** | بيانات الشيكات |
 | 4.08 | ChequeDto.cs | بيانات الشيك وحركته |

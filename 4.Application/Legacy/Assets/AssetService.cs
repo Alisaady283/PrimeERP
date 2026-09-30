@@ -26,7 +26,7 @@ using PrimeERP.Platform.Settings;
 namespace PrimeERP.Application.Legacy.Assets
 {
     /// <summary>الأصل: إنشاءً وتعديلاً وبذراً</summary>
-    public class AssetService : AssetMovementServiceBase<Asset, AssetDto, AssetFilter>, IAssetService
+    public class AssetService : AssetMovementServiceBase<Asset, Asset, AssetFilter>, IAssetService
     {
         protected override string EntityName => "Assets";
 
@@ -71,73 +71,72 @@ namespace PrimeERP.Application.Legacy.Assets
             return Result.Ok();
         }
 
-        public Result<AssetDto> Create(CreateAssetDto dto)
+        public Result<Asset> Create(Asset asset)
         {
-            if (!Can("Create")) return FailDenied<AssetDto>();
+            if (!Can("Create")) return FailDenied<Asset>();
 
-            var asset = Rows.Copy(dto, new Asset(), to =>
-            {
-                to.Code = _numbers.Next("Asset");
-                to.RevaluedValue = dto.PurchaseCost;
-                to.CurrentValue = dto.PurchaseCost;
-            });
+            asset.Code = _numbers.Next("Asset");
+            asset.RevaluedValue = asset.PurchaseCost;
+            asset.CurrentValue = asset.PurchaseCost;
 
             var check = Check.Valid(asset, AssetFields);
-            if (check.IsFailure) return check.As<AssetDto>();
+            if (check.IsFailure) return check.As<Asset>();
 
-            var funding = FundingAccount(dto.AcquisitionMethod, dto.FundingId);
-            if (funding.IsFailure) return Result.Fail<AssetDto>(funding.ErrorMessage, funding.ErrorCode);
+            var funding = FundingAccount(asset.AcquisitionMethod, asset.FundingId);
+            if (funding.IsFailure) return Result.Fail<Asset>(funding.ErrorMessage, funding.ErrorCode);
 
             asset.FundingAccountCode = funding.Value;
 
-            var category = CategoryOf(dto.CategoryId);
-            if (category.IsFailure) return Result.Fail<AssetDto>(category.ErrorMessage, category.ErrorCode);
+            var category = CategoryOf(asset.CategoryId);
+            if (category.IsFailure) return Result.Fail<Asset>(category.ErrorMessage, category.ErrorCode);
 
             var posted = Acquire(asset, category.Value);
-            if (posted.IsFailure) return Result.Fail<AssetDto>(posted.ErrorMessage, posted.ErrorCode);
+            if (posted.IsFailure) return Result.Fail<Asset>(posted.ErrorMessage, posted.ErrorCode);
 
             Audit.Log(EntityName, asset.Id, AuditAction.Insert, newValue: new { asset.Code, asset.Name });
-            return Result.Ok(ToDto(asset));
+            return Result.Ok(asset);
         }
 
-        public Result Update(UpdateAssetDto dto)
+        public Result Update(Asset asset)
         {
             if (!Can("Edit")) return FailDenied();
 
-            var asset = _assets.GetById(dto.Id);
-            if (asset == null) return Fail("NotFound", ErrorCode.NotFound);
+            var stored = _assets.GetById(asset.Id);
+            if (stored == null) return Fail("NotFound", ErrorCode.NotFound);
 
-            var names = AddEntityAccount.Names(asset, Ledger(null));
+            var names = AddEntityAccount.Names(stored, Ledger(null));
+            AddEntityAccount.Keep(asset, stored, Ledger(null));
+            asset.Code = stored.Code;
 
-            var entryChanged = asset.PurchaseCost != dto.PurchaseCost
-                            || asset.PurchaseDate != dto.PurchaseDate
-                            || asset.FundingId != dto.FundingId
-                            || asset.AcquisitionMethod != dto.AcquisitionMethod;
+            var entryChanged = stored.PurchaseCost != asset.PurchaseCost
+                            || stored.PurchaseDate != asset.PurchaseDate
+                            || stored.FundingId != asset.FundingId
+                            || stored.AcquisitionMethod != asset.AcquisitionMethod;
 
-            Rows.Copy(dto, asset, a => a.CurrentValue = AssetCalc.BookValue(
-                a.RevaluedValue > 0 ? a.RevaluedValue : dto.PurchaseCost, a.AccumulatedDepreciation));
+            asset.CurrentValue = AssetCalc.BookValue(
+                stored.RevaluedValue > 0 ? stored.RevaluedValue : asset.PurchaseCost, stored.AccumulatedDepreciation);
 
             var check = Check.Valid(asset, AssetFields);
             if (check.IsFailure) return check;
 
-            var funding = FundingAccount(dto.AcquisitionMethod, dto.FundingId);
+            var funding = FundingAccount(asset.AcquisitionMethod, asset.FundingId);
             if (funding.IsFailure) return funding;
             asset.FundingAccountCode = funding.Value;
 
             var saved = Commit(db =>
             {
-                _assets.Update(asset, db);
+                _assets.Edit(asset, db);
                 _tree.Rename.Run(db, asset, Ledger(null), names);
 
-                if (!entryChanged || asset.JournalEntryId == null) return Result.Ok();
+                if (!entryChanged || stored.JournalEntryId == null) return Result.Ok();
 
-                ReverseEntry(db, asset.JournalEntryId);
+                ReverseEntry(db, stored.JournalEntryId);
                 _assets.SetJournalEntryId(db, asset.Id, AcquisitionEntry(db, asset));
                 return Result.Ok();
             });
             if (saved.IsFailure) return saved;
 
-            var posted = PostMissingAcquisition(asset);
+            var posted = stored.JournalEntryId == null ? PostMissingAcquisition(asset) : Result.Ok();
             if (posted.IsFailure) return posted;
 
             Audit.Log(EntityName, asset.Id, AuditAction.Update, newValue: new { asset.Name });
@@ -197,7 +196,6 @@ namespace PrimeERP.Application.Legacy.Assets
 
         private Result PostMissingAcquisition(Asset asset)
         {
-            if (asset.JournalEntryId != null) return Result.Ok();
             if (string.IsNullOrWhiteSpace(asset.FundingAccountCode))
                 return Result.Fail(Msg("FundingMissing"), ErrorCode.ValidationFailed);
 
@@ -224,16 +222,6 @@ namespace PrimeERP.Application.Legacy.Assets
 
 
 
-        protected override AssetDto ToDto(Asset a)
-        {
-            var (variant, status) = Rows.Active(a.IsActive);
-            return Rows.Copy(a, new AssetDto(), to =>
-            {
-                to.StatusVariant = variant;
-                to.StatusText = status;
-                to.CanEdit = Can("Edit");
-                to.CanDelete = Can("Delete");
-            });
-        }
+        protected override Asset ToDto(Asset a) => a;
     }
 }

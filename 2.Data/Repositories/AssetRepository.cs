@@ -22,6 +22,7 @@ namespace PrimeERP.Data.Repositories
 
         int Insert(Asset a, PrimeDbContext db = null);
         void Update(Asset a, PrimeDbContext db = null);
+        void Edit(Asset a, PrimeDbContext db = null);
         void Delete(int id, string deletedBy, PrimeDbContext db = null);
         void SetJournalEntryId(PrimeDbContext db, int id, int journalEntryId);
     }
@@ -74,6 +75,12 @@ namespace PrimeERP.Data.Repositories
 
         public void Update(Asset a, PrimeDbContext db = null) =>
             Modify(a, db);
+
+        /// <summary>تعديل المستخدم عدا حقول النظام</summary>
+        public void Edit(Asset a, PrimeDbContext db = null) =>
+            Modify(a, db, nameof(Asset.Code), nameof(Asset.AccountCode), nameof(Asset.DepreciationAccountCode),
+                nameof(Asset.AccumulatedDepreciation), nameof(Asset.RevaluedValue), nameof(Asset.LastDepreciationDate),
+                nameof(Asset.JournalEntryId));
 
         public void Delete(int id, string deletedBy, PrimeDbContext db = null) =>
             SoftDelete(id, deletedBy, db);

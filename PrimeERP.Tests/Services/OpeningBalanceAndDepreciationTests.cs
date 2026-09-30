@@ -8,6 +8,7 @@ using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Assets;
 using PrimeERP.Application.Legacy.Accounting;
 using PrimeERP.Application.Legacy.Assets;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Xunit;
@@ -165,7 +166,7 @@ namespace PrimeERP.Tests.Services
             var treasury = FundedTreasury("صندوق الأصول");
 
             var assets = _db.Services.GetRequiredService<IAssetService>();
-            var asset = assets.Create(new CreateAssetDto
+            var asset = assets.Create(new Asset
             {
                 Name = "سيارة", CategoryId = AssetCategory("سيارات"),
                 PurchaseDate = DateTime.Today.AddMonths(-12), PurchaseCost = 120000,
@@ -206,7 +207,7 @@ namespace PrimeERP.Tests.Services
 
             var assets = _db.Services.GetRequiredService<IAssetService>();
 
-            var created = assets.Create(new CreateAssetDto
+            var created = assets.Create(new Asset
             {
                 Name = "جهاز", CategoryId = AssetCategory("أجهزة"),
                 PurchaseDate = DateTime.Today.AddMonths(-2), PurchaseCost = 9000,
@@ -219,14 +220,8 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(PrimeERP.Domain.Enums.AssetAcquisition.Cash, loaded.AcquisitionMethod);
             Assert.Equal(treasury.Value.Id, loaded.FundingId);
 
-            var edited = assets.Update(new UpdateAssetDto
-            {
-                Id = loaded.Id, Name = "جهاز معدَّل", CategoryId = loaded.CategoryId,
-                PurchaseDate = loaded.PurchaseDate, PurchaseCost = loaded.PurchaseCost,
-                UsefulLifeYears = loaded.UsefulLifeYears, SalvageValue = loaded.SalvageValue,
-                Location = loaded.Location, Notes = loaded.Notes, IsActive = loaded.IsActive,
-                AcquisitionMethod = loaded.AcquisitionMethod, FundingId = loaded.FundingId
-            });
+            loaded.Name = "جهاز معدَّل";
+            var edited = assets.Update(loaded);
             Assert.True(edited.IsSuccess, edited.ErrorMessage);
             Assert.Equal("جهاز معدَّل", assets.GetById(loaded.Id).Value.Name);
 
@@ -243,7 +238,7 @@ namespace PrimeERP.Tests.Services
             var assets = _db.Services.GetRequiredService<IAssetService>();
             var category = AssetCategory("فئة الحذف");
 
-            CreateAssetDto New(string name) => new()
+            Asset New(string name) => new()
             {
                 Name = name, CategoryId = category,
                 PurchaseDate = DateTime.Today.AddMonths(-3), PurchaseCost = 6000,
@@ -271,7 +266,7 @@ namespace PrimeERP.Tests.Services
             var treasury = FundedTreasury("صندوق البيع");
 
             var assets = _db.Services.GetRequiredService<IAssetService>();
-            var created = assets.Create(new CreateAssetDto
+            var created = assets.Create(new Asset
             {
                 Name = "رافعة", CategoryId = AssetCategory("معدات"),
                 PurchaseDate = DateTime.Today.AddMonths(-12), PurchaseCost = 12000,
@@ -323,7 +318,7 @@ namespace PrimeERP.Tests.Services
             var treasury = FundedTreasury("صندوق التقييم");
 
             var assets = _db.Services.GetRequiredService<IAssetService>();
-            var created = assets.Create(new CreateAssetDto
+            var created = assets.Create(new Asset
             {
                 Name = "مبنى", CategoryId = AssetCategory("مبانٍ"),
                 PurchaseDate = DateTime.Today, PurchaseCost = 10000,
@@ -375,7 +370,7 @@ namespace PrimeERP.Tests.Services
             row.AccountCode = "";
             repo.Update(row);
 
-            CreateAssetDto New() => new()
+            Asset New() => new()
             {
                 Name = "أصل من الصندوق الرئيسي", CategoryId = AssetCategory("فئة قائمة"),
                 PurchaseDate = DateTime.Today, PurchaseCost = 35000,
@@ -415,7 +410,7 @@ namespace PrimeERP.Tests.Services
 
             Leaf(treasuryAccount, "فرع");
 
-            var failed = assets.Create(new CreateAssetDto
+            var failed = assets.Create(new Asset
             {
                 Name = "أصل لا يُحفَظ", CategoryId = category,
                 PurchaseDate = DateTime.Today, PurchaseCost = 35000,
@@ -436,7 +431,7 @@ namespace PrimeERP.Tests.Services
 
             var category = AssetCategory("فئة الأصول");
 
-            void Add(string name, int monthsAgo, int life) => Assert.True(assets.Create(new CreateAssetDto
+            void Add(string name, int monthsAgo, int life) => Assert.True(assets.Create(new Asset
             {
                 Name = name, CategoryId = category,
                 PurchaseDate = DateTime.Today.AddMonths(-monthsAgo), PurchaseCost = 12000,

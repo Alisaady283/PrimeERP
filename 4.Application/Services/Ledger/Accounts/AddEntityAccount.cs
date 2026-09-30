@@ -30,5 +30,12 @@ namespace PrimeERP.Application.Services.Ledger.Accounts
 
         public static List<string> Names<T>(T entity, IEnumerable<AccountSpec<T>> specs) =>
             specs.Select(s => s.Name(entity)).ToList();
+
+        /// <summary>حسابات المخزَّن للمُدخل الفارغ</summary>
+        public static void Keep<T>(T input, T stored, IEnumerable<AccountSpec<T>> specs)
+        {
+            foreach (var spec in specs.Where(s => string.IsNullOrWhiteSpace(s.Get(input))))
+                spec.Set(input, spec.Get(stored));
+        }
     }
 }

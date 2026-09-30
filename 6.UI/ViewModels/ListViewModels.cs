@@ -155,7 +155,7 @@ namespace PrimeERP.UI.ViewModels
         protected override Result DeleteItem(int id) => _treasuries.Delete(id);
     }
 
-    public class AssetsViewModel : CrudViewModelBase<AssetDto, AssetFilter>
+    public class AssetsViewModel : CrudViewModelBase<Asset, AssetFilter>
     {
         private readonly IAssetService _assets;
 
@@ -165,14 +165,14 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "Assets";
 
-        protected override Result<PagedResult<AssetDto>> FetchPage(int page, int pageSize, AssetFilter filter)
+        protected override Result<PagedResult<Asset>> FetchPage(int page, int pageSize, AssetFilter filter)
         {
             var f = filter ?? new AssetFilter();
             f.SearchText = SearchText;
             return _assets.GetPaged(page, pageSize, f);
         }
 
-        protected override int IdOf(AssetDto item) => item.Id;
+        protected override int IdOf(Asset item) => item.Id;
 
         protected override Result DeleteItem(int id) => _assets.Delete(id);
     }
