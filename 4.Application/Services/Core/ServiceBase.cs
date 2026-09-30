@@ -1,5 +1,6 @@
 using PrimeERP.Application.Validation;
 using PrimeERP.Data.Core;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using PrimeERP.Domain.Contracts;
@@ -82,6 +83,11 @@ namespace PrimeERP.Application.Services.Core
             catch (InvalidOperationException aborted)
             {
                 outcome = Result.Fail<T>(aborted.Message, ErrorCode.ValidationFailed);
+            }
+            catch (DbUpdateException refused)
+            {
+                outcome = Result.Fail<T>((refused.InnerException ?? refused).Message,
+                    refused is DbUpdateConcurrencyException ? ErrorCode.ConcurrencyConflict : ErrorCode.Conflict);
             }
 
             return outcome;
