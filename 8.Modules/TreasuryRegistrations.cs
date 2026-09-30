@@ -1,6 +1,6 @@
 using PrimeERP.Application.DTOs.Cheques;
-using PrimeERP.Application.DTOs.Treasury;
 using PrimeERP.Application.DTOs.Vouchers;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Application.Legacy.Vouchers;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Domain.Enums;
@@ -23,25 +23,25 @@ namespace PrimeERP.Modules
                 ViewModelType = typeof(TreasuriesViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(TreasuryDto.Code), Width = 100, Align = ColumnAlign.Center },
-                    new() { Header = "الحساب بالشجرة", Binding = nameof(TreasuryDto.AccountCode), Width = 130, Align = ColumnAlign.Center },
-                    new() { Header = "اسم الخزينة / البنك", Binding = nameof(TreasuryDto.Name), Width = 240, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(TreasuryDto.Balance), Width = 130, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
-                    new() { Header = "النوع", Binding = nameof(TreasuryDto.KindName), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Treasury.Code), Width = 100, Align = ColumnAlign.Center },
+                    new() { Header = "الحساب بالشجرة", Binding = nameof(Treasury.AccountCode), Width = 130, Align = ColumnAlign.Center },
+                    new() { Header = "اسم الخزينة / البنك", Binding = nameof(Treasury.Name), Width = 240, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(Treasury.AccountBalance), Width = 130, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                    new() { Header = "النوع", Binding = nameof(Treasury.KindName), Width = 90, Align = ColumnAlign.Center },
                 },
                 Dialog = new DialogDefinition
                 {
                     TitleKey = "Str.Treasuries.Add", TitleEditKey = "Str.Treasuries.Edit", GridColumns = 2,
                     ServiceType = typeof(PrimeERP.Application.Legacy.Treasury.ITreasuryService),
-                    CreateDtoType = typeof(CreateTreasuryDto), UpdateDtoType = typeof(UpdateTreasuryDto),
+                    CreateDtoType = typeof(Treasury), UpdateDtoType = typeof(Treasury),
                     Fields = new()
                     {
-                        new() { Key = nameof(CreateTreasuryDto.Kind), LabelKey = "النوع", Kind = FieldKind.Picker, PickerType = "TreasuryKind", IsRequired = true, IsReadOnlyOnEdit = true, DefaultValue = (int)TreasuryKind.Cash },
-                        new() { Key = nameof(CreateTreasuryDto.Name), LabelKey = "اسم الخزينة / البنك", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateTreasuryDto.AccountNumber), LabelKey = "رقم الحساب بالبنك", Kind = FieldKind.Text, MaxLength = 60,
-                                VisibleWhenField = nameof(CreateTreasuryDto.Kind), VisibleWhenValue = (int)TreasuryKind.Bank },
-                        new() { Key = nameof(CreateTreasuryDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
-                        new() { Key = nameof(CreateTreasuryDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                        new() { Key = nameof(Treasury.Kind), LabelKey = "النوع", Kind = FieldKind.Picker, PickerType = "TreasuryKind", IsRequired = true, IsReadOnlyOnEdit = true, DefaultValue = (int)TreasuryKind.Cash },
+                        new() { Key = nameof(Treasury.Name), LabelKey = "اسم الخزينة / البنك", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(Treasury.AccountNumber), LabelKey = "رقم الحساب بالبنك", Kind = FieldKind.Text, MaxLength = 60,
+                                VisibleWhenField = nameof(Treasury.Kind), VisibleWhenValue = (int)TreasuryKind.Bank },
+                        new() { Key = nameof(Treasury.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                        new() { Key = nameof(Treasury.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }
                 }
             });

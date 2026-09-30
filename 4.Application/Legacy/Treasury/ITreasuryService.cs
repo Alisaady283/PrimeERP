@@ -1,16 +1,16 @@
 using System.Collections.Generic;
-using PrimeERP.Application.DTOs.Treasury;
 using PrimeERP.Domain.Results;
+using Entity = PrimeERP.Domain.Entities.Treasury;
 
 namespace PrimeERP.Application.Legacy.Treasury
 {
     /// <summary>عقد الخزائن والبنوك</summary>
     public interface ITreasuryService
     {
-        Result<List<TreasuryDto>> GetAll(bool includeInactive = false);
-        Result<TreasuryDto> GetById(int id);
-        Result<TreasuryDto> Create(CreateTreasuryDto dto);
-        Result Update(UpdateTreasuryDto dto);
+        Result<List<Entity>> GetAll(bool includeInactive = false);
+        Result<Entity> GetById(int id);
+        Result<Entity> Create(Entity treasury);
+        Result Update(Entity treasury);
         Result Delete(int id);
         Result SeedDefaults();
         Result RepairMissingAccounts();

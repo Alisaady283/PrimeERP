@@ -223,7 +223,7 @@
 | 4.30 | RoleFilter.cs | مرشّح الأدوار |
 | 4.31 | UserDto.cs | بيانات المستخدم |
 | | **DTOs/Treasury/** | بيانات الخزائن والبنوك |
-| 4.32 | TreasuryDto.cs | بيانات الخزينة |
+| 4.32 | TreasuryFilter.cs | مرشّح الخزائن |
 | | **DTOs/Vouchers/** | بيانات السندات |
 | 4.33 | VoucherDto.cs | بيانات السند وتخصيصه |
 | | **Legacy/Accounting/** | الحسابات والقيود والفترات المالية |

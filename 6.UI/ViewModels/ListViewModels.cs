@@ -139,7 +139,7 @@ namespace PrimeERP.UI.ViewModels
         protected override Result DeleteItem(int id) => _users.Delete(id);
     }
 
-    public class TreasuriesViewModel : CrudViewModelBase<TreasuryDto, TreasuryFilter>
+    public class TreasuriesViewModel : CrudViewModelBase<Treasury, TreasuryFilter>
     {
         private readonly ITreasuryService _treasuries;
 
@@ -148,10 +148,10 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "Treasuries";
 
-        protected override Result<PagedResult<TreasuryDto>> FetchPage(int page, int pageSize, TreasuryFilter filter) =>
+        protected override Result<PagedResult<Treasury>> FetchPage(int page, int pageSize, TreasuryFilter filter) =>
             AllRows(_treasuries.GetAll(), t => t.Name, t => t.Code);
 
-        protected override int IdOf(TreasuryDto item) => item.Id;
+        protected override int IdOf(Treasury item) => item.Id;
         protected override Result DeleteItem(int id) => _treasuries.Delete(id);
     }
 

@@ -112,8 +112,8 @@ namespace PrimeERP.Tests.Services
         {
             var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
             treasuries.SeedDefaults();
-            return treasuries.Create(new CreateTreasuryDto
-            { Name = kind == TreasuryKind.Bank ? "بنك" : "خزينة", Kind = (int)kind }).Value.Id;
+            return treasuries.Create(new PrimeERP.Domain.Entities.Treasury
+            { Name = kind == TreasuryKind.Bank ? "بنك" : "خزينة", Kind = kind }).Value.Id;
         }
 
         private PrimeERP.Domain.Results.Result<VoucherDetailDto> Pay(int treasuryId, int supplierId, decimal amount) =>

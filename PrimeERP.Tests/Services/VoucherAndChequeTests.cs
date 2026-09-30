@@ -42,9 +42,9 @@ namespace PrimeERP.Tests.Services
             return account.Value.Code;
         }
 
-        private TreasuryDto SeedTreasury()
+        private Treasury SeedTreasury()
         {
-            var result = _db.Services.GetRequiredService<ITreasuryService>().Create(new CreateTreasuryDto
+            var result = _db.Services.GetRequiredService<ITreasuryService>().Create(new Treasury
             {
                 Name = $"خزينة {Guid.NewGuid():N}",
                 AccountCode = SeedLeafAccount()
@@ -164,7 +164,7 @@ namespace PrimeERP.Tests.Services
             Assert.True(Localized.Says(refused.ErrorMessage, "Str.Cheque.MovedLocked"), refused.ErrorMessage);
             Assert.True(service.DeleteUnmoved(cheque.Id).IsFailure);
         }
-        private ChequeDetailDto SeedIncomingCheque(out TreasuryDto treasury)
+        private ChequeDetailDto SeedIncomingCheque(out Treasury treasury)
         {
             treasury = SeedTreasury();
             var customer = SeedCustomer();

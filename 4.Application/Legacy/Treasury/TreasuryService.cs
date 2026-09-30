@@ -1,14 +1,10 @@
-using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Services.Ledger.Accounts;
 using PrimeERP.Application.Services.Core;
 using PrimeERP.Data.Core;
 using System.Collections.Generic;
 using System.Linq;
-using PrimeERP.Application.DTOs.Treasury;
-using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Application.Validation;
 using PrimeERP.Data.Repositories;
-using PrimeERP.Domain.Contracts;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
@@ -21,7 +17,7 @@ using Entity = PrimeERP.Domain.Entities.Treasury;
 namespace PrimeERP.Application.Legacy.Treasury
 {
     /// <summary>الخزائن والبنوك وحساباتها</summary>
-    public class TreasuryService : EntityService<Entity, TreasuryDto, CreateTreasuryDto, UpdateTreasuryDto, object>,
+    public class TreasuryService : EntityService<Entity, Entity, Entity, Entity, object>,
         ITreasuryService, IAccountLinkedService
     {
         protected override string PermissionPrefix => "Treasuries";
@@ -71,29 +67,13 @@ namespace PrimeERP.Application.Legacy.Treasury
         protected override List<Entity> FindSearch(string term, int maxResults) =>
             _repo.GetAll().Where(t => (t.Name ?? "").Contains(term)).Take(maxResults).ToList();
 
-        public override Result<TreasuryDto> GetById(int id) =>
-            FindById(id) is { } entity ? Result.Ok(ToDto(entity)) : Fail<TreasuryDto>("NotFound", ErrorCode.NotFound);
+        public override Result<Entity> GetById(int id) =>
+            FindById(id) is { } entity ? Result.Ok(ToDto(entity)) : Fail<Entity>("NotFound", ErrorCode.NotFound);
 
-        public Result<List<TreasuryDto>> GetAll(bool includeInactive = false) => Result.Ok(ToDtos(_repo.GetAll(includeInactive)));
-
-        protected override Entity New(CreateTreasuryDto dto) => Rows.Copy<Entity>(dto, new(), to =>
-        {
-            to.Kind = dto.IsBank ? TreasuryKind.Bank : TreasuryKind.Cash;
-        });
+        public Result<List<Entity>> GetAll(bool includeInactive = false) => Result.Ok(ToDtos(_repo.GetAll(includeInactive)));
 
         protected override void Number(Entity t, string code) => t.Code = code;
 
-        protected override void Apply(Entity t, UpdateTreasuryDto dto)
-        {
-            var code = t.AccountCode;
-            Rows.Copy(dto, t, x =>
-            {
-                x.Kind = dto.IsBank ? TreasuryKind.Bank : TreasuryKind.Cash;
-                x.AccountCode = dto.AccountCode ?? code;
-            });
-        }
-
-        protected override int IdOf(UpdateTreasuryDto dto) => dto.Id;
         protected override int Insert(PrimeDbContext db, Entity t) => _repo.Insert(t, db);
         protected override void Save(PrimeDbContext db, Entity t) => _repo.Update(t, db);
         protected override void Erase(PrimeDbContext db, Entity t) => _repo.Delete(t.Id, db);
@@ -156,24 +136,23 @@ namespace PrimeERP.Application.Legacy.Treasury
         {
             if (_repo.GetAll(includeInactive: true).Count > 0) return Result.Ok();
 
-            Add(new CreateTreasuryDto { Name = Msg("MainFund"), IsBank = false, IsActive = true });
-            Add(new CreateTreasuryDto { Name = Msg("MainBank"),  IsBank = true,  IsActive = true });
+            Add(new Entity { Name = Msg("MainFund"), Kind = TreasuryKind.Cash, IsActive = true });
+            Add(new Entity { Name = Msg("MainBank"), Kind = TreasuryKind.Bank, IsActive = true });
             return Result.Ok();
         }
 
-        protected override TreasuryDto ToDto(Entity t) => ToDtos(new List<Entity> { t })[0];
+        protected override Entity ToDto(Entity t) => ToDtos(new List<Entity> { t })[0];
 
-        protected override List<TreasuryDto> ToDtos(List<Entity> treasuries)
+        protected override List<Entity> ToDtos(List<Entity> treasuries)
         {
             var balances = _accountRows.GetByCodes(treasuries.Select(t => t.AccountCode).Where(c => !string.IsNullOrWhiteSpace(c)))
                                        .ToDictionary(a => a.Code, a => a.Balance);
-            return treasuries.Select(t => ToDto(t, balances)).ToList();
+            foreach (var t in treasuries)
+            {
+                t.KindName = LocalizationService.Get(t.Kind == TreasuryKind.Bank ? "Str.Treasury.Kind.Bank" : "Str.Treasury.Kind.Fund");
+                t.AccountBalance = !string.IsNullOrWhiteSpace(t.AccountCode) ? balances.GetValueOrDefault(t.AccountCode) : 0m;
+            }
+            return treasuries;
         }
-
-        private static TreasuryDto ToDto(Entity t, IReadOnlyDictionary<string, decimal> balances) => Rows.Copy<TreasuryDto>(t, new(), to =>
-        {
-            to.KindName = t.Kind == TreasuryKind.Bank ? LocalizationService.Get("Str.Treasury.Kind.Bank") : LocalizationService.Get("Str.Treasury.Kind.Fund");
-            to.Balance = !string.IsNullOrWhiteSpace(t.AccountCode) ? balances.GetValueOrDefault(t.AccountCode) : 0m;
-        });
     }
 }

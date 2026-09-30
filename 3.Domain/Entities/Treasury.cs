@@ -14,5 +14,8 @@ namespace PrimeERP.Domain.Entities
         public string       AccountNumber { get; set; }
         public string       Notes         { get; set; }
         public bool         IsActive      { get; set; } = true;
+
+        public decimal      AccountBalance { get; set; }
+        public string       KindName       { get; set; }
     }
 }

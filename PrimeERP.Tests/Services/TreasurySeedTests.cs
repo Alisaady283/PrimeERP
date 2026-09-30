@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Treasury;
 using PrimeERP.Application.Legacy.Accounting;
 using PrimeERP.Application.Legacy.Treasury;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using Xunit;
@@ -79,7 +80,7 @@ namespace PrimeERP.Tests.Services
         {
             var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
 
-            var created = treasuries.Create(new CreateTreasuryDto { Name = "خزينة الفرع", IsBank = false, IsActive = true });
+            var created = treasuries.Create(new Treasury { Name = "خزينة الفرع", Kind = TreasuryKind.Cash, IsActive = true });
             Assert.True(created.IsSuccess, created.ErrorMessage);
             Assert.False(string.IsNullOrWhiteSpace(created.Value.AccountCode));
 
@@ -97,7 +98,7 @@ namespace PrimeERP.Tests.Services
 
             settings.Set(PrimeERP.Platform.Settings.SettingKeys.Accounts.Bank, "9999");
 
-            var created = treasuries.Create(new CreateTreasuryDto { Name = "بنك بلا أصل", IsBank = true, IsActive = true });
+            var created = treasuries.Create(new Treasury { Name = "بنك بلا أصل", Kind = TreasuryKind.Bank, IsActive = true });
 
             Assert.True(created.IsFailure, "أُنشئت خزينة بلا حساب بدل رفض واضح");
             Assert.Contains("9999", created.ErrorMessage);
@@ -111,7 +112,7 @@ namespace PrimeERP.Tests.Services
             var accounts = _db.Services.GetRequiredService<IAccountService>();
             var repo = _db.Services.GetRequiredService<PrimeERP.Data.Repositories.ITreasuryRepository>();
 
-            var created = treasuries.Create(new CreateTreasuryDto { Name = "الصندوق الرئيسي", IsBank = false, IsActive = true });
+            var created = treasuries.Create(new Treasury { Name = "الصندوق الرئيسي", Kind = TreasuryKind.Cash, IsActive = true });
             Assert.True(created.IsSuccess, created.ErrorMessage);
             var accountCode = created.Value.AccountCode;
 
@@ -138,11 +139,11 @@ namespace PrimeERP.Tests.Services
             var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
             var accounts = _db.Services.GetRequiredService<IAccountService>();
 
-            var created = treasuries.Create(new CreateTreasuryDto { Name = "خزينة الفرع", IsBank = false, IsActive = true });
+            var created = treasuries.Create(new Treasury { Name = "خزينة الفرع", Kind = TreasuryKind.Cash, IsActive = true });
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
-            var updated = treasuries.Update(new UpdateTreasuryDto
-            { Id = created.Value.Id, Name = "خزينة الفرع الرئيسي", IsBank = false, IsActive = true });
+            var updated = treasuries.Update(new Treasury
+            { Id = created.Value.Id, Name = "خزينة الفرع الرئيسي", Kind = TreasuryKind.Cash, IsActive = true });
             Assert.True(updated.IsSuccess, updated.ErrorMessage);
 
             Assert.Equal("خزينة الفرع الرئيسي", accounts.GetByCode(created.Value.AccountCode).Value.Name);
@@ -154,7 +155,7 @@ namespace PrimeERP.Tests.Services
             var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
             var accounts = _db.Services.GetRequiredService<IAccountService>();
 
-            var created = treasuries.Create(new CreateTreasuryDto { Name = "بنك الفرع", IsBank = true, IsActive = true });
+            var created = treasuries.Create(new Treasury { Name = "بنك الفرع", Kind = TreasuryKind.Bank, IsActive = true });
             Assert.True(created.IsSuccess, created.ErrorMessage);
             Assert.Contains(accounts.GetLeaves().Value, a => a.Code == created.Value.AccountCode);
 
@@ -168,12 +169,12 @@ namespace PrimeERP.Tests.Services
         {
             var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
 
-            var first = treasuries.Create(new CreateTreasuryDto { Name = "بنك أول", IsBank = true, IsActive = true });
+            var first = treasuries.Create(new Treasury { Name = "بنك أول", Kind = TreasuryKind.Bank, IsActive = true });
             Assert.True(first.IsSuccess, first.ErrorMessage);
 
             Assert.True(treasuries.Delete(first.Value.Id).IsSuccess);
 
-            var second = treasuries.Create(new CreateTreasuryDto { Name = "بنك ثانٍ", IsBank = true, IsActive = true });
+            var second = treasuries.Create(new Treasury { Name = "بنك ثانٍ", Kind = TreasuryKind.Bank, IsActive = true });
             Assert.True(second.IsSuccess, second.ErrorMessage);
             Assert.NotEqual(first.Value.AccountCode, second.Value.AccountCode);
         }

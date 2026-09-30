@@ -44,11 +44,11 @@ namespace PrimeERP.Tests.Services
             { ParentId = _accounts.GetByCode(parentCode).Value.Id, Name = name, SkipAutoLink = true }).Value.Code;
 
 
-        private PrimeERP.Domain.Results.Result<PrimeERP.Application.DTOs.Treasury.TreasuryDto> FundedTreasury(string name, decimal amount = 500000)
+        private PrimeERP.Domain.Results.Result<PrimeERP.Domain.Entities.Treasury> FundedTreasury(string name, decimal amount = 500000)
         {
             var treasury = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>()
-                .Create(new PrimeERP.Application.DTOs.Treasury.CreateTreasuryDto
-                { Name = name, IsBank = false, AccountCode = Leaf("1204", name), IsActive = true });
+                .Create(new PrimeERP.Domain.Entities.Treasury
+                { Name = name, Kind = PrimeERP.Domain.Enums.TreasuryKind.Cash, AccountCode = Leaf("1204", name), IsActive = true });
 
             Assert.True(treasury.IsSuccess, treasury.ErrorMessage);
 
@@ -407,8 +407,8 @@ namespace PrimeERP.Tests.Services
         {
             var treasuryAccount = Leaf("1204", "صندوق بفرع");
             var treasury = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>()
-                .Create(new PrimeERP.Application.DTOs.Treasury.CreateTreasuryDto
-                { Name = "صندوق بفرع", IsBank = false, AccountCode = treasuryAccount, IsActive = true });
+                .Create(new PrimeERP.Domain.Entities.Treasury
+                { Name = "صندوق بفرع", Kind = PrimeERP.Domain.Enums.TreasuryKind.Cash, AccountCode = treasuryAccount, IsActive = true });
 
             var assets = _db.Services.GetRequiredService<IAssetService>();
             var category = AssetCategory("فئة التراجع");

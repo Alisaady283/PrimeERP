@@ -62,8 +62,8 @@ namespace PrimeERP.Tests.Composition
             var accountRepo = _services.GetRequiredService<IAccountRepository>();
             var bankAccount = accounts.Create(new CreateAccountDto
             { ParentId = accountRepo.GetByCode("1204").Id, Name = "حساب بنك الشيكات", SkipAutoLink = true }).Value.Code;
-            var bank = _services.GetRequiredService<ITreasuryService>().Create(new CreateTreasuryDto
-            { Name = "بنك الاختبار", AccountCode = bankAccount, IsBank = true });
+            var bank = _services.GetRequiredService<ITreasuryService>().Create(new Treasury
+            { Name = "بنك الاختبار", AccountCode = bankAccount, Kind = PrimeERP.Domain.Enums.TreasuryKind.Bank });
             Assert.True(bank.IsSuccess, bank.ErrorMessage);
 
             var customers = _services.GetRequiredService<ICustomerService>();

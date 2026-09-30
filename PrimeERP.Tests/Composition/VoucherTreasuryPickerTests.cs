@@ -45,10 +45,10 @@ namespace PrimeERP.Tests.Composition
                     accounts.Create(new CreateAccountDto
                     { ParentId = accounts.GetByCode(parentCode).Value.Id, Name = name, IsLeaf = true, SkipAutoLink = true }).Value.Code;
 
-                var cash = treasuries.Create(new CreateTreasuryDto
-                { Name = "صندوق الاختبار", IsBank = false, AccountCode = LeafUnder("1201", "صندوق"), IsActive = true });
-                var bank = treasuries.Create(new CreateTreasuryDto
-                { Name = "بنك الاختبار", IsBank = true, AccountCode = LeafUnder("1201", "بنك"), BankName = "بنك مصر", IsActive = true });
+                var cash = treasuries.Create(new PrimeERP.Domain.Entities.Treasury
+                { Name = "صندوق الاختبار", Kind = PrimeERP.Domain.Enums.TreasuryKind.Cash, AccountCode = LeafUnder("1201", "صندوق"), IsActive = true });
+                var bank = treasuries.Create(new PrimeERP.Domain.Entities.Treasury
+                { Name = "بنك الاختبار", Kind = PrimeERP.Domain.Enums.TreasuryKind.Bank, AccountCode = LeafUnder("1201", "بنك"), BankName = "بنك مصر", IsActive = true });
                 Assert.True(cash.IsSuccess, cash.ErrorMessage);
                 Assert.True(bank.IsSuccess, bank.ErrorMessage);
 

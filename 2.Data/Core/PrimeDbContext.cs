@@ -570,6 +570,8 @@ namespace PrimeERP.Data.Core
             {
                 e.ToTable("Treasuries");
                 e.HasKey(x => x.Id);
+                e.Ignore(x => x.AccountBalance);
+                e.Ignore(x => x.KindName);
                 e.HasIndex("Code").HasDatabaseName("IX_Treasuries_Code").IsUnique();
             });
 
