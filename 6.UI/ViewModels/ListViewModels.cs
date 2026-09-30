@@ -107,7 +107,7 @@ namespace PrimeERP.UI.ViewModels
 
 
 
-    public class RolesViewModel : CrudViewModelBase<RoleDto, RoleFilter>
+    public class RolesViewModel : CrudViewModelBase<Role, RoleFilter>
     {
         private readonly IRoleService _roles;
 
@@ -116,10 +116,10 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "Users";
 
-        protected override Result<PagedResult<RoleDto>> FetchPage(int page, int pageSize, RoleFilter filter) =>
+        protected override Result<PagedResult<Role>> FetchPage(int page, int pageSize, RoleFilter filter) =>
             AllRows(_roles.GetAll(), r => r.NameAr);
 
-        protected override int IdOf(RoleDto item) => item.Id;
+        protected override int IdOf(Role item) => item.Id;
         protected override Result DeleteItem(int id) => _roles.Delete(id);
     }
 

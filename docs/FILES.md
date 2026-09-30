@@ -220,7 +220,7 @@
 | 4.28 | SalesInvoiceDto.cs | بيانات فاتورة البيع |
 | 4.29 | SalesReturnDto.cs | بيانات مرتجع البيع |
 | | **DTOs/Security/** | بيانات المستخدمين والأدوار |
-| 4.30 | RoleDto.cs | بيانات الدور |
+| 4.30 | RoleFilter.cs | مرشّح الأدوار |
 | 4.31 | UserDto.cs | بيانات المستخدم |
 | | **DTOs/Treasury/** | بيانات الخزائن والبنوك |
 | 4.32 | TreasuryDto.cs | بيانات الخزينة |

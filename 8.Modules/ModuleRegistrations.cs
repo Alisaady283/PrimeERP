@@ -527,17 +527,17 @@ namespace PrimeERP.Modules
                 Key = "Roles", TitleKey = "Str.Module.Roles", PermissionPrefix = "Users", ViewModelType = typeof(RolesViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(RoleDto.NameAr), Width = 200, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.RoleNameEn"), Binding = nameof(RoleDto.Name), Width = 160 },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Role.NameAr), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.RoleNameEn"), Binding = nameof(Role.Name), Width = 160 },
                 },
                 Dialog = new DialogDefinition
                 {
                     TitleKey = "Str.Roles.Add", TitleEditKey = "Str.Roles.Edit", GridColumns = 1,
-                    ServiceType = typeof(IRoleService), CreateDtoType = typeof(CreateRoleDto), UpdateDtoType = typeof(UpdateRoleDto),
+                    ServiceType = typeof(IRoleService), CreateDtoType = typeof(Role), UpdateDtoType = typeof(Role),
                     Fields = new List<FieldDefinition>
                     {
-                        new() { Key = nameof(CreateRoleDto.NameAr), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 100 },
-                        new() { Key = nameof(CreateRoleDto.Name), LabelKey = "Str.RoleNameEn", Kind = FieldKind.Text, IsRequired = true, MaxLength = 100 },
+                        new() { Key = nameof(Role.NameAr), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 100 },
+                        new() { Key = nameof(Role.Name), LabelKey = "Str.RoleNameEn", Kind = FieldKind.Text, IsRequired = true, MaxLength = 100 },
                     }
                 }
             });
