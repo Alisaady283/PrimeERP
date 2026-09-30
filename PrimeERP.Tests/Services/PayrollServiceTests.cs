@@ -29,7 +29,7 @@ namespace PrimeERP.Tests.Services
             var deptId = departments.Add("قسم");
             var jobId = jobTitles.Add("وظيفة");
 
-            _employeeCode = _db.Services.GetRequiredService<IEmployeeService>().Create(new CreateEmployeeDto
+            _employeeCode = _db.Services.GetRequiredService<IEmployeeService>().Create(new Employee
             { Name = "موظف", DepartmentId = deptId, JobTitleId = jobId, HireDate = DateTime.Today, BasicSalary = 5000 }).Value.Code;
         }
 

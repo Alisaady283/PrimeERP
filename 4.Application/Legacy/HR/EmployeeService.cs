@@ -1,14 +1,10 @@
-using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Services.Ledger.Accounts;
 using PrimeERP.Application.Services.Core;
 using PrimeERP.Data.Core;
 using System.Collections.Generic;
 using PrimeERP.Application.DTOs.HR;
-using PrimeERP.Application.Legacy.Common;
-using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Application.Validation;
 using PrimeERP.Data.Repositories;
-using PrimeERP.Domain.Contracts;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
@@ -20,7 +16,7 @@ using PrimeERP.Platform.Settings;
 namespace PrimeERP.Application.Legacy.HR
 {
     /// <summary>خدمة الموظفين</summary>
-    public class EmployeeService : EntityService<Employee, EmployeeDto, CreateEmployeeDto, UpdateEmployeeDto, EmployeeFilter>,
+    public class EmployeeService : EntityService<Employee, Employee, Employee, Employee, EmployeeFilter>,
         IEmployeeService, IAccountLinkedService
     {
         protected override string PermissionPrefix => "HR";
@@ -69,19 +65,8 @@ namespace PrimeERP.Application.Legacy.HR
 
         protected override List<Employee> FindSearch(string term, int maxResults) => _employees.Search(term, maxResults);
 
-        protected override Employee New(CreateEmployeeDto dto) => Rows.Copy<Employee>(dto, new(), to =>
-        {
-            to.Status = dto.IsActive ? EmployeeStatus.Active : EmployeeStatus.Inactive;
-        });
-
         protected override void Number(Employee e, string code) => e.Code = code;
 
-        protected override void Apply(Employee e, UpdateEmployeeDto dto)
-        {
-            Rows.Copy(dto, e, x => x.Status = dto.IsActive ? EmployeeStatus.Active : EmployeeStatus.Inactive);
-        }
-
-        protected override int IdOf(UpdateEmployeeDto dto) => dto.Id;
         protected override int Insert(PrimeDbContext db, Employee e) => _employees.Insert(e, db);
         protected override void Save(PrimeDbContext db, Employee e) => _employees.Update(e, db);
         protected override void Erase(PrimeDbContext db, Employee e) => _employees.Delete(e.Id, CurrentUser, db);
@@ -114,18 +99,6 @@ namespace PrimeERP.Application.Legacy.HR
             return Result.Ok();
         }
 
-        protected override EmployeeDto ToDto(Employee e)
-        {
-            var isActive = e.Status == EmployeeStatus.Active;
-            var (variant, status) = Rows.Active(isActive);
-            return Rows.Copy(e, new EmployeeDto(), to =>
-            {
-                to.IsActive = isActive;
-                to.StatusVariant = variant;
-                to.StatusText = status;
-                to.CanEdit = Can("Edit");
-                to.CanDelete = Can("Delete");
-            });
-        }
+        protected override Employee ToDto(Employee e) => e;
     }
 }

@@ -83,7 +83,7 @@ namespace PrimeERP.UI.ViewModels
         protected override Result DeleteItem(int id) => _suppliers.Delete(id);
     }
 
-    public class EmployeesViewModel : CrudViewModelBase<EmployeeDto, EmployeeFilter>
+    public class EmployeesViewModel : CrudViewModelBase<Employee, EmployeeFilter>
     {
         private readonly IEmployeeService _employees;
 
@@ -93,14 +93,14 @@ namespace PrimeERP.UI.ViewModels
 
         protected override string PermissionPrefix => "HR";
 
-        protected override Result<PagedResult<EmployeeDto>> FetchPage(int page, int pageSize, EmployeeFilter filter)
+        protected override Result<PagedResult<Employee>> FetchPage(int page, int pageSize, EmployeeFilter filter)
         {
             var f = filter ?? new EmployeeFilter();
             f.SearchText = SearchText;
             return _employees.GetPaged(page, pageSize, f);
         }
 
-        protected override int IdOf(EmployeeDto item) => item.Id;
+        protected override int IdOf(Employee item) => item.Id;
 
         protected override Result DeleteItem(int id) => _employees.Delete(id);
     }

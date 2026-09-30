@@ -26,8 +26,8 @@ namespace PrimeERP.Tests.Services
             var deptId = _db.Services.GetRequiredService<Lookup<Department>>().Add("المبيعات");
             var jobId = _db.Services.GetRequiredService<Lookup<JobTitle>>().Add("محاسب");
             var employees = _db.Services.GetRequiredService<IEmployeeService>();
-            employees.Create(new CreateEmployeeDto { Name = "بقسم", DepartmentId = deptId, JobTitleId = jobId, HireDate = DateTime.Today });
-            employees.Create(new CreateEmployeeDto { Name = "بلا قسم", HireDate = DateTime.Today });
+            employees.Create(new Employee { Name = "بقسم", DepartmentId = deptId, JobTitleId = jobId, HireDate = DateTime.Today });
+            employees.Create(new Employee { Name = "بلا قسم", HireDate = DateTime.Today });
 
             var page = employees.GetPaged(1, 50, new EmployeeFilter());
 

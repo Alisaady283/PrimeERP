@@ -622,6 +622,9 @@
     <sys:String x:Key="Str.Employee.CodeNotFound">الموظف بالكود {0} غير موجود</sys:String>
     <sys:String x:Key="Str.Employee.MonthRange">الشهر بين 1 و12</sys:String>
     <sys:String x:Key="Str.Employee.Required">الموظف مطلوب</sys:String>
+    <sys:String x:Key="Str.Employee.Status.Active">نشط</sys:String>
+    <sys:String x:Key="Str.Employee.Status.Inactive">غير نشط</sys:String>
+    <sys:String x:Key="Str.Employee.Status.OnLeave">في إجازة</sys:String>
     <sys:String x:Key="Str.Employee.YearInvalid">السنة غير صحيحة</sys:String>
     <sys:String x:Key="Str.Field.AccountCode">كود الحساب</sys:String>
     <sys:String x:Key="Str.Field.AccountName">اسم الحساب</sys:String>

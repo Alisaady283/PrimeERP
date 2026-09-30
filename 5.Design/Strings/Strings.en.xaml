@@ -622,6 +622,9 @@
     <sys:String x:Key="Str.Employee.CodeNotFound">Employee with code {0} not found</sys:String>
     <sys:String x:Key="Str.Employee.MonthRange">Month must be between 1 and 12</sys:String>
     <sys:String x:Key="Str.Employee.Required">Employee is required</sys:String>
+    <sys:String x:Key="Str.Employee.Status.Active">Active</sys:String>
+    <sys:String x:Key="Str.Employee.Status.Inactive">Inactive</sys:String>
+    <sys:String x:Key="Str.Employee.Status.OnLeave">On leave</sys:String>
     <sys:String x:Key="Str.Employee.YearInvalid">Invalid year</sys:String>
     <sys:String x:Key="Str.Field.AccountCode">Account code</sys:String>
     <sys:String x:Key="Str.Field.AccountName">Account name</sys:String>

@@ -489,12 +489,12 @@ namespace PrimeERP.Modules
                 ViewModelType = typeof(EmployeesViewModel),
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(EmployeeDto.Code), Width = 90, Align = ColumnAlign.Center },
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(EmployeeDto.Name), Width = 200, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Department"), Binding = nameof(EmployeeDto.DepartmentName), Width = 140 },
-                    new() { Header = LocalizationService.Get("Str.JobTitle"), Binding = nameof(EmployeeDto.JobTitleName), Width = 140 },
-                    new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(EmployeeDto.Phone), Width = 120 },
-                    new() { Header = LocalizationService.Get("Str.Salary"), Binding = nameof(EmployeeDto.BasicSalary), Width = 110, Align = ColumnAlign.Center, Format = "N2", PermissionKey = PermissionKeys.HR.ColumnSalary },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Employee.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Employee.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Department"), Binding = nameof(Employee.DepartmentName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.JobTitle"), Binding = nameof(Employee.JobTitleName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(Employee.Phone), Width = 120 },
+                    new() { Header = LocalizationService.Get("Str.Salary"), Binding = nameof(Employee.BasicSalary), Width = 110, Align = ColumnAlign.Center, Format = "N2", PermissionKey = PermissionKeys.HR.ColumnSalary },
                 },
                 Filters = new()
                 {
@@ -506,19 +506,21 @@ namespace PrimeERP.Modules
                     TitleEditKey = "Str.Employees.Edit",
                     GridColumns = 2,
                     ServiceType = typeof(IEmployeeService),
-                    CreateDtoType = typeof(CreateEmployeeDto),
-                    UpdateDtoType = typeof(UpdateEmployeeDto),
+                    CreateDtoType = typeof(Employee),
+                    UpdateDtoType = typeof(Employee),
                     Fields = new List<FieldDefinition>
                     {
-                        new() { Key = nameof(CreateEmployeeDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                        new() { Key = nameof(CreateEmployeeDto.DepartmentId), LabelKey = "Str.Department", Kind = FieldKind.Picker, PickerType = "Department" },
-                        new() { Key = nameof(CreateEmployeeDto.JobTitleId), LabelKey = "Str.JobTitle", Kind = FieldKind.Picker, PickerType = "JobTitle" },
-                        new() { Key = nameof(CreateEmployeeDto.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
-                        new() { Key = nameof(CreateEmployeeDto.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 120 },
-                        new() { Key = nameof(CreateEmployeeDto.HireDate), LabelKey = "Str.HireDate", Kind = FieldKind.Date, IsRequired = true },
-                        new() { Key = nameof(CreateEmployeeDto.BasicSalary), LabelKey = "Str.Salary", Kind = FieldKind.Number },
-                        new() { Key = nameof(CreateEmployeeDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
-                    }.Concat(StandardFields.DialogFields()).ToList()
+                        new() { Key = nameof(Employee.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(Employee.DepartmentId), LabelKey = "Str.Department", Kind = FieldKind.Picker, PickerType = "Department" },
+                        new() { Key = nameof(Employee.JobTitleId), LabelKey = "Str.JobTitle", Kind = FieldKind.Picker, PickerType = "JobTitle" },
+                        new() { Key = nameof(Employee.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
+                        new() { Key = nameof(Employee.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 120 },
+                        new() { Key = nameof(Employee.HireDate), LabelKey = "Str.HireDate", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(Employee.BasicSalary), LabelKey = "Str.Salary", Kind = FieldKind.Number },
+                        new() { Key = nameof(Employee.Status), LabelKey = "Str.Status", Kind = FieldKind.Picker, PickerType = "EmployeeStatus", IsRequired = true,
+                                DefaultValue = (int)PrimeERP.Domain.Enums.EmployeeStatus.Active },
+                        new() { Key = nameof(Employee.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }.Concat(StandardFields.DialogFields().Where(f => f.Key != "IsActive")).ToList()
                 }
             });
 

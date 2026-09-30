@@ -202,7 +202,7 @@
 | 4.14 | PullLinkFields.cs |  |
 | 4.15 | TradeLineDto.cs | سطر فاتورةٍ أو مرتجع |
 | | **DTOs/HR/** | بيانات الموارد البشرية |
-| 4.16 | EmployeeDto.cs | بيانات الموظف |
+| 4.16 | EmployeeFilter.cs | مرشّح الموظفين |
 | 4.17 | EmployeeMovementDto.cs | بدلٌ أو خصمٌ على موظف |
 | 4.18 | PayrollDto.cs | بيانات مسير الرواتب |
 | | **DTOs/Inventory/** | بيانات المخزون |

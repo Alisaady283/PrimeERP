@@ -558,6 +558,11 @@ namespace PrimeERP.Composition.Renderers
                     new() { Id = (int)PrimeERP.Domain.Enums.TreasuryKind.Bank, Display = "بنك" },
                 };
             }
+            else if (field.PickerType == "EmployeeStatus")
+            {
+                combo.ItemsSource = Enum.GetValues<PrimeERP.Domain.Enums.EmployeeStatus>()
+                    .Select(s => new PickerRow { Id = (int)s, Display = LocalizationService.Get($"Str.Employee.Status.{s}") }).ToList();
+            }
             else if (field.PickerType == "SalesInvoice")
             {
                 var result = services.GetRequiredService<PrimeERP.Application.Legacy.Sales.ISalesInvoiceService>().GetPaged(1, 2000);
