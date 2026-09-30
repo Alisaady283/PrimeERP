@@ -25,8 +25,8 @@ namespace PrimeERP.Data.Repositories
 
 
         public List<Category> GetAll(string moduleKey, bool includeInactive = false) =>
-            Fetch(q => q.Where(c => c.ModuleKey == moduleKey && (includeInactive || c.IsActive))
-                       .OrderBy(c => c.Name));
+            WithCategoryNames(Fetch(q => q.Where(c => c.ModuleKey == moduleKey && (includeInactive || c.IsActive))
+                       .OrderBy(c => c.Name)), (c => c.ParentId, (c, name) => c.ParentName = name));
 
 
         public bool HasChildren(int id) => Any(q => q.Where(c => c.ParentId == id && c.IsActive));
@@ -37,11 +37,8 @@ namespace PrimeERP.Data.Repositories
             Edit(x => x.Id == c.Id, row =>
             {
                 row.Name = c.Name;
-                row.ParentId = c.ParentId;
                 row.IsActive = c.IsActive;
                 row.Notes = c.Notes ?? "";
-                row.AccountCode = c.AccountCode ?? "";
-                row.DepreciationAccountCode = c.DepreciationAccountCode ?? "";
             }, db);
 
         public void Delete(int id, PrimeDbContext db = null) =>

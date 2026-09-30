@@ -1,4 +1,5 @@
-using PrimeERP.Application.DTOs.Common;
+using System.Collections.Generic;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Legacy.Common
@@ -6,10 +7,10 @@ namespace PrimeERP.Application.Legacy.Common
     /// <summary>عقد خدمة الفئات</summary>
     public interface ICategoryService
     {
-        Result<System.Collections.Generic.List<CategoryDto>> GetAll(string moduleKey, bool includeInactive = false);
-        Result<CategoryDto> GetById(int id);
-        Result<CategoryDto> Create(CreateCategoryDto dto);
-        Result Update(UpdateCategoryDto dto);
+        Result<List<Category>> GetAll(string moduleKey, bool includeInactive = false);
+        Result<Category> GetById(int id);
+        Result<Category> Create(Category category);
+        Result Update(Category category);
         Result Delete(int id);
     }
 }

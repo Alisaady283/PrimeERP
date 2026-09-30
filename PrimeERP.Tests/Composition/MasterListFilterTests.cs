@@ -4,7 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.DTOs.Common;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Application.Legacy.Common;
 using PrimeERP.Application.Legacy.Inventory;
 using PrimeERP.Application.DTOs.Inventory;
@@ -38,8 +38,8 @@ namespace PrimeERP.Tests.Composition
                 _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var categories = _db.Services.GetRequiredService<ICategoryService>();
-                var catA = categories.Create(new CreateCategoryDto { Name = "فئة أ", ModuleKey = "Products" }).Value;
-                var catB = categories.Create(new CreateCategoryDto { Name = "فئة ب", ModuleKey = "Products" }).Value;
+                var catA = categories.Create(new Category { Name = "فئة أ", ModuleKey = "Products" }).Value;
+                var catB = categories.Create(new Category { Name = "فئة ب", ModuleKey = "Products" }).Value;
 
                 var products = _db.Services.GetRequiredService<IProductService>();
                 products.Create(new PrimeERP.Domain.Entities.Product { Name = "منتج أ", CategoryId = catA.Id, CostPrice = 1, SalePrice = 2 });

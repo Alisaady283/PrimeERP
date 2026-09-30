@@ -24,7 +24,7 @@ MINUTES = {("Attendance", "CheckIn"), ("Attendance", "CheckOut")}
 # خاصيةٌ محسوبة أو مملوءة بضمّة: تُتجاهَل صراحةً. وما عداها عمودٌ يُنشئه SchemaSync إن نقص
 DERIVED = {"Lines", "Allocations", "CategoryName", "BrandName", "EmployeeName", "EmployeeCode",
            "UnitName", "RoleName", "JobTitleName", "DepartmentName", "CurrentStock",
-           "AccountBalance", "KindName"}
+           "AccountBalance", "KindName", "ParentName"}
 
 
 def build():

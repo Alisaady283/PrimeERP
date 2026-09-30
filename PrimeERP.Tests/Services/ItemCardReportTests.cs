@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.Reporting;
 using PrimeERP.Application.Legacy.Common;
@@ -31,7 +30,7 @@ namespace PrimeERP.Tests.Services
             _report = _db.Services.GetRequiredService<IStockReportService>();
 
             var category = _db.Services.GetRequiredService<ICategoryService>()
-                .Create(new CreateCategoryDto { Name = "فئة", ModuleKey = "Products" }).Value;
+                .Create(new Category { Name = "فئة", ModuleKey = "Products" }).Value;
 
             _productId = _db.Services.GetRequiredService<IProductService>()
                 .Create(new Product { Name = "صنف", CategoryId = category.Id, CostPrice = 1, SalePrice = 2 }).Value.Id;

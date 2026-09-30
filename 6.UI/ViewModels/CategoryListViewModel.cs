@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
-using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
@@ -12,7 +12,7 @@ namespace PrimeERP.UI.ViewModels
     /// <summary>نماذج عرض CategoryFilter</summary>
     public class CategoryFilter { }
 
-    public class CategoryListViewModel : CrudViewModelBase<CategoryDto, CategoryFilter>
+    public class CategoryListViewModel : CrudViewModelBase<Category, CategoryFilter>
     {
         private readonly ICategoryService _categories;
         private readonly string _moduleKey;
@@ -28,10 +28,10 @@ namespace PrimeERP.UI.ViewModels
             PermissionPrefix = permissionPrefix;
         }
 
-        protected override Result<PagedResult<CategoryDto>> FetchPage(int page, int pageSize, CategoryFilter filter) =>
+        protected override Result<PagedResult<Category>> FetchPage(int page, int pageSize, CategoryFilter filter) =>
             AllRows(_categories.GetAll(_moduleKey), c => c.Name);
 
-        protected override int IdOf(CategoryDto item) => item.Id;
+        protected override int IdOf(Category item) => item.Id;
         protected override Result DeleteItem(int id) => _categories.Delete(id);
     }
 }

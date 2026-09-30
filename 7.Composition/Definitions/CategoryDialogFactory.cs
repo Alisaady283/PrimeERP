@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Composition.Definitions
 {
@@ -14,14 +14,14 @@ namespace PrimeERP.Composition.Definitions
             TitleEditKey = titleEditKey,
             GridColumns = 1,
             ServiceType = typeof(ICategoryService),
-            CreateDtoType = typeof(CreateCategoryDto),
-            UpdateDtoType = typeof(UpdateCategoryDto),
+            CreateDtoType = typeof(Category),
+            UpdateDtoType = typeof(Category),
             Fields = new List<FieldDefinition>
             {
-                new() { Key = nameof(CreateCategoryDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                new() { Key = nameof(CreateCategoryDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea },
+                new() { Key = nameof(Category.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                new() { Key = nameof(Category.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea },
             }.Concat(StandardFields.DialogFields()).ToList(),
-            FixedValues = new Dictionary<string, object> { [nameof(CreateCategoryDto.ModuleKey)] = moduleKey }
+            FixedValues = new Dictionary<string, object> { [nameof(Category.ModuleKey)] = moduleKey }
         };
     }
 }

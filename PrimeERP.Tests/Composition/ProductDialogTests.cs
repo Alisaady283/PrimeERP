@@ -6,7 +6,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.DTOs.Common;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.Legacy.Common;
 using PrimeERP.Application.Legacy.Inventory;
@@ -41,7 +41,7 @@ namespace PrimeERP.Tests.Composition
                 _db.Services.GetRequiredService<IIdentityService>().Initialize();
 
                 var categories = _db.Services.GetRequiredService<ICategoryService>();
-                var category = categories.Create(new CreateCategoryDto { Name = "أدوات كهربائية", ModuleKey = "Products" });
+                var category = categories.Create(new Category { Name = "أدوات كهربائية", ModuleKey = "Products" });
                 Assert.True(category.IsSuccess, category.ErrorMessage);
 
                 var registry = _db.Services.GetRequiredService<IModuleRegistry>();
@@ -93,7 +93,7 @@ namespace PrimeERP.Tests.Composition
                 var filtered = products.GetPaged(1, 20, new ProductFilter { CategoryId = category.Value.Id }).Value.Items;
                 Assert.Contains(filtered, p => p.Id == created.Id);
 
-                var otherCategory = categories.Create(new CreateCategoryDto { Name = "فئة أخرى", ModuleKey = "Products" });
+                var otherCategory = categories.Create(new Category { Name = "فئة أخرى", ModuleKey = "Products" });
                 var filteredOther = products.GetPaged(1, 20, new ProductFilter { CategoryId = otherCategory.Value.Id }).Value.Items;
                 Assert.DoesNotContain(filteredOther, p => p.Id == created.Id);
             });

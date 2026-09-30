@@ -5,7 +5,6 @@ using PrimeERP.Domain.Entities;
 using PrimeERP.Data.Core;
 using System;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.Legacy.Common;
 using PrimeERP.Application.Legacy.Inventory;
@@ -30,7 +29,7 @@ namespace PrimeERP.Tests.Services
             _stock = _db.Services.GetRequiredService<IStockMove>();
 
             var categories = _db.Services.GetRequiredService<ICategoryService>();
-            var category = categories.Create(new CreateCategoryDto { Name = "فئة اختبار", ModuleKey = "Products" }).Value;
+            var category = categories.Create(new Category { Name = "فئة اختبار", ModuleKey = "Products" }).Value;
 
             var products = _db.Services.GetRequiredService<IProductService>();
             var product = products.Create(new Product { Name = "صنف اختبار", CategoryId = category.Id, CostPrice = 10, SalePrice = 20 }).Value;

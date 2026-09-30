@@ -1,10 +1,7 @@
-using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Services.Ledger.Accounts;
 using PrimeERP.Application.Services.Core;
 using PrimeERP.Data.Core;
 using System.Collections.Generic;
-using System.Linq;
-using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Application.Validation;
 using PrimeERP.Data.Repositories;
@@ -63,30 +60,20 @@ namespace PrimeERP.Application.Legacy.Common
 
         private bool CanIn(string moduleKey, string action) => Permissions.Can($"{moduleKey}.{action}");
 
-        public Result<List<CategoryDto>> GetAll(string moduleKey, bool includeInactive = false)
-        {
-            var all = _repo.GetAll(moduleKey, includeInactive);
-            var byId = all.ToDictionary(c => c.Id);
-            return Result.Ok(all.Select(c => ToDto(c, byId)).ToList());
-        }
+        public Result<List<Category>> GetAll(string moduleKey, bool includeInactive = false) =>
+            Result.Ok(_repo.GetAll(moduleKey, includeInactive));
 
-        public Result<CategoryDto> GetById(int id)
+        public Result<Category> GetById(int id)
         {
             var category = _repo.GetById(id);
-            if (category == null) return Result.Fail<CategoryDto>(Msg("NotFound"), ErrorCode.NotFound);
-
-            var byId = _repo.GetAll(category.ModuleKey, includeInactive: true).ToDictionary(c => c.Id);
-            return Result.Ok(ToDto(category, byId));
+            return category == null ? Result.Fail<Category>(Msg("NotFound"), ErrorCode.NotFound) : Result.Ok(category);
         }
 
-        public Result<CategoryDto> Create(CreateCategoryDto dto)
+        public Result<Category> Create(Category category)
         {
-            if (!CanIn(dto.ModuleKey, "Create")) return FailDenied<CategoryDto>();
+            if (!CanIn(category.ModuleKey, "Create")) return FailDenied<Category>();
 
-            var category = Rows.Copy(dto, new Category(), to =>
-            {
-                to.IsActive = true;
-            });
+            category.IsActive = true;
 
             var saved = Check.Valid(category, CategoryFields()).Then(() => Commit(db =>
                 _tree.Add.Run(db, category, AccountsOf(category)).Then(() =>
@@ -94,24 +81,21 @@ namespace PrimeERP.Application.Legacy.Common
                     category.Id = _repo.Insert(category, db);
                     return Result.Ok();
                 })));
-            if (saved.IsFailure) return saved.As<CategoryDto>();
+            if (saved.IsFailure) return saved.As<Category>();
 
             Audit.Log(EntityName, category.Id, AuditAction.Insert, newValue: new { category.Name, category.ModuleKey });
-
-            var byId = _repo.GetAll(dto.ModuleKey, includeInactive: true).ToDictionary(c => c.Id);
-            return Result.Ok(ToDto(category, byId));
+            return Result.Ok(category);
         }
 
-        public Result Update(UpdateCategoryDto dto)
+        public Result Update(Category category)
         {
-            var category = _repo.GetById(dto.Id);
-            if (category == null) return Result.Fail(Msg("NotFound"), ErrorCode.NotFound);
-            if (!CanIn(category.ModuleKey, "Edit")) return FailDenied();
+            var stored = _repo.GetById(category.Id);
+            if (stored == null) return Result.Fail(Msg("NotFound"), ErrorCode.NotFound);
+            if (!CanIn(stored.ModuleKey, "Edit")) return FailDenied();
 
-            var accounts = AccountsOf(category);
-            var names = AddEntityAccount.Names(category, accounts);
-
-            Rows.Copy(dto, category);
+            var accounts = AccountsOf(stored);
+            var names = AddEntityAccount.Names(stored, accounts);
+            AddEntityAccount.Keep(category, stored, accounts);
 
             var saved = Check.Valid(category, CategoryFields()).Then(() => Commit(db =>
             {
@@ -145,18 +129,6 @@ namespace PrimeERP.Application.Legacy.Common
 
             Audit.Log(EntityName, id, AuditAction.Delete);
             return Result.Ok();
-        }
-
-
-
-        private static CategoryDto ToDto(Category c, Dictionary<int, Category> byId)
-        {
-            var parent = c.ParentId != null && byId.TryGetValue(c.ParentId.Value, out var p) ? p : null;
-            return Rows.Copy(c, new CategoryDto(), to =>
-            {
-                to.ParentName = parent?.Name;
-                to.HasChildren = byId.Values.Any(x => x.ParentId == c.Id);
-            });
         }
     }
 }

@@ -928,9 +928,9 @@ namespace PrimeERP.Modules
                 ViewModelType = viewModelType,
                 Columns = new()
                 {
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(CategoryDto.Name), Width = 220, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.ParentCategory"), Binding = nameof(CategoryDto.ParentName), Width = 160 },
-                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(CategoryDto.IsActive), Width = 80, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Category.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.ParentCategory"), Binding = nameof(Category.ParentName), Width = 160 },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(Category.IsActive), Width = 80, Align = ColumnAlign.Center },
                 },
                 Dialog = CategoryDialogFactory.Build(moduleKey, "Str." + addKey, "Str." + editKey)
             });

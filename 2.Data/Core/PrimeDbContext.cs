@@ -192,6 +192,7 @@ namespace PrimeERP.Data.Core
             {
                 e.ToTable("Categories");
                 e.HasKey(x => x.Id);
+                e.Ignore(x => x.ParentName);
                 e.Property(x => x.DepreciationAccountCode).HasColumnName("DepAccountCode");
                 e.HasIndex("ParentId").HasDatabaseName("IX_Categories_ParentId");
                 e.HasIndex("ModuleKey").HasDatabaseName("IX_Categories_ModuleKey");

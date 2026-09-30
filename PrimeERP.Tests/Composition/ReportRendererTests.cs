@@ -12,7 +12,6 @@ using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Sales;
@@ -62,7 +61,7 @@ namespace PrimeERP.Tests.Composition
                 settings.Set(SettingKeys.Accounts.Inventory, LeafUnder("1201", "مخزون"));
 
                 var categories = _db.Services.GetRequiredService<ICategoryService>();
-                var category = categories.Create(new CreateCategoryDto { Name = "فئة", ModuleKey = "Products" }).Value;
+                var category = categories.Create(new Category { Name = "فئة", ModuleKey = "Products" }).Value;
                 var products = _db.Services.GetRequiredService<IProductService>();
                 var product = products.Create(new Product { Name = "صنف", CategoryId = category.Id, CostPrice = 10, SalePrice = 25 }).Value;
 

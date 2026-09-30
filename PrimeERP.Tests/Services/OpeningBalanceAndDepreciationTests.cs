@@ -34,7 +34,7 @@ namespace PrimeERP.Tests.Services
         private int AssetCategory(string name = "فئة اختبار")
         {
             var created = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Common.ICategoryService>()
-                .Create(new PrimeERP.Application.DTOs.Common.CreateCategoryDto { Name = name, ModuleKey = "AssetCategories" });
+                .Create(new Category { Name = name, ModuleKey = "AssetCategories" });
 
             Assert.True(created.IsSuccess, created.ErrorMessage);
             return created.Value.Id;
