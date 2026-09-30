@@ -65,11 +65,7 @@ namespace PrimeERP.Application.Legacy.Accounting
         {
             if (!Can("Create")) return FailDenied<JournalEntryDto>();
 
-            var created = Commit(db => _entries.Create(db, dto).Then(entry =>
-            {
-                _entries.MarkPosted(db, entry.Id, CurrentUser);
-                return Result.Ok(entry);
-            }));
+            var created = Commit(db => _entries.CreatePosted(db, dto, CurrentUser));
             if (created.IsFailure) return created.As<JournalEntryDto>();
 
             Audit.Log(EntityName, created.Value.Id, AuditAction.Insert, details: Msg("CreatedLog", created.Value.EntryNo, dto.Lines.Count));
@@ -85,13 +81,8 @@ namespace PrimeERP.Application.Legacy.Accounting
             var existing = _journal.GetById(dto.Id);
             if (existing == null) return NotFound();
 
-            var accounts = EnsureOwnedSource(existing.Source, ownerSource, Localization.Get("Str.Action.EditVerb"))
-                .Then(() => _entries.CanReplace(dto.Id, dto.Lines))
-                .Then(() => _entries.Validate(dto.Lines, dto.EntryDate));
+            var accounts = _entries.CanUpdate(existing, dto, ownerSource);
             if (accounts.IsFailure) return accounts;
-
-            if (!_entries.IsOpen(Entries.ParseDate(existing.EntryDate)) || !_entries.IsOpen(dto.EntryDate))
-                return Result.Fail(Msg("PeriodClosed"), ErrorCode.ValidationFailed);
 
             Tx(db => _entries.Replace(db, dto, accounts.Value));
 
@@ -108,8 +99,7 @@ namespace PrimeERP.Application.Legacy.Accounting
             var entry = _journal.GetById(id);
             if (entry == null) return NotFound();
 
-            var deletable = EnsureOwnedSource(entry.Source, ownerSource, Localization.Get("Str.Action.DeleteVerb"))
-                .Then(() => _entries.CanRemove(id));
+            var deletable = _entries.CanDelete(entry, ownerSource);
             if (deletable.IsFailure) return deletable;
 
             Tx(db => _entries.Delete(db, id));
@@ -123,8 +113,7 @@ namespace PrimeERP.Application.Legacy.Accounting
             if (!Can("Post")) return FailDenied();
 
             var entry = _journal.GetById(id);
-            var postable = _entries.Postable(entry).Then(() => _entries.CanAfford(_journal.GetLines(id)
-                .Select(l => new CreateJournalLineDto { AccountCode = l.AccountCode, Debit = l.Debit, Credit = l.Credit })));
+            var postable = _entries.CanPost(entry);
             if (postable.IsFailure) return postable;
 
             Tx(db => _entries.MarkPosted(db, id, CurrentUser));
@@ -140,9 +129,8 @@ namespace PrimeERP.Application.Legacy.Accounting
             var entry = _journal.GetById(id);
             if (entry == null) return NotFound();
 
-            if (!entry.IsPosted) return Result.Fail(Msg("NotPostedCannotUnpost"), ErrorCode.ValidationFailed);
-            if (entry.Source == Entries.ClosingSource) return Result.Fail(Msg("ClosingEntryCannotUnpost"), ErrorCode.ValidationFailed);
-            if (!_entries.IsOpen(Entries.ParseDate(entry.EntryDate))) return Result.Fail(Msg("PeriodClosed"), ErrorCode.ValidationFailed);
+            var unpostable = _entries.CanUnpost(entry);
+            if (unpostable.IsFailure) return unpostable;
 
             Tx(db => _entries.MarkUnposted(db, id));
 
@@ -159,7 +147,7 @@ namespace PrimeERP.Application.Legacy.Accounting
 
             foreach (var id in ids)
             {
-                var postable = _entries.Postable(_journal.GetById(id));
+                var postable = _entries.CanPost(_journal.GetById(id));
                 if (postable.IsFailure) batch.Failures.Add((id, postable.ErrorMessage));
                 else toPost.Add(id);
             }
@@ -263,17 +251,5 @@ namespace PrimeERP.Application.Legacy.Accounting
         private string SourceText(string source) => Msg($"Source.{Entries.NormalizeSource(source)}");
 
         private Result NotFound() => Result.Fail(Msg("NotFound"), ErrorCode.NotFound);
-
-        private static readonly string[] ManualSources = { "Manual", "يدوي", "" };
-
-        private static Result EnsureOwnedSource(string entrySource, string ownerSource, string action)
-        {
-            var source = entrySource ?? "";
-            var owned = ownerSource == null ? ManualSources.Contains(source) : source == ownerSource;
-
-            return owned
-                ? Result.Ok()
-                : Result.Fail(LocalizationService.Get("Str.Journal.OwnedBySource", action, entrySource), ErrorCode.ValidationFailed);
-        }
     }
 }

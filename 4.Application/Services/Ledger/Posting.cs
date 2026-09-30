@@ -13,13 +13,12 @@ namespace PrimeERP.Application.Services.Ledger
         public static int Entry(Entries entries, PrimeDbContext db, DateTime date, string description,
             string source, List<CreateJournalLineDto> lines)
         {
-            var entry = entries.Create(db, new CreateJournalDto
+            var entry = entries.CreatePosted(db, new CreateJournalDto
             {
                 EntryDate = date, Description = description, Source = source, Lines = lines
-            });
+            }, AppSession.Username ?? "Admin");
             if (entry.IsFailure) throw new InvalidOperationException(entry.ErrorMessage);
 
-            entries.MarkPosted(db, entry.Value.Id, AppSession.Username ?? "Admin");
             return entry.Value.Id;
         }
 

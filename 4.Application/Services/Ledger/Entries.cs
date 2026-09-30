@@ -114,6 +114,14 @@ namespace PrimeERP.Application.Services.Ledger
             return Result.Ok((id, entryNo));
         }
 
+        /// <summary>قيدٌ جديد مُرحَّل</summary>
+        public Result<(int Id, string EntryNo)> CreatePosted(PrimeDbContext db, CreateJournalDto dto, string user) =>
+            Create(db, dto).Then(entry =>
+            {
+                MarkPosted(db, entry.Id, user);
+                return Result.Ok(entry);
+            });
+
         /// <summary>استبدال سطور قيدٍ قائم</summary>
         public void Replace(PrimeDbContext db, CreateJournalDto dto, Dictionary<string, string> accountNames)
         {
@@ -155,15 +163,56 @@ namespace PrimeERP.Application.Services.Ledger
                 .Then(() => entry.IsPosted ? _guards.CashStaysPositive(Effects(_journal.GetLines(id), -1)) : Result.Ok());
         }
 
-        public Result CanAfford(IEnumerable<CreateJournalLineDto> lines) => _guards.CashStaysPositive(Effects(lines, 1));
+        /// <summary>تعديله مسموح، وأسماء حساباته</summary>
+        public Result<Dictionary<string, string>> CanUpdate(JournalEntry existing, CreateJournalDto dto, string ownerSource)
+        {
+            var accounts = Owned(existing.Source, ownerSource, LocalizationService.Get("Str.Action.EditVerb"))
+                .Then(() => CanReplace(existing.Id, dto.Lines))
+                .Then(() => Validate(dto.Lines, dto.EntryDate));
+            if (accounts.IsFailure) return accounts;
 
-        public Result CanReplace(int id, IEnumerable<CreateJournalLineDto> lines) =>
+            return Open(ParseDate(existing.EntryDate)).Then(() => Open(dto.EntryDate)).Then(() => accounts);
+        }
+
+        /// <summary>حذفه مسموح</summary>
+        public Result CanDelete(JournalEntry entry, string ownerSource) =>
+            Owned(entry.Source, ownerSource, LocalizationService.Get("Str.Action.DeleteVerb")).Then(() => CanRemove(entry.Id));
+
+        /// <summary>ترحيله مسموح</summary>
+        public Result CanPost(JournalEntry entry) =>
+            Postable(entry).Then(() => _guards.CashStaysPositive(Effects(_journal.GetLines(entry.Id), 1)));
+
+        /// <summary>إلغاء ترحيله مسموح</summary>
+        public Result CanUnpost(JournalEntry entry)
+        {
+            if (!entry.IsPosted) return Result.Fail(Text("NotPostedCannotUnpost"), ErrorCode.ValidationFailed);
+            if (entry.Source == ClosingSource) return Result.Fail(Text("ClosingEntryCannotUnpost"), ErrorCode.ValidationFailed);
+
+            return Open(ParseDate(entry.EntryDate))
+                .Then(() => _guards.CashStaysPositive(Effects(_journal.GetLines(entry.Id), -1)));
+        }
+
+        private Result CanReplace(int id, IEnumerable<CreateJournalLineDto> lines) =>
             _journal.GetById(id)?.IsPosted == true
                 ? _guards.CashStaysPositive(Effects(_journal.GetLines(id), -1).Concat(Effects(lines, 1)))
                 : Result.Ok();
 
+        /// <summary>مصادر القيد اليدوي</summary>
+        private static readonly string[] ManualSources = { "Manual", "يدوي", "" };
+
+        /// <summary>القيد ملك مصدره</summary>
+        private static Result Owned(string entrySource, string ownerSource, string action)
+        {
+            var source = entrySource ?? "";
+            var owned = ownerSource == null ? ManualSources.Contains(source) : source == ownerSource;
+
+            return owned
+                ? Result.Ok()
+                : Result.Fail(LocalizationService.Get("Str.Journal.OwnedBySource", action, entrySource), ErrorCode.ValidationFailed);
+        }
+
         /// <summary>سبب رفض ترحيله إن وُجد</summary>
-        public Result Postable(JournalEntry entry)
+        private Result Postable(JournalEntry entry)
         {
             if (entry == null) return Result.Fail(Text("NotFound"), ErrorCode.NotFound);
             if (entry.IsPosted) return Result.Fail(Text("AlreadyPosted"), ErrorCode.ValidationFailed);
