@@ -33,7 +33,7 @@ namespace PrimeERP.Data.Repositories
             Directory.CreateDirectory(target);
 
             foreach (var directory in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
-                Directory.CreateDirectory(directory.Replace(source, target));
+                Directory.CreateDirectory(Path.Combine(target, Path.GetRelativePath(source, directory)));
 
             var files = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
             var reported = -1;
@@ -41,7 +41,7 @@ namespace PrimeERP.Data.Repositories
             for (var i = 0; i < files.Length; i++)
             {
                 if (!Path.GetExtension(files[i]).Equals(".pdb", StringComparison.OrdinalIgnoreCase))
-                    File.Copy(files[i], files[i].Replace(source, target), overwrite: true);
+                    File.Copy(files[i], Path.Combine(target, Path.GetRelativePath(source, files[i])), overwrite: true);
 
                 var percent = (int)((i + 1) * share / files.Length);
                 if (percent == reported) continue;
