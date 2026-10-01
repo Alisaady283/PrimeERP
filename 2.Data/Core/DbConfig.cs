@@ -115,9 +115,8 @@ namespace PrimeERP.Data.Core
 
             if (config.Provider == DatabaseProvider.Sqlite && !Path.IsPathRooted(config.FilePath))
             {
-                var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PrimeERP");
-                Directory.CreateDirectory(dataDir);
-                config.FilePath = Path.Combine(dataDir, config.FilePath);
+                Directory.CreateDirectory(PrimeERP.Platform.AppInfo.DataFolder);
+                config.FilePath = Path.Combine(PrimeERP.Platform.AppInfo.DataFolder, config.FilePath);
             }
 
             return config;

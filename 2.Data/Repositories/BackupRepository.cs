@@ -24,6 +24,7 @@ namespace PrimeERP.Data.Repositories
 
         BackupCapability Capability { get; }
         string FileExtension { get; }
+        string FolderOf(string configured);
 
         void CopyTo(string targetPath);
         void RestoreFrom(string sourcePath);
@@ -47,6 +48,10 @@ namespace PrimeERP.Data.Repositories
             DatabaseProvider.PostgreSql => ".sql",
             _                           => ".db"
         };
+
+        /// <summary>المضبوط وإلا مجلّد البيانات</summary>
+        public string FolderOf(string configured) =>
+            string.IsNullOrWhiteSpace(configured) ? System.IO.Path.Combine(PrimeERP.Platform.AppInfo.DataFolder, "Backups") : configured;
 
         /// <summary>أمرُ المحرّك بمسار ملفٍ</summary>
         private static void Run(string sql, string path)

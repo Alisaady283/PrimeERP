@@ -44,7 +44,7 @@ namespace PrimeERP.Application.Legacy.Backup
 
             try
             {
-                folder ??= ResolveBackupFolder();
+                folder ??= _repo.FolderOf(Setting(SettingKeys.Backup.AutoBackupPath, ""));
                 var record = _repo.Snapshot(folder, note, type);
                 Audit.Log(EntityName, record.Id, AuditAction.Insert,
                     newValue: new { record.FileName, record.SizeBytes }, details: Msg("CreatedLog", type));
@@ -183,14 +183,6 @@ namespace PrimeERP.Application.Legacy.Backup
             _autoTimer?.Stop();
             _autoTimer?.Dispose();
             _autoTimer = null;
-        }
-
-        private string ResolveBackupFolder()
-        {
-            var configured = Setting(SettingKeys.Backup.AutoBackupPath, "");
-            return string.IsNullOrWhiteSpace(configured)
-                ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Backups")
-                : configured;
         }
 
         private static BackupInfo ToInfo(BackupHistoryRecord r) => Rows.Copy<BackupInfo>(r, new());

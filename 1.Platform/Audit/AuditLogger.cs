@@ -24,7 +24,7 @@ namespace PrimeERP.Platform.Audit
         private const int MaxJsonLength = 4000;
 
         private static readonly string FallbackLogPath =
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs", "audit-fallback.log");
+            Path.Combine(AppInfo.DataFolder, "Logs", "audit-fallback.log");
 
         public void Log(string tableName, int recordId, AuditAction action,
                                object oldValue = null, object newValue = null, string details = null)
