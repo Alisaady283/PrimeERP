@@ -62,7 +62,8 @@ namespace PrimeERP.Application.Legacy.Admin
 
             try
             {
-                CopyFolder(source, target, progress);
+                var stage = Msg("CopyingFiles");
+                _edition.CopyProgram(source, target, FilesShare, percent => progress?.Report(new EditionProgress(percent, stage)));
 
                 progress?.Report(new EditionProgress(FilesShare, Msg("CopyingDatabase")));
                 var copied = _backupRepo.Snapshot(target, Msg("EditionNote"), BackupType.Manual);
@@ -70,7 +71,7 @@ namespace PrimeERP.Application.Legacy.Admin
                 progress?.Report(new EditionProgress(FilesShare + DatabaseShare, Msg("WritingManifest")));
                 StripDeveloperData(copied.FilePath);
                 WriteEditionSettings(copied.FilePath, edition);
-                PointAtDatabase(Path.Combine(target, "appsettings.json"), copied.FilePath);
+                _edition.PointAtDatabase(Path.Combine(target, "appsettings.json"), copied.FilePath);
 
                 Audit.Log(EntityName, 0, AuditAction.Insert,
                     newValue: new { target, edition.Simplified, pages = edition.ModuleKeys.Count });
@@ -120,42 +121,6 @@ namespace PrimeERP.Application.Legacy.Admin
             }
 
             db.SaveChanges();
-        }
-
-        private void CopyFolder(string source, string target, IProgress<EditionProgress> progress)
-        {
-            Directory.CreateDirectory(target);
-
-            foreach (var directory in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
-                Directory.CreateDirectory(directory.Replace(source, target));
-
-            var files = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
-            var stage = Msg("CopyingFiles");
-            var reported = -1;
-
-            for (var i = 0; i < files.Length; i++)
-            {
-                if (!Path.GetExtension(files[i]).Equals(".pdb", StringComparison.OrdinalIgnoreCase))
-                    File.Copy(files[i], files[i].Replace(source, target), overwrite: true);
-
-                var percent = (int)((i + 1) * FilesShare / files.Length);
-                if (percent == reported) continue;
-
-                reported = percent;
-                progress?.Report(new EditionProgress(percent, stage));
-            }
-        }
-
-        private static void PointAtDatabase(string settingsFile, string databasePath)
-        {
-            var settings = File.Exists(settingsFile)
-                ? JsonNode.Parse(File.ReadAllText(settingsFile))
-                : new JsonObject();
-
-            settings["Database"] ??= new JsonObject();
-            settings["Database"]["FilePath"] = databasePath;
-
-            File.WriteAllText(settingsFile, settings.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
         }
 
         /// <summary>شروط النسخة المنشأة</summary>
