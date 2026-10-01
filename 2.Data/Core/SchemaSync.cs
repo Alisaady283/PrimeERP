@@ -93,7 +93,7 @@ namespace PrimeERP.Data.Core
         }
 
         /// <summary>قيمة النوع الفارغة</summary>
-        private static object Empty(Type type) =>
+        internal static object Empty(Type type) =>
             type == typeof(string) ? "" : type.IsValueType ? Activator.CreateInstance(type) : null;
 
         /// <summary>أعمدة الجدول وقبولها الفراغ</summary>

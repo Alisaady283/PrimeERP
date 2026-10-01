@@ -104,7 +104,7 @@ namespace PrimeERP.Data.Repositories
         {
             using var db = DbContextFactory.Open();
             var row = Blank();
-            foreach (var c in Stored) row[c.Name] = values.TryGetValue(c.Name, out var v) ? v : null;
+            foreach (var c in Stored) row[c.Name] = Storable(c, values.TryGetValue(c.Name, out var v) ? v : null);
 
             db.BuiltSet(_table).Add(row);
             db.SaveChanges();
@@ -118,7 +118,7 @@ namespace PrimeERP.Data.Repositories
             if (row == null) return;
 
             foreach (var c in Stored)
-                if (values.TryGetValue(c.Name, out var v)) row[c.Name] = v;
+                if (values.TryGetValue(c.Name, out var v)) row[c.Name] = Storable(c, v);
 
             db.SaveChanges();
         }
@@ -138,6 +138,13 @@ namespace PrimeERP.Data.Repositories
             using var db = DbContextFactory.Open();
             return db.Rows(_table).AsNoTracking()
                 .Any(r => r[column].Equals(value) && (int)r["Id"] != exceptId);
+        }
+
+        /// <summary>فراغٌ لا يقبله النموذج</summary>
+        private static object Storable(BuilderColumn column, object value)
+        {
+            var type = BuiltTables.ClrTypeOf(column.DataType, column.IsRequired);
+            return value != null || column.IsRequired || !type.IsValueType ? value : SchemaSync.Empty(type);
         }
 
         private Dictionary<string, object> Blank()
