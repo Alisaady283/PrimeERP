@@ -17,6 +17,8 @@ namespace PrimeERP.Data.Repositories
         BackupHistoryRecord GetById(int id, PrimeDbContext db = null);
         int Insert(BackupHistoryRecord record);
         BackupHistoryRecord Snapshot(string folder, string note, BackupType type);
+        List<BackupHistoryRecord> InFolder(string folder);
+        void Prune(string folder, int keep);
         string CopyInto(string folder);
         int Insert(PrimeDbContext db, BackupHistoryRecord record);
         void Delete(int id);
@@ -183,6 +185,24 @@ namespace PrimeERP.Data.Repositories
         }
 
         public int Insert(PrimeDbContext db, BackupHistoryRecord record) => Add(record, db);
+
+        /// <summary>نسخ مجلّدٍ، أو الكل</summary>
+        public List<BackupHistoryRecord> InFolder(string folder) =>
+            GetAll().Where(r => folder == null || In(r, folder)).ToList();
+
+        /// <summary>الأحدث وحدها في مجلّد</summary>
+        public void Prune(string folder, int keep)
+        {
+            foreach (var old in GetAll().Where(r => In(r, folder)).OrderByDescending(r => r.CreatedAt).Skip(keep))
+            {
+                if (System.IO.File.Exists(old.FilePath))
+                    System.IO.File.Delete(old.FilePath);
+                Delete(old.Id);
+            }
+        }
+
+        private static bool In(BackupHistoryRecord record, string folder) =>
+            string.Equals(System.IO.Path.GetDirectoryName(record.FilePath), folder, StringComparison.OrdinalIgnoreCase);
 
         public void Delete(int id) =>
             Remove(b => b.Id == id);

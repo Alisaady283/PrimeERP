@@ -113,27 +113,13 @@ namespace PrimeERP.Application.Legacy.Backup
         }
 
         public List<BackupInfo> List(string folder = null) =>
-            _repo.GetAll()
-                .Where(r => folder == null || string.Equals(Path.GetDirectoryName(r.FilePath), folder, StringComparison.OrdinalIgnoreCase))
-                .Select(ToInfo)
-                .ToList();
+            _repo.InFolder(folder).Select(ToInfo).ToList();
 
         public Result ApplyRetention(string folder, int keepCount)
         {
             try
             {
-                var toRemove = _repo.GetAll()
-                    .Where(r => string.Equals(Path.GetDirectoryName(r.FilePath), folder, StringComparison.OrdinalIgnoreCase))
-                    .OrderByDescending(r => r.CreatedAt)
-                    .Skip(keepCount);
-
-                foreach (var old in toRemove)
-                {
-                    if (File.Exists(old.FilePath))
-                        File.Delete(old.FilePath);
-                    _repo.Delete(old.Id);
-                }
-
+                _repo.Prune(folder, keepCount);
                 return Result.Ok();
             }
             catch (Exception ex)
