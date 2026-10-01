@@ -121,6 +121,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<PrimeERP.Application.Services.Ledger.TrialBalance>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.ClosingEntry>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.NewFiscalYear>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.DepreciationCharges>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.PartyByKind>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.AddTreeAccount>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.AddEntityAccount>();
