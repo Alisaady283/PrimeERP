@@ -1,4 +1,3 @@
-using PrimeERP.Application.Legacy.Print;
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;

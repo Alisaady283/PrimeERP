@@ -11,6 +11,7 @@ using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Entities.Common;
+using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
@@ -20,8 +21,7 @@ using PrimeERP.Platform.Settings;
 namespace PrimeERP.Application.Legacy.Parties
 {
     /// <summary>المنطق المشترك بين العملاء والموردين</summary>
-    public abstract class PartyServiceBase<TEntity, TFilter>
-        : EntityService<TEntity, TEntity, TEntity, TEntity, TFilter>, IAccountLinkedService
+    public abstract class PartyServiceBase<TEntity, TFilter> : LinkedEntityService<TEntity, TFilter>
         where TEntity : PartyBase, new()
     {
         protected abstract string AccountSettingKey { get; }
@@ -29,20 +29,30 @@ namespace PrimeERP.Application.Legacy.Parties
         protected virtual PrimeERP.Application.Legacy.Cheques.IChequeService Cheques => null;
 
         private readonly Statement _statement;
-        private readonly IJournalRepository _journalRepo;
+        private readonly AccountBalances _balances;
         private readonly AccountSpec<TEntity>[] _account;
 
         protected PartyServiceBase(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
                                     IAuditLogger audit, Statement statement, INumberSequenceService numbers,
-                                    IJournalRepository journalRepo, AccountCases tree)
+                                    AccountBalances balances, AccountCases tree)
             : base(permissions, settings, localization, audit, numbers, tree)
         {
             _statement = statement;
-            _journalRepo = journalRepo;
+            _balances = balances;
             _account = new[] { new AccountSpec<TEntity>((db, _) => ParentAccount(db), e => e.Name, e => e.AccountCode, (e, code) => e.AccountCode = code) };
         }
 
         protected override IReadOnlyList<AccountSpec<TEntity>> Accounts => _account;
+
+        /// <summary>شروط الطرف بعنوانيه</summary>
+        protected static Field<TEntity>[] RulesOf(string codeLabel, string nameLabel) => new Field<TEntity>[]
+        {
+            new(x => x.Code, codeLabel, Required: true),
+            new(x => x.Name, nameLabel, Required: true, Max: 150),
+            new(x => x.Phone, "Str.Field.Phone", Format: FieldFormat.Phone),
+            new(x => x.Email, "Str.Email", Format: FieldFormat.Email),
+            new(x => x.CreditLimit, "Str.CreditLimit", From: 0),
+        };
 
         private Result<Account> ParentAccount(PrimeDbContext db) =>
             Tree.Root(db, Setting(AccountSettingKey, ""), "Str.Party.AccountParentNotFound", "Str.Party.AccountParentIsLeaf");
@@ -68,34 +78,15 @@ namespace PrimeERP.Application.Legacy.Parties
             return entity == null ? Fail<TEntity>("NotFound", ErrorCode.NotFound) : Ok(entity);
         }
 
-        string[] IAccountLinkedService.RootKeys => new[] { AccountSettingKey };
+        public override string[] RootKeys => new[] { AccountSettingKey };
 
-        Result IAccountLinkedService.CreateFromAccount(PrimeDbContext db, string accountCode, string name, string rootCode) =>
-            CreateFromAccount(db, accountCode, name);
+        protected override TEntity FromAccount(string accountCode, string name, string rootCode) =>
+            new() { Name = name, AccountCode = accountCode, IsActive = true };
 
-        public virtual Result<TEntity> CreateFromAccount(PrimeDbContext db, string accountCode, string name)
-        {
-            var entity = new TEntity { Code = Numbers.Next(db, SequenceKey), Name = name, AccountCode = accountCode, IsActive = true };
+        protected override TEntity FindByAccount(PrimeDbContext db, string accountCode) => Repository.GetByAccountCode(accountCode, db);
 
-            var check = Check.Valid(entity, Fields);
-            if (check.IsFailure) return check.As<TEntity>();
-
-            entity.Id = Repository.Insert(entity, db);
-            return Result.Ok(entity);
-        }
-
-        public virtual Result DeleteByAccountCode(PrimeDbContext db, string accountCode)
-        {
-            var entity = Repository.GetByAccountCode(accountCode, db);
-            if (entity != null) Repository.Delete(entity.Id, CurrentUser, db);
-            return Result.Ok();
-        }
-
-        public virtual Result UpdateNameFromAccount(PrimeDbContext db, string accountCode, string name)
-        {
+        protected override void RenameByAccount(PrimeDbContext db, string accountCode, string name) =>
             Repository.UpdateNameByAccountCode(db, accountCode, name);
-            return Result.Ok();
-        }
 
         public virtual Result RecalculateBalance(int id)
         {
@@ -103,9 +94,10 @@ namespace PrimeERP.Application.Legacy.Parties
 
             var entity = FindById(id);
             if (entity == null) return Fail("NotFound", ErrorCode.NotFound);
-            if (string.IsNullOrWhiteSpace(entity.AccountCode)) return Result.Fail(Localization.Get("Str.Party.AccountNotConfigured"));
+            var account = AccountOf.Required(entity.AccountCode, "Str.Party.AccountNotConfigured");
+            if (account.IsFailure) return account;
 
-            Tx(db => PartyBalance.Refresh(Repository, _journalRepo, db, id));
+            Tx(db => _balances.Refresh(db, account.Value));
             return Result.Ok();
         }
 
@@ -113,7 +105,8 @@ namespace PrimeERP.Application.Legacy.Parties
         {
             if (!Can("Edit")) return FailDenied();
 
-            Tx(db => PartyBalance.RefreshAll(Repository, _journalRepo, db));
+            var all = Tree.Rows.GetAll(includeInactive: true);
+            Tx(db => _balances.RefreshAll(db, all));
 
             return Result.Ok();
         }
@@ -124,10 +117,10 @@ namespace PrimeERP.Application.Legacy.Parties
 
             var entity = FindById(id);
             if (entity == null) return Fail<List<AccountStatementLine>>("NotFound", ErrorCode.NotFound);
-            if (string.IsNullOrWhiteSpace(entity.AccountCode))
-                return Result.Fail<List<AccountStatementLine>>(Localization.Get("Str.Party.AccountNotConfigured"));
+            var account = AccountOf.Required(entity.AccountCode, "Str.Party.AccountNotConfigured");
+            if (account.IsFailure) return account.As<List<AccountStatementLine>>();
 
-            var lines = _statement.Of(entity.AccountCode, from, to);
+            var lines = _statement.Of(account.Value, from, to);
             var open = Cheques?.GetOpenForParty(id, from, to);
             return Result.Ok(open is { IsSuccess: true } ? Statement.WithCheques(lines, open.Value) : lines);
         }

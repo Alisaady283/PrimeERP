@@ -22,8 +22,6 @@ namespace PrimeERP.Application.Legacy.Parties
         Result<Supplier> Create(Supplier supplier);
         Result<Supplier> Create(PrimeDbContext db, Supplier supplier);
 
-        Result<Supplier> CreateFromAccount(PrimeDbContext db, string accountCode, string name);
-
         Result Update(Supplier supplier);
         Result UpdateNameFromAccount(PrimeDbContext db, string accountCode, string name);
 

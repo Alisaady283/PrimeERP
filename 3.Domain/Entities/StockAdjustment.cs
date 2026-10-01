@@ -15,7 +15,7 @@ namespace PrimeERP.Domain.Entities
         public List<StockAdjustmentLine> Lines { get; set; } = new();
     }
 
-    public class StockAdjustmentLine
+    public class StockAdjustmentLine : IProductLine
     {
         public int     Id          { get; set; }
         public int     DocumentId  { get; set; }

@@ -13,7 +13,7 @@ namespace PrimeERP.Data.Repositories
     public interface IEmployeeRepository
     {
         Employee GetById(int id, PrimeDbContext db = null);
-        Employee GetByCode(string code, PrimeDbContext db = null);
+        int IdByCode(string code, PrimeDbContext db = null);
         Dictionary<string, Employee> ByCodes(IEnumerable<string> codes, PrimeDbContext db = null);
         List<Employee> GetByIds(IEnumerable<int> ids, PrimeDbContext db = null);
 
@@ -37,8 +37,8 @@ namespace PrimeERP.Data.Repositories
 
 
 
-        public Employee GetByCode(string code, PrimeDbContext db = null) =>
-            One(q => q.Where(e => e.Code == code), db);
+        public int IdByCode(string code, PrimeDbContext db = null) =>
+            One(q => q.Where(e => e.Code == code), db)?.Id ?? 0;
 
         public Employee GetByAccountCode(string accountCode, PrimeDbContext db = null) =>
             One(q => q.Where(e => e.AccountCode == accountCode), db);

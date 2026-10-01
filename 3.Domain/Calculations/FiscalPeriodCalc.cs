@@ -29,6 +29,14 @@ namespace PrimeERP.Domain.Calculations
             return result;
         }
 
+        /// <summary>فترةٌ سابقة ما زالت مفتوحة</summary>
+        public static bool PreviousOpen(IEnumerable<FiscalPeriod> periods, FiscalPeriod period) =>
+            periods.Any(p => p.PeriodNo < period.PeriodNo && !p.IsClosed);
+
+        /// <summary>فترةٌ لاحقة مقفلة</summary>
+        public static bool NextClosed(IEnumerable<FiscalPeriod> periods, FiscalPeriod period) =>
+            periods.Any(p => p.PeriodNo > period.PeriodNo && p.IsClosed);
+
         public static string DefaultYearName(DateTime start, DateTime end) =>
             start.Year == end.Year ? start.Year.ToString() : $"{start.Year}/{end.Year}";
 

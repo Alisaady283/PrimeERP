@@ -26,6 +26,13 @@ namespace PrimeERP.Data.Repositories
     {
         protected override string TableName => "AssetDisposals";
 
+        /// <summary>كود الأصل واسمه عرضٌ فقط</summary>
+        private static List<AssetDisposal> WithAsset(List<AssetDisposal> rows) =>
+            WithCodeNames<Asset>("Assets", rows, x => x.AssetId, (x, code, name) => (x.AssetCode, x.AssetName) = (code, name));
+
+        public override AssetDisposal GetById(int id, PrimeDbContext db = null) =>
+            WithAsset(Fetch(q => q.Where(x => x.Id == id), db)).FirstOrDefault();
+
 
 
         public (List<AssetDisposal> Items, int Total) GetPaged(int page, int pageSize, string searchText = null,
@@ -40,7 +47,8 @@ namespace PrimeERP.Data.Repositories
                 return q;
             }
 
-            return Page(page, pageSize, Shape, q => (By(x => x.DisposalDate, sortDescending))(q).ThenByDescending(x => x.Id));
+            var (items, total) = Page(page, pageSize, Shape, q => (By(x => x.DisposalDate, sortDescending))(q).ThenByDescending(x => x.Id));
+            return (WithAsset(items), total);
         }
 
         public bool AnyForAsset(int assetId, PrimeDbContext db = null) => Any(q => q.Where(x => x.AssetId == assetId), db);

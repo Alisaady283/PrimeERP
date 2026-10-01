@@ -31,7 +31,7 @@ namespace PrimeERP.Application.Legacy.Builder
     /// <summary>شاشات الوصف الخمس</summary>
     public abstract class BuilderCrudServiceBase<TEntity>
         : CrudServiceBase<TEntity, IDictionary<string, object>, DynamicFilter>, IRowService
-        where TEntity : BaseModel
+        where TEntity : BaseModel, new()
     {
         protected readonly IBuilderRepository Repo;
 
@@ -51,10 +51,8 @@ namespace PrimeERP.Application.Legacy.Builder
 
         protected override (List<TEntity> Items, int Total) FindPaged(int page, int pageSize, DynamicFilter filter)
         {
-            var items = Match(Narrow(Sort(All()), filter), filter?.SearchText);
-            if (pageSize <= 0) return (items, items.Count);
-
-            return (items.Skip((page < 1 ? 0 : page - 1) * pageSize).Take(pageSize).ToList(), items.Count);
+            var items = Rows.Search(Narrow(Sort(All()), filter), filter?.SearchText);
+            return (items, items.Count);
         }
 
         protected virtual List<TEntity> Narrow(List<TEntity> items, DynamicFilter filter) => items;
@@ -64,16 +62,9 @@ namespace PrimeERP.Application.Legacy.Builder
         protected Dictionary<int, int> SectionOrder() =>
             Repo.Sections().ToDictionary(section => section.Id, section => section.SortOrder);
 
-        protected override List<TEntity> FindSearch(string term, int maxResults) =>
-            Match(All(), term).Take(maxResults).ToList();
+        protected override List<TEntity> FindSearch(string term, int maxResults) => Rows.Search(All(), term, maxResults);
 
         protected override IDictionary<string, object> ToDto(TEntity entity) => Rows.Of(entity);
-
-        private List<TEntity> Match(List<TEntity> items, string term) =>
-            string.IsNullOrWhiteSpace(term)
-                ? items
-                : items.Where(e => ToDto(e).Values
-                    .Any(v => v?.ToString()?.Contains(term, StringComparison.OrdinalIgnoreCase) == true)).ToList();
 
 
         public Result<PagedResult<IDictionary<string, object>>> GetPaged(int page, int pageSize, DynamicFilter filter) =>
@@ -120,16 +111,16 @@ namespace PrimeERP.Application.Legacy.Builder
             return Result.Ok();
         }
 
-        protected static int Order(IDictionary<string, object> v, IEnumerable<int> siblings)
-        {
-            var written = Int(v, "SortOrder");
-            return written > 0 ? written : siblings.DefaultIfEmpty(0).Max() + 10;
-        }
+        protected static int Order(int written, IEnumerable<int> siblings) =>
+            written > 0 ? written : siblings.DefaultIfEmpty(0).Max() + 10;
 
-        protected static int    Int(IDictionary<string, object> v, string key) => v.TryGetValue(key, out var r) && r != null ? Convert.ToInt32(r) : 0;
-        protected static string Text(IDictionary<string, object> v, string key) => v.TryGetValue(key, out var r) ? r?.ToString() : null;
-        protected static bool   Bool(IDictionary<string, object> v, string key) => v.TryGetValue(key, out var r) && r != null && Convert.ToBoolean(r);
-        protected static double Num(IDictionary<string, object> v, string key) => v.TryGetValue(key, out var r) && r != null ? Convert.ToDouble(r) : 0d;
+        /// <summary>الكيان من قيم الحوار</summary>
+        protected static TEntity From(IDictionary<string, object> values)
+        {
+            var entity = new TEntity { Id = Rows.Id(values) };
+            Rows.Fill(entity, values);
+            return entity;
+        }
     }
 
     public class BuilderSectionsService : BuilderCrudServiceBase<BuilderSection>
@@ -152,13 +143,13 @@ namespace PrimeERP.Application.Legacy.Builder
             return Result.Ok();
         }
 
-        protected override int Write(IDictionary<string, object> v) => Repo.SaveSection(new BuilderSection
+        protected override int Write(IDictionary<string, object> v)
         {
-            SortOrder = Order(v, Repo.Sections().Select(s => s.SortOrder)),
-            Id = Int(v, "Id"), Key = Text(v, "Key"), Title = Text(v, "Title"),
-            IconKey = Text(v, "IconKey"),
-            Modules = Repo.Sections().FirstOrDefault(s => s.Id == Int(v, "Id"))?.Modules
-        });
+            var section = From(v);
+            section.SortOrder = Order(section.SortOrder, Repo.Sections().Select(s => s.SortOrder));
+            section.Modules = Repo.Sections().FirstOrDefault(s => s.Id == section.Id)?.Modules;
+            return Repo.SaveSection(section);
+        }
     }
 
     public class BuilderModulesService : BuilderCrudServiceBase<BuilderModule>
@@ -171,13 +162,7 @@ namespace PrimeERP.Application.Legacy.Builder
         protected override string EntityName => "BuilderModules";
         protected override List<BuilderModule> All() => Repo.Modules();
 
-        protected override Result Validate(IDictionary<string, object> v) =>
-            Check.Valid(new BuilderModule
-            {
-                Id = Int(v, "Id"), Key = Text(v, "Key"), Title = Text(v, "Title"),
-                Kind = (BuilderKind)Int(v, "Kind"), SectionId = Int(v, "SectionId"),
-                TableName = Text(v, "TableName")
-            }, ModuleFields(Repo.Modules()));
+        protected override Result Validate(IDictionary<string, object> v) => Check.Valid(From(v), ModuleFields(Repo.Modules()));
 
         /// <summary>شروط الصفحة المبنيّة</summary>
         private static Field<BuilderModule>[] ModuleFields(List<BuilderModule> existing) => new Field<BuilderModule>[]
@@ -226,21 +211,15 @@ namespace PrimeERP.Application.Legacy.Builder
 
         protected override int Write(IDictionary<string, object> v)
         {
-            var id = Repo.SaveModule(new BuilderModule
-            {
-                SortOrder = Order(v, Repo.Modules().Where(m => m.SectionId == Int(v, "SectionId")).Select(m => m.SortOrder)),
-                Id = Int(v, "Id"), Key = Text(v, "Key"), Title = Text(v, "Title"),
-                Kind = (BuilderKind)Int(v, "Kind"), SectionId = Int(v, "SectionId"),
-                TableName = Text(v, "TableName"), LineTable = Text(v, "LineTable"),
-                SourceKey = Text(v, "SourceKey"), CopiedFrom = Text(v, "CopiedFrom"),
-                IsActive = Bool(v, "IsActive"),
-                IsCoded = Repo.Modules().FirstOrDefault(m => m.Id == Int(v, "Id"))?.IsCoded ?? false
-            });
+            var module = From(v);
+            module.SortOrder = Order(module.SortOrder, Repo.Modules().Where(m => m.SectionId == module.SectionId).Select(m => m.SortOrder));
+            module.IsCoded = Repo.Modules().FirstOrDefault(m => m.Id == module.Id)?.IsCoded ?? false;
+            var isNew = module.Id == 0;
+            var id = Repo.SaveModule(module);
 
-            var copiedFrom = Text(v, "CopiedFrom");
-            if (Int(v, "Id") == 0 && !string.IsNullOrWhiteSpace(copiedFrom))
+            if (isNew && !string.IsNullOrWhiteSpace(module.CopiedFrom))
             {
-                var source = Repo.Modules().FirstOrDefault(m => m.Key == copiedFrom);
+                var source = Repo.Modules().FirstOrDefault(m => m.Key == module.CopiedFrom);
                 if (source != null)
                 {
                     Repo.ReplaceColumns(id, Repo.Columns(source.Id).Select(c => { c.ModuleId = id; return c; }).ToList());
@@ -254,13 +233,12 @@ namespace PrimeERP.Application.Legacy.Builder
     }
 
     /// <summary>أبناء الصفحة يُستبدلون بالجملة</summary>
-    public abstract class BuilderChildService<TEntity> : BuilderCrudServiceBase<TEntity> where TEntity : BaseModel
+    public abstract class BuilderChildService<TEntity> : BuilderCrudServiceBase<TEntity> where TEntity : BaseModel, new()
     {
         protected BuilderChildService(IBuilderRepository repo, IPermissionService p, ISettingsProvider s, ILocalizationService l, IAuditLogger a)
             : base(repo, p, s, l, a) { }
 
         protected abstract List<TEntity> Of(int moduleId);
-        protected abstract TEntity From(IDictionary<string, object> values);
         protected abstract int ModuleOf(TEntity item);
         protected abstract int Save(int moduleId, TEntity item);
         protected abstract void Remove(int id);
@@ -327,9 +305,10 @@ namespace PrimeERP.Application.Legacy.Builder
 
         protected override int Write(IDictionary<string, object> v)
         {
-            v["SortOrder"] = Order(v, Of(Int(v, "ModuleId")).Select(OrderOf));
-
             var incoming = From(v);
+            v["SortOrder"] = Order(OrderOf(incoming), Of(ModuleOf(incoming)).Select(OrderOf));
+            Rows.Fill(incoming, v);
+
             return Save(ModuleOf(incoming), incoming);
         }
 
@@ -346,19 +325,6 @@ namespace PrimeERP.Application.Legacy.Builder
         protected override int Save(int moduleId, BuilderColumn item) => Repo.SaveColumn(moduleId, item);
         protected override void Remove(int id) => Repo.DeleteColumn(id);
         protected override int ModuleOf(BuilderColumn item) => item.ModuleId;
-
-        protected override BuilderColumn From(IDictionary<string, object> v) => new()
-        {
-            Id = Int(v, "Id"), ModuleId = Int(v, "ModuleId"), Name = Text(v, "Name"), Header = Text(v, "Header"),
-            DataType = (BuilderDataType)Int(v, "DataType"), IsRequired = Bool(v, "IsRequired"), IsUnique = Bool(v, "IsUnique"),
-            MaxLength = Int(v, "MaxLength") == 0 ? null : Int(v, "MaxLength"),
-            RefModule = Text(v, "RefModule"), RefDisplay = Text(v, "RefDisplay"),
-            Aggregate = (BuilderAggregate)Int(v, "Aggregate"),
-            AggFrom = Text(v, "AggFrom"), AggColumn = Text(v, "AggColumn"), AggMatch = Text(v, "AggMatch"),
-            ShowInGrid = Bool(v, "ShowInGrid"), ShowInForm = Bool(v, "ShowInForm"), IsLine = Bool(v, "IsLine"),
-            Width = Num(v, "Width"), WidthPercent = Num(v, "WidthPercent"),
-            Footer = Text(v, "Footer"), SortOrder = Int(v, "SortOrder")
-        };
 
         private Dictionary<int, double> _shares;
 
@@ -393,12 +359,6 @@ namespace PrimeERP.Application.Legacy.Builder
         protected override int Save(int moduleId, BuilderAction item) => Repo.SaveAction(moduleId, item);
         protected override void Remove(int id) => Repo.DeleteAction(id);
         protected override int ModuleOf(BuilderAction item) => item.ModuleId;
-
-        protected override BuilderAction From(IDictionary<string, object> v) => new()
-        {
-            Id = Int(v, "Id"), ModuleId = Int(v, "ModuleId"), ActionKey = Text(v, "ActionKey"),
-            OnTable = Bool(v, "OnTable"), SortOrder = Int(v, "SortOrder")
-        };
     }
 
     public class BuilderFiltersService : BuilderChildService<BuilderFilter>
@@ -411,11 +371,5 @@ namespace PrimeERP.Application.Legacy.Builder
         protected override int Save(int moduleId, BuilderFilter item) => Repo.SaveFilter(moduleId, item);
         protected override void Remove(int id) => Repo.DeleteFilter(id);
         protected override int ModuleOf(BuilderFilter item) => item.ModuleId;
-
-        protected override BuilderFilter From(IDictionary<string, object> v) => new()
-        {
-            Id = Int(v, "Id"), ModuleId = Int(v, "ModuleId"), Key = Text(v, "Key"), Label = Text(v, "Label"),
-            Kind = Text(v, "Kind"), RefModule = Text(v, "RefModule"), SortOrder = Int(v, "SortOrder")
-        };
     }
 }

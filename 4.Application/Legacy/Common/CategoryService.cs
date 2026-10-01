@@ -1,12 +1,12 @@
 using PrimeERP.Application.Services.Ledger.Accounts;
 using PrimeERP.Application.Services.Core;
 using PrimeERP.Data.Core;
+using System;
 using System.Collections.Generic;
-using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.Validation;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
-using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
@@ -16,13 +16,12 @@ using PrimeERP.Platform.Settings;
 namespace PrimeERP.Application.Legacy.Common
 {
     /// <summary>فئات الوحدات وحساباتها</summary>
-    public class CategoryService : ServiceBase, ICategoryService
+    public class CategoryService : EntityService<Category, Category, Category, Category, CategoryFilter>, ICategoryService
     {
         private const string LinkedModule = "AssetCategories";
 
         private readonly ICategoryRepository _repo;
         private readonly IAssetRepository _assets;
-        private readonly AccountCases _tree;
         private readonly AccountSpec<Category>[] _accounts;
 
         protected override string PermissionPrefix => "Categories";
@@ -31,104 +30,76 @@ namespace PrimeERP.Application.Legacy.Common
 
         public CategoryService(ICategoryRepository repo, IPermissionService permissions, ISettingsProvider settings,
                                 ILocalizationService localization, IAuditLogger audit, IAssetRepository assets, AccountCases tree)
-            : base(permissions, settings, localization, audit)
+            : base(permissions, settings, localization, audit, tree: tree)
         {
             _repo = repo;
             _assets = assets;
-            _tree = tree;
             _accounts = AddMirroredAccount.Specs<Category>(
                 (db, _) => Root(db, SettingKeys.Accounts.FixedAssets), (db, _) => Root(db, SettingKeys.Accounts.AccumulatedDepreciation),
                 c => c.Name, c => c.AccountCode, (c, code) => c.AccountCode = code,
                 c => c.DepreciationAccountCode, (c, code) => c.DepreciationAccountCode = code, leaf: false);
         }
 
-        private Field<Category>[] CategoryFields() => new Field<Category>[]
+        private static readonly Field<Category>[] CategoryFields =
         {
             new(x => x.Name, "Str.Field.CategoryName", Required: true, Max: 200),
             new(x => x.ParentId, "", Must: c => c.ParentId != c.Id, Message: "Str.Category.SelfParent"),
-            new(x => x.ParentId, "", Must: c => c.ParentId == null || _repo.GetById(c.ParentId.Value) != null, Message: "Str.Category.ParentNotFound"),
-            new(x => x.ParentId, "", Must: c => c.ParentId == null || _repo.GetById(c.ParentId.Value)?.ModuleKey is not { } key || key == c.ModuleKey,
-                Message: "Str.Category.ParentOtherModule"),
         };
 
+        protected override Field<Category>[] Fields => CategoryFields;
+
+        /// <summary>الأب قائمٌ في وحدته</summary>
+        protected override Result Prepare(Category c, Category stored)
+        {
+            if (c.ParentId == null) return Result.Ok();
+
+            var parent = _repo.GetById(c.ParentId.Value);
+            if (parent == null) return Fail("ParentNotFound", ErrorCode.ValidationFailed);
+            return parent.ModuleKey != null && parent.ModuleKey != c.ModuleKey ? Fail("ParentOtherModule", ErrorCode.ValidationFailed) : Result.Ok();
+        }
+
         /// <summary>حسابا الفئة المرتبطة</summary>
-        private IReadOnlyList<AccountSpec<Category>> AccountsOf(Category c) =>
-            c.ModuleKey == LinkedModule ? _accounts : System.Array.Empty<AccountSpec<Category>>();
+        protected override IReadOnlyList<AccountSpec<Category>> AccountsOf(Category c) =>
+            c.ModuleKey == LinkedModule ? _accounts : Array.Empty<AccountSpec<Category>>();
+
+        protected override bool CanOn(Category c, string action) => Permissions.Can($"{c.ModuleKey}.{action}");
 
         private Result<Account> Root(PrimeDbContext db, string key) =>
-            _tree.Root(db, Setting(key, ""), "Str.Category.AccountsMissing");
-
-        private bool CanIn(string moduleKey, string action) => Permissions.Can($"{moduleKey}.{action}");
+            Tree.Root(db, Setting(key, ""), "Str.Category.AccountsMissing");
 
         public Result<List<Category>> GetAll(string moduleKey, bool includeInactive = false) =>
             Result.Ok(_repo.GetAll(moduleKey, includeInactive));
 
-        public Result<Category> GetById(int id)
+        protected override Category FindById(int id) => _repo.GetById(id);
+
+        protected override (List<Category> Items, int Total) FindPaged(int page, int pageSize, CategoryFilter filter)
         {
-            var category = _repo.GetById(id);
-            return category == null ? Result.Fail<Category>(Msg("NotFound"), ErrorCode.NotFound) : Result.Ok(category);
+            var rows = _repo.GetAll(filter?.ModuleKey, filter?.IncludeInactive ?? false);
+            return (rows, rows.Count);
         }
 
-        public Result<Category> Create(Category category)
+        protected override List<Category> FindSearch(string term, int maxResults) => _repo.Search(term, maxResults);
+
+        protected override Category ToDto(Category c) => c;
+
+        protected override Category New(Category c)
         {
-            if (!CanIn(category.ModuleKey, "Create")) return FailDenied<Category>();
-
-            category.IsActive = true;
-
-            var saved = Check.Valid(category, CategoryFields()).Then(() => Commit(db =>
-                _tree.Add.Run(db, category, AccountsOf(category)).Then(() =>
-                {
-                    category.Id = _repo.Insert(category, db);
-                    return Result.Ok();
-                })));
-            if (saved.IsFailure) return saved.As<Category>();
-
-            Audit.Log(EntityName, category.Id, AuditAction.Insert, newValue: new { category.Name, category.ModuleKey });
-            return Result.Ok(category);
+            c.IsActive = true;
+            return c;
         }
 
-        public Result Update(Category category)
+        protected override int Insert(PrimeDbContext db, Category c) => _repo.Insert(c, db);
+
+        protected override void Save(PrimeDbContext db, Category c) => _repo.Update(c, db);
+
+        protected override void Erase(PrimeDbContext db, Category c) => _repo.Delete(c.Id, db);
+
+        protected override Result CanErase(Category c)
         {
-            var stored = _repo.GetById(category.Id);
-            if (stored == null) return Result.Fail(Msg("NotFound"), ErrorCode.NotFound);
-            if (!CanIn(stored.ModuleKey, "Edit")) return FailDenied();
-
-            var accounts = AccountsOf(stored);
-            var names = AddEntityAccount.Names(stored, accounts);
-            AddEntityAccount.Keep(category, stored, accounts);
-
-            var saved = Check.Valid(category, CategoryFields()).Then(() => Commit(db =>
-            {
-                _repo.Update(category, db);
-                _tree.Rename.Run(db, category, accounts, names);
-                return Result.Ok();
-            }));
-            if (saved.IsFailure) return saved;
-
-            Audit.Log(EntityName, category.Id, AuditAction.Update, newValue: new { category.Name, category.IsActive });
-            return Result.Ok();
+            if (_repo.HasChildren(c.Id)) return Fail("HasChildren", ErrorCode.ValidationFailed);
+            return _assets.AnyInCategory(c.Id) ? Fail("HasAssets", ErrorCode.ValidationFailed) : Result.Ok();
         }
 
-        public Result Delete(int id)
-        {
-            var category = _repo.GetById(id);
-            if (category == null) return Result.Fail(Msg("NotFound"), ErrorCode.NotFound);
-            if (!CanIn(category.ModuleKey, "Delete")) return FailDenied();
-            if (_repo.HasChildren(id)) return Result.Fail(Msg("HasChildren"), ErrorCode.ValidationFailed);
-            if (_assets.AnyInCategory(id)) return Result.Fail(Msg("HasAssets"), ErrorCode.ValidationFailed);
-
-            var accounts = AccountsOf(category);
-            if (_tree.Guards.HasEntries(AddEntityAccount.Codes(category, accounts))) return Result.Fail(Msg("HasTransactions"), ErrorCode.ValidationFailed);
-
-            Commit(db =>
-            {
-                _repo.Delete(id, db);
-                _tree.Close.Run(db, category, accounts);
-                return Result.Ok();
-            });
-
-            Audit.Log(EntityName, id, AuditAction.Delete);
-            return Result.Ok();
-        }
+        protected override object AuditValue(Category c) => new { c.Name, c.ModuleKey, c.IsActive };
     }
 }

@@ -3,7 +3,7 @@ using System;
 namespace PrimeERP.Domain.Entities.Common
 {
     /// <summary>القاعدة المشتركة لكل الكيانات الرئيسية</summary>
-    public abstract class BaseModel
+    public abstract class BaseModel : IEntity
     {
         public int       Id         { get; set; }
         public DateTime  CreatedAt  { get; set; }

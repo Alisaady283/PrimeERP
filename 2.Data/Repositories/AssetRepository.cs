@@ -12,7 +12,6 @@ namespace PrimeERP.Data.Repositories
     public interface IAssetRepository
     {
         Asset GetById(int id, PrimeDbContext db = null);
-        List<Asset> GetByIds(IEnumerable<int> ids, PrimeDbContext db = null);
         List<Asset> Depreciable(PrimeDbContext db = null);
         bool AnyInCategory(int categoryId);
         List<Asset> Search(string term, int maxResults);
@@ -25,6 +24,7 @@ namespace PrimeERP.Data.Repositories
         void Edit(Asset a, PrimeDbContext db = null);
         void Delete(int id, string deletedBy, PrimeDbContext db = null);
         void SetJournalEntryId(PrimeDbContext db, int id, int journalEntryId);
+        void SetActive(PrimeDbContext db, int id, bool active);
     }
 
     public class AssetRepository : RepositoryBase<Asset>, IAssetRepository
@@ -87,5 +87,8 @@ namespace PrimeERP.Data.Repositories
 
         public void SetJournalEntryId(PrimeDbContext db, int id, int journalEntryId) =>
             Set(a => a.Id == id, s => s.SetProperty(r => r.JournalEntryId, journalEntryId), db);
+
+        public void SetActive(PrimeDbContext db, int id, bool active) =>
+            Set(a => a.Id == id, s => s.SetProperty(r => r.IsActive, active), db);
     }
 }

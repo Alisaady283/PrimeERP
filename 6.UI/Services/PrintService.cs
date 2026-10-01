@@ -16,7 +16,7 @@ using System.Windows.Media.Imaging;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Settings;
 
-namespace PrimeERP.Application.Legacy.Print
+namespace PrimeERP.UI.Services
 {
     /// <summary>يبني مستندات الطباعة من IPrintable</summary>
     public class PrintService : IPrintService

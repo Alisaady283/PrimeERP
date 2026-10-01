@@ -13,10 +13,6 @@ namespace PrimeERP.Domain.Calculations
         public static decimal Withheld(decimal deductions, decimal advances, decimal insurance, decimal tax) =>
             deductions + advances + insurance + tax;
 
-        public static decimal Net(decimal basic, decimal allowances, decimal overtime,
-            decimal deductions, decimal advances, decimal insurance, decimal tax) =>
-            Gross(basic, allowances, overtime) - Withheld(deductions, advances, insurance, tax);
-
         public static decimal Gross(PayrollLine l) => Gross(l.BasicSalary, l.Allowances, l.Overtime);
 
         public static decimal Withheld(PayrollLine l) => Withheld(l.Deductions, l.Advances, l.Insurance, l.Tax);
@@ -30,6 +26,24 @@ namespace PrimeERP.Domain.Calculations
         public static decimal Overtime(decimal hours, decimal basic) => Math.Round(hours * HourlyRate(basic), 2);
 
         public static decimal Absence(decimal days, decimal basic) => Math.Round(days * DailyRate(basic), 2);
+
+        /// <summary>سطر راتب الموظف للفترة</summary>
+        public static PayrollLine Line(Employee employee, decimal allowances, decimal deductions,
+            decimal overtimeHours, decimal absenceDays, decimal advanceBalance)
+        {
+            var line = new PayrollLine
+            {
+                BasicSalary = employee.BasicSalary,
+                Allowances = employee.FixedAllowances + allowances,
+                Overtime = Overtime(overtimeHours, employee.BasicSalary),
+                Deductions = deductions + Absence(absenceDays, employee.BasicSalary),
+                Insurance = employee.IsInsured ? employee.InsuranceAmount : 0,
+                Tax = employee.TaxAmount,
+                Advances = Math.Max(advanceBalance, 0),
+            };
+            line.NetSalary = Net(line);
+            return line;
+        }
 
         /// <summary>مجاميع المسير</summary>
         public static PayrollTotals Totals(IReadOnlyCollection<PayrollLine> lines) => new(

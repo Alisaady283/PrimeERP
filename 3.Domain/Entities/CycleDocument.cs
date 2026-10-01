@@ -15,7 +15,7 @@ namespace PrimeERP.Domain.Entities
         public List<CycleDocumentLine> Lines { get; set; } = new();
     }
 
-    public class CycleDocumentLine
+    public class CycleDocumentLine : IProductLine
     {
         public int     Id          { get; set; }
         public int     DocumentId  { get; set; }

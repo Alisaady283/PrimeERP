@@ -1,6 +1,5 @@
 using PrimeERP.Application.Services.Ledger.Accounts;
 using PrimeERP.Application.Legacy.Security;
-using PrimeERP.Application.Legacy.Print;
 using PrimeERP.Application.Legacy.Builder;
 using PrimeERP.Application.Legacy.Backup;
 using PrimeERP.Application.Legacy.Admin;
@@ -120,9 +119,12 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<PrimeERP.Application.Services.Ledger.Entries>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.Statement>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.TrialBalance>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.ClosingEntry>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.NewFiscalYear>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.PartyByKind>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.AddTreeAccount>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.AddEntityAccount>();
+            services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.RepairAccounts>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.AddLinkedAccount>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.RenameAccount>();
             services.AddSingleton<PrimeERP.Application.Services.Ledger.Accounts.CloseAccount>();
@@ -189,7 +191,7 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<PrimeERP.Application.Legacy.Treasury.ITreasuryService, PrimeERP.Application.Legacy.Treasury.TreasuryService>();
             services.AddSingleton<PrimeERP.Application.Legacy.Vouchers.IReceiptVoucherService, PrimeERP.Application.Legacy.Vouchers.ReceiptVoucherService>();
             services.AddSingleton<PrimeERP.Application.Legacy.Vouchers.IPaymentVoucherService, PrimeERP.Application.Legacy.Vouchers.PaymentVoucherService>();
-            services.AddSingleton<PrimeERP.Application.Legacy.Print.IChequePrinter, PrimeERP.Application.Legacy.Print.ChequePrinter>();
+            services.AddSingleton<PrimeERP.UI.Services.IChequePrinter, PrimeERP.UI.Services.ChequePrinter>();
             services.AddSingleton<PrimeERP.Application.Legacy.Assets.IAssetDepreciationService, PrimeERP.Application.Legacy.Assets.AssetDepreciationService>();
             services.AddSingleton<PrimeERP.Application.Legacy.Assets.IAssetDisposalService, PrimeERP.Application.Legacy.Assets.AssetDisposalService>();
             services.AddSingleton<PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService, PrimeERP.Application.Legacy.Accounting.OpeningBalanceService>();

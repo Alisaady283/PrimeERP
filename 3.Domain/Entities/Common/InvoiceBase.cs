@@ -27,7 +27,7 @@ namespace PrimeERP.Domain.Entities.Common
     }
 
     /// <summary>سطر مستند بيعٍ أو شراء</summary>
-    public abstract class DocumentLineBase
+    public abstract class DocumentLineBase : IProductLine
     {
         public int     Id                 { get; set; }
         public int     LineNo             { get; set; }

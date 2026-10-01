@@ -13,6 +13,7 @@ namespace PrimeERP.Data.Repositories
     {
 
         List<FiscalYear> GetAllYears();
+        bool AnyYear(PrimeDbContext db = null);
         FiscalYear GetYearById(int id);
         FiscalYear GetCurrentYear();
         FiscalYear GetYearContaining(string date);
@@ -46,6 +47,8 @@ namespace PrimeERP.Data.Repositories
 
         public List<FiscalYear> GetAllYears() =>
             Fetch(q => q.OrderByDescending(y => y.StartDate));
+
+        public bool AnyYear(PrimeDbContext db = null) => Any(q => q, db);
 
         public FiscalYear GetYearById(int id) => GetById(id);
 

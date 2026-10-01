@@ -26,8 +26,7 @@ namespace PrimeERP.Application.Services.Documents
                 amounts.Add(a);
                 return Result.Ok(new TLine
                 {
-                    LineNo = l.LineNo, ProductId = product.Id, ProductCode = product.Code, ProductName = product.Name,
-                    Qty = l.Qty, UnitPrice = l.UnitPrice,
+                    LineNo = l.LineNo, Qty = l.Qty, UnitPrice = l.UnitPrice,
                     DiscountPercent = l.DiscountPercent, DiscountAmount = a.Discount,
                     VatPercent = l.VatPercent, VatAmount = a.Vat,
                     WithholdingPercent = l.WithholdingPercent, WithholdingAmount = a.Withholding,

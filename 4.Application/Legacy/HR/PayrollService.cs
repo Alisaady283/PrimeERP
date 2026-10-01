@@ -4,6 +4,7 @@ using PrimeERP.Domain.Calculations;
 using PrimeERP.Application.Services.Documents;
 using PrimeERP.Application.Services.Core;
 using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Services.Ledger.Accounts;
 using PrimeERP.Application.Legacy.Documents;
 using PrimeERP.Data.Core;
 using System;
@@ -34,21 +35,28 @@ namespace PrimeERP.Application.Legacy.HR
         private readonly IEmployeeDeductionRepository _deductions;
         private readonly IAttendanceRepository _attendances;
         private readonly IAccountRepository _accountRows;
+        private readonly AccountOf _accountsOf;
 
         public PayrollService(IPayrollRepository payrolls, IEmployeeRepository employees, Entries journal,
             INumberSequenceService numbers,
             IEmployeeAllowanceRepository allowances, IEmployeeDeductionRepository deductions,
-            IAttendanceRepository attendances, IAccountRepository accountRows,
+            IAttendanceRepository attendances, IAccountRepository accountRows, AccountOf accountsOf,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
             : base(permissions, settings, localization, audit, journals: journal)
         {
             _payrolls = payrolls; _employees = employees; _numbers = numbers;
             _allowances = allowances; _deductions = deductions; _attendances = attendances; _accountRows = accountRows;
+            _accountsOf = accountsOf;
         }
 
         protected override string PermissionPrefix => "HR";
         protected override string StringPrefix => "Str.Payroll";
         protected override string EntityName => "Payrolls";
+
+        public static readonly Field<PayrollLine>[] LineFields =
+        {
+            new(x => x.NetSalary, "", Must: l => l.NetSalary >= 0, Message: "Str.Payroll.DeductionsExceed", Args: l => new object[] { l.EmployeeName }),
+        };
 
         protected override bool CanDo(string action) => Can(action == "Create" ? "PaySalary" : action);
 
@@ -85,9 +93,7 @@ namespace PrimeERP.Application.Legacy.HR
                     row.EmployeeName = employee.Name;
                 });
                 line.NetSalary = PayrollCalc.Net(line);
-                return line.NetSalary < 0
-                    ? Result.Fail<PayrollLine>(Msg("DeductionsExceed", employee.Name), ErrorCode.ValidationFailed)
-                    : Result.Ok(line);
+                return Check.Valid(line, LineFields).Then(() => Result.Ok(line));
             });
             if (built.IsFailure) return built.As<Func<PrimeDbContext, int>>();
             var resolved = built.Value;
@@ -129,7 +135,7 @@ namespace PrimeERP.Application.Legacy.HR
 
             var advances = _employees.GetByIds(lines.Where(l => l.Advances > 0).Select(l => l.EmployeeId))
                                      .ToDictionary(e => e.Id, e => e.AccountCode);
-            var journalLines = AccrualLines(Settings, lines, advances);
+            var journalLines = AccrualLines(lines, advances);
             if (journalLines.IsFailure) return journalLines;
 
             var posted = Commit(db =>
@@ -167,37 +173,19 @@ namespace PrimeERP.Application.Legacy.HR
         }
 
         /// <summary>سطور قيد الاستحقاق</summary>
-        private static Result<List<CreateJournalLineDto>> AccrualLines(ISettingsProvider settings, List<PayrollLine> lines,
-            IReadOnlyDictionary<int, string> advanceAccounts)
+        private Result<List<CreateJournalLineDto>> AccrualLines(List<PayrollLine> lines, IReadOnlyDictionary<int, string> advanceAccounts)
         {
-            var salaryExpense = settings.Get(SettingKeys.Accounts.SalaryExpense, "");
-            var allowanceExpense = settings.Get(SettingKeys.Accounts.AllowanceExpense, "");
-            var salariesPayable = settings.Get(SettingKeys.Accounts.SalariesPayable, "");
-            var insurancePayable = settings.Get(SettingKeys.Accounts.InsurancePayable, "");
-            var taxPayable = settings.Get(SettingKeys.Accounts.TaxPayable, "");
+            Result<string> Account(string key) => _accountsOf.Setting(key, "Str.Payroll.AccountsMissing");
+            var salaryExpense = Account(SettingKeys.Accounts.SalaryExpense);
+            var allowanceExpense = Account(SettingKeys.Accounts.AllowanceExpense);
+            var salariesPayable = Account(SettingKeys.Accounts.SalariesPayable);
+            var insurancePayable = Account(SettingKeys.Accounts.InsurancePayable);
+            var taxPayable = Account(SettingKeys.Accounts.TaxPayable);
+            var accounts = Result.Combine(salaryExpense, allowanceExpense, salariesPayable, insurancePayable, taxPayable);
+            if (accounts.IsFailure) return accounts.As<List<CreateJournalLineDto>>();
 
-            if (new[] { salaryExpense, allowanceExpense, salariesPayable, insurancePayable, taxPayable }.Any(string.IsNullOrWhiteSpace))
-                return Result.Fail<List<CreateJournalLineDto>>(LocalizationService.Get("Str.Payroll.AccountsMissing"), ErrorCode.ValidationFailed);
-
-            var totals = PayrollCalc.Totals(lines);
-            var entry = new JournalLines()
-                .Debit(salaryExpense, totals.Basic)
-                .Debit(allowanceExpense, totals.Allowances)
-                .Credit(salariesPayable, totals.Net)
-                .Credit(insurancePayable, totals.Insurance)
-                .Credit(taxPayable, totals.Tax);
-
-            foreach (var line in lines.Where(l => l.Advances > 0))
-            {
-                var account = advanceAccounts.GetValueOrDefault(line.EmployeeId);
-                if (string.IsNullOrWhiteSpace(account))
-                    return Result.Fail<List<CreateJournalLineDto>>(
-                        LocalizationService.Get("Str.Payroll.AdvanceAccountMissing", line.EmployeeName), ErrorCode.ValidationFailed);
-
-                entry.Credit(account, line.Advances);
-            }
-
-            return Result.Ok(entry.Credit(salaryExpense, totals.Deductions).ToList());
+            return PayrollEntry.Lines(lines, advanceAccounts,
+                (salaryExpense.Value, allowanceExpense.Value, salariesPayable.Value, insurancePayable.Value, taxPayable.Value));
         }
 
         private List<CreatePayrollLineDto> GenerateLines(DateTime from, DateTime to)
@@ -213,37 +201,15 @@ namespace PrimeERP.Application.Legacy.HR
             var overtime = _attendances.OvertimeByEmployee(from, to);
             var absences = _attendances.AbsenceDaysByEmployee(from, to);
 
-            decimal Of(Dictionary<int, decimal> source, int id) => source.TryGetValue(id, out var value) ? value : 0;
-
-            var lineNo = 1;
-            return employees.Select(e =>
-            {
-
-                var absenceDays = absences.TryGetValue(e.Id, out var days) ? days : 0;
-
-                var line = new CreatePayrollLineDto
+            return employees.Select((e, i) => Rows.Copy(
+                PayrollCalc.Line(e, allowances.GetValueOrDefault(e.Id), deductions.GetValueOrDefault(e.Id), overtime.GetValueOrDefault(e.Id),
+                    absences.GetValueOrDefault(e.Id), advanceBalances.GetValueOrDefault(e.AccountCode ?? "")),
+                new CreatePayrollLineDto(), row =>
                 {
-                    LineNo = lineNo++,
-                    EmployeeCode = e.Code,
-                    BasicSalary = e.BasicSalary,
-                    Allowances = e.FixedAllowances + Of(allowances, e.Id),
-                    Overtime = PayrollCalc.Overtime(Of(overtime, e.Id), e.BasicSalary),
-                    Deductions = Of(deductions, e.Id) + PayrollCalc.Absence(absenceDays, e.BasicSalary),
-                    Insurance = e.IsInsured ? e.InsuranceAmount : 0,
-                    Tax = e.TaxAmount,
-                    Advances = AdvanceInstalment(e, advanceBalances),
-                };
-
-                line.NetSalary = PayrollCalc.Net(line.BasicSalary, line.Allowances, line.Overtime, line.Deductions, line.Advances, line.Insurance, line.Tax);
-
-                return line;
-            }).ToList();
+                    row.LineNo = i + 1;
+                    row.EmployeeCode = e.Code;
+                })).ToList();
         }
-
-        private static decimal AdvanceInstalment(Employee employee, IReadOnlyDictionary<string, decimal> balances) =>
-            !string.IsNullOrWhiteSpace(employee.AccountCode) && balances.TryGetValue(employee.AccountCode, out var balance) && balance > 0
-                ? balance
-                : 0;
 
 
         private static T ToDto<T>(Payroll p) where T : PayrollDto, new()

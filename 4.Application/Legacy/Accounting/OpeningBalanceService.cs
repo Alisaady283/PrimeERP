@@ -60,13 +60,13 @@ namespace PrimeERP.Application.Legacy.Accounting
             }));
         }
 
-        public Result<JournalEntryDto> Create(CreateJournalDto dto) => Balance(dto).Then(balanced => _journals.Create(balanced));
+        public Result<JournalEntryDto> Create(CreateJournalDto dto) => _journals.Create(Opening(dto));
 
-        public Result Update(CreateJournalDto dto) => Balance(dto).Then(balanced => _journals.UpdateOwned(balanced, SourceKey));
+        public Result Update(CreateJournalDto dto) => _journals.UpdateOwned(Opening(dto), SourceKey);
 
         public Result Delete(int id) => _journals.DeleteOwned(id, SourceKey);
 
-        private Result<CreateJournalDto> Balance(CreateJournalDto dto) =>
+        private CreateJournalDto Opening(CreateJournalDto dto) =>
             OpeningEntry.Prepare(dto, Setting(SettingKeys.Company.StartDate, dto.EntryDate), SourceKey, FixedDescription);
     }
 }

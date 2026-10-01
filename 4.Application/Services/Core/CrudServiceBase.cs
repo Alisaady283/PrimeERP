@@ -10,12 +10,15 @@ using PrimeERP.Platform.Settings;
 namespace PrimeERP.Application.Services.Core
 {
     /// <summary>القراءة العامة لكيان بصفحات وبحث</summary>
-    public abstract class CrudServiceBase<TEntity, TDto, TFilter> : ServiceBase where TEntity : BaseModel
+    public abstract class CrudServiceBase<TEntity, TDto, TFilter> : ServiceBase where TEntity : class, IEntity
     {
         protected abstract TEntity FindById(int id);
         protected abstract (List<TEntity> Items, int Total) FindPaged(int page, int pageSize, TFilter filter);
         protected abstract List<TEntity> FindSearch(string term, int maxResults);
         protected abstract TDto ToDto(TEntity entity);
+
+        /// <summary>صلاحية الفعل على السجل</summary>
+        protected virtual bool CanOn(TEntity entity, string action) => Can(action);
 
         /// <summary>الصفحة كلها بضمّةٍ واحدة</summary>
         protected virtual List<TDto> ToDtos(List<TEntity> entities) => entities.Select(ToDto).ToList();
@@ -26,12 +29,10 @@ namespace PrimeERP.Application.Services.Core
 
         public virtual Result<TDto> GetById(int id)
         {
-            if (!Can("View")) return FailDenied<TDto>();
-
             var entity = FindById(id);
-            if (entity == null) return Fail<TDto>("NotFound", ErrorCode.NotFound);
+            if (entity == null) return Can("View") ? Fail<TDto>("NotFound", ErrorCode.NotFound) : FailDenied<TDto>();
 
-            return Ok(ToDto(entity));
+            return CanOn(entity, "View") ? Ok(ToDto(entity)) : FailDenied<TDto>();
         }
 
         public virtual Result<PagedResult<TDto>> GetPaged(int page, int pageSize, TFilter filter)
@@ -40,7 +41,7 @@ namespace PrimeERP.Application.Services.Core
 
             var (items, total) = FindPaged(page, pageSize, filter);
 
-            return Ok(new PagedResult<TDto> { Items = ToDtos(items), TotalCount = total, Page = page, PageSize = pageSize });
+            return Ok(Paged(items, total, page, pageSize, ToDtos));
         }
 
         public virtual Result<List<TDto>> Search(string term, int maxResults = 50)

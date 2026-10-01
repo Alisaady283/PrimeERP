@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.Legacy.Common;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
@@ -9,9 +10,7 @@ using PrimeERP.UI.ViewModels.Base;
 
 namespace PrimeERP.UI.ViewModels
 {
-    /// <summary>نماذج عرض CategoryFilter</summary>
-    public class CategoryFilter { }
-
+    /// <summary>قائمة فئات الوحدة</summary>
     public class CategoryListViewModel : CrudViewModelBase<Category, CategoryFilter>
     {
         private readonly ICategoryService _categories;

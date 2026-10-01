@@ -1,4 +1,3 @@
-using PrimeERP.Application.Legacy.Print;
 using PrimeERP.Application.Legacy.Backup;
 using PrimeERP.Application.Legacy.Admin;
 using PrimeERP.Application.Legacy.Accounting;
@@ -134,7 +133,7 @@ namespace PrimeERP.Composition.Renderers
             button.Click += (_, __) =>
             {
                 var settings = services.GetRequiredService<ISettingsService>();
-                var layout = new PrimeERP.Application.Legacy.Print.ChequeLayout
+                var layout = new PrimeERP.UI.Services.ChequeLayout
                 {
                     OffsetX = ReadNumber(settings, SettingKeys.Print.ChequeOffsetX),
                     OffsetY = ReadNumber(settings, SettingKeys.Print.ChequeOffsetY),
@@ -147,10 +146,10 @@ namespace PrimeERP.Composition.Renderers
                     }
                 };
 
-                var sheet = services.GetRequiredService<PrimeERP.Application.Legacy.Print.IChequePrinter>().BuildCalibrationSheet(layout);
+                var sheet = services.GetRequiredService<PrimeERP.UI.Services.IChequePrinter>().BuildCalibrationSheet(layout);
                 if (sheet.IsFailure) { toast.Error(sheet.ErrorMessage); return; }
 
-                services.GetRequiredService<PrimeERP.Application.Legacy.Print.IPrintService>()
+                services.GetRequiredService<PrimeERP.UI.Services.IPrintService>()
                     .DialogHost?.ShowPreview(sheet.Value, "معايرة الشيك");
             };
 

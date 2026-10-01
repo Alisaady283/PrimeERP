@@ -65,7 +65,7 @@ namespace PrimeERP.Application.Legacy.Assets
         {
             new(x => x.AssetId, "", Required: true, Message: "Str.Asset.PickAsset"),
             new(x => x.RevaluationDate, "", Required: true, Message: "Str.Asset.RevaluationDateRequired"),
-            new(x => x.NewValue, "Str.Asset.Revalued", From: 0),
+            new(x => x.NewValue, "", Must: r => r.NewValue > 0, Message: "Str.Asset.RevaluationZero"),
             new(x => x.NewValue, "", Must: r => AssetCalc.Difference(r) != 0, Message: "Str.Asset.RevaluationNoChange"),
         };
 
@@ -86,8 +86,8 @@ namespace PrimeERP.Application.Legacy.Assets
                     revaluation.Id = _revaluations.Insert(revaluation, db);
                     Apply(db, asset, revaluation.NewValue);
 
-                    revaluation.JournalEntryId = PostEntry(db, revaluation.RevaluationDate,
-                        $"{Msg("Revaluation")} — {asset.Name}", sides.Debit, sides.Credit, Math.Abs(AssetCalc.Difference(revaluation)));
+                    revaluation.JournalEntryId = Posting.Entry(Journals, db, revaluation.RevaluationDate,
+                        $"{Msg("Revaluation")} — {asset.Name}", EntityName, sides.Debit, sides.Credit, Math.Abs(AssetCalc.Difference(revaluation)));
 
                     _revaluations.SetJournalEntryId(db, revaluation.Id, revaluation.JournalEntryId.Value);
                     return Result.Ok(revaluation);
@@ -99,7 +99,7 @@ namespace PrimeERP.Application.Legacy.Assets
             var asset = _assets.GetById(revaluation.AssetId, db);
             if (asset == null) return Fail("NotFound", ErrorCode.NotFound);
 
-            ReverseEntry(db, revaluation.JournalEntryId);
+            Posting.Reverse(Journals, db, revaluation.JournalEntryId);
             Apply(db, asset, revaluation.OldValue);
             _revaluations.Delete(revaluation.Id, CurrentUser, db);
             return Result.Ok();
@@ -107,30 +107,24 @@ namespace PrimeERP.Application.Legacy.Assets
 
         private Result<(string Debit, string Credit)> Sides(Asset asset, decimal difference)
         {
-            var own = Required(asset.AccountCode, "AccountsMissing");
-            if (own.IsFailure) return Result.Fail<(string, string)>(own.ErrorMessage, own.ErrorCode);
+            var own = AccountOf.Required(asset.AccountCode, "Str.Asset.AccountsMissing");
+            if (own.IsFailure) return own.As<(string, string)>();
 
-            var counter = Account(difference > 0 ? SettingKeys.Accounts.CapitalGains : SettingKeys.Accounts.CapitalLosses);
-            if (counter.IsFailure) return Result.Fail<(string, string)>(counter.ErrorMessage, counter.ErrorCode);
+            var counter = AccountsOf.SettingBySign(difference, SettingKeys.Accounts.CapitalGains, SettingKeys.Accounts.CapitalLosses, "Str.Asset.AccountsMissing");
+            if (counter.IsFailure) return counter.As<(string, string)>();
 
-            return Result.Ok(TwoSided.BySign(difference > 0, own.Value, counter.Value));
+            return Result.Ok(TwoSided.By(!counter.Value.Debit, own.Value, counter.Value.Account));
         }
 
         private void Apply(PrimeDbContext db, Asset asset, decimal value)
         {
             asset.RevaluedValue = value;
-            asset.CurrentValue = AssetCalc.BookValue(value, asset.AccumulatedDepreciation);
+            asset.CurrentValue = AssetCalc.CurrentValue(value, asset.PurchaseCost, asset.AccumulatedDepreciation);
             _assets.Update(asset, db);
         }
 
-        protected override AssetRevaluation ToDto(AssetRevaluation r) => ToDto(r, _assets.GetById(r.AssetId));
-
-        protected override List<AssetRevaluation> ToDtos(List<AssetRevaluation> rows) =>
-            WithAssets(rows, _assets, r => r.AssetId, ToDto);
-
-        private static AssetRevaluation ToDto(AssetRevaluation r, Asset asset)
+        protected override AssetRevaluation ToDto(AssetRevaluation r)
         {
-            (r.AssetCode, r.AssetName) = (asset?.Code, asset?.Name);
             r.Difference = AssetCalc.Difference(r);
             r.KindName = LocalizationService.Get(r.Difference >= 0 ? "Str.Asset.Increase" : "Str.Asset.Decrease");
             return r;

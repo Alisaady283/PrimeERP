@@ -51,5 +51,8 @@ namespace PrimeERP.Domain.Calculations
         }
 
         public static decimal UnitCostOf(decimal totalValue, decimal qty) => qty == 0 ? 0 : totalValue / qty;
+
+        /// <summary>تكلفة السطر وإلا تكلفة الصنف</summary>
+        public static decimal LineCost(decimal given, decimal productCost) => given > 0 ? given : productCost;
     }
 }

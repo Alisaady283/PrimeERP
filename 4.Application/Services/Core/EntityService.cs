@@ -17,7 +17,7 @@ namespace PrimeERP.Application.Services.Core
 {
     /// <summary>إضافة الكيان وتعديله وحذفه</summary>
     public abstract class EntityService<TEntity, TDto, TCreate, TUpdate, TFilter> : CrudServiceBase<TEntity, TDto, TFilter>
-        where TEntity : BaseModel
+        where TEntity : class, IEntity
     {
         protected readonly INumberSequenceService Numbers;
         protected readonly AccountCases Tree;
@@ -41,33 +41,39 @@ namespace PrimeERP.Application.Services.Core
         protected virtual string SequenceKey => null;
         protected virtual void Number(TEntity entity, string code) { }
         protected virtual IReadOnlyList<AccountSpec<TEntity>> Accounts => Array.Empty<AccountSpec<TEntity>>();
+
+        /// <summary>حسابات السجل بعينه</summary>
+        protected virtual IReadOnlyList<AccountSpec<TEntity>> AccountsOf(TEntity entity) => Accounts;
+
         protected virtual Result CanErase(TEntity entity) => Result.Ok();
-        protected virtual Result OnSaved(PrimeDbContext db, TEntity entity) => Result.Ok();
+        protected virtual int? OwnEntry(TEntity entity) => null;
+        protected virtual Result Prepare(TEntity entity, TEntity stored) => Result.Ok();
+        protected virtual Result OnSaved(PrimeDbContext db, TEntity entity, TEntity stored) => Result.Ok();
         protected virtual object AuditValue(TEntity entity) => null;
         protected virtual string CreateDetails(TEntity entity) => null;
         protected virtual string DeleteDetails(TEntity entity) => null;
 
-        public virtual Result<TDto> Create(TCreate dto) => Can("Create") ? Add(dto) : FailDenied<TDto>();
-
-        /// <summary>الإنشاء بلا صلاحية للبذر</summary>
-        protected Result<TDto> Add(TCreate dto)
+        public virtual Result<TDto> Create(TCreate dto)
         {
             var entity = New(dto);
-            if (SequenceKey != null) Number(entity, Numbers.Next(SequenceKey));
-
-            var saved = Valid(entity).Then(() => Commit(db => CreateCore(db, entity)));
-            if (saved.IsFailure) return saved.As<TDto>();
-
-            Audit.Log(EntityName, entity.Id, AuditAction.Insert, newValue: AuditValue(entity), details: CreateDetails(entity));
-            return Ok(ToDto(entity));
+            return CanOn(entity, "Create") ? Store(entity) : FailDenied<TDto>();
         }
+
+        /// <summary>الإنشاء بلا صلاحية للبذر</summary>
+        protected Result<TDto> Add(TCreate dto) => Store(New(dto));
 
         /// <summary>الإنشاء في معاملة المستدعي</summary>
         public Result<TDto> Create(PrimeDbContext db, TCreate dto)
         {
             var entity = New(dto);
+            return CreateIn(db, entity).Then(() => Result.Ok(ToDto(entity)));
+        }
+
+        /// <summary>كيانٌ جديد في معاملةٍ قائمة</summary>
+        protected Result CreateIn(PrimeDbContext db, TEntity entity)
+        {
             if (SequenceKey != null) Number(entity, Numbers.Next(db, SequenceKey));
-            return Valid(entity).Then(() => CreateCore(db, entity)).Then(() => Result.Ok(ToDto(entity)));
+            return Valid(entity).Then(() => Prepare(entity, null)).Then(() => CreateCore(db, entity));
         }
 
         /// <summary>الإنشاء داخل معاملةٍ قائمة</summary>
@@ -75,24 +81,23 @@ namespace PrimeERP.Application.Services.Core
             OpenAccounts(db, entity).Then(() =>
             {
                 entity.Id = Insert(db, entity);
-                return OnSaved(db, entity);
+                return OnSaved(db, entity, null);
             });
 
         public virtual Result Update(TUpdate dto)
         {
-            if (!Can("Edit")) return FailDenied();
-
             var stored = FindById(IdOf(dto));
-            if (stored == null) return Fail("NotFound", ErrorCode.NotFound);
+            if (stored == null) return Can("Edit") ? Fail("NotFound", ErrorCode.NotFound) : FailDenied();
+            if (!CanOn(stored, "Edit")) return FailDenied();
 
-            var names = AddEntityAccount.Names(stored, Accounts);
+            var names = AddEntityAccount.Names(stored, AccountsOf(stored));
             var entity = Edited(stored, dto);
 
-            var saved = Valid(entity).Then(() => Commit(db => OpenAccounts(db, entity).Then(() =>
+            var saved = Valid(entity).Then(() => Prepare(entity, stored)).Then(() => Commit(db => OpenAccounts(db, entity).Then(() =>
             {
                 Save(db, entity);
-                Tree?.Rename.Run(db, entity, Accounts, names);
-                return OnSaved(db, entity);
+                Tree?.Rename.Run(db, entity, AccountsOf(entity), names);
+                return OnSaved(db, entity, stored);
             })));
             if (saved.IsFailure) return saved;
 
@@ -102,24 +107,35 @@ namespace PrimeERP.Application.Services.Core
 
         public virtual Result Delete(int id)
         {
-            if (!Can("Delete")) return FailDenied();
-
             var entity = FindById(id);
-            if (entity == null) return Fail("NotFound", ErrorCode.NotFound);
+            if (entity == null) return Can("Delete") ? Fail("NotFound", ErrorCode.NotFound) : FailDenied();
+            if (!CanOn(entity, "Delete")) return FailDenied();
 
-            if (Accounts.Count > 0 && Tree.Guards.HasEntries(AddEntityAccount.Codes(entity, Accounts)))
+            var accounts = AccountsOf(entity);
+            if (accounts.Count > 0 && Tree.Guards.HasEntries(AddEntityAccount.Codes(entity, accounts), OwnEntry(entity)))
                 return Fail("HasTransactions", ErrorCode.ValidationFailed);
 
             var erased = CanErase(entity).Then(() => Commit(db =>
             {
-                Tree?.Close.Run(db, entity, Accounts);
                 Erase(db, entity);
+                Tree?.Close.Run(db, entity, accounts);
                 return Result.Ok();
             }));
             if (erased.IsFailure) return erased;
 
             Audit.Log(EntityName, id, AuditAction.Delete, details: DeleteDetails(entity));
             return Result.Ok();
+        }
+
+        private Result<TDto> Store(TEntity entity)
+        {
+            if (SequenceKey != null) Number(entity, Numbers.Next(SequenceKey));
+
+            var saved = Valid(entity).Then(() => Prepare(entity, null)).Then(() => Commit(db => CreateCore(db, entity)));
+            if (saved.IsFailure) return saved.As<TDto>();
+
+            Audit.Log(EntityName, entity.Id, AuditAction.Insert, newValue: AuditValue(entity), details: CreateDetails(entity));
+            return Ok(ToDto(entity));
         }
 
         /// <summary>المُدخل كياناً بحسابات المخزَّن</summary>
@@ -131,12 +147,15 @@ namespace PrimeERP.Application.Services.Core
                 return stored;
             }
 
-            AddEntityAccount.Keep(input, stored, Accounts);
+            AddEntityAccount.Keep(input, stored, AccountsOf(stored));
             return input;
         }
 
-        private Result OpenAccounts(PrimeDbContext db, TEntity entity) =>
-            Accounts.Count == 0 ? Result.Ok() : Tree.Add.Run(db, entity, Accounts);
+        private Result OpenAccounts(PrimeDbContext db, TEntity entity)
+        {
+            var accounts = AccountsOf(entity);
+            return accounts.Count == 0 ? Result.Ok() : Tree.Add.Run(db, entity, accounts);
+        }
 
         private Result Valid(TEntity entity) => Check.Valid(entity, Fields);
     }

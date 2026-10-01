@@ -12,17 +12,22 @@ namespace PrimeERP.Application.Services.Ledger
     {
         private readonly IAccountRepository _accounts;
         private readonly IJournalRepository _journal;
+        private readonly IPartyRepository<Customer> _customers;
+        private readonly IPartyRepository<Supplier> _suppliers;
 
-        public AccountBalances(IAccountRepository accounts, IJournalRepository journal)
+        public AccountBalances(IAccountRepository accounts, IJournalRepository journal,
+            IPartyRepository<Customer> customers, IPartyRepository<Supplier> suppliers)
         {
             _accounts = accounts;
             _journal = journal;
+            _customers = customers;
+            _suppliers = suppliers;
         }
 
         public decimal Refresh(PrimeDbContext db, string code)
         {
             var balance = _journal.SumPosted(code, null, null, db);
-            _accounts.UpdateBalance(code, balance, db);
+            Write(db, code, balance);
             return balance;
         }
 
@@ -33,7 +38,15 @@ namespace PrimeERP.Application.Services.Ledger
                                .ToDictionary(s => s.AccountCode, s => s.SumDebit - s.SumCredit);
             var balances = StatementCalc.Rollup(accounts, a => a.Code, a => a.ParentCode,
                 a => a.IsLeaf ? sums.GetValueOrDefault(a.Code) : 0m);
-            foreach (var pair in balances) _accounts.UpdateBalance(pair.Key, pair.Value, db);
+            foreach (var pair in balances) Write(db, pair.Key, pair.Value);
+        }
+
+        /// <summary>رصيد الحساب وطرفه</summary>
+        private void Write(PrimeDbContext db, string code, decimal balance)
+        {
+            _accounts.UpdateBalance(code, balance, db);
+            _customers.SetBalanceByAccount(code, balance, db);
+            _suppliers.SetBalanceByAccount(code, balance, db);
         }
     }
 }

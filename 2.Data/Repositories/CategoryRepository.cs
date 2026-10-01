@@ -12,6 +12,7 @@ namespace PrimeERP.Data.Repositories
     public interface ICategoryRepository
     {
         List<Category> GetAll(string moduleKey, bool includeInactive = false);
+        List<Category> Search(string term, int maxResults);
         Category GetById(int id, PrimeDbContext db = null);
         bool HasChildren(int id);
         int Insert(Category c, PrimeDbContext db = null);
@@ -28,6 +29,9 @@ namespace PrimeERP.Data.Repositories
             WithCategoryNames(Fetch(q => q.Where(c => c.ModuleKey == moduleKey && (includeInactive || c.IsActive))
                        .OrderBy(c => c.Name)), (c => c.ParentId, (c, name) => c.ParentName = name));
 
+
+        public List<Category> Search(string term, int maxResults) =>
+            Fetch(q => q.Where(c => c.IsActive && EF.Functions.Like(c.Name, $"%{term}%")).OrderBy(c => c.Name).Take(maxResults));
 
         public bool HasChildren(int id) => Any(q => q.Where(c => c.ParentId == id && c.IsActive));
 

@@ -12,5 +12,14 @@ namespace PrimeERP.Application.Validation
             Validation.Check.Valid(lines ?? Array.Empty<T>(),
                 new Field<IReadOnlyCollection<T>>(x => x, "", Name: "Lines", Required: true, Message: noLinesKey),
                 new Field<IReadOnlyCollection<T>>(x => x, "", Name: "Lines", Must: x => x.All(l => qty(l) > 0), Message: "Str.Document.QtyPositive"));
+
+        /// <summary>مجموع السطور لا يتجاوز حدّه</summary>
+        public static Result Within<T>(IReadOnlyCollection<T> lines, Func<T, decimal> amount, decimal limit, string exceedKey)
+        {
+            var total = (lines ?? Array.Empty<T>()).Sum(amount);
+            return Validation.Check.Valid(lines ?? Array.Empty<T>(),
+                new Field<IReadOnlyCollection<T>>(x => x, "", Name: "Lines", Must: _ => total <= limit, Message: exceedKey,
+                    Args: _ => new object[] { total, limit }));
+        }
     }
 }

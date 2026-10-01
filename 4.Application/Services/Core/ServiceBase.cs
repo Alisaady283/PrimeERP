@@ -2,6 +2,7 @@ using PrimeERP.Application.Validation;
 using PrimeERP.Data.Core;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Domain.Enums;
@@ -58,6 +59,16 @@ namespace PrimeERP.Application.Services.Core
         protected T Setting<T>(string key, T defaultValue = default) => Settings.Get(key, defaultValue);
 
         protected static string CurrentUser => AppSession.Username ?? "Admin";
+
+        /// <summary>صفحةٌ لا تتجاوز حجمها</summary>
+        protected static PagedResult<TOut> Paged<TIn, TOut>(List<TIn> items, int total, int page, int pageSize,
+            Func<List<TIn>, List<TOut>> map)
+        {
+            var cut = pageSize > 0 && items.Count > pageSize
+                ? items.Skip(Math.Max(0, page - 1) * pageSize).Take(pageSize).ToList()
+                : items;
+            return new PagedResult<TOut> { Items = map(cut), TotalCount = total, Page = page, PageSize = pageSize };
+        }
 
 
 

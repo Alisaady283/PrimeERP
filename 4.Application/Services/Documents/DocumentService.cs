@@ -53,7 +53,7 @@ namespace PrimeERP.Application.Services.Documents
             if (!CanDo("View")) return FailDenied<PagedResult<TRow>>();
 
             var (items, total) = FindPage(page, pageSize, filter);
-            return Ok(new PagedResult<TRow> { Items = ToRows(items), Page = page, PageSize = pageSize, TotalCount = total });
+            return Ok(Paged(items, total, page, pageSize, ToRows));
         }
 
         public Result<TDetail> GetById(int id)

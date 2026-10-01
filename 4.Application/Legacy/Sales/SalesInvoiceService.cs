@@ -37,19 +37,18 @@ namespace PrimeERP.Application.Legacy.Sales
         private readonly IInvoiceRepository<SalesInvoice, SalesInvoiceLine> _invoices;
         private readonly IProductRepository _products;
         private readonly IPartyRepository<Customer> _customers;
-        private readonly IJournalRepository _ledger;
         private readonly ILookupRepository<Warehouse> _warehouses;
         private readonly IStockMove _stock;
         private readonly INumberSequenceService _numbers;
 
         public SalesInvoiceService(IInvoiceRepository<SalesInvoice, SalesInvoiceLine> invoices, IProductRepository products,
-            IPartyRepository<Customer> customers, IJournalRepository ledger, ILookupRepository<Warehouse> warehouses, IStockMove stock,
+            IPartyRepository<Customer> customers, ILookupRepository<Warehouse> warehouses, IStockMove stock,
             Entries journal, INumberSequenceService numbers, IDocumentPull links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
             AccountOf accountOf)
             : base(permissions, settings, localization, audit, links, journal)
         {
-            _invoices = invoices; _products = products; _customers = customers; _ledger = ledger; _warehouses = warehouses;
+            _invoices = invoices; _products = products; _customers = customers; _warehouses = warehouses;
             _stock = stock; _numbers = numbers; _accountOf = accountOf;
         }
 
@@ -72,13 +71,13 @@ namespace PrimeERP.Application.Legacy.Sales
         protected override List<SalesInvoiceDto> ToRows(List<SalesInvoice> heads)
         {
             var names = _customers.NamesOf(heads.Select(x => x.CustomerId));
-            var warehouses = Warehouses();
+            var warehouses = _warehouses.NamesOf(heads.Select(x => x.WarehouseId ?? 0));
             return heads.Select(x => ToDto<SalesInvoiceDto>(x, names, warehouses)).ToList();
         }
 
         protected override SalesInvoiceDetailDto ToDetail(SalesInvoice head)
         {
-            var detail = ToDto<SalesInvoiceDetailDto>(head, _customers.NamesOf(new[] { head.CustomerId }), Warehouses());
+            var detail = ToDto<SalesInvoiceDetailDto>(head, _customers.NamesOf(new[] { head.CustomerId }), _warehouses.NamesOf(new[] { head.WarehouseId ?? 0 }));
             detail.Lines = TradeLines.ToDtos<SalesInvoiceLineDto>(_invoices.GetLines(head.Id));
             return detail;
         }
@@ -113,7 +112,6 @@ namespace PrimeERP.Application.Legacy.Sales
                 // تكلفة الصرف من متوسط اللحظة
                 var costs = _stock.GetIssueCosts(db, lines.Select(x => (x.ProductId, x.Qty)).ToList());
                 if (costs.IsFailure) throw new InvalidOperationException(costs.ErrorMessage);
-                var totalCost = costs.Value.Sum();
 
                 var inserted = new List<(IPullableLine Line, int TargetLineId, decimal Qty)>();
                 for (int i = 0; i < lines.Count; i++)
@@ -123,17 +121,16 @@ namespace PrimeERP.Application.Legacy.Sales
 
                     var moveResult = simplifiedFlow
                         ? _stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.Out, line.Qty,
-                            InventoryCosting.UnitCostOf(costs.Value[i], line.Qty), "SalesInvoice", id, invoiceNo, dto.InvoiceDate)
+                            InventoryCosting.UnitCostOf(costs.Value.Lines[i], line.Qty), "SalesInvoice", id, invoiceNo, dto.InvoiceDate)
                         : Result.Ok();
                     if (moveResult.IsFailure) throw new InvalidOperationException(moveResult.ErrorMessage);
                 }
 
                 Links.RecordPulls(db, EntityName, id, inserted);
 
-                var journalLines = TradeEntry.Lines(true, partyAccount.Value, accounts.Main, accounts.Vat, accounts.Withholding, totals, accounts.Cogs, accounts.Inventory, totalCost);
+                var journalLines = TradeEntry.Lines(true, partyAccount.Value, accounts.Main, accounts.Vat, accounts.Withholding, totals, accounts.Cogs, accounts.Inventory, costs.Value.Total);
                 _invoices.SetJournalEntryId(db, id, Posting.Entry(Journals, db, dto.InvoiceDate, Msg("EntryDescription", invoiceNo),
                     nameof(JournalSource.Sales), journalLines));
-                PartyBalance.Refresh(_customers, _ledger, db, dto.CustomerId);
                 return id;
             });
         }
@@ -144,11 +141,7 @@ namespace PrimeERP.Application.Legacy.Sales
             _stock.RemoveMovements(db, "SalesInvoice", head.Id);
             Links.RemovePull(EntityName, head.Id, db);
             _invoices.DeleteDocument(db, head.Id);
-            PartyBalance.Refresh(_customers, _ledger, db, head.CustomerId);
         }
-
-        private IReadOnlyDictionary<int, string> Warehouses() =>
-            _warehouses.GetAll(true).ToDictionary(w => w.Id, w => w.Name);
 
         private T ToDto<T>(SalesInvoice i, IReadOnlyDictionary<int, string> names, IReadOnlyDictionary<int, string> warehouses)
             where T : SalesInvoiceDto, new() => Rows.Copy<T>(i, new(), to =>

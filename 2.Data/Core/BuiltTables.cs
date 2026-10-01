@@ -108,7 +108,7 @@ namespace PrimeERP.Data.Core
 
             foreach (var c in columns.Where(c => c.Aggregate == BuilderAggregate.None))
                 operation.Columns.Add(Column(c.Name, BuiltTables.ClrTypeOf(c.DataType, c.IsRequired), !c.IsRequired,
-                                             max: c.MaxLength));
+                                             max: c.MaxLength > 0 ? c.MaxLength : null));
 
             foreach (var (name, clr) in new (string, Type)[]
                      {

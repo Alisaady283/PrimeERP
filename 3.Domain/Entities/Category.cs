@@ -1,7 +1,9 @@
+using PrimeERP.Domain.Entities.Common;
+
 namespace PrimeERP.Domain.Entities
 {
     /// <summary>كيان Category</summary>
-    public class Category
+    public class Category : IEntity
     {
         public int    Id        { get; set; }
         public string Name      { get; set; }

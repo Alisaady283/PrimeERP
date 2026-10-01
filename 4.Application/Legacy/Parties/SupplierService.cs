@@ -25,14 +25,7 @@ namespace PrimeERP.Application.Legacy.Parties
         protected override string SequenceKey => "Supplier";
         protected override string AccountSettingKey => SettingKeys.Accounts.Suppliers;
 
-        public static readonly Field<Supplier>[] Rules =
-        {
-            new(x => x.Code, "Str.Field.SupplierCode", Required: true),
-            new(x => x.Name, "Str.Field.SupplierName", Required: true, Max: 150),
-            new(x => x.Phone, "Str.Field.Phone", Format: FieldFormat.Phone),
-            new(x => x.Email, "Str.Email", Format: FieldFormat.Email),
-            new(x => x.CreditLimit, "Str.CreditLimit", From: 0),
-        };
+        public static readonly Field<Supplier>[] Rules = RulesOf("Str.Field.SupplierCode", "Str.Field.SupplierName");
 
         protected override Field<Supplier>[] Fields => Rules;
 
@@ -44,8 +37,8 @@ namespace PrimeERP.Application.Legacy.Parties
 
         public SupplierService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
             Statement statement, INumberSequenceService numbers, IPartyRepository<Supplier> suppliers,
-            IJournalRepository journalRepo, Cheques.IChequeService cheques, AccountCases tree)
-            : base(permissions, settings, localization, audit, statement, numbers, journalRepo, tree)
+            AccountBalances balances, Cheques.IChequeService cheques, AccountCases tree)
+            : base(permissions, settings, localization, audit, statement, numbers, balances, tree)
         {
             _suppliers = suppliers;
             _cheques = cheques;

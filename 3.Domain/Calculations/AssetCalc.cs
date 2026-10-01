@@ -6,7 +6,14 @@ namespace PrimeERP.Domain.Calculations
         public static decimal PerMonth(decimal cost, decimal salvage, int usefulLifeYears) =>
             usefulLifeYears <= 0 ? 0 : (cost - salvage) / (usefulLifeYears * 12);
 
+        /// <summary>قيمة التقييم وإلا التكلفة</summary>
+        public static decimal Basis(decimal revalued, decimal purchase) => revalued > 0 ? revalued : purchase;
+
         public static decimal BookValue(decimal cost, decimal accumulated) => cost - accumulated;
+
+        /// <summary>القيمة الحالية للأصل</summary>
+        public static decimal CurrentValue(decimal revalued, decimal purchase, decimal accumulated) =>
+            BookValue(Basis(revalued, purchase), accumulated);
 
         public static decimal BookValue(PrimeERP.Domain.Entities.AssetDisposal d) => BookValue(d.AssetValue, d.AccumulatedDepreciation);
 

@@ -35,18 +35,17 @@ namespace PrimeERP.Application.Legacy.Sales
         private readonly IReturnRepository<SalesReturn, SalesReturnLine> _returns;
         private readonly IProductRepository _products;
         private readonly IPartyRepository<Customer> _customers;
-        private readonly IJournalRepository _ledger;
         private readonly IStockMove _stock;
         private readonly INumberSequenceService _numbers;
 
         public SalesReturnService(IReturnRepository<SalesReturn, SalesReturnLine> returns, IProductRepository products,
-            IPartyRepository<Customer> customers, IJournalRepository ledger, IStockMove stock, Entries journal,
+            IPartyRepository<Customer> customers, IStockMove stock, Entries journal,
             INumberSequenceService numbers, IDocumentPull links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
             AccountOf accountOf)
             : base(permissions, settings, localization, audit, links, journal)
         {
-            _returns = returns; _products = products; _customers = customers; _ledger = ledger;
+            _returns = returns; _products = products; _customers = customers;
             _stock = stock; _numbers = numbers; _accountOf = accountOf;
         }
 
@@ -105,22 +104,18 @@ namespace PrimeERP.Application.Legacy.Sales
                     to.NetTotal = totals.Net;
                 }));
 
-                // تكلفة صرفه الأصلية
-                decimal totalCost = 0;
+                var costs = _stock.GetReturnCosts(db, "SalesInvoice",
+                    lines.Select((line, i) => (line.ProductId, line.Qty, dto.Lines[i].SourceId, dto.Lines[i].SourceLineId)).ToList(), simplifiedFlow);
+
                 var inserted = new List<(IPullableLine Line, int TargetLineId, decimal Qty)>();
                 for (int i = 0; i < lines.Count; i++)
                 {
                     var line = lines[i];
                     var source = dto.Lines[i];
 
-                    var unitCost =
-                        (source.SourceLineId > 0 ? _stock.SourceUnitCost(db, "SalesInvoice", source.SourceId, line.ProductId) : null)
-                        ?? _stock.CurrentUnitCost(db, line.ProductId);
-                    totalCost += line.Qty * unitCost;
-
                     inserted.Add((source, _returns.InsertLine(db, id, line), line.Qty));
                     var moveResult = simplifiedFlow
-                        ? _stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, unitCost,
+                        ? _stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, costs.UnitCosts[i],
                             "SalesReturn", id, returnNo, dto.ReturnDate)
                         : Result.Ok();
                     if (moveResult.IsFailure) throw new InvalidOperationException(moveResult.ErrorMessage);
@@ -128,10 +123,9 @@ namespace PrimeERP.Application.Legacy.Sales
 
                 Links.RecordPulls(db, EntityName, id, inserted);
 
-                var journalLines = TradeEntry.Lines(false, partyAccount.Value, accounts.Main, accounts.Vat, accounts.Withholding, totals, accounts.Cogs, accounts.Inventory, totalCost);
+                var journalLines = TradeEntry.Lines(false, partyAccount.Value, accounts.Main, accounts.Vat, accounts.Withholding, totals, accounts.Cogs, accounts.Inventory, costs.Total);
                 _returns.SetJournalEntryId(db, id, Posting.Entry(Journals, db, dto.ReturnDate, Msg("EntryDescription", returnNo),
                     nameof(JournalSource.Sales), journalLines));
-                PartyBalance.Refresh(_customers, _ledger, db, dto.CustomerId);
                 return id;
             });
         }
@@ -142,7 +136,6 @@ namespace PrimeERP.Application.Legacy.Sales
             _stock.RemoveMovements(db, "SalesReturn", head.Id);
             Links.RemovePull(EntityName, head.Id, db);
             _returns.DeleteDocument(db, head.Id);
-            PartyBalance.Refresh(_customers, _ledger, db, head.CustomerId);
         }
 
         private static T ToDto<T>(SalesReturn r, IReadOnlyDictionary<int, string> names) where T : SalesReturnDto, new() => Rows.Copy<T>(r, new(), to =>

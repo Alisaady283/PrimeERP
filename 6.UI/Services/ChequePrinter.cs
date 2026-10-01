@@ -10,7 +10,7 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using PrimeERP.Domain.Results;
 
-namespace PrimeERP.Application.Legacy.Print
+namespace PrimeERP.UI.Services
 {
     /// <summary>حقل على ورق الشيك بموضع</summary>
     public record ChequeField

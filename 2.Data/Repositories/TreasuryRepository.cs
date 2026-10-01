@@ -13,6 +13,7 @@ namespace PrimeERP.Data.Repositories
     public interface ITreasuryRepository
     {
         List<Treasury> GetAll(bool includeInactive = false);
+        List<Treasury> Search(string term, int maxResults);
         Treasury GetById(int id, PrimeDbContext db = null);
         Dictionary<int, string> NamesOf(IEnumerable<int> ids, PrimeDbContext db = null);
         int Insert(Treasury t, PrimeDbContext db = null);
@@ -20,7 +21,6 @@ namespace PrimeERP.Data.Repositories
         void Delete(int id, PrimeDbContext db = null);
         Treasury GetByAccountCode(string accountCode, PrimeDbContext db = null);
         void UpdateNameByAccountCode(PrimeDbContext db, string accountCode, string name);
-        void DeleteByAccountCode(PrimeDbContext db, string accountCode);
     }
 
     public class TreasuryRepository : RepositoryBase<Treasury>, ITreasuryRepository
@@ -30,6 +30,9 @@ namespace PrimeERP.Data.Repositories
 
         public List<Treasury> GetAll(bool includeInactive = false) =>
             Fetch(q => q.Where(t => includeInactive || t.IsActive).OrderBy(t => t.Code));
+
+        public List<Treasury> Search(string term, int maxResults) =>
+            Fetch(q => q.Where(t => t.IsActive && EF.Functions.Like(t.Name, $"%{term}%")).OrderBy(t => t.Code).Take(maxResults));
 
 
         public Treasury GetByAccountCode(string accountCode, PrimeDbContext db = null) =>
@@ -51,9 +54,6 @@ namespace PrimeERP.Data.Repositories
 
         public void UpdateNameByAccountCode(PrimeDbContext db, string accountCode, string name) =>
             Set(t => t.AccountCode == (accountCode ?? ""), s => s.SetProperty(r => r.Name, name ?? ""), db);
-
-        public void DeleteByAccountCode(PrimeDbContext db, string accountCode) =>
-            Set(t => t.AccountCode == (accountCode ?? ""), s => s.SetProperty(r => r.IsActive, false), db);
 
         public void Delete(int id, PrimeDbContext db = null) =>
             Set(t => t.Id == id, s => s.SetProperty(r => r.IsActive, false), db);

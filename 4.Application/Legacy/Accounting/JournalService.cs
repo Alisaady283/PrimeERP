@@ -69,7 +69,7 @@ namespace PrimeERP.Application.Legacy.Accounting
             if (created.IsFailure) return created.As<JournalEntryDto>();
 
             Audit.Log(EntityName, created.Value.Id, AuditAction.Insert, details: Msg("CreatedLog", created.Value.EntryNo, dto.Lines.Count));
-            return Result.Ok(Draft(created.Value.Id, created.Value.EntryNo, dto));
+            return Result.Ok(Row(_journal.GetById(created.Value.Id), dto.Lines.Count, _periods.GetAllPeriods()));
         }
 
         public Result Update(CreateJournalDto dto) => UpdateOwned(dto, null);
@@ -178,11 +178,7 @@ namespace PrimeERP.Application.Legacy.Accounting
             var counts = _journal.GetLineCounts(items.Select(e => e.Id));
             var periods = _periods.GetAllPeriods();
 
-            return new PagedResult<JournalEntryDto>
-            {
-                Items = items.Select(e => Row(e, counts.GetValueOrDefault(e.Id), periods)).ToList(),
-                TotalCount = total, Page = page, PageSize = pageSize
-            };
+            return Paged(items, total, page, pageSize, rows => rows.Select(e => Row(e, counts.GetValueOrDefault(e.Id), periods)).ToList());
         }
 
         private JournalEntryDetailDto Detail(JournalEntry e)
@@ -191,28 +187,6 @@ namespace PrimeERP.Application.Legacy.Accounting
             var accounts = _accountRepo.GetByCodes(lines.Select(l => l.AccountCode)).ToDictionary(a => a.Code);
             return Rows.Copy(Row(e, lines.Count, _periods.GetAllPeriods()),
                 new JournalEntryDetailDto { Lines = lines.Select(l => Line(l, accounts)).ToList() });
-        }
-
-        private JournalEntryDto Draft(int id, string entryNo, CreateJournalDto dto)
-        {
-            var source = Entries.NormalizeSource(dto.Source);
-            var (debit, credit) = (dto.Lines.Sum(l => l.Debit), dto.Lines.Sum(l => l.Credit));
-            return Rows.Copy(dto, new JournalEntryDto(), row =>
-            {
-                row.Id = id;
-                row.EntryNo = entryNo;
-                row.TotalDebit = debit;
-                row.TotalCredit = credit;
-                row.Source = source;
-                row.SourceText = SourceText(source);
-                row.StatusVariant = StatusVariant.Warning;
-                row.StatusText = Msg("Status.Draft");
-                row.CreatedAt = DateTime.Now;
-                row.LinesCount = dto.Lines.Count;
-                row.CanEdit = true;
-                row.CanDelete = true;
-                row.CanPost = Can("Post");
-            });
         }
 
         private JournalEntryDto Row(JournalEntry e, int linesCount, List<FiscalPeriod> periods)

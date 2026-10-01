@@ -35,18 +35,17 @@ namespace PrimeERP.Application.Legacy.Purchasing
         private readonly IReturnRepository<PurchaseReturn, PurchaseReturnLine> _returns;
         private readonly IProductRepository _products;
         private readonly IPartyRepository<Supplier> _suppliers;
-        private readonly IJournalRepository _ledger;
         private readonly IStockMove _stock;
         private readonly INumberSequenceService _numbers;
 
         public PurchaseReturnService(IReturnRepository<PurchaseReturn, PurchaseReturnLine> returns, IProductRepository products,
-            IPartyRepository<Supplier> suppliers, IJournalRepository ledger, IStockMove stock, Entries journal,
+            IPartyRepository<Supplier> suppliers, IStockMove stock, Entries journal,
             INumberSequenceService numbers, IDocumentPull links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
             AccountOf accountOf)
             : base(permissions, settings, localization, audit, links, journal)
         {
-            _returns = returns; _products = products; _suppliers = suppliers; _ledger = ledger;
+            _returns = returns; _products = products; _suppliers = suppliers;
             _stock = stock; _numbers = numbers; _accountOf = accountOf;
         }
 
@@ -122,7 +121,6 @@ namespace PrimeERP.Application.Legacy.Purchasing
                 var journalLines = TradeEntry.Lines(true, partyAccount.Value, accounts.Inventory, accounts.Vat, accounts.Withholding, totals);
                 _returns.SetJournalEntryId(db, id, Posting.Entry(Journals, db, dto.ReturnDate, Msg("EntryDescription", returnNo),
                     nameof(JournalSource.Purchase), journalLines));
-                PartyBalance.Refresh(_suppliers, _ledger, db, dto.SupplierId);
                 return id;
             });
         }
@@ -133,7 +131,6 @@ namespace PrimeERP.Application.Legacy.Purchasing
             _stock.RemoveMovements(db, "PurchaseReturn", head.Id);
             Links.RemovePull(EntityName, head.Id, db);
             _returns.DeleteDocument(db, head.Id);
-            PartyBalance.Refresh(_suppliers, _ledger, db, head.SupplierId);
         }
 
         private static T ToDto<T>(PurchaseReturn r, IReadOnlyDictionary<int, string> names) where T : PurchaseReturnDto, new() => Rows.Copy<T>(r, new(), to =>

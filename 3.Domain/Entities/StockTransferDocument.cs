@@ -16,7 +16,7 @@ namespace PrimeERP.Domain.Entities
         public List<StockTransferLine> Lines { get; set; } = new();
     }
 
-    public class StockTransferLine
+    public class StockTransferLine : IProductLine
     {
         public int     Id          { get; set; }
         public int     DocumentId  { get; set; }
