@@ -52,6 +52,7 @@ namespace PrimeERP.App.Bootstrap
         public static IServiceCollection AddData(this IServiceCollection services)
         {
             services.AddSingleton<ISettingStore, SettingRepository>();
+            services.AddSingleton<ISettingRepository, SettingRepository>();
             services.AddSingleton<IPermissionStore, PermissionRepository>();
             services.AddSingleton<IAuditStore, AuditRepository>();
             services.AddSingleton<IAccountRepository, AccountRepository>();

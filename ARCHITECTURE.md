@@ -36,7 +36,7 @@ PrimeERP/
 
 **اتجاه الاعتماد**: من أعلى الرقم إلى أدناه فقط. `3.Domain` و `5.Design` لا تعتمدان على شيء. يفحصه `check.sh` آلياً.
 
-**عكس الاعتماد**: ما تحتاجه `1.Platform` من القاعدة تُعلنه عقداً عندها — `ISettingStore` و `IPermissionStore` و `IAuditStore` — وتنفّذه `2.Data/Repositories`، فلا تعرف الطبقة الأولى طبقةً أعلى منها.
+**عكس الاعتماد**: ما تحتاجه `1.Platform` من القاعدة تُعلنه عقداً عندها — `ISettingStore` و `IPermissionStore` و `IAuditStore` — وتنفّذه `2.Data/Repositories`، فلا تعرف الطبقة الأولى طبقةً أعلى منها. وما تحتاجه `2.Data` وحدها فوق العقد — قاعدةٌ مفتوحة لنسخةٍ أخرى — يمدّه عقدها (`ISettingRepository : ISettingStore`).
 
 ---
 

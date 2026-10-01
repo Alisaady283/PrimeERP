@@ -38,16 +38,18 @@ namespace PrimeERP.Application.Legacy.Admin
         private readonly IEditionRepository _edition;
         private readonly ILicenseRepository _licenses;
         private readonly IBackupRepository _backupRepo;
+        private readonly ISettingRepository _settingRows;
 
         public ProgramEditionService(IPermissionService permissions, ISettingsProvider settings,
             ILocalizationService localization, IAuditLogger audit,
             IEditionRepository edition, ILicenseRepository licenses,
-            IBackupRepository backupRepo)
+            IBackupRepository backupRepo, ISettingRepository settingRows)
             : base(permissions, settings, localization, audit)
         {
             _backupRepo = backupRepo;
             _edition = edition;
             _licenses = licenses;
+            _settingRows = settingRows;
         }
 
         public Result Create(CreateEditionDto edition, IProgress<EditionProgress> progress = null)
@@ -89,9 +91,8 @@ namespace PrimeERP.Application.Legacy.Admin
             using var connection = _edition.Open(databasePath);
             using var db = DbContextFactory.On(connection);
 
-            db.AppSettings.RemoveRange(db.AppSettings.Where(s => s.Key.StartsWith("Developer.")));
+            _settingRows.RemoveByPrefix(db, "Developer.");
             _licenses.Clear(db);
-            db.SaveChanges();
         }
 
         private void WriteEditionSettings(string databasePath, CreateEditionDto edition)
@@ -99,28 +100,11 @@ namespace PrimeERP.Application.Legacy.Admin
             using var connection = _edition.Open(databasePath);
             using var db = DbContextFactory.On(connection);
 
-            foreach (var (key, value) in new Dictionary<string, string>
+            _settingRows.UpsertMany(new[]
             {
-                [SettingKeys.UI.Manifest] = string.Join(",", edition.ModuleKeys),
-                [SettingKeys.Documents.SimplifiedFlow] = edition.Simplified ? "true" : "false"
-            })
-            {
-                var row = db.AppSettings.FirstOrDefault(s => s.Key == key);
-                if (row == null)
-                    db.AppSettings.Add(new AppSetting
-                    {
-                        Key = key, Value = value, Category = "UI", DataType = "string",
-                        IsSystem = true, ModifiedBy = AppSession.Username, ModifiedAt = DateTime.Now
-                    });
-                else
-                {
-                    row.Value = value;
-                    row.ModifiedBy = AppSession.Username;
-                    row.ModifiedAt = DateTime.Now;
-                }
-            }
-
-            db.SaveChanges();
+                SettingsProvider.BuildRecord(SettingKeys.UI.Manifest, string.Join(",", edition.ModuleKeys), null),
+                SettingsProvider.BuildRecord(SettingKeys.Documents.SimplifiedFlow, edition.Simplified, null)
+            }, db);
         }
 
         /// <summary>شروط النسخة المنشأة</summary>

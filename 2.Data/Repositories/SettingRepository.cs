@@ -8,8 +8,15 @@ using PrimeERP.Platform.Settings;
 
 namespace PrimeERP.Data.Repositories
 {
+    /// <summary>الإعدادات في قاعدةٍ مفتوحة</summary>
+    public interface ISettingRepository : ISettingStore
+    {
+        void UpsertMany(IEnumerable<AppSetting> settings, PrimeDbContext db);
+        void RemoveByPrefix(PrimeDbContext db, string prefix);
+    }
+
     /// <summary>مستودع AppSettings</summary>
-    public class SettingRepository : RepositoryBase<AppSetting>, ISettingStore
+    public class SettingRepository : RepositoryBase<AppSetting>, ISettingRepository
     {
         protected override string TableName => "AppSettings";
 
@@ -24,12 +31,17 @@ namespace PrimeERP.Data.Repositories
 
 
 
-        public void UpsertMany(IEnumerable<AppSetting> settings) =>
-            Write(db =>
+        public void UpsertMany(IEnumerable<AppSetting> settings) => UpsertMany(settings, null);
+
+        public void UpsertMany(IEnumerable<AppSetting> settings, PrimeDbContext db) =>
+            Write(ctx =>
             {
-                foreach (var setting in settings) Apply(db, setting);
+                foreach (var setting in settings) Apply(ctx, setting);
                 return 0;
-            });
+            }, db);
+
+        public void RemoveByPrefix(PrimeDbContext db, string prefix) =>
+            Remove(s => s.Key.StartsWith(prefix), db);
 
         public void InsertIfMissing(AppSetting setting) =>
             Write(db =>
