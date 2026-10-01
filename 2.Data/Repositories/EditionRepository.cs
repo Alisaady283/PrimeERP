@@ -1,6 +1,7 @@
 using System;
 using System.Data.Common;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using PrimeERP.Data.Core;
@@ -18,6 +19,9 @@ namespace PrimeERP.Data.Repositories
 
     public class EditionRepository : IEditionRepository
     {
+        /// <summary>ما ليس من البرنامج</summary>
+        private static readonly string[] NotProgram = { ".pdb", ".db", ".bak", ".log" };
+
         public DbConnection Open(string databasePath)
         {
             var connection = new Microsoft.Data.Sqlite.SqliteConnection(
@@ -40,7 +44,7 @@ namespace PrimeERP.Data.Repositories
 
             for (var i = 0; i < files.Length; i++)
             {
-                if (!Path.GetExtension(files[i]).Equals(".pdb", StringComparison.OrdinalIgnoreCase))
+                if (!NotProgram.Contains(Path.GetExtension(files[i]), StringComparer.OrdinalIgnoreCase))
                     File.Copy(files[i], Path.Combine(target, Path.GetRelativePath(source, files[i])), overwrite: true);
 
                 var percent = (int)((i + 1) * share / files.Length);
