@@ -51,8 +51,11 @@ namespace PrimeERP.Data.Core
                 var live = Columns(db, table.Name);
                 if (live == null) { operations.Add(table); created.Add(table.Name); continue; }
 
-                foreach (var column in table.Columns.Where(c => !live.Contains(c.Name)))
+                foreach (var column in table.Columns.Where(c => !live.ContainsKey(c.Name)))
                     operations.Add(Added(column));
+
+                foreach (var column in table.Columns.Where(c => !c.IsNullable && live.TryGetValue(c.Name, out var nullable) && nullable))
+                    if (Filled(db, column) is { } filled) operations.Add(filled);
             }
 
             operations.AddRange(blueprint.OfType<CreateIndexOperation>().Where(i => created.Contains(i.Table)));
@@ -60,17 +63,41 @@ namespace PrimeERP.Data.Core
         }
 
         /// <summary>عمودٌ يُضاف لجدولٍ فيه صفوف</summary>
-        private static AddColumnOperation Added(AddColumnOperation column) => new()
+        private static AddColumnOperation Added(AddColumnOperation column)
         {
-            Table = column.Table, Name = column.Name, ClrType = column.ClrType,
-            ColumnType = column.ColumnType, MaxLength = column.MaxLength,
-            Precision = column.Precision, Scale = column.Scale,
-            DefaultValue = column.DefaultValue, DefaultValueSql = column.DefaultValueSql,
-            IsNullable = column.IsNullable || column.DefaultValue == null && column.DefaultValueSql == null,
-        };
+            var fill = column.IsNullable || column.DefaultValueSql != null ? column.DefaultValue : column.DefaultValue ?? Empty(column.ClrType);
+            return new()
+            {
+                Table = column.Table, Name = column.Name, ClrType = column.ClrType,
+                ColumnType = column.ColumnType, MaxLength = column.MaxLength,
+                Precision = column.Precision, Scale = column.Scale,
+                DefaultValue = fill, DefaultValueSql = column.DefaultValueSql,
+                IsNullable = column.IsNullable || fill == null && column.DefaultValueSql == null,
+            };
+        }
 
-        /// <summary>أعمدة الجدول من وصف القارئ</summary>
-        private static HashSet<string> Columns(PrimeDbContext db, string table)
+        /// <summary>فراغٌ لا يقبله النموذج</summary>
+        private static SqlOperation Filled(PrimeDbContext db, AddColumnOperation column)
+        {
+            if (column.IsRowVersion || column.ComputedColumnSql != null) return null;
+
+            var fill = column.DefaultValue ?? Empty(column.ClrType);
+            var mapping = fill == null ? null : db.GetService<IRelationalTypeMappingSource>().FindMapping(fill.GetType());
+            if (mapping == null) return null;
+
+            var name = Quote(db, column.Name);
+            return new SqlOperation
+            {
+                Sql = $"UPDATE {Quote(db, column.Table)} SET {name} = {mapping.GenerateSqlLiteral(fill)} WHERE {name} IS NULL"
+            };
+        }
+
+        /// <summary>قيمة النوع الفارغة</summary>
+        private static object Empty(Type type) =>
+            type == typeof(string) ? "" : type.IsValueType ? Activator.CreateInstance(type) : null;
+
+        /// <summary>أعمدة الجدول وقبولها الفراغ</summary>
+        private static Dictionary<string, bool> Columns(PrimeDbContext db, string table)
         {
             using var command = db.Database.GetDbConnection().CreateCommand();
             command.CommandText = $"SELECT * FROM {Quote(db, table)} WHERE 1 = 0";
@@ -78,9 +105,18 @@ namespace PrimeERP.Data.Core
             try
             {
                 using var reader = command.ExecuteReader(CommandBehavior.SchemaOnly);
-                var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                for (var i = 0; i < reader.FieldCount; i++) names.Add(reader.GetName(i));
-                return names;
+                var columns = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+                for (var i = 0; i < reader.FieldCount; i++) columns[reader.GetName(i)] = true;
+
+                try
+                {
+                    foreach (DataRow row in reader.GetSchemaTable()?.Rows ?? new DataTable().Rows)
+                        if (row["ColumnName"] is string name && row["AllowDBNull"] is bool allows && columns.ContainsKey(name))
+                            columns[name] = allows;
+                }
+                catch { }
+
+                return columns;
             }
             catch { return null; }
         }
