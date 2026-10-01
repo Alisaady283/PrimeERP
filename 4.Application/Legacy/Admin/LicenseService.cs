@@ -100,10 +100,11 @@ namespace PrimeERP.Application.Legacy.Admin
             if (license == null) return Result.Fail(Msg("LicenseNotFound"), ErrorCode.NotFound);
 
             license.Manifest = string.Join(",", moduleKeys ?? new List<string>());
-            _repo.Update(license);
 
             var published = Publish(license);
             if (published.IsFailure) return published;
+
+            _repo.Update(license);
 
             Audit.Log(EntityName, id, AuditAction.Update, newValue: new { pages = moduleKeys?.Count ?? 0 });
 
