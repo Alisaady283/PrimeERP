@@ -66,10 +66,6 @@ namespace PrimeERP.Application.Legacy.Builder
 
         protected override IDictionary<string, object> ToDto(TEntity entity) => Rows.Of(entity);
 
-
-        public Result<PagedResult<IDictionary<string, object>>> GetPaged(int page, int pageSize, DynamicFilter filter) =>
-            base.GetPaged(page, pageSize, filter);
-
         /// <summary>تحقّق الوصف قبل كتابته</summary>
         protected virtual Result Validate(IDictionary<string, object> values) => Result.Ok();
 
