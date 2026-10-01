@@ -304,7 +304,6 @@
     <sys:String x:Key="Str.Builder.FullCycle">Full cycle</sys:String>
     <sys:String x:Key="Str.Builder.CreateProgram">Create program</sys:String>
     <sys:String x:Key="Str.Builder.ChooseFolder">Choose the edition folder</sys:String>
-    <sys:String x:Key="Str.Builder.EditionNote">Program edition</sys:String>
     <sys:String x:Key="Str.Builder.Creating">Creating the program…</sys:String>
     <sys:String x:Key="Str.Builder.CopyingFiles">Copying program files</sys:String>
     <sys:String x:Key="Str.Builder.CopyingDatabase">Copying the database</sys:String>

@@ -18,6 +18,7 @@ namespace PrimeERP.Data.Repositories
         BackupHistoryRecord GetById(int id, PrimeDbContext db = null);
         int Insert(BackupHistoryRecord record);
         BackupHistoryRecord Snapshot(string folder, string note, BackupType type);
+        string CopyInto(string folder);
         int Insert(PrimeDbContext db, BackupHistoryRecord record);
         void Delete(int id);
         void DeleteOlderThan(DateTime cutoff);
@@ -147,18 +148,24 @@ namespace PrimeERP.Data.Repositories
 
         public int Insert(BackupHistoryRecord record) => Insert(null, record);
 
-        /// <summary>نسخة القاعدة وسجلّها</summary>
-        public BackupHistoryRecord Snapshot(string folder, string note, BackupType type)
+        /// <summary>نسخة القاعدة في مجلّد</summary>
+        public string CopyInto(string folder)
         {
             System.IO.Directory.CreateDirectory(folder);
 
-            var fileName = $"PrimeERP_{DateTime.Now:yyyyMMdd_HHmmss}{FileExtension}";
-            var path = System.IO.Path.Combine(folder, fileName);
+            var path = System.IO.Path.Combine(folder, $"PrimeERP_{DateTime.Now:yyyyMMdd_HHmmss}{FileExtension}");
             CopyTo(path);
+            return path;
+        }
+
+        /// <summary>نسخة القاعدة وسجلّها</summary>
+        public BackupHistoryRecord Snapshot(string folder, string note, BackupType type)
+        {
+            var path = CopyInto(folder);
 
             var record = new BackupHistoryRecord
             {
-                FileName = fileName, FilePath = path, SizeBytes = new System.IO.FileInfo(path).Length, CreatedAt = DateTime.Now,
+                FileName = System.IO.Path.GetFileName(path), FilePath = path, SizeBytes = new System.IO.FileInfo(path).Length, CreatedAt = DateTime.Now,
                 Note = note, BackupType = type, DatabaseProvider = DbConfig.Current.Provider.ToString(), IsValid = true
             };
             record.Id = Insert(record);

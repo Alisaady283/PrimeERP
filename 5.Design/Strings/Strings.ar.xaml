@@ -304,7 +304,6 @@
     <sys:String x:Key="Str.Builder.FullCycle">الدورة الكاملة</sys:String>
     <sys:String x:Key="Str.Builder.CreateProgram">إنشاء البرنامج</sys:String>
     <sys:String x:Key="Str.Builder.ChooseFolder">اختر مجلد النسخة</sys:String>
-    <sys:String x:Key="Str.Builder.EditionNote">نسخة برنامج</sys:String>
     <sys:String x:Key="Str.Builder.Creating">جارٍ إنشاء البرنامج…</sys:String>
     <sys:String x:Key="Str.Builder.CopyingFiles">نسخ ملفات البرنامج</sys:String>
     <sys:String x:Key="Str.Builder.CopyingDatabase">نسخ قاعدة البيانات</sys:String>

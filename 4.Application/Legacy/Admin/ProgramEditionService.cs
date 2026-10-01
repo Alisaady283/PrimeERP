@@ -66,12 +66,12 @@ namespace PrimeERP.Application.Legacy.Admin
                 _edition.CopyProgram(source, target, FilesShare, percent => progress?.Report(new EditionProgress(percent, stage)));
 
                 progress?.Report(new EditionProgress(FilesShare, Msg("CopyingDatabase")));
-                var copied = _backupRepo.Snapshot(target, Msg("EditionNote"), BackupType.Manual);
+                var database = _backupRepo.CopyInto(target);
 
                 progress?.Report(new EditionProgress(FilesShare + DatabaseShare, Msg("WritingManifest")));
-                StripDeveloperData(copied.FilePath);
-                WriteEditionSettings(copied.FilePath, edition);
-                _edition.PointAtDatabase(Path.Combine(target, "appsettings.json"), copied.FilePath);
+                StripDeveloperData(database);
+                WriteEditionSettings(database, edition);
+                _edition.PointAtDatabase(Path.Combine(target, "appsettings.json"), database);
 
                 Audit.Log(EntityName, 0, AuditAction.Insert,
                     newValue: new { target, edition.Simplified, pages = edition.ModuleKeys.Count });
