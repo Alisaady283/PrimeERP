@@ -320,6 +320,7 @@
     <sys:String x:Key="Str.Backup.CreateNow">Create Backup Now</sys:String>
     <sys:String x:Key="Str.Backup.Restore">Restore</sys:String>
     <sys:String x:Key="Str.Backup.RestoreConfirm">This will replace the current database with this backup. Are you sure?</sys:String>
+    <sys:String x:Key="Str.Backup.RestoredRestart">Restore complete. The program will now close; reopen it to work on the restored database.</sys:String>
     <sys:String x:Key="Str.Report.Run">Run Report</sys:String>
     <sys:String x:Key="Str.DateFrom">From Date</sys:String>
     <sys:String x:Key="Str.DateTo">To Date</sys:String>

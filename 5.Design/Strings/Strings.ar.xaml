@@ -320,6 +320,7 @@
     <sys:String x:Key="Str.Backup.CreateNow">إنشاء نسخة الآن</sys:String>
     <sys:String x:Key="Str.Backup.Restore">استعادة</sys:String>
     <sys:String x:Key="Str.Backup.RestoreConfirm">سيتم استبدال قاعدة البيانات الحالية بهذه النسخة. هل أنت متأكد؟</sys:String>
+    <sys:String x:Key="Str.Backup.RestoredRestart">تمت الاستعادة. سيُغلق البرنامج الآن، فأعد فتحه ليعمل على القاعدة المستعادة.</sys:String>
     <sys:String x:Key="Str.Report.Run">تشغيل التقرير</sys:String>
     <sys:String x:Key="Str.DateFrom">من تاريخ</sys:String>
     <sys:String x:Key="Str.DateTo">إلى تاريخ</sys:String>

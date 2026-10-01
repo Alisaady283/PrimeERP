@@ -185,12 +185,16 @@ namespace PrimeERP.Composition.Renderers
                         var confirmed = await dialogs.ConfirmAsync(LocalizationService.Get("Str.Backup.Restore"), LocalizationService.Get("Str.Backup.RestoreConfirm"), isDangerous: true);
                         if (!confirmed) return;
 
-                        using var handle = dialogs.ShowProgress(LocalizationService.Get("Str.Backup.Restore"),
-                                                               LocalizationService.Get("Str.PleaseWait"));
-                        var result = await Task.Run(() => backup.Restore(b.FilePath));
+                        PrimeERP.Domain.Results.Result result;
+                        using (dialogs.ShowProgress(LocalizationService.Get("Str.Backup.Restore"),
+                                                    LocalizationService.Get("Str.PleaseWait")))
+                            result = await Task.Run(() => backup.Restore(b.FilePath));
 
-                        if (!result.IsSuccess) toast.Error(result.ErrorMessage);
-                        else toast.Success(LocalizationService.Get("Str.Success"));
+                        if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
+
+                        await dialogs.ShowMessageAsync(LocalizationService.Get("Str.Backup.Restore"),
+                            LocalizationService.Get("Str.Backup.RestoredRestart"), PrimeERP.Domain.Results.StatusVariant.Success);
+                        System.Windows.Application.Current.Shutdown();
                     };
 
                     Grid.SetColumn(text, 0);
