@@ -13,7 +13,6 @@ namespace PrimeERP.Application.Legacy.Backup
         Result Restore(string filePath);
         Result<bool> Validate(string filePath);
         List<BackupInfo> List(string folder = null);
-        Result Delete(string filePath);
 
         Result ApplyRetention(string folder, int keepCount);
 

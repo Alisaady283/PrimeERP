@@ -401,7 +401,6 @@
     <sys:String x:Key="Str.Backup.CreateFailed">Failed to create backup</sys:String>
     <sys:String x:Key="Str.Backup.SafetyBackupFailed">Failed to create the safety backup before restore — operation cancelled</sys:String>
     <sys:String x:Key="Str.Backup.RestoreFailed">Restore operation failed</sys:String>
-    <sys:String x:Key="Str.Backup.DeleteFailed">Failed to delete backup</sys:String>
     <sys:String x:Key="Str.Backup.RetentionFailed">Failed to apply the old-backups retention policy</sys:String>
 
     <sys:String x:Key="Str.Fiscal.YearCreated">Fiscal year created successfully</sys:String>

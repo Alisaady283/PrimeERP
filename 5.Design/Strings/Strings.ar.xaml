@@ -401,7 +401,6 @@
     <sys:String x:Key="Str.Backup.CreateFailed">فشل إنشاء النسخة الاحتياطية</sys:String>
     <sys:String x:Key="Str.Backup.SafetyBackupFailed">فشل إنشاء نسخة الأمان قبل الاستعادة — أُلغيت العملية</sys:String>
     <sys:String x:Key="Str.Backup.RestoreFailed">فشلت عملية الاستعادة</sys:String>
-    <sys:String x:Key="Str.Backup.DeleteFailed">فشل حذف النسخة الاحتياطية</sys:String>
     <sys:String x:Key="Str.Backup.RetentionFailed">فشل تطبيق سياسة الاحتفاظ بالنسخ القديمة</sys:String>
 
     <sys:String x:Key="Str.Fiscal.YearCreated">تم إنشاء السنة المالية بنجاح</sys:String>

@@ -118,28 +118,6 @@ namespace PrimeERP.Application.Legacy.Backup
                 .Select(ToInfo)
                 .ToList();
 
-        public Result Delete(string filePath)
-        {
-            if (!Can("Backup")) return Fail("PermissionDenied", ErrorCode.Unauthorized);
-
-            try
-            {
-                if (File.Exists(filePath))
-                    File.Delete(filePath);
-
-                var record = _repo.GetAll().FirstOrDefault(r => string.Equals(r.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
-                if (record != null)
-                    _repo.Delete(record.Id);
-
-                Audit.Log(EntityName, record?.Id ?? 0, AuditAction.Delete, details: Path.GetFileName(filePath));
-                return Result.Ok();
-            }
-            catch (Exception ex)
-            {
-                return Result.Fail($"{Msg("DeleteFailed")}: {ex.Message}", ErrorCode.Unexpected);
-            }
-        }
-
         public Result ApplyRetention(string folder, int keepCount)
         {
             try

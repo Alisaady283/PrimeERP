@@ -14,14 +14,12 @@ namespace PrimeERP.Data.Repositories
     public interface IBackupRepository
     {
         List<BackupHistoryRecord> GetAll(PrimeDbContext db = null);
-        List<BackupHistoryRecord> GetRecent(int count);
         BackupHistoryRecord GetById(int id, PrimeDbContext db = null);
         int Insert(BackupHistoryRecord record);
         BackupHistoryRecord Snapshot(string folder, string note, BackupType type);
         string CopyInto(string folder);
         int Insert(PrimeDbContext db, BackupHistoryRecord record);
         void Delete(int id);
-        void DeleteOlderThan(DateTime cutoff);
 
         BackupCapability Capability { get; }
         string FileExtension { get; }
@@ -158,9 +156,6 @@ namespace PrimeERP.Data.Repositories
         public override List<BackupHistoryRecord> GetAll(PrimeDbContext db = null) =>
             Fetch(q => q.OrderByDescending(b => b.CreatedAt), db);
 
-        public List<BackupHistoryRecord> GetRecent(int count) =>
-            Fetch(q => q.OrderByDescending(b => b.CreatedAt).Take(count));
-
         public int Insert(BackupHistoryRecord record) => Insert(null, record);
 
         /// <summary>نسخة القاعدة في مجلّد</summary>
@@ -191,8 +186,5 @@ namespace PrimeERP.Data.Repositories
 
         public void Delete(int id) =>
             Remove(b => b.Id == id);
-
-        public void DeleteOlderThan(DateTime cutoff) =>
-            Remove(b => b.CreatedAt < cutoff);
     }
 }
