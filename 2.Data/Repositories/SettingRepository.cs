@@ -27,6 +27,12 @@ namespace PrimeERP.Data.Repositories
         public List<AppSetting> GetByCategory(string category) =>
             Fetch(q => q.Where(s => s.Category == category));
 
+        public bool AnySystem(IEnumerable<string> keys)
+        {
+            var wanted = keys.ToList();
+            return Any(q => q.Where(s => s.IsSystem && wanted.Contains(s.Key)));
+        }
+
         public void Upsert(AppSetting setting) => Write(ctx => Apply(ctx, setting));
 
 

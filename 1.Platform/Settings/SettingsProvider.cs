@@ -34,14 +34,14 @@ namespace PrimeERP.Platform.Settings
 
         public void SetRaw<T>(string key, T value)
         {
-            _store.Upsert(BuildRecord(key, value, _store.GetByKey(key)));
+            _store.Upsert(BuildRecord(key, value));
             Reload();
             Changed?.Invoke(key);
         }
 
         public void SetManyRaw(Dictionary<string, object> values)
         {
-            _store.UpsertMany(values.Select(v => BuildRecord(v.Key, v.Value, _store.GetByKey(v.Key))).ToList());
+            _store.UpsertMany(values.Select(v => BuildRecord(v.Key, v.Value)).ToList());
 
             Reload();
             foreach (var key in values.Keys) Changed?.Invoke(key);
@@ -62,16 +62,13 @@ namespace PrimeERP.Platform.Settings
             }
         }
 
-        public static AppSetting BuildRecord<T>(string key, T value, AppSetting existing) => new()
+        /// <summary>القائم تُكتب قيمته وحدها</summary>
+        public static AppSetting BuildRecord<T>(string key, T value) => new()
         {
-            Key           = key,
-            Value         = FormatValue(value),
-            Category      = existing?.Category,
-            DataType      = existing?.DataType ?? typeof(T).Name,
-            DisplayNameAr = existing?.DisplayNameAr,
-            DisplayNameEn = existing?.DisplayNameEn,
-            IsSystem      = existing?.IsSystem ?? false,
-            ModifiedBy    = AppSession.Username
+            Key        = key,
+            Value      = FormatValue(value),
+            DataType   = typeof(T).Name,
+            ModifiedBy = AppSession.Username
         };
 
         public static string FormatValue<T>(T value) =>

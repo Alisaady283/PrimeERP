@@ -38,7 +38,7 @@ namespace PrimeERP.Application.Legacy.Admin
 
         public Result Set<T>(string key, T value)
         {
-            var denied = CheckWriteAllowed(_settings.GetByKey(key));
+            var denied = CheckWriteAllowed(_settings.AnySystem(new[] { key }));
             if (denied != null) return denied;
 
             _provider.SetRaw(key, value);
@@ -50,8 +50,7 @@ namespace PrimeERP.Application.Legacy.Admin
         {
             if (values == null || values.Count == 0) return Result.Ok();
 
-            var existingRows = values.Keys.ToDictionary(k => k, k => _settings.GetByKey(k));
-            var denied = CheckWriteAllowed(existingRows.Values.FirstOrDefault(r => r?.IsSystem == true));
+            var denied = CheckWriteAllowed(_settings.AnySystem(values.Keys));
             if (denied != null) return denied;
 
             _provider.SetManyRaw(values);
@@ -63,10 +62,10 @@ namespace PrimeERP.Application.Legacy.Admin
 
         public void Reload() => _provider.Reload();
 
-        private Result CheckWriteAllowed(AppSetting existing)
+        private Result CheckWriteAllowed(bool system)
         {
             if (!Can("Edit")) return Fail("PermissionDenied", ErrorCode.Unauthorized);
-            if (existing != null && existing.IsSystem && !Can("System")) return Fail("SystemPermissionDenied", ErrorCode.Unauthorized);
+            if (system && !Can("System")) return Fail("SystemPermissionDenied", ErrorCode.Unauthorized);
             return null;
         }
     }

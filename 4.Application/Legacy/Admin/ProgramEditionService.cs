@@ -102,8 +102,8 @@ namespace PrimeERP.Application.Legacy.Admin
 
             _settingRows.UpsertMany(new[]
             {
-                SettingsProvider.BuildRecord(SettingKeys.UI.Manifest, string.Join(",", edition.ModuleKeys), null),
-                SettingsProvider.BuildRecord(SettingKeys.Documents.SimplifiedFlow, edition.Simplified, null)
+                SettingsProvider.BuildRecord(SettingKeys.UI.Manifest, string.Join(",", edition.ModuleKeys)),
+                SettingsProvider.BuildRecord(SettingKeys.Documents.SimplifiedFlow, edition.Simplified)
             }, db);
         }
 
