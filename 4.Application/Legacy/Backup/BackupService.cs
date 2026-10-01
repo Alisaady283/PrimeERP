@@ -42,9 +42,9 @@ namespace PrimeERP.Application.Legacy.Backup
 
         public event Action<string> BackupFailed;
 
-        public Result<BackupInfo> Create(string folder = null, string note = null, BackupType type = BackupType.Manual)
+        public Result<BackupHistoryRecord> Create(string folder = null, string note = null, BackupType type = BackupType.Manual)
         {
-            if (!Can("Backup")) return Fail<BackupInfo>("PermissionDenied", ErrorCode.Unauthorized);
+            if (!Can("Backup")) return Fail<BackupHistoryRecord>("PermissionDenied", ErrorCode.Unauthorized);
 
             try
             {
@@ -53,20 +53,18 @@ namespace PrimeERP.Application.Legacy.Backup
                 Audit.Log(EntityName, record.Id, AuditAction.Insert,
                     newValue: new { record.FileName, record.SizeBytes }, details: Msg("CreatedLog", type));
 
-                var info = ToInfo(record);
-
                 var retentionCount = Setting(SettingKeys.Backup.RetentionCount, 10);
                 ApplyRetention(folder, retentionCount);
 
-                return Result.Ok(info);
+                return Result.Ok(record);
             }
             catch (NotSupportedException ex)
             {
-                return Result.Fail<BackupInfo>(ex.Message, ErrorCode.Unexpected);
+                return Result.Fail<BackupHistoryRecord>(ex.Message, ErrorCode.Unexpected);
             }
             catch (Exception ex)
             {
-                return Result.Fail<BackupInfo>($"{Msg("CreateFailed")}: {ex.Message}", ErrorCode.Unexpected);
+                return Result.Fail<BackupHistoryRecord>($"{Msg("CreateFailed")}: {ex.Message}", ErrorCode.Unexpected);
             }
         }
 
@@ -112,8 +110,7 @@ namespace PrimeERP.Application.Legacy.Backup
                 : Result.Fail<bool>($"{Msg("CorruptFile")}: {error}", ErrorCode.Unexpected);
         }
 
-        public List<BackupInfo> List(string folder = null) =>
-            _repo.InFolder(folder).Select(ToInfo).ToList();
+        public List<BackupHistoryRecord> List(string folder = null) => _repo.InFolder(folder);
 
         public Result ApplyRetention(string folder, int keepCount)
         {
@@ -162,7 +159,5 @@ namespace PrimeERP.Application.Legacy.Backup
             if (_auto && (key == SettingKeys.Backup.AutoBackupEnabled || key == SettingKeys.Backup.AutoBackupIntervalHours))
                 StartAutoBackup();
         }
-
-        private static BackupInfo ToInfo(BackupHistoryRecord r) => Rows.Copy<BackupInfo>(r, new());
     }
 }

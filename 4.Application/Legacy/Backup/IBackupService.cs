@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using PrimeERP.Platform.Permissions;
+using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 
@@ -9,10 +10,10 @@ namespace PrimeERP.Application.Legacy.Backup
     /// <summary>عقد النسخ الاحتياطي</summary>
     public interface IBackupService
     {
-        Result<BackupInfo> Create(string folder = null, string note = null, BackupType type = BackupType.Manual);
+        Result<BackupHistoryRecord> Create(string folder = null, string note = null, BackupType type = BackupType.Manual);
         Result Restore(string filePath);
         Result<bool> Validate(string filePath);
-        List<BackupInfo> List(string folder = null);
+        List<BackupHistoryRecord> List(string folder = null);
 
         Result ApplyRetention(string folder, int keepCount);
 

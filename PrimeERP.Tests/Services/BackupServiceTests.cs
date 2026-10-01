@@ -27,7 +27,7 @@ namespace PrimeERP.Tests.Services
             var result = _service.Create(_folder, note: "test");
 
             Assert.True(result.IsSuccess);
-            Assert.True(result.Value.Exists);
+            Assert.True(File.Exists(result.Value.FilePath));
         }
 
         [Fact]
