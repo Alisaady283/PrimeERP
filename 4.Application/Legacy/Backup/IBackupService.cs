@@ -20,7 +20,6 @@ namespace PrimeERP.Application.Legacy.Backup
         void StartAutoBackup();
         void StopAutoBackup();
 
-        event Action<BackupInfo> BackupCompleted;
         event Action<string> BackupFailed;
     }
 }

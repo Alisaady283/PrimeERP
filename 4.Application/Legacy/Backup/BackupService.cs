@@ -25,17 +25,21 @@ namespace PrimeERP.Application.Legacy.Backup
         protected override string StringPrefix => "Str.Backup";
         protected override string EntityName => "BackupHistory";
 
+        /// <summary>أقصى ما يقبله المؤقّت</summary>
+        private const int MaxIntervalHours = 576;
+
         private readonly IBackupRepository _repo;
         private Timer _autoTimer;
+        private bool _auto;
 
         public BackupService(IPermissionService permissions, ISettingsProvider settings,
                               ILocalizationService localization, IAuditLogger audit, IBackupRepository repo)
             : base(permissions, settings, localization, audit)
         {
             _repo = repo;
+            settings.Changed += Restart;
         }
 
-        public event Action<BackupInfo> BackupCompleted;
         public event Action<string> BackupFailed;
 
         public Result<BackupInfo> Create(string folder = null, string note = null, BackupType type = BackupType.Manual)
@@ -54,19 +58,15 @@ namespace PrimeERP.Application.Legacy.Backup
                 var retentionCount = Setting(SettingKeys.Backup.RetentionCount, 10);
                 ApplyRetention(folder, retentionCount);
 
-                BackupCompleted?.Invoke(info);
                 return Result.Ok(info);
             }
             catch (NotSupportedException ex)
             {
-                BackupFailed?.Invoke(ex.Message);
                 return Result.Fail<BackupInfo>(ex.Message, ErrorCode.Unexpected);
             }
             catch (Exception ex)
             {
-                var message = $"{Msg("CreateFailed")}: {ex.Message}";
-                BackupFailed?.Invoke(message);
-                return Result.Fail<BackupInfo>(message, ErrorCode.Unexpected);
+                return Result.Fail<BackupInfo>($"{Msg("CreateFailed")}: {ex.Message}", ErrorCode.Unexpected);
             }
         }
 
@@ -167,22 +167,36 @@ namespace PrimeERP.Application.Legacy.Backup
         public void StartAutoBackup()
         {
             StopAutoBackup();
+            _auto = true;
 
             if (!Setting(SettingKeys.Backup.AutoBackupEnabled, false)) return;
 
-            var hours = Setting(SettingKeys.Backup.AutoBackupIntervalHours, 24);
-            if (hours < 1) hours = 1;
+            var hours = Math.Clamp(Setting(SettingKeys.Backup.AutoBackupIntervalHours, 24), 1, MaxIntervalHours);
 
             _autoTimer = new Timer(TimeSpan.FromHours(hours).TotalMilliseconds) { AutoReset = true };
-            _autoTimer.Elapsed += (s, e) => Create(note: Msg("ScheduledNote"), type: BackupType.Auto);
+            _autoTimer.Elapsed += (s, e) => Scheduled();
             _autoTimer.Start();
         }
 
         public void StopAutoBackup()
         {
+            _auto = false;
             _autoTimer?.Stop();
             _autoTimer?.Dispose();
             _autoTimer = null;
+        }
+
+        private void Scheduled()
+        {
+            var made = Create(note: Msg("ScheduledNote"), type: BackupType.Auto);
+            if (made.IsFailure) BackupFailed?.Invoke(Msg("ScheduledFailed", made.ErrorMessage));
+        }
+
+        /// <summary>المؤقّت يتبع إعداده</summary>
+        private void Restart(string key)
+        {
+            if (_auto && (key == SettingKeys.Backup.AutoBackupEnabled || key == SettingKeys.Backup.AutoBackupIntervalHours))
+                StartAutoBackup();
         }
 
         private static BackupInfo ToInfo(BackupHistoryRecord r) => Rows.Copy<BackupInfo>(r, new());

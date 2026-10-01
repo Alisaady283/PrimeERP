@@ -574,6 +574,7 @@
     <sys:String x:Key="Str.Backup.PreRestoreNote">Automatic safety backup before restore</sys:String>
     <sys:String x:Key="Str.Backup.RestoredLog">Restored from backup: {0}</sys:String>
     <sys:String x:Key="Str.Backup.ScheduledNote">Scheduled automatic backup</sys:String>
+    <sys:String x:Key="Str.Backup.ScheduledFailed">Automatic backup failed: {0}</sys:String>
     <sys:String x:Key="Str.Builder.CustomerNameRequired">Customer name is required</sys:String>
     <sys:String x:Key="Str.Builder.EditionInsideApp">The path is inside the program folder. Choose a folder outside it</sys:String>
     <sys:String x:Key="Str.Builder.EditionLocalOnly">Creating a copy works with a local database only</sys:String>

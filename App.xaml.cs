@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.App.Bootstrap;
+using PrimeERP.Application.Legacy.Backup;
 using PrimeERP.Platform.Design;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
@@ -45,6 +46,10 @@ public partial class App : System.Windows.Application
             Shutdown();
             return;
         }
+
+        var backup = Services.GetRequiredService<IBackupService>();
+        backup.BackupFailed += Services.GetRequiredService<IToastService>().Error;
+        backup.StartAutoBackup();
 
         var main = new MainWindow(Services);
         main.Closed += (_, __) => Shutdown();

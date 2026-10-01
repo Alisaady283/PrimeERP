@@ -574,6 +574,7 @@
     <sys:String x:Key="Str.Backup.PreRestoreNote">نسخة أمان تلقائية قبل الاستعادة</sys:String>
     <sys:String x:Key="Str.Backup.RestoredLog">استعادة من نسخة: {0}</sys:String>
     <sys:String x:Key="Str.Backup.ScheduledNote">نسخة تلقائية مجدولة</sys:String>
+    <sys:String x:Key="Str.Backup.ScheduledFailed">تعذّر النسخ الاحتياطي التلقائي: {0}</sys:String>
     <sys:String x:Key="Str.Builder.CustomerNameRequired">اسم العميل مطلوب</sys:String>
     <sys:String x:Key="Str.Builder.EditionInsideApp">المسار داخل مجلد البرنامج نفسه — اختر مجلداً خارجه</sys:String>
     <sys:String x:Key="Str.Builder.EditionLocalOnly">إنشاء نسخة يعمل مع قاعدة محلية فقط</sys:String>
