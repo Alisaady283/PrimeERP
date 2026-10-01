@@ -77,7 +77,7 @@ namespace PrimeERP.Data.Repositories
         /// <summary>نسخة القاعدة إلى ملف</summary>
         public void CopyTo(string targetPath)
         {
-            if (Capability == BackupCapability.ExternalTool) throw Unsupported();
+            if (Capability == BackupCapability.ExternalTool) throw new NotSupportedException();
 
             Run(Capability == BackupCapability.FileCopy
                     ? "VACUUM INTO @path"
@@ -87,7 +87,7 @@ namespace PrimeERP.Data.Repositories
 
         public void RestoreFrom(string sourcePath)
         {
-            if (Capability == BackupCapability.ExternalTool) throw Unsupported();
+            if (Capability == BackupCapability.ExternalTool) throw new NotSupportedException();
 
             var history = GetAll();
             if (Capability == BackupCapability.FileCopy)
@@ -113,9 +113,6 @@ namespace PrimeERP.Data.Repositories
                 Insert(record);
             }
         }
-
-        private static NotSupportedException Unsupported() =>
-            new("النسخ الاحتياطي لقاعدة PostgreSQL يحتاج أداة pg_dump خارجية — غير مدعوم من داخل التطبيق.");
 
         /// <summary>سلامة الملف وكونه قاعدة PrimeERP</summary>
         public (bool Ok, string Error) Verify(string filePath)

@@ -58,9 +58,9 @@ namespace PrimeERP.Application.Legacy.Backup
 
                 return Result.Ok(record);
             }
-            catch (NotSupportedException ex)
+            catch (NotSupportedException)
             {
-                return Result.Fail<BackupHistoryRecord>(ex.Message, ErrorCode.Unexpected);
+                return Fail<BackupHistoryRecord>("PostgreSqlUnsupported", ErrorCode.Unexpected);
             }
             catch (Exception ex)
             {
@@ -87,9 +87,9 @@ namespace PrimeERP.Application.Legacy.Backup
                 Audit.Log(EntityName, 0, AuditAction.Update, details: Msg("RestoredLog", Path.GetFileName(filePath)));
                 return Result.Ok();
             }
-            catch (NotSupportedException ex)
+            catch (NotSupportedException)
             {
-                return Result.Fail(ex.Message, ErrorCode.Unexpected);
+                return Fail("PostgreSqlUnsupported", ErrorCode.Unexpected);
             }
             catch (Exception ex)
             {

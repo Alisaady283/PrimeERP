@@ -35,8 +35,8 @@ namespace PrimeERP.Composition.Renderers
             var toast = services.GetRequiredService<IToastService>();
             var allDefs = SettingKeys.All();
 
-            var header = new PageHeader { Subtitle = $"الإصدار {PrimeERP.Platform.AppInfo.Version}" };
-            var updateButton = new Btn { Text = "البحث عن تحديث", Variant = "secondary", Size = "sm" };
+            var header = new PageHeader { Subtitle = LocalizationService.Get("Str.Settings.Version", PrimeERP.Platform.AppInfo.Version) };
+            var updateButton = new Btn { Text = LocalizationService.Get("Str.Settings.CheckUpdate"), Variant = "secondary", Size = "sm" };
             updateButton.Click += async (_, __) => await UpdateFlow.RunAsync(services);
             header.ActionsContent = updateButton;
             var controls = new Dictionary<string, (FieldDefinition Field, FrameworkElement Control)>();

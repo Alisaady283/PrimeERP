@@ -402,6 +402,7 @@
     <sys:String x:Key="Str.Backup.SafetyBackupFailed">فشل إنشاء نسخة الأمان قبل الاستعادة — أُلغيت العملية</sys:String>
     <sys:String x:Key="Str.Backup.RestoreFailed">فشلت عملية الاستعادة</sys:String>
     <sys:String x:Key="Str.Backup.RetentionFailed">فشل تطبيق سياسة الاحتفاظ بالنسخ القديمة</sys:String>
+    <sys:String x:Key="Str.Backup.PostgreSqlUnsupported">النسخ الاحتياطي لقاعدة PostgreSQL يحتاج أداة pg_dump خارجية — غير مدعوم من داخل التطبيق</sys:String>
 
     <sys:String x:Key="Str.Fiscal.YearCreated">تم إنشاء السنة المالية بنجاح</sys:String>
     <sys:String x:Key="Str.Fiscal.PeriodClosed">تم إقفال الفترة المالية بنجاح</sys:String>
@@ -738,6 +739,14 @@
     <sys:String x:Key="Str.Settings.BatchSavedLog">تعديل {0} إعداد دفعة واحدة</sys:String>
     <sys:String x:Key="Str.Settings.NoActiveSerial">النسخة بلا سريال مُفعَّل</sys:String>
     <sys:String x:Key="Str.Settings.NoPackage">لا حزمة للتنزيل</sys:String>
+    <sys:String x:Key="Str.Settings.Version">الإصدار {0}</sys:String>
+    <sys:String x:Key="Str.Settings.CheckUpdate">البحث عن تحديث</sys:String>
+    <sys:String x:Key="Str.Settings.Update">تحديث</sys:String>
+    <sys:String x:Key="Str.Settings.UpToDate">نسختك أحدث ما لدينا ({0})</sys:String>
+    <sys:String x:Key="Str.Settings.UpdateAvailable">يوجد إصدار {0} — هل تريد تنزيله؟</sys:String>
+    <sys:String x:Key="Str.Settings.Downloading">تنزيل الإصدار {0}</sys:String>
+    <sys:String x:Key="Str.Settings.DownloadStage">تنزيل</sys:String>
+    <sys:String x:Key="Str.Settings.Downloaded">نُزِّل الإصدار {0} — أغلق البرنامج وشغّل الحزمة</sys:String>
     <sys:String x:Key="Str.Statement.Balanced">الميزانية متوازنة</sys:String>
     <sys:String x:Key="Str.Statement.CashDifference">فرق عن رصيد النقدية: {0:N2}</sys:String>
     <sys:String x:Key="Str.Statement.CashMatches">مطابق لرصيد النقدية</sys:String>

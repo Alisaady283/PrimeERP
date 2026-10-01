@@ -402,6 +402,7 @@
     <sys:String x:Key="Str.Backup.SafetyBackupFailed">Failed to create the safety backup before restore — operation cancelled</sys:String>
     <sys:String x:Key="Str.Backup.RestoreFailed">Restore operation failed</sys:String>
     <sys:String x:Key="Str.Backup.RetentionFailed">Failed to apply the old-backups retention policy</sys:String>
+    <sys:String x:Key="Str.Backup.PostgreSqlUnsupported">Backing up a PostgreSQL database needs the external pg_dump tool and is not supported inside the program</sys:String>
 
     <sys:String x:Key="Str.Fiscal.YearCreated">Fiscal year created successfully</sys:String>
     <sys:String x:Key="Str.Fiscal.PeriodClosed">Fiscal period closed successfully</sys:String>
@@ -738,6 +739,14 @@
     <sys:String x:Key="Str.Settings.BatchSavedLog">Saved {0} settings at once</sys:String>
     <sys:String x:Key="Str.Settings.NoActiveSerial">This copy has no activated serial</sys:String>
     <sys:String x:Key="Str.Settings.NoPackage">No package to download</sys:String>
+    <sys:String x:Key="Str.Settings.Version">Version {0}</sys:String>
+    <sys:String x:Key="Str.Settings.CheckUpdate">Check for updates</sys:String>
+    <sys:String x:Key="Str.Settings.Update">Update</sys:String>
+    <sys:String x:Key="Str.Settings.UpToDate">You have the latest version ({0})</sys:String>
+    <sys:String x:Key="Str.Settings.UpdateAvailable">Version {0} is available. Download it?</sys:String>
+    <sys:String x:Key="Str.Settings.Downloading">Downloading version {0}</sys:String>
+    <sys:String x:Key="Str.Settings.DownloadStage">Downloading</sys:String>
+    <sys:String x:Key="Str.Settings.Downloaded">Version {0} downloaded. Close the program and run the package.</sys:String>
     <sys:String x:Key="Str.Statement.Balanced">The balance sheet is balanced</sys:String>
     <sys:String x:Key="Str.Statement.CashDifference">Difference from the cash balance: {0:N2}</sys:String>
     <sys:String x:Key="Str.Statement.CashMatches">Matches the cash balance</sys:String>
