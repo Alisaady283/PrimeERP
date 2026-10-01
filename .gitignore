@@ -8,3 +8,7 @@ PrimeERP.Tests/obj/
 
 # إعدادات أدوات المطوّر المحلّية — ليست من البرنامج
 .claude/
+__pycache__/
+bin/
+obj/
+*.pyc
