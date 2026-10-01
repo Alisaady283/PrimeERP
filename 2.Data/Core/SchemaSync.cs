@@ -63,7 +63,7 @@ namespace PrimeERP.Data.Core
         }
 
         /// <summary>عمودٌ يُضاف لجدولٍ فيه صفوف</summary>
-        private static AddColumnOperation Added(AddColumnOperation column)
+        internal static AddColumnOperation Added(AddColumnOperation column)
         {
             var fill = column.IsNullable || column.DefaultValueSql != null ? column.DefaultValue : column.DefaultValue ?? Empty(column.ClrType);
             return new()
@@ -77,7 +77,7 @@ namespace PrimeERP.Data.Core
         }
 
         /// <summary>فراغٌ لا يقبله النموذج</summary>
-        private static SqlOperation Filled(PrimeDbContext db, AddColumnOperation column)
+        internal static SqlOperation Filled(PrimeDbContext db, AddColumnOperation column)
         {
             if (column.IsRowVersion || column.ComputedColumnSql != null) return null;
 
@@ -97,9 +97,13 @@ namespace PrimeERP.Data.Core
             type == typeof(string) ? "" : type.IsValueType ? Activator.CreateInstance(type) : null;
 
         /// <summary>أعمدة الجدول وقبولها الفراغ</summary>
-        private static Dictionary<string, bool> Columns(PrimeDbContext db, string table)
+        internal static Dictionary<string, bool> Columns(PrimeDbContext db, string table)
         {
-            using var command = db.Database.GetDbConnection().CreateCommand();
+            var connection = db.Database.GetDbConnection();
+            var wasClosed = connection.State != ConnectionState.Open;
+            if (wasClosed) connection.Open();
+
+            using var command = connection.CreateCommand();
             command.CommandText = $"SELECT * FROM {Quote(db, table)} WHERE 1 = 0";
 
             try
@@ -119,6 +123,7 @@ namespace PrimeERP.Data.Core
                 return columns;
             }
             catch { return null; }
+            finally { if (wasClosed) connection.Close(); }
         }
 
         private static string Quote(PrimeDbContext db, string identifier) =>

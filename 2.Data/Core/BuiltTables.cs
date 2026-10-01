@@ -86,11 +86,9 @@ namespace PrimeERP.Data.Core
         public DbSet<Dictionary<string, object>> BuiltSet(string table) =>
             Set<Dictionary<string, object>>(table);
 
-        /// <summary>ينشئ جدول المستخدم بمولّد DDL</summary>
+        /// <summary>ينشئ جدول المستخدم أو يُلحقه بوصفه</summary>
         public void CreateBuiltTable(string table, List<BuilderColumn> columns, string headerTable = null)
         {
-            if (Database.GetService<IRelationalDatabaseCreator>().HasTables() && TableExists(table)) return;
-
             var operation = new CreateTableOperation { Name = table };
             operation.Columns.Add(Column("Id", typeof(int), nullable: false, identity: true));
             operation.PrimaryKey = new AddPrimaryKeyOperation { Table = table, Columns = new[] { "Id" } };
@@ -118,8 +116,21 @@ namespace PrimeERP.Data.Core
                      })
                 operation.Columns.Add(Column(name, clr, clr != typeof(bool)));
 
-            Run(operation);
+            foreach (var column in operation.Columns) column.Table = table;
+
+            var live = SchemaSync.Columns(this, table);
+            if (live == null) { Run(operation); return; }
+
+            foreach (var column in operation.Columns.Where(c => !live.ContainsKey(c.Name)))
+                Run(SchemaSync.Added(column));
+
+            live = SchemaSync.Columns(this, table);
+            foreach (var column in operation.Columns.Where(c => Valued(c.ClrType) && live.TryGetValue(c.Name, out var nullable) && nullable))
+                if (SchemaSync.Filled(this, column) is { } filled) Run(filled);
         }
+
+        /// <summary>نوعٌ لا يقبل الفراغ</summary>
+        private static bool Valued(Type type) => type.IsValueType && Nullable.GetUnderlyingType(type) == null;
 
         private AddColumnOperation Column(string name, Type clr, bool nullable = true, bool identity = false,
                                           int? max = null) =>
@@ -135,24 +146,6 @@ namespace PrimeERP.Data.Core
             var commands = Database.GetService<IMigrationsSqlGenerator>().Generate(new[] { operation }, Model);
             Database.GetService<IMigrationCommandExecutor>()
                 .ExecuteNonQuery(commands, Database.GetService<IRelationalConnection>());
-        }
-
-        /// <summary>وجود الجدول بقراءةٍ فارغة</summary>
-        private bool TableExists(string table)
-        {
-            var connection = Database.GetDbConnection();
-            var wasClosed = connection.State != System.Data.ConnectionState.Open;
-            if (wasClosed) connection.Open();
-
-            try
-            {
-                using var command = connection.CreateCommand();
-                command.CommandText = $"SELECT * FROM {Database.GetService<ISqlGenerationHelper>().DelimitIdentifier(table)} WHERE 1 = 0";
-                using var reader = command.ExecuteReader(System.Data.CommandBehavior.SchemaOnly);
-                return true;
-            }
-            catch { return false; }
-            finally { if (wasClosed) connection.Close(); }
         }
     }
 }
