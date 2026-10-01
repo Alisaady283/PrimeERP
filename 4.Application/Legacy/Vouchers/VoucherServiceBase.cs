@@ -94,11 +94,11 @@ namespace PrimeERP.Application.Legacy.Vouchers
 
         protected override Result<Func<PrimeDbContext, int>> Plan(CreateVoucherDto dto)
         {
-            var input = Check.Valid(dto,
-                new Field<CreateVoucherDto>(x => x.Amount, "", Must: d => d.Amount > 0, Message: "Str.Common.AmountPositive"),
-                new Field<CreateVoucherDto>(x => x.PartyId, "", Required: true, Message: IsReceipt ? "Str.Voucher.CustomerRequired" : "Str.Voucher.SupplierRequired"),
-                new Field<CreateVoucherDto>(x => x.Allocations, "", Must: d => Allocated(d) <= d.Amount, Message: "Str.Voucher.AllocationsExceed",
-                    Args: d => new object[] { Allocated(d), d.Amount }));
+            var input = Result.Combine(
+                Check.Valid(dto,
+                    new Field<CreateVoucherDto>(x => x.Amount, "", Must: d => d.Amount > 0, Message: "Str.Common.AmountPositive"),
+                    new Field<CreateVoucherDto>(x => x.PartyId, "", Required: true, Message: IsReceipt ? "Str.Voucher.CustomerRequired" : "Str.Voucher.SupplierRequired")),
+                DocumentLines.Within(dto.Allocations, a => a.Amount, dto.Amount, "Str.Voucher.AllocationsExceed"));
             if (input.IsFailure) return input.As<Func<PrimeDbContext, int>>();
 
             var accounts = _accountOf.Treasury(dto.TreasuryId, "Str.Voucher.TreasuryAccountMissing").Then(cash =>
@@ -125,11 +125,10 @@ namespace PrimeERP.Application.Legacy.Vouchers
                         to.InvoiceType = EntityName;
                     }));
 
-                var (debit, credit) = TwoSided.Cash(IsReceipt, cashAccount, partyAccount);
+                var (debit, credit) = TwoSided.By(IsReceipt, cashAccount, partyAccount);
                 var entryId = Posting.Entry(Journals, db, voucher.VoucherDate, Msg(IsReceipt ? "ReceiptEntry" : "PaymentEntry", voucher.VoucherNo),
                     EntityName, debit, credit, voucher.Amount);
                 _repo.SetLinks(db, id, entryId, null);
-                RefreshParty(db, dto.PartyId);
                 return id;
             });
         }
@@ -138,12 +137,7 @@ namespace PrimeERP.Application.Legacy.Vouchers
         {
             Posting.Reverse(Journals, db, head.JournalEntryId);
             _repo.Delete(db, head.Id);
-            RefreshParty(db, head.PartyId);
         }
-
-        private static decimal Allocated(CreateVoucherDto dto) => (dto.Allocations ?? new()).Sum(a => a.Amount);
-
-        private void RefreshParty(PrimeDbContext db, int? partyId) => _parties.Refresh(db, PartyOf, partyId);
 
         private static T ToDto<T>(Voucher v, IReadOnlyDictionary<int, string> parties, IReadOnlyDictionary<int, string> treasuries)
             where T : VoucherDto, new() => Rows.Copy<T>(v, new(), to =>

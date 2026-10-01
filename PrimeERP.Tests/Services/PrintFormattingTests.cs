@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Print;
+using PrimeERP.UI.Services;
 using PrimeERP.Application.Legacy.Admin;
 using System;
 using System.Linq;

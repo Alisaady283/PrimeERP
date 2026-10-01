@@ -26,14 +26,7 @@ namespace PrimeERP.Application.Legacy.Parties
         protected override string SequenceKey => "Customer";
         protected override string AccountSettingKey => SettingKeys.Accounts.Customers;
 
-        public static readonly Field<Customer>[] Rules =
-        {
-            new(x => x.Code, "Str.Field.CustomerCode", Required: true),
-            new(x => x.Name, "Str.Field.CustomerName", Required: true, Max: 150),
-            new(x => x.Phone, "Str.Field.Phone", Format: FieldFormat.Phone),
-            new(x => x.Email, "Str.Email", Format: FieldFormat.Email),
-            new(x => x.CreditLimit, "Str.CreditLimit", From: 0),
-        };
+        public static readonly Field<Customer>[] Rules = RulesOf("Str.Field.CustomerCode", "Str.Field.CustomerName");
 
         protected override Field<Customer>[] Fields => Rules;
 
@@ -45,8 +38,8 @@ namespace PrimeERP.Application.Legacy.Parties
 
         public CustomerService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
             Statement statement, INumberSequenceService numbers, IPartyRepository<Customer> customers,
-            IJournalRepository journalRepo, Cheques.IChequeService cheques, AccountCases tree)
-            : base(permissions, settings, localization, audit, statement, numbers, journalRepo, tree)
+            AccountBalances balances, Cheques.IChequeService cheques, AccountCases tree)
+            : base(permissions, settings, localization, audit, statement, numbers, balances, tree)
         {
             _customers = customers;
             _cheques = cheques;

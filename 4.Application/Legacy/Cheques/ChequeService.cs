@@ -103,11 +103,13 @@ namespace PrimeERP.Application.Legacy.Cheques
             if (!Cycle.Allows(cheque.Status, target))
                 return Result.Fail(Msg("MoveRefused", StatusName(cheque.Status), StatusName(target)), ErrorCode.ValidationFailed);
 
-            var (debit, credit) = Cycle.Posts(target)
-                ? TwoSided.Cash(target == ChequeStatus.Collected, _accountOf.TreasuryOrRoot(dto.TreasuryId ?? cheque.TreasuryId), _parties.CodeOf(cheque.PartyKind, cheque.PartyId))
-                : (null, null);
-            if (Cycle.Posts(target) && (string.IsNullOrWhiteSpace(debit) || string.IsNullOrWhiteSpace(credit)))
-                return Result.Fail(Msg("AccountsMissing"), ErrorCode.ValidationFailed);
+            var accounts = Cycle.Posts(target)
+                ? AccountOf.Required(_accountOf.TreasuryOrRoot(dto.TreasuryId ?? cheque.TreasuryId), "Str.Cheque.AccountsMissing")
+                    .Then(cash => _accountOf.Party(cheque.PartyKind, cheque.PartyId, "Str.Cheque.AccountsMissing")
+                    .Then(party => Result.Ok(TwoSided.By(target == ChequeStatus.Collected, cash, party))))
+                : Result.Ok<(string, string)>((null, null));
+            if (accounts.IsFailure) return accounts;
+            var (debit, credit) = accounts.Value;
 
             // الخروج يعكس قيد الدخول
             var posted = Cycle.Reverses(cheque.Status)
@@ -139,7 +141,6 @@ namespace PrimeERP.Application.Legacy.Cheques
                 }));
 
                 _repo.SetStatus(db, cheque.Id, target, dto.TreasuryId ?? cheque.TreasuryId);
-                _parties.Refresh(db, cheque.PartyKind, cheque.PartyId);
                 return Result.Ok();
             });
             if (moved.IsFailure) return moved;
@@ -252,7 +253,7 @@ namespace PrimeERP.Application.Legacy.Cheques
             var status = filter.Status == 0 ? (ChequeStatus?)null : (ChequeStatus)filter.Status;
 
             var (items, total) = _repo.GetPaged(direction, status, page, pageSize, filter.SearchText);
-            return new PagedResult<ChequeDto> { Items = Of(items), Page = page, PageSize = pageSize, TotalCount = total };
+            return Paged(items, total, page, pageSize, Of);
         }
 
         private List<ChequeDto> Of(List<Cheque> cheques)

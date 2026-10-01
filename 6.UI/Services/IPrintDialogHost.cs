@@ -1,6 +1,6 @@
 using System.Windows.Documents;
 
-namespace PrimeERP.Application.Legacy.Print
+namespace PrimeERP.UI.Services
 {
     /// <summary>تنفّذه طبقة الواجهة</summary>
     public interface IPrintDialogHost

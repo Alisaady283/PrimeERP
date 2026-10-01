@@ -85,19 +85,20 @@ namespace PrimeERP.Application.Legacy.Assets
             if (_disposals.AnyForAsset(disposal.AssetId, db))
                 return Fail<AssetDisposal>("AlreadyDisposed", ErrorCode.ValidationFailed);
 
-            disposal.AssetValue = asset.RevaluedValue > 0 ? asset.RevaluedValue : asset.PurchaseCost;
+            disposal.AssetValue = AssetCalc.Basis(asset.RevaluedValue, asset.PurchaseCost);
             disposal.AccumulatedDepreciation = asset.AccumulatedDepreciation;
+            var note = $"{Msg("Disposal")} — {asset.Name}";
 
             return Check.Valid(disposal, DisposalFields)
-                .Then(() => Lines(asset, disposal))
+                .Then(() => Lines(asset, disposal, note))
                 .Then(lines =>
                 {
                     disposal.Id = _disposals.Insert(disposal, db);
 
-                    disposal.JournalEntryId = PostEntry(db, disposal.DisposalDate, $"{Msg("Disposal")} — {asset.Name}", lines);
+                    disposal.JournalEntryId = Posting.Entry(Journals, db, disposal.DisposalDate, note, EntityName, lines);
 
                     _disposals.SetJournalEntryId(db, disposal.Id, disposal.JournalEntryId.Value);
-                    Activate(db, asset, false);
+                    _assets.SetActive(db, asset.Id, false);
                     return Result.Ok(disposal);
                 });
         }
@@ -107,51 +108,36 @@ namespace PrimeERP.Application.Legacy.Assets
             var asset = _assets.GetById(disposal.AssetId, db);
             if (asset == null) return Fail("NotFound", ErrorCode.NotFound);
 
-            ReverseEntry(db, disposal.JournalEntryId);
+            Posting.Reverse(Journals, db, disposal.JournalEntryId);
             _disposals.Delete(disposal.Id, CurrentUser, db);
-            Activate(db, asset, true);
+            _assets.SetActive(db, asset.Id, true);
             return Result.Ok();
         }
 
-        private Result<List<CreateJournalLineDto>> Lines(Asset asset, AssetDisposal disposal)
+        private Result<List<CreateJournalLineDto>> Lines(Asset asset, AssetDisposal disposal, string note)
         {
-            var own = Required(asset.AccountCode, "AccountsMissing");
-            if (own.IsFailure) return Result.Fail<List<CreateJournalLineDto>>(own.ErrorMessage, own.ErrorCode);
+            var own = AccountOf.Required(asset.AccountCode, "Str.Asset.AccountsMissing");
+            if (own.IsFailure) return own.As<List<CreateJournalLineDto>>();
 
             var cash = AccountsOf.Treasury(disposal.TreasuryId, "Str.Asset.FundingAccountMissing");
-            if (cash.IsFailure) return Result.Fail<List<CreateJournalLineDto>>(cash.ErrorMessage, cash.ErrorCode);
+            if (cash.IsFailure) return cash.As<List<CreateJournalLineDto>>();
             var gain = AssetCalc.GainOrLoss(disposal);
-            var counter = gain == 0 ? Result.Ok("")
-                : Account(gain > 0 ? SettingKeys.Accounts.CapitalGains : SettingKeys.Accounts.CapitalLosses);
-            if (counter.IsFailure) return Result.Fail<List<CreateJournalLineDto>>(counter.ErrorMessage, counter.ErrorCode);
+            var counter = AccountsOf.SettingBySign(gain, SettingKeys.Accounts.CapitalGains, SettingKeys.Accounts.CapitalLosses, "Str.Asset.AccountsMissing");
+            if (counter.IsFailure) return counter.As<List<CreateJournalLineDto>>();
 
-            var note = $"{Msg("Disposal")} — {asset.Name}";
-            return Result.Ok(new JournalLines()
-                .Debit(cash.Value, disposal.SalePrice, note)
-                .Debit(asset.DepreciationAccountCode, disposal.AccumulatedDepreciation, note)
-                .Credit(own.Value, disposal.AssetValue, note)
-                .Add(counter.Value, gain < 0 ? -gain : 0, gain > 0 ? gain : 0, note)
-                .ToList());
+            return Result.Ok(DisposalEntry.Lines(disposal, cash.Value, asset.DepreciationAccountCode, own.Value, counter.Value, note));
         }
 
-        private void Activate(PrimeDbContext db, Asset asset, bool active)
-        {
-            asset.IsActive = active;
-            _assets.Update(asset, db);
-        }
-
-        protected override AssetDisposal ToDto(AssetDisposal d) =>
-            ToDto(d, _assets.GetById(d.AssetId), _treasuryRows.NamesOf(new[] { d.TreasuryId }));
+        protected override AssetDisposal ToDto(AssetDisposal d) => ToDto(d, _treasuryRows.NamesOf(new[] { d.TreasuryId }));
 
         protected override List<AssetDisposal> ToDtos(List<AssetDisposal> rows)
         {
             var treasuries = _treasuryRows.NamesOf(rows.Select(d => d.TreasuryId));
-            return WithAssets(rows, _assets, d => d.AssetId, (d, asset) => ToDto(d, asset, treasuries));
+            return rows.Select(d => ToDto(d, treasuries)).ToList();
         }
 
-        private static AssetDisposal ToDto(AssetDisposal d, Asset asset, IReadOnlyDictionary<int, string> treasuries)
+        private static AssetDisposal ToDto(AssetDisposal d, IReadOnlyDictionary<int, string> treasuries)
         {
-            (d.AssetCode, d.AssetName) = (asset?.Code, asset?.Name);
             d.TreasuryName = treasuries.GetValueOrDefault(d.TreasuryId);
             d.BookValue = AssetCalc.BookValue(d);
             d.GainOrLoss = AssetCalc.GainOrLoss(d);

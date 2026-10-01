@@ -26,13 +26,12 @@ namespace PrimeERP.Application.Services.Documents
 
     public interface IDocumentPull
     {
-        decimal GetRemainingQty(string sourceType, int sourceLineId, decimal originalQty);
+        decimal GetRemainingQty(string sourceType, int sourceLineId, decimal originalQty, string exceptTargetType = null, int exceptTargetId = 0);
         Dictionary<int, decimal> GetPulledBySource(string sourceType, int sourceId);
         bool IsPulledFrom(string sourceType, int sourceId);
-        Result ValidatePull(string sourceType, int sourceId, int sourceLineId, decimal qty, string sourceNo);
         Result RecordPull(IEnumerable<DocumentLink> links, PrimeDbContext db = null);
 
-        Result ValidatePulls(IEnumerable<(IPullableLine Line, decimal Qty)> lines);
+        Result ValidatePulls(IEnumerable<(IPullableLine Line, decimal Qty)> lines, string exceptTargetType = null, int exceptTargetId = 0);
 
         Result RecordPulls(PrimeDbContext db, string targetType, int targetId,
             IEnumerable<(IPullableLine Line, int TargetLineId, decimal Qty)> lines);
@@ -54,9 +53,9 @@ namespace PrimeERP.Application.Services.Documents
         protected override string StringPrefix => "Str.Document";
         protected override string EntityName => "DocumentLink";
 
-        public decimal GetRemainingQty(string sourceType, int sourceLineId, decimal originalQty)
+        public decimal GetRemainingQty(string sourceType, int sourceLineId, decimal originalQty, string exceptTargetType = null, int exceptTargetId = 0)
         {
-            var pulled = _links.GetPulledQty(sourceType, sourceLineId);
+            var pulled = _links.GetPulledQty(sourceType, sourceLineId, null, exceptTargetType, exceptTargetId);
             var remaining = originalQty - pulled;
             return remaining > 0 ? remaining : 0m;
         }
@@ -66,14 +65,15 @@ namespace PrimeERP.Application.Services.Documents
         public Dictionary<int, decimal> GetPulledBySource(string sourceType, int sourceId) =>
             _links.GetPulledBySource(sourceType, sourceId);
 
-        public Result ValidatePull(string sourceType, int sourceId, int sourceLineId, decimal qty, string sourceNo)
+        private Result ValidatePull(string sourceType, int sourceId, int sourceLineId, decimal qty, string sourceNo,
+            string exceptTargetType, int exceptTargetId)
         {
             if (_sources == null || sourceLineId <= 0) return Result.Ok();
 
             var originalQty = _sources.GetSourceLineQty(sourceType, sourceId, sourceLineId);
             if (originalQty <= 0) return Result.Ok();
 
-            var remaining = GetRemainingQty(sourceType, sourceLineId, originalQty);
+            var remaining = GetRemainingQty(sourceType, sourceLineId, originalQty, exceptTargetType, exceptTargetId);
             return qty <= remaining
                 ? Result.Ok()
                 : Result.Fail(Msg("PullExceeds", qty, remaining, sourceNo), ErrorCode.ValidationFailed);
@@ -89,13 +89,15 @@ namespace PrimeERP.Application.Services.Documents
             return Result.Ok();
         }
 
-        public Result ValidatePulls(IEnumerable<(IPullableLine Line, decimal Qty)> lines)
+        /// <summary>مجموع كل سطر مصدر مقابل متبقيه</summary>
+        public Result ValidatePulls(IEnumerable<(IPullableLine Line, decimal Qty)> lines, string exceptTargetType = null, int exceptTargetId = 0)
         {
-            foreach (var (line, qty) in lines)
+            foreach (var source in lines.Where(x => x.Line != null && x.Line.SourceLineId > 0)
+                                        .GroupBy(x => (x.Line.SourceType, x.Line.SourceId, x.Line.SourceLineId)))
             {
-                if (line == null || line.SourceLineId <= 0) continue;
-
-                var check = ValidatePull(line.SourceType, line.SourceId, line.SourceLineId, qty, line.SourceNo);
+                var line = source.First().Line;
+                var check = ValidatePull(line.SourceType, line.SourceId, line.SourceLineId, source.Sum(x => x.Qty), line.SourceNo,
+                    exceptTargetType, exceptTargetId);
                 if (check.IsFailure) return check;
             }
             return Result.Ok();

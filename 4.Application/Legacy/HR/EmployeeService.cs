@@ -16,8 +16,7 @@ using PrimeERP.Platform.Settings;
 namespace PrimeERP.Application.Legacy.HR
 {
     /// <summary>خدمة الموظفين</summary>
-    public class EmployeeService : EntityService<Employee, Employee, Employee, Employee, EmployeeFilter>,
-        IEmployeeService, IAccountLinkedService
+    public class EmployeeService : LinkedEntityService<Employee, EmployeeFilter>, IEmployeeService
     {
         protected override string PermissionPrefix => "HR";
         protected override string StringPrefix => "Str.Employee";
@@ -74,30 +73,17 @@ namespace PrimeERP.Application.Legacy.HR
         protected override object AuditValue(Employee e) => new { e.Code, e.Name };
         protected override string DeleteDetails(Employee e) => e.Code;
 
-        public string[] RootKeys => new[] { SettingKeys.Accounts.EmployeeAdvances };
+        public override string[] RootKeys => new[] { SettingKeys.Accounts.EmployeeAdvances };
 
-        Result IAccountLinkedService.CreateFromAccount(PrimeDbContext db, string accountCode, string name, string rootCode)
+        protected override Employee FromAccount(string accountCode, string name, string rootCode) => new()
         {
-            _employees.Insert(new Employee
-            {
-                Code = Numbers.Next(db, "Employee"), Name = name, AccountCode = accountCode,
-                HireDate = System.DateTime.Today, Status = EmployeeStatus.Active
-            }, db);
-            return Result.Ok();
-        }
+            Name = name, AccountCode = accountCode, HireDate = System.DateTime.Today, Status = EmployeeStatus.Active
+        };
 
-        public Result UpdateNameFromAccount(PrimeDbContext db, string accountCode, string name)
-        {
+        protected override Employee FindByAccount(PrimeDbContext db, string accountCode) => _employees.GetByAccountCode(accountCode, db);
+
+        protected override void RenameByAccount(PrimeDbContext db, string accountCode, string name) =>
             _employees.UpdateNameByAccountCode(db, accountCode, name);
-            return Result.Ok();
-        }
-
-        public Result DeleteByAccountCode(PrimeDbContext db, string accountCode)
-        {
-            var employee = _employees.GetByAccountCode(accountCode, db);
-            if (employee != null) _employees.Delete(employee.Id, CurrentUser, db);
-            return Result.Ok();
-        }
 
         protected override Employee ToDto(Employee e) => e;
     }

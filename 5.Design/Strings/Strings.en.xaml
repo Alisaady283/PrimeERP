@@ -563,8 +563,10 @@
     <sys:String x:Key="Str.Asset.PickDisposalTreasury">Choose the treasury that received the price</sys:String>
     <sys:String x:Key="Str.Asset.RevaluationDateRequired">Revaluation date is required</sys:String>
     <sys:String x:Key="Str.Asset.RevaluationNoChange">The new value equals the current value, so there is no difference to post</sys:String>
+    <sys:String x:Key="Str.Asset.RevaluationZero">An asset cannot be revalued to zero; use disposal instead</sys:String>
     <sys:String x:Key="Str.Asset.SalePriceNegative">Sale price cannot be negative</sys:String>
     <sys:String x:Key="Str.Attendance.Absent">Absent</sys:String>
+    <sys:String x:Key="Str.Attendance.NotFound">Record not found</sys:String>
     <sys:String x:Key="Str.Attendance.OutBeforeIn">Check-out time is before check-in time</sys:String>
     <sys:String x:Key="Str.Attendance.OvertimeNegative">Overtime hours cannot be negative</sys:String>
     <sys:String x:Key="Str.Attendance.Present">Present</sys:String>
@@ -626,6 +628,7 @@
     <sys:String x:Key="Str.Employee.Status.Inactive">Inactive</sys:String>
     <sys:String x:Key="Str.Employee.Status.OnLeave">On leave</sys:String>
     <sys:String x:Key="Str.Employee.YearInvalid">Invalid year</sys:String>
+    <sys:String x:Key="Str.EmployeeMovement.NotFound">Record not found</sys:String>
     <sys:String x:Key="Str.Field.AccountCode">Account code</sys:String>
     <sys:String x:Key="Str.Field.AccountName">Account name</sys:String>
     <sys:String x:Key="Str.Field.AssetCode">Asset code</sys:String>
@@ -830,7 +833,6 @@
     <sys:String x:Key="Str.Rule.Invalid">{0} is invalid</sys:String>
     <sys:String x:Key="Str.Rule.Duplicate">{0} is already used</sys:String>
     <sys:String x:Key="Str.Rule.AccountCodeFormat">{0} must contain digits only</sys:String>
-    <sys:String x:Key="Str.Rule.Unbalanced">The entry is unbalanced: debit {0:N2}, credit {1:N2}</sys:String>
     <sys:String x:Key="Str.Rule.MinJournalLines">The entry needs at least {0} lines</sys:String>
     <sys:String x:Key="Str.Rule.ZeroEntry">An entry with zero value cannot be saved</sys:String>
     <sys:String x:Key="Str.Rule.DebitAndCredit">A line cannot have both debit and credit {0}</sys:String>

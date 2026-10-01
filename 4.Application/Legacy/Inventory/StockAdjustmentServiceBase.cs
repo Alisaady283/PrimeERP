@@ -1,4 +1,5 @@
 using PrimeERP.Application.Services.Entities;
+using PrimeERP.Domain.Calculations;
 using PrimeERP.Application.Validation;
 using PrimeERP.Application.Services.Documents;
 using PrimeERP.Application.Services.Core;
@@ -72,14 +73,14 @@ namespace PrimeERP.Application.Legacy.Inventory
 
         protected override List<StockAdjustmentDto> ToRows(List<StockAdjustment> heads)
         {
-            var warehouses = Warehouses();
+            var warehouses = _warehouses.NamesOf(heads.Select(d => d.WarehouseId));
             var totals = Repo.TotalQty(heads.Select(d => d.Id));
             return heads.Select(d => ToDto<StockAdjustmentDto>(d, warehouses, totals)).ToList();
         }
 
         protected override StockAdjustmentDetailDto ToDetail(StockAdjustment head)
         {
-            var detail = ToDto<StockAdjustmentDetailDto>(head, Warehouses(), Repo.TotalQty(new[] { head.Id }));
+            var detail = ToDto<StockAdjustmentDetailDto>(head, _warehouses.NamesOf(new[] { head.WarehouseId }), Repo.TotalQty(new[] { head.Id }));
             detail.Lines = Repo.GetLines(head.Id).Select(l => Rows.Copy(l, new StockAdjustmentLineDto())).ToList();
             return detail;
         }
@@ -90,14 +91,13 @@ namespace PrimeERP.Application.Legacy.Inventory
             if (shape.IsFailure) return shape.As<Func<PrimeDbContext, int>>();
 
             var lines = ProductLines.Resolve(_products, dto.Lines, l => l.ProductCode, (l, product, _) =>
-                Links.ValidatePull(l.SourceType, l.SourceId, l.SourceLineId, l.Qty, l.SourceNo).Then(() => Result.Ok(Rows.Copy(l, new StockAdjustmentLine(), to =>
+                Result.Ok(Rows.Copy(l, new StockAdjustmentLine(), to =>
                 {
-                    to.ProductId = product.Id;
-                    to.ProductCode = product.Code;
-                    to.ProductName = product.Name;
-                    to.UnitCost = l.UnitCost > 0 ? l.UnitCost : product.CostPrice;
-                }))));
+                    to.UnitCost = InventoryCosting.LineCost(l.UnitCost, product.CostPrice);
+                })));
             if (lines.IsFailure) return lines.As<Func<PrimeDbContext, int>>();
+            var pulls = Links.ValidatePulls(dto.Lines.Select(l => ((IPullableLine)l, l.Qty)));
+            if (pulls.IsFailure) return pulls.As<Func<PrimeDbContext, int>>();
             var resolved = lines.Value;
 
             return Result.Ok<Func<PrimeDbContext, int>>(db =>
@@ -128,9 +128,6 @@ namespace PrimeERP.Application.Legacy.Inventory
             _stock.RemoveMovements(db, _entityName, head.Id);
             Repo.DeleteDocument(db, head.Id);
         }
-
-        private IReadOnlyDictionary<int, string> Warehouses() =>
-            _warehouses.GetAll(true).ToDictionary(w => w.Id, w => w.Name);
 
         private static T ToDto<T>(StockAdjustment d, IReadOnlyDictionary<int, string> warehouses,
             IReadOnlyDictionary<int, decimal> totals) where T : StockAdjustmentDto, new() => Rows.Copy<T>(d, new(), to =>

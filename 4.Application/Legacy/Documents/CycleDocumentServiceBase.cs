@@ -40,16 +40,17 @@ namespace PrimeERP.Application.Legacy.Documents
     {
         protected readonly TRepo Repo;
         private readonly IProductRepository _products;
+        private readonly IDocumentLinkRepository _linkRows;
         private readonly INumberSequenceService _numbers;
         private readonly string _sequenceKey, _permissionPrefix, _entityName;
         private readonly bool _partyRequired;
 
         protected CycleDocumentServiceBase(TRepo repo, IProductRepository products, INumberSequenceService numbers,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
-            IDocumentPull links, string sequenceKey, string permissionPrefix, string entityName, bool partyRequired)
+            IDocumentPull links, IDocumentLinkRepository linkRows, string sequenceKey, string permissionPrefix, string entityName, bool partyRequired)
             : base(permissions, settings, localization, audit, links)
         {
-            Repo = repo; _products = products; _numbers = numbers;
+            Repo = repo; _products = products; _numbers = numbers; _linkRows = linkRows;
             _sequenceKey = sequenceKey; _permissionPrefix = permissionPrefix; _entityName = entityName; _partyRequired = partyRequired;
         }
 
@@ -78,9 +79,14 @@ namespace PrimeERP.Application.Legacy.Documents
 
         protected override CycleDocumentDetailDto ToDetail(CycleDocument head)
         {
-            var lines = Repo.GetLines(head.Id);
-            var detail = ToDto<CycleDocumentDetailDto>(head, (lines.Sum(l => l.Qty), lines.Sum(l => l.Qty * l.UnitPrice)));
-            detail.Lines = lines.Select(l => Rows.Copy(l, new CycleDocumentLineDto())).ToList();
+            var detail = ToDto<CycleDocumentDetailDto>(head, Repo.Totals(new[] { head.Id }).GetValueOrDefault(head.Id));
+            var links = _linkRows.GetByTarget(EntityName, head.Id);
+            detail.Lines = Repo.GetLines(head.Id).Select(l => Rows.Copy(l, new CycleDocumentLineDto(), to =>
+            {
+                var link = links.FirstOrDefault(x => x.TargetLineId == l.Id);
+                if (link == null) return;
+                (to.SourceType, to.SourceId, to.SourceNo, to.SourceLineId) = (link.SourceType, link.SourceId, link.SourceNo, link.SourceLineId);
+            })).ToList();
             return detail;
         }
 
@@ -93,14 +99,13 @@ namespace PrimeERP.Application.Legacy.Documents
             if (party.IsFailure) return party.As<Func<PrimeDbContext, int>>();
 
             var lines = ProductLines.Resolve(_products, dto.Lines, l => l.ProductCode, (l, product, no) =>
-                Links.ValidatePull(l.SourceType, l.SourceId, l.SourceLineId, l.Qty, l.SourceNo).Then(() => Result.Ok(Rows.Copy(l, new CycleDocumentLine(), to =>
+                Result.Ok(Rows.Copy(l, new CycleDocumentLine(), to =>
                 {
                     to.LineNo = no;
-                    to.ProductId = product.Id;
-                    to.ProductCode = product.Code;
-                    to.ProductName = product.Name;
-                }))));
+                })));
             if (lines.IsFailure) return lines.As<Func<PrimeDbContext, int>>();
+            var pulls = Links.ValidatePulls(dto.Lines.Select(l => ((IPullableLine)l, l.Qty)), EntityName, dto.Id);
+            if (pulls.IsFailure) return pulls.As<Func<PrimeDbContext, int>>();
             var resolved = lines.Value;
 
             return Result.Ok<Func<PrimeDbContext, int>>(db =>
@@ -133,31 +138,31 @@ namespace PrimeERP.Application.Legacy.Documents
     {
         public PurchaseRequestService(IPurchaseRequestRepository repo, IProductRepository products, INumberSequenceService numbers,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IDocumentPull links)
-            : base(repo, products, numbers, permissions, settings, localization, audit, links, "PurchaseRequest", "Purchases", "PurchaseRequest", partyRequired: false) { }
+            IAuditLogger audit, IDocumentPull links, IDocumentLinkRepository linkRows)
+            : base(repo, products, numbers, permissions, settings, localization, audit, links, linkRows, "PurchaseRequest", "Purchases", "PurchaseRequest", partyRequired: false) { }
     }
 
     public class PurchaseOrderService : CycleDocumentServiceBase<IPurchaseOrderRepository>, IPurchaseOrderService
     {
         public PurchaseOrderService(IPurchaseOrderRepository repo, IProductRepository products, INumberSequenceService numbers,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IDocumentPull links)
-            : base(repo, products, numbers, permissions, settings, localization, audit, links, "PurchaseOrder", "Purchases", "PurchaseOrder", partyRequired: true) { }
+            IAuditLogger audit, IDocumentPull links, IDocumentLinkRepository linkRows)
+            : base(repo, products, numbers, permissions, settings, localization, audit, links, linkRows, "PurchaseOrder", "Purchases", "PurchaseOrder", partyRequired: true) { }
     }
 
     public class QuotationService : CycleDocumentServiceBase<IQuotationRepository>, IQuotationService
     {
         public QuotationService(IQuotationRepository repo, IProductRepository products, INumberSequenceService numbers,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IDocumentPull links)
-            : base(repo, products, numbers, permissions, settings, localization, audit, links, "Quotation", "Sales", "Quotation", partyRequired: false) { }
+            IAuditLogger audit, IDocumentPull links, IDocumentLinkRepository linkRows)
+            : base(repo, products, numbers, permissions, settings, localization, audit, links, linkRows, "Quotation", "Sales", "Quotation", partyRequired: false) { }
     }
 
     public class SalesOrderService : CycleDocumentServiceBase<ISalesOrderRepository>, ISalesOrderService
     {
         public SalesOrderService(ISalesOrderRepository repo, IProductRepository products, INumberSequenceService numbers,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IDocumentPull links)
-            : base(repo, products, numbers, permissions, settings, localization, audit, links, "SalesOrder", "Sales", "SalesOrder", partyRequired: true) { }
+            IAuditLogger audit, IDocumentPull links, IDocumentLinkRepository linkRows)
+            : base(repo, products, numbers, permissions, settings, localization, audit, links, linkRows, "SalesOrder", "Sales", "SalesOrder", partyRequired: true) { }
     }
 }

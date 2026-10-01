@@ -7,7 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using PrimeERP.Domain.Contracts;
 
-namespace PrimeERP.Application.Legacy.Print
+namespace PrimeERP.UI.Services
 {
     /// <summary>مترجم PaperNode إلى عناصر WPF</summary>
     public static class PaperNodeRenderer

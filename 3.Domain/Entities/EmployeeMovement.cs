@@ -4,7 +4,7 @@ using PrimeERP.Domain.Entities.Common;
 namespace PrimeERP.Domain.Entities
 {
     /// <summary>البدل والخصم سواء</summary>
-    public abstract class EmployeeMovement : BaseModel
+    public abstract class EmployeeMovement : BaseModel, IEmployeeLine
     {
         public int      EmployeeId { get; set; }
 
@@ -25,7 +25,7 @@ namespace PrimeERP.Domain.Entities
     public class EmployeeDeduction : EmployeeMovement { }
 
     /// <summary>موضع الساعات الإضافية</summary>
-    public class Attendance : BaseModel
+    public class Attendance : BaseModel, IEmployeeLine
     {
         public int       EmployeeId    { get; set; }
         public DateTime  Date          { get; set; } = DateTime.Today;

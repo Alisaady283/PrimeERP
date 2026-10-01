@@ -17,8 +17,7 @@ using Entity = PrimeERP.Domain.Entities.Treasury;
 namespace PrimeERP.Application.Legacy.Treasury
 {
     /// <summary>الخزائن والبنوك وحساباتها</summary>
-    public class TreasuryService : EntityService<Entity, Entity, Entity, Entity, object>,
-        ITreasuryService, IAccountLinkedService
+    public class TreasuryService : LinkedEntityService<Entity, object>, ITreasuryService
     {
         protected override string PermissionPrefix => "Treasuries";
         protected override string StringPrefix => "Str.Treasury";
@@ -30,16 +29,20 @@ namespace PrimeERP.Application.Legacy.Treasury
 
         private readonly ITreasuryRepository _repo;
         private readonly IAccountRepository _accountRows;
+        private readonly RepairAccounts _repair;
+        private readonly AccountSpec<Entity> _spec;
         private readonly AccountSpec<Entity>[] _account;
 
         public TreasuryService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
             IAuditLogger audit, ITreasuryRepository repo, INumberSequenceService numbers, IAccountRepository accountRows,
-            AccountCases tree)
+            AccountCases tree, RepairAccounts repair)
             : base(permissions, settings, localization, audit, numbers, tree)
         {
             _repo = repo;
             _accountRows = accountRows;
-            _account = new[] { new AccountSpec<Entity>(Root, t => t.Name, t => t.AccountCode, (t, code) => t.AccountCode = code) };
+            _repair = repair;
+            _spec = new AccountSpec<Entity>(Root, t => t.Name, t => t.AccountCode, (t, code) => t.AccountCode = code);
+            _account = new[] { _spec };
         }
 
         protected override IReadOnlyList<AccountSpec<Entity>> Accounts => _account;
@@ -64,8 +67,7 @@ namespace PrimeERP.Application.Legacy.Treasury
             return (all, all.Count);
         }
 
-        protected override List<Entity> FindSearch(string term, int maxResults) =>
-            _repo.GetAll().Where(t => (t.Name ?? "").Contains(term)).Take(maxResults).ToList();
+        protected override List<Entity> FindSearch(string term, int maxResults) => _repo.Search(term, maxResults);
 
         public override Result<Entity> GetById(int id) =>
             FindById(id) is { } entity ? Result.Ok(ToDto(entity)) : Fail<Entity>("NotFound", ErrorCode.NotFound);
@@ -80,55 +82,23 @@ namespace PrimeERP.Application.Legacy.Treasury
 
         protected override object AuditValue(Entity t) => new { t.Code, t.Name, t.AccountCode };
 
-        public string[] RootKeys => new[] { SettingKeys.Accounts.Cash, SettingKeys.Accounts.Bank };
+        public override string[] RootKeys => new[] { SettingKeys.Accounts.Cash, SettingKeys.Accounts.Bank };
 
-        public Result CreateFromAccount(PrimeDbContext db, string accountCode, string name, string rootCode)
+        protected override Entity FromAccount(string accountCode, string name, string rootCode) => new()
         {
-            if (_repo.GetByAccountCode(accountCode, db) != null) return Result.Ok();
+            Name = name, Kind = rootCode == RootCode(bank: true) ? TreasuryKind.Bank : TreasuryKind.Cash,
+            AccountCode = accountCode, IsActive = true
+        };
 
-            _repo.Insert(new Entity
-            {
-                Code = Numbers.Next(db, "Treasury"), Name = name,
-                Kind = rootCode == RootCode(bank: true) ? TreasuryKind.Bank : TreasuryKind.Cash,
-                AccountCode = accountCode, IsActive = true
-            }, db);
-            return Result.Ok();
-        }
+        protected override Entity FindByAccount(PrimeDbContext db, string accountCode) => _repo.GetByAccountCode(accountCode, db);
 
-        public Result UpdateNameFromAccount(PrimeDbContext db, string accountCode, string name)
-        {
+        protected override void RenameByAccount(PrimeDbContext db, string accountCode, string name) =>
             _repo.UpdateNameByAccountCode(db, accountCode, name);
-            return Result.Ok();
-        }
-
-        public Result DeleteByAccountCode(PrimeDbContext db, string accountCode)
-        {
-            _repo.DeleteByAccountCode(db, accountCode);
-            return Result.Ok();
-        }
 
         public Result RepairMissingAccounts()
         {
-            var treasuries = _repo.GetAll(includeInactive: true);
-            var missing = treasuries.Where(t => t.IsActive && string.IsNullOrWhiteSpace(t.AccountCode)).ToList();
-            if (missing.Count == 0) return Result.Ok();
-
-            var linked = treasuries.Select(t => t.AccountCode).Where(c => !string.IsNullOrWhiteSpace(c)).ToHashSet();
-
-            foreach (var treasury in missing)
-            {
-                var root = RootCode(treasury.Kind == TreasuryKind.Bank);
-                treasury.AccountCode = _accountRows.LeafNamed(root, treasury.Name, linked)?.Code;
-
-                var repaired = Commit(db => Tree.Add.Run(db, treasury, Accounts).Then(() =>
-                {
-                    _repo.Update(treasury, db);
-                    return Result.Ok();
-                }));
-
-                if (repaired.IsSuccess) linked.Add(treasury.AccountCode);
-            }
-
+            _repair.Run(_repo.GetAll(includeInactive: true), t => t.IsActive, _spec, t => RootCode(t.Kind == TreasuryKind.Bank),
+                Commit, (db, t) => _repo.Update(t, db));
             return Result.Ok();
         }
 

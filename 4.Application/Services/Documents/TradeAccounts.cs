@@ -1,5 +1,5 @@
+using PrimeERP.Application.Services.Ledger.Accounts;
 using PrimeERP.Domain.Calculations;
-using PrimeERP.Platform.Localization;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Helpers;
 using PrimeERP.Domain.Results;
@@ -19,14 +19,12 @@ namespace PrimeERP.Application.Services.Documents
                 settings.Get(SettingKeys.Accounts.COGS, ""),
                 settings.Get(SettingKeys.Accounts.Inventory, ""));
 
-            if (Missing(accounts.Main) || Missing(accounts.Cogs) || Missing(accounts.Inventory))
-                return Refused(LocalizationService.Get("Str.Trade.SalesAccountsMissing"));
-            if (totals.Vat > 0 && Missing(accounts.Vat))
-                return Refused(LocalizationService.Get("Str.Trade.VatOutputMissing"));
-            if (totals.Withholding > 0 && Missing(accounts.Withholding))
-                return Refused(LocalizationService.Get("Str.Trade.WithholdingReceivableMissing"));
-
-            return Result.Ok(accounts);
+            return AccountOf.Required(accounts.Main, "Str.Trade.SalesAccountsMissing")
+                .Then(() => AccountOf.Required(accounts.Cogs, "Str.Trade.SalesAccountsMissing"))
+                .Then(() => AccountOf.Required(accounts.Inventory, "Str.Trade.SalesAccountsMissing"))
+                .Then(() => totals.Vat > 0 ? AccountOf.Required(accounts.Vat, "Str.Trade.VatOutputMissing") : Result.Ok())
+                .Then(() => totals.Withholding > 0 ? AccountOf.Required(accounts.Withholding, "Str.Trade.WithholdingReceivableMissing") : Result.Ok())
+                .Then(() => Result.Ok(accounts));
         }
 
         /// <summary>حساب المرتجعات أو المبيعات</summary>
@@ -45,20 +43,10 @@ namespace PrimeERP.Application.Services.Documents
                 "",
                 inventory);
 
-            if (Missing(accounts.Inventory))
-                return Refused(LocalizationService.Get("Str.Trade.InventoryMissing"));
-            if (totals.Vat > 0 && Missing(accounts.Vat))
-                return Refused(LocalizationService.Get("Str.Trade.VatInputMissing"));
-            if (totals.Withholding > 0 && Missing(accounts.Withholding))
-                return Refused(LocalizationService.Get("Str.Trade.WithholdingPayableMissing"));
-
-            return Result.Ok(accounts);
+            return AccountOf.Required(accounts.Inventory, "Str.Trade.InventoryMissing")
+                .Then(() => totals.Vat > 0 ? AccountOf.Required(accounts.Vat, "Str.Trade.VatInputMissing") : Result.Ok())
+                .Then(() => totals.Withholding > 0 ? AccountOf.Required(accounts.Withholding, "Str.Trade.WithholdingPayableMissing") : Result.Ok())
+                .Then(() => Result.Ok(accounts));
         }
-
-        private static bool Missing(string code) => string.IsNullOrWhiteSpace(code);
-
-        private static Result<TradeAccounts> Refused(string message) =>
-            Result.Fail<TradeAccounts>(message, ErrorCode.ValidationFailed);
-
     }
 }

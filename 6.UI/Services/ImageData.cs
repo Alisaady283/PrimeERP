@@ -3,7 +3,7 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace PrimeERP.Application.Legacy.Print
+namespace PrimeERP.UI.Services
 {
     /// <summary>تحويل صورة ↔ Base64</summary>
     public static class ImageData

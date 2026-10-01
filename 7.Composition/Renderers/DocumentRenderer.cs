@@ -166,7 +166,16 @@ namespace PrimeERP.Composition.Renderers
             {
                 var existingLines = editItem.GetType().GetProperty(def.LinesPropertyName)?.GetValue(editItem) as IEnumerable;
                 if (existingLines != null)
-                    foreach (var line in existingLines) AddRow(line);
+                    foreach (var line in existingLines)
+                    {
+                        var row = AddRow(line);
+                        if (line is PrimeERP.Application.DTOs.Documents.IPullableLine { SourceLineId: > 0 } pulled)
+                            row.Link = new PullDialog.PulledLine
+                            {
+                                SourceType = pulled.SourceType, SourceId = pulled.SourceId,
+                                SourceNo = pulled.SourceNo, SourceLineId = pulled.SourceLineId
+                            };
+                    }
             }
             else
             {

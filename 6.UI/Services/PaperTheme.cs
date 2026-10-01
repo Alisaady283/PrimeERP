@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 
-namespace PrimeERP.Application.Legacy.Print
+namespace PrimeERP.UI.Services
 {
     /// <summary>قيم الورق كلها من PrintTheme.xaml</summary>
     public static class PaperTheme

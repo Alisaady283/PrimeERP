@@ -49,11 +49,11 @@ namespace PrimeERP.Application.Services.Ledger
         public static readonly Field<JournalEntry>[] Shape =
         {
             new(x => x.EntryDate, "Str.EntryDate", Required: true, Format: FieldFormat.Date),
+            new(x => x.Lines, "", Name: "Balance", Must: e => Valid(e).Sum(l => l.Debit) == Valid(e).Sum(l => l.Credit), Message: "Str.Journal.Unbalanced",
+                Args: e => new object[] { Valid(e).Sum(l => l.Debit), Valid(e).Sum(l => l.Credit), Math.Abs(Valid(e).Sum(l => l.Debit) - Valid(e).Sum(l => l.Credit)) }),
             new(x => x.Lines, "", Name: "Lines", Must: e => Valid(e).Count >= 2, Message: "Str.Rule.MinJournalLines", Args: _ => new object[] { 2 }),
             new(x => x.Lines, "", Name: "Lines", Must: e => !Valid(e).Any(l => l.Debit > 0 && l.Credit > 0), Message: "Str.Rule.DebitAndCredit",
                 Args: e => new object[] { Valid(e).First(l => l.Debit > 0 && l.Credit > 0).AccountCode }),
-            new(x => x.Lines, "", Name: "Balance", Must: e => Valid(e).Sum(l => l.Debit) == Valid(e).Sum(l => l.Credit), Message: "Str.Rule.Unbalanced",
-                Args: e => new object[] { Valid(e).Sum(l => l.Debit), Valid(e).Sum(l => l.Credit) }),
             new(x => x.Lines, "", Name: "Balance", Must: e => Valid(e).Any(l => l.Debit != 0 || l.Credit != 0), Message: "Str.Rule.ZeroEntry"),
         };
 

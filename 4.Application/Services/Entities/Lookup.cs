@@ -52,13 +52,10 @@ namespace PrimeERP.Application.Services.Entities
         protected override (List<TEntity> Items, int Total) FindPaged(int page, int pageSize, DynamicFilter filter)
         {
             var rows = FindSearch(filter?.SearchText, int.MaxValue);
-            return (rows.Skip(Math.Max(0, page - 1) * pageSize).Take(pageSize).ToList(), rows.Count);
+            return (rows, rows.Count);
         }
 
-        protected override List<TEntity> FindSearch(string term, int maxResults) =>
-            _rows.GetAll()
-                 .Where(e => string.IsNullOrWhiteSpace(term) || ToDto(e).Values.Any(v => v?.ToString()?.Contains(term, StringComparison.OrdinalIgnoreCase) == true))
-                 .Take(maxResults).ToList();
+        protected override List<TEntity> FindSearch(string term, int maxResults) => Rows.Search(_rows.GetAll(), term, maxResults);
 
         protected override TEntity New(IDictionary<string, object> values)
         {

@@ -22,7 +22,7 @@ namespace PrimeERP.Application.DTOs.Documents
         public List<CycleDocumentLineDto> Lines { get; set; } = new();
     }
 
-    public class CycleDocumentLineDto
+    public class CycleDocumentLineDto : IPullableLine
     {
         public int     Id          { get; set; }
         public int     LineNo      { get; set; }
@@ -31,6 +31,11 @@ namespace PrimeERP.Application.DTOs.Documents
         public decimal Qty         { get; set; }
         public decimal UnitPrice   { get; set; }
         public string  Notes       { get; set; }
+
+        public string  SourceType   { get; set; }
+        public int     SourceId     { get; set; }
+        public string  SourceNo     { get; set; }
+        public int     SourceLineId { get; set; }
     }
 
     public class CreateCycleDocumentLineDto : IPullableLine

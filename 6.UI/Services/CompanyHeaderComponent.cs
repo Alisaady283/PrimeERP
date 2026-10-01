@@ -3,7 +3,7 @@ using System;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Platform.Settings;
 
-namespace PrimeERP.Application.Legacy.Print
+namespace PrimeERP.UI.Services
 {
     /// <summary>ترويسة الشركة كقطعة واحدة تُستدعى</summary>
     public static class CompanyHeaderComponent

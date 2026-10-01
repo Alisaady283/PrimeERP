@@ -563,8 +563,10 @@
     <sys:String x:Key="Str.Asset.PickDisposalTreasury">اختر الخزينة التي قُبض فيها الثمن</sys:String>
     <sys:String x:Key="Str.Asset.RevaluationDateRequired">تاريخ إعادة التقييم مطلوب</sys:String>
     <sys:String x:Key="Str.Asset.RevaluationNoChange">القيمة الجديدة تساوي القيمة الحالية — لا فرق يُرحَّل</sys:String>
+    <sys:String x:Key="Str.Asset.RevaluationZero">لا تُعاد قيمة الأصل إلى صفر؛ استعمل الاستبعاد</sys:String>
     <sys:String x:Key="Str.Asset.SalePriceNegative">ثمن البيع لا يكون سالباً</sys:String>
     <sys:String x:Key="Str.Attendance.Absent">غياب</sys:String>
+    <sys:String x:Key="Str.Attendance.NotFound">السجل غير موجود</sys:String>
     <sys:String x:Key="Str.Attendance.OutBeforeIn">وقت الانصراف قبل وقت الحضور</sys:String>
     <sys:String x:Key="Str.Attendance.OvertimeNegative">الساعات الإضافية لا تكون سالبة</sys:String>
     <sys:String x:Key="Str.Attendance.Present">حضور</sys:String>
@@ -626,6 +628,7 @@
     <sys:String x:Key="Str.Employee.Status.Inactive">غير نشط</sys:String>
     <sys:String x:Key="Str.Employee.Status.OnLeave">في إجازة</sys:String>
     <sys:String x:Key="Str.Employee.YearInvalid">السنة غير صحيحة</sys:String>
+    <sys:String x:Key="Str.EmployeeMovement.NotFound">السجل غير موجود</sys:String>
     <sys:String x:Key="Str.Field.AccountCode">كود الحساب</sys:String>
     <sys:String x:Key="Str.Field.AccountName">اسم الحساب</sys:String>
     <sys:String x:Key="Str.Field.AssetCode">كود الأصل</sys:String>
@@ -830,7 +833,6 @@
     <sys:String x:Key="Str.Rule.Invalid">{0} غير صحيح</sys:String>
     <sys:String x:Key="Str.Rule.Duplicate">{0} مستخدم من قبل</sys:String>
     <sys:String x:Key="Str.Rule.AccountCodeFormat">{0} يجب أن يتكوّن من أرقام فقط</sys:String>
-    <sys:String x:Key="Str.Rule.Unbalanced">القيد غير متوازن: مدين {0:N2}، دائن {1:N2}</sys:String>
     <sys:String x:Key="Str.Rule.MinJournalLines">القيد يحتاج {0} سطور على الأقل</sys:String>
     <sys:String x:Key="Str.Rule.ZeroEntry">لا يمكن حفظ قيد بقيمة صفر</sys:String>
     <sys:String x:Key="Str.Rule.DebitAndCredit">لا يُدخل مدينٌ ودائن في سطرٍ واحد {0}</sys:String>

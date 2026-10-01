@@ -88,5 +88,8 @@ namespace PrimeERP.Data.Repositories.Base
 
         public void SetBalance(int id, decimal balance, PrimeDbContext db = null) =>
             Set(p => p.Id == id, s => s.SetProperty(r => r.Balance, balance), db);
+
+        public void SetBalanceByAccount(string code, decimal balance, PrimeDbContext db = null) =>
+            Set(p => p.AccountCode == code, s => s.SetProperty(r => r.Balance, balance), db);
     }
 }

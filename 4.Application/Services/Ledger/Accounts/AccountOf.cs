@@ -35,7 +35,7 @@ namespace PrimeERP.Application.Services.Ledger.Accounts
             return _settings.Get(treasury?.Kind == TreasuryKind.Cash ? SettingKeys.Accounts.Cash : SettingKeys.Accounts.Bank, "");
         }
 
-        public Result<string> Party(PartyKind kind, int id, string missingKey)
+        public Result<string> Party(PartyKind kind, int? id, string missingKey)
         {
             var party = _parties.Find(kind, id);
             return party == null
@@ -45,9 +45,17 @@ namespace PrimeERP.Application.Services.Ledger.Accounts
 
         public Result<string> Setting(string key, string missingKey) => Required(_settings.Get(key, ""), missingKey);
 
-        private static Result<string> Required(string code, string missingKey) =>
+        /// <summary>حساب الإعداد وجهته بالإشارة</summary>
+        public Result<(string Account, bool Debit)> SettingBySign(decimal amount, string positiveKey, string negativeKey, string missingKey)
+        {
+            if (amount == 0) return Result.Ok(("", false));
+            return Setting(amount > 0 ? positiveKey : negativeKey, missingKey).Then(code => Result.Ok((code, amount < 0)));
+        }
+
+        /// <summary>الحساب المطلوب أو رسالته</summary>
+        public static Result<string> Required(string code, string missingKey, params object[] args) =>
             string.IsNullOrWhiteSpace(code)
-                ? Result.Fail<string>(LocalizationService.Get(missingKey), ErrorCode.ValidationFailed)
+                ? Result.Fail<string>(LocalizationService.Get(missingKey, args), ErrorCode.ValidationFailed)
                 : Result.Ok(code);
     }
 }

@@ -31,12 +31,13 @@ namespace PrimeERP.Application.Legacy.Inventory
         private readonly IStockMove _stock;
         private readonly Entries _journals;
         private readonly IJournalRepository _ledger;
+        private readonly AccountOf _accountsOf;
 
-        public OpeningStockService(IStockMove stock, Entries journals, IJournalRepository ledger, IPermissionService permissions,
+        public OpeningStockService(IStockMove stock, Entries journals, IJournalRepository ledger, AccountOf accountsOf, IPermissionService permissions,
             ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
             : base(permissions, settings, localization, audit)
         {
-            _stock = stock; _journals = journals; _ledger = ledger;
+            _stock = stock; _journals = journals; _ledger = ledger; _accountsOf = accountsOf;
         }
 
         protected override string PermissionPrefix => "Inventory";
@@ -55,16 +56,16 @@ namespace PrimeERP.Application.Legacy.Inventory
                 new Field<CreateOpeningStockDto>(x => x.WarehouseId, "", Required: true, Message: "Str.Stock.WarehouseRequired"));
             if (input.IsFailure) return input.As<CreateOpeningStockDto>();
 
-            var inventory = Setting(SettingKeys.Accounts.Inventory, "");
-            var counter = Setting(SettingKeys.Accounts.OpeningAdjustments, "");
-            if (string.IsNullOrWhiteSpace(counter))
-                return Result.Fail<CreateOpeningStockDto>(Msg("OpeningAccountMissing"), ErrorCode.ValidationFailed);
+            var inventory = _accountsOf.Setting(SettingKeys.Accounts.Inventory, "Str.Trade.InventoryMissing");
+            if (inventory.IsFailure) return inventory.As<CreateOpeningStockDto>();
+            var counter = _accountsOf.Setting(SettingKeys.Accounts.OpeningAdjustments, "Str.Stock.OpeningAccountMissing");
+            if (counter.IsFailure) return counter.As<CreateOpeningStockDto>();
 
-            var total = lines.Sum(l => l.Qty * l.UnitCost);
+            var total = InventoryCosting.Replay(lines.Select(l => new InventoryCosting.Entry(MovementType.In, l.Qty, l.UnitCost))).Value;
 
             var created = Commit(db =>
             {
-                var entryId = Posting.Entry(_journals, db, dto.Date, Msg("OpeningDescription"), EntityName, inventory, counter, total);
+                var entryId = Posting.Entry(_journals, db, dto.Date, Msg("OpeningDescription"), EntityName, inventory.Value, counter.Value, total);
                 var entryNo = _ledger.GetById(entryId, db)?.EntryNo;
 
                 foreach (var line in lines)

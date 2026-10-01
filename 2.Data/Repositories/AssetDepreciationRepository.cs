@@ -16,7 +16,7 @@ namespace PrimeERP.Data.Repositories
         (List<AssetDepreciation> Items, int Total) GetPaged(int page, int pageSize, string searchText = null,
             int? assetId = null, string sortColumn = "PeriodDate", bool sortDescending = true);
 
-        List<AssetDepreciation> OfAsset(int assetId, PrimeDbContext db = null);
+        (decimal Total, DateTime? Last) TotalOf(int assetId, PrimeDbContext db = null);
 
         List<int> LinkedEntryIds();
 
@@ -28,6 +28,13 @@ namespace PrimeERP.Data.Repositories
     public class AssetDepreciationRepository : RepositoryBase<AssetDepreciation>, IAssetDepreciationRepository
     {
         protected override string TableName => "AssetDepreciations";
+
+        /// <summary>كود الأصل واسمه عرضٌ فقط</summary>
+        private static List<AssetDepreciation> WithAsset(List<AssetDepreciation> rows) =>
+            WithCodeNames<Asset>("Assets", rows, c => c.AssetId, (c, code, name) => (c.AssetCode, c.AssetName) = (code, name));
+
+        public override AssetDepreciation GetById(int id, PrimeDbContext db = null) =>
+            WithAsset(Fetch(q => q.Where(c => c.Id == id), db)).FirstOrDefault();
 
 
 
@@ -43,12 +50,18 @@ namespace PrimeERP.Data.Repositories
                 return q;
             }
 
-            return Page(page, pageSize, Shape, q => (sortColumn == "Amount" ? By(c => c.Amount, sortDescending)
+            var (items, total) = Page(page, pageSize, Shape, q => (sortColumn == "Amount" ? By(c => c.Amount, sortDescending)
                                          : By(c => c.PeriodDate, sortDescending))(q).ThenByDescending(c => c.Id));
+            return (WithAsset(items), total);
         }
 
-        public List<AssetDepreciation> OfAsset(int assetId, PrimeDbContext db = null) =>
-            Fetch(q => q.Where(c => c.AssetId == assetId).OrderBy(c => c.PeriodDate), db);
+        /// <summary>مجموع أقساط الأصل وآخرها</summary>
+        public (decimal Total, DateTime? Last) TotalOf(int assetId, PrimeDbContext db = null) =>
+            Scope(db, ctx =>
+            {
+                var charges = Rows(ctx).Where(c => c.AssetId == assetId);
+                return (charges.Sum(c => (decimal?)c.Amount) ?? 0m, charges.Max(c => (DateTime?)c.PeriodDate));
+            });
 
         public List<int> LinkedEntryIds() =>
             Fetch(q => q.Where(c => c.JournalEntryId != null)).Select(c => c.JournalEntryId.Value).ToList();

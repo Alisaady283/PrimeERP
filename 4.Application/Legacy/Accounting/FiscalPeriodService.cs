@@ -28,19 +28,24 @@ namespace PrimeERP.Application.Legacy.Accounting
         protected override string StringPrefix => "Str.Fiscal";
         protected override string EntityName => "FiscalYears";
 
-        private readonly IAccountRepository _accounts;
         private readonly IFiscalPeriodRepository _fiscalPeriods;
         private readonly Entries _entries;
         private readonly IJournalRepository _ledger;
+        private readonly AccountOf _accountsOf;
+        private readonly ClosingEntry _closing;
+        private readonly NewFiscalYear _newYear;
 
         public FiscalPeriodService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IAccountRepository accounts, IFiscalPeriodRepository fiscalPeriods, Entries entries, IJournalRepository ledger)
+            IAuditLogger audit, IFiscalPeriodRepository fiscalPeriods, Entries entries, IJournalRepository ledger,
+            AccountOf accountsOf, ClosingEntry closing, NewFiscalYear newYear)
             : base(permissions, settings, localization, audit)
         {
-            _accounts = accounts;
             _fiscalPeriods = fiscalPeriods;
             _entries = entries;
             _ledger = ledger;
+            _accountsOf = accountsOf;
+            _closing = closing;
+            _newYear = newYear;
         }
 
 
@@ -103,26 +108,7 @@ namespace PrimeERP.Application.Legacy.Accounting
 
             name ??= FiscalPeriodCalc.DefaultYearName(start, end);
 
-            var periods = FiscalPeriodCalc.SplitPeriods(start, end, periodsCount);
-            foreach (var period in periods) period.Name = Msg("PeriodName", period.PeriodNo);
-
-            var isFirstYear = _fiscalPeriods.GetAllYears().Count == 0;
-
-            var yearId = Tx(db =>
-            {
-                var id = _fiscalPeriods.InsertYear(db, new FiscalYear { Name = name, StartDate = start.ToString("yyyy-MM-dd"), EndDate = end.ToString("yyyy-MM-dd") });
-
-                foreach (var p in periods)
-                {
-                    p.FiscalYearId = id;
-                    _fiscalPeriods.InsertPeriod(db, p);
-                }
-
-                if (isFirstYear)
-                    _fiscalPeriods.SetCurrentYear(db, id);
-
-                return id;
-            });
+            var yearId = Tx(db => _newYear.Create(db, name, start, end, periodsCount, no => Msg("PeriodName", no)));
 
             var details = monthMismatch
                 ? Msg("YearCreatedMismatch", name, start.Month, configuredStartMonth)
@@ -161,7 +147,7 @@ namespace PrimeERP.Application.Legacy.Accounting
             if (period.IsClosed)
                 return Result.Fail(Msg("PeriodAlreadyClosed"), ErrorCode.ValidationFailed);
 
-            if (_fiscalPeriods.GetPeriods(period.FiscalYearId).Any(p => p.PeriodNo < period.PeriodNo && !p.IsClosed))
+            if (FiscalPeriodCalc.PreviousOpen(_fiscalPeriods.GetPeriods(period.FiscalYearId), period))
                 return Result.Fail(Msg("PreviousPeriodOpen"), ErrorCode.ValidationFailed);
 
             if (_ledger.CountUnpostedBetween(ParseDate(period.StartDate), ParseDate(period.EndDate)) > 0)
@@ -187,7 +173,7 @@ namespace PrimeERP.Application.Legacy.Accounting
             if (_fiscalPeriods.GetYearById(period.FiscalYearId)?.IsClosed == true)
                 return Result.Fail(Msg("YearIsClosed"), ErrorCode.ValidationFailed);
 
-            if (_fiscalPeriods.GetPeriods(period.FiscalYearId).Any(p => p.PeriodNo > period.PeriodNo && p.IsClosed))
+            if (FiscalPeriodCalc.NextClosed(_fiscalPeriods.GetPeriods(period.FiscalYearId), period))
                 return Result.Fail(Msg("NextPeriodClosed"), ErrorCode.ValidationFailed);
 
             Tx(db => _fiscalPeriods.SetPeriodReopened(db, periodId));
@@ -211,26 +197,14 @@ namespace PrimeERP.Application.Legacy.Accounting
             if (periods.Count == 0 || periods.Any(p => !p.IsClosed))
                 return Result.Fail(Msg("ClosePeriodsFirst"), ErrorCode.ValidationFailed);
 
-            var retainedCode = Setting(SettingKeys.Accounts.RetainedEarnings, "");
-            if (string.IsNullOrWhiteSpace(retainedCode))
-                return Result.Fail(Msg("RetainedEarningsNotConfigured"), ErrorCode.Unexpected);
-
-            var nominal = _accounts.Find(null, null, (int)AccountType.Revenue, leafOnly: true, includeInactive: false)
-                .Concat(_accounts.Find(null, null, (int)AccountType.Expense, leafOnly: true, includeInactive: false));
-
-            // حركة السنة وحدها
-            var sums = _ledger.GetAccountSums(ParseDate(year.StartDate), ParseDate(year.EndDate), postedOnly: true)
-                              .ToDictionary(s => s.AccountCode, s => s.SumDebit - s.SumCredit);
-            var lines = new JournalLines()
-                .Close(nominal.Select(a => (a.Code, sums.GetValueOrDefault(a.Code))), retainedCode)
-                .ToList();
-            var retainedLines = lines.Where(l => l.AccountCode == retainedCode).ToList();
-            var (lossToRetained, profitToRetained) = (retainedLines.Sum(l => l.Debit), retainedLines.Sum(l => l.Credit));
+            var retained = _accountsOf.Setting(SettingKeys.Accounts.RetainedEarnings, "Str.Fiscal.RetainedEarningsNotConfigured");
+            if (retained.IsFailure) return retained;
+            var closing = _closing.Of(ParseDate(year.StartDate), ParseDate(year.EndDate), retained.Value);
 
             var closed = Commit(db =>
             {
-                int? entryId = lines.Count > 0
-                    ? Posting.Entry(_entries, db, ParseDate(year.EndDate), Msg("ClosingEntry", year.Name), "YearClosing", lines)
+                int? entryId = closing.Lines.Count > 0
+                    ? Posting.Entry(_entries, db, ParseDate(year.EndDate), Msg("ClosingEntry", year.Name), Entries.ClosingSource, closing.Lines)
                     : null;
 
                 _fiscalPeriods.SetYearClosed(db, yearId, DateTime.Now, CurrentUser, entryId);
@@ -239,7 +213,7 @@ namespace PrimeERP.Application.Legacy.Accounting
             if (closed.IsFailure) return closed;
             var closingEntryId = closed.Value;
 
-            Audit.Log("FiscalYears", yearId, AuditAction.Update, details: Msg("YearClosedLog", year.Name, profitToRetained - lossToRetained, closingEntryId));
+            Audit.Log("FiscalYears", yearId, AuditAction.Update, details: Msg("YearClosedLog", year.Name, closing.NetIncome, closingEntryId));
             return Result.Ok();
         }
 

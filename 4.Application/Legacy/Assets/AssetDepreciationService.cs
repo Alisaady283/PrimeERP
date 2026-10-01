@@ -62,15 +62,12 @@ namespace PrimeERP.Application.Legacy.Assets
         protected override List<AssetDepreciation> FindSearch(string term, int maxResults) =>
             _charges.GetPaged(1, maxResults, term).Items;
 
-        private static decimal Base(Asset asset) =>
-            asset.RevaluedValue > 0 ? asset.RevaluedValue : asset.PurchaseCost;
-
         public Result<decimal> MonthlyAmount(int assetId)
         {
             var asset = _assets.GetById(assetId);
             return asset == null
                 ? Result.Fail<decimal>(Msg("NotFound"), ErrorCode.NotFound)
-                : Result.Ok(AssetCalc.PerMonth(Base(asset), asset.SalvageValue, asset.UsefulLifeYears));
+                : Result.Ok(AssetCalc.PerMonth(AssetCalc.Basis(asset.RevaluedValue, asset.PurchaseCost), asset.SalvageValue, asset.UsefulLifeYears));
         }
 
         public Result<AssetDepreciation> Create(AssetDepreciation charge) => Record(db => Write(db, charge));
@@ -89,13 +86,13 @@ namespace PrimeERP.Application.Legacy.Assets
 
         private Result<AssetDepreciation> Write(PrimeDbContext db, AssetDepreciation charge)
         {
-            var expense = Account(SettingKeys.Accounts.DepreciationExpense);
+            var expense = AccountsOf.Setting(SettingKeys.Accounts.DepreciationExpense, "Str.Asset.AccountsMissing");
             if (expense.IsFailure) return expense.As<AssetDepreciation>();
 
             var asset = _assets.GetById(charge.AssetId, db);
             if (asset == null) return Fail<AssetDepreciation>("NotFound", ErrorCode.NotFound);
-            if (string.IsNullOrWhiteSpace(asset.DepreciationAccountCode))
-                return Fail<AssetDepreciation>("MirrorMissing", ErrorCode.ValidationFailed);
+            var mirror = AccountOf.Required(asset.DepreciationAccountCode, "Str.Asset.MirrorMissing");
+            if (mirror.IsFailure) return mirror.As<AssetDepreciation>();
 
             if (string.IsNullOrWhiteSpace(charge.Notes)) charge.Notes = Msg("DepreciationNote", asset.Name, charge.PeriodDate);
             charge.PeriodDate = AssetCalc.EndOfMonth(charge.PeriodDate);
@@ -109,7 +106,7 @@ namespace PrimeERP.Application.Legacy.Assets
 
         protected override Result Undo(PrimeDbContext db, AssetDepreciation charge)
         {
-            ReverseEntry(db, charge.JournalEntryId);
+            Posting.Reverse(Journals, db, charge.JournalEntryId);
             _charges.Delete(charge.Id, db);
             Recalculate(db, charge.AssetId);
             return Result.Ok();
@@ -120,7 +117,7 @@ namespace PrimeERP.Application.Legacy.Assets
         {
             if (!Can("Create")) return FailDenied<int>();
 
-            var expense = Account(SettingKeys.Accounts.DepreciationExpense);
+            var expense = AccountsOf.Setting(SettingKeys.Accounts.DepreciationExpense, "Str.Asset.AccountsMissing");
             if (expense.IsFailure) return expense.As<int>();
 
             var run = Commit(db =>
@@ -129,7 +126,7 @@ namespace PrimeERP.Application.Legacy.Assets
                 foreach (var asset in _assets.Depreciable(db))
                 {
                     var schedule = AssetCalc.Schedule(
-                        Base(asset), asset.SalvageValue, asset.UsefulLifeYears, asset.AccumulatedDepreciation,
+                        AssetCalc.Basis(asset.RevaluedValue, asset.PurchaseCost), asset.SalvageValue, asset.UsefulLifeYears, asset.AccumulatedDepreciation,
                         AssetCalc.FirstUndepreciatedMonth(asset.LastDepreciationDate, asset.PurchaseDate), upTo).ToList();
 
                     foreach (var (period, amount) in schedule)
@@ -155,7 +152,7 @@ namespace PrimeERP.Application.Legacy.Assets
             charge.Id = _charges.Insert(charge, db);
 
             var (debit, credit) = (expenseAccount, asset.DepreciationAccountCode);
-            charge.JournalEntryId = PostEntry(db, charge.PeriodDate, charge.Notes, debit, credit, charge.Amount, asset.Name);
+            charge.JournalEntryId = Posting.Entry(Journals, db, charge.PeriodDate, charge.Notes, EntityName, debit, credit, charge.Amount, asset.Name);
 
             _charges.SetJournalEntryId(db, charge.Id, charge.JournalEntryId.Value);
             Recalculate(db, charge.AssetId);
@@ -166,24 +163,12 @@ namespace PrimeERP.Application.Legacy.Assets
             var asset = _assets.GetById(assetId, db);
             if (asset == null) return;
 
-            var charges = _charges.OfAsset(assetId, db);
-
-            asset.AccumulatedDepreciation = charges.Sum(c => c.Amount);
-            asset.CurrentValue = AssetCalc.BookValue(Base(asset), asset.AccumulatedDepreciation);
-            asset.LastDepreciationDate = charges.Count == 0 ? null : charges.Max(c => c.PeriodDate);
+            (asset.AccumulatedDepreciation, asset.LastDepreciationDate) = _charges.TotalOf(assetId, db);
+            asset.CurrentValue = AssetCalc.CurrentValue(asset.RevaluedValue, asset.PurchaseCost, asset.AccumulatedDepreciation);
 
             _assets.Update(asset, db);
         }
 
-        protected override AssetDepreciation ToDto(AssetDepreciation charge) => ToDto(charge, _assets.GetById(charge.AssetId));
-
-        protected override List<AssetDepreciation> ToDtos(List<AssetDepreciation> charges) =>
-            WithAssets(charges, _assets, c => c.AssetId, ToDto);
-
-        private static AssetDepreciation ToDto(AssetDepreciation charge, Asset asset)
-        {
-            (charge.AssetCode, charge.AssetName) = (asset?.Code, asset?.Name);
-            return charge;
-        }
+        protected override AssetDepreciation ToDto(AssetDepreciation charge) => charge;
     }
 }

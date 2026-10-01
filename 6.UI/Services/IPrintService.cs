@@ -2,7 +2,7 @@ using PrimeERP.Domain.Contracts;
 using System.Windows.Documents;
 using PrimeERP.Domain.Results;
 
-namespace PrimeERP.Application.Legacy.Print
+namespace PrimeERP.UI.Services
 {
     /// <summary>عقد الطباعة</summary>
     public interface IPrintService

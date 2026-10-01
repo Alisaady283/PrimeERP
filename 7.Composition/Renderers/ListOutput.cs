@@ -1,4 +1,3 @@
-using PrimeERP.Application.Legacy.Print;
 using System;
 using System.Collections.Generic;
 using System.Linq;

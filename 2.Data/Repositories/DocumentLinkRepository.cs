@@ -14,7 +14,7 @@ namespace PrimeERP.Data.Repositories
         int Insert(DocumentLink link, PrimeDbContext db = null);
         List<DocumentLink> GetBySource(string sourceType, int sourceId, PrimeDbContext db = null);
         List<DocumentLink> GetByTarget(string targetType, int targetId, PrimeDbContext db = null);
-        decimal GetPulledQty(string sourceType, int sourceLineId, PrimeDbContext db = null);
+        decimal GetPulledQty(string sourceType, int sourceLineId, PrimeDbContext db = null, string exceptTargetType = null, int exceptTargetId = 0);
         Dictionary<int, decimal> GetPulledBySource(string sourceType, int sourceId, PrimeDbContext db = null);
         bool AnyPulledFrom(string sourceType, int sourceId);
         void DeleteByTarget(string targetType, int targetId, PrimeDbContext db = null);
@@ -36,12 +36,13 @@ namespace PrimeERP.Data.Repositories
             Fetch(q => q.Where(l => l.TargetType == targetType && l.TargetId == targetId), db);
 
         public decimal GetPulledQty(string sourceType, int sourceLineId,
-            PrimeDbContext db = null)
+            PrimeDbContext db = null, string exceptTargetType = null, int exceptTargetId = 0)
         {
             return Scope(db, ctx =>
             {
                 return Rows(ctx).AsNoTracking()
-                    .Where(l => l.SourceType == sourceType && l.SourceLineId == sourceLineId)
+                    .Where(l => l.SourceType == sourceType && l.SourceLineId == sourceLineId
+                             && (exceptTargetType == null || l.TargetType != exceptTargetType || l.TargetId != exceptTargetId))
                     .Sum(l => (decimal?)l.PulledQty) ?? 0m;
             });
         }

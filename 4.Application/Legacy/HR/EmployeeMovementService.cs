@@ -1,15 +1,13 @@
 using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Validation;
 using PrimeERP.Application.Services.Core;
-using System;
+using PrimeERP.Data.Core;
 using System.Collections.Generic;
-using System.Linq;
 using PrimeERP.Application.DTOs.HR;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
-using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
@@ -29,7 +27,8 @@ namespace PrimeERP.Application.Legacy.HR
     public interface IAllowanceService : IEmployeeMovementService { }
     public interface IDeductionService : IEmployeeMovementService { }
 
-    public abstract class EmployeeMovementService<T> : ServiceBase, IEmployeeMovementService
+    public abstract class EmployeeMovementService<T>
+        : EntityService<T, EmployeeMovementDto, CreateEmployeeMovementDto, CreateEmployeeMovementDto, EmployeeMovementFilter>, IEmployeeMovementService
         where T : EmployeeMovement, new()
     {
         private readonly IEmployeeMovementRepository<T> _repo;
@@ -43,87 +42,47 @@ namespace PrimeERP.Application.Legacy.HR
         }
 
         protected override string PermissionPrefix => "HR";
-        protected override string StringPrefix => "Str.Employee";
+        protected override string StringPrefix => "Str.EmployeeMovement";
 
-        public Result<PagedResult<EmployeeMovementDto>> GetPaged(int page, int pageSize, EmployeeMovementFilter filter = null)
+        private static readonly Field<T>[] MovementFields =
+        [
+            .. EmployeeCode.Rules<T>(),
+            new(x => x.Amount, "", Must: m => m.Amount > 0, Message: "Str.Common.AmountPositive"),
+            new(x => x.Month, "", From: 1, To: 12, Message: "Str.Employee.MonthRange"),
+            new(x => x.Year, "", From: 2000, Message: "Str.Employee.YearInvalid"),
+        ];
+
+        protected override Field<T>[] Fields => MovementFields;
+
+        protected override T FindById(int id) => _repo.GetById(id);
+
+        protected override (List<T> Items, int Total) FindPaged(int page, int pageSize, EmployeeMovementFilter filter)
         {
-            if (!Can("View")) return FailDenied<PagedResult<EmployeeMovementDto>>();
             filter ??= new EmployeeMovementFilter();
-
-            var (items, total) = _repo.GetPaged(page, pageSize, filter.SearchText, filter.EmployeeId, filter.SortBy, filter.SortDescending);
-            return Result.Ok(new PagedResult<EmployeeMovementDto>
-            { Items = items.Select(ToDto).ToList(), Page = page, PageSize = pageSize, TotalCount = total });
+            return _repo.GetPaged(page, pageSize, filter.SearchText, filter.EmployeeId, filter.SortBy, filter.SortDescending);
         }
 
-        public Result<EmployeeMovementDto> GetById(int id)
-        {
-            if (!Can("View")) return FailDenied<EmployeeMovementDto>();
+        protected override List<T> FindSearch(string term, int maxResults) =>
+            _repo.GetPaged(1, maxResults, term, null, null, false).Items;
 
-            var item = _repo.GetById(id);
-            return item == null
-                ? Result.Fail<EmployeeMovementDto>(Localization.Get("Str.Common.RecordNotFound"), ErrorCode.NotFound)
-                : Result.Ok(ToDto(item));
-        }
+        protected override T New(CreateEmployeeMovementDto dto) => Rows.Copy(dto, new T(), to => Fill(to, dto));
 
-        public Result<EmployeeMovementDto> Create(CreateEmployeeMovementDto dto)
-        {
-            if (!Can("Create")) return FailDenied<EmployeeMovementDto>();
+        protected override void Apply(T entity, CreateEmployeeMovementDto dto) => Rows.Copy(dto, entity, to => Fill(to, dto));
 
-            var check = Validate(dto);
-            if (check.IsFailure) return Result.Fail<EmployeeMovementDto>(check.ErrorMessage, check.ErrorCode);
+        protected override int IdOf(CreateEmployeeMovementDto dto) => dto.Id;
 
-            var item = Rows.Copy(dto, new T(), to =>
-            {
-                to.EmployeeId = Resolve(dto.EmployeeCode).Id;
-            });
-            item.Id = _repo.Insert(item);
+        protected override int Insert(PrimeDbContext db, T item) => _repo.Insert(item, db);
 
-            Audit.Log(EntityName, item.Id, AuditAction.Insert, newValue: new { item.EmployeeId, item.Amount });
-            return Result.Ok(ToDto(_repo.GetById(item.Id)));
-        }
+        protected override void Save(PrimeDbContext db, T item) => _repo.Update(item, db);
 
-        public Result Update(CreateEmployeeMovementDto dto)
-        {
-            if (!Can("Edit")) return FailDenied();
+        protected override void Erase(PrimeDbContext db, T item) => _repo.Delete(item.Id, CurrentUser, db);
 
-            var item = _repo.GetById(dto.Id);
-            if (item == null) return Result.Fail(Localization.Get("Str.Common.RecordNotFound"), ErrorCode.NotFound);
+        protected override object AuditValue(T item) => new { item.EmployeeId, item.Amount };
 
-            var check = Validate(dto);
-            if (check.IsFailure) return check;
+        private void Fill(T to, CreateEmployeeMovementDto dto) =>
+            to.EmployeeId = _employees.IdByCode(dto.EmployeeCode);
 
-            Rows.Copy(dto, item, i => i.EmployeeId = Resolve(dto.EmployeeCode).Id);
-
-            _repo.Update(item);
-            Audit.Log(EntityName, item.Id, AuditAction.Update, newValue: new { item.Amount });
-            return Result.Ok();
-        }
-
-        public Result Delete(int id)
-        {
-            if (!Can("Delete")) return FailDenied();
-
-            if (_repo.GetById(id) == null) return Result.Fail(Localization.Get("Str.Common.RecordNotFound"), ErrorCode.NotFound);
-
-            _repo.Delete(id, CurrentUser);
-            Audit.Log(EntityName, id, AuditAction.Delete);
-            return Result.Ok();
-        }
-
-        private Employee Resolve(string code) => _employees.GetByCode(code);
-
-        private Result Validate(CreateEmployeeMovementDto dto)
-        {
-            return Check.Valid(dto,
-                new Field<CreateEmployeeMovementDto>(x => x.EmployeeCode, "", Required: true, Message: "Str.Employee.Required"),
-                new Field<CreateEmployeeMovementDto>(x => x.EmployeeCode, "", Must: d => string.IsNullOrWhiteSpace(d.EmployeeCode) || Resolve(d.EmployeeCode) != null,
-                    Message: "Str.Employee.CodeNotFound", Args: d => new object[] { d.EmployeeCode }),
-                new Field<CreateEmployeeMovementDto>(x => x.Amount, "", Must: d => d.Amount > 0, Message: "Str.Common.AmountPositive"),
-                new Field<CreateEmployeeMovementDto>(x => x.Month, "", From: 1, To: 12, Message: "Str.Employee.MonthRange"),
-                new Field<CreateEmployeeMovementDto>(x => x.Year, "", From: 2000, Message: "Str.Employee.YearInvalid"));
-        }
-
-        private static EmployeeMovementDto ToDto(T item) => Rows.Copy<EmployeeMovementDto>(item, new());
+        protected override EmployeeMovementDto ToDto(T item) => Rows.Copy<EmployeeMovementDto>(item, new());
     }
 
     public class AllowanceService : EmployeeMovementService<EmployeeAllowance>, IAllowanceService

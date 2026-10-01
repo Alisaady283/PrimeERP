@@ -56,13 +56,13 @@ namespace PrimeERP.Application.Legacy.Inventory
 
         protected override List<StockTransferDto> ToRows(List<StockTransferDocument> heads)
         {
-            var warehouses = Warehouses();
+            var warehouses = _warehouses.NamesOf(heads.SelectMany(d => new[] { d.FromWarehouseId, d.ToWarehouseId }));
             return heads.Select(d => ToDto<StockTransferDto>(d, warehouses)).ToList();
         }
 
         protected override StockTransferDetailDto ToDetail(StockTransferDocument head)
         {
-            var detail = ToDto<StockTransferDetailDto>(head, Warehouses());
+            var detail = ToDto<StockTransferDetailDto>(head, _warehouses.NamesOf(new[] { head.FromWarehouseId, head.ToWarehouseId }));
             detail.Lines = _repo.GetLines(head.Id).Select(l => Rows.Copy(l, new StockTransferLineDto())).ToList();
             return detail;
         }
@@ -75,12 +75,7 @@ namespace PrimeERP.Application.Legacy.Inventory
                 Must: d => d.FromWarehouseId != d.ToWarehouseId, Message: "Str.StockTransfer.SameWarehouse"));
             if (warehouses.IsFailure) return warehouses.As<Func<PrimeDbContext, int>>();
 
-            var lines = ProductLines.Resolve(_products, dto.Lines, l => l.ProductCode, (l, product, _) => Result.Ok(Rows.Copy(l, new StockTransferLine(), to =>
-            {
-                to.ProductId = product.Id;
-                to.ProductCode = product.Code;
-                to.ProductName = product.Name;
-            })));
+            var lines = ProductLines.Resolve(_products, dto.Lines, l => l.ProductCode, (l, product, _) => Result.Ok(Rows.Copy(l, new StockTransferLine())));
             if (lines.IsFailure) return lines.As<Func<PrimeDbContext, int>>();
             var resolved = lines.Value;
 
@@ -113,9 +108,6 @@ namespace PrimeERP.Application.Legacy.Inventory
             var moved = _stock.RecordMovement(db, line.ProductId, warehouseId, direction, line.Qty, 0, EntityName, id, docNo, date);
             if (moved.IsFailure) throw new InvalidOperationException(moved.ErrorMessage);
         }
-
-        private IReadOnlyDictionary<int, string> Warehouses() =>
-            _warehouses.GetAll(true).ToDictionary(w => w.Id, w => w.Name);
 
         private static T ToDto<T>(StockTransferDocument d, IReadOnlyDictionary<int, string> warehouses) where T : StockTransferDto, new() => Rows.Copy<T>(d, new(), to =>
         {

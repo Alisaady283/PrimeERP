@@ -1,4 +1,5 @@
 using PrimeERP.Application.Services.Core;
+using PrimeERP.Application.Services.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Data.Repositories;
@@ -52,8 +53,7 @@ namespace PrimeERP.Application.Legacy.Builder
             filter ??= new DynamicFilter();
             var (items, total) = _repo.GetPaged(page, pageSize, filter.SearchText, filter.SortBy, filter.SortDescending);
 
-            return Result.Ok(new PagedResult<IDictionary<string, object>>
-            { Items = items, Page = page, PageSize = pageSize, TotalCount = total });
+            return Result.Ok(Paged(items, total, page, pageSize, rows => rows));
         }
 
         public Result<IDictionary<string, object>> GetById(int id)
@@ -83,7 +83,7 @@ namespace PrimeERP.Application.Legacy.Builder
         {
             if (!Can("Edit")) return FailDenied();
 
-            var id = values.TryGetValue("Id", out var raw) && raw != null ? System.Convert.ToInt32(raw) : 0;
+            var id = Rows.Id(values);
             if (id == 0) return Result.Fail(Localization.Get("Str.Common.RecordNotFound"), ErrorCode.NotFound);
 
             var valid = Validate(values, id);

@@ -49,13 +49,13 @@ namespace PrimeERP.Application.Services.Documents
         public Result RecordMovement(PrimeDbContext db, int productId, int warehouseId, MovementType type,
             decimal qty, decimal unitCost, string sourceDocType, int? sourceDocId, string sourceDocNo, DateTime? date = null, string notes = null)
         {
-            if (type != MovementType.Adjustment && qty <= 0) return Fail(Localization.Get("Str.Document.QtyPositive"), ErrorCode.ValidationFailed);
+            if (type != MovementType.Adjustment && qty <= 0) return Result.Fail(Localization.Get("Str.Document.QtyPositive"), ErrorCode.ValidationFailed);
 
             var currentBalance = _movements.GetBalance(productId, warehouseId, db);
             var signedQty = type == MovementType.Out ? -qty : qty;
 
             if (currentBalance + signedQty < 0)
-                return Fail(Msg("Insufficient"), ErrorCode.ValidationFailed);
+                return Fail("Insufficient", ErrorCode.ValidationFailed);
 
             var movement = new StockMovement
             {
@@ -72,41 +72,56 @@ namespace PrimeERP.Application.Services.Documents
         public void RemoveMovements(PrimeDbContext db, string sourceDocType, int sourceDocId) =>
             _movements.DeleteBySource(db, sourceDocType, sourceDocId);
 
-        public decimal? SourceUnitCost(PrimeDbContext db, string sourceDocType, int sourceDocId, int productId) =>
-            _movements.GetSourceUnitCost(sourceDocType, sourceDocId, productId, db);
-
         public Result<List<StockMovement>> GetCostingHistory(int productId) =>
             Result.Ok(_movements.GetForCosting(productId));
 
-        public decimal CurrentUnitCost(PrimeDbContext db, int productId) =>
-            InventoryCosting.Replay(_movements.GetForCosting(productId, db)
-                .Select(m => new InventoryCosting.Entry(m.MovementType, m.Qty, m.UnitCost))).UnitCost;
+        /// <summary>تكلفة المرتجع من صرفه الأصلي</summary>
+        public (List<decimal> UnitCosts, decimal Total) GetReturnCosts(PrimeDbContext db, string sourceDocType,
+            List<(int ProductId, decimal Qty, int SourceId, int SourceLineId)> lines, bool recordsStock)
+        {
+            var unitCosts = Costs(db, lines, l => l.ProductId, (l, balance) =>
+            {
+                var unitCost = (l.SourceLineId > 0 ? _movements.GetSourceUnitCost(sourceDocType, l.SourceId, l.ProductId, db) : null)
+                               ?? balance.UnitCost;
+                var next = recordsStock
+                    ? InventoryCosting.Apply(balance, new InventoryCosting.Entry(MovementType.In, l.Qty, unitCost), out _)
+                    : balance;
+                return Result.Ok((unitCost, next));
+            }).Value;
 
-        public Result<List<decimal>> GetIssueCosts(PrimeDbContext db, List<(int ProductId, decimal Qty)> lines)
+            return (unitCosts, lines.Zip(unitCosts, (l, unitCost) => l.Qty * unitCost).Sum());
+        }
+
+        public Result<(List<decimal> Lines, decimal Total)> GetIssueCosts(PrimeDbContext db, List<(int ProductId, decimal Qty)> lines) =>
+            Costs(db, lines, l => l.ProductId, (l, balance) =>
+                    InventoryCosting.TryIssueCost(balance, l.Qty, out var cost)
+                        ? Result.Ok((cost, InventoryCosting.Apply(balance, new InventoryCosting.Entry(MovementType.Out, l.Qty, 0), out _)))
+                        : Fail<(decimal, InventoryCosting.Balance)>("Insufficient", ErrorCode.ValidationFailed))
+                .Then(costs => Result.Ok((costs, costs.Sum())));
+
+        /// <summary>تكلفة السطور على رصيدٍ جارٍ</summary>
+        private Result<List<decimal>> Costs<TLine>(PrimeDbContext db, List<TLine> lines, Func<TLine, int> productOf,
+            Func<TLine, InventoryCosting.Balance, Result<(decimal Cost, InventoryCosting.Balance Next)>> step)
         {
             var balances = new Dictionary<int, InventoryCosting.Balance>();
             var costs = new List<decimal>(lines.Count);
 
-            foreach (var (productId, qty) in lines)
+            foreach (var line in lines)
             {
-                if (!balances.TryGetValue(productId, out var balance))
-                {
-                    balance = InventoryCosting.Replay(_movements.GetForCosting(productId, db)
-                        .Select(m => new InventoryCosting.Entry(m.MovementType, m.Qty, m.UnitCost)));
-                    balances[productId] = balance;
-                }
+                var productId = productOf(line);
+                var priced = step(line, balances.TryGetValue(productId, out var balance) ? balance : Replay(db, productId));
+                if (priced.IsFailure) return priced.As<List<decimal>>();
 
-                if (!InventoryCosting.TryIssueCost(balance, qty, out var cost))
-                    return Fail<List<decimal>>(Msg("Insufficient"), ErrorCode.ValidationFailed);
-
-                balances[productId] = InventoryCosting.Apply(balance,
-                    new InventoryCosting.Entry(MovementType.Out, qty, 0), out _);
-
-                costs.Add(cost);
+                balances[productId] = priced.Value.Next;
+                costs.Add(priced.Value.Cost);
             }
 
             return Result.Ok(costs);
         }
+
+        private InventoryCosting.Balance Replay(PrimeDbContext db, int productId) =>
+            InventoryCosting.Replay(_movements.GetForCosting(productId, db)
+                .Select(m => new InventoryCosting.Entry(m.MovementType, m.Qty, m.UnitCost)));
 
     }
 }

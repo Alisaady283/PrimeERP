@@ -22,6 +22,13 @@ namespace PrimeERP.Application.Services.Entities
             return row;
         }
 
+        /// <summary>الصفوف التي يحوي أحد حقولها النصّ</summary>
+        public static List<T> Search<T>(IEnumerable<T> items, string term, int maxResults = int.MaxValue) =>
+            (string.IsNullOrWhiteSpace(term)
+                ? items
+                : items.Where(item => Of(item).Values.Any(v => v?.ToString()?.Contains(term, StringComparison.OrdinalIgnoreCase) == true)))
+            .Take(maxResults).ToList();
+
         public static void Fill(object entity, IDictionary<string, object> values)
         {
             foreach (var property in entity.GetType().GetProperties())

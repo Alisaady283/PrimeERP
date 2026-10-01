@@ -80,13 +80,7 @@ namespace PrimeERP.Application.Legacy.Accounting
                 (int?)filter.TypeFilter, filter.LeafOnly, filter.IncludeInactive);
             var facts = FactsOf(items, filter.IncludeInactive);
 
-            return Result.Ok(new PagedResult<AccountDto>
-            {
-                Items = items.Select(a => ToDto(a, facts)).ToList(),
-                TotalCount = total,
-                Page = page,
-                PageSize = pageSize
-            });
+            return Result.Ok(Paged(items, total, page, pageSize, rows => rows.Select(a => ToDto(a, facts)).ToList()));
         }
 
         public Result<List<AccountDto>> GetLeaves(AccountType? type = null)

@@ -22,8 +22,6 @@ namespace PrimeERP.Application.Legacy.Parties
         Result<Customer> Create(Customer customer);
         Result<Customer> Create(PrimeDbContext db, Customer customer);
 
-        Result<Customer> CreateFromAccount(PrimeDbContext db, string accountCode, string name);
-
         Result Update(Customer customer);
 
         Result UpdateNameFromAccount(PrimeDbContext db, string accountCode, string name);

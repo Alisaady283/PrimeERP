@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Print;
+using PrimeERP.UI.Services;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Domain.Entities;

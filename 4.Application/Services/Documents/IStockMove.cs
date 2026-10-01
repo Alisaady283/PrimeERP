@@ -21,11 +21,10 @@ namespace PrimeERP.Application.Services.Documents
 
         void RemoveMovements(PrimeDbContext db, string sourceDocType, int sourceDocId);
 
-        Result<List<decimal>> GetIssueCosts(PrimeDbContext db, List<(int ProductId, decimal Qty)> lines);
+        Result<(List<decimal> Lines, decimal Total)> GetIssueCosts(PrimeDbContext db, List<(int ProductId, decimal Qty)> lines);
 
-        decimal? SourceUnitCost(PrimeDbContext db, string sourceDocType, int sourceDocId, int productId);
-
-        decimal CurrentUnitCost(PrimeDbContext db, int productId);
+        (List<decimal> UnitCosts, decimal Total) GetReturnCosts(PrimeDbContext db, string sourceDocType,
+            List<(int ProductId, decimal Qty, int SourceId, int SourceLineId)> lines, bool recordsStock);
 
         Result<List<Domain.Entities.StockMovement>> GetCostingHistory(int productId);
     }

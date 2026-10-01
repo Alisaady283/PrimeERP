@@ -28,5 +28,6 @@ namespace PrimeERP.Data.Repositories
         void UpdateNameByAccountCode(PrimeDbContext db, string accountCode, string name);
         void Delete(int id, string deletedBy, PrimeDbContext db = null);
         void SetBalance(int id, decimal balance, PrimeDbContext db = null);
+        void SetBalanceByAccount(string code, decimal balance, PrimeDbContext db = null);
     }
 }

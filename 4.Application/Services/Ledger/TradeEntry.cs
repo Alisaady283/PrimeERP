@@ -24,8 +24,8 @@ namespace PrimeERP.Application.Services.Ledger
 
         private static void Side(JournalLines entry, bool debit, string account, decimal amount)
         {
-            if (debit) entry.Debit(account, amount);
-            else entry.Credit(account, amount);
+            var (debitAmount, creditAmount) = TwoSided.By(debit, amount, 0m);
+            entry.Add(account, debitAmount, creditAmount);
         }
     }
 }
