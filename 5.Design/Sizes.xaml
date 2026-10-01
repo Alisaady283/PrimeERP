@@ -87,6 +87,7 @@
     <!-- قياساتٌ يتقاسمها أكثر من مكوّن -->
     <sys:Double x:Key="C.IconButton.Size">34</sys:Double>
     <sys:Double x:Key="C.Control.Size.Xs">24</sys:Double>
+    <GridLength x:Key="C.Control.Size.Xs.Column">24</GridLength>
     <sys:Double x:Key="C.Stepper.Height">18</sys:Double>
     <Thickness  x:Key="C.Input.AdornmentMargin">2,4,0,0</Thickness>
     <Thickness  x:Key="C.Cell.Padding">10,5</Thickness>

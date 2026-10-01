@@ -42,7 +42,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="3"/>
                             <ColumnDefinition Width="15"/>
-                            <ColumnDefinition Width="{DynamicResource C.Control.Size.Xs}"/>
+                            <ColumnDefinition Width="{DynamicResource C.Control.Size.Xs.Column}"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
