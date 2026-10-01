@@ -89,14 +89,29 @@ namespace PrimeERP.Data.Repositories
         {
             if (Capability == BackupCapability.ExternalTool) throw Unsupported();
 
+            var history = GetAll();
             if (Capability == BackupCapability.FileCopy)
             {
                 Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
                 System.IO.File.Copy(sourcePath, DbConfig.Current.FilePath, overwrite: true);
-                return;
             }
+            else
+                Run($"RESTORE DATABASE [{DbConfig.Current.Database}] FROM DISK = @path WITH REPLACE, RECOVERY", sourcePath);
 
-            Run($"RESTORE DATABASE [{DbConfig.Current.Database}] FROM DISK = @path WITH REPLACE, RECOVERY", sourcePath);
+            SchemaSync.Run();
+            KeepHistory(history);
+        }
+
+        /// <summary>النسخ الباقية على القرص</summary>
+        private void KeepHistory(List<BackupHistoryRecord> history)
+        {
+            var restored = GetAll().Select(r => r.FilePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var record in history.Where(r => !restored.Contains(r.FilePath) && System.IO.File.Exists(r.FilePath)))
+            {
+                record.Id = 0;
+                Insert(record);
+            }
         }
 
         private static NotSupportedException Unsupported() =>
