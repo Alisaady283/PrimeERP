@@ -587,6 +587,7 @@
     <sys:String x:Key="Str.Builder.ProtectedSection">A protected section cannot be deleted</sys:String>
     <sys:String x:Key="Str.Builder.SectionRequired">Section is required</sys:String>
     <sys:String x:Key="Str.Builder.SerialRegisterFailed">Could not register the serial on the server: {0}</sys:String>
+    <sys:String x:Key="Str.Builder.SerialRevokeFailed">Could not revoke the serial on the server, so the license was not deleted: {0}</sys:String>
     <sys:String x:Key="Str.Builder.TableInUse">The table is used by another page</sys:String>
     <sys:String x:Key="Str.Builder.TableRequired">A table is required for a page that saves records</sys:String>
     <sys:String x:Key="Str.Category.HasChildren">A category with active sub-categories cannot be deleted</sys:String>

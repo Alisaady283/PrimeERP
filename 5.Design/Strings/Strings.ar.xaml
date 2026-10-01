@@ -587,6 +587,7 @@
     <sys:String x:Key="Str.Builder.ProtectedSection">قسمٌ محميّ لا يُحذف</sys:String>
     <sys:String x:Key="Str.Builder.SectionRequired">القسم مطلوب</sys:String>
     <sys:String x:Key="Str.Builder.SerialRegisterFailed">تعذّر تسجيل السريال على الخادم: {0}</sys:String>
+    <sys:String x:Key="Str.Builder.SerialRevokeFailed">تعذّر إيقاف السريال على الخادم، فلم يُحذف الترخيص: {0}</sys:String>
     <sys:String x:Key="Str.Builder.TableInUse">الجدول مستعمَل في صفحةٍ أخرى</sys:String>
     <sys:String x:Key="Str.Builder.TableRequired">الجدول مطلوب لصفحةٍ تحفظ سجلات</sys:String>
     <sys:String x:Key="Str.Category.HasChildren">لا يمكن حذف تصنيف له تصنيفات فرعية نشطة</sys:String>

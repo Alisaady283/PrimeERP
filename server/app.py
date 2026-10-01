@@ -113,6 +113,22 @@ def upsert_license():
     return jsonify(ok=True)
 
 
+@app.post("/licenses/revoke")
+def revoke_license():
+    """حذف الترخيص من برنامج البناء يُوقف سريالَه — بالتوكن وحده."""
+    if not authorized():
+        return jsonify(error="غير مصرّح"), HTTPStatus.UNAUTHORIZED
+
+    serial = ((request.get_json(silent=True) or {}).get("serial") or "").strip()
+    if not serial:
+        return jsonify(error="السريال مطلوب"), HTTPStatus.BAD_REQUEST
+
+    with db() as connection:
+        connection.execute("UPDATE licenses SET is_active = 0 WHERE serial = ?", (serial,))
+
+    return jsonify(ok=True)
+
+
 @app.post("/activate")
 def activate():
     """أول تفعيل يربط السريال بجهازه؛ وما بعده يقبل الجهاز نفسه ويرفض غيره."""

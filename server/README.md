@@ -26,6 +26,7 @@ sudo systemctl daemon-reload && sudo systemctl enable --now primeerp-api
 |---|---|---|
 | `GET  /erp/health` | — | حالة الخدمة |
 | `POST /erp/licenses` | ترخيص + توكن المطوّر | تسجيل السريال |
+| `POST /erp/licenses/revoke` | سريال + توكن المطوّر | إيقاف السريال: لا يُفعَّل ولا يُحدَّث |
 | `POST /erp/activate` | سريال + بصمة جهاز | البيان والإصدار ورابط الحزمة |
 | `POST /erp/update` | سريال + الإصدار الحالي | هل يوجد أحدث |
 | `POST /erp/releases` | إصدار + اسم حزمة + توكن | نشر إصدار |

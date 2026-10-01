@@ -115,13 +115,29 @@ namespace PrimeERP.Application.Legacy.Admin
         {
             if (!Can("Delete")) return FailDenied();
 
+            var license = _repo.GetById(id);
+            if (license == null) return Result.Fail(Msg("LicenseNotFound"), ErrorCode.NotFound);
+
+            var revoked = Send("licenses/revoke", new { serial = license.Serial }, "SerialRevokeFailed");
+            if (revoked.IsFailure) return revoked;
+
             _repo.Delete(id);
             Audit.Log(EntityName, id, AuditAction.Delete);
 
             return Result.Ok();
         }
 
-        private Result Publish(License license)
+        private Result Publish(License license) => Send("licenses", new
+        {
+            serial = license.Serial,
+            customer = license.CustomerName,
+            location = license.Location ?? "",
+            manifest = license.Manifest ?? "",
+            simplified = license.Simplified
+        }, "SerialRegisterFailed");
+
+        /// <summary>طلبٌ بتوكن المطوّر</summary>
+        private Result Send(string path, object payload, string failKey)
         {
             var server = Setting(SettingKeys.Developer.ServerUrl, "").TrimEnd('/');
             var token = Setting(SettingKeys.Developer.AdminToken, "");
@@ -129,19 +145,10 @@ namespace PrimeERP.Application.Legacy.Admin
             if (string.IsNullOrWhiteSpace(server) || string.IsNullOrWhiteSpace(token))
                 return Result.Fail(Msg("LicenseServerMissing"), ErrorCode.ValidationFailed);
 
-            var payload = new
-            {
-                serial = license.Serial,
-                customer = license.CustomerName,
-                location = license.Location ?? "",
-                manifest = license.Manifest ?? "",
-                simplified = license.Simplified
-            };
-
             var (ok, error, _) = System.Threading.Tasks.Task
-                .Run(() => _http.PostAsync($"{server}/licenses", payload, token))
+                .Run(() => _http.PostAsync($"{server}/{path}", payload, token))
                 .GetAwaiter().GetResult();
-            return ok ? Result.Ok() : Result.Fail(Msg("SerialRegisterFailed", error), ErrorCode.Unexpected);
+            return ok ? Result.Ok() : Result.Fail(Msg(failKey, error), ErrorCode.Unexpected);
         }
 
         private static string NewSerial()
