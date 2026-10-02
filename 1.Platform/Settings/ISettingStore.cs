@@ -13,7 +13,7 @@ namespace PrimeERP.Platform.Settings
 
         void Upsert(AppSetting setting);
         void UpsertMany(IEnumerable<AppSetting> settings);
-        void InsertIfMissing(AppSetting setting);
+        void InsertMissing(IEnumerable<AppSetting> settings);
 
     }
 }

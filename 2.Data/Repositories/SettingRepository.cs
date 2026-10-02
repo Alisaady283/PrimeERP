@@ -49,12 +49,12 @@ namespace PrimeERP.Data.Repositories
         public void RemoveByPrefix(PrimeDbContext db, string prefix) =>
             Remove(s => s.Key.StartsWith(prefix), db);
 
-        public void InsertIfMissing(AppSetting setting) =>
+        public void InsertMissing(IEnumerable<AppSetting> settings) =>
             Write(db =>
             {
-                if (SetOf(db).Any(s => s.Key == setting.Key)) return 0;
-                SetOf(db).Add(setting);
-                return 1;
+                var known = SetOf(db).Select(s => s.Key).ToHashSet();
+                foreach (var setting in settings.Where(s => known.Add(s.Key))) SetOf(db).Add(setting);
+                return 0;
             });
 
 

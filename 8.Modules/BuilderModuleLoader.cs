@@ -35,12 +35,16 @@ namespace PrimeERP.Modules
             var modules = repo.Modules().Where(m => m.IsActive).ToList();
             var built = modules.Where(m => !m.IsCoded).Select(m => m.Key).ToHashSet();
 
+            var allActions = repo.Actions(0).ToLookup(a => a.ModuleId);
+            var allFilters = repo.Filters(0).ToLookup(f => f.ModuleId);
+            var allColumns = repo.Columns(0).ToLookup(c => c.ModuleId);
+
             foreach (var module in modules)
             {
-                var actions = repo.Actions(module.Id);
-                var filters = repo.Filters(module.Id);
+                var actions = allActions[module.Id].ToList();
+                var filters = allFilters[module.Id].ToList();
 
-                var columns = repo.Columns(module.Id);
+                var columns = allColumns[module.Id].ToList();
 
                 if (module.IsCoded)
                 {

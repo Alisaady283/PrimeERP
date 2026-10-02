@@ -77,6 +77,8 @@ namespace PrimeERP.Application.Legacy.Builder
             var sections = _repo.Sections().ToDictionary(s => s.Key, s => s.Id);
             var existing = _repo.ModuleKeys().ToHashSet();
             var seeded = _repo.Modules().ToDictionary(m => m.Key, m => m.Id);
+            var columned = _repo.Columns(0).Select(c => c.ModuleId).ToHashSet();
+            var filtered = _repo.Filters(0).Select(f => f.ModuleId).ToHashSet();
 
             var order = 0;
             foreach (var page in coded)
@@ -84,7 +86,7 @@ namespace PrimeERP.Application.Legacy.Builder
                 order += 10;
                 if (existing.Contains(page.Key))
                 {
-                    if (seeded.TryGetValue(page.Key, out var seededId)) Backfill(seededId, page);
+                    if (seeded.TryGetValue(page.Key, out var seededId)) Backfill(seededId, page, columned, filtered);
                     continue;
                 }
 
@@ -104,12 +106,12 @@ namespace PrimeERP.Application.Legacy.Builder
             }
         }
 
-        private void Backfill(int moduleId, CodedPage page)
+        private void Backfill(int moduleId, CodedPage page, HashSet<int> columned, HashSet<int> filtered)
         {
-            if (page.Columns.Count > 0 && _repo.Columns(moduleId).Count == 0)
+            if (page.Columns.Count > 0 && !columned.Contains(moduleId))
                 _repo.ReplaceColumns(moduleId, page.Columns);
 
-            if (page.Filters.Count > 0 && _repo.Filters(moduleId).Count == 0)
+            if (page.Filters.Count > 0 && !filtered.Contains(moduleId))
                 _repo.ReplaceFilters(moduleId, page.Filters);
         }
     }

@@ -15,8 +15,9 @@ namespace PrimeERP.Data.Seeders
             var roleId = permissions.FindRoleId("SystemAdmin")
                          ?? permissions.InsertRole("SystemAdmin", "مدير النظام", isSystem: true);
 
-            permissions.ReplaceRolePermissions(roleId,
-                permissions.GetRolePermissions(roleId).Union(PermissionKeys.All()));
+            var granted = permissions.GetRolePermissions(roleId);
+            if (PermissionKeys.All().Except(granted).Any())
+                permissions.ReplaceRolePermissions(roleId, granted.Union(PermissionKeys.All()));
 
             if (permissions.UsernameExists("admin")) return;
 

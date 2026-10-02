@@ -45,7 +45,7 @@ namespace PrimeERP.Data.Repositories
 
         public void SeedDefaults()
         {
-            if (GetAll().Count > 0) return;
+            if (Any(q => q)) return;
 
             var accounts = new (string Code, string Name, string Parent, int Level, int Type, bool IsLeaf)[]
             {
