@@ -23,12 +23,6 @@ namespace PrimeERP.Composition.Renderers
     /// <summary>تصيير صفحة الإعدادات</summary>
     public static class SettingsPageRenderer
     {
-        private static readonly (string Category, string TitleKey)[] CategoryOrder =
-        {
-            ("Company", "Str.Settings.Company"), ("Financial", "Str.Settings.Financial"), ("Accounts", "Str.Settings.Accounts"),
-            ("Documents", "Str.Settings.Documents"), ("UI", "Str.Settings.UI"), ("Print", "الطباعة"), ("Backup", "Str.Settings.Backup"), ("Security", "Str.Settings.Security"),
-        };
-
         public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services)
         {
             var settingsService = services.GetRequiredService<ISettingsService>();
@@ -42,7 +36,7 @@ namespace PrimeERP.Composition.Renderers
             var controls = new Dictionary<string, (FieldDefinition Field, FrameworkElement Control)>();
             var accountRows = new Lazy<List<DialogRenderer.PickerRow>>(() => DialogRenderer.AccountRows(services) ?? new());
 
-            var tabs = CategoryOrder.Select(cat =>
+            var tabs = SettingsTabs.All.Select(cat =>
             {
                 var panel = new WrapPanel { Margin = new Thickness(24) };
                 foreach (var def in allDefs.Where(d => d.Category == cat.Category))
