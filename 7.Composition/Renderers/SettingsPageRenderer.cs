@@ -40,13 +40,14 @@ namespace PrimeERP.Composition.Renderers
             updateButton.Click += async (_, __) => await UpdateFlow.RunAsync(services);
             header.ActionsContent = updateButton;
             var controls = new Dictionary<string, (FieldDefinition Field, FrameworkElement Control)>();
+            var accountRows = new Lazy<List<DialogRenderer.PickerRow>>(() => DialogRenderer.AccountRows(services) ?? new());
 
             var tabs = CategoryOrder.Select(cat =>
             {
                 var panel = new WrapPanel { Margin = new Thickness(24) };
                 foreach (var def in allDefs.Where(d => d.Category == cat.Category))
                 {
-                    var isAccount = cat.Category == "Accounts";
+                    var isAccount = cat.Category == "Accounts" && def.DataType == "string";
                     var field = new FieldDefinition
                     {
                         Key = def.Key, LabelKey = LabelFor(def.Key),
@@ -55,12 +56,10 @@ namespace PrimeERP.Composition.Renderers
                              : def.DataType switch { "bool" => FieldKind.Check, "int" => FieldKind.Number, _ => FieldKind.Text },
                         PickerType = isAccount ? "Account" : null,
                         PickerValueField = isAccount ? "Code" : "Id",
-                        PickerGroupsOnly = isAccount && SettingKeys.Accounts.LinkedRoots.Contains(def.Key),
-                        PickerLeafOnly = isAccount && !SettingKeys.Accounts.LinkedRoots.Contains(def.Key),
                     };
 
                     var control = DialogRenderer.BuildField(field);
-                    if (isAccount) DialogRenderer.LoadPickerItems((AppComboBox)control, field, services);
+                    if (isAccount) ((AppComboBox)control).ItemsSource = accountRows.Value.ToList();
                     if (field.Kind == FieldKind.Image) control.Width = 420; else control.Width = 260;
                     control.Margin = new Thickness(0, 0, 16, 16);
 
@@ -103,7 +102,7 @@ namespace PrimeERP.Composition.Renderers
                     var account = accounts.GetByCode(text);
                     if (account.IsSuccess && account.Value.IsLeaf)
                     {
-                        toast.Error($"«{LabelFor(rootKey)}» يجب أن يكون حساباً تجميعياً (أباً) لا حساباً ورقياً — الكيانات تُنشأ تحته.");
+                        toast.Error(LocalizationService.Get("Str.Settings.RootMustBeGroup", LabelFor(rootKey)));
                         return;
                     }
                 }

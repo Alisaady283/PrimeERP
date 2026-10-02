@@ -739,6 +739,7 @@
     <sys:String x:Key="Str.Settings.BatchSavedLog">Saved {0} settings at once</sys:String>
     <sys:String x:Key="Str.Settings.NoActiveSerial">This copy has no activated serial</sys:String>
     <sys:String x:Key="Str.Settings.NoPackage">No package to download</sys:String>
+    <sys:String x:Key="Str.Settings.RootMustBeGroup">«{0}» must be a group (parent) account, not a leaf — its entities are created under it.</sys:String>
     <sys:String x:Key="Str.Settings.Version">Version {0}</sys:String>
     <sys:String x:Key="Str.Settings.CheckUpdate">Check for updates</sys:String>
     <sys:String x:Key="Str.Settings.Update">Update</sys:String>

@@ -739,6 +739,7 @@
     <sys:String x:Key="Str.Settings.BatchSavedLog">تعديل {0} إعداد دفعة واحدة</sys:String>
     <sys:String x:Key="Str.Settings.NoActiveSerial">النسخة بلا سريال مُفعَّل</sys:String>
     <sys:String x:Key="Str.Settings.NoPackage">لا حزمة للتنزيل</sys:String>
+    <sys:String x:Key="Str.Settings.RootMustBeGroup">«{0}» يجب أن يكون حساباً تجميعياً (أباً) لا حساباً ورقياً — الكيانات تُنشأ تحته.</sys:String>
     <sys:String x:Key="Str.Settings.Version">الإصدار {0}</sys:String>
     <sys:String x:Key="Str.Settings.CheckUpdate">البحث عن تحديث</sys:String>
     <sys:String x:Key="Str.Settings.Update">تحديث</sys:String>

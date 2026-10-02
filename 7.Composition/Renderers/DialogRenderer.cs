@@ -438,17 +438,7 @@ namespace PrimeERP.Composition.Renderers
         {
             if (field.PickerType == "Account")
             {
-                var accountService = services.GetRequiredService<IAccountService>();
-                var filter = new AccountTreeFilter { LeafOnly = field.PickerLeafOnly };
-                var pageResult = accountService.GetPaged(1, 5000, filter);
-                if (!pageResult.IsSuccess) return;
-
-                var accountRows = pageResult.Value.Items.AsEnumerable();
-                if (field.PickerGroupsOnly) accountRows = accountRows.Where(a => !a.IsLeaf);
-
-                combo.ItemsSource = accountRows
-                    .Select(a => new PickerRow { Id = a.Id, Code = a.Code, Display = $"{a.Code} - {a.Name}" })
-                    .ToList();
+                if (AccountRows(services, field.PickerLeafOnly) is { } rows) combo.ItemsSource = rows;
             }
             else if (field.PickerType == "Category")
             {
@@ -614,6 +604,15 @@ namespace PrimeERP.Composition.Renderers
                 LoadPickerItems(combo, field, services);
                 combo.SelectedItem = null;
             };
+        }
+
+        /// <summary>الحسابات صفوفَ قائمة</summary>
+        internal static List<PickerRow> AccountRows(IServiceProvider services, bool leafOnly = false)
+        {
+            var page = services.GetRequiredService<IAccountService>().GetPaged(1, 5000, new AccountTreeFilter { LeafOnly = leafOnly });
+            return page.IsSuccess
+                ? page.Value.Items.Select(a => new PickerRow { Id = a.Id, Code = a.Code, Display = $"{a.Code} - {a.Name}" }).ToList()
+                : null;
         }
 
         internal class PickerRow { public int Id { get; set; } public string Code { get; set; } public string Display { get; set; } }

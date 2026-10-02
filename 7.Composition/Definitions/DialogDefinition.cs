@@ -32,8 +32,6 @@ namespace PrimeERP.Composition.Definitions
         public string PickerType { get; init; }
         public bool PickerLeafOnly { get; init; }
 
-        public bool PickerGroupsOnly { get; init; }
-
         public string PickerCategoryModuleKey { get; init; }
 
         public string PickerValueField { get; init; } = "Id";
