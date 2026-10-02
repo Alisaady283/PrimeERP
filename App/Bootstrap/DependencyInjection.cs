@@ -326,25 +326,28 @@ namespace PrimeERP.App.Bootstrap
             return services;
         }
 
-        public static IServiceProvider EnsureDatabaseReady(this IServiceProvider services, IProgress<double> progress = null)
+        public static IServiceProvider EnsureDatabaseReady(this IServiceProvider services)
         {
-            var steps = new Action[]
-            {
-                SchemaSync.Run,
-                () => SettingSeeder.Seed(services.GetRequiredService<ISettingStore>()),
-                () => services.GetRequiredService<IAccountRepository>().SeedDefaults(),
-                () => NumberSequenceSeeder.Seed(services.GetRequiredService<INumberSequenceRepository>(), services.GetRequiredService<ISettingStore>()),
-                () => services.GetRequiredService<SettingAccounts>().RepairRoots(PrimeERP.Platform.Settings.SettingKeys.Accounts.LinkedRoots),
-                () => services.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>().SeedDefaults(),
-                () => services.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>().RepairMissingAccounts(),
-                () => services.GetRequiredService<PrimeERP.Application.Legacy.Assets.IAssetService>().SeedDefaults(),
-            };
+            SchemaSync.Run();
 
-            for (var i = 0; i < steps.Length; i++)
-            {
-                steps[i]();
-                progress?.Report((i + 1) * 100d / steps.Length);
-            }
+            SettingSeeder.Seed(services.GetRequiredService<ISettingStore>());
+
+
+            var accounts = services.GetRequiredService<IAccountRepository>();
+            accounts.SeedDefaults();
+
+
+            var numberSequences = services.GetRequiredService<INumberSequenceRepository>();
+            NumberSequenceSeeder.Seed(numberSequences, services.GetRequiredService<ISettingStore>());
+
+            services.GetRequiredService<SettingAccounts>().RepairRoots(PrimeERP.Platform.Settings.SettingKeys.Accounts.LinkedRoots);
+            var treasuryService = services.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>();
+            treasuryService.SeedDefaults();
+            treasuryService.RepairMissingAccounts();
+
+
+
+            services.GetRequiredService<PrimeERP.Application.Legacy.Assets.IAssetService>().SeedDefaults();
 
             return services;
         }

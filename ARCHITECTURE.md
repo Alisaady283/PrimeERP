@@ -114,7 +114,7 @@ AppDataGrid + AppPagination
 
 كل عملية تتجاوز ثانية تُنفَّذ خارج خيط الواجهة، بحوار تقدّم، وبنسبة محسوبة لا دائرة بلا نهاية.
 
-الآلية الوحيدة: `IDialogService.ShowProgress(title, message)` تُرجع `IProgressHandle` (فوق `AppProgressDialog`). الخدمة ترفع تقدّمها بـ `IProgress<T>` ولا تعرف الواجهة، والمُصيِّر يُشغّلها بـ `Task.Run` ويعرض الحوار. المرجع العامل: `ProgramEditionService`. والإقلاع مثلها: `App.OnStartup` يهيّئ الهوية ثم يُشغّل `EnsureDatabaseReady` (بخطواته نسبةً) في `Task.Run` بحوار تقدّم ويضخّ الواجهة بـ`DispatcherFrame`، ثم `RegisterModules` على خيط الواجهة لأنه ينشئ عناصر WPF.
+الآلية الوحيدة: `IDialogService.ShowProgress(title, message)` تُرجع `IProgressHandle` (فوق `AppProgressDialog`). الخدمة ترفع تقدّمها بـ `IProgress<T>` ولا تعرف الواجهة، والمُصيِّر يُشغّلها بـ `Task.Run` ويعرض الحوار. المرجع العامل: `ProgramEditionService`.
 
 ---
 
