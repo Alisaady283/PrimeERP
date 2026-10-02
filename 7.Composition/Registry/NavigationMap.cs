@@ -22,6 +22,9 @@ namespace PrimeERP.Composition.Registry
 
         public static readonly string[] Protected = { "Accounting", "Settings", "Builder" };
 
+        /// <summary>أقسامٌ تشملها كل نسخة</summary>
+        public static readonly string[] Always = { "Accounting" };
+
         public static (string Key, string Text, string IconKey, string[] Keys)[] Groups(
             IReadOnlyList<(string Key, string Title, string IconKey, string[] ModuleKeys)> built = null)
         {

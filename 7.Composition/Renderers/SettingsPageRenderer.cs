@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Composition.Definitions;
+using PrimeERP.Composition.Registry;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Components.Display;
@@ -36,7 +37,7 @@ namespace PrimeERP.Composition.Renderers
             var controls = new Dictionary<string, (FieldDefinition Field, FrameworkElement Control)>();
             var accountRows = new Lazy<List<DialogRenderer.PickerRow>>(() => DialogRenderer.AccountRows(services) ?? new());
 
-            var tabs = SettingsTabs.All.Select(cat =>
+            var tabs = SettingsTabs.Visible(services.GetRequiredService<IModuleRegistry>().Manifest).Select(cat =>
             {
                 var panel = new WrapPanel { Margin = new Thickness(24) };
                 foreach (var def in allDefs.Where(d => d.Category == cat.Category))

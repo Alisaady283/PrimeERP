@@ -229,8 +229,15 @@ namespace PrimeERP.Modules
             var roots = EditionTree(services, license.Simplified);
             if (license.ModuleKeys.Count == 0) return roots;
 
+            var tabs = SettingsTabs.Visible(license.ModuleKeys).Select(t => SettingsTabs.Key(t.Category)).ToHashSet();
             foreach (var page in roots.SelectMany(section => section.Children).Where(p => p.IsCheckEnabled))
+            {
                 page.CheckState = license.ModuleKeys.Contains(page.Id) ? NodeCheckState.Checked : NodeCheckState.Unchecked;
+                foreach (var tab in page.Children)
+                    tab.CheckState = page.CheckState == NodeCheckState.Checked && tabs.Contains(tab.Id)
+                        ? NodeCheckState.Checked
+                        : NodeCheckState.Unchecked;
+            }
 
             Inherit(roots, null);
             return roots;
@@ -291,7 +298,7 @@ namespace PrimeERP.Modules
             {
                 if (group.Key == "Builder") continue;
 
-                var always = NavigationMap.Protected.Contains(group.Key);
+                var always = NavigationMap.Always.Contains(group.Key);
 
                 var section = new TreeNodeViewModel
                 {
@@ -300,11 +307,24 @@ namespace PrimeERP.Modules
                 };
 
                 foreach (var key in group.Keys.Where(modules.ContainsKey))
-                    section.AddChild(new TreeNodeViewModel
+                {
+                    var tabbed = modules[key].LayoutKind == LayoutKind.Settings;
+                    var page = new TreeNodeViewModel
                     {
-                        Id = key, DisplayText = LocalizationService.Get(modules[key].TitleKey), IsLeaf = true,
+                        Id = key, DisplayText = LocalizationService.Get(modules[key].TitleKey), IsLeaf = !tabbed,
                         CheckState = NodeCheckState.Checked, IsCheckEnabled = !always
-                    });
+                    };
+
+                    if (tabbed)
+                        foreach (var (category, titleKey) in SettingsTabs.All)
+                            page.AddChild(new TreeNodeViewModel
+                            {
+                                Id = SettingsTabs.Key(category), DisplayText = LocalizationService.Get(titleKey), IsLeaf = true,
+                                CheckState = NodeCheckState.Checked, IsCheckEnabled = !always
+                            });
+
+                    section.AddChild(page);
+                }
 
                 if (section.Children.Count > 0) roots.Add(section);
             }
@@ -314,17 +334,20 @@ namespace PrimeERP.Modules
 
         private static void Inherit(List<TreeNodeViewModel> roots, TreeNodeViewModel changed)
         {
-            if (changed != null && changed.Children.Count > 0)
-                foreach (var page in changed.Children) page.CheckState = changed.CheckState;
+            if (changed != null) Cascade(changed, changed.CheckState);
 
             foreach (var section in roots)
             {
-                if (NavigationMap.Protected.Contains(section.Id))
+                if (NavigationMap.Always.Contains(section.Id))
                 {
-                    section.CheckState = NodeCheckState.Checked;
-                    foreach (var page in section.Children) page.CheckState = NodeCheckState.Checked;
+                    Cascade(section, NodeCheckState.Checked);
                     continue;
                 }
+
+                foreach (var page in section.Children.Where(p => p.Children.Count > 0))
+                    page.CheckState = page.Children.Any(tab => tab.CheckState == NodeCheckState.Checked)
+                        ? NodeCheckState.Checked
+                        : NodeCheckState.Unchecked;
 
                 section.CheckState = section.Children.All(page => page.CheckState == NodeCheckState.Checked)
                     ? NodeCheckState.Checked
@@ -334,11 +357,15 @@ namespace PrimeERP.Modules
 
         private static void SetAll(List<TreeNodeViewModel> roots, NodeCheckState state)
         {
-            foreach (var section in roots.Where(r => !NavigationMap.Protected.Contains(r.Id)))
-            {
-                section.CheckState = state;
-                foreach (var page in section.Children) page.CheckState = state;
-            }
+            foreach (var section in roots.Where(r => !NavigationMap.Always.Contains(r.Id)))
+                Cascade(section, state);
+        }
+
+        /// <summary>الحالة لكل ما تحت العقدة</summary>
+        private static void Cascade(TreeNodeViewModel node, NodeCheckState state)
+        {
+            node.CheckState = state;
+            foreach (var child in node.Children) Cascade(child, state);
         }
 
         private static async Task<Result> CreateEdition(IServiceProvider services, int licenseId,
@@ -349,7 +376,9 @@ namespace PrimeERP.Modules
 
             var keys = roots.SelectMany(section => section.Children)
                 .Where(page => page.CheckState == NodeCheckState.Checked)
-                .Select(page => page.Id).ToList();
+                .SelectMany(page => page.Children.Where(tab => tab.CheckState == NodeCheckState.Checked)
+                    .Select(tab => tab.Id).Prepend(page.Id))
+                .ToList();
 
             var folder = FolderOutput.Pick(LocalizationService.Get("Str.Builder.ChooseFolder"));
 
