@@ -107,9 +107,6 @@ namespace PrimeERP.Application.Legacy.Builder
             return Result.Ok();
         }
 
-        protected static int Order(int written, IEnumerable<int> siblings) =>
-            written > 0 ? written : siblings.DefaultIfEmpty(0).Max() + 10;
-
         /// <summary>الكيان من قيم الحوار</summary>
         protected static TEntity From(IDictionary<string, object> values)
         {
@@ -142,7 +139,6 @@ namespace PrimeERP.Application.Legacy.Builder
         protected override int Write(IDictionary<string, object> v)
         {
             var section = From(v);
-            section.SortOrder = Order(section.SortOrder, Repo.Sections().Select(s => s.SortOrder));
             section.Modules = Repo.Sections().FirstOrDefault(s => s.Id == section.Id)?.Modules;
             return Repo.SaveSection(section);
         }
@@ -208,7 +204,6 @@ namespace PrimeERP.Application.Legacy.Builder
         protected override int Write(IDictionary<string, object> v)
         {
             var module = From(v);
-            module.SortOrder = Order(module.SortOrder, Repo.Modules().Where(m => m.SectionId == module.SectionId).Select(m => m.SortOrder));
             module.IsCoded = Repo.Modules().FirstOrDefault(m => m.Id == module.Id)?.IsCoded ?? false;
             var isNew = module.Id == 0;
             var id = Repo.SaveModule(module);
@@ -302,9 +297,6 @@ namespace PrimeERP.Application.Legacy.Builder
         protected override int Write(IDictionary<string, object> v)
         {
             var incoming = From(v);
-            v["SortOrder"] = Order(OrderOf(incoming), Of(ModuleOf(incoming)).Select(OrderOf));
-            Rows.Fill(incoming, v);
-
             return Save(ModuleOf(incoming), incoming);
         }
 

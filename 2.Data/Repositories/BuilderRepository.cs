@@ -86,6 +86,7 @@ namespace PrimeERP.Data.Repositories
             Write(db =>
             {
                 var set = SetOf<BuilderSection>(db, "BuilderSections");
+                if (s.SortOrder <= 0) s.SortOrder = Next(set.Select(x => x.SortOrder));
                 if (s.Id == 0)
                 {
                     set.Add(s);
@@ -105,6 +106,7 @@ namespace PrimeERP.Data.Repositories
         public int SaveModule(BuilderModule m) =>
             Write(db =>
             {
+                if (m.SortOrder <= 0) m.SortOrder = Next(Rows(db).Where(x => x.SectionId == m.SectionId).Select(x => x.SortOrder));
                 if (m.Id == 0)
                 {
                     SetOf(db).Add(m);
@@ -138,6 +140,7 @@ namespace PrimeERP.Data.Repositories
             Write(db =>
             {
                 var set = SetOf<T>(db, table);
+                if (child.SortOrder <= 0) child.SortOrder = Next(set.Where(x => x.ModuleId == moduleId).Select(x => x.SortOrder));
                 if (child.Id == 0)
                 {
                     set.Add(child);
@@ -150,6 +153,9 @@ namespace PrimeERP.Data.Repositories
             });
             return child.Id;
         }
+
+        /// <summary>آخر الترتيب بخطوته</summary>
+        private static int Next(IQueryable<int> orders) => (orders.Max(o => (int?)o) ?? 0) + 10;
 
         public void ReplaceColumns(int moduleId, List<BuilderColumn> columns) =>
             Replace("BuilderColumns", moduleId, columns, (id, c) => SaveColumn(id, c));
