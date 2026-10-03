@@ -12,7 +12,7 @@ namespace PrimeERP.Composition.Print
     /// <summary>عائلتا المستندات</summary>
     public static class PrintDocuments
     {
-        private static readonly string[] TradeSignatures = { "المُعِد", "المراجع", "المستلم" };
+        private static string[] TradeSignatures() => new[] { LocalizationService.Get("Str.Print.PreparedBy"), LocalizationService.Get("Str.Print.Reviewer"), LocalizationService.Get("Str.Print.Receiver") };
 
         /// <summary>خيارات الورق المشتركة</summary>
         public class PaperOptions
@@ -38,8 +38,8 @@ namespace PrimeERP.Composition.Print
                     Type = PrintSectionType.Parties,
                     Parties = new()
                     {
-                        new() { Title = "الطرف", Name = party },
-                        new() { Title = "المستند", Name = number, Details = { docDate } }
+                        new() { Title = LocalizationService.Get("Str.Party"), Name = party },
+                        new() { Title = LocalizationService.Get("Str.Doc"), Name = number, Details = { docDate } }
                     }
                 });
 
@@ -67,7 +67,7 @@ namespace PrimeERP.Composition.Print
                 Orientation = ColumnCount(definition) > 5 ? PrintOrientation.Landscape : PrintOrientation.Portrait,
                 Header = HeaderFields(definition, doc, party, number, docDate),
                 Footer = doc.NotesField(),
-                Signatures = signatures ?? TradeSignatures.ToList(),
+                Signatures = signatures ?? TradeSignatures().ToList(),
                 CopyLabels = paper?.CopyLabels ?? new(),
                 LinesPerPage = paper?.LinesPerPage ?? 0,
                 Sections = sections
@@ -111,7 +111,7 @@ namespace PrimeERP.Composition.Print
                 new()
                 {
                     Type = PrintSectionType.AmountInWords,
-                    Title = "مبلغاً وقدره",
+                    Title = LocalizationService.Get("Str.Print.AmountOf"),
                     Amount = document.Amount,
                     Currency = document.Currency,
                     SubUnit = document.SubUnit
@@ -176,7 +176,7 @@ namespace PrimeERP.Composition.Print
             foreach (var field in definition.LineFields)
             {
                 if (split.Contains(field.Key))
-                    columns.Add(new PrintColumn { Key = field.Key, Header = "الكود", Width = 0.9, Align = "Center" });
+                    columns.Add(new PrintColumn { Key = field.Key, Header = LocalizationService.Get("Str.Code"), Width = 0.9, Align = "Center" });
 
                 columns.Add(new PrintColumn
                 {
@@ -262,7 +262,7 @@ namespace PrimeERP.Composition.Print
                 var isNumeric = rows.Any(r => r.TryGetValue(column.Key, out var v) && v is decimal or int or double);
                 if (!isNumeric)
                 {
-                    totals[column.Key] = labelled ? "" : "الإجمالي";
+                    totals[column.Key] = labelled ? "" : LocalizationService.Get("Str.Total");
                     labelled = true;
                     continue;
                 }
@@ -296,7 +296,7 @@ namespace PrimeERP.Composition.Print
             public Dictionary<string, string> NotesField()
             {
                 var notes = Raw("Notes") as string;
-                return string.IsNullOrWhiteSpace(notes) ? null : new Dictionary<string, string> { ["ملاحظات"] = notes };
+                return string.IsNullOrWhiteSpace(notes) ? null : new Dictionary<string, string> { [LocalizationService.Get("Str.Notes")] = notes };
             }
 
             public string Display(string key)
@@ -353,8 +353,8 @@ namespace PrimeERP.Composition.Print
         public required Dictionary<string, string> Values { get; init; }
 
         public decimal Amount { get; init; }
-        public string Currency { get; init; } = "جنيه";
-        public string SubUnit { get; init; } = "قرش";
+        public string Currency { get; init; }
+        public string SubUnit { get; init; }
 
         public Dictionary<string, string> Header { get; init; }
         public Dictionary<string, string> Details { get; init; }

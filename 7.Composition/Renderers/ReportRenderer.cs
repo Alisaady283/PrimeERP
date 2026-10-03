@@ -58,11 +58,11 @@ namespace PrimeERP.Composition.Renderers
                 {
                     PrimeERP.UI.Components.Actions.ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(
                         _ => ListOutput.Print(services, currentTitle, report.Columns, Rows()),
-                        _ => current != null), view, "طباعة التقرير"),
+                        _ => current != null), view, LocalizationService.Get("Str.Output.PrintReport")),
 
                     PrimeERP.UI.Components.Actions.ToolbarAction.Export(new PrimeERP.UI.ViewModels.RelayCommand(
                         _ => ListOutput.Export(services, currentTitle, report.Columns, Rows()),
-                        _ => current != null), view, "تصدير التقرير"),
+                        _ => current != null), view, LocalizationService.Get("Str.Output.ExportReport")),
                 }
             };
 
@@ -119,7 +119,7 @@ namespace PrimeERP.Composition.Renderers
 
             if (method == null)
                 return Result.Fail<PrimeERP.Application.Reporting.ReportData>(
-                    $"الخدمة {report.ServiceType.Name} بلا {report.Method}");
+                    LocalizationService.Get("Str.Composition.MissingMethod", report.ServiceType.Name, report.Method));
 
             if (report.FixedArguments != null)
                 foreach (var fixedArgument in report.FixedArguments) parameters[fixedArgument.Key] = fixedArgument.Value;

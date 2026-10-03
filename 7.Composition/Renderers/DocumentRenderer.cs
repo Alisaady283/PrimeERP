@@ -53,7 +53,7 @@ namespace PrimeERP.Composition.Renderers
                 var id = (int)editItem.GetType().GetProperty("Id").GetValue(editItem);
                 var service0 = Resolve.Service(def, services);
                 var getById = DialogRenderer.FindMethod(def.ServiceType, "GetById", typeof(int));
-                if (getById == null) { toast.Error($"الخدمة {def.ServiceType.Name} بلا GetById(int)"); return null; }
+                if (getById == null) { toast.Error(LocalizationService.Get("Str.Composition.MissingMethod", def.ServiceType.Name, "GetById(int)")); return null; }
 
                 var detailResult = (Result)getById.Invoke(service0, new object[] { id });
                 if (!detailResult.IsSuccess) { toast.Error(detailResult.ErrorMessage); return null; }
@@ -288,7 +288,7 @@ namespace PrimeERP.Composition.Renderers
 
             TextBlock differenceLabel = null, difference = null;
             if (def.LineTotals.MustBalance is { Length: 2 })
-                differenceLabel = AddCell("الفرق", out difference);
+                differenceLabel = AddCell(LocalizationService.Get("Str.Difference"), out difference);
 
             decimal SumOf(string key) => rows
                 .Select(r => r.Controls.TryGetValue(key, out var c) && c is AppNumericBox box ? box.Value : 0m)
@@ -505,12 +505,12 @@ namespace PrimeERP.Composition.Renderers
                 linesList.Add(lineDto);
             }
             if (!rowsValid) return false;
-            if (linesList.Count == 0) { toast.Error("المستند يحتاج سطراً واحداً على الأقل"); return false; }
+            if (linesList.Count == 0) { toast.Error(LocalizationService.Get("Str.Document.NoLines")); return false; }
 
             def.DtoType.GetProperty(def.LinesPropertyName).SetValue(dto, linesList);
 
             var method = DialogRenderer.FindMethod(def.ServiceType, isEdit ? "Update" : "Create", def.DtoType);
-            if (method == null) { toast.Error($"الخدمة {def.ServiceType.Name} بلا {(isEdit ? "Update" : "Create")}({def.DtoType.Name})"); return false; }
+            if (method == null) { toast.Error(LocalizationService.Get("Str.Composition.MissingMethod", def.ServiceType.Name, $"{(isEdit ? "Update" : "Create")}({def.DtoType.Name})")); return false; }
 
             var result = (Result)method.Invoke(service, new[] { dto });
             if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return false; }

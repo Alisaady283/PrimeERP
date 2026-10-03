@@ -28,7 +28,7 @@ namespace PrimeERP.Modules
         {
             var repo = services.GetRequiredService<IBuilderCatalog>();
 
-            repo.SeedSections(NavigationMap.Coded, NavigationMap.Protected);
+            repo.SeedSections(NavigationMap.Sections(), NavigationMap.Protected);
 
             repo.SeedModules(Coded(repo, registry));
 
@@ -83,7 +83,7 @@ namespace PrimeERP.Modules
             var pages = new List<CodedPage>();
             var sections = repo.Sections().Select(section => section.Key).ToHashSet();
 
-            foreach (var (key, _, _, modules) in NavigationMap.Coded)
+            foreach (var (key, _, modules) in NavigationMap.Coded)
             {
                 if (!sections.Contains(key)) continue;   // قسمٌ محميّ أو حذفه المستخدم
 

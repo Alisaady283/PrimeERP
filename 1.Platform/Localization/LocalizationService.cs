@@ -58,6 +58,10 @@ namespace PrimeERP.Platform.Localization
         public static string Get(string key, params object[] args) =>
             args == null || args.Length == 0 ? Get(key) : string.Format(Get(key), args);
 
+        /// <summary>النص أو بديله</summary>
+        public static string GetOr(string key, string fallback) =>
+            System.Windows.Application.Current?.Resources.Contains(key) == true ? Get(key) : fallback;
+
         public static string Get(string key)
         {
             if (System.Windows.Application.Current?.Resources.Contains(key) == true)

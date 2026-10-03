@@ -110,7 +110,7 @@ namespace PrimeERP.Composition.Renderers
                 ApplyFixedValues(dialog, updateDto);
 
                 var method = FindMethod(dialog.ServiceType, "Update", dialog.UpdateDtoType);
-                if (method == null) { toast.Error($"الخدمة {dialog.ServiceType.Name} بلا Update({dialog.UpdateDtoType.Name})"); return false; }
+                if (method == null) { toast.Error(LocalizationService.Get("Str.Composition.MissingMethod", dialog.ServiceType.Name, $"Update({dialog.UpdateDtoType.Name})")); return false; }
 
                 var result = (Result)method.Invoke(service, new[] { updateDto });
                 if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return false; }
@@ -122,7 +122,7 @@ namespace PrimeERP.Composition.Renderers
                 ApplyFixedValues(dialog, createDto);
 
                 var method = FindMethod(dialog.ServiceType, "Create", dialog.CreateDtoType);
-                if (method == null) { toast.Error($"الخدمة {dialog.ServiceType.Name} بلا Create({dialog.CreateDtoType.Name})"); return false; }
+                if (method == null) { toast.Error(LocalizationService.Get("Str.Composition.MissingMethod", dialog.ServiceType.Name, $"Create({dialog.CreateDtoType.Name})")); return false; }
 
                 var result = (Result)method.Invoke(service, new[] { createDto });
                 if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return false; }
@@ -544,8 +544,8 @@ namespace PrimeERP.Composition.Renderers
             {
                 combo.ItemsSource = new List<PickerRow>
                 {
-                    new() { Id = (int)PrimeERP.Domain.Enums.TreasuryKind.Cash, Display = "خزينة" },
-                    new() { Id = (int)PrimeERP.Domain.Enums.TreasuryKind.Bank, Display = "بنك" },
+                    new() { Id = (int)PrimeERP.Domain.Enums.TreasuryKind.Cash, Display = LocalizationService.Get("Str.Treasury.Kind.Fund") },
+                    new() { Id = (int)PrimeERP.Domain.Enums.TreasuryKind.Bank, Display = LocalizationService.Get("Str.Treasury.Kind.Bank") },
                 };
             }
             else if (field.PickerType == "EmployeeStatus")
@@ -571,8 +571,8 @@ namespace PrimeERP.Composition.Renderers
             {
                 combo.ItemsSource = new List<PickerRow>
                 {
-                    new() { Id = (int)PrimeERP.Domain.Enums.PaymentMethod.Cash,   Display = "نقدي" },
-                    new() { Id = (int)PrimeERP.Domain.Enums.PaymentMethod.Bank,   Display = "تحويل بنكي" },
+                    new() { Id = (int)PrimeERP.Domain.Enums.PaymentMethod.Cash,   Display = LocalizationService.Get("Str.Voucher.Method.Cash") },
+                    new() { Id = (int)PrimeERP.Domain.Enums.PaymentMethod.Bank,   Display = LocalizationService.Get("Str.Voucher.Method.Bank") },
                 };
             }
             else if (field.PickerType == "Warehouse")

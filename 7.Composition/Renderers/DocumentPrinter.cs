@@ -33,29 +33,29 @@ namespace PrimeERP.Composition.Renderers
         {
             var isCheque = voucher.Method == PrimeERP.Domain.Enums.PaymentMethod.Cheque;
             var words = PrimeERP.Domain.Helpers.ArabicNumberToWords.Convert(voucher.Amount,
-                settings.Get(PrimeERP.Platform.Settings.SettingKeys.Financial.CurrencyName, "جنيه"),
-                settings.Get(PrimeERP.Platform.Settings.SettingKeys.Financial.CurrencySubUnit, "قرش"));
+                settings.Get<string>(PrimeERP.Platform.Settings.SettingKeys.Financial.CurrencyName),
+                settings.Get<string>(PrimeERP.Platform.Settings.SettingKeys.Financial.CurrencySubUnit));
 
             var sections = new System.Collections.Generic.List<PrintSection>
             {
                 new() { Type = PrintSectionType.Callout, Text = $"{voucher.Amount:N2}", Variant = StatusVariant.Neutral },
 
-                Line("التاريخ", voucher.VoucherDate.ToString("yyyy-MM-dd")),
-                Line(isReceipt ? "استلمنا من السيد" : "صرفنا إلى السيد", voucher.PartyName),
-                Line("مبلغاً وقدره", $"{words} لا غير"),
-                Pair("نقداً / شيك رقم", isCheque ? voucher.Reference : null,
-                     "مسحوب على بنك", voucher.TreasuryName),
-                Line("وذلك عن", voucher.Notes),
+                Line(LocalizationService.Get("Str.Date"), voucher.VoucherDate.ToString("yyyy-MM-dd")),
+                Line(LocalizationService.Get(isReceipt ? "Str.Print.ReceivedFrom" : "Str.Print.PaidTo"), voucher.PartyName),
+                Line(LocalizationService.Get("Str.Print.AmountOf"), LocalizationService.Get("Str.Print.WordsOnly", words)),
+                Pair(LocalizationService.Get("Str.Print.CashOrCheque"), isCheque ? voucher.Reference : null,
+                     LocalizationService.Get("Str.Print.DrawnOn"), voucher.TreasuryName),
+                Line(LocalizationService.Get("Str.Print.For"), voucher.Notes),
             };
 
             return new VoucherPaper
             {
-                Title = isReceipt ? "سند قبض" : "سند صرف",
+                Title = LocalizationService.Get(isReceipt ? "Str.Print.ReceiptVoucher" : "Str.Print.PaymentVoucher"),
                 Subtitle = voucher.VoucherNo,
                 Sections = sections,
                 Signatures = isReceipt
-                    ? new() { "المحاسب", "الاعتماد" }
-                    : new() { "المستلِم", "المحاسب", "الاعتماد" }
+                    ? new() { LocalizationService.Get("Str.Print.Accountant"), LocalizationService.Get("Str.Print.Approval") }
+                    : new() { LocalizationService.Get("Str.Print.Receiver"), LocalizationService.Get("Str.Print.Accountant"), LocalizationService.Get("Str.Print.Approval") }
             };
         }
 
@@ -64,8 +64,8 @@ namespace PrimeERP.Composition.Renderers
             if (def.AffectsStock == StockEffect.None) return null;
 
             return def.AffectsStock == StockEffect.Out
-                ? new System.Collections.Generic.List<string> { "المستلِم", "أمين المخزن", "الاعتماد" }
-                : new System.Collections.Generic.List<string> { "أمين المخزن", "الاعتماد" };
+                ? new System.Collections.Generic.List<string> { LocalizationService.Get("Str.Print.Receiver"), LocalizationService.Get("Str.Print.Storekeeper"), LocalizationService.Get("Str.Print.Approval") }
+                : new System.Collections.Generic.List<string> { LocalizationService.Get("Str.Print.Storekeeper"), LocalizationService.Get("Str.Print.Approval") };
         }
 
         private static PrintSection Line(string label, string value) => new()
@@ -133,7 +133,7 @@ namespace PrimeERP.Composition.Renderers
                 var exported = services.GetRequiredService<IPrintService>().ExportToPdf(printable, dialog.FileName);
                 if (exported.IsFailure) { toast.Error(exported.ErrorMessage); return; }
 
-                toast.Success($"تم التصدير إلى {System.IO.Path.GetFileName(dialog.FileName)}");
+                toast.Success(LocalizationService.Get("Str.Output.Exported", System.IO.Path.GetFileName(dialog.FileName)));
             });
 
         private static void WithDocument(ModuleDefinition definition, IServiceProvider services, object item,
@@ -142,16 +142,16 @@ namespace PrimeERP.Composition.Renderers
             var toast = services.GetRequiredService<IToastService>();
             var def = definition.DocumentDialog;
 
-            if (def == null) { toast.Error("لا مستند قابل للطباعة في هذه الشاشة"); return; }
-            if (item == null) { toast.Error("اختر مستنداً أولاً"); return; }
+            if (def == null) { toast.Error(LocalizationService.Get("Str.Output.NoPrintable")); return; }
+            if (item == null) { toast.Error(LocalizationService.Get("Str.Document.PickFirst")); return; }
 
             var id = item.GetType().GetProperty("Id")?.GetValue(item);
-            if (id == null) { toast.Error("المستند بلا معرّف"); return; }
+            if (id == null) { toast.Error(LocalizationService.Get("Str.Document.NoId")); return; }
 
             var settings = services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>();
             var service = Resolve.Service(def, services);
             var getById = DialogRenderer.FindMethod(def.ServiceType, "GetById", typeof(int));
-            if (getById == null) { toast.Error($"الخدمة {def.ServiceType.Name} بلا GetById(int)"); return; }
+            if (getById == null) { toast.Error(LocalizationService.Get("Str.Composition.MissingMethod", def.ServiceType.Name, "GetById(int)")); return; }
 
             var result = (Result)getById.Invoke(service, new object[] { (int)id });
             if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }

@@ -36,7 +36,7 @@ namespace PrimeERP.Composition.Renderers
             var moveCommand = new RelayCommand(_ =>
             {
                 var selected = vm.SelectedItem as ChequeDto;
-                if (selected == null) { toast.Error("اختر شيكاً أولاً"); return; }
+                if (selected == null) { toast.Error(LocalizationService.Get("Str.Cheque.PickFirst")); return; }
 
                 if (ShowMoveDialog(selected, services, cheques, toast))
                     vm.LoadCommand.Execute(null);
@@ -46,7 +46,7 @@ namespace PrimeERP.Composition.Renderers
             {
                 ButtonsSource = new List<ToolbarAction>
                 {
-                    ToolbarAction.Build("move", "تحريك الشيك", "IconRefresh", "primary", moveCommand, $"{definition.PermissionPrefix}.Edit", null, "إيداع / تحصيل / ارتداد / رد"),
+                    ToolbarAction.Build("move", LocalizationService.Get("Str.Cheque.Move"), "IconRefresh", "primary", moveCommand, $"{definition.PermissionPrefix}.Edit", null, LocalizationService.Get("Str.Cheque.MoveHint")),
                     ToolbarAction.Refresh((ICommand)vm.RefreshCommand),
                 }
             };
@@ -79,16 +79,16 @@ namespace PrimeERP.Composition.Renderers
         {
             var allowed = service.GetAllowedTransitions(cheque.Id);
             if (allowed.IsFailure) { toast.Error(allowed.ErrorMessage); return false; }
-            if (allowed.Value.Count == 0) { toast.Info($"الشيك في حالة نهائية ({cheque.StatusName}) — لا حركة بعدها"); return false; }
+            if (allowed.Value.Count == 0) { toast.Info(LocalizationService.Get("Str.Cheque.Final", cheque.StatusName)); return false; }
 
             var statusPicker = new AppComboBox
             {
-                Placeholder = "الحالة الجديدة", DisplayMemberPath = "Display", SelectedValuePath = "Id",
+                Placeholder = LocalizationService.Get("Str.Cheque.NewStatus"), DisplayMemberPath = "Display", SelectedValuePath = "Id",
                 ItemsSource = allowed.Value.Select(s => new DialogRenderer.PickerRow { Id = (int)s, Display = ChequeService.StatusName(s) }).ToList(),
                 Margin = new Thickness(0, 0, 0, 12)
             };
 
-            var treasuryField = new FieldDefinition { Key = "TreasuryId", LabelKey = "الخزينة", Kind = FieldKind.Picker, PickerType = "Treasury" };
+            var treasuryField = new FieldDefinition { Key = "TreasuryId", LabelKey = "Str.Treasury", Kind = FieldKind.Picker, PickerType = "Treasury" };
             var treasuryPicker = (AppComboBox)DialogRenderer.BuildField(treasuryField);
             DialogRenderer.LoadPickerItems(treasuryPicker, treasuryField, services);
             treasuryPicker.Margin = new Thickness(0, 0, 0, 12);
@@ -97,7 +97,7 @@ namespace PrimeERP.Composition.Renderers
             var notes = new AppTextBox { Placeholder = LocalizationService.Get("Str.Notes") };
 
             var body = new StackPanel { Width = 380, Margin = new Thickness(4) };
-            var summary = new TextBlock { Text = $"شيك {cheque.ChequeNo} — {cheque.Amount:N2} — الحالة الحالية: {cheque.StatusName}", Margin = new Thickness(0, 0, 0, 12), TextWrapping = TextWrapping.Wrap };
+            var summary = new TextBlock { Text = LocalizationService.Get("Str.Cheque.MoveSummary", cheque.ChequeNo, cheque.Amount, cheque.StatusName), Margin = new Thickness(0, 0, 0, 12), TextWrapping = TextWrapping.Wrap };
             summary.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
             body.Children.Add(summary);
             body.Children.Add(statusPicker);
@@ -106,15 +106,15 @@ namespace PrimeERP.Composition.Renderers
             body.Children.Add(notes);
 
             var btnCancel = new Btn { Text = LocalizationService.Get("Str.Cancel"), Variant = "secondary", Size = "sm" };
-            var btnMove = new Btn { Text = "تنفيذ", Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
+            var btnMove = new Btn { Text = LocalizationService.Get("Str.Execute"), Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
             var footer = new StackPanel { Orientation = Orientation.Horizontal, Children = { btnCancel, btnMove } };
-            var window = new ComposedDialogWindow("تحريك شيك", body, footer);
+            var window = new ComposedDialogWindow(LocalizationService.Get("Str.Cheque.MoveTitle"), body, footer);
 
             var moved = false;
             btnCancel.Click += (_, __) => window.Close();
             btnMove.Click += (_, __) =>
             {
-                if (statusPicker.SelectedValue == null) { toast.Error("اختر الحالة الجديدة"); return; }
+                if (statusPicker.SelectedValue == null) { toast.Error(LocalizationService.Get("Str.Cheque.PickStatus")); return; }
 
                 var result = service.Move(new MoveChequeDto
                 {

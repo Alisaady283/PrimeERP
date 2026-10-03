@@ -40,17 +40,17 @@ namespace PrimeERP.Composition.Renderers
             var toast = services.GetRequiredService<IToastService>();
             var result = services.GetRequiredService<IPullService>().GetAvailable(source, matchValues);
             if (result.IsFailure) { toast.Error(result.ErrorMessage); return null; }
-            if (result.Value.Count == 0) { toast.Info("لا توجد مستندات متاحة للسحب"); return null; }
+            if (result.Value.Count == 0) { toast.Info(LocalizationService.Get("Str.Pull.NoDocuments")); return null; }
 
             var documents = new AppDataGrid
             {
                 ColumnsSource = new List<GridColumn>
                 {
-                    new() { Header = "المستند", Binding = nameof(PullCandidate.SourceNo), Width = 130 },
+                    new() { Header = LocalizationService.Get("Str.Doc"), Binding = nameof(PullCandidate.SourceNo), Width = 130 },
                     new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(PullCandidate.DocDate), Width = 110, Format = "yyyy-MM-dd" },
-                    new() { Header = "الطرف", Binding = nameof(PullCandidate.PartyName), Width = 200, IsStarWidth = true },
-                    new() { Header = "سطور متاحة", Binding = nameof(PullCandidate.OpenLineCount), Width = 100, Align = ColumnAlign.Center },
-                    new() { Header = "المتبقي", Binding = nameof(PullCandidate.RemainingQty), Width = 100, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Party"), Binding = nameof(PullCandidate.PartyName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Pull.OpenLines"), Binding = nameof(PullCandidate.OpenLineCount), Width = 100, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Pull.Remaining"), Binding = nameof(PullCandidate.RemainingQty), Width = 100, Align = ColumnAlign.Center, Format = "N2" },
                 },
                 ItemsSource = result.Value,
                 ShowRowActions = false,
@@ -94,15 +94,15 @@ namespace PrimeERP.Composition.Renderers
             body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             body.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-            var documentsCaption = Caption("المستندات المتاحة");
-            var linesCaption = Caption("سطور المستند المختار");
+            var documentsCaption = Caption(LocalizationService.Get("Str.Pull.Documents"));
+            var linesCaption = Caption(LocalizationService.Get("Str.Pull.SelectedLines"));
             var scroll = new ScrollViewer { Content = linesHost, MinHeight = 220, MaxHeight = 320, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
 
             Grid.SetRow(documentsCaption, 0); Grid.SetRow(documents, 1); Grid.SetRow(linesCaption, 2); Grid.SetRow(scroll, 3);
             body.Children.Add(documentsCaption); body.Children.Add(documents); body.Children.Add(linesCaption); body.Children.Add(scroll);
 
             var btnCancel = new Btn { Text = LocalizationService.Get("Str.Cancel"), Variant = "secondary", Size = "sm" };
-            var btnPull   = new Btn { Text = "سحب", Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
+            var btnPull   = new Btn { Text = LocalizationService.Get("Str.Pull.Pull"), Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
             var footer    = new StackPanel { Orientation = Orientation.Horizontal, Children = { btnCancel, btnPull } };
 
             var window = new ComposedDialogWindow(source.Label, body, footer,
@@ -112,12 +112,12 @@ namespace PrimeERP.Composition.Renderers
             btnCancel.Click += (_, __) => window.Close();
             btnPull.Click += (_, __) =>
             {
-                if (documents.SelectedItem is not PullCandidate candidate) { toast.Error("اختر مستنداً أولاً"); return; }
+                if (documents.SelectedItem is not PullCandidate candidate) { toast.Error(LocalizationService.Get("Str.Document.PickFirst")); return; }
 
                 var over = rows.FirstOrDefault(r => r.Check.IsChecked == true && r.Qty.Value > r.Line.RemainingQty);
                 if (over.Line != null)
                 {
-                    toast.Error($"الكمية تتجاوز المتبقي ({over.Line.RemainingQty:N2}) للصنف {over.Line.ProductCode}");
+                    toast.Error(LocalizationService.Get("Str.Pull.Exceeds", over.Line.RemainingQty, over.Line.ProductCode));
                     return;
                 }
 
@@ -131,7 +131,7 @@ namespace PrimeERP.Composition.Renderers
                     })
                     .ToList();
 
-                if (lines.Count == 0) { toast.Error("لم يُحدَّد أي سطر"); return; }
+                if (lines.Count == 0) { toast.Error(LocalizationService.Get("Str.Pull.NoLines")); return; }
 
                 picked = new PullResult { Lines = lines, Header = candidate.HeaderValues };
                 window.Close();
@@ -157,7 +157,7 @@ namespace PrimeERP.Composition.Renderers
         private static Grid HeaderRow()
         {
             var grid = NewRowGrid();
-            var headers = new[] { "", "الصنف", "الأصلي / المسحوب", "الكمية" };
+            var headers = new[] { "", LocalizationService.Get("Str.Product"), LocalizationService.Get("Str.Pull.OriginalPulled"), LocalizationService.Get("Str.Qty") };
             for (int i = 0; i < headers.Length; i++)
             {
                 var text = new TextBlock { Text = headers[i], Margin = new Thickness(0, 0, 8, 4) };

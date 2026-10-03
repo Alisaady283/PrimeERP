@@ -35,18 +35,18 @@ namespace PrimeERP.UI.Components.Documents
             foreach (var col in columns.Where(c => c.IsRequired))
             {
                 if (IsMissing(line[col.Key], col.Type))
-                    errors[col.Key] = LocalizationService.Get("Str.Line.Required", col.Header);
+                    errors[col.Key] = LocalizationService.Get("Str.Rule.Required", col.Header);
             }
 
             if (HasColumn(columns, nameof(DocumentLine.Qty)) && line.Qty <= 0)
                 errors[nameof(DocumentLine.Qty)] = LocalizationService.Get("Str.Document.QtyPositive");
 
             if (HasColumn(columns, nameof(DocumentLine.Price)) && line.Price < 0)
-                errors[nameof(DocumentLine.Price)] = LocalizationService.Get("Str.Line.PriceNegative");
+                errors[nameof(DocumentLine.Price)] = LocalizationService.Get("Str.Rule.NonNegative", LocalizationService.Get("Str.Line.Price"));
 
             if (HasColumn(columns, nameof(DocumentLine.DiscountPercent)) &&
                 (line.DiscountPercent < 0 || line.DiscountPercent > 100))
-                errors[nameof(DocumentLine.DiscountPercent)] = LocalizationService.Get("Str.Line.DiscountRange");
+                errors[nameof(DocumentLine.DiscountPercent)] = LocalizationService.Get("Str.Rule.Range", LocalizationService.Get("Str.Line.DiscountPercent"), 0, 100);
 
             if (context?.Mode == DocumentLinesMode.Journal)
                 ValidateJournalDebitCredit(line, errors);

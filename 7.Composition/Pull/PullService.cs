@@ -39,7 +39,7 @@ namespace PrimeERP.Composition.Pull
 
         public int     OpenLineCount => Lines.Count;
         public decimal RemainingQty  => Lines.Sum(l => l.RemainingQty);
-        public string  Display       => $"{SourceNo} — {DocDate:yyyy-MM-dd} ({Lines.Count} سطر)";
+        public string  Display       => LocalizationService.Get("Str.Pull.CandidateDisplay", SourceNo, DocDate, Lines.Count);
     }
 
     public interface IPullService
@@ -62,7 +62,7 @@ namespace PrimeERP.Composition.Pull
         public Result<List<PullCandidate>> GetAvailable(PullSource source, IDictionary<string, object> matchValues)
         {
             var service = ResolveService(source.SourceKind);
-            if (service == null) return Result.Fail<List<PullCandidate>>($"لا توجد وحدة مسجّلة بالمفتاح {source.SourceKind}", ErrorCode.NotFound);
+            if (service == null) return Result.Fail<List<PullCandidate>>(LocalizationService.Get("Str.Pull.NoModule", source.SourceKind), ErrorCode.NotFound);
 
             var headers = ReadValue(Invoke(service, "GetPaged", 1, MaxSourceDocuments, null), "Value");
             if (headers == null) return Result.Ok(new List<PullCandidate>());

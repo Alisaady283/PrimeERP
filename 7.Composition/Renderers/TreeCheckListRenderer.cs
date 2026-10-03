@@ -43,7 +43,7 @@ namespace PrimeERP.Composition.Renderers
             {
                 var keyNodes = nodes.SelectMany(n => n.Children).ToList();
                 var granted = keyNodes.Count(n => n.CheckState is NodeCheckState.Checked or NodeCheckState.Granted);
-                summary.Text = $"الممنوح {granted} من {keyNodes.Count}";
+                summary.Text = LocalizationService.Get("Str.Permissions.Granted", granted, keyNodes.Count);
             }
 
             int SelectedSourceId() => sourcePicker.SelectedValue is int id ? id : 0;
@@ -74,7 +74,7 @@ namespace PrimeERP.Composition.Renderers
                 {
                     if (action.RequiresSource && SelectedSourceId() == 0)
                     {
-                        toast.Info(LocalizationService.Get(def.SourceLabelKey) + " مطلوب أولاً");
+                        toast.Info(LocalizationService.Get("Str.Rule.RequiredFirst", LocalizationService.Get(def.SourceLabelKey)));
                         return;
                     }
 
@@ -104,7 +104,7 @@ namespace PrimeERP.Composition.Renderers
             {
                 if (SelectedSourceId() == 0)
                 {
-                    toast.Info(LocalizationService.Get(def.SourceLabelKey) + " مطلوب أولاً");
+                    toast.Info(LocalizationService.Get("Str.Rule.RequiredFirst", LocalizationService.Get(def.SourceLabelKey)));
                     return;
                 }
 

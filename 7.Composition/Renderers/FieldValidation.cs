@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.UI.Components.Inputs;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Composition.Renderers
 {
@@ -36,7 +37,7 @@ namespace PrimeERP.Composition.Renderers
                 || (value is string text && string.IsNullOrWhiteSpace(text))
                 || (field.Kind == FieldKind.Date && value is DateTime date && date == default);
 
-            if (isEmpty) return field.IsRequired ? $"{label} مطلوب" : null;
+            if (isEmpty) return field.IsRequired ? LocalizationService.Get("Str.Rule.Required", label) : null;
 
             return field.Kind switch
             {
@@ -48,20 +49,20 @@ namespace PrimeERP.Composition.Renderers
 
         private static string CheckNumber(FieldDefinition field, string label, object value)
         {
-            if (!decimal.TryParse(value.ToString(), out var number)) return $"{label} يجب أن يكون رقماً";
-            if (field.Min != null && number < field.Min) return $"{label} لا يقل عن {field.Min:N2}";
-            if (field.Max != null && number > field.Max) return $"{label} لا يزيد عن {field.Max:N2}";
+            if (!decimal.TryParse(value.ToString(), out var number)) return LocalizationService.Get("Str.Rule.Number", label);
+            if (field.Min != null && number < field.Min) return LocalizationService.Get("Str.Rule.Min", label, field.Min);
+            if (field.Max != null && number > field.Max) return LocalizationService.Get("Str.Rule.Max", label, field.Max);
 
             return null;
         }
 
         private static string CheckDate(FieldDefinition field, string label, object value)
         {
-            if (value is not DateTime date) return $"{label} تاريخ غير صالح";
+            if (value is not DateTime date) return LocalizationService.Get("Str.Rule.Invalid", label);
 
-            if (date.Year < 1900) return $"{label} تاريخ غير صالح";
-            if (field.MinDate != null && date < field.MinDate) return $"{label} لا يسبق {field.MinDate:yyyy-MM-dd}";
-            if (field.MaxDate != null && date > field.MaxDate) return $"{label} لا يتجاوز {field.MaxDate:yyyy-MM-dd}";
+            if (date.Year < 1900) return LocalizationService.Get("Str.Rule.Invalid", label);
+            if (field.MinDate != null && date < field.MinDate) return LocalizationService.Get("Str.Rule.NotBefore", label, field.MinDate);
+            if (field.MaxDate != null && date > field.MaxDate) return LocalizationService.Get("Str.Rule.NotAfter", label, field.MaxDate);
 
             return null;
         }
@@ -69,10 +70,10 @@ namespace PrimeERP.Composition.Renderers
         private static string CheckText(FieldDefinition field, string label, object value)
         {
             var text = value.ToString();
-            if (field.MinLength > 0 && text.Length < field.MinLength) return $"{label} لا يقل عن {field.MinLength} حرفاً";
-            if (field.MaxLength > 0 && text.Length > field.MaxLength) return $"{label} لا يزيد عن {field.MaxLength} حرفاً";
+            if (field.MinLength > 0 && text.Length < field.MinLength) return LocalizationService.Get("Str.Rule.MinLength", label, field.MinLength);
+            if (field.MaxLength > 0 && text.Length > field.MaxLength) return LocalizationService.Get("Str.Rule.MaxLength", label, field.MaxLength);
             if (!string.IsNullOrEmpty(field.Pattern) && !Regex.IsMatch(text, field.Pattern))
-                return field.PatternMessage ?? $"صيغة {label} غير صحيحة";
+                return field.PatternMessage ?? LocalizationService.Get("Str.Rule.Invalid", label);
 
             return null;
         }

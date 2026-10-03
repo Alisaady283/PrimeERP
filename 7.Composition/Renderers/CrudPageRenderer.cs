@@ -51,18 +51,18 @@ namespace PrimeERP.Composition.Renderers
 
             var view = $"{definition.PermissionPrefix}.View";
             actions.Add(ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(
-                _ => PrintList(definition, services, vm)), view, "طباعة التقرير"));
+                _ => PrintList(definition, services, vm)), view, LocalizationService.Get("Str.Output.PrintReport")));
             actions.Add(ToolbarAction.Export(new PrimeERP.UI.ViewModels.RelayCommand(
-                _ => ExportGrid(definition, services, vm)), view, "تصدير التقرير"));
+                _ => ExportGrid(definition, services, vm)), view, LocalizationService.Get("Str.Output.ExportReport")));
 
             var documentActions = definition.DocumentDialog == null ? null : new List<ToolbarAction>
             {
                 ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(
                     _ => DocumentPrinter.PrintSelected(definition, services, vm.SelectedItem as object),
-                    _ => vm.SelectedItem != null), view, "طباعة المستند"),
+                    _ => vm.SelectedItem != null), view, LocalizationService.Get("Str.Output.PrintDocument")),
                 ToolbarAction.Export(new PrimeERP.UI.ViewModels.RelayCommand(
                     _ => DocumentPrinter.ExportSelected(definition, services, vm.SelectedItem as object),
-                    _ => vm.SelectedItem != null), view, "تصدير المستند"),
+                    _ => vm.SelectedItem != null), view, LocalizationService.Get("Str.Output.ExportDocument")),
             };
 
             foreach (var rowAction in definition.RowActions ?? new List<RowAction>())

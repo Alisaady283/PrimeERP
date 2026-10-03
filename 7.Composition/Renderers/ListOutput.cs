@@ -6,6 +6,7 @@ using PrimeERP.Composition.Definitions;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Services;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Composition.Renderers
 {
@@ -15,7 +16,7 @@ namespace PrimeERP.Composition.Renderers
         public static void Print(IServiceProvider services, string title, List<GridColumn> columns, List<object> rows)
         {
             var toast = services.GetRequiredService<IToastService>();
-            if (rows.Count == 0) { toast.Info("لا بيانات للطباعة"); return; }
+            if (rows.Count == 0) { toast.Info(LocalizationService.Get("Str.Output.NoPrintData")); return; }
 
             var orientation = columns.Count > 6 ? PrintOrientation.Landscape : PrintOrientation.Portrait;
             var printable = PrimeERP.Composition.Print.PrintDocuments.Report(new ReportResult { Title = title, Columns = columns, Rows = rows }, orientation);
@@ -27,7 +28,7 @@ namespace PrimeERP.Composition.Renderers
         public static void Export(IServiceProvider services, string title, List<GridColumn> columns, List<object> rows)
         {
             var toast = services.GetRequiredService<IToastService>();
-            if (rows.Count == 0) { toast.Info("لا بيانات للتصدير"); return; }
+            if (rows.Count == 0) { toast.Info(LocalizationService.Get("Str.Output.NoExportData")); return; }
 
             var dialog = new Microsoft.Win32.SaveFileDialog
             {
@@ -46,11 +47,11 @@ namespace PrimeERP.Composition.Renderers
                     default:     export.ExportToExcel(rows, columns, dialog.FileName); break;
                 }
 
-                toast.Success($"تم التصدير إلى {System.IO.Path.GetFileName(dialog.FileName)}");
+                toast.Success(LocalizationService.Get("Str.Output.Exported", System.IO.Path.GetFileName(dialog.FileName)));
             }
             catch (Exception ex)
             {
-                toast.Error($"فشل التصدير: {ex.Message}");
+                toast.Error(LocalizationService.Get("Str.Output.ExportFailed", ex.Message));
             }
         }
     }

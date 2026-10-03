@@ -45,7 +45,7 @@ namespace PrimeERP.Composition.Renderers
                     var isAccount = cat.Category == "Accounts" && def.DataType == "string";
                     var field = new FieldDefinition
                     {
-                        Key = def.Key, LabelKey = LabelFor(def.Key),
+                        Key = def.Key, LabelKey = LabelKeyOf(def.Key),
                         Kind = isAccount ? FieldKind.Picker
                              : def.Key == SettingKeys.Company.LogoData ? FieldKind.Image
                              : def.DataType switch { "bool" => FieldKind.Check, "int" => FieldKind.Number, _ => FieldKind.Text },
@@ -97,7 +97,7 @@ namespace PrimeERP.Composition.Renderers
                     var account = accounts.GetByCode(text);
                     if (account.IsSuccess && account.Value.IsLeaf)
                     {
-                        toast.Error(LocalizationService.Get("Str.Settings.RootMustBeGroup", LabelFor(rootKey)));
+                        toast.Error(LocalizationService.Get("Str.Settings.RootMustBeGroup", LocalizationService.Get(LabelKeyOf(rootKey))));
                         return;
                     }
                 }
@@ -123,7 +123,7 @@ namespace PrimeERP.Composition.Renderers
 
         private static FrameworkElement BuildChequeCalibration(IServiceProvider services, IToastService toast)
         {
-            var button = new Btn { Text = "طباعة ورقة معايرة الشيك", Variant = "secondary", Size = "sm", Margin = new Thickness(0, 8, 0, 0) };
+            var button = new Btn { Text = LocalizationService.Get("Str.Settings.ChequeCalibrationPrint"), Variant = "secondary", Size = "sm", Margin = new Thickness(0, 8, 0, 0) };
             button.Click += (_, __) =>
             {
                 var settings = services.GetRequiredService<ISettingsService>();
@@ -133,10 +133,10 @@ namespace PrimeERP.Composition.Renderers
                     OffsetY = ReadNumber(settings, SettingKeys.Print.ChequeOffsetY),
                     Fields =
                     {
-                        new() { Text = "اسم المستفيد", X = 3.0, Y = 1.6 },
-                        new() { Text = "المبلغ رقماً", X = 12.5, Y = 1.6 },
-                        new() { Text = "المبلغ كتابةً", X = 3.0, Y = 2.8 },
-                        new() { Text = "التاريخ", X = 12.5, Y = 0.8 },
+                        new() { Text = LocalizationService.Get("Str.Cheque.Payee"), X = 3.0, Y = 1.6 },
+                        new() { Text = LocalizationService.Get("Str.Cheque.AmountDigits"), X = 12.5, Y = 1.6 },
+                        new() { Text = LocalizationService.Get("Str.Cheque.AmountWords"), X = 3.0, Y = 2.8 },
+                        new() { Text = LocalizationService.Get("Str.Date"), X = 12.5, Y = 0.8 },
                     }
                 };
 
@@ -144,7 +144,7 @@ namespace PrimeERP.Composition.Renderers
                 if (sheet.IsFailure) { toast.Error(sheet.ErrorMessage); return; }
 
                 services.GetRequiredService<PrimeERP.UI.Services.IPrintService>()
-                    .DialogHost?.ShowPreview(sheet.Value, "معايرة الشيك");
+                    .DialogHost?.ShowPreview(sheet.Value, LocalizationService.Get("Str.Settings.ChequeCalibration"));
             };
 
             return new StackPanel { Width = 500, Children = { button } };
@@ -216,66 +216,6 @@ namespace PrimeERP.Composition.Renderers
             return panel;
         }
 
-        private static readonly Dictionary<string, string> Labels = new()
-        {
-            [SettingKeys.Company.Name] = "اسم الشركة", [SettingKeys.Company.NameEn] = "اسم الشركة (إنجليزي)",
-            [SettingKeys.Company.TaxNumber] = "الرقم الضريبي", [SettingKeys.Company.CommercialRegNo] = "السجل التجاري",
-            [SettingKeys.Company.Address] = "العنوان", [SettingKeys.Company.Phone] = "الهاتف", [SettingKeys.Company.Email] = "البريد الإلكتروني",
-            [SettingKeys.Company.LogoPath] = "اسم ملف الشعار",
-            [SettingKeys.Company.LogoData] = "شعار الشركة",
-
-            [SettingKeys.Financial.CurrencyName] = "اسم العملة (للتفقيط)", [SettingKeys.Financial.CurrencySubUnit] = "الوحدة الفرعية (للتفقيط)",
-            [SettingKeys.Financial.BaseCurrencyId] = "العملة الأساسية (معرّف)", [SettingKeys.Financial.DecimalPlaces] = "عدد الخانات العشرية",
-            [SettingKeys.Financial.FiscalYearStartMonth] = "شهر بداية السنة المالية", [SettingKeys.Financial.AllowNegativeStock] = "السماح برصيد مخزون سالب",
-            [SettingKeys.Financial.DefaultCostMethod] = "طريقة التكلفة الافتراضية", [SettingKeys.Financial.RoundingMethod] = "طريقة التقريب",
-            [SettingKeys.Financial.RequireFiscalPeriod] = "إلزام وجود فترة مالية", [SettingKeys.Financial.AllowDuplicateAccountInEntry] = "السماح بتكرار الحساب بالقيد",
-            [SettingKeys.Financial.WarnOnDuplicateCustomerName] = "تحذير عند تكرار اسم عميل", [SettingKeys.Financial.WarnOnDuplicatePhone] = "تحذير عند تكرار الهاتف",
-
-            [SettingKeys.Accounts.Customers] = "حساب العملاء", [SettingKeys.Accounts.Suppliers] = "حساب الموردين",
-            [SettingKeys.Accounts.Inventory] = "حساب المخزون", [SettingKeys.Accounts.Cash] = "حساب الصندوق", [SettingKeys.Accounts.Bank] = "حساب البنك",
-            [SettingKeys.Accounts.Sales] = "حساب المبيعات", [SettingKeys.Accounts.SalesReturns] = "حساب مرتجعات المبيعات",
-            [SettingKeys.Accounts.COGS] = "حساب تكلفة البضاعة المباعة", 
-            [SettingKeys.Accounts.RetainedEarnings] = "حساب الأرباح المحتجزة", [SettingKeys.Accounts.VATInput] = "حساب ضريبة المدخلات",
-            [SettingKeys.Accounts.VATOutput] = "حساب ضريبة المخرجات",
-            [SettingKeys.Accounts.DepreciationExpense] = "حساب مصروف الإهلاك",
-            [SettingKeys.Accounts.AccumulatedDepreciation] = "حساب مجمع الإهلاك",
-            [SettingKeys.Accounts.FixedAssets] = "حساب الأصول الثابتة",
-            [SettingKeys.Accounts.CapitalGains] = "حساب الأرباح الرأسمالية",
-            [SettingKeys.Accounts.CapitalLosses] = "حساب الخسائر الرأسمالية",
-            [SettingKeys.Accounts.EmployeeAdvances] = "حساب سلف الموظفين",
-            [SettingKeys.Accounts.SalaryExpense] = "حساب مصروف الرواتب والأجور",
-            [SettingKeys.Accounts.AllowanceExpense] = "حساب مصروف البدلات",
-            [SettingKeys.Accounts.SalariesPayable] = "حساب الرواتب المستحقة",
-            [SettingKeys.Accounts.InsurancePayable] = "حساب التأمينات المستحقة",
-            [SettingKeys.Accounts.TaxPayable] = "حساب الضرائب المستحقة",
-            [SettingKeys.Accounts.AutoLinkEnabled] = "تفعيل الربط التلقائي بالشجرة",
-            [SettingKeys.Accounts.OpeningAdjustments] = "حساب الأرصدة الافتتاحية والتسويات",
-            [SettingKeys.Accounts.WithholdingReceivable] = "حساب ضريبة الخصم والإضافة (مدينة)",
-            [SettingKeys.Accounts.WithholdingPayable] = "حساب ضريبة الخصم والإضافة (دائنة)",
-
-            [SettingKeys.Print.ChequeOffsetX] = "معايرة الشيك أفقياً (سم)", [SettingKeys.Print.ChequeOffsetY] = "معايرة الشيك رأسياً (سم)",
-            [SettingKeys.Print.CopyLabels] = "تسميات النسخ (مفصولة بفاصلة)", [SettingKeys.Print.LinesPerPage] = "سطور الجدول في الصفحة (0 = تلقائي)",
-            [SettingKeys.Print.Terms] = "الشروط والأحكام",
-            [SettingKeys.Documents.JournalPrefix] = "بادئة قيود اليومية", [SettingKeys.Documents.SalesInvoicePrefix] = "بادئة فاتورة البيع",
-            [SettingKeys.Documents.PurchaseInvoicePrefix] = "بادئة فاتورة الشراء", [SettingKeys.Documents.StockVoucherPrefix] = "بادئة إذن المخزون",
-            [SettingKeys.Documents.NumberPadding] = "عدد أصفار الترقيم", [SettingKeys.Documents.ResetNumbersYearly] = "إعادة الترقيم كل سنة",
-            [SettingKeys.Documents.SimplifiedFlow] = "الوضع المبسّط (بلا طلب/أمر/أذون دورة)",
-            [SettingKeys.Documents.CustomerPrefix] = "بادئة كود العميل", [SettingKeys.Documents.SupplierPrefix] = "بادئة كود المورد",
-            [SettingKeys.Documents.ProductPrefix] = "بادئة كود الصنف",
-
-            [SettingKeys.UI.Language] = "اللغة", [SettingKeys.UI.UseArabicNumerals] = "أرقام عربية",
-            [SettingKeys.UI.DateFormat] = "صيغة التاريخ", [SettingKeys.UI.PageSize] = "عدد الصفوف بالصفحة",
-            [SettingKeys.UI.SidebarCollapsed] = "طي الشريط الجانبي افتراضياً",
-
-            [SettingKeys.Backup.AutoBackupEnabled] = "تفعيل النسخ التلقائي", [SettingKeys.Backup.AutoBackupPath] = "مسار النسخ الاحتياطي",
-            [SettingKeys.Backup.AutoBackupIntervalHours] = "الفاصل بالساعات", [SettingKeys.Backup.RetentionCount] = "عدد النسخ المحتفَظ بها",
-
-            [SettingKeys.Developer.ServerUrl] = "عنوان خادم التراخيص", [SettingKeys.Developer.AdminToken] = "توكن المطوّر",
-
-            [SettingKeys.Security.PasswordMinLength] = "أقل طول لكلمة المرور", [SettingKeys.Security.SessionTimeoutMinutes] = "مهلة الجلسة (دقائق)",
-            [SettingKeys.Security.RequirePasswordChange] = "إلزام تغيير كلمة المرور",
-        };
-
-        private static string LabelFor(string settingKey) => Labels.TryGetValue(settingKey, out var label) ? label : settingKey;
+        private static string LabelKeyOf(string settingKey) => $"Str.Settings.Label.{settingKey}";
     }
 }
