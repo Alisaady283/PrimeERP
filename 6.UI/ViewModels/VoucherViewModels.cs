@@ -7,6 +7,7 @@ using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
 using PrimeERP.UI.ViewModels.Base;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.ViewModels
 {
@@ -69,7 +70,7 @@ namespace PrimeERP.UI.ViewModels
         protected override int IdOf(ChequeDto item) => item.Id;
 
         protected override Result DeleteItem(int id) =>
-            Result.Fail("الشيك يُلغى بحركة (ارتداد/رد) لا بالحذف", PrimeERP.Domain.Results.ErrorCode.ValidationFailed);
+            Result.Fail(LocalizationService.Get("Str.Cheque.DeleteByMovement"), PrimeERP.Domain.Results.ErrorCode.ValidationFailed);
     }
 
     /// <summary>شبكة شيكات الاتجاه الواحد</summary>

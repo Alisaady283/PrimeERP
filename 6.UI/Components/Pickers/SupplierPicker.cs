@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Pickers
 {
@@ -17,7 +18,7 @@ namespace PrimeERP.UI.Components.Pickers
             var config = DataSource.GetDisplayConfig();
             var results = items.Select(i => ToResultItem(i, config)).ToList();
 
-            var window = new PickerGridWindow("اختيار مورد", config, results, allowQuickAdd: AllowQuickAdd);
+            var window = new PickerGridWindow(LocalizationService.Get("Str.Picker.Supplier"), config, results, allowQuickAdd: AllowQuickAdd);
             window.QuickAddRequested += (s, e) => RaiseQuickAddRequested();
 
             if (window.ShowDialog() == true && window.SelectedResult?.RawData is Supplier selected)

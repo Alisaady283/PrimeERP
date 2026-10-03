@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Pickers
 {
@@ -20,7 +21,7 @@ namespace PrimeERP.UI.Components.Pickers
             var config = DataSource.GetDisplayConfig();
             var results = items.Select(i => ToResultItem(i, config)).ToList();
 
-            var window = new PickerGridWindow("اختيار عميل", config, results, allowQuickAdd: AllowQuickAdd)
+            var window = new PickerGridWindow(LocalizationService.Get("Str.Picker.Customer"), config, results, allowQuickAdd: AllowQuickAdd)
             {
                 RowHighlight = raw => raw is Customer c && PartyCalc.IsOverCreditLimit(c.Balance, c.CreditLimit) ? "danger" : null
             };

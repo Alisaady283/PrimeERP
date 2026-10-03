@@ -18,6 +18,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using PrimeERP.Domain.Helpers;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Services
 {
@@ -191,7 +192,7 @@ namespace PrimeERP.UI.Services
         public Result ExportPrintableToPdf(IPrintable document, string path)
         {
             if (document == null)
-                return Result.Fail("لا مستند لتصديره", ErrorCode.ValidationFailed);
+                return Result.Fail(LocalizationService.Get("Str.Export.NoDocument"), ErrorCode.ValidationFailed);
 
             try
             {
@@ -232,7 +233,7 @@ namespace PrimeERP.UI.Services
             }
             catch (Exception ex)
             {
-                return Result.Fail($"فشل تصدير PDF: {ex.Message}", ErrorCode.Unexpected);
+                return Result.Fail(LocalizationService.Get("Str.Export.PdfFailed", ex.Message), ErrorCode.Unexpected);
             }
         }
 
@@ -300,7 +301,7 @@ namespace PrimeERP.UI.Services
                     if (!string.IsNullOrWhiteSpace(section.Text))
                     {
                         col.Item().PaddingTop(14)
-                           .Text(string.IsNullOrWhiteSpace(section.Title) ? "الشروط والأحكام" : section.Title).Bold();
+                           .Text(string.IsNullOrWhiteSpace(section.Title) ? LocalizationService.Get("Str.Print.Terms") : section.Title).Bold();
                         col.Item().Text(section.Text).FontSize(ExportTheme.BodyFontSize)
                            .FontColor(ExportTheme.TextSecondaryHex);
                     }
@@ -313,10 +314,8 @@ namespace PrimeERP.UI.Services
         }
 
         private static string WordsOf(PrintSection section) =>
-            (string.IsNullOrWhiteSpace(section.Title) ? "مبلغاً وقدره" : section.Title) + ": " +
-            ArabicNumberToWords.Convert(section.Amount,
-                string.IsNullOrWhiteSpace(section.Currency) ? "جنيه" : section.Currency,
-                string.IsNullOrWhiteSpace(section.SubUnit) ? "قرش" : section.SubUnit);
+            (string.IsNullOrWhiteSpace(section.Title) ? LocalizationService.Get("Str.Print.AmountOf") : section.Title) + ": " +
+            ArabicNumberToWords.Convert(section.Amount, section.Currency, section.SubUnit);
 
         private static void RenderBarcode(QuestPDF.Fluent.ColumnDescriptor col, string text)
         {

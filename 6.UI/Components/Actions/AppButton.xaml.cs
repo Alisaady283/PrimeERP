@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using PrimeERP.Platform.Permissions;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Actions
 {
@@ -93,7 +94,7 @@ namespace PrimeERP.UI.Components.Actions
         {
             if (IsLoading)
             {
-                txt.Text = "جارٍ التحميل...";
+                txt.Text = LocalizationService.Get("Str.Loading");
                 icon.Visibility = Visibility.Collapsed;
                 btn.IsEnabled = false;
                 return;

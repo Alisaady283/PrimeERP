@@ -3,6 +3,7 @@ using System.Linq;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Pickers
 {
@@ -23,7 +24,7 @@ namespace PrimeERP.UI.Components.Pickers
             var config = DataSource.GetDisplayConfig();
             var results = items.Select(i => ToResultItem(i, config)).ToList();
 
-            var window = new PickerGridWindow("اختيار موظف", config, results, allowQuickAdd: AllowQuickAdd);
+            var window = new PickerGridWindow(LocalizationService.Get("Str.Picker.Employee"), config, results, allowQuickAdd: AllowQuickAdd);
 
             if (window.ShowDialog() == true && window.SelectedResult?.RawData is Employee selected)
                 CommitSelection(selected);

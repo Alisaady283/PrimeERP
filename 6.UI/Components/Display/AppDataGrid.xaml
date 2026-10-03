@@ -150,6 +150,7 @@
             </Border>
 
             <display:AppEmptyState x:Name="emptyState" Grid.Row="1" Visibility="Collapsed"
+                                   Message="{DynamicResource Str.NoData}"
                                    Margin="{DynamicResource C.Grid.Empty.Margin}"/>
             <display:AppLoadingOverlay x:Name="loadingOverlay" Grid.Row="1"/>
         </Grid>

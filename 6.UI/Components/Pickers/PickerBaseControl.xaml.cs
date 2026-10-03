@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Pickers
 {
@@ -169,7 +170,7 @@ namespace PrimeERP.UI.Components.Pickers
             }
             else if (_notFound)
             {
-                txtError.Text = "غير موجود";
+                txtError.Text = LocalizationService.Get("Str.Picker.NotFound");
                 txtError.Visibility = Visibility.Visible;
                 border.BorderBrush = (Brush)FindResource("Warning");
             }

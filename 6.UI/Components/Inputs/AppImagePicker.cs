@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using PrimeERP.Platform.Localization;
 
 
 namespace PrimeERP.UI.Components.Inputs
@@ -12,14 +13,14 @@ namespace PrimeERP.UI.Components.Inputs
     public class AppImagePicker : UserControl
     {
         private readonly Image _preview = new() { Stretch = Stretch.Uniform, Height = 96, Margin = new Thickness(0, 0, 12, 0) };
-        private readonly TextBlock _empty = new() { Text = "لا صورة", VerticalAlignment = VerticalAlignment.Center };
+        private readonly TextBlock _empty = new() { Text = LocalizationService.Get("Str.Image.None"), VerticalAlignment = VerticalAlignment.Center };
         private string _base64;
         private string _error;
 
         public AppImagePicker(string label)
         {
-            var pick = new Actions.AppButton { Text = "اختيار صورة", Variant = "secondary", Size = "sm", Margin = new Thickness(0, 0, 0, 6) };
-            var clear = new Actions.AppButton { Text = "إزالة", Variant = "ghost", Size = "sm" };
+            var pick = new Actions.AppButton { Text = LocalizationService.Get("Str.Image.Pick"), Variant = "secondary", Size = "sm", Margin = new Thickness(0, 0, 0, 6) };
+            var clear = new Actions.AppButton { Text = LocalizationService.Get("Str.Image.Remove"), Variant = "ghost", Size = "sm" };
 
             pick.Click += (_, __) => PickFile();
             clear.Click += (_, __) => Value = null;
@@ -46,13 +47,13 @@ namespace PrimeERP.UI.Components.Inputs
         {
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
-                Title = "اختر صورة الشعار",
-                Filter = "الصور|*.png;*.jpg;*.jpeg;*.bmp|كل الملفات|*.*"
+                Title = LocalizationService.Get("Str.Image.DialogTitle"),
+                Filter = LocalizationService.Get("Str.Image.Filter")
             };
             if (dialog.ShowDialog() != true) return;
 
             try { Value = ImageData.Encode(dialog.FileName); _error = null; }
-            catch (Exception ex) { Value = null; _error = $"تعذّرت قراءة الصورة: {ex.Message}"; }
+            catch (Exception ex) { Value = null; _error = LocalizationService.Get("Str.Image.ReadFailed", ex.Message); }
 
             Render();
         }
@@ -63,7 +64,7 @@ namespace PrimeERP.UI.Components.Inputs
             _preview.Source = image;
             _preview.Visibility = image == null ? Visibility.Collapsed : Visibility.Visible;
             _empty.Visibility = image == null ? Visibility.Visible : Visibility.Collapsed;
-            _empty.Text = _error ?? "لا صورة";
+            _empty.Text = _error ?? LocalizationService.Get("Str.Image.None");
             _empty.SetResourceReference(TextBlock.ForegroundProperty, _error == null ? "TextMuted" : "Danger");
         }
     }

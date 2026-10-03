@@ -4,6 +4,7 @@ using PrimeERP.Platform.Permissions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Entities;
 using PrimeERP.UI.Components.Tree;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Pickers
 {
@@ -21,7 +22,7 @@ namespace PrimeERP.UI.Components.Pickers
             var all = (await DataSource.SearchAsync("", 5000)).ToList();
             var roots = BuildTree(all);
 
-            var window = new PickerTreeWindow("اختيار حساب", roots, extraFilter: null, isSelectable: IsNodeSelectable);
+            var window = new PickerTreeWindow(LocalizationService.Get("Str.Picker.Account"), roots, extraFilter: null, isSelectable: IsNodeSelectable);
 
             if (window.ShowDialog() == true && window.SelectedNode?.Data is Account selected)
                 CommitSelection(selected);

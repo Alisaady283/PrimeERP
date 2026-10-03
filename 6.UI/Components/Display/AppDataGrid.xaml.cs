@@ -39,7 +39,7 @@ namespace PrimeERP.UI.Components.Display
 
         public static readonly DependencyProperty EmptyMessageProperty =
             DependencyProperty.Register(nameof(EmptyMessage), typeof(string), typeof(AppDataGrid),
-                new PropertyMetadata("لا توجد بيانات لعرضها", OnEmptyMessageChanged));
+                new PropertyMetadata(null, OnEmptyMessageChanged));
 
         public static readonly DependencyProperty ShowRowNumbersProperty =
             DependencyProperty.Register(nameof(ShowRowNumbers), typeof(bool), typeof(AppDataGrid),

@@ -50,10 +50,10 @@ namespace PrimeERP.UI.Components.Pickers
             _tree.ItemsSource = rootList;
             search.Search += (s, term) => _tree.SearchText = term;
 
-            var btnExpand = new Btn { Text = "توسيع الكل", Variant = "ghost", Size = "sm", Margin = new Thickness(0, 0, 8, 0) };
+            var btnExpand = new Btn { Text = LocalizationService.Get("Str.ExpandAll"), Variant = "ghost", Size = "sm", Margin = new Thickness(0, 0, 8, 0) };
             btnExpand.Click += (s, e) => _tree.ExpandAll();
 
-            var btnCollapse = new Btn { Text = "طي الكل", Variant = "ghost", Size = "sm" };
+            var btnCollapse = new Btn { Text = LocalizationService.Get("Str.CollapseAll"), Variant = "ghost", Size = "sm" };
             btnCollapse.Click += (s, e) => _tree.CollapseAll();
 
             var toolsRow = new StackPanel

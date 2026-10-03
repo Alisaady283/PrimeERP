@@ -16,6 +16,7 @@ using System.Windows.Threading;
 using PrimeERP.Domain.Entities;
 using PrimeERP.UI.Components.Pickers;
 using PrimeERP.UI.Components;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Documents
 {
@@ -80,7 +81,7 @@ namespace PrimeERP.UI.Components.Documents
             {
                 line.ItemId = null;
                 OnCellEdited(line);
-                line.Errors[col.Key] = "كود غير موجود";
+                line.Errors[col.Key] = LocalizationService.Get("Str.Line.CodeNotFound");
                 line.NotifyErrorsChanged();
             }
         }

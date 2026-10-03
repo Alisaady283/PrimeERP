@@ -3,16 +3,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Shell
 {
     /// <summary>شريط علوي عام</summary>
     public partial class AppTopBar : UserControl
     {
-        private static string[] BuildUserMenu() => new[]
-        {
-            "الملف الشخصي", "تغيير كلمة المرور", "تحديث", "اللغة", "تسجيل الخروج"
-        };
+        private readonly List<(string Label, Action Raise)> _userMenu;
 
         public static readonly DependencyProperty BreadcrumbProperty =
             DependencyProperty.Register(nameof(Breadcrumb), typeof(List<string>), typeof(AppTopBar),
@@ -75,7 +73,15 @@ namespace PrimeERP.UI.Components.Shell
         public AppTopBar()
         {
             InitializeComponent();
-            userMenu.Items = BuildUserMenu();
+            _userMenu = new()
+            {
+                (LocalizationService.Get("Str.TopBar.Profile"),        () => ProfileClicked?.Invoke(this, EventArgs.Empty)),
+                (LocalizationService.Get("Str.TopBar.ChangePassword"), () => PasswordChangeRequested?.Invoke(this, EventArgs.Empty)),
+                (LocalizationService.Get("Str.Settings.Update"),       () => UpdateRequested?.Invoke(this, EventArgs.Empty)),
+                (LocalizationService.Get("Str.TopBar.Language"),       () => LanguageToggled?.Invoke(this, EventArgs.Empty)),
+                (LocalizationService.Get("Str.Logout"),                () => LogoutRequested?.Invoke(this, EventArgs.Empty)),
+            };
+            userMenu.Items = _userMenu.Select(m => m.Label).ToArray();
             RefreshDate();
         }
 
@@ -85,7 +91,7 @@ namespace PrimeERP.UI.Components.Shell
             gregorianText.Text = now.ToString("dd/MM/yyyy");
 
             var hijri = new HijriCalendar();
-            hijriText.Text = $"{hijri.GetDayOfMonth(now)}/{hijri.GetMonth(now)}/{hijri.GetYear(now)} هـ";
+            hijriText.Text = LocalizationService.Get("Str.TopBar.Hijri", hijri.GetDayOfMonth(now), hijri.GetMonth(now), hijri.GetYear(now));
         }
 
         private static void OnNotificationCountChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -102,16 +108,8 @@ namespace PrimeERP.UI.Components.Shell
 
         private void userMenu_ItemSelected(object sender, object item)
         {
-            var label = item as string ?? "";
-
-            switch (label)
-            {
-                case "الملف الشخصي":       ProfileClicked?.Invoke(this, EventArgs.Empty); break;
-                case "تغيير كلمة المرور":  PasswordChangeRequested?.Invoke(this, EventArgs.Empty); break;
-                case "اللغة":              LanguageToggled?.Invoke(this, EventArgs.Empty); break;
-                case "تحديث":              UpdateRequested?.Invoke(this, EventArgs.Empty); break;
-                case "تسجيل الخروج":       LogoutRequested?.Invoke(this, EventArgs.Empty); break;
-            }
+            var label = item as string;
+            _userMenu.FirstOrDefault(m => m.Label == label).Raise?.Invoke();
         }
     }
 }

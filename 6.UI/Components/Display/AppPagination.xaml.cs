@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Display
 {
@@ -80,7 +81,7 @@ namespace PrimeERP.UI.Components.Display
             int from = TotalItems == 0 ? 0 : (CurrentPage - 1) * PageSize + 1;
             int to   = Math.Min(CurrentPage * PageSize, TotalItems);
 
-            txtInfo.Text = $"عرض {from} إلى {to} من {TotalItems} عنصر";
+            txtInfo.Text = LocalizationService.Get("Str.Pager.Info", from, to, TotalItems);
 
             AddNavButton("IconChevronsRight", () => GoTo(1), CurrentPage == 1);
             AddNavButton("IconChevronRight", () => GoTo(CurrentPage - 1), CurrentPage == 1);

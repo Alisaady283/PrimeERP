@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Documents
 {
@@ -34,18 +35,18 @@ namespace PrimeERP.UI.Components.Documents
             foreach (var col in columns.Where(c => c.IsRequired))
             {
                 if (IsMissing(line[col.Key], col.Type))
-                    errors[col.Key] = $"{col.Header} مطلوب";
+                    errors[col.Key] = LocalizationService.Get("Str.Line.Required", col.Header);
             }
 
             if (HasColumn(columns, nameof(DocumentLine.Qty)) && line.Qty <= 0)
-                errors[nameof(DocumentLine.Qty)] = "الكمية يجب أن تكون أكبر من صفر";
+                errors[nameof(DocumentLine.Qty)] = LocalizationService.Get("Str.Document.QtyPositive");
 
             if (HasColumn(columns, nameof(DocumentLine.Price)) && line.Price < 0)
-                errors[nameof(DocumentLine.Price)] = "السعر لا يمكن أن يكون سالباً";
+                errors[nameof(DocumentLine.Price)] = LocalizationService.Get("Str.Line.PriceNegative");
 
             if (HasColumn(columns, nameof(DocumentLine.DiscountPercent)) &&
                 (line.DiscountPercent < 0 || line.DiscountPercent > 100))
-                errors[nameof(DocumentLine.DiscountPercent)] = "نسبة الخصم يجب أن تكون بين 0 و 100";
+                errors[nameof(DocumentLine.DiscountPercent)] = LocalizationService.Get("Str.Line.DiscountRange");
 
             if (context?.Mode == DocumentLinesMode.Journal)
                 ValidateJournalDebitCredit(line, errors);
@@ -67,12 +68,12 @@ namespace PrimeERP.UI.Components.Documents
 
             if (hasDebit && hasCredit)
             {
-                errors[nameof(DocumentLine.Debit)]  = "لا يمكن إدخال مدين ودائن في نفس السطر";
-                errors[nameof(DocumentLine.Credit)] = "لا يمكن إدخال مدين ودائن في نفس السطر";
+                errors[nameof(DocumentLine.Debit)]  = LocalizationService.Get("Str.Journal.BothDebitAndCredit");
+                errors[nameof(DocumentLine.Credit)] = LocalizationService.Get("Str.Journal.BothDebitAndCredit");
             }
             else if (!hasDebit && !hasCredit)
             {
-                errors[nameof(DocumentLine.Debit)] = "أدخل مدين أو دائن";
+                errors[nameof(DocumentLine.Debit)] = LocalizationService.Get("Str.Line.DebitOrCredit");
             }
         }
 
@@ -86,7 +87,7 @@ namespace PrimeERP.UI.Components.Documents
                 .Count(l => !l.IsEmpty && string.Equals(l[key]?.ToString(), value, StringComparison.OrdinalIgnoreCase));
 
             if (count > 1)
-                errors[key] = "هذا العنصر مستخدم في سطر آخر بالفعل";
+                errors[key] = LocalizationService.Get("Str.Line.Duplicate");
         }
 
         private static bool HasColumn(List<LineColumn> columns, string key) => columns.Any(c => c.Key == key);

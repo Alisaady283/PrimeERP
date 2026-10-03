@@ -85,7 +85,7 @@ namespace PrimeERP.UI.Components.Pickers
 
             if (allowQuickAdd)
             {
-                var btnAdd = new Btn { Text = "+ جديد", Variant = "secondary", Size = "sm", Margin = new Thickness(0, 0, 8, 0) };
+                var btnAdd = new Btn { Text = LocalizationService.Get("Str.Picker.New"), Variant = "secondary", Size = "sm", Margin = new Thickness(0, 0, 8, 0) };
                 btnAdd.Click += (s, e) => QuickAddRequested?.Invoke(this, EventArgs.Empty);
                 footerButtons.Children.Add(btnAdd);
             }
@@ -138,7 +138,7 @@ namespace PrimeERP.UI.Components.Pickers
         private void RefreshGrid(List<PickerResultItem> items)
         {
             _grid.ItemsSource = items.Select(i => i.RawData).ToList();
-            _txtCount.Text = $"{items.Count} نتيجة";
+            _txtCount.Text = LocalizationService.Get("Str.Results", items.Count);
         }
 
         private void Choose(object rawItem)

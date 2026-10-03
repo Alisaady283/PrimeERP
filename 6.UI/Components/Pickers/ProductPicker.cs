@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Pickers
 {
@@ -18,7 +19,7 @@ namespace PrimeERP.UI.Components.Pickers
             var config = DataSource.GetDisplayConfig();
             var results = items.Select(i => ToResultItem(i, config)).ToList();
 
-            var window = new PickerGridWindow("اختيار صنف", config, results, allowQuickAdd: AllowQuickAdd)
+            var window = new PickerGridWindow(LocalizationService.Get("Str.Picker.Product"), config, results, allowQuickAdd: AllowQuickAdd)
             {
                 RowHighlight = raw => raw is Product { CurrentStock: <= 0 } ? "danger" : null
             };

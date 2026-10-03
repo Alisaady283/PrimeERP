@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Layout
 {
@@ -53,7 +54,7 @@ namespace PrimeERP.UI.Components.Layout
             var c = (FilterBar)d;
             var count = (int?)e.NewValue;
             c.countBadge.Visibility = count.HasValue ? Visibility.Visible : Visibility.Collapsed;
-            c.txtCount.Text = count.HasValue ? $"{count.Value} نتيجة" : "";
+            c.txtCount.Text = count.HasValue ? LocalizationService.Get("Str.Results", count.Value) : "";
         }
 
         private void btnClear_Click(object sender, RoutedEventArgs e)

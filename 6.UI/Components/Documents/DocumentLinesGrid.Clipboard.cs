@@ -16,6 +16,7 @@ using System.Windows.Threading;
 using PrimeERP.Domain.Entities;
 using PrimeERP.UI.Components.Pickers;
 using PrimeERP.UI.Components;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Documents
 {
@@ -211,7 +212,7 @@ namespace PrimeERP.UI.Components.Documents
             }
             else
             {
-                line.Errors[colDef.Key] = "قيمة غير صالحة للصق";
+                line.Errors[colDef.Key] = LocalizationService.Get("Str.Line.PasteInvalid");
                 line.NotifyErrorsChanged();
             }
         }

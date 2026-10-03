@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.UI.Components.Inputs
 {
@@ -18,11 +19,11 @@ namespace PrimeERP.UI.Components.Inputs
 
         public static readonly DependencyProperty OnLabelProperty =
             DependencyProperty.Register(nameof(OnLabel), typeof(string), typeof(AppToggleSwitch),
-                new PropertyMetadata("مفعّل", OnStatusTextChanged));
+                new PropertyMetadata(null, OnStatusTextChanged));
 
         public static readonly DependencyProperty OffLabelProperty =
             DependencyProperty.Register(nameof(OffLabel), typeof(string), typeof(AppToggleSwitch),
-                new PropertyMetadata("معطّل", OnStatusTextChanged));
+                new PropertyMetadata(null, OnStatusTextChanged));
 
         public static readonly DependencyProperty LabelProperty =
             DependencyProperty.Register(nameof(Label), typeof(string), typeof(AppToggleSwitch),
@@ -71,7 +72,7 @@ namespace PrimeERP.UI.Components.Inputs
 
         private void UpdateStatusText()
         {
-            txtStatus.Text = IsChecked ? OnLabel : OffLabel;
+            txtStatus.Text = IsChecked ? OnLabel ?? LocalizationService.Get("Str.State.Enabled") : OffLabel ?? LocalizationService.Get("Str.State.Disabled");
         }
 
         private void ApplyEnabledVisual()
