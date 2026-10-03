@@ -77,8 +77,8 @@ digraph PrimeERP {
   "4.Application/Legacy" -> "3.Domain/Enums" [color="#6f7d8b" penwidth=2 tailport=se headport=nw arrowsize=0.8];
   "6.UI/Components" -> "5.Design/Icons" [color="#6f7d8b" penwidth=2 tailport=e headport=w arrowsize=0.8];
   "4.Application/Services" -> "3.Domain/Results" [color="#6f7d8b" penwidth=2 tailport=e headport=w arrowsize=0.8];
-  "4.Application/Services" -> "2.Data/Core" [color="#6f7d8b" penwidth=2 tailport=se headport=nw arrowsize=0.8];
   "4.Application/Legacy" -> "2.Data/Core" [color="#6f7d8b" penwidth=2 tailport=se headport=nw arrowsize=0.8];
+  "4.Application/Services" -> "2.Data/Core" [color="#6f7d8b" penwidth=2 tailport=se headport=nw arrowsize=0.8];
   "4.Application/Services" -> "3.Domain/Entities" [color="#6f7d8b" penwidth=2 tailport=e headport=w arrowsize=0.8];
   "4.Application/Services" -> "2.Data/Repositories" [color="#6f7d8b" penwidth=2 tailport=se headport=nw arrowsize=0.8];
   "6.UI/Components" -> "1.Platform/Localization" [color="#6f7d8b" penwidth=2 tailport=s headport=n arrowsize=0.8];

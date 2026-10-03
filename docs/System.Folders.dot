@@ -100,9 +100,9 @@ digraph PrimeERP {
   "PrimeERP.Tests/Services" -> "1.Platform/Permissions" [color="#6f7d8b" penwidth=2 tailport=e headport=w arrowsize=0.8];
   "6.UI/Components" -> "5.Design/Icons" [color="#6f7d8b" penwidth=2 tailport=w headport=e arrowsize=0.8];
   "4.Application/Services" -> "3.Domain/Results" [color="#6f7d8b" penwidth=2 tailport=w headport=e arrowsize=0.8];
+  "4.Application/Legacy" -> "2.Data/Core" [color="#6f7d8b" penwidth=2 tailport=w headport=e arrowsize=0.8];
   "4.Application/Services" -> "2.Data/Core" [color="#6f7d8b" penwidth=2 tailport=w headport=e arrowsize=0.8];
   "PrimeERP.Tests/Composition" -> "7.Composition/Registry" [color="#6f7d8b" penwidth=2 tailport=ne headport=sw arrowsize=0.8];
-  "4.Application/Legacy" -> "2.Data/Core" [color="#6f7d8b" penwidth=2 tailport=w headport=e arrowsize=0.8];
   "4.Application/Services" -> "3.Domain/Entities" [color="#6f7d8b" penwidth=2 tailport=nw headport=se arrowsize=0.8];
   "PrimeERP.Tests/Composition" -> "4.Application/Legacy" [color="#6f7d8b" penwidth=2 tailport=ne headport=sw arrowsize=0.8];
   "PrimeERP.Tests/Composition" -> "1.Platform/Permissions" [color="#6f7d8b" penwidth=2 tailport=e headport=w arrowsize=0.8];

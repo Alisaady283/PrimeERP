@@ -77,10 +77,10 @@ digraph PrimeERP {
   "PrimeERP.Tests/ViewModels" [pos="-9.05,-7.72!" shape=circle width=1.23 height=1.23 fillcolor="#cfd8c8" color="#6f7b88" fontsize=13 label="ViewModels"];
   "PrimeERP.Setup" [pos="-15.29,-7.72!" shape=circle width=1.92 height=1.92 fillcolor="#dcd0c0" color="#6f7b88" fontsize=13 label="الجذر"];
   "@6.UI" -> "@5.Design" [color="#46525e" penwidth=3.5 tailport=w headport=e label="798" arrowsize=0.8];
-  "@4.Application" -> "@3.Domain" [color="#46525e" penwidth=3.5 tailport=w headport=e label="287" arrowsize=0.8];
+  "@4.Application" -> "@3.Domain" [color="#46525e" penwidth=3.5 tailport=w headport=e label="288" arrowsize=0.8];
   "@PrimeERP.Tests" -> "@4.Application" [color="#46525e" penwidth=3.5 tailport=ne headport=sw label="253" arrowsize=0.8];
   "@4.Application" -> "@1.Platform" [color="#46525e" penwidth=3.5 tailport=se headport=nw label="247" arrowsize=0.8];
-  "@4.Application" -> "@2.Data" [color="#46525e" penwidth=3.5 tailport=w headport=e label="131" arrowsize=0.8];
+  "@4.Application" -> "@2.Data" [color="#46525e" penwidth=3.5 tailport=w headport=e label="132" arrowsize=0.8];
   "@PrimeERP.Tests" -> "@1.Platform" [color="#46525e" penwidth=3.5 tailport=e headport=w label="124" arrowsize=0.8];
   "@PrimeERP.Tests" -> "@6.UI" [color="#46525e" penwidth=3.5 tailport=n headport=s label="73" arrowsize=0.8];
   "@PrimeERP.Tests" -> "@7.Composition" [color="#46525e" penwidth=3.5 tailport=ne headport=sw label="69" arrowsize=0.8];
