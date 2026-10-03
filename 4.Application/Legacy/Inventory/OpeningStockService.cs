@@ -123,7 +123,7 @@ namespace PrimeERP.Application.Legacy.Inventory
             var lines = (dto.Lines ?? new()).Where(l => l.ProductId > 0).ToList();
 
             var input = Check.Valid(dto, new Field<CreateOpeningStockDto>(x => x.WarehouseId, "", Required: true, Message: "Str.Stock.WarehouseRequired"))
-                .Then(() => DocumentLines.Check(lines, l => l.Qty, "Str.Stock.NoProducts", l => l.UnitCost));
+                .Then(() => DocumentLines.Check(lines, l => l.Qty, "Str.Stock.NoProducts", l => l.UnitCost, "Str.CostPrice"));
             if (input.IsFailure) return input.As<Func<PrimeDbContext, Result>>();
 
             var warehouse = _warehouses.NamesOf(new[] { dto.WarehouseId }).GetValueOrDefault(dto.WarehouseId);

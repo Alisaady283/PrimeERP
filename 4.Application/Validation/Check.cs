@@ -44,6 +44,7 @@ namespace PrimeERP.Application.Validation
             else if (f.Max > 0 && text?.Length > f.Max) (rule, args) = ("MaxLength", new object[] { label, f.Max });
             else if ((f.From != null || f.To != null) && Number(value) is { } n && (n < f.From || n > f.To))
                 (rule, args) = f.To != null ? ("Range", new object[] { label, f.From, f.To }) : ("NonNegative", new object[] { label });
+            else if (f.Positive && !(Number(value) > 0)) rule = "Positive";
             else if (f.Format != FieldFormat.None && !Missing(value) && !Matches(value, f.Format)) rule = "Invalid";
             else if (f.Must != null && !f.Must(item)) rule = "Invalid";
 

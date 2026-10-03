@@ -9,6 +9,7 @@ namespace PrimeERP.Application.Validation
         Expression<Func<T, object>> Of,
         string Label,
         bool Required = false,
+        bool Positive = false,
         int Min = 0,
         int Max = 0,
         decimal? From = null,

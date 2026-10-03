@@ -435,7 +435,7 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(AssetRevaluation.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
                         new() { Key = nameof(AssetRevaluation.RevaluationDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
-                        new() { Key = nameof(AssetRevaluation.NewValue), LabelKey = "Str.Asset.NewValue", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
+                        new() { Key = nameof(AssetRevaluation.NewValue), LabelKey = "Str.Asset.NewValue", Kind = FieldKind.Number, Positive = true, Message = "Str.Asset.RevaluationZero" },
                         new() { Key = nameof(AssetRevaluation.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }
                 }
@@ -600,8 +600,8 @@ namespace PrimeERP.Modules
                     LineFields = new()
                     {
                         new() { Key = nameof(CreateSalesInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
-                        new() { Key = nameof(CreateSalesInvoiceLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
-                        new() { Key = nameof(CreateSalesInvoiceLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
+                        StandardFields.Qty(),
+                        StandardFields.Price(),
                         new() { Key = nameof(CreateSalesInvoiceLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
                         new() { Key = nameof(CreateSalesInvoiceLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
                         new() { Key = nameof(CreateSalesInvoiceLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
@@ -642,8 +642,8 @@ namespace PrimeERP.Modules
                     LineFields = new()
                     {
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
-                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
-                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
+                        StandardFields.Qty(),
+                        StandardFields.Price(),
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
@@ -683,8 +683,8 @@ namespace PrimeERP.Modules
                     LineFields = new()
                     {
                         new() { Key = nameof(CreateSalesReturnLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
-                        new() { Key = nameof(CreateSalesReturnLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
-                        new() { Key = nameof(CreateSalesReturnLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
+                        StandardFields.Qty(),
+                        StandardFields.Price(),
                         new() { Key = nameof(CreateSalesReturnLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
                         new() { Key = nameof(CreateSalesReturnLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
                         new() { Key = nameof(CreateSalesReturnLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
@@ -724,8 +724,8 @@ namespace PrimeERP.Modules
                     LineFields = new()
                     {
                         new() { Key = nameof(CreatePurchaseReturnLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
-                        new() { Key = nameof(CreatePurchaseReturnLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
-                        new() { Key = nameof(CreatePurchaseReturnLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
+                        StandardFields.Qty(),
+                        StandardFields.Price(),
                         new() { Key = nameof(CreatePurchaseReturnLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
                         new() { Key = nameof(CreatePurchaseReturnLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
                         new() { Key = nameof(CreatePurchaseReturnLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
@@ -767,7 +767,7 @@ namespace PrimeERP.Modules
                     LineFields = new()
                     {
                         new() { Key = nameof(CreateStockTransferLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
-                        new() { Key = nameof(CreateStockTransferLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
+                        StandardFields.Qty(),
                         new() { Key = nameof(CreateStockTransferLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
                 }
@@ -890,8 +890,8 @@ namespace PrimeERP.Modules
             LineFields = new()
             {
                 new() { Key = nameof(CreateOpeningStockLineDto.ProductId), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 260, IsRequired = true, PickerType = "Product" },
-                new() { Key = nameof(CreateOpeningStockLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 120 },
-                new() { Key = nameof(CreateOpeningStockLineDto.UnitCost), Header = LocalizationService.Get("Str.CostPrice"), Kind = FieldKind.Number, Width = 120 },
+                StandardFields.Qty(),
+                StandardFields.Price(nameof(CreateOpeningStockLineDto.UnitCost), "Str.CostPrice"),
                 new() { Key = nameof(CreateOpeningStockLineDto.Value), Header = LocalizationService.Get("Str.Balance"), Kind = FieldKind.ReadOnly, Width = 120 },
                 new() { Key = nameof(CreateOpeningStockLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
             },

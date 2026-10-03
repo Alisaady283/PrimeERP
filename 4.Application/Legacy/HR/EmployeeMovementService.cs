@@ -47,7 +47,7 @@ namespace PrimeERP.Application.Legacy.HR
         private static readonly Field<T>[] MovementFields =
         [
             .. EmployeeCode.Rules<T>(),
-            new(x => x.Amount, "", Must: m => m.Amount > 0, Message: "Str.Common.AmountPositive"),
+            new(x => x.Amount, "Str.Amount", Positive: true),
             new(x => x.Month, "", From: 1, To: 12, Message: "Str.Employee.MonthRange"),
             new(x => x.Year, "", From: 2000, Message: "Str.Employee.YearInvalid"),
         ];

@@ -45,7 +45,7 @@ namespace PrimeERP.Modules
                     LineFields = new()
                     {
                         new() { Key = nameof(CreateStockAdjustmentLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
-                        new() { Key = nameof(CreateStockAdjustmentLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
+                        StandardFields.Qty(),
                         new() { Key = nameof(CreateStockAdjustmentLineDto.UnitCost), Header = LocalizationService.Get("Str.UnitCost"), Kind = FieldKind.Number, Width = 100 },
                         new() { Key = nameof(CreateStockAdjustmentLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }

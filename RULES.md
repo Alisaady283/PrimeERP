@@ -58,7 +58,7 @@
 
 **ما تأتي به الوراثة فلا يُكتب يدوياً**: `Can("Create")` و `FailDenied()` للصلاحية ورسالتها · `Audit.Log(...)` للتدقيق · `Commit(db => …)` لمعاملةٍ تُلغى بنتيجتها الفاشلة أو باستثناء `InvalidOperationException` · `Tx(...)` لمعاملةٍ بلا فشل · `Msg(key)` للنصوص · `SoftDelete`/`Remove` في المستودع للحذف.
 
-**التحقق دالةٌ واحدة**: `Check.Valid(item, params Field<T>[])` و`Check.Fields` لنتيجة الحقول. كل شرطٍ معاملٌ في `Field<T>`: `Required` · `Min` · `Max` · `From`/`To` · `Format` (`Phone`/`Email`/`Date`/`Digits`) · `Must` · `Message`/`Args`. رسائلها `Str.Rule.*`. لا دالةٌ لكل نوع تحقق، ولا ملفّ متحقّقٍ لكل كيان، ولا تحقّقُ مدخلٍ مكتوبٌ بـ`if` في الخدمة. وسطور المستند بـ`DocumentLines.Check` فوقها: سطرٌ واحدٌ على الأقل، وكميةٌ وسعرٌ (حيث يُدخَل) أكبر من صفر. وقاعدة الأعمال على حالة البيانات ليست تحقّق مدخل: تُكتب شرطَ حمايةٍ صريحاً يُرجع `Result` في العملية المالكة لها، ولا تُحشر في `Check`.
+**التحقق دالةٌ واحدة**: `Check.Valid(item, params Field<T>[])` و`Check.Fields` لنتيجة الحقول. كل شرطٍ معاملٌ في `Field<T>`: `Required` · `Positive` (لا فراغ ولا صفر) · `Min` · `Max` · `From`/`To` · `Format` (`Phone`/`Email`/`Date`/`Digits`) · `Must` · `Message`/`Args`. رسائلها `Str.Rule.*`. لا دالةٌ لكل نوع تحقق، ولا ملفّ متحقّقٍ لكل كيان، ولا تحقّقُ مدخلٍ مكتوبٌ بـ`if` في الخدمة. وسطور المستند بـ`DocumentLines.Check` فوقها: سطرٌ واحدٌ على الأقل، وكميةٌ وسعرٌ (حيث يُدخَل) بـ`Positive`. وقيمةٌ لا تقبل الصفر تُعلَن `Positive` في الخدمة والشاشة معاً، لا `Must: x => x > 0` ولا `IsRequired`. وقاعدة الأعمال على حالة البيانات ليست تحقّق مدخل: تُكتب شرطَ حمايةٍ صريحاً يُرجع `Result` في العملية المالكة لها، ولا تُحشر في `Check`.
 
 **يُمنَع داخل الخدمة**: رسالة بلغة بشرية خارج `Strings.*.xaml` · شرط تحقق خارج المتحقّق · فحص صلاحية خارج `Can` · استعلام خارج المستودع · استعلامٌ لكل صفّ في `ToDto` أو داخل حلقة (الصفحة تُجلب بـ`ToDtos` والمستند يحلّ أكواده بـ`ByCodes`) · ختم `CreatedBy`/`UpdatedBy` يدوي · `try/catch` حول معاملة (`Commit` يلغيها) · إنشاء قيدٍ وترحيله بيده (`Posting.Entry`) · تعديلٌ بحذفٍ ثم إنشاءٍ في معاملتين (الأساس يستبدل في معاملةٍ واحدة) · رصيد حسابٍ أو طرفٍ يُكتب خارج `AccountBalances` · حساب كيانٍ يُفتح أو يُسمّى أو يُغلق خارج `Services/Ledger/Accounts`.
 
@@ -143,7 +143,7 @@ registry.Register(new ModuleDefinition
 | `RegisterLookup` | قائمة بسيطة (كود/اسم/نشط) |
 | `CategoryDialogFactory` | حوار فئة |
 
-**قطعٌ مُعلَنة جاهزة**: `StandardFields.DialogFields()` · `StandardFields.AuditColumns()` · `StandardFields.DateRange()` · `PayrollRowActions()` · `TradePaper.*` · `CycleFlow.Into*` مصادر السحب.
+**قطعٌ مُعلَنة جاهزة**: `StandardFields.DialogFields()` · `StandardFields.Qty()` · `StandardFields.Price(...)` (عمودا القيمة في كل مستند) · `StandardFields.AuditColumns()` · `StandardFields.DateRange()` · `PayrollRowActions()` · `TradePaper.*` · `CycleFlow.Into*` مصادر السحب.
 
 **نموذج العرض** يرث `CrudViewModelBase<TDto,TFilter>` ويُعلن `PermissionPrefix` فقط — بلا تحميل وبلا حفظ.
 

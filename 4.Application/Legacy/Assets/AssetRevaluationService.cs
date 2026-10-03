@@ -67,7 +67,7 @@ namespace PrimeERP.Application.Legacy.Assets
         {
             new(x => x.AssetId, "", Required: true, Message: "Str.Asset.PickAsset"),
             new(x => x.RevaluationDate, "", Required: true, Message: "Str.Asset.RevaluationDateRequired"),
-            new(x => x.NewValue, "", Must: r => r.NewValue > 0, Message: "Str.Asset.RevaluationZero"),
+            new(x => x.NewValue, "Str.Asset.NewValue", Positive: true, Message: "Str.Asset.RevaluationZero"),
             new(x => x.NewValue, "", Must: r => AssetCalc.Difference(r) != 0, Message: "Str.Asset.RevaluationNoChange"),
         };
 

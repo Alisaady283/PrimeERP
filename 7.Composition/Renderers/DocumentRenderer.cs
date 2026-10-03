@@ -89,7 +89,7 @@ namespace PrimeERP.Composition.Renderers
                 {
                     var fieldDef = new FieldDefinition
                     {
-                        Key = lf.Key, LabelKey = "", Kind = lf.Kind, IsRequired = lf.IsRequired,
+                        Key = lf.Key, LabelKey = "", Kind = lf.Kind, IsRequired = lf.IsRequired, Positive = lf.Positive,
                         PickerType = lf.PickerType, PickerLeafOnly = lf.PickerLeafOnly,
                         PickerValueField = PickerValueFieldOf(def.LineDtoType, lf)
                     };
@@ -471,7 +471,7 @@ namespace PrimeERP.Composition.Renderers
 
             var linesList = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(def.LineDtoType));
             var lineFieldDefs = def.LineFields
-                .Select(lf => new FieldDefinition { Key = lf.Key, LabelKey = lf.Header, Kind = lf.Kind, IsRequired = lf.IsRequired })
+                .Select(lf => new FieldDefinition { Key = lf.Key, LabelKey = lf.Header, Kind = lf.Kind, IsRequired = lf.IsRequired, Positive = lf.Positive })
                 .ToList();
             var rowsValid = true;
             int lineNo = 1;

@@ -37,11 +37,11 @@ namespace PrimeERP.Modules
             var lineFields = new List<LineFieldDefinition>
             {
                 new() { Key = nameof(CreateCycleDocumentLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
-                new() { Key = nameof(CreateCycleDocumentLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
+                StandardFields.Qty(),
             };
 
             if (showPrices)
-                lineFields.Add(new() { Key = nameof(CreateCycleDocumentLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true });
+                lineFields.Add(StandardFields.Price());
 
             lineFields.Add(new() { Key = nameof(CreateCycleDocumentLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 });
 

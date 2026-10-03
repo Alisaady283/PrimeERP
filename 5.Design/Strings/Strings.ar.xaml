@@ -609,7 +609,6 @@
     <sys:String x:Key="Str.Category.SelfParent">لا يمكن أن يكون التصنيف أباً لنفسه</sys:String>
     <sys:String x:Key="Str.Cheque.AccountsMissing">لا حساب مرتبط بالخزينة أو بالطرف — اربطهما بحسابيهما أولاً</sys:String>
     <sys:String x:Key="Str.Cheque.AmountDigits">المبلغ رقماً</sys:String>
-    <sys:String x:Key="Str.Cheque.AmountPositive">مبلغ الشيك يجب أن يكون أكبر من صفر</sys:String>
     <sys:String x:Key="Str.Cheque.AmountWords">المبلغ كتابةً</sys:String>
     <sys:String x:Key="Str.Cheque.Bank">البنك</sys:String>
     <sys:String x:Key="Str.Cheque.BankName">اسم البنك</sys:String>
@@ -641,7 +640,6 @@
     <sys:String x:Key="Str.Cheque.Status.InHand">بالمحفظة</sys:String>
     <sys:String x:Key="Str.Cheque.Status.Paid">مصروف</sys:String>
     <sys:String x:Key="Str.Cheque.Status.Returned">مردود للطرف</sys:String>
-    <sys:String x:Key="Str.Common.AmountPositive">المبلغ يجب أن يكون أكبر من صفر</sys:String>
     <sys:String x:Key="Str.Common.RecordNotFound">السجل غير موجود</sys:String>
     <sys:String x:Key="Str.Composition.MissingMethod">الخدمة {0} بلا {1}</sys:String>
     <sys:String x:Key="Str.Deduction.Amount">قيمة الخصم</sys:String>
@@ -654,10 +652,8 @@
     <sys:String x:Key="Str.Document.NotPullSource">المستند {0} لا يُسحَب منه</sys:String>
     <sys:String x:Key="Str.Document.PartyRequired">الطرف إلزامي في هذا المستند</sys:String>
     <sys:String x:Key="Str.Document.PickFirst">اختر مستنداً أولاً</sys:String>
-    <sys:String x:Key="Str.Document.PricePositive">السعر يجب أن يكون أكبر من صفر</sys:String>
     <sys:String x:Key="Str.Document.ProductCodeNotFound">الصنف بالكود {0} غير موجود</sys:String>
     <sys:String x:Key="Str.Document.PullExceeds">الكمية المسحوبة ({0:N2}) تتجاوز المتبقي ({1:N2}) في {2}</sys:String>
-    <sys:String x:Key="Str.Document.QtyPositive">الكمية يجب أن تكون أكبر من صفر</sys:String>
     <sys:String x:Key="Str.Employee.CodeNotFound">الموظف بالكود {0} غير موجود</sys:String>
     <sys:String x:Key="Str.Employee.MonthRange">الشهر بين 1 و12</sys:String>
     <sys:String x:Key="Str.Employee.Required">الموظف مطلوب</sys:String>
@@ -1169,6 +1165,7 @@
     <sys:String x:Key="Str.Rule.MaxLength">{0} يجب ألا يتجاوز {1} حرف</sys:String>
     <sys:String x:Key="Str.Rule.Range">{0} يجب أن يكون بين {1} و {2}</sys:String>
     <sys:String x:Key="Str.Rule.NonNegative">{0} لا يمكن أن يكون سالباً</sys:String>
+    <sys:String x:Key="Str.Rule.Positive">قيمة {0} يجب أن تكون أكبر من صفر</sys:String>
     <sys:String x:Key="Str.Rule.Invalid">{0} غير صحيح</sys:String>
     <sys:String x:Key="Str.Rule.Duplicate">{0} مستخدم من قبل</sys:String>
     <sys:String x:Key="Str.Rule.AccountCodeFormat">{0} يجب أن يتكوّن من أرقام فقط</sys:String>

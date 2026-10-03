@@ -11,6 +11,7 @@ namespace PrimeERP.Composition.Definitions
         public FieldKind Kind { get; init; } = FieldKind.Text;
         public double Width { get; init; } = 140;
         public bool IsRequired { get; init; }
+        public bool Positive { get; init; }
         public string PickerType { get; init; }
         public bool PickerLeafOnly { get; init; }
 

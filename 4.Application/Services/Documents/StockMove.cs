@@ -49,7 +49,8 @@ namespace PrimeERP.Application.Services.Documents
         public Result RecordMovement(PrimeDbContext db, int productId, int warehouseId, MovementType type,
             decimal qty, decimal unitCost, string sourceDocType, int? sourceDocId, string sourceDocNo, DateTime? date = null, string notes = null)
         {
-            if (type != MovementType.Adjustment && qty <= 0) return Result.Fail(Localization.Get("Str.Document.QtyPositive"), ErrorCode.ValidationFailed);
+            var shape = type == MovementType.Adjustment ? Result.Ok() : Check.Valid(qty, new Field<decimal>(q => q, "Str.Qty", Positive: true));
+            if (shape.IsFailure) return shape;
 
             var currentBalance = _movements.GetBalance(productId, warehouseId, db);
             var signedQty = InventoryCosting.Signed(type, qty);

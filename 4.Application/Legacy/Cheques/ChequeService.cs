@@ -243,7 +243,7 @@ namespace PrimeERP.Application.Legacy.Cheques
         {
             new(x => x.ChequeNo, "Str.Field.ChequeNo", Required: true),
             new(x => x.BankName, "Str.Field.ChequeBank", Required: true),
-            new(x => x.Amount, "", Must: x => x.Amount > 0, Message: "Str.Cheque.AmountPositive"),
+            new(x => x.Amount, "Str.Amount", Positive: true),
             new(x => x.PartyId, "", Required: true, Message: "Str.Cheque.PartyRequired"),
         };
 

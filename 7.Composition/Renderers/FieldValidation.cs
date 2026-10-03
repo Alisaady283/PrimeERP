@@ -22,6 +22,7 @@ namespace PrimeERP.Composition.Renderers
                 if (control.Visibility != Visibility.Visible) { SetError(control, null); continue; }
 
                 var error = Check(field, DialogRenderer.GetControlValue(control, field.Kind));
+                if (error != null && field.Message != null) error = LocalizationService.Get(field.Message);
                 SetError(control, error);
                 if (error != null) valid = false;
             }
@@ -37,7 +38,8 @@ namespace PrimeERP.Composition.Renderers
                 || (value is string text && string.IsNullOrWhiteSpace(text))
                 || (field.Kind == FieldKind.Date && value is DateTime date && date == default);
 
-            if (isEmpty) return field.IsRequired ? LocalizationService.Get("Str.Rule.Required", label) : null;
+            if (isEmpty) return field.Positive ? LocalizationService.Get("Str.Rule.Positive", label)
+                : field.IsRequired ? LocalizationService.Get("Str.Rule.Required", label) : null;
 
             return field.Kind switch
             {
@@ -50,6 +52,7 @@ namespace PrimeERP.Composition.Renderers
         private static string CheckNumber(FieldDefinition field, string label, object value)
         {
             if (!decimal.TryParse(value.ToString(), out var number)) return LocalizationService.Get("Str.Rule.Number", label);
+            if (field.Positive && number <= 0) return LocalizationService.Get("Str.Rule.Positive", label);
             if (field.Min != null && number < field.Min) return LocalizationService.Get("Str.Rule.Min", label, field.Min);
             if (field.Max != null && number > field.Max) return LocalizationService.Get("Str.Rule.Max", label, field.Max);
 

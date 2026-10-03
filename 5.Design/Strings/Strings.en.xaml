@@ -609,7 +609,6 @@
     <sys:String x:Key="Str.Category.SelfParent">A category cannot be its own parent</sys:String>
     <sys:String x:Key="Str.Cheque.AccountsMissing">The treasury or party has no linked account. Link both to their accounts first</sys:String>
     <sys:String x:Key="Str.Cheque.AmountDigits">Amount in figures</sys:String>
-    <sys:String x:Key="Str.Cheque.AmountPositive">Cheque amount must be greater than zero</sys:String>
     <sys:String x:Key="Str.Cheque.AmountWords">Amount in words</sys:String>
     <sys:String x:Key="Str.Cheque.Bank">Bank</sys:String>
     <sys:String x:Key="Str.Cheque.BankName">Bank name</sys:String>
@@ -641,7 +640,6 @@
     <sys:String x:Key="Str.Cheque.Status.InHand">In hand</sys:String>
     <sys:String x:Key="Str.Cheque.Status.Paid">Paid</sys:String>
     <sys:String x:Key="Str.Cheque.Status.Returned">Returned to party</sys:String>
-    <sys:String x:Key="Str.Common.AmountPositive">Amount must be greater than zero</sys:String>
     <sys:String x:Key="Str.Common.RecordNotFound">Record not found</sys:String>
     <sys:String x:Key="Str.Composition.MissingMethod">The service {0} has no {1}</sys:String>
     <sys:String x:Key="Str.Deduction.Amount">Deduction amount</sys:String>
@@ -654,10 +652,8 @@
     <sys:String x:Key="Str.Document.NotPullSource">{0} is not a pull source</sys:String>
     <sys:String x:Key="Str.Document.PartyRequired">The party is required in this document</sys:String>
     <sys:String x:Key="Str.Document.PickFirst">Choose a document first</sys:String>
-    <sys:String x:Key="Str.Document.PricePositive">The price must be greater than zero</sys:String>
     <sys:String x:Key="Str.Document.ProductCodeNotFound">Product with code {0} not found</sys:String>
     <sys:String x:Key="Str.Document.PullExceeds">The pulled quantity ({0:N2}) exceeds the remaining ({1:N2}) in {2}</sys:String>
-    <sys:String x:Key="Str.Document.QtyPositive">Quantity must be greater than zero</sys:String>
     <sys:String x:Key="Str.Employee.CodeNotFound">Employee with code {0} not found</sys:String>
     <sys:String x:Key="Str.Employee.MonthRange">Month must be between 1 and 12</sys:String>
     <sys:String x:Key="Str.Employee.Required">Employee is required</sys:String>
@@ -1169,6 +1165,7 @@
     <sys:String x:Key="Str.Rule.MaxLength">{0} must not exceed {1} characters</sys:String>
     <sys:String x:Key="Str.Rule.Range">{0} must be between {1} and {2}</sys:String>
     <sys:String x:Key="Str.Rule.NonNegative">{0} cannot be negative</sys:String>
+    <sys:String x:Key="Str.Rule.Positive">{0} must be greater than zero</sys:String>
     <sys:String x:Key="Str.Rule.Invalid">{0} is invalid</sys:String>
     <sys:String x:Key="Str.Rule.Duplicate">{0} is already used</sys:String>
     <sys:String x:Key="Str.Rule.AccountCodeFormat">{0} must contain digits only</sys:String>

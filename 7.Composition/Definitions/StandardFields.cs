@@ -20,6 +20,18 @@ namespace PrimeERP.Composition.Definitions
             new() { Key = "To",   LabelKey = "Str.DateTo",   Kind = FieldKind.Date, DefaultValue = System.DateTime.Today },
         };
 
+        /// <summary>كمية السطر أكبر من صفر</summary>
+        public static LineFieldDefinition Qty() => new()
+        {
+            Key = "Qty", Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, Positive = true
+        };
+
+        /// <summary>سعر السطر أكبر من صفر</summary>
+        public static LineFieldDefinition Price(string key = "UnitPrice", string headerKey = "Str.UnitPrice") => new()
+        {
+            Key = key, Header = LocalizationService.Get(headerKey), Kind = FieldKind.Number, Width = 100, Positive = true
+        };
+
         public static List<GridColumn> AuditColumns() => new()
         {
             new() { Header = LocalizationService.Get("Str.Status"), Binding = "StatusText" },

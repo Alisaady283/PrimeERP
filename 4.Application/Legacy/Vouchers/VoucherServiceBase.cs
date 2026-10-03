@@ -96,7 +96,7 @@ namespace PrimeERP.Application.Legacy.Vouchers
         {
             var input = Result.Combine(
                 Check.Valid(dto,
-                    new Field<CreateVoucherDto>(x => x.Amount, "", Must: d => d.Amount > 0, Message: "Str.Common.AmountPositive"),
+                    new Field<CreateVoucherDto>(x => x.Amount, "Str.Amount", Positive: true),
                     new Field<CreateVoucherDto>(x => x.PartyId, "", Required: true, Message: IsReceipt ? "Str.Voucher.CustomerRequired" : "Str.Voucher.SupplierRequired")),
                 DocumentLines.Within(dto.Allocations, a => a.Amount, dto.Amount, "Str.Voucher.AllocationsExceed"));
             if (input.IsFailure) return input.As<Func<PrimeDbContext, int>>();

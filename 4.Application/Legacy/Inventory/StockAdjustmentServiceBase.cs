@@ -94,7 +94,7 @@ namespace PrimeERP.Application.Legacy.Inventory
                     to.UnitCost = InventoryCosting.LineCost(l.UnitCost, product.CostPrice);
                 })));
             if (lines.IsFailure) return lines.As<Func<PrimeDbContext, int>>();
-            var shape = DocumentLines.Check(lines.Value, l => l.Qty, price: l => l.UnitCost);
+            var shape = DocumentLines.Check(lines.Value, l => l.Qty, price: l => l.UnitCost, priceLabel: "Str.UnitCost");
             if (shape.IsFailure) return shape.As<Func<PrimeDbContext, int>>();
             var pulls = Links.ValidatePulls(dto.Lines.Select(l => ((IPullableLine)l, l.Qty)), EntityName, dto.Id);
             if (pulls.IsFailure) return pulls.As<Func<PrimeDbContext, int>>();

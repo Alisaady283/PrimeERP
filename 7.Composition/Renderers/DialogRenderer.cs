@@ -384,7 +384,7 @@ namespace PrimeERP.Composition.Renderers
             {
                 FieldKind.Text => new AppTextBox { Label = label, IsRequired = field.IsRequired, MaxLength = field.MaxLength },
                 FieldKind.ReadOnly => new AppTextBox { Label = label, IsReadOnly = true },
-                FieldKind.Number => new AppNumericBox { Label = label, IsRequired = field.IsRequired },
+                FieldKind.Number => new AppNumericBox { Label = label, IsRequired = field.IsRequired || field.Positive },
                 FieldKind.Date => new AppDatePicker { Label = label, IsRequired = field.IsRequired },
                 FieldKind.Check => new AppCheckBox { Label = label },
                 FieldKind.TextArea => new AppTextArea { Label = label, IsRequired = field.IsRequired, MaxLength = field.MaxLength, Rows = 3 },

@@ -20,6 +20,8 @@ namespace PrimeERP.Composition.Definitions
         public int      MinLength      { get; init; }
         public decimal? Min            { get; init; }
         public decimal? Max            { get; init; }
+        public bool     Positive       { get; init; }
+        public string   Message        { get; init; }
         public DateTime? MinDate       { get; init; }
         public DateTime? MaxDate       { get; init; }
 

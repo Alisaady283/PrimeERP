@@ -52,7 +52,7 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateEmployeeMovementDto.EmployeeCode), LabelKey = "Str.Employee", Kind = FieldKind.Picker, PickerType = "Employee", IsRequired = true },
                         new() { Key = nameof(CreateEmployeeMovementDto.Month), LabelKey = "Str.Month", Kind = FieldKind.Number, IsRequired = true },
                         new() { Key = nameof(CreateEmployeeMovementDto.Year), LabelKey = "Str.Year", Kind = FieldKind.Number, IsRequired = true },
-                        new() { Key = nameof(CreateEmployeeMovementDto.Amount), LabelKey = amountKey, Kind = FieldKind.Number, IsRequired = true },
+                        new() { Key = nameof(CreateEmployeeMovementDto.Amount), LabelKey = amountKey, Kind = FieldKind.Number, Positive = true },
                         new() { Key = nameof(CreateEmployeeMovementDto.Reason), LabelKey = reasonKey, Kind = FieldKind.Text, MaxLength = 200, ColumnSpan = 2 },
                         new() { Key = nameof(CreateEmployeeMovementDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }
