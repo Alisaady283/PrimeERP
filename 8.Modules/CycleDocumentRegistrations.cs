@@ -41,7 +41,7 @@ namespace PrimeERP.Modules
             };
 
             if (showPrices)
-                lineFields.Add(new() { Key = nameof(CreateCycleDocumentLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100 });
+                lineFields.Add(new() { Key = nameof(CreateCycleDocumentLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true });
 
             lineFields.Add(new() { Key = nameof(CreateCycleDocumentLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 });
 

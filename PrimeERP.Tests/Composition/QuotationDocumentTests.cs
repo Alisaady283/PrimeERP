@@ -79,7 +79,9 @@ namespace PrimeERP.Tests.Composition
                             && c.ItemsSource.Cast<object>().Any(i => (i.GetType().GetProperty("Code")?.GetValue(i) as string) == product.Value.Code));
                         SelectByCode(productCombo, product.Value.Code);
 
-                        FindAllVisualChildren<AppNumericBox>(window).First().Value = 3m;
+                        var numerics = FindAllVisualChildren<AppNumericBox>(window).ToList();
+                        numerics[0].Value = 3m;                        // الكمية
+                        numerics[1].Value = product.Value.SalePrice;   // السعر
 
                         ClickButton(window, "Str.Save");
                     }
