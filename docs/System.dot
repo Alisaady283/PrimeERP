@@ -76,7 +76,7 @@ digraph PrimeERP {
   "PrimeERP.Tests/Validation" [pos="-5.10,-10.48!" shape=circle width=1.23 height=1.23 fillcolor="#cfd8c8" color="#6f7b88" fontsize=13 label="Validation"];
   "PrimeERP.Tests/ViewModels" [pos="-9.05,-7.72!" shape=circle width=1.23 height=1.23 fillcolor="#cfd8c8" color="#6f7b88" fontsize=13 label="ViewModels"];
   "PrimeERP.Setup" [pos="-15.29,-7.72!" shape=circle width=1.92 height=1.92 fillcolor="#dcd0c0" color="#6f7b88" fontsize=13 label="الجذر"];
-  "@6.UI" -> "@5.Design" [color="#46525e" penwidth=3.5 tailport=w headport=e label="797" arrowsize=0.8];
+  "@6.UI" -> "@5.Design" [color="#46525e" penwidth=3.5 tailport=w headport=e label="798" arrowsize=0.8];
   "@4.Application" -> "@3.Domain" [color="#46525e" penwidth=3.5 tailport=w headport=e label="287" arrowsize=0.8];
   "@PrimeERP.Tests" -> "@4.Application" [color="#46525e" penwidth=3.5 tailport=ne headport=sw label="253" arrowsize=0.8];
   "@4.Application" -> "@1.Platform" [color="#46525e" penwidth=3.5 tailport=se headport=nw label="247" arrowsize=0.8];
@@ -110,7 +110,6 @@ digraph PrimeERP {
   "@PrimeERP.Tests" -> "@5.Design" [color="#9aa5b1" penwidth=1.1 tailport=nw headport=se label="4" arrowsize=0.8];
   "@App" -> "@7.Composition" [color="#9aa5b1" penwidth=1.1 tailport=n headport=s label="3" arrowsize=0.8];
   "@PrimeERP.Tests" -> "@8.Modules" [color="#9aa5b1" penwidth=1.1 tailport=ne headport=sw label="3" arrowsize=0.8];
-  "@5.Design" -> "@6.UI" [color="#d62828" penwidth=3.5 tailport=e headport=w label="2" arrowsize=0.8];
   "@App" -> "@3.Domain" [color="#9aa5b1" penwidth=1.1 tailport=nw headport=se label="2" arrowsize=0.8];
   "@5.Design" -> "@3.Domain" [color="#9aa5b1" penwidth=1.1 tailport=se headport=nw label="1" arrowsize=0.8];
   "@App" -> "@8.Modules" [color="#9aa5b1" penwidth=1.1 tailport=ne headport=sw label="1" arrowsize=0.8];

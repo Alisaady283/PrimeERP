@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- حقل إدخال AppSearchBox -->
-    <Border x:Name="border" Style="{StaticResource AppSearchBox_FieldBorder}">
+    <Border x:Name="border" Style="{StaticResource SearchFieldBorderStyle}">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>

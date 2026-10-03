@@ -47,12 +47,6 @@ namespace PrimeERP.UI.Components.Actions
             DependencyProperty.Register(nameof(CommandParameter), typeof(object), typeof(AppButton),
                 new PropertyMetadata(null, (d, e) => ((AppButton)d).btn.CommandParameter = e.NewValue));
 
-        public static readonly DependencyProperty IconSizeProperty =
-            DependencyProperty.Register(nameof(IconSize), typeof(double), typeof(AppButton),
-                new PropertyMetadata(16.0));
-
-        public double IconSize { get => (double)GetValue(IconSizeProperty); set => SetValue(IconSizeProperty, value); }
-
         public string   Text            { get => (string)GetValue(TextProperty);            set => SetValue(TextProperty, value); }
         public Geometry Icon            { get => (Geometry)GetValue(IconProperty);           set => SetValue(IconProperty, value); }
 

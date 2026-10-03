@@ -229,7 +229,6 @@ digraph PrimeERP {
   "6.UI/Converters" -> "6.UI/Components" [color="#9aa5b1" penwidth=1.1 tailport=s headport=n arrowsize=0.8];
   "6.UI/Components" -> "3.Domain/Calculations" [color="#9aa5b1" penwidth=1.1 tailport=se headport=nw arrowsize=0.8];
   "6.UI/Components" -> "3.Domain/Enums" [color="#9aa5b1" penwidth=1.1 tailport=se headport=nw arrowsize=0.8];
-  "5.Design/Styles" -> "6.UI/Components" [color="#d62828" penwidth=3.5 tailport=e headport=w arrowsize=0.8];
   "4.Application/Legacy" -> "1.Platform/Net" [color="#9aa5b1" penwidth=1.1 tailport=s headport=n arrowsize=0.8];
   "4.Application/DTOs" -> "1.Platform/Permissions" [color="#9aa5b1" penwidth=1.1 tailport=se headport=nw arrowsize=0.8];
   "4.Application/Validation" -> "3.Domain/Results" [color="#9aa5b1" penwidth=1.1 tailport=w headport=e arrowsize=0.8];

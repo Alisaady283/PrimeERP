@@ -1,7 +1,6 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:actions="clr-namespace:PrimeERP.UI.Components.Actions">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- أنماط الأزرار -->
 
@@ -41,48 +40,48 @@
 
         <Style.Triggers>
             <!-- Size -->
-            <DataTrigger Binding="{Binding Size, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="sm">
+            <DataTrigger Binding="{Binding Size, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="sm">
                 <Setter Property="Height" Value="{DynamicResource C.Button.Height.Sm}"/>
                 <Setter Property="Padding" Value="12,0,12,0"/>
                 <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.200}"/>
             </DataTrigger>
-            <DataTrigger Binding="{Binding Size, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="lg">
+            <DataTrigger Binding="{Binding Size, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="lg">
                 <Setter Property="Height" Value="{DynamicResource C.Button.Height.Lg}"/>
                 <Setter Property="Padding" Value="24,0,24,0"/>
                 <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.500}"/>
             </DataTrigger>
 
             <!-- Variant -->
-            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="secondary">
+            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="secondary">
                 <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
                 <Setter Property="BorderThickness" Value="1"/>
             </DataTrigger>
-            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="success">
+            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="success">
                 <Setter Property="Background" Value="{DynamicResource Success}"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource Success}"/>
             </DataTrigger>
-            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="warning">
+            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="warning">
                 <Setter Property="Background" Value="{DynamicResource Warning}"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource Warning}"/>
             </DataTrigger>
-            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="ghost">
+            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="ghost">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
                 <Setter Property="BorderThickness" Value="1"/>
             </DataTrigger>
-            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="danger">
+            <DataTrigger Binding="{Binding Variant, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="danger">
                 <Setter Property="Background" Value="{DynamicResource Danger}"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
             </DataTrigger>
 
             <!-- Danger -->
-            <DataTrigger Binding="{Binding IsDangerous, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}" Value="True">
+            <DataTrigger Binding="{Binding IsDangerous, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
                 <Setter Property="Background" Value="{DynamicResource Danger}"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextOnBrand}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
@@ -97,20 +96,18 @@
         <Setter Property="StrokeStartLineCap" Value="Round"/>
         <Setter Property="StrokeEndLineCap" Value="Round"/>
         <Setter Property="StrokeLineJoin" Value="Round"/>
-        <Setter Property="Width" Value="{Binding IconSize, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}"/>
-        <Setter Property="Height" Value="{Binding IconSize, RelativeSource={RelativeSource AncestorType={x:Type actions:AppButton}}}"/>
+        <Setter Property="Width" Value="{DynamicResource C.Button.IconSize.Md}"/>
+        <Setter Property="Height" Value="{DynamicResource C.Button.IconSize.Md}"/>
         <Setter Property="Stroke" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
-    </Style>
-
-    <Style TargetType="{x:Type actions:AppButton}">
-        <Setter Property="IconSize" Value="{DynamicResource C.Button.IconSize.Md}"/>
         <Style.Triggers>
-            <Trigger Property="Size" Value="sm">
-                <Setter Property="IconSize" Value="{DynamicResource C.Button.IconSize.Sm}"/>
-            </Trigger>
-            <Trigger Property="Size" Value="lg">
-                <Setter Property="IconSize" Value="{DynamicResource C.Button.IconSize.Lg}"/>
-            </Trigger>
+            <DataTrigger Binding="{Binding Size, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="sm">
+                <Setter Property="Width" Value="{DynamicResource C.Button.IconSize.Sm}"/>
+                <Setter Property="Height" Value="{DynamicResource C.Button.IconSize.Sm}"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Size, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="lg">
+                <Setter Property="Width" Value="{DynamicResource C.Button.IconSize.Lg}"/>
+                <Setter Property="Height" Value="{DynamicResource C.Button.IconSize.Lg}"/>
+            </DataTrigger>
         </Style.Triggers>
     </Style>
 

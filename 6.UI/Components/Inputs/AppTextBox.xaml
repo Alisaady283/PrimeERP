@@ -10,7 +10,7 @@
             <TextBlock x:Name="txtRequired" Text=" *" Style="{StaticResource FieldRequiredMarkStyle}" Visibility="Collapsed"/>
         </StackPanel>
 
-        <Border x:Name="border" Style="{StaticResource AppTextBox_FieldBorder}">
+        <Border x:Name="border" Style="{StaticResource FieldBorderStyle}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
