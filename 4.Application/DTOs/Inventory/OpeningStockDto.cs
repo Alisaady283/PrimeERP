@@ -9,7 +9,6 @@ namespace PrimeERP.Application.DTOs.Inventory
         public int      Id          { get; set; }
         public DateTime Date        { get; set; } = DateTime.Today;
         public int      WarehouseId { get; set; }
-        public string   Notes       { get; set; }
 
         public List<CreateOpeningStockLineDto> Lines { get; set; } = new();
     }

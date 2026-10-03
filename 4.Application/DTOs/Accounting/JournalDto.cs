@@ -78,7 +78,7 @@ namespace PrimeERP.Application.DTOs.Accounting
         public string   SearchText { get; set; }
         public DateTime? DateFrom  { get; set; }
         public DateTime? DateTo    { get; set; }
-        public string   Source     { get; set; }
+        public string[] Sources    { get; set; }
         public bool?    IsPosted   { get; set; }
         public string   AccountCode { get; set; }
         public decimal? MinAmount  { get; set; }

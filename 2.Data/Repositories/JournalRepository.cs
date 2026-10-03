@@ -27,7 +27,7 @@ namespace PrimeERP.Data.Repositories
         Dictionary<int, int> GetLineCounts(IEnumerable<int> entryIds);
         (List<JournalEntry> Items, int Total) GetPaged(
             int page, int pageSize,
-            string searchText = null, DateTime? dateFrom = null, DateTime? dateTo = null, string source = null,
+            string searchText = null, DateTime? dateFrom = null, DateTime? dateTo = null, string[] sources = null,
             bool? isPosted = null, string accountCode = null, decimal? minAmount = null, decimal? maxAmount = null,
             string sortColumn = "EntryDate", bool sortDescending = true);
 
@@ -162,7 +162,7 @@ namespace PrimeERP.Data.Repositories
 
         public (List<JournalEntry> Items, int Total) GetPaged(
             int page, int pageSize,
-            string searchText = null, DateTime? dateFrom = null, DateTime? dateTo = null, string source = null,
+            string searchText = null, DateTime? dateFrom = null, DateTime? dateTo = null, string[] sources = null,
             bool? isPosted = null, string accountCode = null, decimal? minAmount = null, decimal? maxAmount = null,
             string sortColumn = "EntryDate", bool sortDescending = true)
         {
@@ -178,7 +178,7 @@ namespace PrimeERP.Data.Repositories
                                   || EF.Functions.Like(e.Description, $"%{searchText}%"));
                 if (since != null) q = q.Where(e => string.Compare(e.EntryDate, since) >= 0);
                 if (until != null) q = q.Where(e => string.Compare(e.EntryDate, until) <= 0);
-                if (!string.IsNullOrWhiteSpace(source)) q = q.Where(e => e.Source == source);
+                if (sources is { Length: > 0 }) q = q.Where(e => sources.Contains(e.Source));
                 if (isPosted != null) q = q.Where(e => e.IsPosted == isPosted);
                 if (!string.IsNullOrWhiteSpace(accountCode))
                     q = q.Where(e => RowsOf<JournalLine>(db, LinesOf).Any(l => l.EntryId == e.Id && l.AccountCode == accountCode));

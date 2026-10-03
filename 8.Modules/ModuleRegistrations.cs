@@ -818,10 +818,13 @@ namespace PrimeERP.Modules
                 Key = "OpeningBalances", TitleKey = "Str.Module.OpeningBalances", PermissionPrefix = "Journal",
                 ViewModelType = typeof(OpeningBalancesViewModel),
                 SingleRecord = true,
+                RowKindProperty = nameof(JournalEntryDto.Source),
+                KindDialogs = new() { OpeningStockDialog() },
                 Columns = new()
                 {
                     new() { Header = LocalizationService.Get("Str.EntryNo"), Binding = nameof(JournalEntryDto.EntryNo), Width = 130 },
                     new() { Header = LocalizationService.Get("Str.EntryDate"), Binding = nameof(JournalEntryDto.EntryDate), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.Type"), Binding = nameof(JournalEntryDto.SourceText), Width = 150 },
                     new() { Header = LocalizationService.Get("Str.Description"), Binding = nameof(JournalEntryDto.Description), Width = 300, IsStarWidth = true },
                     new() { Header = LocalizationService.Get("Str.Debit"), Binding = nameof(JournalEntryDto.TotalDebit), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
                     new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(JournalEntryDto.StatusText), Width = 100, Align = ColumnAlign.Center },
@@ -881,9 +884,8 @@ namespace PrimeERP.Modules
             AllowPost = false,
             HeaderFields = new()
             {
-                new() { Key = nameof(CreateOpeningStockDto.Date), LabelKey = "Str.StartDate", Kind = FieldKind.Date, IsRequired = true },
+                new() { Key = nameof(CreateOpeningStockDto.Date), LabelKey = "Str.StartDate", Kind = FieldKind.Date, IsReadOnly = true },
                 new() { Key = nameof(CreateOpeningStockDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
-                new() { Key = nameof(CreateOpeningStockDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
             },
             LineFields = new()
             {

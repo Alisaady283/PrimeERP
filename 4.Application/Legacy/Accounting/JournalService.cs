@@ -173,7 +173,7 @@ namespace PrimeERP.Application.Legacy.Accounting
 
         private PagedResult<JournalEntryDto> Page(int page, int pageSize, JournalFilter filter)
         {
-            var (items, total) = _journal.GetPaged(page, pageSize, filter.SearchText, filter.DateFrom, filter.DateTo, filter.Source,
+            var (items, total) = _journal.GetPaged(page, pageSize, filter.SearchText, filter.DateFrom, filter.DateTo, filter.Sources,
                 filter.IsPosted, filter.AccountCode, filter.MinAmount, filter.MaxAmount, filter.SortBy, filter.SortDescending);
             var counts = _journal.GetLineCounts(items.Select(e => e.Id));
             var periods = _periods.GetAllPeriods();

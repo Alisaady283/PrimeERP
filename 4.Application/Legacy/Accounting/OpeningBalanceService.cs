@@ -10,6 +10,7 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
+using PrimeERP.Application.Legacy.Inventory;
 
 namespace PrimeERP.Application.Legacy.Accounting
 {
@@ -30,12 +31,14 @@ namespace PrimeERP.Application.Legacy.Accounting
         public static string FixedDescription => LocalizationService.Get("Str.Journal.OpeningDescription");
 
         private readonly IJournalService _journals;
+        private readonly IOpeningStockService _stock;
 
-        public OpeningBalanceService(IJournalService journals,
+        public OpeningBalanceService(IJournalService journals, IOpeningStockService stock,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
             : base(permissions, settings, localization, audit)
         {
             _journals = journals;
+            _stock = stock;
         }
 
         protected override string PermissionPrefix => "Journal";
@@ -45,7 +48,7 @@ namespace PrimeERP.Application.Legacy.Accounting
         public Result<PagedResult<JournalEntryDto>> GetPaged(int page, int pageSize, JournalFilter filter = null)
         {
             filter ??= new JournalFilter();
-            filter.Source = SourceKey;
+            filter.Sources = new[] { SourceKey, OpeningStockService.SourceKey };
             return _journals.GetPaged(page, pageSize, filter);
         }
 
@@ -64,7 +67,10 @@ namespace PrimeERP.Application.Legacy.Accounting
 
         public Result Update(CreateJournalDto dto) => _journals.UpdateOwned(Opening(dto), SourceKey);
 
-        public Result Delete(int id) => _journals.DeleteOwned(id, SourceKey);
+        public Result Delete(int id) =>
+            _journals.GetById(id) is { IsSuccess: true, Value.Source: OpeningStockService.SourceKey }
+                ? _stock.Delete(id)
+                : _journals.DeleteOwned(id, SourceKey);
 
         private CreateJournalDto Opening(CreateJournalDto dto) =>
             OpeningEntry.Prepare(dto, Setting(SettingKeys.Company.StartDate, dto.EntryDate), SourceKey, FixedDescription);

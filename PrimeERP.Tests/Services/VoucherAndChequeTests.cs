@@ -75,7 +75,7 @@ namespace PrimeERP.Tests.Services
             Assert.True(voucher.IsSuccess, voucher.ErrorMessage);
 
             var journals = _db.Services.GetRequiredService<IJournalService>();
-            var entry = journals.GetPaged(1, 50, new PrimeERP.Application.DTOs.Accounting.JournalFilter { Source = "ReceiptVoucher" });
+            var entry = journals.GetPaged(1, 50, new PrimeERP.Application.DTOs.Accounting.JournalFilter { Sources = new[] { "ReceiptVoucher" } });
             Assert.True(entry.IsSuccess, entry.ErrorMessage);
 
             var detail = journals.GetById(entry.Value.Items.First().Id).Value;

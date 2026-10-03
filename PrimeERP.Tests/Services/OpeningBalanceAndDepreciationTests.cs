@@ -390,7 +390,7 @@ namespace PrimeERP.Tests.Services
             Assert.True(created.IsSuccess, created.ErrorMessage);
 
             var entry = _db.Services.GetRequiredService<IJournalService>()
-                .GetPaged(1, 100, new PrimeERP.Application.DTOs.Accounting.JournalFilter { Source = "Assets" })
+                .GetPaged(1, 100, new PrimeERP.Application.DTOs.Accounting.JournalFilter { Sources = new[] { "Assets" } })
                 .Value.Items.Single();
 
             Assert.Equal(35000, entry.TotalDebit);

@@ -729,6 +729,15 @@
     <sys:String x:Key="Str.Journal.OpeningDescription">Opening balance</sys:String>
     <sys:String x:Key="Str.Journal.OwnedBySource">Cannot {0} an entry whose source is «{1}» from here. It is managed from its document</sys:String>
     <sys:String x:Key="Str.Journal.PostedLog">Posted entry {0}</sys:String>
+    <sys:String x:Key="Str.Journal.Source.AssetDepreciation">Depreciation</sys:String>
+    <sys:String x:Key="Str.Journal.Source.AssetDisposals">Asset disposal</sys:String>
+    <sys:String x:Key="Str.Journal.Source.AssetRevaluations">Asset revaluation</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Assets">Asset acquisition</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Cheque">Cheque</sys:String>
+    <sys:String x:Key="Str.Journal.Source.OpeningBalance">Opening account balances</sys:String>
+    <sys:String x:Key="Str.Journal.Source.OpeningStock">Opening item balances</sys:String>
+    <sys:String x:Key="Str.Journal.Source.PaymentVoucher">Payment voucher</sys:String>
+    <sys:String x:Key="Str.Journal.Source.ReceiptVoucher">Receipt voucher</sys:String>
     <sys:String x:Key="Str.Journal.Unbalanced">The entry is unbalanced: debit {0:N2}, credit {1:N2}, difference {2:N2}</sys:String>
     <sys:String x:Key="Str.Journal.UnpostedLog">Unposted entry {0}</sys:String>
     <sys:String x:Key="Str.Line.CodeNotFound">Code not found</sys:String>
@@ -1110,7 +1119,8 @@
     <sys:String x:Key="Str.Stock.Insufficient">The available balance is not enough for this movement</sys:String>
     <sys:String x:Key="Str.Stock.NoProducts">No products in the document</sys:String>
     <sys:String x:Key="Str.Stock.OpeningAccountMissing">Set the «Opening balances and adjustments» account in settings first</sys:String>
-    <sys:String x:Key="Str.Stock.OpeningDescription">Opening stock balance</sys:String>
+    <sys:String x:Key="Str.Stock.OpeningDescription">Opening item balances — {0}</sys:String>
+    <sys:String x:Key="Str.Stock.OpeningExists">Warehouse «{0}» already has an opening balance — edit it instead</sys:String>
     <sys:String x:Key="Str.Stock.WarehouseRequired">Warehouse is required</sys:String>
     <sys:String x:Key="Str.StockTransfer.SameWarehouse">The source and target warehouse cannot be the same</sys:String>
     <sys:String x:Key="Str.TopBar.ChangePassword">Change password</sys:String>

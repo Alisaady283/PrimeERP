@@ -54,5 +54,8 @@ namespace PrimeERP.Domain.Calculations
 
         /// <summary>تكلفة السطر وإلا تكلفة الصنف</summary>
         public static decimal LineCost(decimal given, decimal productCost) => given > 0 ? given : productCost;
+
+        /// <summary>الصرف ينقص والباقي يزيد</summary>
+        public static decimal Signed(MovementType type, decimal qty) => type == MovementType.Out ? -qty : qty;
     }
 }

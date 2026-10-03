@@ -52,7 +52,7 @@ namespace PrimeERP.Application.Services.Documents
             if (type != MovementType.Adjustment && qty <= 0) return Result.Fail(Localization.Get("Str.Document.QtyPositive"), ErrorCode.ValidationFailed);
 
             var currentBalance = _movements.GetBalance(productId, warehouseId, db);
-            var signedQty = type == MovementType.Out ? -qty : qty;
+            var signedQty = InventoryCosting.Signed(type, qty);
 
             if (currentBalance + signedQty < 0)
                 return Fail("Insufficient", ErrorCode.ValidationFailed);
@@ -71,6 +71,26 @@ namespace PrimeERP.Application.Services.Documents
 
         public void RemoveMovements(PrimeDbContext db, string sourceDocType, int sourceDocId) =>
             _movements.DeleteBySource(db, sourceDocType, sourceDocId);
+
+        /// <summary>أثر حركات المستند بإشارته</summary>
+        public IEnumerable<(int ProductId, int WarehouseId, decimal Delta)> Effects(string sourceDocType, int sourceDocId, int sign) =>
+            _movements.GetBySource(sourceDocType, sourceDocId)
+                .Select(m => (m.ProductId, m.WarehouseId, sign * InventoryCosting.Signed(m.MovementType, m.Qty)));
+
+        /// <summary>المخزون لا ينزل تحت الصفر</summary>
+        public Result StaysPositive(IEnumerable<(int ProductId, int WarehouseId, decimal Delta)> effects, PrimeDbContext db = null)
+        {
+            var falling = effects.GroupBy(e => (e.ProductId, e.WarehouseId))
+                .Select(g => (Pair: g.Key, Delta: g.Sum(e => e.Delta)))
+                .Where(x => x.Delta < 0)
+                .ToList();
+            if (falling.Count == 0) return Result.Ok();
+
+            var balances = _movements.BalancesOf(falling.Select(x => x.Pair).ToList(), db);
+            return falling.Any(x => balances.GetValueOrDefault(x.Pair) + x.Delta < 0)
+                ? Fail("Insufficient", ErrorCode.ValidationFailed)
+                : Result.Ok();
+        }
 
         public Result<List<StockMovement>> GetCostingHistory(int productId) =>
             Result.Ok(_movements.GetForCosting(productId));

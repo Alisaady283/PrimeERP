@@ -108,7 +108,7 @@ namespace PrimeERP.UI.ViewModels
             IToastService toast, IDialogService dialogs) : base(documents, permissions, toast, dialogs) { }
     }
 
-    /// <summary>الأرصدة الافتتاحية قيود بمصدر OpeningBalance</summary>
+    /// <summary>الأرصدة الافتتاحية: حساباتٌ وأصناف</summary>
     public class OpeningBalancesViewModel : CrudViewModelBase<JournalEntryDto, JournalFilter>
     {
         private readonly PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService _openings;

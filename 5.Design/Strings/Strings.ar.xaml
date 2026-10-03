@@ -729,6 +729,15 @@
     <sys:String x:Key="Str.Journal.OpeningDescription">رصيد أول المدة</sys:String>
     <sys:String x:Key="Str.Journal.OwnedBySource">لا يمكن {0} قيد مصدره «{1}» من هنا — تمّ من المستند نفسه</sys:String>
     <sys:String x:Key="Str.Journal.PostedLog">ترحيل قيد {0}</sys:String>
+    <sys:String x:Key="Str.Journal.Source.AssetDepreciation">إهلاك</sys:String>
+    <sys:String x:Key="Str.Journal.Source.AssetDisposals">استبعاد أصل</sys:String>
+    <sys:String x:Key="Str.Journal.Source.AssetRevaluations">إعادة تقييم أصل</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Assets">اقتناء أصل</sys:String>
+    <sys:String x:Key="Str.Journal.Source.Cheque">شيك</sys:String>
+    <sys:String x:Key="Str.Journal.Source.OpeningBalance">أرصدة حسابات افتتاحية</sys:String>
+    <sys:String x:Key="Str.Journal.Source.OpeningStock">أرصدة أصناف افتتاحية</sys:String>
+    <sys:String x:Key="Str.Journal.Source.PaymentVoucher">سند صرف</sys:String>
+    <sys:String x:Key="Str.Journal.Source.ReceiptVoucher">سند قبض</sys:String>
     <sys:String x:Key="Str.Journal.Unbalanced">القيد غير متزن: المدين {0:N2} والدائن {1:N2}، والفرق {2:N2}</sys:String>
     <sys:String x:Key="Str.Journal.UnpostedLog">إلغاء ترحيل قيد {0}</sys:String>
     <sys:String x:Key="Str.Line.CodeNotFound">كود غير موجود</sys:String>
@@ -1110,7 +1119,8 @@
     <sys:String x:Key="Str.Stock.Insufficient">الرصيد المتاح غير كافٍ لإتمام هذه الحركة</sys:String>
     <sys:String x:Key="Str.Stock.NoProducts">لا أصناف في المستند</sys:String>
     <sys:String x:Key="Str.Stock.OpeningAccountMissing">حدّد حساب «الأرصدة الافتتاحية والتسويات» من الإعدادات أولاً</sys:String>
-    <sys:String x:Key="Str.Stock.OpeningDescription">رصيد أول المدة للأصناف</sys:String>
+    <sys:String x:Key="Str.Stock.OpeningDescription">رصيد أول المدة للأصناف — {0}</sys:String>
+    <sys:String x:Key="Str.Stock.OpeningExists">للمخزن «{0}» رصيدٌ افتتاحي مسجَّل — عدّله بدل إضافة غيره</sys:String>
     <sys:String x:Key="Str.Stock.WarehouseRequired">المخزن مطلوب</sys:String>
     <sys:String x:Key="Str.StockTransfer.SameWarehouse">المخزن المصدر والهدف لا يمكن أن يكونا نفس المخزن</sys:String>
     <sys:String x:Key="Str.TopBar.ChangePassword">تغيير كلمة المرور</sys:String>

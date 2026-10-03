@@ -31,7 +31,7 @@ namespace PrimeERP.Composition.Renderers
             ICommand addCommand = definition.SingleRecord
                 ? new PrimeERP.UI.ViewModels.RelayCommand(
                     _ => vm.AddCommand.Execute(null),
-                    _ => ((System.Collections.IEnumerable)vm.Items).Cast<object>().Any() == false)
+                    _ => !((System.Collections.IEnumerable)vm.Items).Cast<object>().Any(row => DialogFor(definition, row) == definition.DocumentDialog))
                 : (ICommand)vm.AddCommand;
 
             var actions = new List<ToolbarAction>
@@ -132,7 +132,7 @@ namespace PrimeERP.Composition.Renderers
                 });
                 vm.EditRequested += (Action<object>)(item =>
                 {
-                    if (DocumentRenderer.ShowAndSave(definition.DocumentDialog, services, toast, item))
+                    if (DocumentRenderer.ShowAndSave(DialogFor(definition, item), services, toast, item))
                         vm.LoadCommand.Execute(null);
                 });
             }
@@ -167,5 +167,13 @@ namespace PrimeERP.Composition.Renderers
 
         private static List<object> Rows(dynamic vm) =>
             ((System.Collections.IEnumerable)vm.Items).Cast<object>().ToList();
+
+        /// <summary>محرّر الصفّ بنوعه</summary>
+        private static DocumentDialogDefinition DialogFor(ModuleDefinition definition, object row)
+        {
+            var kind = definition.RowKindProperty == null ? null
+                : row?.GetType().GetProperty(definition.RowKindProperty)?.GetValue(row) as string;
+            return definition.KindDialogs?.FirstOrDefault(d => d.DocumentKind == kind) ?? definition.DocumentDialog;
+        }
     }
 }

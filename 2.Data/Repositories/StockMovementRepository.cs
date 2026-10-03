@@ -29,6 +29,10 @@ namespace PrimeERP.Data.Repositories
 
         decimal? GetSourceUnitCost(string sourceDocType, int sourceDocId, int productId,
             PrimeDbContext db = null);
+
+        List<StockMovement> GetBySource(string sourceDocType, int sourceDocId, PrimeDbContext db = null);
+        Dictionary<(int ProductId, int WarehouseId), decimal> BalancesOf(IReadOnlyCollection<(int ProductId, int WarehouseId)> pairs, PrimeDbContext db = null);
+        bool AnyInWarehouse(string sourceDocType, int warehouseId, int exceptSourceId);
     }
 
     public class StockMovementRepository : RepositoryBase<StockMovement>, IStockMovementRepository
@@ -107,5 +111,26 @@ namespace PrimeERP.Data.Repositories
             PrimeDbContext db = null) =>
             One(q => q.Where(m => m.SourceDocType == sourceDocType && m.SourceDocId == sourceDocId
                                && m.ProductId == productId).OrderBy(m => m.Id), db)?.UnitCost;
+
+        public List<StockMovement> GetBySource(string sourceDocType, int sourceDocId, PrimeDbContext db = null) =>
+            Fetch(q => q.Where(m => m.SourceDocType == sourceDocType && m.SourceDocId == sourceDocId).OrderBy(m => m.Id), db);
+
+        /// <summary>أرصدة أزواجٍ بعينها</summary>
+        public Dictionary<(int ProductId, int WarehouseId), decimal> BalancesOf(IReadOnlyCollection<(int ProductId, int WarehouseId)> pairs,
+            PrimeDbContext db = null)
+        {
+            var products = pairs.Select(p => p.ProductId).Distinct().ToList();
+            var warehouses = pairs.Select(p => p.WarehouseId).Distinct().ToList();
+
+            return Scope(db, ctx => Rows(ctx).AsNoTracking()
+                .Where(m => products.Contains(m.ProductId) && warehouses.Contains(m.WarehouseId))
+                .GroupBy(m => new { m.ProductId, m.WarehouseId })
+                .Select(g => new { g.Key.ProductId, g.Key.WarehouseId, Balance = g.Sum(m => m.MovementType == MovementType.Out ? -m.Qty : m.Qty) })
+                .AsEnumerable()
+                .ToDictionary(x => (x.ProductId, x.WarehouseId), x => x.Balance));
+        }
+
+        public bool AnyInWarehouse(string sourceDocType, int warehouseId, int exceptSourceId) =>
+            Any(q => q.Where(m => m.SourceDocType == sourceDocType && m.WarehouseId == warehouseId && m.SourceDocId != exceptSourceId));
     }
 }
