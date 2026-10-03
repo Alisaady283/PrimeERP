@@ -79,6 +79,7 @@ namespace PrimeERP.Application.Legacy.Sales
         {
             var detail = ToDto<SalesInvoiceDetailDto>(head, _customers.NamesOf(new[] { head.CustomerId }), _warehouses.NamesOf(new[] { head.WarehouseId ?? 0 }));
             detail.Lines = TradeLines.ToDtos<SalesInvoiceLineDto>(_invoices.GetLines(head.Id));
+            Links.Attach(EntityName, head.Id, detail.Lines);
             return detail;
         }
 
@@ -90,7 +91,7 @@ namespace PrimeERP.Application.Legacy.Sales
             var partyAccount = _accountOf.Party(PartyKind.Customer, dto.CustomerId, "Str.Trade.CustomerAccountInvoice");
             if (partyAccount.IsFailure) return partyAccount.As<Func<PrimeDbContext, int>>();
 
-            var prepared = TradeLines.Prepare<SalesInvoiceLine>(_products, Links, dto.Lines, totals => TradeAccounts.Sales(Settings, totals));
+            var prepared = TradeLines.Prepare<SalesInvoiceLine>(_products, Links, EntityName, dto.Id, dto.Lines, totals => TradeAccounts.Sales(Settings, totals));
             if (prepared.IsFailure) return prepared.As<Func<PrimeDbContext, int>>();
             var (lines, totals, accounts) = prepared.Value;
 

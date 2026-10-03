@@ -36,6 +36,7 @@ namespace PrimeERP.Application.Services.Documents
         Result RecordPulls(PrimeDbContext db, string targetType, int targetId,
             IEnumerable<(IPullableLine Line, int TargetLineId, decimal Qty)> lines);
         Result RemovePull(string targetType, int targetId, PrimeDbContext db = null);
+        void Attach<TLine>(string targetType, int targetId, IEnumerable<TLine> lines) where TLine : class, ISourceLine, IPullableLine;
         Result<List<ChainNode>> GetChain(string docType, int docId);
     }
 
@@ -118,6 +119,15 @@ namespace PrimeERP.Application.Services.Documents
         {
             _links.DeleteByTarget(targetType, targetId, db);
             return Result.Ok();
+        }
+
+        /// <summary>مصدر كل سطرٍ مسحوب</summary>
+        public void Attach<TLine>(string targetType, int targetId, IEnumerable<TLine> lines) where TLine : class, ISourceLine, IPullableLine
+        {
+            var links = _links.GetByTarget(targetType, targetId).ToLookup(l => l.TargetLineId);
+            foreach (var line in lines)
+                if (links[line.Id].FirstOrDefault() is { } link)
+                    (line.SourceType, line.SourceId, line.SourceNo, line.SourceLineId) = (link.SourceType, link.SourceId, link.SourceNo, link.SourceLineId);
         }
 
         public Result<List<ChainNode>> GetChain(string docType, int docId)

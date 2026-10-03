@@ -75,6 +75,7 @@ namespace PrimeERP.Application.Legacy.Purchasing
         {
             var detail = ToDto<PurchaseReturnDetailDto>(head, _suppliers.NamesOf(new[] { head.SupplierId }));
             detail.Lines = TradeLines.ToDtos<PurchaseReturnLineDto>(_returns.GetLines(head.Id));
+            Links.Attach(EntityName, head.Id, detail.Lines);
             return detail;
         }
 
@@ -86,7 +87,7 @@ namespace PrimeERP.Application.Legacy.Purchasing
             var partyAccount = _accountOf.Party(PartyKind.Supplier, dto.SupplierId, "Str.Trade.SupplierAccountReturn");
             if (partyAccount.IsFailure) return partyAccount.As<Func<PrimeDbContext, int>>();
 
-            var prepared = TradeLines.Prepare<PurchaseReturnLine>(_products, Links, dto.Lines, totals => TradeAccounts.Purchases(Settings, totals));
+            var prepared = TradeLines.Prepare<PurchaseReturnLine>(_products, Links, EntityName, dto.Id, dto.Lines, totals => TradeAccounts.Purchases(Settings, totals));
             if (prepared.IsFailure) return prepared.As<Func<PrimeDbContext, int>>();
             var (lines, totals, accounts) = prepared.Value;
 

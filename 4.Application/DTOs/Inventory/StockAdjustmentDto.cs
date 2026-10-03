@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PrimeERP.Application.DTOs.Documents;
 
 namespace PrimeERP.Application.DTOs.Inventory
 {
@@ -15,12 +16,16 @@ namespace PrimeERP.Application.DTOs.Inventory
         public DateTime CreatedAt     { get; set; }
     }
 
-    public class StockAdjustmentDetailDto : StockAdjustmentDto
+    public class StockAdjustmentDetailDto : StockAdjustmentDto, ISourceDocument
     {
         public List<StockAdjustmentLineDto> Lines { get; set; } = new();
+
+        DateTime ISourceDocument.DocDate   => MovementDate;
+        string   ISourceDocument.PartyName => WarehouseName;
+        IEnumerable<ISourceLine> ISourceDocument.Lines => Lines;
     }
 
-    public class StockAdjustmentLineDto
+    public class StockAdjustmentLineDto : ISourceLine, IPullableLine
     {
         public int     Id          { get; set; }
         public int     LineNo      { get; set; }
@@ -29,6 +34,13 @@ namespace PrimeERP.Application.DTOs.Inventory
         public decimal Qty         { get; set; }
         public decimal UnitCost    { get; set; }
         public string  Notes       { get; set; }
+
+        public string  SourceType   { get; set; }
+        public int     SourceId     { get; set; }
+        public string  SourceNo     { get; set; }
+        public int     SourceLineId { get; set; }
+
+        decimal ISourceLine.UnitPrice => UnitCost;
     }
 
     public class CreateStockAdjustmentLineDto : PrimeERP.Application.DTOs.Documents.IPullableLine

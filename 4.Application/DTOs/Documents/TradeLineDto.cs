@@ -1,8 +1,9 @@
 namespace PrimeERP.Application.DTOs.Documents
 {
     /// <summary>سطر فاتورةٍ أو مرتجع</summary>
-    public class TradeLineDto
+    public class TradeLineDto : ISourceLine, IPullableLine
     {
+        public int     Id                 { get; set; }
         public int     LineNo             { get; set; }
         public string  ProductCode        { get; set; }
         public string  ProductName        { get; set; }
@@ -17,6 +18,11 @@ namespace PrimeERP.Application.DTOs.Documents
         public decimal LineTotal          { get; set; }
         public decimal NetAmount          { get; set; }
         public string  Notes              { get; set; }
+
+        public string  SourceType   { get; set; }
+        public int     SourceId     { get; set; }
+        public string  SourceNo     { get; set; }
+        public int     SourceLineId { get; set; }
     }
 
     /// <summary>سطر فاتورةٍ أو مرتجع مُدخَل</summary>

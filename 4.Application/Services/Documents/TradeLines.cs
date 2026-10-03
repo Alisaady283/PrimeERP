@@ -41,7 +41,7 @@ namespace PrimeERP.Application.Services.Documents
         public static List<TDto> ToDtos<TDto>(IEnumerable<DocumentLineBase> lines) where TDto : TradeLineDto, new() =>
             lines.Select(l => new TDto
             {
-                LineNo = l.LineNo, ProductCode = l.ProductCode, ProductName = l.ProductName, Qty = l.Qty,
+                Id = l.Id, LineNo = l.LineNo, ProductCode = l.ProductCode, ProductName = l.ProductName, Qty = l.Qty,
                 UnitPrice = l.UnitPrice,
                 DiscountPercent = l.DiscountPercent, DiscountAmount = l.DiscountAmount,
                 VatPercent = l.VatPercent, VatAmount = l.VatAmount,
@@ -51,10 +51,10 @@ namespace PrimeERP.Application.Services.Documents
 
         /// <summary>السطور ثم السحب ثم الحسابات</summary>
         public static Result<(List<TLine> Lines, LineAmounts Totals, TradeAccounts Accounts)> Prepare<TLine>(
-            IProductRepository products, IDocumentPull links, IReadOnlyList<CreateTradeLineDto> input,
+            IProductRepository products, IDocumentPull links, string targetType, int targetId, IReadOnlyList<CreateTradeLineDto> input,
             Func<LineAmounts, Result<TradeAccounts>> accountsOf) where TLine : DocumentLineBase, new() =>
             Resolve<TLine>(products, input).Then(resolved =>
-                links.ValidatePulls(input.Select(l => ((IPullableLine)l, l.Qty)))
+                links.ValidatePulls(input.Select(l => ((IPullableLine)l, l.Qty)), targetType, targetId)
                     .Then(() => accountsOf(resolved.Totals))
                     .Then(accounts => Result.Ok((resolved.Lines, resolved.Totals, accounts))));
     }

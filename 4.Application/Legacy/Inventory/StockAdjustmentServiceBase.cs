@@ -82,6 +82,7 @@ namespace PrimeERP.Application.Legacy.Inventory
         {
             var detail = ToDto<StockAdjustmentDetailDto>(head, _warehouses.NamesOf(new[] { head.WarehouseId }), Repo.TotalQty(new[] { head.Id }));
             detail.Lines = Repo.GetLines(head.Id).Select(l => Rows.Copy(l, new StockAdjustmentLineDto())).ToList();
+            Links.Attach(EntityName, head.Id, detail.Lines);
             return detail;
         }
 
@@ -96,7 +97,7 @@ namespace PrimeERP.Application.Legacy.Inventory
                     to.UnitCost = InventoryCosting.LineCost(l.UnitCost, product.CostPrice);
                 })));
             if (lines.IsFailure) return lines.As<Func<PrimeDbContext, int>>();
-            var pulls = Links.ValidatePulls(dto.Lines.Select(l => ((IPullableLine)l, l.Qty)));
+            var pulls = Links.ValidatePulls(dto.Lines.Select(l => ((IPullableLine)l, l.Qty)), EntityName, dto.Id);
             if (pulls.IsFailure) return pulls.As<Func<PrimeDbContext, int>>();
             var resolved = lines.Value;
 

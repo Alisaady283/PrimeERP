@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PrimeERP.Application.DTOs.Documents;
 
 namespace PrimeERP.Application.DTOs.Sales
 {
@@ -20,9 +21,14 @@ namespace PrimeERP.Application.DTOs.Sales
         public DateTime CreatedAt    { get; set; }
     }
 
-    public class SalesReturnDetailDto : SalesReturnDto
+    public class SalesReturnDetailDto : SalesReturnDto, ISourceDocument
     {
         public List<SalesReturnLineDto> Lines { get; set; } = new();
+
+        string   ISourceDocument.DocNo     => ReturnNo;
+        DateTime ISourceDocument.DocDate   => ReturnDate;
+        string   ISourceDocument.PartyName => CustomerName;
+        IEnumerable<ISourceLine> ISourceDocument.Lines => Lines;
     }
 
     public class SalesReturnLineDto : PrimeERP.Application.DTOs.Documents.TradeLineDto { }

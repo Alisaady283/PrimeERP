@@ -17,12 +17,14 @@ namespace PrimeERP.Application.DTOs.Documents
         public DateTime CreatedAt { get; set; }
     }
 
-    public class CycleDocumentDetailDto : CycleDocumentDto
+    public class CycleDocumentDetailDto : CycleDocumentDto, ISourceDocument
     {
         public List<CycleDocumentLineDto> Lines { get; set; } = new();
+
+        IEnumerable<ISourceLine> ISourceDocument.Lines => Lines;
     }
 
-    public class CycleDocumentLineDto : IPullableLine
+    public class CycleDocumentLineDto : ISourceLine, IPullableLine
     {
         public int     Id          { get; set; }
         public int     LineNo      { get; set; }

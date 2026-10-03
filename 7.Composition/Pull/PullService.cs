@@ -4,11 +4,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using PrimeERP.Application.DTOs.Documents;
 using PrimeERP.Application.Legacy.Documents;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Domain.Results;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Composition.Pull
 {
@@ -71,27 +73,27 @@ namespace PrimeERP.Composition.Pull
                 if (!Matches(header, source.MatchFields, matchValues)) continue;
 
                 var id = (int)ReadValue(header, "Id");
-                var detail = ReadValue(Invoke(service, "GetById", id), "Value");
-                if (detail == null) continue;
+                var value = ReadValue(Invoke(service, "GetById", id), "Value");
+                if (value == null) continue;
+                if (value is not ISourceDocument detail)
+                    return Result.Fail<List<PullCandidate>>(LocalizationService.Get("Str.Document.NotPullSource", source.SourceKind), ErrorCode.ValidationFailed);
 
                 var pulled = Links.GetPulledBySource(source.SourceKind, id);
                 var lines = new List<PullCandidateLine>();
 
-                foreach (var line in (IEnumerable)ReadValue(detail, "Lines") ?? Array.Empty<object>())
+                foreach (var line in detail.Lines)
                 {
-                    var lineId = (int)ReadValue(line, "Id");
-                    var qty = Convert.ToDecimal(ReadValue(line, "Qty"));
-                    var already = pulled.TryGetValue(lineId, out var p) ? p : 0m;
-                    var remaining = qty - already;
+                    var already = pulled.TryGetValue(line.Id, out var p) ? p : 0m;
+                    var remaining = line.Qty - already;
                     if (remaining <= 0) continue;   // المسحوب بالكامل لا يظهر أصلاً في نافذة السحب
 
                     lines.Add(new PullCandidateLine
                     {
-                        SourceLineId = lineId,
-                        ProductCode  = ReadValue(line, "ProductCode") as string,
-                        ProductName  = ReadValue(line, "ProductName") as string,
-                        OriginalQty  = qty, PulledQty = already, RemainingQty = remaining,
-                        UnitValue    = Convert.ToDecimal(ReadValue(line, "UnitPrice") ?? ReadValue(line, "UnitCost") ?? 0m)
+                        SourceLineId = line.Id,
+                        ProductCode  = line.ProductCode,
+                        ProductName  = line.ProductName,
+                        OriginalQty  = line.Qty, PulledQty = already, RemainingQty = remaining,
+                        UnitValue    = line.UnitPrice
                     });
                 }
 
@@ -100,9 +102,7 @@ namespace PrimeERP.Composition.Pull
                 candidates.Add(new PullCandidate
                 {
                     SourceType = source.SourceKind, SourceId = id,
-                    SourceNo = ReadValue(detail, "DocNo") as string,
-                    DocDate = Convert.ToDateTime(ReadValue(detail, "DocDate") ?? ReadValue(detail, "MovementDate")),
-                    PartyName = ReadValue(detail, "PartyName") as string ?? ReadValue(detail, "WarehouseName") as string,
+                    SourceNo = detail.DocNo, DocDate = detail.DocDate, PartyName = detail.PartyName,
                     HeaderValues = ReadHeaderValues(detail),
                     Lines = lines
                 });
@@ -116,14 +116,9 @@ namespace PrimeERP.Composition.Pull
             var service = ResolveService(sourceType);
             if (service == null) return 0m;
 
-            var detail = ReadValue(Invoke(service, "GetById", sourceId), "Value");
-            if (detail == null) return 0m;
-
-            foreach (var line in (IEnumerable)ReadValue(detail, "Lines") ?? Array.Empty<object>())
-                if ((int)ReadValue(line, "Id") == sourceLineId)
-                    return Convert.ToDecimal(ReadValue(line, "Qty"));
-
-            return 0m;
+            return ReadValue(Invoke(service, "GetById", sourceId), "Value") is ISourceDocument detail
+                ? detail.Lines.FirstOrDefault(l => l.Id == sourceLineId)?.Qty ?? 0m
+                : 0m;
         }
 
         private static readonly string[] HeaderKeys = { "PartyId", "CustomerId", "SupplierId", "WarehouseId" };
