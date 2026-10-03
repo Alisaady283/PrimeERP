@@ -6,6 +6,7 @@ using PrimeERP.Application.Services.Core;
 using PrimeERP.Application.Services.Entities;
 using PrimeERP.Data.Core;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Application.Services.Ledger;
 using System;
 using System.Collections.Generic;
