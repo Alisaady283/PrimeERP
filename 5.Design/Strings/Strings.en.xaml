@@ -686,6 +686,8 @@
     <sys:String x:Key="Str.Journal.PostedLog">Posted entry {0}</sys:String>
     <sys:String x:Key="Str.Journal.Unbalanced">The entry is unbalanced: debit {0:N2}, credit {1:N2}, difference {2:N2}</sys:String>
     <sys:String x:Key="Str.Journal.UnpostedLog">Unposted entry {0}</sys:String>
+    <sys:String x:Key="Str.Net.DownloadFailed">Download failed ({0})</sys:String>
+    <sys:String x:Key="Str.Net.ServerFailed">Could not reach the server ({0})</sys:String>
     <sys:String x:Key="Str.Payroll.AccountsMissing">Payroll accounts are not set in settings. Set salary and allowance expenses and the three payables</sys:String>
     <sys:String x:Key="Str.Payroll.AdvanceAccountMissing">No advance account is linked to «{0}», so the advance cannot be deducted</sys:String>
     <sys:String x:Key="Str.Payroll.AlreadyPosted">The payroll is already posted</sys:String>

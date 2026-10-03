@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Platform.Net
 {
@@ -41,7 +42,7 @@ namespace PrimeERP.Platform.Net
 
                 var error = body.ValueKind == JsonValueKind.Object && body.TryGetProperty("error", out var message)
                     ? message.GetString()
-                    : $"تعذّر الاتصال بالخادم ({(int)response.StatusCode})";
+                    : LocalizationService.Get("Str.Net.ServerFailed", (int)response.StatusCode);
 
                 return (false, error, body);
             }
@@ -57,7 +58,7 @@ namespace PrimeERP.Platform.Net
             {
                 using var response = await _client
                     .GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-                if (!response.IsSuccessStatusCode) return (false, $"تعذّر التنزيل ({(int)response.StatusCode})");
+                if (!response.IsSuccessStatusCode) return (false, LocalizationService.Get("Str.Net.DownloadFailed", (int)response.StatusCode));
 
                 var total = response.Content.Headers.ContentLength ?? 0;
                 Directory.CreateDirectory(Path.GetDirectoryName(targetPath) ?? ".");

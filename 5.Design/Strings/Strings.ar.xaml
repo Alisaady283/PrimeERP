@@ -686,6 +686,8 @@
     <sys:String x:Key="Str.Journal.PostedLog">ترحيل قيد {0}</sys:String>
     <sys:String x:Key="Str.Journal.Unbalanced">القيد غير متزن: المدين {0:N2} والدائن {1:N2}، والفرق {2:N2}</sys:String>
     <sys:String x:Key="Str.Journal.UnpostedLog">إلغاء ترحيل قيد {0}</sys:String>
+    <sys:String x:Key="Str.Net.DownloadFailed">تعذّر التنزيل ({0})</sys:String>
+    <sys:String x:Key="Str.Net.ServerFailed">تعذّر الاتصال بالخادم ({0})</sys:String>
     <sys:String x:Key="Str.Payroll.AccountsMissing">حسابات المسير غير مضبوطة في الإعدادات — اضبط مصروف الرواتب والبدلات والمستحقّات الثلاثة</sys:String>
     <sys:String x:Key="Str.Payroll.AdvanceAccountMissing">لا حساب سلفة مرتبط بـ«{0}» — لا يمكن قطع سلفته</sys:String>
     <sys:String x:Key="Str.Payroll.AlreadyPosted">المسير مُرحَّل بالفعل</sys:String>
