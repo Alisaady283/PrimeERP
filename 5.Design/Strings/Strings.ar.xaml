@@ -656,6 +656,7 @@
     <sys:String x:Key="Str.Document.NotPullSource">المستند {0} لا يُسحَب منه</sys:String>
     <sys:String x:Key="Str.Document.PartyRequired">الطرف إلزامي في هذا المستند</sys:String>
     <sys:String x:Key="Str.Document.PickFirst">اختر مستنداً أولاً</sys:String>
+    <sys:String x:Key="Str.Document.PricePositive">السعر يجب أن يكون أكبر من صفر</sys:String>
     <sys:String x:Key="Str.Document.ProductCodeNotFound">الصنف بالكود {0} غير موجود</sys:String>
     <sys:String x:Key="Str.Document.PullExceeds">الكمية المسحوبة ({0:N2}) تتجاوز المتبقي ({1:N2}) في {2}</sys:String>
     <sys:String x:Key="Str.Document.QtyPositive">الكمية يجب أن تكون أكبر من صفر</sys:String>

@@ -85,7 +85,7 @@ namespace PrimeERP.Application.Legacy.Sales
 
         protected override Result<Func<PrimeDbContext, int>> Plan(CreateSalesInvoiceDto dto)
         {
-            var shape = DocumentLines.Check(dto.Lines, l => l.Qty, "Str.Trade.InvoiceNoLines");
+            var shape = DocumentLines.Check(dto.Lines, l => l.Qty, "Str.Trade.InvoiceNoLines", l => l.UnitPrice);
             if (shape.IsFailure) return shape.As<Func<PrimeDbContext, int>>();
 
             var partyAccount = _accountOf.Party(PartyKind.Customer, dto.CustomerId, "Str.Trade.CustomerAccountInvoice");

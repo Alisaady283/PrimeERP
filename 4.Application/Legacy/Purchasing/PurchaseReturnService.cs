@@ -81,7 +81,7 @@ namespace PrimeERP.Application.Legacy.Purchasing
 
         protected override Result<Func<PrimeDbContext, int>> Plan(CreatePurchaseReturnDto dto)
         {
-            var shape = DocumentLines.Check(dto.Lines, l => l.Qty, "Str.Trade.ReturnNoLines");
+            var shape = DocumentLines.Check(dto.Lines, l => l.Qty, "Str.Trade.ReturnNoLines", l => l.UnitPrice);
             if (shape.IsFailure) return shape.As<Func<PrimeDbContext, int>>();
 
             var partyAccount = _accountOf.Party(PartyKind.Supplier, dto.SupplierId, "Str.Trade.SupplierAccountReturn");

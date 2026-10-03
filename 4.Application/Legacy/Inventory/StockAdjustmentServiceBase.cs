@@ -88,15 +88,14 @@ namespace PrimeERP.Application.Legacy.Inventory
 
         protected override Result<Func<PrimeDbContext, int>> Plan(CreateStockAdjustmentDto dto)
         {
-            var shape = DocumentLines.Check(dto.Lines, l => l.Qty);
-            if (shape.IsFailure) return shape.As<Func<PrimeDbContext, int>>();
-
             var lines = ProductLines.Resolve(_products, dto.Lines, l => l.ProductCode, (l, product, _) =>
                 Result.Ok(Rows.Copy(l, new StockAdjustmentLine(), to =>
                 {
                     to.UnitCost = InventoryCosting.LineCost(l.UnitCost, product.CostPrice);
                 })));
             if (lines.IsFailure) return lines.As<Func<PrimeDbContext, int>>();
+            var shape = DocumentLines.Check(lines.Value, l => l.Qty, price: l => l.UnitCost);
+            if (shape.IsFailure) return shape.As<Func<PrimeDbContext, int>>();
             var pulls = Links.ValidatePulls(dto.Lines.Select(l => ((IPullableLine)l, l.Qty)), EntityName, dto.Id);
             if (pulls.IsFailure) return pulls.As<Func<PrimeDbContext, int>>();
             var resolved = lines.Value;

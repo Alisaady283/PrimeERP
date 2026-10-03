@@ -42,15 +42,15 @@ namespace PrimeERP.Application.Legacy.Documents
         private readonly IProductRepository _products;
         private readonly INumberSequenceService _numbers;
         private readonly string _sequenceKey, _permissionPrefix, _entityName;
-        private readonly bool _partyRequired;
+        private readonly bool _partyRequired, _pricesRequired;
 
         protected CycleDocumentServiceBase(TRepo repo, IProductRepository products, INumberSequenceService numbers,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
-            IDocumentPull links, string sequenceKey, string permissionPrefix, string entityName, bool partyRequired)
+            IDocumentPull links, string sequenceKey, string permissionPrefix, string entityName, bool partyRequired, bool pricesRequired)
             : base(permissions, settings, localization, audit, links)
         {
             Repo = repo; _products = products; _numbers = numbers;
-            _sequenceKey = sequenceKey; _permissionPrefix = permissionPrefix; _entityName = entityName; _partyRequired = partyRequired;
+            _sequenceKey = sequenceKey; _permissionPrefix = permissionPrefix; _entityName = entityName; _partyRequired = partyRequired; _pricesRequired = pricesRequired;
         }
 
         protected override string PermissionPrefix => _permissionPrefix;
@@ -86,7 +86,8 @@ namespace PrimeERP.Application.Legacy.Documents
 
         protected override Result<Func<PrimeDbContext, int>> Plan(CreateCycleDocumentDto dto)
         {
-            var shape = DocumentLines.Check(dto.Lines, l => l.Qty);
+            var shape = DocumentLines.Check(dto.Lines, l => l.Qty,
+                price: _pricesRequired ? l => l.UnitPrice : (Func<CreateCycleDocumentLineDto, decimal>)null);
             if (shape.IsFailure) return shape.As<Func<PrimeDbContext, int>>();
             var party = Check.Valid(dto, new Field<CreateCycleDocumentDto>(x => x.PartyId, "", Must: d => !_partyRequired || d.PartyId != null,
                 Message: "Str.Document.PartyRequired"));
@@ -133,7 +134,7 @@ namespace PrimeERP.Application.Legacy.Documents
         public PurchaseRequestService(IPurchaseRequestRepository repo, IProductRepository products, INumberSequenceService numbers,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
             IAuditLogger audit, IDocumentPull links)
-            : base(repo, products, numbers, permissions, settings, localization, audit, links, "PurchaseRequest", "Purchases", "PurchaseRequest", partyRequired: false) { }
+            : base(repo, products, numbers, permissions, settings, localization, audit, links, "PurchaseRequest", "Purchases", "PurchaseRequest", partyRequired: false, pricesRequired: false) { }
     }
 
     public class PurchaseOrderService : CycleDocumentServiceBase<IPurchaseOrderRepository>, IPurchaseOrderService
@@ -141,7 +142,7 @@ namespace PrimeERP.Application.Legacy.Documents
         public PurchaseOrderService(IPurchaseOrderRepository repo, IProductRepository products, INumberSequenceService numbers,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
             IAuditLogger audit, IDocumentPull links)
-            : base(repo, products, numbers, permissions, settings, localization, audit, links, "PurchaseOrder", "Purchases", "PurchaseOrder", partyRequired: true) { }
+            : base(repo, products, numbers, permissions, settings, localization, audit, links, "PurchaseOrder", "Purchases", "PurchaseOrder", partyRequired: true, pricesRequired: true) { }
     }
 
     public class QuotationService : CycleDocumentServiceBase<IQuotationRepository>, IQuotationService
@@ -149,7 +150,7 @@ namespace PrimeERP.Application.Legacy.Documents
         public QuotationService(IQuotationRepository repo, IProductRepository products, INumberSequenceService numbers,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
             IAuditLogger audit, IDocumentPull links)
-            : base(repo, products, numbers, permissions, settings, localization, audit, links, "Quotation", "Sales", "Quotation", partyRequired: false) { }
+            : base(repo, products, numbers, permissions, settings, localization, audit, links, "Quotation", "Sales", "Quotation", partyRequired: false, pricesRequired: true) { }
     }
 
     public class SalesOrderService : CycleDocumentServiceBase<ISalesOrderRepository>, ISalesOrderService
@@ -157,6 +158,6 @@ namespace PrimeERP.Application.Legacy.Documents
         public SalesOrderService(ISalesOrderRepository repo, IProductRepository products, INumberSequenceService numbers,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
             IAuditLogger audit, IDocumentPull links)
-            : base(repo, products, numbers, permissions, settings, localization, audit, links, "SalesOrder", "Sales", "SalesOrder", partyRequired: true) { }
+            : base(repo, products, numbers, permissions, settings, localization, audit, links, "SalesOrder", "Sales", "SalesOrder", partyRequired: true, pricesRequired: true) { }
     }
 }

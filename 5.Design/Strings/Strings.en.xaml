@@ -656,6 +656,7 @@
     <sys:String x:Key="Str.Document.NotPullSource">{0} is not a pull source</sys:String>
     <sys:String x:Key="Str.Document.PartyRequired">The party is required in this document</sys:String>
     <sys:String x:Key="Str.Document.PickFirst">Choose a document first</sys:String>
+    <sys:String x:Key="Str.Document.PricePositive">The price must be greater than zero</sys:String>
     <sys:String x:Key="Str.Document.ProductCodeNotFound">Product with code {0} not found</sys:String>
     <sys:String x:Key="Str.Document.PullExceeds">The pulled quantity ({0:N2}) exceeds the remaining ({1:N2}) in {2}</sys:String>
     <sys:String x:Key="Str.Document.QtyPositive">Quantity must be greater than zero</sys:String>
