@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using PrimeERP.Application.DTOs.Documents;
 using PrimeERP.Composition.Definitions;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Modules
 {
@@ -9,53 +10,56 @@ namespace PrimeERP.Modules
     {
         public static List<PullSource> IntoPurchaseOrder() => new()
         {
-            ByParty("PurchaseRequest", "سحب من طلب شراء", Purchases),
+            ByParty("PurchaseRequest", Purchases),
         };
 
         public static List<PullSource> IntoSalesOrder() => new()
         {
-            ByParty("Quotation", "سحب من عرض سعر", Sales),
+            ByParty("Quotation", Sales),
         };
 
         public static List<PullSource> IntoPurchaseInvoice() => new()
         {
-            Unmatched("GoodsReceipt", "سحب من إذن استلام", Purchases),
+            Unmatched("GoodsReceipt", Purchases),
         };
 
         public static List<PullSource> IntoSalesInvoice() => new()
         {
-            Unmatched("DeliveryNote", "سحب من إذن صرف", Sales),
+            Unmatched("DeliveryNote", Sales),
         };
 
         public static List<PullSource> IntoPurchaseReturn() => new()
         {
-            By("PurchaseInvoices", "سحب من فاتورة شراء", Purchases, "SupplierId"),
+            By("PurchaseInvoices", Purchases, "SupplierId"),
         };
 
         public static List<PullSource> IntoSalesReturn() => new()
         {
-            By("SalesInvoices", "سحب من فاتورة بيع", Sales, "CustomerId"),
+            By("SalesInvoices", Sales, "CustomerId"),
         };
 
-        public static PullSource IntoStockVoucher(string sourceKind, string label) =>
-            Unmatched(sourceKind, label, "Inventory.Create");
+        public static PullSource IntoStockVoucher(string sourceKind) =>
+            Unmatched(sourceKind, "Inventory.Create");
 
         private const string Sales     = "Sales.Create";
         private const string Purchases = "Purchases.Create";
 
-        private static PullSource ByParty(string sourceKind, string label, string permissionKey) =>
-            By(sourceKind, label, permissionKey, nameof(CreateCycleDocumentDto.PartyId));
+        private static PullSource ByParty(string sourceKind, string permissionKey) =>
+            By(sourceKind, permissionKey, nameof(CreateCycleDocumentDto.PartyId));
 
-        private static PullSource By(string sourceKind, string label, string permissionKey, string matchField) => new()
+        private static PullSource By(string sourceKind, string permissionKey, string matchField) => new()
         {
-            SourceKind = sourceKind, Label = label, PermissionKey = permissionKey,
+            SourceKind = sourceKind, Label = LabelOf(sourceKind), PermissionKey = permissionKey,
             MatchFields = new List<string> { matchField },
         };
 
-        private static PullSource Unmatched(string sourceKind, string label, string permissionKey) => new()
+        private static PullSource Unmatched(string sourceKind, string permissionKey) => new()
         {
-            SourceKind = sourceKind, Label = label, PermissionKey = permissionKey,
+            SourceKind = sourceKind, Label = LabelOf(sourceKind), PermissionKey = permissionKey,
             MatchFields = new List<string>(),
         };
+
+        /// <summary>عنوان السحب من مصدره</summary>
+        private static string LabelOf(string sourceKind) => LocalizationService.Get($"Str.Pull.From.{sourceKind}");
     }
 }

@@ -13,7 +13,7 @@ namespace PrimeERP.Modules
     {
         internal static void Register(IModuleRegistry registry, string key, string titleKey, Type viewModel, Type service,
             FlowScope scope, StockEffect stock = StockEffect.None, PullSource pullSource = null,
-            string printTitle = null, string addTitleKey = null, string editTitleKey = null, bool allowPost = true)
+            string printTitleKey = null, string addTitleKey = null, string editTitleKey = null, bool allowPost = true)
         {
             registry.Register(new ModuleDefinition
             {
@@ -28,7 +28,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
-                    PrintTitle = printTitle,
+                    PrintTitleKey = printTitleKey,
                     TitleKey = addTitleKey ?? titleKey, TitleEditKey = editTitleKey ?? titleKey,
                     DocumentKind = pullSource == null ? null : key,
                     ServiceType = service, DtoType = typeof(CreateStockAdjustmentDto), LineDtoType = typeof(CreateStockAdjustmentLineDto),

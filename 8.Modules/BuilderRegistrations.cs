@@ -246,16 +246,16 @@ namespace PrimeERP.Modules
         private static async Task<Result> CustomerInstaller(IServiceProvider services, int licenseId)
         {
             var license = Licensed(services, licenseId);
-            if (license == null) return Result.Fail("اختر العميل أولاً", ErrorCode.ValidationFailed);
+            if (license == null) return Result.Fail(LocalizationService.Get("Str.Builder.PickCustomer"), ErrorCode.ValidationFailed);
 
             var folder = FolderOutput.Pick(LocalizationService.Get("Str.Builder.ChooseFolder"));
-            if (string.IsNullOrWhiteSpace(folder)) return Result.Fail("لم يُختَر مجلد", ErrorCode.ValidationFailed);
+            if (string.IsNullOrWhiteSpace(folder)) return Result.Fail(LocalizationService.Get("Str.Builder.NoFolder"), ErrorCode.ValidationFailed);
 
             var server = services.GetRequiredService<Platform.Settings.ISettingsProvider>()
                 .Get(Platform.Settings.SettingKeys.Developer.ServerUrl, "").TrimEnd('/');
 
             if (string.IsNullOrWhiteSpace(server))
-                return Result.Fail("اضبط عنوان خادم التراخيص من الإعدادات", ErrorCode.ValidationFailed);
+                return Result.Fail(LocalizationService.Get("Str.Builder.ServerUrlMissing"), ErrorCode.ValidationFailed);
 
             var target = System.IO.Path.Combine(folder, "PrimeERP.Setup.exe");
             var http = services.GetRequiredService<Platform.Net.IHttpGateway>();
@@ -266,7 +266,7 @@ namespace PrimeERP.Modules
             var progress = new Progress<double>(percent => handle.Report(percent, LocalizationService.Get("Str.Builder.Installer")));
 
             var (ok, error) = await http.DownloadAsync($"{server}/package/PrimeERP.Setup.exe", target, progress);
-            if (!ok) return Result.Fail($"تعذّر تنزيل المنصِّب: {error}", ErrorCode.Unexpected);
+            if (!ok) return Result.Fail(LocalizationService.Get("Str.Builder.SetupDownloadFailed", error), ErrorCode.Unexpected);
 
             await System.IO.File.WriteAllTextAsync(System.IO.Path.Combine(folder, "serial.txt"), license.Serial);
 
@@ -372,7 +372,7 @@ namespace PrimeERP.Modules
             List<TreeNodeViewModel> roots)
         {
             var license = Licensed(services, licenseId);
-            if (license == null) return Result.Fail("اختر العميل أولاً", ErrorCode.ValidationFailed);
+            if (license == null) return Result.Fail(LocalizationService.Get("Str.Builder.PickCustomer"), ErrorCode.ValidationFailed);
 
             var keys = roots.SelectMany(section => section.Children)
                 .Where(page => page.CheckState == NodeCheckState.Checked)

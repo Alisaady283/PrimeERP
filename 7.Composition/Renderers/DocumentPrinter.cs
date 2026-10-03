@@ -157,7 +157,7 @@ namespace PrimeERP.Composition.Renderers
             if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
 
             var document = result.GetType().GetProperty("Value").GetValue(result);
-            var title = def.PrintTitle ?? LocalizationService.Get(definition.TitleKey);
+            var title = LocalizationService.Get(def.PrintTitleKey ?? definition.TitleKey);
 
             var printable = document is PrimeERP.Application.DTOs.Vouchers.VoucherDetailDto voucher
                 ? VoucherDocument(voucher, definition.Key == "Receipts", settings)

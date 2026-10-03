@@ -20,11 +20,11 @@ namespace PrimeERP.Modules
 
             Register(registry, "CustomerBalances", "Str.Module.CustomerBalances",
                 typeof(IPartyReportService), nameof(IPartyReportService.CustomerBalances),
-                StandardFields.DateRange(), PartyBalanceColumns("المبيعات", "المقبوضات"));
+                StandardFields.DateRange(), PartyBalanceColumns(LocalizationService.Get("Str.Reports.Sales"), LocalizationService.Get("Str.Reports.Receipts")));
 
             Register(registry, "SupplierBalances", "Str.Module.SupplierBalances",
                 typeof(IPartyReportService), nameof(IPartyReportService.SupplierBalances),
-                StandardFields.DateRange(), PartyBalanceColumns("المشتريات", "المدفوعات"));
+                StandardFields.DateRange(), PartyBalanceColumns(LocalizationService.Get("Str.Reports.Purchases"), LocalizationService.Get("Str.Reports.Payments")));
 
             Register(registry, "StockBalances", "Str.Module.StockBalances",
                 typeof(IStockReportService), nameof(IStockReportService.Balances),
@@ -156,12 +156,12 @@ namespace PrimeERP.Modules
             {
                 new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(TrialBalanceRow.Code), Width = 110 },
                 new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(TrialBalanceRow.Name), Width = 240, IsStarWidth = true },
-                Money(debit,  nameof(TrialBalanceRow.OpeningDebit),  "الأرصدة الافتتاحية"),
-                Money(credit, nameof(TrialBalanceRow.OpeningCredit), "الأرصدة الافتتاحية"),
-                Money(debit,  nameof(TrialBalanceRow.PeriodDebit),   "الحركة خلال الفترة"),
-                Money(credit, nameof(TrialBalanceRow.PeriodCredit),  "الحركة خلال الفترة"),
-                Money(debit,  nameof(TrialBalanceRow.ClosingDebit),  "الأرصدة الختامية"),
-                Money(credit, nameof(TrialBalanceRow.ClosingCredit), "الأرصدة الختامية"),
+                Money(debit,  nameof(TrialBalanceRow.OpeningDebit),  LocalizationService.Get("Str.Reports.OpeningGroup")),
+                Money(credit, nameof(TrialBalanceRow.OpeningCredit), LocalizationService.Get("Str.Reports.OpeningGroup")),
+                Money(debit,  nameof(TrialBalanceRow.PeriodDebit),   LocalizationService.Get("Str.Reports.PeriodGroup")),
+                Money(credit, nameof(TrialBalanceRow.PeriodCredit),  LocalizationService.Get("Str.Reports.PeriodGroup")),
+                Money(debit,  nameof(TrialBalanceRow.ClosingDebit),  LocalizationService.Get("Str.Reports.ClosingGroup")),
+                Money(credit, nameof(TrialBalanceRow.ClosingCredit), LocalizationService.Get("Str.Reports.ClosingGroup")),
             };
         }
 
@@ -169,10 +169,10 @@ namespace PrimeERP.Modules
         {
             new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(PartyBalanceRow.Code), Width = 110 },
             new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(PartyBalanceRow.Name), Width = 240, IsStarWidth = true },
-            Money("رصيد أول المدة", nameof(PartyBalanceRow.Opening)),
+            Money(LocalizationService.Get("Str.Reports.OpeningBalance"), nameof(PartyBalanceRow.Opening)),
             Money(chargeLabel,      nameof(PartyBalanceRow.Charged)),
             Money(settleLabel,      nameof(PartyBalanceRow.Settled)),
-            Money("رصيد آخر المدة", nameof(PartyBalanceRow.Closing)),
+            Money(LocalizationService.Get("Str.Reports.ClosingBalance"), nameof(PartyBalanceRow.Closing)),
         };
 
         private static List<GridColumn> StockBalanceColumns() => new()
@@ -180,10 +180,10 @@ namespace PrimeERP.Modules
             new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(StockBalanceRow.ProductCode), Width = 110 },
             new() { Header = LocalizationService.Get("Str.Product"), Binding = nameof(StockBalanceRow.ProductName), Width = 220, IsStarWidth = true },
             new() { Header = LocalizationService.Get("Str.Warehouse"), Binding = nameof(StockBalanceRow.WarehouseName), Width = 150 },
-            Money("رصيد أول المدة", nameof(StockBalanceRow.Opening)),
-            Money("الوارد",         nameof(StockBalanceRow.In)),
-            Money("المنصرف",        nameof(StockBalanceRow.Out)),
-            Money("رصيد آخر المدة", nameof(StockBalanceRow.Closing)),
+            Money(LocalizationService.Get("Str.Reports.OpeningBalance"), nameof(StockBalanceRow.Opening)),
+            Money(LocalizationService.Get("Str.Reports.In"), nameof(StockBalanceRow.In)),
+            Money(LocalizationService.Get("Str.Reports.Out"), nameof(StockBalanceRow.Out)),
+            Money(LocalizationService.Get("Str.Reports.ClosingBalance"), nameof(StockBalanceRow.Closing)),
         };
 
         private static List<GridColumn> StatementColumns() => new()
@@ -198,18 +198,18 @@ namespace PrimeERP.Modules
 
         private static List<GridColumn> PayslipColumns() => new()
         {
-            new() { Header = "المسير", Binding = nameof(PayslipRow.PayrollNo), Width = 110 },
-            new() { Header = "الفترة", Binding = nameof(PayslipRow.Period), Width = 180, IsStarWidth = true },
-            Money("الأساسي", nameof(PayslipRow.BasicSalary)),
-            Money("البدلات", nameof(PayslipRow.Allowances)),
-            Money("الإضافي", nameof(PayslipRow.Overtime)),
-            Money("الاستحقاقات", nameof(PayslipRow.Gross)),
-            Money("الخصومات", nameof(PayslipRow.Deductions)),
-            Money("السلف", nameof(PayslipRow.Advances)),
-            Money("التأمينات", nameof(PayslipRow.Insurance)),
-            Money("الضرائب", nameof(PayslipRow.Tax)),
-            Money("الاستقطاعات", nameof(PayslipRow.Withheld)),
-            Money("صافي الراتب", nameof(PayslipRow.NetSalary)),
+            new() { Header = LocalizationService.Get("Str.Payroll.No"), Binding = nameof(PayslipRow.PayrollNo), Width = 110 },
+            new() { Header = LocalizationService.Get("Str.Period"), Binding = nameof(PayslipRow.Period), Width = 180, IsStarWidth = true },
+            Money(LocalizationService.Get("Str.Payroll.Basic"), nameof(PayslipRow.BasicSalary)),
+            Money(LocalizationService.Get("Str.Allowances"), nameof(PayslipRow.Allowances)),
+            Money(LocalizationService.Get("Str.Payroll.Overtime"), nameof(PayslipRow.Overtime)),
+            Money(LocalizationService.Get("Str.Payroll.Gross"), nameof(PayslipRow.Gross)),
+            Money(LocalizationService.Get("Str.Payroll.Deductions"), nameof(PayslipRow.Deductions)),
+            Money(LocalizationService.Get("Str.Payroll.Advances"), nameof(PayslipRow.Advances)),
+            Money(LocalizationService.Get("Str.Payroll.Insurance"), nameof(PayslipRow.Insurance)),
+            Money(LocalizationService.Get("Str.Payroll.Tax"), nameof(PayslipRow.Tax)),
+            Money(LocalizationService.Get("Str.Deductions"), nameof(PayslipRow.Withheld)),
+            Money(LocalizationService.Get("Str.Payroll.Net"), nameof(PayslipRow.NetSalary)),
         };
 
         private static List<GridColumn> ItemCardColumns() => new()
@@ -217,17 +217,17 @@ namespace PrimeERP.Modules
             new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(ItemCardRow.Date), Width = 95 },
             new() { Header = LocalizationService.Get("Str.SourceDoc"), Binding = nameof(ItemCardRow.SourceDoc), Width = 120, IsStarWidth = true },
 
-            Money("وارد: كمية", nameof(ItemCardRow.InQty)),
-            Money("وارد: سعر",  nameof(ItemCardRow.InPrice)),
-            Money("وارد: قيمة", nameof(ItemCardRow.InValue)),
+            Money(LocalizationService.Get("Str.Reports.InQty"), nameof(ItemCardRow.InQty)),
+            Money(LocalizationService.Get("Str.Reports.InPrice"), nameof(ItemCardRow.InPrice)),
+            Money(LocalizationService.Get("Str.Reports.InValue"), nameof(ItemCardRow.InValue)),
 
-            Money("منصرف: كمية", nameof(ItemCardRow.OutQty)),
-            Money("منصرف: سعر",  nameof(ItemCardRow.OutPrice)),
-            Money("منصرف: قيمة", nameof(ItemCardRow.OutValue)),
+            Money(LocalizationService.Get("Str.Reports.OutQty"), nameof(ItemCardRow.OutQty)),
+            Money(LocalizationService.Get("Str.Reports.OutPrice"), nameof(ItemCardRow.OutPrice)),
+            Money(LocalizationService.Get("Str.Reports.OutValue"), nameof(ItemCardRow.OutValue)),
 
-            Money("الرصيد: كمية", nameof(ItemCardRow.BalanceQty)),
-            Money("الرصيد: سعر",  nameof(ItemCardRow.BalancePrice)),
-            Money("الرصيد: قيمة", nameof(ItemCardRow.BalanceValue)),
+            Money(LocalizationService.Get("Str.Reports.BalanceQty"), nameof(ItemCardRow.BalanceQty)),
+            Money(LocalizationService.Get("Str.Reports.BalancePrice"), nameof(ItemCardRow.BalancePrice)),
+            Money(LocalizationService.Get("Str.Reports.BalanceValue"), nameof(ItemCardRow.BalanceValue)),
         };
 
         private static List<GridColumn> StockMovementColumns() => new()

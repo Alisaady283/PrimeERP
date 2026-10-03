@@ -172,7 +172,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
-                    PrintTitle = "قيد يومية",
+                    PrintTitleKey = "Str.Print.Title.Journal",
                     TitleKey = "Str.Journals.Add",
                     TitleEditKey = "Str.Journals.Edit",
                     ServiceType = typeof(IJournalService),
@@ -366,7 +366,7 @@ namespace PrimeERP.Modules
                 {
                     new()
                     {
-                        Label = "احتساب الإهلاك", Variant = "primary", PermissionKey = "Assets.Create",
+                        Label = LocalizationService.Get("Str.Module.AssetDepreciations"), Variant = "primary", PermissionKey = "Assets.Create",
                         RequiresSelection = false,
                         Execute = (services, _) => services
                             .GetRequiredService<PrimeERP.Application.Legacy.Assets.IAssetDepreciationService>()
@@ -582,7 +582,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
-                    PrintTitle = "فاتورة مبيعات",
+                    PrintTitleKey = "Str.Print.Title.SalesInvoice",
                     PrintColumns = TradePaper.Columns(),
                     PrintTotals = TradePaper.Totals(),
                     LineMath = TradePaper.LineMath(),
@@ -602,9 +602,9 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateSalesInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
                         new() { Key = nameof(CreateSalesInvoiceLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
                         new() { Key = nameof(CreateSalesInvoiceLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
-                        new() { Key = nameof(CreateSalesInvoiceLineDto.DiscountPercent), Header = "خصم %", Kind = FieldKind.Number, Width = 70 },
-                        new() { Key = nameof(CreateSalesInvoiceLineDto.VatPercent), Header = "ق.مضافة %", Kind = FieldKind.Number, Width = 80 },
-                        new() { Key = nameof(CreateSalesInvoiceLineDto.WithholdingPercent), Header = "خ.إضافة %", Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreateSalesInvoiceLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
+                        new() { Key = nameof(CreateSalesInvoiceLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreateSalesInvoiceLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
                         TradePaper.NetColumn(),
                         new() { Key = nameof(CreateSalesInvoiceLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
@@ -624,7 +624,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
-                    PrintTitle = "فاتورة مشتريات",
+                    PrintTitleKey = "Str.Print.Title.PurchaseInvoice",
                     PrintColumns = TradePaper.Columns(),
                     PrintTotals = TradePaper.Totals(),
                     LineMath = TradePaper.LineMath(),
@@ -644,9 +644,9 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
-                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.DiscountPercent), Header = "خصم %", Kind = FieldKind.Number, Width = 70 },
-                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.VatPercent), Header = "ق.مضافة %", Kind = FieldKind.Number, Width = 80 },
-                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.WithholdingPercent), Header = "خ.إضافة %", Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
                         TradePaper.NetColumn(),
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
@@ -665,7 +665,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
-                    PrintTitle = "مرتجع مبيعات",
+                    PrintTitleKey = "Str.Print.Title.SalesReturn",
                     PrintColumns = TradePaper.Columns(),
                     PrintTotals = TradePaper.Totals(),
                     LineMath = TradePaper.LineMath(),
@@ -685,9 +685,9 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateSalesReturnLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
                         new() { Key = nameof(CreateSalesReturnLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
                         new() { Key = nameof(CreateSalesReturnLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
-                        new() { Key = nameof(CreateSalesReturnLineDto.DiscountPercent), Header = "خصم %", Kind = FieldKind.Number, Width = 70 },
-                        new() { Key = nameof(CreateSalesReturnLineDto.VatPercent), Header = "ق.مضافة %", Kind = FieldKind.Number, Width = 80 },
-                        new() { Key = nameof(CreateSalesReturnLineDto.WithholdingPercent), Header = "خ.إضافة %", Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreateSalesReturnLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
+                        new() { Key = nameof(CreateSalesReturnLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreateSalesReturnLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
                         TradePaper.NetColumn(),
                         new() { Key = nameof(CreateSalesReturnLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
@@ -706,7 +706,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
-                    PrintTitle = "مرتجع مشتريات",
+                    PrintTitleKey = "Str.Print.Title.PurchaseReturn",
                     PrintColumns = TradePaper.Columns(),
                     PrintTotals = TradePaper.Totals(),
                     LineMath = TradePaper.LineMath(),
@@ -726,9 +726,9 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreatePurchaseReturnLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
                         new() { Key = nameof(CreatePurchaseReturnLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, IsRequired = true },
                         new() { Key = nameof(CreatePurchaseReturnLineDto.UnitPrice), Header = LocalizationService.Get("Str.UnitPrice"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
-                        new() { Key = nameof(CreatePurchaseReturnLineDto.DiscountPercent), Header = "خصم %", Kind = FieldKind.Number, Width = 70 },
-                        new() { Key = nameof(CreatePurchaseReturnLineDto.VatPercent), Header = "ق.مضافة %", Kind = FieldKind.Number, Width = 80 },
-                        new() { Key = nameof(CreatePurchaseReturnLineDto.WithholdingPercent), Header = "خ.إضافة %", Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreatePurchaseReturnLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
+                        new() { Key = nameof(CreatePurchaseReturnLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreatePurchaseReturnLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
                         TradePaper.NetColumn(),
                         new() { Key = nameof(CreatePurchaseReturnLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
@@ -736,10 +736,10 @@ namespace PrimeERP.Modules
             });
 
             StockDocumentFactory.Register(registry, "StockIn", "Str.Module.StockIn", typeof(StockInViewModel), typeof(IStockInService),
-                FlowScope.SimplifiedOnly, printTitle: "إذن إضافة مخزني", addTitleKey: "Str.StockIn.Add", editTitleKey: "Str.StockIn.Edit");
+                FlowScope.SimplifiedOnly, printTitleKey: "Str.Print.Title.StockIn", addTitleKey: "Str.StockIn.Add", editTitleKey: "Str.StockIn.Edit");
 
             StockDocumentFactory.Register(registry, "StockOut", "Str.Module.StockOut", typeof(StockOutViewModel), typeof(IStockOutService),
-                FlowScope.SimplifiedOnly, printTitle: "إذن صرف مخزني", addTitleKey: "Str.StockOut.Add", editTitleKey: "Str.StockOut.Edit");
+                FlowScope.SimplifiedOnly, printTitleKey: "Str.Print.Title.StockOut", addTitleKey: "Str.StockOut.Add", editTitleKey: "Str.StockOut.Edit");
 
             registry.Register(new ModuleDefinition
             {
@@ -753,7 +753,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
-                    PrintTitle = "إذن تحويل مخزني",
+                    PrintTitleKey = "Str.Print.Title.StockTransfer",
                     TitleKey = "Str.StockTransfer.Add", TitleEditKey = "Str.StockTransfer.Edit",
                     ServiceType = typeof(IStockTransferService), DtoType = typeof(CreateStockTransferDto), LineDtoType = typeof(CreateStockTransferLineDto),
                     LinesPropertyName = nameof(CreateStockTransferDto.Lines),
@@ -786,7 +786,7 @@ namespace PrimeERP.Modules
                 RowActions = PayrollRowActions(),
                 DocumentDialog = new DocumentDialogDefinition
                 {
-                    PrintTitle = "كشف رواتب",
+                    PrintTitleKey = "Str.Print.Title.Payroll",
                     TitleKey = "Str.Payroll.Add", TitleEditKey = "Str.Payroll.Edit",
                     ServiceType = typeof(IPayrollService), DtoType = typeof(CreatePayrollDto), LineDtoType = typeof(CreatePayrollLineDto),
                     LinesPropertyName = nameof(CreatePayrollDto.Lines),
@@ -802,12 +802,12 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreatePayrollLineDto.EmployeeCode), Header = LocalizationService.Get("Str.Employee"), Kind = FieldKind.Picker, Width = 200, IsRequired = true, PickerType = "Employee" },
                         new() { Key = nameof(CreatePayrollLineDto.BasicSalary), Header = LocalizationService.Get("Str.BasicSalary"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
                         new() { Key = nameof(CreatePayrollLineDto.Allowances), Header = LocalizationService.Get("Str.Allowances"), Kind = FieldKind.Number, Width = 90 },
-                        new() { Key = nameof(CreatePayrollLineDto.Overtime), Header = "الإضافي", Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Overtime), Header = LocalizationService.Get("Str.Payroll.Overtime"), Kind = FieldKind.Number, Width = 90 },
                         new() { Key = nameof(CreatePayrollLineDto.Deductions), Header = LocalizationService.Get("Str.Deductions"), Kind = FieldKind.Number, Width = 90 },
-                        new() { Key = nameof(CreatePayrollLineDto.Advances), Header = "السلف", Kind = FieldKind.Number, Width = 90 },
-                        new() { Key = nameof(CreatePayrollLineDto.Insurance), Header = "التأمينات", Kind = FieldKind.Number, Width = 90 },
-                        new() { Key = nameof(CreatePayrollLineDto.Tax), Header = "الضرائب", Kind = FieldKind.Number, Width = 90 },
-                        new() { Key = nameof(CreatePayrollLineDto.NetSalary), Header = "صافي المبلغ", Kind = FieldKind.ReadOnly, Width = 110 },
+                        new() { Key = nameof(CreatePayrollLineDto.Advances), Header = LocalizationService.Get("Str.Payroll.Advances"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Insurance), Header = LocalizationService.Get("Str.Payroll.Insurance"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Tax), Header = LocalizationService.Get("Str.Payroll.Tax"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.NetSalary), Header = LocalizationService.Get("Str.Print.NetAmount"), Kind = FieldKind.ReadOnly, Width = 110 },
                         new() { Key = nameof(CreatePayrollLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 120 },
                     }
                 }
@@ -830,7 +830,7 @@ namespace PrimeERP.Modules
                 {
                     new()
                     {
-                        Label = "أرصدة الأصناف الافتتاحية", Variant = "secondary",
+                        Label = LocalizationService.Get("Str.Module.OpeningStock"), Variant = "secondary",
                         PermissionKey = PermissionKeys.Inventory.OpeningStock,
                         RequiresSelection = false,
                         Execute = (services, _) =>
@@ -843,7 +843,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = new DocumentDialogDefinition
                 {
-                    PrintTitle = "قيد أرصدة افتتاحية",
+                    PrintTitleKey = "Str.Print.Title.Opening",
                     TitleKey = "Str.Module.OpeningBalances", TitleEditKey = "Str.Module.OpeningBalances",
                     ServiceType = typeof(PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService),
                     DtoType = typeof(CreateJournalDto), LineDtoType = typeof(CreateJournalLineDto),
@@ -874,7 +874,7 @@ namespace PrimeERP.Modules
 
         private static DocumentDialogDefinition OpeningStockDialog() => new()
         {
-            TitleKey = "أرصدة الأصناف الافتتاحية", TitleEditKey = "أرصدة الأصناف الافتتاحية",
+            TitleKey = "Str.Module.OpeningStock", TitleEditKey = "Str.Module.OpeningStock",
             ServiceType = typeof(PrimeERP.Application.Legacy.Inventory.IOpeningStockService),
             DtoType = typeof(CreateOpeningStockDto), LineDtoType = typeof(CreateOpeningStockLineDto),
             LinesPropertyName = nameof(CreateOpeningStockDto.Lines), DocumentKind = "OpeningStock",
@@ -889,7 +889,7 @@ namespace PrimeERP.Modules
             {
                 new() { Key = nameof(CreateOpeningStockLineDto.ProductId), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 260, IsRequired = true, PickerType = "Product" },
                 new() { Key = nameof(CreateOpeningStockLineDto.Qty), Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 120 },
-                new() { Key = nameof(CreateOpeningStockLineDto.UnitCost), Header = "سعر التكلفة", Kind = FieldKind.Number, Width = 120 },
+                new() { Key = nameof(CreateOpeningStockLineDto.UnitCost), Header = LocalizationService.Get("Str.CostPrice"), Kind = FieldKind.Number, Width = 120 },
                 new() { Key = nameof(CreateOpeningStockLineDto.Value), Header = LocalizationService.Get("Str.Balance"), Kind = FieldKind.ReadOnly, Width = 120 },
                 new() { Key = nameof(CreateOpeningStockLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
             },
@@ -902,13 +902,13 @@ namespace PrimeERP.Modules
         {
             new()
             {
-                Label = "ترحيل", Variant = "primary", PermissionKey = PermissionKeys.HR.PaySalary,
+                Label = LocalizationService.Get("Str.Action.Post"), Variant = "primary", PermissionKey = PermissionKeys.HR.PaySalary,
                 AppliesTo = item => IsPosted(item) is false,
                 Execute = (services, item) => services.GetRequiredService<IPayrollService>().Post(IdOf(item))
             },
             new()
             {
-                Label = "إلغاء الترحيل", Variant = "secondary", PermissionKey = PermissionKeys.HR.PaySalary,
+                Label = LocalizationService.Get("Str.Action.Unpost"), Variant = "secondary", PermissionKey = PermissionKeys.HR.PaySalary,
                 AppliesTo = item => IsPosted(item) is true,
                 Execute = (services, item) => services.GetRequiredService<IPayrollService>().Unpost(IdOf(item))
             }

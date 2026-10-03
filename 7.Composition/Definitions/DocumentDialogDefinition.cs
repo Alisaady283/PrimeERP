@@ -66,7 +66,7 @@ namespace PrimeERP.Composition.Definitions
         public required List<FieldDefinition> HeaderFields { get; init; }
         public required List<LineFieldDefinition> LineFields { get; init; }
 
-        public string PrintTitle { get; init; }
+        public string PrintTitleKey { get; init; }
 
         public List<PrintColumnDefinition> PrintColumns { get; init; }
 

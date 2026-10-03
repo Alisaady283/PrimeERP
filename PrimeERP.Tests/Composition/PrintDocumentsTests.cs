@@ -6,6 +6,7 @@ using PrimeERP.Composition.Registry;
 using PrimeERP.Domain.Contracts;
 using PrimeERP.Platform.Permissions;
 using Xunit;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Tests.Composition
 {
@@ -50,7 +51,7 @@ namespace PrimeERP.Tests.Composition
             var table = PrintDocuments.Trade(definition, "فاتورة مبيعات", invoice)
                 .BuildSections().Single(s => s.Type == PrintSectionType.Table);
 
-            Assert.Contains(table.Columns, c => c.Key == "ProductCode" && c.Header == "الكود");
+            Assert.Contains(table.Columns, c => c.Key == "ProductCode" && c.Header == LocalizationService.Get("Str.Code"));
             Assert.Contains(table.Columns, c => c.Key == "ProductName");
 
             Assert.Equal("صنف أول", table.Rows[0]["ProductName"]);

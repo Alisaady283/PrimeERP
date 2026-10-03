@@ -35,7 +35,7 @@ namespace PrimeERP.Tests.Composition
                     if (field.Key.EndsWith("Code") && printed.Contains(field.Key[..^4] + "Name")) continue;
                     if (field.Key.EndsWith("Percent") && printed.Contains(field.Key[..^7] + "Amount")) continue;
 
-                    missing.Add($"{definition.PrintTitle}: {field.Key}");
+                    missing.Add($"{definition.PrintTitleKey}: {field.Key}");
                 }
             }
 

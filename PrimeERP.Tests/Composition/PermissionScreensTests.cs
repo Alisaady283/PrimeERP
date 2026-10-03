@@ -7,6 +7,7 @@ using PrimeERP.Modules;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Components.Tree;
 using Xunit;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Tests.Composition
 {
@@ -80,7 +81,7 @@ namespace PrimeERP.Tests.Composition
 
             var inherited = keyNodes.First(n => n.Id == "Suppliers.View");
             Assert.Equal(NodeCheckState.Inherited, inherited.CheckState);
-            Assert.Equal("(من الدور)", inherited.InheritedHint);
+            Assert.Equal(LocalizationService.Get("Str.Permissions.FromRole"), inherited.InheritedHint);
 
             keyNodes.First(n => n.Id == "Suppliers.View").CheckState = NodeCheckState.Revoked;
             keyNodes.First(n => n.Id == "Products.Create").CheckState = NodeCheckState.Granted;

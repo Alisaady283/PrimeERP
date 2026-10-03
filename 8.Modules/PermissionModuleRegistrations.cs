@@ -7,6 +7,7 @@ using PrimeERP.Composition.Registry;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Components.Tree;
+using PrimeERP.Platform.Localization;
 
 namespace PrimeERP.Modules
 {
@@ -18,13 +19,13 @@ namespace PrimeERP.Modules
             registry.Register(new ModuleDefinition
             {
                 Key = "RolePermissions",
-                TitleKey = "صلاحيات الأدوار",
+                TitleKey = "Str.Module.RolePermissions",
                 PermissionPrefix = "Users",
                 LayoutKind = LayoutKind.TreeCheckList,
                 TreeCheckList = new TreeCheckListDefinition
                 {
-                    TitleKey = "صلاحيات الأدوار",
-                    SourceLabelKey = "الدور",
+                    TitleKey = "Str.Module.RolePermissions",
+                    SourceLabelKey = "Str.Role",
                     Mode = TreeCheckMode.TwoState,
                     SourceItems = services => services.GetRequiredService<IPermissionStore>().GetAllRoles()
                         .Select(r => new SourceOption { Id = r.Id, Display = r.NameAr })
@@ -52,12 +53,12 @@ namespace PrimeERP.Modules
                     {
                         new()
                         {
-                            TextKey = "تحديد الكل",
+                            TextKey = "Str.SelectAll",
                             Run = (_, __, nodes) => SetAll(nodes, NodeCheckState.Checked)
                         },
                         new()
                         {
-                            TextKey = "إلغاء الكل",
+                            TextKey = "Str.ClearAll",
                             Run = (_, __, nodes) => SetAll(nodes, NodeCheckState.Unchecked)
                         },
                     }
@@ -67,13 +68,13 @@ namespace PrimeERP.Modules
             registry.Register(new ModuleDefinition
             {
                 Key = "UserPermissions",
-                TitleKey = "صلاحيات المستخدمين",
+                TitleKey = "Str.Module.UserPermissions",
                 PermissionPrefix = "Users",
                 LayoutKind = LayoutKind.TreeCheckList,
                 TreeCheckList = new TreeCheckListDefinition
                 {
-                    TitleKey = "صلاحيات المستخدمين",
-                    SourceLabelKey = "المستخدم",
+                    TitleKey = "Str.Module.UserPermissions",
+                    SourceLabelKey = "Str.User",
                     Mode = TreeCheckMode.ThreeState,
                     SourceItems = services => services.GetRequiredService<IPermissionStore>().GetAllUsers()
                         .Select(u => new SourceOption { Id = u.Id, Display = u.DisplayName })
@@ -95,7 +96,7 @@ namespace PrimeERP.Modules
                             if (node.CheckState != NodeCheckState.Inherited) continue;
 
                             node.InheritedAllowed = admin.IsInheritedFromRole(userId, node.Id);
-                            node.InheritedHint = node.InheritedAllowed ? "(من الدور)" : "";
+                            node.InheritedHint = node.InheritedAllowed ? LocalizationService.Get("Str.Permissions.FromRole") : "";
                         }
 
                         SyncModules(roots, NodeCheckState.Granted);
@@ -120,7 +121,7 @@ namespace PrimeERP.Modules
                     {
                         new()
                         {
-                            TextKey = "إعادة الكل للموروث",
+                            TextKey = "Str.Permissions.ResetInherited",
                             Run = (_, __, nodes) => SetAll(nodes, NodeCheckState.Inherited)
                         },
                     }

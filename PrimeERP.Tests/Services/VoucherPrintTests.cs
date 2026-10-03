@@ -8,6 +8,8 @@ using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Xunit;
+using PrimeERP.Platform.Localization;
+using PrimeERP.Tests.Helpers;
 
 namespace PrimeERP.Tests.Services
 {
@@ -68,39 +70,39 @@ namespace PrimeERP.Tests.Services
                 .First(text => text.StartsWith(label + " :"));
 
         [Theory]
-        [InlineData(true, "استلمنا من السيد")]
-        [InlineData(false, "صرفنا إلى السيد")]
-        public void EachLineRunsToTheEdge_WithDots(bool isReceipt, string partyLabel)
+        [InlineData(true, "Str.Print.ReceivedFrom")]
+        [InlineData(false, "Str.Print.PaidTo")]
+        public void EachLineRunsToTheEdge_WithDots(bool isReceipt, string partyKey)
         {
             var printable = Build(isReceipt);
 
-            Assert.Contains("2026-09-13", LineText(printable, "التاريخ"));
-            Assert.Contains("محمد أحمد", LineText(printable, partyLabel));
-            Assert.Contains("دفعة تحت الحساب", LineText(printable, "وذلك عن"));
+            Assert.Contains("2026-09-13", LineText(printable, LocalizationService.Get("Str.Date")));
+            Assert.Contains("محمد أحمد", LineText(printable, LocalizationService.Get(partyKey)));
+            Assert.Contains("دفعة تحت الحساب", LineText(printable, LocalizationService.Get("Str.Print.For")));
 
         }
 
         [Fact]
         public void TheAmountInWords_SitsOnItsOwnLine()
         {
-            Assert.Contains("جنيه", LineText(Build(isReceipt: true), "مبلغاً وقدره"));
-            Assert.Contains("لا غير", LineText(Build(isReceipt: true), "مبلغاً وقدره"));
+            Assert.Contains("جنيه", LineText(Build(isReceipt: true), LocalizationService.Get("Str.Print.AmountOf")));
+            Assert.True(Localized.Says(LineText(Build(isReceipt: true), LocalizationService.Get("Str.Print.AmountOf")), "Str.Print.WordsOnly"));
         }
 
         [Fact]
         public void AMissingValue_LeavesTheLineToFillByHand()
         {
-            var line = LineText(Build(isReceipt: true, party: null, reason: null), "وذلك عن");
+            var line = LineText(Build(isReceipt: true, party: null, reason: null), LocalizationService.Get("Str.Print.For"));
 
-            Assert.Equal("وذلك عن : ", line);
+            Assert.Equal(LocalizationService.Get("Str.Print.For") + " : ", line);
         }
 
         [Fact]
         public void TheChequeAndItsBank_ShareOneLine()
         {
-            var line = LineText(Build(isReceipt: true), "نقداً / شيك رقم");
+            var line = LineText(Build(isReceipt: true), LocalizationService.Get("Str.Print.CashOrCheque"));
 
-            Assert.Contains("مسحوب على بنك", line);
+            Assert.Contains(LocalizationService.Get("Str.Print.DrawnOn"), line);
             Assert.Contains("الخزينة الرئيسية", line);
         }
 
@@ -123,19 +125,19 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void ReceiptSignsTwice_AndPaymentThrice()
         {
-            Assert.Equal(new[] { "المحاسب", "الاعتماد" }, Build(isReceipt: true).SignatureLabels);
-            Assert.Equal(new[] { "المستلِم", "المحاسب", "الاعتماد" }, Build(isReceipt: false).SignatureLabels);
+            Assert.Equal(new[] { LocalizationService.Get("Str.Print.Accountant"), LocalizationService.Get("Str.Print.Approval") }, Build(isReceipt: true).SignatureLabels);
+            Assert.Equal(new[] { LocalizationService.Get("Str.Print.Receiver"), LocalizationService.Get("Str.Print.Accountant"), LocalizationService.Get("Str.Print.Approval") }, Build(isReceipt: false).SignatureLabels);
         }
 
         [Theory]
-        [InlineData("GoodsReceipt", new[] { "أمين المخزن", "الاعتماد" })]
-        [InlineData("DeliveryNote", new[] { "المستلِم", "أمين المخزن", "الاعتماد" })]
-        public void StockVouchers_SignAtTheStore(string moduleKey, string[] expected)
+        [InlineData("GoodsReceipt", new[] { "Str.Print.Storekeeper", "Str.Print.Approval" })]
+        [InlineData("DeliveryNote", new[] { "Str.Print.Receiver", "Str.Print.Storekeeper", "Str.Print.Approval" })]
+        public void StockVouchers_SignAtTheStore(string moduleKey, string[] expectedKeys)
         {
             var module = _db.Services.GetRequiredService<PrimeERP.Composition.Registry.IModuleRegistry>().Get(moduleKey);
             Assert.NotNull(module);
 
-            Assert.Equal(expected, DocumentPrinter.StockSignatures(module.DocumentDialog));
+            Assert.Equal(expectedKeys.Select(k => LocalizationService.Get(k)), DocumentPrinter.StockSignatures(module.DocumentDialog));
         }
 
         [Fact]

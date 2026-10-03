@@ -16,16 +16,16 @@ namespace PrimeERP.Modules
         public static void RegisterAll(IModuleRegistry registry)
         {
             Register(registry, "GoodsReceipt", "Str.Module.GoodsReceipt", typeof(GoodsReceiptViewModel), typeof(IGoodsReceiptService),
-                StockEffect.In, CycleFlow.IntoStockVoucher("PurchaseOrder", "سحب من أمر شراء"));
+                StockEffect.In, CycleFlow.IntoStockVoucher("PurchaseOrder"));
 
             Register(registry, "GoodsIssue", "Str.Module.GoodsIssue", typeof(GoodsIssueViewModel), typeof(IGoodsIssueService),
-                StockEffect.Out, CycleFlow.IntoStockVoucher("PurchaseReturns", "سحب من مرتجع شراء"));
+                StockEffect.Out, CycleFlow.IntoStockVoucher("PurchaseReturns"));
 
             Register(registry, "DeliveryNote", "Str.Module.DeliveryNote", typeof(DeliveryNoteViewModel), typeof(IDeliveryNoteService),
-                StockEffect.Out, CycleFlow.IntoStockVoucher("SalesOrder", "سحب من أمر توريد"));
+                StockEffect.Out, CycleFlow.IntoStockVoucher("SalesOrder"));
 
             Register(registry, "SalesReceipt", "Str.Module.SalesReceipt", typeof(SalesReceiptViewModel), typeof(ISalesReceiptService),
-                StockEffect.In, CycleFlow.IntoStockVoucher("SalesReturns", "سحب من مرتجع بيع"));
+                StockEffect.In, CycleFlow.IntoStockVoucher("SalesReturns"));
         }
 
         private static void Register(IModuleRegistry registry, string key, string title, Type viewModel, Type service,
