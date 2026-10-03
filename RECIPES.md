@@ -186,7 +186,20 @@ RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Ed
 
 ---
 
-## ١١) تعديل موجود
+## ١١) سحب مستندٍ من آخر
+
+```
+المصدر: تفصيله يُعلن ISourceDocument وسطره ISourceLine (أسماؤه المختلفة تُربط صراحةً)
+   → الهدف: سطر تفصيله يُعلن IPullableLine، وToDetail يستدعي Links.Attach
+   → خدمة الهدف: ValidatePulls(…, EntityName, dto.Id) ثم RecordPulls في المعاملة، وRemovePull في الحذف
+   → الإعلان: PullSource في 8.Modules/CycleFlow، ومفتاح المصدر مفتاح وحدته
+```
+
+`PullService` يقرأ العقد وحده، فمصدرٌ لا يُعلنه يُرفض برسالة `Str.Document.NotPullSource`. ولا اسمٌ يُضاف إلى المحرّك ليقرأ مستنداً بعينه.
+
+---
+
+## ١٢) تعديل موجود
 
 1. افحص الآلية الصحيحة لهذا النوع أولاً.
 2. بناءٌ في غير موضعه أو نسخةٌ يدوية من مشترك: يُحذَف ويُعاد بناؤه سليماً.

@@ -54,13 +54,13 @@
 | حركة أصل | `AssetMovementServiceBase<…>` | `Write` في المعاملة و`Undo` و`EntryOf` |
 | ما سواها | `ServiceBase` | — |
 
-والقطع المشتركة في `Services/Ledger`: `Posting` (قيدٌ يُنشأ مُرحَّلاً، وعكسه، وحارسه) · `JournalLines` (سطور القيد) · `Guards` (له أبناء، له قيود، النقدية) · `Accounts/*` (الحساب: في الشجرة، للكيان، بالاتجاهين، ومع مجمّعه) · `PartyBalance` (رصيد الطرف من حسابه). وفي `Services/Documents`: `TradeEntry` و`TwoSided` في `Ledger` لأطراف القيد بالمعاملات، و`StatusChange` للحالة التي تعمل كترحيل، و`TradeLines.Prepare` يحلّ سطور الفاتورة أو المرتجع ومجاميعها ثم سحبها ثم حساباتها من `TradeAccounts` بدالةٍ تمرّرها الخدمة.
+والقطع المشتركة في `Services/Ledger`: `Posting` (قيدٌ يُنشأ مُرحَّلاً، وعكسه، وحارسه) · `JournalLines` (سطور القيد) · `Guards` (له أبناء، له قيود، النقدية) · `Accounts/*` (الحساب: في الشجرة، للكيان، بالاتجاهين، ومع مجمّعه) · `AccountBalances` (رصيد الحساب وطرفه معاً، يستدعيه `Entries` مع كل قيد). وفي `Services/Documents`: `TradeEntry` و`TwoSided` في `Ledger` لأطراف القيد بالمعاملات، و`StatusChange` للحالة التي تعمل كترحيل، و`TradeLines.Prepare` يحلّ سطور الفاتورة أو المرتجع ومجاميعها ثم سحبها (مستثنياً المستند المُعدَّل) ثم حساباتها من `TradeAccounts` بدالةٍ تمرّرها الخدمة، و`DocumentPull.Attach` يعيد إلى سطور المستند المحمَّل روابط سحبها.
 
-**ما تأتي به الوراثة فلا يُكتب يدوياً**: `Can("Create")` و `FailDenied()` للصلاحية ورسالتها · `Audit.Log(...)` للتدقيق · `Commit(db => …)` لمعاملةٍ تُلغى بنتيجتها الفاشلة أو باستثناء `InvalidOperationException` · `Tx(...)` لمعاملةٍ بلا فشل · `Msg(key)` للنصوص · `SoftDelete`/`HardDelete` للحذف.
+**ما تأتي به الوراثة فلا يُكتب يدوياً**: `Can("Create")` و `FailDenied()` للصلاحية ورسالتها · `Audit.Log(...)` للتدقيق · `Commit(db => …)` لمعاملةٍ تُلغى بنتيجتها الفاشلة أو باستثناء `InvalidOperationException` · `Tx(...)` لمعاملةٍ بلا فشل · `Msg(key)` للنصوص · `SoftDelete`/`Remove` في المستودع للحذف.
 
 **التحقق دالةٌ واحدة**: `Check.Valid(item, params Field<T>[])` و`Check.Fields` لنتيجة الحقول. كل شرطٍ معاملٌ في `Field<T>`: `Required` · `Min` · `Max` · `From`/`To` · `Format` (`Phone`/`Email`/`Date`/`Digits`) · `Must` · `Message`/`Args`. رسائلها `Str.Rule.*`. لا دالةٌ لكل نوع تحقق، ولا ملفّ متحقّقٍ لكل كيان، ولا تحقّقُ مدخلٍ مكتوبٌ بـ`if` في الخدمة. وسطور المستند بـ`DocumentLines.Check` فوقها. وقاعدة الأعمال على حالة البيانات ليست تحقّق مدخل: تُكتب شرطَ حمايةٍ صريحاً يُرجع `Result` في العملية المالكة لها، ولا تُحشر في `Check`.
 
-**يُمنَع داخل الخدمة**: رسالة بلغة بشرية خارج `Strings.*.xaml` · شرط تحقق خارج المتحقّق · فحص صلاحية خارج `Can` · استعلام خارج المستودع · استعلامٌ لكل صفّ في `ToDto` أو داخل حلقة (الصفحة تُجلب بـ`ToDtos` والمستند يحلّ أكواده بـ`ByCodes`) · ختم `CreatedBy`/`UpdatedBy` يدوي · `try/catch` حول معاملة (`Commit` يلغيها) · إنشاء قيدٍ وترحيله بيده (`Posting.Entry`) · تعديلٌ بحذفٍ ثم إنشاءٍ في معاملتين (الأساس يستبدل في معاملةٍ واحدة) · رصيد طرفٍ يُحسب خارج `PartyBalance` · حساب كيانٍ يُفتح أو يُسمّى أو يُغلق خارج `Services/Ledger/Accounts`.
+**يُمنَع داخل الخدمة**: رسالة بلغة بشرية خارج `Strings.*.xaml` · شرط تحقق خارج المتحقّق · فحص صلاحية خارج `Can` · استعلام خارج المستودع · استعلامٌ لكل صفّ في `ToDto` أو داخل حلقة (الصفحة تُجلب بـ`ToDtos` والمستند يحلّ أكواده بـ`ByCodes`) · ختم `CreatedBy`/`UpdatedBy` يدوي · `try/catch` حول معاملة (`Commit` يلغيها) · إنشاء قيدٍ وترحيله بيده (`Posting.Entry`) · تعديلٌ بحذفٍ ثم إنشاءٍ في معاملتين (الأساس يستبدل في معاملةٍ واحدة) · رصيد حسابٍ أو طرفٍ يُكتب خارج `AccountBalances` · حساب كيانٍ يُفتح أو يُسمّى أو يُغلق خارج `Services/Ledger/Accounts`.
 
 **كل صيغة حساب في `3.Domain/Calculations/`** — لا في كيان ولا خدمة ولا واجهة ولا تقرير. الخدمة تجلب ثم تستدعي الصيغة، ولا دالةٌ تجلب وتحسب معاً.
 
@@ -104,13 +104,14 @@
 | `3.Domain/Calculations` | صيغةٌ نقيّة لها معنى أعمال: مدخلاتٌ ← رقمٌ أو قرار. رصيد، تجميع من الأبناء، إهلاك، تكلفة، قاعدة فترة، مقياس عرض | جلبٌ من قاعدة، نصٌّ مترجَم، `Result`، أي طبقةٍ أعلى، وغلافٌ لعمليةٍ جاهزة في LINQ أو Math (القاعدة ٨) | `LineCalc` السطر ومجاميعه · `StatementCalc` القوائم والرصيد الجاري والتجميع وسطر الميزان · `AssetCalc` الإهلاك والقيمة · `PayrollCalc` · `InventoryCosting` · `FiscalPeriodCalc` الفترات وقواعدها · `PartyCalc` الحدّ والمتاح · `LayoutCalc` نسب الأعمدة |
 | `3.Domain/Enums` | تعدادٌ يتقاسمه أكثر من ملف | — | ومنها `FieldFormat` |
 | `4.Application/Validation` | التحقق من **المدخل** وحده: الدالة الواحدة `Check` وشروط حقول المُدخل معاملاتٍ في `Field<T>` (`Required` · `Min`/`Max` · `From`/`To` · `Format` · `Must` على قيمة المدخل) | قاعدة أعمال على حالة البيانات (له أبناء، سبق ترحيله، الفترة مقفلة، الرصيد لا يكفي): هذه شرطُ حمايةٍ صريح يُرجع `Result` في الخدمة أو الصفحة المالكة للعملية، لا شرطٌ في `Check` · ملفّ متحقّقٍ لكيان · دالّةٌ لكل نوع تحقق | `Check` · `Field` · `DocumentLines` · `ValidationResult` |
-| `4.Application/Services/Core` | أسس الخدمات والترقيم | منطقُ مجالٍ بعينه | `ServiceBase` · `CrudServiceBase` · `EntityService` · `NumberSequenceService` |
-| `4.Application/Services/Ledger` | القيد: إنشاؤه وترحيله وعكسه وحرّاسه وعرضه، والأرصدة | حساب الشجرة (مجلده التالي)، صيغة حساب | `Entries` · `Posting` · `PeriodGate` · `JournalLines` · `TradeEntry` · `TwoSided` · `OpeningEntry` · `Guards` · `PartyBalance` (`Refresh`/`RefreshAll`) · `PartyByKind` الطرف بنوعه: اسمه وحسابه ورصيده · `Statement` (ومعه `WithCheques`) · `TrialBalance` ميزان المراجعة |
-| `4.Application/Services/Ledger/Accounts` | الحساب في الشجرة: إضافة وتعديل وحذف بقطعٍ منفصلة، وحساب الكيان أو الإعداد | قيدٌ أو رصيد | `AddTreeAccount` · `AddEntityAccount` · `AddLinkedAccount` · `AddMirroredAccount` · `EditTreeAccount` · `EditLinkedAccount` · `RenameAccount` · `CloseAccount` · `CloseLinkedAccount` · `LinkedAccounts` · `AccountOf` · `SettingAccounts` · `AccountCases` · `AccountSpec` |
-| `4.Application/Services/Documents` | المستند: رأسٌ وسطور، سحبه، أثره المخزني، حالته كترحيل، حساباته | صيغة المبالغ (`LineCalc`) | `DocumentService` · `DocumentPull` · `StockMove` · `StatusChange` · `TradeLines` · `TradeAccounts` (المبيعات ومرتجعاتها والمشتريات) · `ProductLines` |
+| `4.Application/Services/Core` | أسس الخدمات والترقيم | منطقُ مجالٍ بعينه | `ServiceBase` · `CrudServiceBase` · `EntityService` · `LinkedEntityService` الكيان ورقةً في الشجرة · `NumberSequenceService` |
+| `4.Application/Services/Ledger` | القيد: إنشاؤه وترحيله وعكسه وحرّاسه وعرضه، والأرصدة | حساب الشجرة (مجلده التالي)، صيغة حساب | `Entries` · `Posting` · `PeriodGate` · `JournalLines` · `TradeEntry` · `TwoSided` · `OpeningEntry` · `DisposalEntry` · `PayrollEntry` · `ClosingEntry` · `NewFiscalYear` · `DepreciationCharges` · `Guards` · `AccountBalances` (`Refresh`/`RefreshAll`) · `PartyByKind` الطرف بنوعه: اسمه وحسابه ورصيده · `Statement` (ومعه `WithCheques`) · `TrialBalance` ميزان المراجعة |
+| `4.Application/Services/Ledger/Accounts` | الحساب في الشجرة: إضافة وتعديل وحذف بقطعٍ منفصلة، وحساب الكيان أو الإعداد | قيدٌ أو رصيد | `AddTreeAccount` · `AddEntityAccount` · `AddLinkedAccount` · `AddMirroredAccount` · `EditTreeAccount` · `EditLinkedAccount` · `RenameAccount` · `CloseAccount` · `CloseLinkedAccount` · `LinkedAccounts` · `RepairAccounts` · `AccountOf` · `SettingAccounts` · `AccountCases` · `AccountSpec` |
+| `4.Application/Services/Documents` | المستند: رأسٌ وسطور، سحبه، أثره المخزني، حالته كترحيل، حساباته | صيغة المبالغ (`LineCalc`) | `DocumentService` · `DocumentPull` (`ValidatePulls` · `RecordPulls` · `Attach`) · `StockMove` · `StatusChange` · `TradeLines` · `TradeAccounts` (المبيعات ومرتجعاتها والمشتريات) · `ProductLines` |
 | `4.Application/Services/Entities` | شكلٌ عامّ للبيانات لا يخصّ مجالاً: قائمة بسيطة، شجرة، نسخ بالاسم، حالة بلونها، سطورٌ بكودها | ما يعرف قيداً أو مستنداً أو حساباً | `Lookup<T>` · `EntitySpec` · `Rows` · `Tree` · `ByCode` |
+| `4.Application/DTOs` | شكلٌ يختلف عن الكيان: المستند وسطوره، المُدخل المختلف، إخفاء السرّ، المرشِّح — وعقود السحب | نسخةُ حقول كيان، منطق | `IPullableLine` رابط السطر بمصدره · `ISourceDocument`/`ISourceLine` المستند الذي يُسحَب منه وسطره |
 | `4.Application/Legacy/<القسم>` | الصفحة: صلاحية، جلب، استدعاء خدماتها بالمعاملات، تدقيق، نتيجة، وإعلاناتها (`AccountSpec`، جدول الحالات، شروط `Field`). وتستدعي صفحةً أخرى أو ترثها حين تجمع تلك ما تحتاجه — استدعاءٌ واحد أقلّ من إعادة استدعاء خدماتها | كل ما في الصفوف أعلاه، وإعادة بناء ما تجمعه صفحةٌ أخرى | — |
-| `2.Data/Repositories` | الاستعلام والكتابة والملف: شرطٌ، ترتيب، مجموعٌ في SQL، نسخة القاعدة | قرار أعمال | ومنها `BackupRepository.Snapshot` نسخة القاعدة وسجلّها |
+| `2.Data/Repositories` | الاستعلام والكتابة والملف: شرطٌ، ترتيب، مجموعٌ في SQL، نسخة القاعدة | قرار أعمال | ومنها `BackupRepository` (`Snapshot` · `CopyInto` · `RestoreFrom` · `Prune` · `FolderOf`) نسخة القاعدة وسجلّها، و`EditionRepository` (`CopyProgram` · `PointAtDatabase`) ملفات النسخة المنشأة |
 
 **قبل النقل يُسأل:** هل يطابق وصفُه صفّاً واحداً؟ هل في ذلك الصف قطعةٌ تفعله فيُضاف إليها معامل؟ هل تستدعيه صفحتان فأكثر أو صفحةٌ ومستند؟ وبعد النقل: هل خلت الصفحة منه؟ يُقرأ الملف نفسه للتأكد، لا عدّادٌ ولا مولّد.
 
@@ -142,7 +143,7 @@ registry.Register(new ModuleDefinition
 | `RegisterLookup` | قائمة بسيطة (كود/اسم/نشط) |
 | `CategoryDialogFactory` | حوار فئة |
 
-**قطعٌ مُعلَنة جاهزة**: `StandardFields.DialogFields()` · `StandardFields.AuditColumns()` · `StandardFields.DateRange()` · `PayrollRowActions()` · `TradePaper.*`.
+**قطعٌ مُعلَنة جاهزة**: `StandardFields.DialogFields()` · `StandardFields.AuditColumns()` · `StandardFields.DateRange()` · `PayrollRowActions()` · `TradePaper.*` · `CycleFlow.Into*` مصادر السحب.
 
 **نموذج العرض** يرث `CrudViewModelBase<TDto,TFilter>` ويُعلن `PermissionPrefix` فقط — بلا تحميل وبلا حفظ.
 
@@ -191,7 +192,7 @@ registry.Register(new ModuleDefinition
 | حقل عرضٍ في قائمة (اسم مرجع، إجمالي، فرق، نصّ نوع) | خاصيةٌ على الكيان في `DERIVED` (`Tools/Docs/context.py` وسطر `Ignore` في `PrimeDbContext`)، يملؤها المستودع: `WithNames`/`WithCodeNames`/`NamesOf`/مجاميع بالمعرّفات، أو الخدمة: `ToDtos` |
 | حقل نظامٍ يُطمَس عند تعديل المستخدم (رصيد، كود، قيد) | المستودع: `Modify(entity, db, keep…)` |
 | استبعاد المحذوف من القراءة | `2.Data/Core/ModelConventions.cs` — مرشِّحٌ عامّ واحد؛ لا `!IsDeleted` في مستودع، ورؤية المحذوف بـ`IgnoreQueryFilters()` صراحةً |
-| كتابة إعداد (ولو في قاعدة أخرى) | `ISettingStore.Upsert` — تنفيذه `2.Data/Repositories/SettingRepository` |
+| كتابة إعداد | `ISettingStore.Upsert`/`UpsertMany`، وفي قاعدة نسخةٍ أخرى `ISettingRepository.UpsertMany(settings, db)`/`RemoveByPrefix` — تنفيذهما `2.Data/Repositories/SettingRepository` |
 | تجميد الواجهة في عملية طويلة | `IDialogService.ShowProgress` + `Task.Run` + `IProgress<T>` |
 | حواجز الحذف (سُحب منه، قيدٌ في فترةٍ مقفلة، له قيود أو حركات) | المستند: `DocumentService.Removable` و`Guard` · الكيان: `EntityService.CanErase` و`Guards.HasEntries` |
 | القيد: إنشاؤه مُرحَّلاً وعكسه وباب الفترة المقفلة وملكية مصدره | `4.Application/Services/Ledger/Entries` (`CreatePosted` · `CanUpdate` · `CanDelete` · `CanPost` · `CanUnpost` · `Owned`) و`Posting` |
@@ -199,11 +200,17 @@ registry.Register(new ModuleDefinition
 | حارس «له أبناء» أو «له قيود» أو رصيد النقدية | `4.Application/Services/Ledger/Guards` |
 | حالةٌ تعمل كترحيل (الشيك) | `4.Application/Services/Documents/StatusChange`، وجدول انتقالاتها معاملةٌ في صفحتها |
 | حساب في الشجرة أو لكيان أو ومجمّعه | `4.Application/Services/Ledger/Accounts/*` — `AccountSpec<T>` في الصفحة |
-| رصيد العميل والمورد | `4.Application/Services/Ledger/PartyBalance` — داخل معاملة المستند |
+| رصيد الحساب والعميل والمورد | `4.Application/Services/Ledger/AccountBalances` — يستدعيه `Entries` مع كل قيدٍ يُرحَّل أو يُعكس أو يُستبدل، فلا تحدّثه صفحة |
 | سطور الفواتير والمرتجعات ومجاميعها وحساباتها من الإعدادات | `4.Application/Services/Documents/TradeLines` و`TradeAccounts` |
 | صلاحية | `1.Platform/Permissions/PermissionKeys.cs` |
 | حقول شاشة أو أعمدتها | `8.Modules/*Registrations.cs` |
 | شاشة لا تظهر في الشريط أو البناء أو إنشاء برنامج | مفتاحها غائب عن `NavigationMap.Coded` |
+| قسمٌ لا يُنزَع من نسخة | `NavigationMap.Always` |
+| تبويب صفحة الإعدادات | `7.Composition/Definitions/SettingsTabs` — مفتاحه `Settings.<الفئة>` في بيان النسخة |
+| مستندٌ يُسحَب منه | تفصيله يُعلن `ISourceDocument` وسطره `ISourceLine`، ومن أين يُسحَب `8.Modules/CycleFlow` — لا اسمٌ يُقرأ بالانعكاس |
+| سطرٌ مسحوب يفقد مصدره عند التعديل | سطر التفصيل يُعلن `IPullableLine`، و`ToDetail` يستدعي `Links.Attach` |
+| ملفٌّ يكتبه البرنامج (قاعدة، نسخة، سجلّ) | `AppInfo.DataFolder` — لا مجلّد البرنامج |
+| عمودٌ أو جدولٌ ناقص في قاعدةٍ قائمة | `2.Data/Core/SchemaSync` يُلحقه ويملأ فراغه في الإقلاع |
 | سلوك كل الشاشات معاً | المُصيِّر في `7.Composition/Renderers` |
 
 ---

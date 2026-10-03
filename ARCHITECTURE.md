@@ -34,7 +34,7 @@ PrimeERP/
 | **7.Composition** | التعريفات (بيانات)، المُصيِّرات (تجميع)، السجلّ | منطق أعمال، XAML لصفحة بعينها |
 | **8.Modules** | تسجيل كل وحدة عمل إعلاناً | أي منطق أعمال |
 
-**اتجاه الاعتماد**: من أعلى الرقم إلى أدناه فقط. `3.Domain` و `5.Design` لا تعتمدان على شيء. يفحصه `check.sh` آلياً.
+**اتجاه الاعتماد**: من أعلى الرقم إلى أدناه فقط. `3.Domain` و `5.Design` لا تعتمدان على شيء، و`3.Domain` لنقائها يعتمد عليها `1.Platform` و`2.Data` كذلك (الكيانات في عقودهما). يفحصه `check.sh` آلياً.
 
 **عكس الاعتماد**: ما تحتاجه `1.Platform` من القاعدة تُعلنه عقداً عندها — `ISettingStore` و `IPermissionStore` و `IAuditStore` — وتنفّذه `2.Data/Repositories`، فلا تعرف الطبقة الأولى طبقةً أعلى منها. وما تحتاجه `2.Data` وحدها فوق العقد — قاعدةٌ مفتوحة لنسخةٍ أخرى — يمدّه عقدها (`ISettingRepository : ISettingStore`).
 
@@ -191,7 +191,7 @@ AppDataGrid + AppPagination
 | نسخٌ بالاسم | `Rows.Copy` تقرأ الخصائص بالانعكاس: عناصر الـtuple ليست خصائص فلا يُنسخ منها شيء، وعناصر WPF تحمل عشرات الخصائص القابلة للكتابة فلا تُنسخ بها. والـDTO لا يعطي الكيان معرّفه — `Id` يُنسخ من كيانٍ لا إليه من DTO — وما يُحسب يُكتب في دالّة `Copy` الثالثة بعد النسخ فلا تطمسه. وكيانٌ إلى كيان ينسخ المعرّف والأختام معه، فلا يُنسخ كيانٌ ليصير صفّاً جديداً |
 | بديلٌ بمعرّف قديم | حركة الأصل تُعدَّل عكساً ثم إدراجاً، والمُدخل المحمَّل يحمل معرّف القديم وأختامه: إدراجه كما هو يصطدم بالصفّ المحذوف منطقياً. `AssetMovementServiceBase.Replace` يصفّرها قبل `Write` |
 | رؤية المحذوف | `IgnoreQueryFilters()` يسري على الاستعلام كلّه لا على جدولٍ داخله، فضمّةٌ تريد اسم مرجعٍ محذوف تُظهر معه صفوف الجدول الأصلي المحذوفة. يُستعمل حيث يُقصد المحذوف كلّه: مفاتيح البذر (`SectionKeys`/`ModuleKeys`)، ومسح جدولٍ كاملاً |
-| عمودٌ يُضاف لجدولٍ فيه صفوف | كان `SchemaSync.Added` يضيف العمود غير القابل للفراغ قابلاً له بلا قيمة، فتبقى صفوفه القديمة `NULL`، وقراءة EF لخاصيةٍ غير قابلة للفراغ ترفع «The data is NULL at ordinal» فيسقط الإقلاع (الـSQL المكتوب قبله كان يتسامح). فالعمود يُضاف بقيمة نوعه الفارغة، وكل إقلاعٍ يملأ فراغ كل عمودٍ تقبله القاعدة ويرفضه النموذج (`Filled`). والجدول المبنيّ يُعلَن بعد الإقلاع، فـ`CreateBuiltTable` يُلحقه بوصفه في كل إقلاع بالقطع نفسها (`SchemaSync.Columns` · `Added` · `Filled`) كما كان `AddMissingColumns` قبل EF، و`DynamicRepository` يكتب للحقل الاختياري الذي لا يقبل نموذجه الفراغ (`Bool` · `Number` · `Money`) قيمة نوعه بدل `null` (`Storable`) |
+| عمودٌ يُضاف لجدولٍ فيه صفوف | عمودٌ غير قابل للفراغ يُضاف بلا قيمة يترك الصفوف القائمة `NULL`، وقراءة EF لخاصيةٍ غير قابلة للفراغ ترفع «The data is NULL at ordinal» فيسقط الإقلاع. لذا `SchemaSync.Added` يضيفه بقيمة نوعه الفارغة، و`Filled` يملأ في كل إقلاع فراغ كل عمودٍ تقبله القاعدة ويرفضه النموذج. والجدول المبنيّ يُعلَن بعد الإقلاع، فـ`CreateBuiltTable` يُلحقه بوصفه في كل إقلاع بالقطع نفسها (`SchemaSync.Columns` · `Added` · `Filled`)، و`DynamicRepository` يكتب للحقل الاختياري الذي لا يقبل نموذجه الفراغ (`Bool` · `Number` · `Money`) قيمة نوعه بدل `null` (`Storable`) |
 
 ---
 
@@ -219,7 +219,8 @@ AppDataGrid + AppPagination
 | قيد الاقتناء يُعاد بمدخلاته وحدها | `AcquisitionChanged`: التكلفة والتاريخ وجهة التمويل وطريقة الاقتناء هي مدخلات القيد كلها، فتعديل الاسم لا يمسّ قيداً في فترةٍ مقفلة ولا يغيّر رقمه. وحين يُعاد يُفحص عكسه في `Prepare` قبل `Commit` (`Posting.EnsureReversible`)، لأن الفحص يقرأ باتصالٍ جديد |
 | حركة الأصل على أساسها لا على `DocumentService` | `DocumentService.Update` يفحص قبل حذف القديم، وحركة الأصل تفحص بعد عكسه داخل المعاملة (التقييم يقرأ القيمة القديمة بعد العكس، والاستبعاد يفحص «سبق استبعاده»)، فالنقل يكسر التعديل |
 | تكلفة المرتجع تتقدّم بما يُسجَّل | `StockMove.GetReturnCosts(…, recordsStock)`: تكلفة كل سطر من الحركات القائمة، وحركة السطر السابق لا تدخل الرصيد إلا حين تُسجَّل (التدفّق المبسّط)، فلا تُحسب تكلفةٌ كأن البضاعة دخلت وهي لم تدخل |
-| السحب يُفحص بمجموعه ويُحمَل في التعديل | `DocumentPull.ValidatePulls` يجمع كميات كل سطر مصدر ويقارنها بالمتبقي مستثنياً المستند المُستبدَل (`GetPulledQty(…, exceptTargetType, exceptTargetId)`)، و`CycleDocumentLineDto` يحمل ربطه فيعيده `DocumentRenderer` إلى السطر المحمَّل، فلا يقطع التعديل الربط ولا يتجاوز سطران المتبقي |
+| السحب يُفحص بمجموعه ويُحمَل في التعديل | `DocumentPull.ValidatePulls` يجمع كميات كل سطر مصدر ويقارنها بالمتبقي مستثنياً المستند المُستبدَل (`GetPulledQty(…, exceptTargetType, exceptTargetId)`) — يمرّره أساس الدورة والأذون و`TradeLines.Prepare` معاً. وكل سطر تفصيلٍ مسحوب (`CycleDocumentLineDto` · `TradeLineDto` · `StockAdjustmentLineDto`) يُعلن `IPullableLine` ويملؤه `IDocumentPull.Attach` في `ToDetail`، فيعيده `DocumentRenderer` إلى السطر المحمَّل؛ فلا يقطع التعديل الربط ولا يتجاوز سطران المتبقي |
+| مصدر السحب عقدٌ مُعلَن | تفصيل كل مستندٍ يُسحَب منه يُعلن `ISourceDocument` (رقمه وتاريخه وطرفه وسطوره) وسطره `ISourceLine` (معرّفه وصنفه وكميته وسعره)، والفاتورة والمرتجع والإذن تربط أسماءها به صراحةً (`InvoiceNo` ← `DocNo`، `UnitCost` ← `UnitPrice`). و`PullService` يقرأ العقد لا الأسماء: قراءة `Id`/`DocNo` بالانعكاس أسقطت سحب المرتجع من الفاتورة لأن سطرها بلا `Id` ورقمها `InvoiceNo`. ومصدرٌ مُسجَّل لا يُعلنه يُرفض برسالة `Str.Document.NotPullSource` لا باستثناء |
 | الطباعة في طبقة الواجهة | `PrintService` وقطعه عناصر WPF، فمكانها `6.UI/Services` لا طبقة المنطق؛ ولا `7.Composition` لأن `6.UI` تستعملها |
 | بيانات البرنامج في مجلّد بياناته | القاعدة والنسخ الاحتياطية (`IBackupRepository.FolderOf`: المسار المضبوط وإلا `Backups` فيه) وسجلّ التدقيق الاحتياطي في `AppInfo.DataFolder`، لا في مجلّد البرنامج: «إنشاء برنامج» ينسخ مجلّد البرنامج كلّه إلى العميل، فنسخةٌ فيه تحمل توكن المطوّر وتراخيصه، و`Program Files` لا يُكتب فيه |
 | الاستعادة تُغلق البرنامج | الإعدادات المخزَّنة والجلسة والوحدات المسجَّلة ببيان النسخة قُرئت من القاعدة القديمة، والإقلاع وحده يعيدها كلّها. و`BackupRepository.RestoreFrom` يُلحق القاعدة المستعادة بالنموذج ويعيد إليها سجلّ كل نسخةٍ باقيةٍ على القرص، فتبقى نسخة الأمان قبلها ظاهرةً للتراجع |
@@ -231,7 +232,7 @@ AppDataGrid + AppPagination
 ## المبنيّ فعلاً
 
 ### 3.Domain
-كيانات صرفة، وعقودها المشتركة في `Entities/Common` (`IEntity` · `IProductLine` · `IEmployeeLine`) · تعدادات · `Result`/`PagedResult` · `StatusVariant` · `Calculations/` — الموضع الوحيد لصيغ الحساب، تستدعيها الخدمة بعد الجلب ولا تجلب شيئاً، والصيغة الجديدة تدخل ملفّ نوعها: `LineCalc` (السطر ومجاميعه) · `PayrollCalc` · `AssetCalc` · `InventoryCosting` · `StatementCalc` (القوائم، والرصيد الجاري `Running`، وتجميع الأبناء `Rollup`) · `FiscalPeriodCalc` · `PartyCalc`. الكيان بيانات فقط بلا خصائص محسوبة، وحقل العرض عليه (`DERIVED`) يملؤه المستودع أو `ToDtos`، والتحقق ليس هنا.
+كيانات صرفة، وعقودها المشتركة في `Entities/Common` (`IEntity` · `IProductLine` · `IEmployeeLine`) · تعدادات · `Result`/`PagedResult` · `StatusVariant` · `Calculations/` — الموضع الوحيد لصيغ الحساب، تستدعيها الخدمة بعد الجلب ولا تجلب شيئاً، والصيغة الجديدة تدخل ملفّ نوعها: `LineCalc` (السطر ومجاميعه) · `PayrollCalc` · `AssetCalc` · `InventoryCosting` · `StatementCalc` (القوائم، والرصيد الجاري `Running`، وتجميع الأبناء `Rollup`) · `FiscalPeriodCalc` · `PartyCalc` · `LayoutCalc` (نسب الأعمدة). الكيان بيانات فقط بلا خصائص محسوبة، وحقل العرض عليه (`DERIVED`) يملؤه المستودع أو `ToDtos`، والتحقق ليس هنا.
 
 ### 2.Data
 `PrimeDbContext` (نموذج EF لكل الجداول) · `DbContextFactory` (سياقٌ فوق `(conn, tx)` القائمين، وخياراته مخزَّنة لكل محرّكٍ واتصال) · `BuiltTables` (جداول المستخدم ككيس خصائص وقت التشغيل) · `RepositoryBase<T>` بأشكاله المشتركة (`Fetch`/`One`/`Count`/`Any`/`Write`/`Add`/`Edit`/`Modify`/`Set`/`Remove`/`SoftDelete`/`Page`/`By`/`DocumentOrder`/`NamesOf`/`GetByIds`/`ByCodes`/`WithNames`/`WithCodeNames`) · `ModelConventions` (اتفاقيات النموذج: المحذوف منطقياً خارج كل استعلام بمرشِّحٍ عامّ واحد فلا `!IsDeleted` في مستودع، وأختام الإنشاء والتعديل والحذف في `SaveChanges` فلا `CreatedBy`/`UpdatedAt` يدوي في مستودع ولا خدمة)
@@ -251,10 +252,10 @@ AppDataGrid + AppPagination
 
 | المجلد | ما فيه |
 |---|---|
-| `Services/Core` | `ServiceBase` · `CrudServiceBase` · `EntityService` · الترقيم |
+| `Services/Core` | `ServiceBase` · `CrudServiceBase` · `EntityService` · `LinkedEntityService` الكيان ورقةً في الشجرة (`RootKeys`) · الترقيم |
 | `Services/Ledger` | `Entries` قلب القيد: شكله (`Shape`، وعدم التوازن فيه وحده برسالة الفرق قبل قاعدتَي السطور)، وإنشاؤه مُرحَّلاً (`CreatePosted`) وحرّاس تعديله وحذفه وترحيله وإلغائه (`CanUpdate` · `CanDelete` · `CanPost` · `CanUnpost`، وملكية المصدر فيها) · `AccountBalances` أرصدة الحسابات وأطرافها (`Refresh`/`RefreshAll`) · `PeriodGate` · `Posting` · `JournalLines` · `TwoSided.By` الطرفان باتجاهٍ واحد · أجسام القيود: `TradeEntry` البيع والشراء وعكسهما · `DisposalEntry` الاستبعاد · `PayrollEntry` استحقاق الرواتب · `ClosingEntry` إقفال السنة · `OpeningEntry` الافتتاحي · `NewFiscalYear` السنة بفتراتها والأولى حاليّة · `DepreciationCharges` القسط بقيده، والتشغيلة كلها، والمُهلَك والقيمة من الأقساط · `Guards` (له أبناء، له قيود، النقدية، حساب النظام، حسابٌ تديره صفحة) · `PartyByKind` العميل أو المورد واسمه بنوعه · `Statement` كشف الحساب برصيده الجاري · `TrialBalance` ميزان المراجعة |
 | `Services/Ledger/Accounts` | `AccountOf` حساب الخزينة أو الطرف أو الإعداد، و`SettingBySign` حساب الإعداد وجهته بالإشارة مرّةً واحدة · `RepairAccounts` الكيان بلا حساب: ورقةٌ باسمه في جذره وإلا جديدة، كلٌّ في معاملته · `SettingAccounts` حساب إعدادٍ يُعتمد أو يُنشأ أو يُصلَح · `AccountCases.Root` جذرٌ موجودٌ يقبل الأبناء · `AddTreeAccount` · `AddEntityAccount` · `AddLinkedAccount` · `AddMirroredAccount` · `EditTreeAccount` · `RenameAccount` · `EditLinkedAccount` · `CloseAccount` · `CloseLinkedAccount`، وإعدادها `AccountSpec<T>`، و`LinkedAccounts` كيان الجذر المرتبط — كل كيانٍ مرتبط يعلن `RootKeys` |
-| `Services/Documents` | `DocumentService` · `DocumentPull` السحب (`ValidatePulls` المدخل الوحيد لفحصه) · `StockMove` حركة المخزون، وتكلفة الصرف والمرتجع على هيكلٍ واحد `Costs` بخطوة السطر · `StatusChange` الحالة كترحيل · `TradeLines` · `TradeAccounts` · `ProductLines` سطور المستند بأصنافها |
+| `Services/Documents` | `DocumentService` · `DocumentPull` السحب (`ValidatePulls` المدخل الوحيد لفحصه، `RecordPulls` كتابته، `Attach` إعادته إلى السطر المحمَّل) · `StockMove` حركة المخزون، وتكلفة الصرف والمرتجع على هيكلٍ واحد `Costs` بخطوة السطر · `StatusChange` الحالة كترحيل · `TradeLines` · `TradeAccounts` · `ProductLines` سطور المستند بأصنافها |
 | `Services/Entities` | `Lookup<T>` القائمة البسيطة بإعدادها `EntitySpec` · `Rows` (الكيان صفّاً، `Copy` نسخ الحقول بالاسم، `State` أول حالةٍ يصدق شرطها، `Active` حالة النشاط) · `Tree` (المطابق وأسلافه، والعقد بأبنائها) · `ByCode` سطورٌ تُحلّ بكود كيانها |
 
 `ServiceBase` — كل خدمة ترثه: `Can` · `FailDenied` · `Audit` · `Tx` · `Commit` · `Msg` · `Settings`.
@@ -263,7 +264,7 @@ AppDataGrid + AppPagination
 
 **المنطق بالمعاملات**: صفحة `Legacy` تجمع منطقها باستدعاء `Services` ومعاملاتها. القيد: `Entries` يتحقّق ويرقّم ويُدرج ويُرحّل ويحذف ويعيد الأرصدة ويحرس الفترة والنقدية، و`Posting` يستدعيه بسطورٍ أو بطرفين، و`TradeEntry.Lines(partyDebit, …)` قيد البيع والشراء وعكسهما، و`TwoSided.By(forward, first, second)` الطرفان باتجاهٍ واحد للقبض والصرف والزيادة والنقص وجهة الربح. الحساب: `AddTreeAccount` في الشجرة وحدها، `AddEntityAccount` لكيان صفحة، `AddLinkedAccount` من الشجرة فينشأ كيانه، `AddMirroredAccount` حسابٌ ومجمّعه للأصل والفئة، ومعها `RenameAccount` و`CloseAccount` (يعيد الأب ورقياً). والحرّاس في `Guards`.
 
-`Validation/` دالةٌ واحدة: `Check.Valid(item, Field<T>…)`، والشرط معاملٌ في `Field<T>` لا دالةٌ ولا ملفّ لكل كيان، والشرط المشترك بين كيانين مصفوفةٌ واحدة (`DocumentLines` للسطور، و`EmployeeCode.Rules<T>` للموظف بكوده: مطلوبٌ وموجود، عبر `IEmployeeLine`) · `Reporting/` خدمات التقارير.
+`DTOs/Documents` عقود السحب: `IPullableLine` رابط السطر بمصدره، و`ISourceDocument`/`ISourceLine` ما يُسحَب منه. · `Validation/` دالةٌ واحدة: `Check.Valid(item, Field<T>…)`، والشرط معاملٌ في `Field<T>` لا دالةٌ ولا ملفّ لكل كيان، والشرط المشترك بين كيانين مصفوفةٌ واحدة (`DocumentLines` للسطور، و`EmployeeCode.Rules<T>` للموظف بكوده: مطلوبٌ وموجود، عبر `IEmployeeLine`) · `Reporting/` خدمات التقارير.
 
 **الصفحة استدعاء**: صفحة `Legacy` لا تحسب ولا تبني شجرةً ولا تحمل جدول ربط ولا تنسخ حقلاً حقلاً — كلّها قطعٌ عامّة في `Services` أو `Calculations` تستدعيها بمعاملاتها (`RULES.md § الصفحة والمنطق`).
 
@@ -320,12 +321,14 @@ AppDataGrid + AppPagination
 
 **قطع مشتركة بين المُصيِّرات** — كلٌّ منها موضعٌ واحد يستورده كل مُصيِّر يحتاجه: `FilterControls` (شريط الفلاتر) · `ToolbarActions` (ترشيح أزرار الوحدة) · `NavigationSource` (أقسام الشريط الجانبي) · `ListOutput` (طباعة وتصدير) · `FolderOutput` (اختيار مجلد) · `BuilderPickers` (قوائم تعدادات النظام وكتالوج أزراره).
 
-**قطع تعريف جاهزة**: `StandardFields` · `CategoryDialogFactory` · `TradePaper` (أعمدة وإجماليات وحساب سطر الفواتير).
+**قطع تعريف جاهزة**: `StandardFields` · `CategoryDialogFactory` · `TradePaper` (أعمدة وإجماليات وحساب سطر الفواتير) · `SettingsTabs` (تبويبات الإعدادات ومفاتيحها في البيان).
+
+**محرّك السحب** `Pull/PullService`: يقرأ قائمة المصدر بخدمته المسجَّلة، ويطابق حقول `MatchFields`، ويقرأ التفصيل بعقده `ISourceDocument`، ويطرح المسحوب من كل سطر؛ و`PullDialog` يعرضه ويعيد السطور المختارة برابطها إلى `DocumentRenderer`. وهو `IPullSourceReader` الذي يقرأ به `DocumentPull` كمية سطر المصدر.
 
 ### 8.Modules
 تسجيل كل وحدة إعلاناً، عبر مصانع مشتركة: `StockDocumentFactory` · `CycleDocumentRegistrations` · `CycleVoucherRegistrations` · `TreasuryRegistrations` · `RegisterLookup`، وتقارير الأرصدة بدالّة `Register` في `ReportRegistrations`.
 
-**دورتا الشراء والبيع**: `Documents.SimplifiedFlow` (إعداد) يحكم أي المستندات تظهر عبر `ModuleDefinition.FlowScope` و `IModuleRegistry.VisibleFor`. وتتبّع السحب في جدول واحد `DocumentLinks` عبر `IDocumentPull` لا يعرف نوع مستند بعينه، و `DocumentDialogDefinition.PullSources` يصف من أين يسحب كل مستند.
+**دورتا الشراء والبيع**: `Documents.SimplifiedFlow` (إعداد) يحكم أي المستندات تظهر عبر `ModuleDefinition.FlowScope` و `IModuleRegistry.VisibleFor`. وتتبّع السحب في جدول واحد `DocumentLinks` عبر `IDocumentPull` لا يعرف نوع مستند بعينه، و `DocumentDialogDefinition.PullSources` يصف من أين يسحب كل مستند، وسلسلته كلها في `CycleFlow`.
 
 ---
 
