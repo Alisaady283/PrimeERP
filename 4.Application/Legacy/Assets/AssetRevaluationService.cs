@@ -5,8 +5,10 @@ using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Data.Core;
 using System.Collections.Generic;
 using System.Linq;
+using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Assets;
 using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Validation;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
@@ -78,16 +80,16 @@ namespace PrimeERP.Application.Legacy.Assets
             if (asset == null) return Fail<AssetRevaluation>("NotFound", ErrorCode.NotFound);
 
             revaluation.OldValue = asset.RevaluedValue;
+            var note = $"{Msg("Revaluation")} — {asset.Name}";
 
             return Check.Valid(revaluation, RevaluationFields)
-                .Then(() => Sides(asset, AssetCalc.Difference(revaluation)))
-                .Then(sides =>
+                .Then(() => Lines(asset, revaluation, note))
+                .Then(lines =>
                 {
                     revaluation.Id = _revaluations.Insert(revaluation, db);
                     Apply(db, asset, revaluation.NewValue);
 
-                    revaluation.JournalEntryId = Posting.Entry(Journals, db, revaluation.RevaluationDate,
-                        $"{Msg("Revaluation")} — {asset.Name}", EntityName, sides.Debit, sides.Credit, Math.Abs(AssetCalc.Difference(revaluation)));
+                    revaluation.JournalEntryId = Posting.Entry(Journals, db, revaluation.RevaluationDate, note, EntityName, lines);
 
                     _revaluations.SetJournalEntryId(db, revaluation.Id, revaluation.JournalEntryId.Value);
                     return Result.Ok(revaluation);
@@ -105,15 +107,15 @@ namespace PrimeERP.Application.Legacy.Assets
             return Result.Ok();
         }
 
-        private Result<(string Debit, string Credit)> Sides(Asset asset, decimal difference)
+        private Result<List<CreateJournalLineDto>> Lines(Asset asset, AssetRevaluation revaluation, string note)
         {
             var own = AccountOf.Required(asset.AccountCode, "Str.Asset.AccountsMissing");
-            if (own.IsFailure) return own.As<(string, string)>();
+            if (own.IsFailure) return own.As<List<CreateJournalLineDto>>();
 
-            var counter = AccountsOf.SettingBySign(difference, SettingKeys.Accounts.CapitalGains, SettingKeys.Accounts.CapitalLosses, "Str.Asset.AccountsMissing");
-            if (counter.IsFailure) return counter.As<(string, string)>();
+            var counter = AccountsOf.SettingBySign(AssetCalc.Difference(revaluation), SettingKeys.Accounts.CapitalGains, SettingKeys.Accounts.CapitalLosses, "Str.Asset.AccountsMissing");
+            if (counter.IsFailure) return counter.As<List<CreateJournalLineDto>>();
 
-            return Result.Ok(TwoSided.By(!counter.Value.Debit, own.Value, counter.Value.Account));
+            return Result.Ok(RevaluationEntry.Lines(revaluation, own.Value, counter.Value, note));
         }
 
         private void Apply(PrimeDbContext db, Asset asset, decimal value)
@@ -126,7 +128,9 @@ namespace PrimeERP.Application.Legacy.Assets
         protected override AssetRevaluation ToDto(AssetRevaluation r)
         {
             r.Difference = AssetCalc.Difference(r);
-            r.KindName = LocalizationService.Get(r.Difference >= 0 ? "Str.Asset.Increase" : "Str.Asset.Decrease");
+            r.KindName = Rows.State(
+                (r.Difference >= 0, StatusVariant.Success, "Str.Asset.Increase"),
+                (true, StatusVariant.Danger, "Str.Asset.Decrease")).Text;
             return r;
         }
     }
