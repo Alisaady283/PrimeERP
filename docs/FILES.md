@@ -6,7 +6,7 @@
 
 | # | الملف | الوظيفة |
 |---|---|---|
-| 1.01 | AppInfo.cs | هوية النسخة المُشغَّلة |
+| 1.01 | AppInfo.cs | النسخة المُشغَّلة ومجلّد بياناتها |
 | | **Audit/** | سجلّ التدقيق: من فعل ماذا ومتى |
 | 1.02 | AuditLogger.cs | سجلّ التدقيق بقيمة قبل وبعد |
 | 1.03 | IAuditLogger.cs | عقد سجلّ التدقيق |
@@ -63,7 +63,7 @@
 | 2.19 | CycleDocumentRepositories.cs | مستودع CycleDocument |
 | 2.20 | DocumentLinkRepository.cs | مستودع DocumentLink |
 | 2.21 | DynamicRepository.cs | مستودع أي جدول بناه المستخدم |
-| 2.22 | EditionRepository.cs | اتصالٌ بقاعدة نسخةٍ أخرى |
+| 2.22 | EditionRepository.cs | نسخةٌ أخرى: قاعدتها وملفاتها |
 | 2.23 | EmployeeMovementRepository.cs | البدل والخصم جدولان بشكلٍ واحد |
 | 2.24 | EmployeeRepository.cs | مستودع Employee |
 | 2.25 | FiscalPeriodRepository.cs | طبقة وصول بيانات السنوات/الفترات المالية |
@@ -162,18 +162,21 @@
 | 3.55 | Warehouse.cs | كيان Warehouse |
 | | **Entities/Common/** | أسس الكيانات المشتركة |
 | 3.56 | BaseModel.cs | القاعدة المشتركة لكل الكيانات الرئيسية |
-| 3.57 | InvoiceBase.cs | ما تتقاسمه فاتورتا البيع والشراء |
-| 3.58 | PartyBase.cs | ما يتقاسمه كل طرف |
-| 3.59 | ReturnBase.cs | ما يتقاسمه مرتجعا البيع والشراء |
+| 3.57 | IEmployeeLine.cs | سطرٌ بموظفه |
+| 3.58 | IEntity.cs | كيانٌ بمعرّفه |
+| 3.59 | IProductLine.cs | سطرٌ بصنفه |
+| 3.60 | InvoiceBase.cs | ما تتقاسمه فاتورتا البيع والشراء |
+| 3.61 | PartyBase.cs | ما يتقاسمه كل طرف |
+| 3.62 | ReturnBase.cs | ما يتقاسمه مرتجعا البيع والشراء |
 | | **Enums/** | تعدادات النظام |
-| 3.60 | Enums.cs | تعدادات النظام |
-| 3.61 | FieldFormat.cs | صيغة الحقل |
+| 3.63 | Enums.cs | تعدادات النظام |
+| 3.64 | FieldFormat.cs | صيغة الحقل |
 | | **Helpers/** | أدوات نقية صغيرة |
-| 3.62 | ArabicNumberToWords.cs | التفقيط بالعربية |
+| 3.65 | ArabicNumberToWords.cs | التفقيط بالعربية |
 | | **Results/** | نتيجة العملية وحالتها |
-| 3.63 | PagedResult.cs | نتيجة صفحة واحدة من قائمة |
-| 3.64 | Result.cs | نتيجة عملية بلا قيمة راجعة |
-| 3.65 | StatusVariant.cs | مفردات حالة الأعمال المقفلة |
+| 3.66 | PagedResult.cs | نتيجة صفحة واحدة من قائمة |
+| 3.67 | Result.cs | نتيجة عملية بلا قيمة راجعة |
+| 3.68 | StatusVariant.cs | مفردات حالة الأعمال المقفلة |
 
 ## 4. 4.Application
 
@@ -191,61 +194,61 @@
 | | **DTOs/Cheques/** | بيانات الشيكات |
 | 4.08 | ChequeDto.cs | بيانات الشيك وحركته |
 | | **DTOs/Common/** | بيانات مشتركة: ترخيص ونسخة |
-| 4.09 | EditionDto.cs | طلب إنشاء نسخة برنامج |
-| 4.10 | LicenseDto.cs | بيانات الترخيص |
+| 4.09 | CategoryFilter.cs | مرشّح الفئات |
+| 4.10 | EditionDto.cs | طلب إنشاء نسخة برنامج |
+| 4.11 | LicenseDto.cs | بيانات الترخيص |
 | | **DTOs/Documents/** | بيانات مستندات الدورة |
-| 4.11 | CycleDocumentDto.cs | بيانات مستند الدورة |
-| 4.12 | IPullableLine.cs | سطرٌ قابل للسحب |
-| 4.13 | PullLinkFields.cs |  |
-| 4.14 | TradeLineDto.cs | سطر فاتورةٍ أو مرتجع |
+| 4.12 | CycleDocumentDto.cs | بيانات مستند الدورة |
+| 4.13 | IPullableLine.cs | سطرٌ قابل للسحب |
+| 4.14 | ISourceDocument.cs | مستندٌ يُسحَب منه |
+| 4.15 | TradeLineDto.cs | سطر فاتورةٍ أو مرتجع |
 | | **DTOs/HR/** | بيانات الموارد البشرية |
-| 4.15 | EmployeeFilter.cs | مرشّح الموظفين |
-| 4.16 | EmployeeMovementDto.cs | بدلٌ أو خصمٌ على موظف |
-| 4.17 | PayrollDto.cs | بيانات مسير الرواتب |
+| 4.16 | EmployeeFilter.cs | مرشّح الموظفين |
+| 4.17 | EmployeeMovementDto.cs | بدلٌ أو خصمٌ على موظف |
+| 4.18 | PayrollDto.cs | بيانات مسير الرواتب |
 | | **DTOs/Inventory/** | بيانات المخزون |
-| 4.18 | OpeningStockDto.cs | أرصدة الأصناف الافتتاحية |
-| 4.19 | ProductFilter.cs | مرشّح الأصناف |
-| 4.20 | StockAdjustmentDto.cs | بيانات إذن المخزون |
-| 4.21 | StockTransferDto.cs | بيانات التحويل المخزني |
+| 4.19 | OpeningStockDto.cs | أرصدة الأصناف الافتتاحية |
+| 4.20 | ProductFilter.cs | مرشّح الأصناف |
+| 4.21 | StockAdjustmentDto.cs | بيانات إذن المخزون |
+| 4.22 | StockTransferDto.cs | بيانات التحويل المخزني |
 | | **DTOs/Parties/** | مرشّحا العملاء والموردين |
-| 4.22 | CustomerFilter.cs | مرشّح العملاء |
-| 4.23 | SupplierFilter.cs | مرشّح الموردين |
+| 4.23 | CustomerFilter.cs | مرشّح العملاء |
+| 4.24 | SupplierFilter.cs | مرشّح الموردين |
 | | **DTOs/Purchasing/** | بيانات المشتريات |
-| 4.24 | PurchaseInvoiceDto.cs | بيانات فاتورة الشراء |
-| 4.25 | PurchaseReturnDto.cs | بيانات مرتجع الشراء |
+| 4.25 | PurchaseInvoiceDto.cs | بيانات فاتورة الشراء |
+| 4.26 | PurchaseReturnDto.cs | بيانات مرتجع الشراء |
 | | **DTOs/Sales/** | بيانات المبيعات |
-| 4.26 | SalesInvoiceDto.cs | بيانات فاتورة البيع |
-| 4.27 | SalesReturnDto.cs | بيانات مرتجع البيع |
+| 4.27 | SalesInvoiceDto.cs | بيانات فاتورة البيع |
+| 4.28 | SalesReturnDto.cs | بيانات مرتجع البيع |
 | | **DTOs/Security/** | بيانات المستخدم ومرشّح الأدوار |
-| 4.28 | RoleFilter.cs | مرشّح الأدوار |
-| 4.29 | UserDto.cs | بيانات المستخدم |
+| 4.29 | RoleFilter.cs | مرشّح الأدوار |
+| 4.30 | UserDto.cs | بيانات المستخدم |
 | | **DTOs/Treasury/** | مرشّح الخزائن والبنوك |
-| 4.30 | TreasuryFilter.cs | مرشّح الخزائن |
+| 4.31 | TreasuryFilter.cs | مرشّح الخزائن |
 | | **DTOs/Vouchers/** | بيانات السندات |
-| 4.31 | VoucherDto.cs | بيانات السند وتخصيصه |
+| 4.32 | VoucherDto.cs | بيانات السند وتخصيصه |
 | | **Legacy/Accounting/** | الحسابات والقيود والفترات المالية |
-| 4.32 | AccountService.cs | صفحة شجرة الحسابات |
-| 4.33 | FiscalPeriodService.cs | المالك الوحيد لمنطق السنوات/الفترات المالية |
-| 4.34 | IAccountService.cs | عقد خدمة الحسابات |
-| 4.35 | IFiscalPeriodService.cs | عقد الفترات المالية |
-| 4.36 | IJournalService.cs | المالك الوحيد لمنطق قيود اليومية |
-| 4.37 | JournalService.cs | صفحة قيود اليومية |
-| 4.38 | OpeningBalanceService.cs | الأرصدة الافتتاحية ليست جدولاً موازياً |
+| 4.33 | AccountService.cs | صفحة شجرة الحسابات |
+| 4.34 | FiscalPeriodService.cs | المالك الوحيد لمنطق السنوات/الفترات المالية |
+| 4.35 | IAccountService.cs | عقد خدمة الحسابات |
+| 4.36 | IFiscalPeriodService.cs | عقد الفترات المالية |
+| 4.37 | IJournalService.cs | المالك الوحيد لمنطق قيود اليومية |
+| 4.38 | JournalService.cs | صفحة قيود اليومية |
+| 4.39 | OpeningBalanceService.cs | الأرصدة الافتتاحية ليست جدولاً موازياً |
 | | **Legacy/Admin/** | الإعدادات والتراخيص والنسخ والتحديث |
-| 4.39 | ISettingsService.cs | عقد الإعدادات |
-| 4.40 | LicenseService.cs | تراخيص العملاء |
-| 4.41 | ProgramEditionService.cs | نسخةُ برنامجٍ مستقلّة في مسارٍ |
-| 4.42 | SettingsService.cs | طبقة الأعمال فوق ISettingsProvider |
-| 4.43 | UpdateService.cs | التحديث سؤالٌ واحد |
+| 4.40 | ISettingsService.cs | عقد الإعدادات |
+| 4.41 | LicenseService.cs | تراخيص العملاء |
+| 4.42 | ProgramEditionService.cs | نسخةُ برنامجٍ مستقلّة في مسارٍ |
+| 4.43 | SettingsService.cs | طبقة الأعمال فوق ISettingsProvider |
+| 4.44 | UpdateService.cs | التحديث سؤالٌ واحد |
 | | **Legacy/Assets/** | الأصل: اقتناءً وإهلاكاً وتقييماً واستبعاداً |
-| 4.44 | AssetDepreciationService.cs | قسط الإهلاك سجلٌّ مستقلّ |
-| 4.45 | AssetDisposalService.cs | بيع الأصل واستبعاده |
-| 4.46 | AssetMovementServiceBase.cs | أساس حركات الأصول |
-| 4.47 | AssetRevaluationService.cs | إعادة تقييم الأصل |
-| 4.48 | AssetService.cs | الأصل: إنشاءً وتعديلاً وبذراً |
-| 4.49 | IAssetService.cs | عقد خدمة الأصول |
+| 4.45 | AssetDepreciationService.cs | قسط الإهلاك سجلٌّ مستقلّ |
+| 4.46 | AssetDisposalService.cs | بيع الأصل واستبعاده |
+| 4.47 | AssetMovementServiceBase.cs | أساس حركات الأصول |
+| 4.48 | AssetRevaluationService.cs | إعادة تقييم الأصل |
+| 4.49 | AssetService.cs | الأصل: إنشاءً وتعديلاً وبذراً |
+| 4.50 | IAssetService.cs | عقد خدمة الأصول |
 | | **Legacy/Backup/** | النسخ الاحتياطي والاستعادة |
-| 4.50 | BackupInfo.cs | وصف نسخة احتياطية |
 | 4.51 | BackupService.cs | المكان الوحيد لأخذ/استعادة/التحقق من النسخ |
 | 4.52 | IBackupService.cs | عقد النسخ الاحتياطي |
 | | **Legacy/Builder/** | ما يبنيه المستخدم من شاشات |
@@ -281,104 +284,102 @@
 | 4.76 | ISupplierService.cs | المالك الوحيد لمنطق الموردين |
 | 4.77 | PartyServiceBase.cs | المنطق المشترك بين العملاء والموردين |
 | 4.78 | SupplierService.cs | المالك الوحيد لمنطق الموردين |
-| | **Legacy/Print/** | بناء المستندات المطبوعة |
-| 4.79 | ChequePrinter.cs | الشيك يُطبَع على ورق مطبوع |
-| 4.80 | Code128.cs | ترميز Code128-B |
-| 4.81 | CompanyHeaderComponent.cs | ترويسة الشركة كقطعة واحدة تُستدعى |
-| 4.82 | IPrintDialogHost.cs | تنفّذه طبقة الواجهة |
-| 4.83 | IPrintService.cs | عقد الطباعة |
-| 4.84 | ImageData.cs | تحويل صورة ↔ Base64 |
-| 4.85 | PaperNodeRenderer.cs | مترجم PaperNode إلى عناصر WPF |
-| 4.86 | PaperTheme.cs | قيم الورق كلها من PrintTheme.xaml |
-| 4.87 | PrintService.cs | يبني مستندات الطباعة من IPrintable |
 | | **Legacy/Purchasing/** | فواتير الشراء ومرتجعاتها |
-| 4.88 | IPurchaseInvoiceService.cs | عقد فاتورة الشراء |
-| 4.89 | IPurchaseReturnService.cs | عقد مرتجع الشراء |
-| 4.90 | PurchaseInvoiceService.cs | فاتورة الشراء وقيدها |
-| 4.91 | PurchaseReturnService.cs | مرتجع الشراء وقيده |
+| 4.79 | IPurchaseInvoiceService.cs | عقد فاتورة الشراء |
+| 4.80 | IPurchaseReturnService.cs | عقد مرتجع الشراء |
+| 4.81 | PurchaseInvoiceService.cs | فاتورة الشراء وقيدها |
+| 4.82 | PurchaseReturnService.cs | مرتجع الشراء وقيده |
 | | **Legacy/Sales/** | فواتير البيع ومرتجعاتها |
-| 4.92 | ISalesInvoiceService.cs | عقد فاتورة البيع |
-| 4.93 | ISalesReturnService.cs | عقد مرتجع البيع |
-| 4.94 | SalesInvoiceService.cs | فاتورة البيع وقيدها |
-| 4.95 | SalesReturnService.cs | مرتجع البيع وقيده |
+| 4.83 | ISalesInvoiceService.cs | عقد فاتورة البيع |
+| 4.84 | ISalesReturnService.cs | عقد مرتجع البيع |
+| 4.85 | SalesInvoiceService.cs | فاتورة البيع وقيدها |
+| 4.86 | SalesReturnService.cs | مرتجع البيع وقيده |
 | | **Legacy/Security/** | المستخدمون والأدوار |
-| 4.96 | IRoleService.cs | عقد الأدوار |
-| 4.97 | IUserService.cs | عقد المستخدمين |
-| 4.98 | RoleService.cs | الأدوار وصلاحياتها |
-| 4.99 | UserService.cs | المستخدمون وكلمات مرورهم |
+| 4.87 | IRoleService.cs | عقد الأدوار |
+| 4.88 | IUserService.cs | عقد المستخدمين |
+| 4.89 | RoleService.cs | الأدوار وصلاحياتها |
+| 4.90 | UserService.cs | المستخدمون وكلمات مرورهم |
 | | **Legacy/Treasury/** | الخزائن والبنوك |
-| 4.100 | ITreasuryService.cs | عقد الخزائن والبنوك |
-| 4.101 | TreasuryService.cs | الخزائن والبنوك وحساباتها |
+| 4.91 | ITreasuryService.cs | عقد الخزائن والبنوك |
+| 4.92 | TreasuryService.cs | الخزائن والبنوك وحساباتها |
 | | **Legacy/Vouchers/** | سندات القبض والصرف |
-| 4.102 | VoucherServiceBase.cs | سند قبض/صرف |
+| 4.93 | VoucherServiceBase.cs | سند قبض/صرف |
 | | **Reporting/** | خدمات التقارير |
-| 4.103 | AssetReportService.cs | تقريرا الأصول |
-| 4.104 | BuilderReportService.cs | تقرير مبنيّ |
-| 4.105 | FinancialStatementFactory.cs | القوائم المالية بشكلها الرسمي |
-| 4.106 | FinancialStatementService.cs | القوائم المالية الثلاث |
-| 4.107 | PartyReportService.cs | أرصدة الأطراف وكشوفها |
-| 4.108 | PayslipReportService.cs | قسيمة راتب موظف |
-| 4.109 | ReportData.cs | مخرَج التقرير |
-| 4.110 | ReportRows.cs | ميزان المراجعة القياسي |
-| 4.111 | ReportServiceBase.cs | ما يتقاسمه كل تقرير |
-| 4.112 | SalesReportService.cs | تقرير المبيعات |
-| 4.113 | StockReportService.cs | تقارير المخزون |
+| 4.94 | AssetReportService.cs | تقريرا الأصول |
+| 4.95 | BuilderReportService.cs | تقرير مبنيّ |
+| 4.96 | FinancialStatementFactory.cs | القوائم المالية بشكلها الرسمي |
+| 4.97 | FinancialStatementService.cs | القوائم المالية الثلاث |
+| 4.98 | PartyReportService.cs | أرصدة الأطراف وكشوفها |
+| 4.99 | PayslipReportService.cs | قسيمة راتب موظف |
+| 4.100 | ReportData.cs | مخرَج التقرير |
+| 4.101 | ReportRows.cs | ميزان المراجعة القياسي |
+| 4.102 | ReportServiceBase.cs | ما يتقاسمه كل تقرير |
+| 4.103 | SalesReportService.cs | تقرير المبيعات |
+| 4.104 | StockReportService.cs | تقارير المخزون |
 | | **Services/Core/** | أساس كل خدمة: الصلاحية والمعاملة والكيان والترقيم |
-| 4.114 | CrudServiceBase.cs | القراءة العامة لكيان بصفحات وبحث |
-| 4.115 | EntityService.cs | إضافة الكيان وتعديله وحذفه |
-| 4.116 | INumberSequenceService.cs | عقد الترقيم التسلسلي |
-| 4.117 | NumberSequenceService.cs | أرقام متسلسلة لكل مفتاح |
-| 4.118 | ServiceBase.cs | القاعدة المشتركة لكل خدمة |
+| 4.105 | CrudServiceBase.cs | القراءة العامة لكيان بصفحات وبحث |
+| 4.106 | EntityService.cs | إضافة الكيان وتعديله وحذفه |
+| 4.107 | INumberSequenceService.cs | عقد الترقيم التسلسلي |
+| 4.108 | LinkedEntityService.cs | كيانٌ يعيش ورقةً في الشجرة |
+| 4.109 | NumberSequenceService.cs | أرقام متسلسلة لكل مفتاح |
+| 4.110 | ServiceBase.cs | القاعدة المشتركة لكل خدمة |
 | | **Services/Documents/** | المستند والسحب وحركة المخزون وتغيير الحالة وسطور التجارة |
-| 4.119 | DocumentPull.cs | تتبّع السحب بين المستندات |
-| 4.120 | DocumentService.cs | المستند: قراءةً وإنشاءً واستبدالاً وحذفاً |
-| 4.121 | IStockMove.cs | عقد أرصدة المخزون |
-| 4.122 | ProductLines.cs | سطور المستند بأصنافها |
-| 4.123 | StatusChange.cs | الحالة كترحيل |
-| 4.124 | StockMove.cs | أرصدة المخزون وحركته |
-| 4.125 | TradeAccounts.cs | حسابات البيع والشراء |
-| 4.126 | TradeLines.cs | سطور الفواتير والمرتجعات ومجاميعها |
+| 4.111 | DocumentPull.cs | تتبّع السحب بين المستندات |
+| 4.112 | DocumentService.cs | المستند: قراءةً وإنشاءً واستبدالاً وحذفاً |
+| 4.113 | IStockMove.cs | عقد أرصدة المخزون |
+| 4.114 | ProductLines.cs | سطور المستند بأصنافها |
+| 4.115 | StatusChange.cs | الحالة كترحيل |
+| 4.116 | StockMove.cs | أرصدة المخزون وحركته |
+| 4.117 | TradeAccounts.cs | حسابات البيع والشراء |
+| 4.118 | TradeLines.cs | سطور الفواتير والمرتجعات ومجاميعها |
 | | **Services/Entities/** | الكيان من إعداده: القائمة البسيطة وتحويل الصفّ |
-| 4.127 | ByCode.cs | سطورٌ تُحلّ بكود كيانها |
-| 4.128 | EntitySpec.cs | إعلان صفحة كيان |
-| 4.129 | Lookup.cs | صفحة قائمةٍ من إعلانها |
-| 4.130 | Rows.cs | الكيان صفّاً والصفّ كياناً |
-| 4.131 | Tree.cs | الشجرة من صفوفٍ مسطّحة |
+| 4.119 | ByCode.cs | سطورٌ تُحلّ بكود كيانها |
+| 4.120 | EntitySpec.cs | إعلان صفحة كيان |
+| 4.121 | Lookup.cs | صفحة قائمةٍ من إعلانها |
+| 4.122 | Rows.cs | الكيان صفّاً والصفّ كياناً |
+| 4.123 | Tree.cs | الشجرة من صفوفٍ مسطّحة |
 | | **Services/Ledger/** | قلب القيد، أرصدة الحسابات، الفترة، القيد بطرفيه والتجارة، الحرّاس، رصيد الطرف |
-| 4.132 | AccountBalances.cs | أرصدة الحسابات من قيودها |
-| 4.133 | Entries.cs | قلب القيد لكل مستدعٍ |
-| 4.134 | Guards.cs | حرّاس الشجرة والنقدية |
-| 4.135 | JournalLines.cs | سطور قيدٍ بطرفيها |
-| 4.136 | OpeningEntry.cs | القيد الافتتاحي متعدّد الأسطر |
-| 4.137 | PartyBalance.cs | رصيد الطرف من حسابه |
-| 4.138 | PartyByKind.cs | الطرف بنوعه |
-| 4.139 | PeriodGate.cs | التاريخ في فترةٍ مفتوحة |
-| 4.140 | Posting.cs | القيد يُنشأ مُرحَّلاً ويُعكس بحذفه |
-| 4.141 | Statement.cs | كشف الحساب برصيده الجاري |
-| 4.142 | TradeEntry.cs | قيد البيع والشراء وعكسهما |
-| 4.143 | TrialBalance.cs | ميزان المراجعة لفترة |
-| 4.144 | TwoSided.cs | طرفا القيد باتجاهه |
+| 4.124 | AccountBalances.cs | أرصدة الحسابات من قيودها |
+| 4.125 | ClosingEntry.cs | قيد إقفال السنة |
+| 4.126 | DepreciationCharges.cs | أقساط الإهلاك وأثرها |
+| 4.127 | DisposalEntry.cs | قيد استبعاد الأصل |
+| 4.128 | Entries.cs | قلب القيد لكل مستدعٍ |
+| 4.129 | Guards.cs | حرّاس الشجرة والنقدية |
+| 4.130 | JournalLines.cs | سطور قيدٍ بطرفيها |
+| 4.131 | NewFiscalYear.cs | السنة المالية بفتراتها |
+| 4.132 | OpeningEntry.cs | القيد الافتتاحي متعدّد الأسطر |
+| 4.133 | PartyByKind.cs | الطرف بنوعه |
+| 4.134 | PayrollEntry.cs | قيد استحقاق الرواتب |
+| 4.135 | PeriodGate.cs | التاريخ في فترةٍ مفتوحة |
+| 4.136 | Posting.cs | القيد يُنشأ مُرحَّلاً ويُعكس بحذفه |
+| 4.137 | RevaluationEntry.cs | قيد إعادة تقييم الأصل |
+| 4.138 | Statement.cs | كشف الحساب برصيده الجاري |
+| 4.139 | TradeEntry.cs | قيد البيع والشراء وعكسهما |
+| 4.140 | TrialBalance.cs | ميزان المراجعة لفترة |
+| 4.141 | TwoSided.cs | طرفا القيد باتجاهه |
 | | **Services/Ledger/Accounts/** | الحساب: في الشجرة، للكيان، بالاتجاهين، ومع مجمّعه |
-| 4.145 | AccountCases.cs | حالات الحساب التي يستدعيها الكيان |
-| 4.146 | AccountOf.cs | حساب الكيان أو الإعداد |
-| 4.147 | AccountSpec.cs | حساب كيانٍ بمعاملاته |
-| 4.148 | AddEntityAccount.cs | إضافة حساب لكيان صفحة |
-| 4.149 | AddLinkedAccount.cs | حسابٌ في الشجرة ينشئ كيانه |
-| 4.150 | AddMirroredAccount.cs | حسابٌ ومجمّعه لأي كيان |
-| 4.151 | AddTreeAccount.cs | إضافة حساب في الشجرة |
-| 4.152 | CloseAccount.cs | حذف الحساب وإعادة أبيه ورقياً |
-| 4.153 | CloseLinkedAccount.cs | حذف الحساب وكيانه |
-| 4.154 | EditLinkedAccount.cs | تعديل الحساب واسم كيانه |
-| 4.155 | EditTreeAccount.cs | تعديل حساب في الشجرة |
-| 4.156 | IAccountLinkedService.cs | كيان يعيش ورقةً في شجرة |
-| 4.157 | LinkedAccounts.cs | كيان الجذر المرتبط |
-| 4.158 | RenameAccount.cs | تسمية الحساب |
-| 4.159 | SettingAccounts.cs | حسابات الإعدادات |
+| 4.142 | AccountCases.cs | حالات الحساب التي يستدعيها الكيان |
+| 4.143 | AccountOf.cs | حساب الكيان أو الإعداد |
+| 4.144 | AccountSpec.cs | حساب كيانٍ بمعاملاته |
+| 4.145 | AddEntityAccount.cs | إضافة حساب لكيان صفحة |
+| 4.146 | AddLinkedAccount.cs | حسابٌ في الشجرة ينشئ كيانه |
+| 4.147 | AddMirroredAccount.cs | حسابٌ ومجمّعه لأي كيان |
+| 4.148 | AddTreeAccount.cs | إضافة حساب في الشجرة |
+| 4.149 | CloseAccount.cs | حذف الحساب وإعادة أبيه ورقياً |
+| 4.150 | CloseLinkedAccount.cs | حذف الحساب وكيانه |
+| 4.151 | EditLinkedAccount.cs | تعديل الحساب واسم كيانه |
+| 4.152 | EditTreeAccount.cs | تعديل حساب في الشجرة |
+| 4.153 | IAccountLinkedService.cs | كيان يعيش ورقةً في شجرة |
+| 4.154 | LinkedAccounts.cs | كيان الجذر المرتبط |
+| 4.155 | RenameAccount.cs | تسمية الحساب |
+| 4.156 | RepairAccounts.cs | الكيان بلا حساب: ورقةٌ باسمه في جذره وإلا جديدة |
+| 4.157 | SettingAccounts.cs | حسابات الإعدادات |
 | | **Validation/** | دالة التحقق الوحيدة Check بشروطٍ معاملاتٍ في Field، وسطور المستند |
-| 4.160 | Check.cs | الدالة الوحيدة للتحقق |
-| 4.161 | DocumentLines.cs | سطور المستند بشروط Check |
-| 4.162 | Field.cs | شرطُ حقلٍ بكل معاملاته |
-| 4.163 | ValidationResult.cs | عقد ValidationResult |
+| 4.158 | Check.cs | الدالة الوحيدة للتحقق |
+| 4.159 | DocumentLines.cs | سطور المستند بشروط Check |
+| 4.160 | EmployeeCode.cs | الموظف بكوده: مطلوبٌ وموجود |
+| 4.161 | Field.cs | شرطُ حقلٍ بكل معاملاته |
+| 4.162 | ValidationResult.cs | عقد ValidationResult |
 
 ## 5. 5.Design
 
@@ -530,38 +531,47 @@
 | 6.111 | StringToVisibilityConverter.cs | نص فارغ/فارغ تماماً يعني Collapsed |
 | 6.112 | VariantToBrushConverter.cs | حالة ← لون |
 | | **Services/** | خدمات الواجهة: حوار وتنبيه وتصدير وتنقّل |
-| 6.113 | DialogService.cs | واجهة async فوق حوارات معتمدة |
-| 6.114 | ExportService.cs | يصدّر بيانات AppDataGrid فعلياً |
-| 6.115 | IDialogService.cs | حوار يريد إرجاع نتيجة نمطية |
-| 6.116 | IExportService.cs | خدمة واجهة Export |
-| 6.117 | INavigationService.cs | خدمة واجهة Navigation |
-| 6.118 | IProgressHandle.cs | خدمة واجهة ProgressHandle |
-| 6.119 | IToastService.cs | خدمة واجهة Toast |
-| 6.120 | IdentityService.cs | تحميل موارد التصميم |
-| 6.121 | NavigationService.cs | ينقل بين صفحات مسجَّلة بمفتاح |
-| 6.122 | PrintDialogHost.cs | الواجهة المرئية للطباعة |
-| 6.123 | ToastHostWindow.xaml | واجهة |
-| 6.124 | ToastHostWindow.xaml.cs | نافذة الإشعارات العائمة |
-| 6.125 | ToastService.cs | يعرض إشعارات Toast فوق أي |
-| 6.126 | UIServices.cs | نقطة وصول واحدة لحاوية DI |
-| 6.127 | UpdateFlow.cs | البحث عن تحديث وتنزيله |
+| 6.113 | ChequePrinter.cs | الشيك يُطبَع على ورق مطبوع |
+| 6.114 | Code128.cs | ترميز Code128-B |
+| 6.115 | CompanyHeaderComponent.cs | ترويسة الشركة كقطعة واحدة تُستدعى |
+| 6.116 | DialogService.cs | واجهة async فوق حوارات معتمدة |
+| 6.117 | ExportService.cs | يصدّر بيانات AppDataGrid فعلياً |
+| 6.118 | IDialogService.cs | حوار يريد إرجاع نتيجة نمطية |
+| 6.119 | IExportService.cs | خدمة واجهة Export |
+| 6.120 | INavigationService.cs | خدمة واجهة Navigation |
+| 6.121 | IPrintDialogHost.cs | تنفّذه طبقة الواجهة |
+| 6.122 | IPrintService.cs | عقد الطباعة |
+| 6.123 | IProgressHandle.cs | خدمة واجهة ProgressHandle |
+| 6.124 | IToastService.cs | خدمة واجهة Toast |
+| 6.125 | IdentityService.cs | تحميل موارد التصميم |
+| 6.126 | ImageData.cs | تحويل صورة ↔ Base64 |
+| 6.127 | NavigationService.cs | ينقل بين صفحات مسجَّلة بمفتاح |
+| 6.128 | PaperNodeRenderer.cs | مترجم PaperNode إلى عناصر WPF |
+| 6.129 | PaperTheme.cs | قيم الورق كلها من PrintTheme.xaml |
+| 6.130 | PrintDialogHost.cs | الواجهة المرئية للطباعة |
+| 6.131 | PrintService.cs | يبني مستندات الطباعة من IPrintable |
+| 6.132 | ToastHostWindow.xaml | واجهة |
+| 6.133 | ToastHostWindow.xaml.cs | نافذة الإشعارات العائمة |
+| 6.134 | ToastService.cs | يعرض إشعارات Toast فوق أي |
+| 6.135 | UIServices.cs | نقطة وصول واحدة لحاوية DI |
+| 6.136 | UpdateFlow.cs | البحث عن تحديث وتنزيله |
 | | **ViewModels/** | نماذج العرض مجموعةً بأقسامها |
-| 6.128 | AccountsViewModel.cs | نماذج عرض AccountsViewModel |
-| 6.129 | BaseViewModel.cs | نماذج عرض BaseViewModel |
-| 6.130 | CategoryListViewModel.cs | نماذج عرض CategoryFilter |
-| 6.131 | CycleDocumentViewModels.cs | نماذج عرض CycleDocumentViewModelBase |
-| 6.132 | CycleVoucherViewModels.cs | نماذج عرض CycleVoucherViewModelBase |
-| 6.133 | DocumentViewModels.cs | نماذج عرض JournalsViewModel |
-| 6.134 | DynamicViewModel.cs | نموذج عرض أي شاشة صفوفها |
-| 6.135 | HrMovementViewModels.cs | البدل والخصم شاشةٌ واحدة بخدمتين |
-| 6.136 | ListViewModels.cs | نماذج عرض UnitsViewModel |
-| 6.137 | LookupViewModels.cs | نماذج عرض CategoriesLookupViewModel |
-| 6.138 | TreeViewModelBase.cs | نماذج عرض TreeViewModelBase |
-| 6.139 | VoucherViewModels.cs | نماذج عرض السندات والشيكات |
+| 6.137 | AccountsViewModel.cs | نماذج عرض AccountsViewModel |
+| 6.138 | BaseViewModel.cs | نماذج عرض BaseViewModel |
+| 6.139 | CategoryListViewModel.cs | قائمة فئات الوحدة |
+| 6.140 | CycleDocumentViewModels.cs | نماذج عرض CycleDocumentViewModelBase |
+| 6.141 | CycleVoucherViewModels.cs | نماذج عرض CycleVoucherViewModelBase |
+| 6.142 | DocumentViewModels.cs | نماذج عرض JournalsViewModel |
+| 6.143 | DynamicViewModel.cs | نموذج عرض أي شاشة صفوفها |
+| 6.144 | HrMovementViewModels.cs | البدل والخصم شاشةٌ واحدة بخدمتين |
+| 6.145 | ListViewModels.cs | نماذج عرض UnitsViewModel |
+| 6.146 | LookupViewModels.cs | نماذج عرض CategoriesLookupViewModel |
+| 6.147 | TreeViewModelBase.cs | نماذج عرض TreeViewModelBase |
+| 6.148 | VoucherViewModels.cs | نماذج عرض السندات والشيكات |
 | | **ViewModels/Base/** | أسس نماذج العرض: صفحة وCRUD وصلاحية |
-| 6.140 | CrudViewModelBase.cs | يضيف على PagedViewModelBase حذف عام |
-| 6.141 | PagedViewModelBase.cs | صفحات+بحث عامان لأي كيان |
-| 6.142 | PermissionAwareViewModel.cs | قاعدة لأي ViewModel يحتاج التحقق |
+| 6.149 | CrudViewModelBase.cs | يضيف على PagedViewModelBase حذف عام |
+| 6.150 | PagedViewModelBase.cs | صفحات+بحث عامان لأي كيان |
+| 6.151 | PermissionAwareViewModel.cs | قاعدة لأي ViewModel يحتاج التحقق |
 
 ## 7. 7.Composition
 
@@ -579,40 +589,41 @@
 | 7.09 | ReportDefinition.cs | وصف التقرير ومعاملاته |
 | 7.10 | RowAction.cs | إجراء إضافي على السجل المحدَّد |
 | 7.11 | RowPage.cs | صفحة صفوفٍ من خدمتها |
-| 7.12 | StandardFields.cs | حقول تتكرر في كل حوار |
-| 7.13 | TreeCheckListDefinition.cs | شاشة شجرة قابلة للتأشير مدفوعة |
+| 7.12 | SettingsTabs.cs | تبويبات صفحة الإعدادات |
+| 7.13 | StandardFields.cs | حقول تتكرر في كل حوار |
+| 7.14 | TreeCheckListDefinition.cs | شاشة شجرة قابلة للتأشير مدفوعة |
 | | **Print/** | جسر الطباعة للشاشات |
-| 7.14 | PrintDocuments.cs | عائلتا المستندات |
-| 7.15 | TradePaper.cs | شكل الورق التجاري |
+| 7.15 | PrintDocuments.cs | عائلتا المستندات |
+| 7.16 | TradePaper.cs | شكل الورق التجاري |
 | | **Pull/** | سحب مستند من مستند |
-| 7.16 | PullService.cs | محرّك السحب العام |
+| 7.17 | PullService.cs | محرّك السحب العام |
 | | **Registry/** | سجلّ الوحدات وخريطة التنقّل |
-| 7.17 | IModuleRegistry.cs | سجل الوحدات المُفعَّلة |
-| 7.18 | ModuleRegistry.cs | سجلّ الوحدات |
-| 7.19 | NavigationMap.cs | خريطة الشريط الجانبي |
-| 7.20 | NavigationSource.cs | أقسام الشريط الجانبي كما يراها |
+| 7.18 | IModuleRegistry.cs | سجل الوحدات المُفعَّلة |
+| 7.19 | ModuleRegistry.cs | سجلّ الوحدات |
+| 7.20 | NavigationMap.cs | خريطة الشريط الجانبي |
+| 7.21 | NavigationSource.cs | أقسام الشريط الجانبي كما يراها |
 | | **Renderers/** | تحويل التعريف إلى شاشة عاملة |
-| 7.21 | BuilderPickers.cs | قوائم تعدادات النظام وكتالوج أزراره |
-| 7.22 | ChequeBoardRenderer.cs | شاشة الشيكات |
-| 7.23 | CrudPageRenderer.cs | تصيير صفحة القائمة وCRUD |
-| 7.24 | DialogRenderer.cs | تصيير الحوار من وصفه |
-| 7.25 | DocumentPageRenderer.cs | تصيير صفحة المستند |
-| 7.26 | DocumentPrinter.cs | يجلب المستند الكامل من خدمته |
-| 7.27 | DocumentRenderer.cs | تصيير محرّر المستند |
-| 7.28 | FieldValidation.cs | تحقّق واجهة واحد لكل الشاشات |
-| 7.29 | FilterControls.cs | شريط فلاتر الصفحة المُعلَنة |
-| 7.30 | FolderOutput.cs | مسار مجلد من المستخدم |
-| 7.31 | ListOutput.cs | طباعة أي قائمة معروضة وتصديرها |
-| 7.32 | PageRenderer.cs | نقطة التوزيع الوحيدة حسب ModuleDefinition.LayoutKind |
-| 7.33 | PaginationBar.cs | شريط الترقيم مربوطاً بنموذج العرض |
-| 7.34 | PullDialog.cs | نافذة "سحب من" |
-| 7.35 | ReportRenderer.cs | تصيير التقرير |
-| 7.36 | Resolve.cs | حلّ نموذج العرض والخدمة |
-| 7.37 | SettingsPageRenderer.cs | تصيير صفحة الإعدادات |
-| 7.38 | ToolbarActions.cs | أزرار الصفحة بعد ترشيحها بما |
-| 7.39 | TreeBuilder.cs | قائمة مسطَّحة تصير شجرة |
-| 7.40 | TreeCheckListRenderer.cs | تصيير شجرة التأشير |
-| 7.41 | TreeRenderer.cs | تصيير الشجرة |
+| 7.22 | BuilderPickers.cs | قوائم تعدادات النظام وكتالوج أزراره |
+| 7.23 | ChequeBoardRenderer.cs | شاشة الشيكات |
+| 7.24 | CrudPageRenderer.cs | تصيير صفحة القائمة وCRUD |
+| 7.25 | DialogRenderer.cs | تصيير الحوار من وصفه |
+| 7.26 | DocumentPageRenderer.cs | تصيير صفحة المستند |
+| 7.27 | DocumentPrinter.cs | يجلب المستند الكامل من خدمته |
+| 7.28 | DocumentRenderer.cs | تصيير محرّر المستند |
+| 7.29 | FieldValidation.cs | تحقّق واجهة واحد لكل الشاشات |
+| 7.30 | FilterControls.cs | شريط فلاتر الصفحة المُعلَنة |
+| 7.31 | FolderOutput.cs | مسار مجلد من المستخدم |
+| 7.32 | ListOutput.cs | طباعة أي قائمة معروضة وتصديرها |
+| 7.33 | PageRenderer.cs | نقطة التوزيع الوحيدة حسب ModuleDefinition.LayoutKind |
+| 7.34 | PaginationBar.cs | شريط الترقيم مربوطاً بنموذج العرض |
+| 7.35 | PullDialog.cs | نافذة "سحب من" |
+| 7.36 | ReportRenderer.cs | تصيير التقرير |
+| 7.37 | Resolve.cs | حلّ نموذج العرض والخدمة |
+| 7.38 | SettingsPageRenderer.cs | تصيير صفحة الإعدادات |
+| 7.39 | ToolbarActions.cs | أزرار الصفحة بعد ترشيحها بما |
+| 7.40 | TreeBuilder.cs | قائمة مسطَّحة تصير شجرة |
+| 7.41 | TreeCheckListRenderer.cs | تصيير شجرة التأشير |
+| 7.42 | TreeRenderer.cs | تصيير الشجرة |
 
 ## 8. 8.Modules
 

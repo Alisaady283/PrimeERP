@@ -53,7 +53,6 @@
 4.Application/Legacy/HR|الموظفون والرواتب والحضور
 4.Application/Legacy/Inventory|الأصناف والمخازن والأرصدة
 4.Application/Legacy/Parties|العملاء والموردون
-4.Application/Legacy/Print|بناء المستندات المطبوعة
 4.Application/Legacy/Purchasing|فواتير الشراء ومرتجعاتها
 4.Application/Legacy/Sales|فواتير البيع ومرتجعاتها
 4.Application/Legacy/Security|المستخدمون والأدوار
