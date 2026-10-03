@@ -68,7 +68,6 @@
 6.UI/Components|القطع المرئية بأقسامها
 6.UI/Components/Actions|الأزرار وشريطها
 6.UI/Components/Display|الجدول والترقيم والبطاقة
-6.UI/Components/Documents|محرر سطور المستند
 6.UI/Components/Feedback|الحوارات والتنبيهات
 6.UI/Components/Inputs|حقول الإدخال
 6.UI/Components/Layout|ترويسة الصفحة وشريط الفلاتر
@@ -93,7 +92,6 @@ PrimeERP.Tests|الاختبارات
 PrimeERP.Tests/Architecture|حدود الطبقات واكتمال الوحدات
 PrimeERP.Tests/Composition|تصيير الشاشات الحقيقية
 PrimeERP.Tests/Design|الألوان والرموز والنصوص
-PrimeERP.Tests/Documents|المستندات ودوراتها
 PrimeERP.Tests/Helpers|أدوات الاختبار
 PrimeERP.Tests/Services|الخدمات ومنطقها
 PrimeERP.Tests/Services/Design|التصميم والنصوص

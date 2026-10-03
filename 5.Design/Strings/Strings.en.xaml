@@ -103,7 +103,6 @@
     <sys:String x:Key="Str.UnitPrice">Unit Price</sys:String>
     <sys:String x:Key="Str.TaxPercent">Tax %</sys:String>
     <sys:String x:Key="Str.SubTotal">Subtotal</sys:String>
-    <sys:String x:Key="Str.TaxAmount">Tax</sys:String>
     <sys:String x:Key="Str.NetTotal">Net Total</sys:String>
     <sys:String x:Key="Str.Module.PurchaseInvoices">Purchase Invoices</sys:String>
     <sys:String x:Key="Str.PurchaseInvoices.Add">Add Purchase Invoice</sys:String>
@@ -433,7 +432,6 @@
     <sys:String x:Key="Str.Journal.AccountNotLeaf">The account is a group — entries post to its sub-accounts</sys:String>
     <sys:String x:Key="Str.Journal.AccountInactive">The account is inactive</sys:String>
     <sys:String x:Key="Str.Journal.DuplicateAccount">This account appears on more than one line in the entry</sys:String>
-    <sys:String x:Key="Str.Journal.BothDebitAndCredit">Cannot enter both debit and credit on the same line</sys:String>
     <sys:String x:Key="Str.Journal.PostedCannotEdit">The entry is posted — it cannot be edited</sys:String>
     <sys:String x:Key="Str.Journal.PostedCannotDelete">The entry is posted — it cannot be deleted</sys:String>
     <sys:String x:Key="Str.Journal.NotPostedCannotUnpost">The entry is not posted</sys:String>
@@ -740,19 +738,10 @@
     <sys:String x:Key="Str.Journal.Source.ReceiptVoucher">Receipt voucher</sys:String>
     <sys:String x:Key="Str.Journal.Unbalanced">The entry is unbalanced: debit {0:N2}, credit {1:N2}, difference {2:N2}</sys:String>
     <sys:String x:Key="Str.Journal.UnpostedLog">Unposted entry {0}</sys:String>
-    <sys:String x:Key="Str.Line.CodeNotFound">Code not found</sys:String>
-    <sys:String x:Key="Str.Line.Cost">Cost</sys:String>
-    <sys:String x:Key="Str.Line.DebitOrCredit">Enter a debit or a credit</sys:String>
     <sys:String x:Key="Str.Line.Discount">Discount</sys:String>
     <sys:String x:Key="Str.Line.DiscountPercent">Disc%</sys:String>
-    <sys:String x:Key="Str.Line.Duplicate">This item is already used in another line</sys:String>
-    <sys:String x:Key="Str.Line.Note">Note</sys:String>
-    <sys:String x:Key="Str.Line.PasteInvalid">Invalid value to paste</sys:String>
     <sys:String x:Key="Str.Line.Price">Price</sys:String>
-    <sys:String x:Key="Str.Line.ProductCode">Item code</sys:String>
     <sys:String x:Key="Str.Line.ProductName">Item name</sys:String>
-    <sys:String x:Key="Str.Line.Unit">Unit</sys:String>
-    <sys:String x:Key="Str.Line.VatPercent">VAT%</sys:String>
     <sys:String x:Key="Str.Module.OpeningStock">Opening item balances</sys:String>
     <sys:String x:Key="Str.Module.RolePermissions">Role permissions</sys:String>
     <sys:String x:Key="Str.Module.UserPermissions">User permissions</sys:String>

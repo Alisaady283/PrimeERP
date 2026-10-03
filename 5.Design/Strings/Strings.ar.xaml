@@ -103,7 +103,6 @@
     <sys:String x:Key="Str.UnitPrice">سعر الوحدة</sys:String>
     <sys:String x:Key="Str.TaxPercent">نسبة الضريبة</sys:String>
     <sys:String x:Key="Str.SubTotal">الإجمالي قبل الضريبة</sys:String>
-    <sys:String x:Key="Str.TaxAmount">الضريبة</sys:String>
     <sys:String x:Key="Str.NetTotal">الصافي</sys:String>
     <sys:String x:Key="Str.Module.PurchaseInvoices">فواتير الشراء</sys:String>
     <sys:String x:Key="Str.PurchaseInvoices.Add">إضافة فاتورة شراء</sys:String>
@@ -433,7 +432,6 @@
     <sys:String x:Key="Str.Journal.AccountNotLeaf">الحساب تجميعيّ لا يقبل القيود — القيود تُرحَّل على حساباته الفرعية</sys:String>
     <sys:String x:Key="Str.Journal.AccountInactive">الحساب غير نشط</sys:String>
     <sys:String x:Key="Str.Journal.DuplicateAccount">هذا الحساب مكرر في أكثر من سطر بالقيد</sys:String>
-    <sys:String x:Key="Str.Journal.BothDebitAndCredit">لا يمكن إدخال مدين ودائن في نفس السطر</sys:String>
     <sys:String x:Key="Str.Journal.PostedCannotEdit">القيد مرحّل — لا يمكن تعديله</sys:String>
     <sys:String x:Key="Str.Journal.PostedCannotDelete">القيد مرحّل — لا يمكن حذفه</sys:String>
     <sys:String x:Key="Str.Journal.NotPostedCannotUnpost">القيد غير مرحّل أصلاً</sys:String>
@@ -740,19 +738,10 @@
     <sys:String x:Key="Str.Journal.Source.ReceiptVoucher">سند قبض</sys:String>
     <sys:String x:Key="Str.Journal.Unbalanced">القيد غير متزن: المدين {0:N2} والدائن {1:N2}، والفرق {2:N2}</sys:String>
     <sys:String x:Key="Str.Journal.UnpostedLog">إلغاء ترحيل قيد {0}</sys:String>
-    <sys:String x:Key="Str.Line.CodeNotFound">كود غير موجود</sys:String>
-    <sys:String x:Key="Str.Line.Cost">التكلفة</sys:String>
-    <sys:String x:Key="Str.Line.DebitOrCredit">أدخل مدين أو دائن</sys:String>
     <sys:String x:Key="Str.Line.Discount">الخصم</sys:String>
     <sys:String x:Key="Str.Line.DiscountPercent">خصم%</sys:String>
-    <sys:String x:Key="Str.Line.Duplicate">هذا العنصر مستخدم في سطر آخر بالفعل</sys:String>
-    <sys:String x:Key="Str.Line.Note">بيان</sys:String>
-    <sys:String x:Key="Str.Line.PasteInvalid">قيمة غير صالحة للصق</sys:String>
     <sys:String x:Key="Str.Line.Price">السعر</sys:String>
-    <sys:String x:Key="Str.Line.ProductCode">كود الصنف</sys:String>
     <sys:String x:Key="Str.Line.ProductName">اسم الصنف</sys:String>
-    <sys:String x:Key="Str.Line.Unit">الوحدة</sys:String>
-    <sys:String x:Key="Str.Line.VatPercent">ضريبة%</sys:String>
     <sys:String x:Key="Str.Module.OpeningStock">أرصدة الأصناف الافتتاحية</sys:String>
     <sys:String x:Key="Str.Module.RolePermissions">صلاحيات الأدوار</sys:String>
     <sys:String x:Key="Str.Module.UserPermissions">صلاحيات المستخدمين</sys:String>
