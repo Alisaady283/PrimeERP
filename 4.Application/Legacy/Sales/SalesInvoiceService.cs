@@ -38,7 +38,6 @@ namespace PrimeERP.Application.Legacy.Sales
         private readonly IProductRepository _products;
         private readonly IPartyRepository<Customer> _customers;
         private readonly ILookupRepository<Warehouse> _warehouses;
-        private readonly IStockMove _stock;
         private readonly INumberSequenceService _numbers;
 
         public SalesInvoiceService(IInvoiceRepository<SalesInvoice, SalesInvoiceLine> invoices, IProductRepository products,
@@ -46,16 +45,17 @@ namespace PrimeERP.Application.Legacy.Sales
             Entries journal, INumberSequenceService numbers, IDocumentPull links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
             AccountOf accountOf)
-            : base(permissions, settings, localization, audit, links, journal)
+            : base(permissions, settings, localization, audit, links, journal, stock)
         {
             _invoices = invoices; _products = products; _customers = customers; _warehouses = warehouses;
-            _stock = stock; _numbers = numbers; _accountOf = accountOf;
+            _numbers = numbers; _accountOf = accountOf;
         }
 
         protected override string PermissionPrefix => "Sales";
         protected override string StringPrefix => "Str.SalesInvoice";
         protected override string EntityName => "SalesInvoices";
         protected override string PullType => EntityName;
+        protected override string StockSource => "SalesInvoice";
 
         protected override SalesInvoice FindHead(int id) => _invoices.GetById(id);
         protected override int IdOf(SalesInvoice head) => head.Id;
@@ -111,7 +111,7 @@ namespace PrimeERP.Application.Legacy.Sales
                 }));
 
                 // تكلفة الصرف من متوسط اللحظة
-                var costs = _stock.GetIssueCosts(db, lines.Select(x => (x.ProductId, x.Qty)).ToList());
+                var costs = Stock.GetIssueCosts(db, lines.Select(x => (x.ProductId, x.Qty)).ToList());
                 if (costs.IsFailure) throw new InvalidOperationException(costs.ErrorMessage);
 
                 var inserted = new List<(IPullableLine Line, int TargetLineId, decimal Qty)>();
@@ -121,8 +121,8 @@ namespace PrimeERP.Application.Legacy.Sales
                     inserted.Add((dto.Lines[i], _invoices.InsertLine(db, id, line), line.Qty));
 
                     var moveResult = simplifiedFlow
-                        ? _stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.Out, line.Qty,
-                            InventoryCosting.UnitCostOf(costs.Value.Lines[i], line.Qty), "SalesInvoice", id, invoiceNo, dto.InvoiceDate)
+                        ? Stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.Out, line.Qty,
+                            InventoryCosting.UnitCostOf(costs.Value.Lines[i], line.Qty), StockSource, id, invoiceNo, dto.InvoiceDate)
                         : Result.Ok();
                     if (moveResult.IsFailure) throw new InvalidOperationException(moveResult.ErrorMessage);
                 }
@@ -139,7 +139,7 @@ namespace PrimeERP.Application.Legacy.Sales
         protected override void Remove(PrimeDbContext db, SalesInvoice head)
         {
             Posting.Reverse(Journals, db, head.JournalEntryId);
-            _stock.RemoveMovements(db, "SalesInvoice", head.Id);
+            Stock.RemoveMovements(db, StockSource, head.Id);
             Links.RemovePull(EntityName, head.Id, db);
             _invoices.DeleteDocument(db, head.Id);
         }

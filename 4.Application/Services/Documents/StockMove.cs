@@ -92,6 +92,10 @@ namespace PrimeERP.Application.Services.Documents
                 : Result.Ok();
         }
 
+        /// <summary>حذف حركاته لا يُنزل الرصيد</summary>
+        public Result Removable(string sourceDocType, int sourceDocId) =>
+            StaysPositive(Effects(sourceDocType, sourceDocId, -1));
+
         public Result<List<StockMovement>> GetCostingHistory(int productId) =>
             Result.Ok(_movements.GetForCosting(productId));
 

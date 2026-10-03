@@ -2,6 +2,7 @@ using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Services.Documents;
 using PrimeERP.Tests.Helpers;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Results;
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Inventory;
@@ -81,6 +82,52 @@ namespace PrimeERP.Tests.Services
                 Lines = { new CreateStockAdjustmentLineDto { LineNo = 1, ProductCode = _productCode, Qty = 5, UnitCost = 10 } }
             });
             Assert.False(result.IsSuccess);
+        }
+
+        private Result<StockAdjustmentDetailDto> Adjust(IStockInService service, int warehouseId, decimal qty) =>
+            service.Create(new CreateStockAdjustmentDto
+            {
+                MovementDate = DateTime.Today, WarehouseId = warehouseId,
+                Lines = { new CreateStockAdjustmentLineDto { LineNo = 1, ProductCode = _productCode, Qty = qty, UnitCost = 10 } }
+            });
+
+        [Fact]
+        public void DeletingAStockIn_ThatWasPartlyIssued_IsRefused()
+        {
+            var stockIn = _db.Services.GetRequiredService<IStockInService>();
+            var received = Adjust(stockIn, _warehouseAId, 50);
+            Assert.True(received.IsSuccess, received.ErrorMessage);
+            Assert.True(Adjust(_db.Services.GetRequiredService<IStockOutService>(), _warehouseAId, 45).IsSuccess);
+
+            var deleted = stockIn.Delete(received.Value.Id);
+
+            Assert.False(deleted.IsSuccess, "حُذف إذن إضافةٍ صُرف منه");
+            Assert.True(Localized.Says(deleted.ErrorMessage, "Str.Stock.Insufficient"), deleted.ErrorMessage);
+            Assert.Equal(5, _db.Services.GetRequiredService<IStockMove>().GetBalance(_productId, _warehouseAId).Value);
+        }
+
+        [Fact]
+        public void DeletingATransfer_WhoseGoodsLeftTheTarget_IsRefusedUntilTheIssueGoes()
+        {
+            Assert.True(Adjust(_db.Services.GetRequiredService<IStockInService>(), _warehouseAId, 50).IsSuccess);
+
+            var transfers = _db.Services.GetRequiredService<IStockTransferService>();
+            var moved = transfers.Create(new CreateStockTransferDto
+            {
+                MovementDate = DateTime.Today, FromWarehouseId = _warehouseAId, ToWarehouseId = _warehouseBId,
+                Lines = { new CreateStockTransferLineDto { LineNo = 1, ProductCode = _productCode, Qty = 15 } }
+            });
+            Assert.True(moved.IsSuccess, moved.ErrorMessage);
+
+            var stockOut = _db.Services.GetRequiredService<IStockOutService>();
+            var issued = Adjust(stockOut, _warehouseBId, 10);
+            Assert.True(issued.IsSuccess, issued.ErrorMessage);
+
+            Assert.False(transfers.Delete(moved.Value.Id).IsSuccess, "حُذف تحويلٌ صُرف من مخزنه الهدف");
+
+            Assert.True(stockOut.Delete(issued.Value.Id).IsSuccess);
+            Assert.True(transfers.Delete(moved.Value.Id).IsSuccess);
+            Assert.Equal(50, _db.Services.GetRequiredService<IStockMove>().GetBalance(_productId, _warehouseAId).Value);
         }
     }
 }

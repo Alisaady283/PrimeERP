@@ -103,7 +103,7 @@ namespace PrimeERP.Application.Legacy.Inventory
             if (!Owned(id)) return Fail("NotFound", ErrorCode.NotFound);
 
             var removed = Posting.EnsureReversible(_journals, id)
-                .Then(() => _stock.StaysPositive(_stock.Effects(SourceKey, id, -1)))
+                .Then(() => _stock.Removable(SourceKey, id))
                 .Then(() => Commit(db =>
                 {
                     Remove(db, id);

@@ -25,6 +25,8 @@ namespace PrimeERP.Application.Services.Documents
 
         Result StaysPositive(IEnumerable<(int ProductId, int WarehouseId, decimal Delta)> effects, PrimeDbContext db = null);
 
+        Result Removable(string sourceDocType, int sourceDocId);
+
         Result<(List<decimal> Lines, decimal Total)> GetIssueCosts(PrimeDbContext db, List<(int ProductId, decimal Qty)> lines);
 
         (List<decimal> UnitCosts, decimal Total) GetReturnCosts(PrimeDbContext db, string sourceDocType,

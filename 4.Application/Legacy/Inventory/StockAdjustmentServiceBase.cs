@@ -36,7 +36,6 @@ namespace PrimeERP.Application.Legacy.Inventory
         protected readonly TRepo Repo;
         private readonly IProductRepository _products;
         private readonly ILookupRepository<Warehouse> _warehouses;
-        private readonly IStockMove _stock;
         private readonly INumberSequenceService _numbers;
         private readonly MovementType _direction;
         private readonly string _sequenceKey, _permissionAction, _entityName;
@@ -45,9 +44,9 @@ namespace PrimeERP.Application.Legacy.Inventory
             INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
             ILocalizationService localization, IAuditLogger audit, IDocumentPull links,
             MovementType direction, string sequenceKey, string permissionAction, string entityName)
-            : base(permissions, settings, localization, audit, links)
+            : base(permissions, settings, localization, audit, links, stock: stock)
         {
-            Repo = repo; _products = products; _warehouses = warehouses; _stock = stock; _numbers = numbers;
+            Repo = repo; _products = products; _warehouses = warehouses; _numbers = numbers;
             _direction = direction;
             _sequenceKey = sequenceKey; _permissionAction = permissionAction; _entityName = entityName;
         }
@@ -56,6 +55,7 @@ namespace PrimeERP.Application.Legacy.Inventory
         protected override string StringPrefix => "Str.Stock";
         protected override string EntityName => _entityName;
         protected override string PullType => _entityName;
+        protected override string StockSource => _entityName;
 
         public string PermissionKey => $"{PermissionPrefix}.{_permissionAction}";
 
@@ -111,8 +111,8 @@ namespace PrimeERP.Application.Legacy.Inventory
                 var inserted = resolved.Select((line, i) =>
                 {
                     var lineId = Repo.InsertLine(db, id, line);
-                    var moved = _stock.RecordMovement(db, line.ProductId, dto.WarehouseId, _direction, line.Qty, line.UnitCost,
-                        _entityName, id, docNo, dto.MovementDate);
+                    var moved = Stock.RecordMovement(db, line.ProductId, dto.WarehouseId, _direction, line.Qty, line.UnitCost,
+                        StockSource, id, docNo, dto.MovementDate);
                     if (moved.IsFailure) throw new InvalidOperationException(moved.ErrorMessage);
                     return ((IPullableLine)dto.Lines[i], lineId, line.Qty);
                 }).ToList();
@@ -125,7 +125,7 @@ namespace PrimeERP.Application.Legacy.Inventory
         protected override void Remove(PrimeDbContext db, StockAdjustment head)
         {
             Links.RemovePull(_entityName, head.Id, db);
-            _stock.RemoveMovements(db, _entityName, head.Id);
+            Stock.RemoveMovements(db, StockSource, head.Id);
             Repo.DeleteDocument(db, head.Id);
         }
 

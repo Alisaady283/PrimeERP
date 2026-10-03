@@ -35,7 +35,6 @@ namespace PrimeERP.Application.Legacy.Purchasing
         private readonly IReturnRepository<PurchaseReturn, PurchaseReturnLine> _returns;
         private readonly IProductRepository _products;
         private readonly IPartyRepository<Supplier> _suppliers;
-        private readonly IStockMove _stock;
         private readonly INumberSequenceService _numbers;
 
         public PurchaseReturnService(IReturnRepository<PurchaseReturn, PurchaseReturnLine> returns, IProductRepository products,
@@ -43,16 +42,17 @@ namespace PrimeERP.Application.Legacy.Purchasing
             INumberSequenceService numbers, IDocumentPull links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
             AccountOf accountOf)
-            : base(permissions, settings, localization, audit, links, journal)
+            : base(permissions, settings, localization, audit, links, journal, stock)
         {
             _returns = returns; _products = products; _suppliers = suppliers;
-            _stock = stock; _numbers = numbers; _accountOf = accountOf;
+            _numbers = numbers; _accountOf = accountOf;
         }
 
         protected override string PermissionPrefix => "Purchases";
         protected override string StringPrefix => "Str.PurchaseReturn";
         protected override string EntityName => "PurchaseReturns";
         protected override string PullType => EntityName;
+        protected override string StockSource => "PurchaseReturn";
 
         protected override PurchaseReturn FindHead(int id) => _returns.GetById(id);
         protected override int IdOf(PurchaseReturn head) => head.Id;
@@ -111,8 +111,8 @@ namespace PrimeERP.Application.Legacy.Purchasing
                     var line = lines[i];
                     inserted.Add((dto.Lines[i], _returns.InsertLine(db, id, line), line.Qty));
                     var moveResult = simplifiedFlow
-                        ? _stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.Out, line.Qty, line.UnitPrice,
-                            "PurchaseReturn", id, returnNo, dto.ReturnDate)
+                        ? Stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.Out, line.Qty, line.UnitPrice,
+                            StockSource, id, returnNo, dto.ReturnDate)
                         : Result.Ok();
                     if (moveResult.IsFailure) throw new InvalidOperationException(moveResult.ErrorMessage);
                 }
@@ -129,7 +129,7 @@ namespace PrimeERP.Application.Legacy.Purchasing
         protected override void Remove(PrimeDbContext db, PurchaseReturn head)
         {
             Posting.Reverse(Journals, db, head.JournalEntryId);
-            _stock.RemoveMovements(db, "PurchaseReturn", head.Id);
+            Stock.RemoveMovements(db, StockSource, head.Id);
             Links.RemovePull(EntityName, head.Id, db);
             _returns.DeleteDocument(db, head.Id);
         }

@@ -35,7 +35,6 @@ namespace PrimeERP.Application.Legacy.Purchasing
         private readonly IInvoiceRepository<PurchaseInvoice, PurchaseInvoiceLine> _invoices;
         private readonly IProductRepository _products;
         private readonly IPartyRepository<Supplier> _suppliers;
-        private readonly IStockMove _stock;
         private readonly INumberSequenceService _numbers;
 
         public PurchaseInvoiceService(IInvoiceRepository<PurchaseInvoice, PurchaseInvoiceLine> invoices, IProductRepository products,
@@ -43,16 +42,17 @@ namespace PrimeERP.Application.Legacy.Purchasing
             INumberSequenceService numbers, IDocumentPull links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
             AccountOf accountOf)
-            : base(permissions, settings, localization, audit, links, journal)
+            : base(permissions, settings, localization, audit, links, journal, stock)
         {
             _invoices = invoices; _products = products; _suppliers = suppliers;
-            _stock = stock; _numbers = numbers; _accountOf = accountOf;
+            _numbers = numbers; _accountOf = accountOf;
         }
 
         protected override string PermissionPrefix => "Purchases";
         protected override string StringPrefix => "Str.PurchaseInvoice";
         protected override string EntityName => "PurchaseInvoices";
         protected override string PullType => EntityName;
+        protected override string StockSource => "PurchaseInvoice";
 
         protected override PurchaseInvoice FindHead(int id) => _invoices.GetById(id);
         protected override int IdOf(PurchaseInvoice head) => head.Id;
@@ -112,8 +112,8 @@ namespace PrimeERP.Application.Legacy.Purchasing
                     var line = lines[i];
                     inserted.Add((dto.Lines[i], _invoices.InsertLine(db, id, line), line.Qty));
                     var moveResult = simplifiedFlow
-                        ? _stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, line.UnitPrice,
-                            "PurchaseInvoice", id, invoiceNo, dto.InvoiceDate)
+                        ? Stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, line.UnitPrice,
+                            StockSource, id, invoiceNo, dto.InvoiceDate)
                         : Result.Ok();
                     if (moveResult.IsFailure) throw new InvalidOperationException(moveResult.ErrorMessage);
                 }
@@ -130,7 +130,7 @@ namespace PrimeERP.Application.Legacy.Purchasing
         protected override void Remove(PrimeDbContext db, PurchaseInvoice head)
         {
             Posting.Reverse(Journals, db, head.JournalEntryId);
-            _stock.RemoveMovements(db, "PurchaseInvoice", head.Id);
+            Stock.RemoveMovements(db, StockSource, head.Id);
             Links.RemovePull(EntityName, head.Id, db);
             _invoices.DeleteDocument(db, head.Id);
         }

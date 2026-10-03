@@ -21,13 +21,15 @@ namespace PrimeERP.Application.Services.Documents
     {
         protected readonly IDocumentPull Links;
         protected readonly Entries Journals;
+        protected readonly IStockMove Stock;
 
         protected DocumentService(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IDocumentPull links = null, Entries journals = null)
+            IAuditLogger audit, IDocumentPull links = null, Entries journals = null, IStockMove stock = null)
             : base(permissions, settings, localization, audit)
         {
             Links = links;
             Journals = journals;
+            Stock = stock;
         }
 
         protected abstract THead FindHead(int id);
@@ -44,6 +46,7 @@ namespace PrimeERP.Application.Services.Documents
         protected virtual int IdOf(TCreate dto) => 0;
         protected virtual bool Editable => false;
         protected virtual string PullType => null;
+        protected virtual string StockSource => null;
         protected virtual int? EntryOf(THead head) => null;
         protected virtual Result Guard(THead head) => Result.Ok();
         protected virtual object AuditValue(THead head) => null;
@@ -118,7 +121,9 @@ namespace PrimeERP.Application.Services.Documents
             if (PullType != null && Links.IsPulledFrom(PullType, IdOf(head)))
                 return Fail("PulledFrom", ErrorCode.ValidationFailed);
 
-            return Posting.EnsureReversible(Journals, EntryOf(head)).Then(() => Guard(head));
+            return Posting.EnsureReversible(Journals, EntryOf(head))
+                .Then(() => StockSource == null ? Result.Ok() : Stock.Removable(StockSource, IdOf(head)))
+                .Then(() => Guard(head));
         }
     }
 }

@@ -35,7 +35,6 @@ namespace PrimeERP.Application.Legacy.Sales
         private readonly IReturnRepository<SalesReturn, SalesReturnLine> _returns;
         private readonly IProductRepository _products;
         private readonly IPartyRepository<Customer> _customers;
-        private readonly IStockMove _stock;
         private readonly INumberSequenceService _numbers;
 
         public SalesReturnService(IReturnRepository<SalesReturn, SalesReturnLine> returns, IProductRepository products,
@@ -43,16 +42,17 @@ namespace PrimeERP.Application.Legacy.Sales
             INumberSequenceService numbers, IDocumentPull links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
             AccountOf accountOf)
-            : base(permissions, settings, localization, audit, links, journal)
+            : base(permissions, settings, localization, audit, links, journal, stock)
         {
             _returns = returns; _products = products; _customers = customers;
-            _stock = stock; _numbers = numbers; _accountOf = accountOf;
+            _numbers = numbers; _accountOf = accountOf;
         }
 
         protected override string PermissionPrefix => "Sales";
         protected override string StringPrefix => "Str.SalesReturn";
         protected override string EntityName => "SalesReturns";
         protected override string PullType => EntityName;
+        protected override string StockSource => "SalesReturn";
 
         protected override SalesReturn FindHead(int id) => _returns.GetById(id);
         protected override int IdOf(SalesReturn head) => head.Id;
@@ -105,7 +105,7 @@ namespace PrimeERP.Application.Legacy.Sales
                     to.NetTotal = totals.Net;
                 }));
 
-                var costs = _stock.GetReturnCosts(db, "SalesInvoice",
+                var costs = Stock.GetReturnCosts(db, "SalesInvoice",
                     lines.Select((line, i) => (line.ProductId, line.Qty, dto.Lines[i].SourceId, dto.Lines[i].SourceLineId)).ToList(), simplifiedFlow);
 
                 var inserted = new List<(IPullableLine Line, int TargetLineId, decimal Qty)>();
@@ -116,8 +116,8 @@ namespace PrimeERP.Application.Legacy.Sales
 
                     inserted.Add((source, _returns.InsertLine(db, id, line), line.Qty));
                     var moveResult = simplifiedFlow
-                        ? _stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, costs.UnitCosts[i],
-                            "SalesReturn", id, returnNo, dto.ReturnDate)
+                        ? Stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, costs.UnitCosts[i],
+                            StockSource, id, returnNo, dto.ReturnDate)
                         : Result.Ok();
                     if (moveResult.IsFailure) throw new InvalidOperationException(moveResult.ErrorMessage);
                 }
@@ -134,7 +134,7 @@ namespace PrimeERP.Application.Legacy.Sales
         protected override void Remove(PrimeDbContext db, SalesReturn head)
         {
             Posting.Reverse(Journals, db, head.JournalEntryId);
-            _stock.RemoveMovements(db, "SalesReturn", head.Id);
+            Stock.RemoveMovements(db, StockSource, head.Id);
             Links.RemovePull(EntityName, head.Id, db);
             _returns.DeleteDocument(db, head.Id);
         }

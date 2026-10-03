@@ -28,19 +28,19 @@ namespace PrimeERP.Application.Legacy.Inventory
         private readonly IStockTransferRepository _repo;
         private readonly IProductRepository _products;
         private readonly ILookupRepository<Warehouse> _warehouses;
-        private readonly IStockMove _stock;
         private readonly INumberSequenceService _numbers;
 
         public StockTransferService(IStockTransferRepository repo, IProductRepository products, ILookupRepository<Warehouse> warehouses,
             IStockMove stock, INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
-            : base(permissions, settings, localization, audit)
+            : base(permissions, settings, localization, audit, stock: stock)
         {
-            _repo = repo; _products = products; _warehouses = warehouses; _stock = stock; _numbers = numbers;
+            _repo = repo; _products = products; _warehouses = warehouses; _numbers = numbers;
         }
 
         protected override string PermissionPrefix => "Inventory";
         protected override string StringPrefix => "Str.StockTransfer";
         protected override string EntityName => "StockTransfer";
+        protected override string StockSource => EntityName;
 
         protected override bool CanDo(string action) => Permissions.Can("Inventory.Transfer");
 
@@ -99,13 +99,13 @@ namespace PrimeERP.Application.Legacy.Inventory
 
         protected override void Remove(PrimeDbContext db, StockTransferDocument head)
         {
-            _stock.RemoveMovements(db, EntityName, head.Id);
+            Stock.RemoveMovements(db, StockSource, head.Id);
             _repo.DeleteDocument(db, head.Id);
         }
 
         private void Move(PrimeDbContext db, StockTransferLine line, int warehouseId, MovementType direction, int id, string docNo, DateTime date)
         {
-            var moved = _stock.RecordMovement(db, line.ProductId, warehouseId, direction, line.Qty, 0, EntityName, id, docNo, date);
+            var moved = Stock.RecordMovement(db, line.ProductId, warehouseId, direction, line.Qty, 0, StockSource, id, docNo, date);
             if (moved.IsFailure) throw new InvalidOperationException(moved.ErrorMessage);
         }
 
