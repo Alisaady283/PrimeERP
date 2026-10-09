@@ -1203,6 +1203,7 @@
     <sys:String x:Key="Str.Builder.VersionDate">Version date</sys:String>
     <sys:String x:Key="Str.Settings.Label.System.Version">Current version (program creation default)</sys:String>
     <sys:String x:Key="Str.Builder.CreateCancelled">Program creation was cancelled</sys:String>
+    <sys:String x:Key="Str.Settings.BuilderNoUpdate">The builder copy is not updated — updates are for customer programs</sys:String>
     <sys:String x:Key="Str.Settings.PagesSynced">The program pages were updated from the license — restart to apply them</sys:String>
     <sys:String x:Key="Str.Settings.InstallNow">Version {0} was downloaded. The program closes, installs the update and reopens. Continue?</sys:String>
     <sys:String x:Key="Str.TopBar.Hijri">{0}/{1}/{2} AH</sys:String>

@@ -287,6 +287,7 @@ namespace PrimeERP.App.Bootstrap
         {
             var path = System.IO.Path.Combine(AppContext.BaseDirectory, "license.json");
             if (!System.IO.File.Exists(path)) return;
+            if (!string.IsNullOrWhiteSpace(services.GetRequiredService<ISettingsProvider>().Get(SettingKeys.Developer.AdminToken, ""))) return;
 
             try
             {

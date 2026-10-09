@@ -39,6 +39,9 @@ namespace PrimeERP.Application.PageServices.Admin
             var server = Setting(SettingKeys.Developer.ServerUrl, "").TrimEnd('/');
             var serial = Setting(SettingKeys.License.Serial, "");
 
+            if (!string.IsNullOrWhiteSpace(Setting(SettingKeys.Developer.AdminToken, "")))
+                return Result.Fail<UpdateAvailability>(Msg("BuilderNoUpdate"), ErrorCode.ValidationFailed);
+
             if (string.IsNullOrWhiteSpace(server) || string.IsNullOrWhiteSpace(serial))
                 return Result.Fail<UpdateAvailability>(Msg("NoActiveSerial"), ErrorCode.ValidationFailed);
 

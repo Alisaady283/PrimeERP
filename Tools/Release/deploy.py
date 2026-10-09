@@ -106,11 +106,10 @@ def publish_setup():
 
 def main():
     parser = argparse.ArgumentParser(description="رفع التحديثات على الخادم")
-    parser.add_argument("--version", help="رقم الإصدار (افتراضيّه من PrimeERP.csproj)")
+    parser.add_argument("--version", help="رقم الإصدار — يُبنى إصدارٌ (≈80 م.ب) ويُنشر حين يُعطى وحده")
     parser.add_argument("--branch", help="فرع كود الخادم (افتراضيّه الحالي)")
     parser.add_argument("--notes", default="", help="ملاحظات الإصدار")
     parser.add_argument("--token", help="توكن المطوّر (افتراضيّه من إعدادات البرنامج)")
-    parser.add_argument("--server-only", action="store_true", help="تحديث كود الخادم وحده")
     parser.add_argument("--release-only", action="store_true", help="نشر إصدار البرنامج وحده")
     parser.add_argument("--setup", action="store_true", help="رفع المنصِّب PrimeERP.Setup.exe أيضاً")
     parser.add_argument("--with-settings", action="store_true", help="تضمين appsettings.json في الحزمة")
@@ -119,7 +118,8 @@ def main():
     if not args.release_only:
         update_server(args.branch or current_branch())
 
-    if args.server_only:
+    if not args.version and not args.release_only:
+        print("تمّ تحديث الخادم وحده — لنشر إصدار البرنامج أعطِ --version")
         return
 
     token = args.token or os.environ.get("PRIMEERP_ADMIN_TOKEN") or local_token()

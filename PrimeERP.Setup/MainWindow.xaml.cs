@@ -128,6 +128,16 @@ namespace PrimeERP.Setup
             };
 
             File.WriteAllText(Path.Combine(folder, "license.json"), JsonSerializer.Serialize(license));
+
+            var settings = Path.Combine(folder, "appsettings.json");
+            if (File.Exists(settings)) return;
+
+            var data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PrimeERP", serial);
+            Directory.CreateDirectory(data);
+            File.WriteAllText(settings, JsonSerializer.Serialize(new
+            {
+                Database = new { Provider = "Sqlite", FilePath = Path.Combine(data, "PrimeERP.db") }
+            }));
         }
 
         private static void Shortcut(string folder)

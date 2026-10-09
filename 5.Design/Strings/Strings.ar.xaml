@@ -1115,7 +1115,7 @@
     <sys:String x:Key="Str.Settings.Version">الإصدار {0}</sys:String>
     <sys:String x:Key="Str.Settings.CheckUpdate">البحث عن تحديث</sys:String>
     <sys:String x:Key="Str.Settings.Update">تحديث</sys:String>
-    <sys:String x:Key="Str.Settings.UpToDate">نسختك أحدث ما لدينا ({0})</sys:String>
+    <sys:String x:Key="Str.Settings.UpToDate">لا يوجد تحديثات متاحة</sys:String>
     <sys:String x:Key="Str.Settings.UpdateAvailable">يوجد إصدار {0} — هل تريد تنزيله؟</sys:String>
     <sys:String x:Key="Str.Settings.Downloading">تنزيل الإصدار {0}</sys:String>
     <sys:String x:Key="Str.Settings.DownloadStage">تنزيل</sys:String>
@@ -1203,6 +1203,7 @@
     <sys:String x:Key="Str.Builder.VersionDate">تاريخ الإصدار</sys:String>
     <sys:String x:Key="Str.Settings.Label.System.Version">رقم الإصدار الحالي (افتراضي إنشاء البرنامج)</sys:String>
     <sys:String x:Key="Str.Builder.CreateCancelled">أُلغي إنشاء البرنامج</sys:String>
+    <sys:String x:Key="Str.Settings.BuilderNoUpdate">نسخة البناء لا تُحدَّث — التحديث لبرامج العملاء</sys:String>
     <sys:String x:Key="Str.Settings.PagesSynced">تحدّثت صفحات البرنامج من الترخيص — أعد التشغيل لتطبيقها</sys:String>
     <sys:String x:Key="Str.Settings.InstallNow">تمّ تنزيل الإصدار {0}. يُغلَق البرنامج ويُثبَّت التحديث ثم يعود. متابعة؟</sys:String>
     <sys:String x:Key="Str.TopBar.Hijri">{0}/{1}/{2} هـ</sys:String>
