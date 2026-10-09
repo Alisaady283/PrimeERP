@@ -10,6 +10,7 @@ namespace PrimeERP.Composition.Definitions
         {
             ("Company", "Str.Settings.Company"), ("Financial", "Str.Settings.Financial"), ("Accounts", "Str.Settings.Accounts"),
             ("Documents", "Str.Settings.Documents"), ("UI", "Str.Settings.UI"), ("Print", "Str.Settings.Print"), ("Backup", "Str.Settings.Backup"), ("Security", "Str.Settings.Security"),
+            ("HR", "Str.Settings.HR"), ("System", "Str.Settings.System"),
         };
 
         /// <summary>مفتاحه في بيان النسخة</summary>

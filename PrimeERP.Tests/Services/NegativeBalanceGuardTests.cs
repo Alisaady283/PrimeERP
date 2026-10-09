@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Services.Documents;
@@ -12,11 +12,11 @@ using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Treasury;
 using PrimeERP.Application.DTOs.Vouchers;
-using PrimeERP.Application.Legacy.Common;
-using PrimeERP.Application.Legacy.Inventory;
-using PrimeERP.Application.Legacy.Parties;
-using PrimeERP.Application.Legacy.Treasury;
-using PrimeERP.Application.Legacy.Vouchers;
+using PrimeERP.Application.PageServices.Common;
+using PrimeERP.Application.PageServices.Inventory;
+using PrimeERP.Application.PageServices.Parties;
+using PrimeERP.Application.PageServices.Treasury;
+using PrimeERP.Application.PageServices.Vouchers;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using Xunit;
@@ -145,11 +145,11 @@ namespace PrimeERP.Tests.Services
         }
 
         private string OtherLeafAccount(string cashCode) =>
-            _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IAccountService>()
+            _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Accounting.IAccountService>()
                 .GetLeaves().Value.First(a => a.Code != cashCode && !a.Code.StartsWith("12")).Code;
 
         private int OpeningBalance(string cashCode, string otherCode, decimal amount) =>
-            _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService>()
+            _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Accounting.IOpeningBalanceService>()
                 .Create(new PrimeERP.Application.DTOs.Accounting.CreateJournalDto
                 {
                     EntryDate = DateTime.Today, Description = "افتتاحي",
@@ -166,7 +166,7 @@ namespace PrimeERP.Tests.Services
             var treasury = CashTreasury();
             var other = OtherLeafAccount(treasury.AccountCode);
 
-            var created = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IJournalService>()
+            var created = _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Accounting.IJournalService>()
                 .Create(new PrimeERP.Application.DTOs.Accounting.CreateJournalDto
                 {
                     EntryDate = DateTime.Today, Description = "صرف من فارغة",
@@ -187,7 +187,7 @@ namespace PrimeERP.Tests.Services
             var treasury = CashTreasury();
             var other = OtherLeafAccount(treasury.AccountCode);
 
-            var created = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService>()
+            var created = _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Accounting.IOpeningBalanceService>()
                 .Create(new PrimeERP.Application.DTOs.Accounting.CreateJournalDto
                 {
                     EntryDate = DateTime.Today, Description = "افتتاحي سالب",
@@ -231,7 +231,7 @@ namespace PrimeERP.Tests.Services
             var other = OtherLeafAccount(treasury.AccountCode);
             var id = OpeningBalance(treasury.AccountCode, other, 1000);
 
-            var edited = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService>()
+            var edited = _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Accounting.IOpeningBalanceService>()
                 .Update(new PrimeERP.Application.DTOs.Accounting.CreateJournalDto
                 {
                     Id = id, EntryDate = DateTime.Today, Description = "افتتاحي",
@@ -243,7 +243,7 @@ namespace PrimeERP.Tests.Services
                 });
 
             Assert.True(edited.IsSuccess, edited.ErrorMessage);
-            Assert.Equal(1500m, _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IAccountService>()
+            Assert.Equal(1500m, _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Accounting.IAccountService>()
                 .GetByCode(treasury.AccountCode).Value.Balance);
         }
 
@@ -258,7 +258,7 @@ namespace PrimeERP.Tests.Services
                 .Create(new Supplier { Name = "مورد" }).Value.Id;
             Assert.True(Pay(treasury.TreasuryId, supplierId, 400).IsSuccess);
 
-            var opening = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService>();
+            var opening = _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Accounting.IOpeningBalanceService>();
 
             var shrunk = opening.Update(new PrimeERP.Application.DTOs.Accounting.CreateJournalDto
             {

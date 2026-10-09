@@ -15,7 +15,7 @@ NOISE = re.compile(r"^[{}\[\]();,]*$|^\}\s*;?$|^\{$|^\)\s*;?$|^else$|^try$")
 
 BY_CONCERN = ("1.Platform", "3.Domain", "7.Composition", "PrimeERP.Setup")
 EXEMPT_SUFFIX = {
-    "Service": ("Reporting", "Legacy"),
+    "Service": ("Reporting", "PageServices"),
     "Renderer": ("Print",),   
     "ViewModel": ("Components",), 
     "Seeder": ("8.Modules",), 

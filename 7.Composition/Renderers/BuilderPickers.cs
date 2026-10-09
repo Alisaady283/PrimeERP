@@ -1,5 +1,5 @@
 using PrimeERP.Domain.Calculations;
-using PrimeERP.Application.Legacy.Builder;
+using PrimeERP.Application.PageServices.Builder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +20,7 @@ namespace PrimeERP.Composition.Renderers
         {
             "AccountType"       => Enum<AccountType>("Str.AccountType"),
             "AssetAcquisition"  => Enum<AssetAcquisition>("Str.Asset"),
+            "DisposalSettlement" => Enum<DisposalSettlement>("Str.Asset"),
             "BuilderKind"       => Enum<BuilderKind>("Str.Builder.Kind"),
             "BuilderDataType"   => Enum<BuilderDataType>("Str.Builder.Type"),
             "BuilderAggregate"  => Enum<BuilderAggregate>("Str.Builder.Agg"),

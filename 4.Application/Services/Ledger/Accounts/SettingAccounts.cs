@@ -11,12 +11,14 @@ namespace PrimeERP.Application.Services.Ledger.Accounts
         private readonly IAccountRepository _accounts;
         private readonly AddTreeAccount _add;
         private readonly ISettingsProvider _settings;
+        private readonly Guards _guards;
 
-        public SettingAccounts(IAccountRepository accounts, AddTreeAccount add, ISettingsProvider settings)
+        public SettingAccounts(IAccountRepository accounts, AddTreeAccount add, ISettingsProvider settings, Guards guards)
         {
             _accounts = accounts;
             _add = add;
             _settings = settings;
+            _guards = guards;
         }
 
         /// <summary>يُعتمد الحساب إن وُجد</summary>
@@ -39,14 +41,13 @@ namespace PrimeERP.Application.Services.Ledger.Accounts
             if (!string.IsNullOrWhiteSpace(code)) _settings.SetRaw(key, code);
         }
 
-        /// <summary>جذرٌ صار ورقةً يعود لأبيه</summary>
         public void RepairRoots(IEnumerable<string> keys)
         {
             foreach (var key in keys)
             {
                 var account = _accounts.GetByCode(_settings.Get(key, ""));
-                if (account == null || !account.IsLeaf || string.IsNullOrWhiteSpace(account.ParentCode)) continue;
-                _settings.SetRaw(key, account.ParentCode);
+                if (account == null || !account.IsLeaf || _guards.HasEntries(account.Code)) continue;
+                _accounts.SetIsLeaf(account.Code, false);
             }
         }
     }

@@ -60,6 +60,9 @@ namespace PrimeERP.UI.Components.Layout
         private void btnClear_Click(object sender, RoutedEventArgs e)
         {
             search.Text = "";
+            foreach (var combo in VisualTree.FindChildren<Inputs.AppComboBox>(filtersPresenter)) combo.SelectedItem = null;
+            foreach (var check in VisualTree.FindChildren<Inputs.AppCheckBox>(filtersPresenter)) check.IsChecked = false;
+            Search?.Invoke(this, "");
             ClearRequested?.Invoke(this, EventArgs.Empty);
         }
     }

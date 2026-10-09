@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Services.Documents;
@@ -14,12 +14,12 @@ using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Purchasing;
 using PrimeERP.Application.DTOs.Sales;
-using PrimeERP.Application.Legacy.Accounting;
-using PrimeERP.Application.Legacy.Common;
-using PrimeERP.Application.Legacy.Inventory;
-using PrimeERP.Application.Legacy.Parties;
-using PrimeERP.Application.Legacy.Purchasing;
-using PrimeERP.Application.Legacy.Sales;
+using PrimeERP.Application.PageServices.Accounting;
+using PrimeERP.Application.PageServices.Common;
+using PrimeERP.Application.PageServices.Inventory;
+using PrimeERP.Application.PageServices.Parties;
+using PrimeERP.Application.PageServices.Purchasing;
+using PrimeERP.Application.PageServices.Sales;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Modules;
 using PrimeERP.Platform.Permissions;
@@ -53,9 +53,9 @@ namespace PrimeERP.Tests.Services
             settings.Set(SettingKeys.Accounts.Sales, LeafUnder("41", "مبيعات"));
             settings.Set(SettingKeys.Accounts.COGS, LeafUnder("51", "تكلفة"));
             settings.Set(SettingKeys.Accounts.Inventory, LeafUnder("1201", "مخزون"));
-            settings.Set(SettingKeys.Accounts.VATOutput, LeafUnder("21", "ضريبة مخرجات"));
+            settings.Set(SettingKeys.Accounts.VATOutput, LeafUnder("2203", "ضريبة مخرجات"));
             settings.Set(SettingKeys.Accounts.VATInput, LeafUnder("12", "ضريبة مدخلات"));
-            settings.Set(SettingKeys.Accounts.Cash, LeafUnder("1204", "الصندوق"));
+            settings.Set(SettingKeys.Accounts.Cash, LeafUnder("1203007", "الصندوق"));
 
             var categories = _db.Services.GetRequiredService<ICategoryService>();
             var category = categories.Create(new Category { Name = "فئة", ModuleKey = "Products" }).Value;

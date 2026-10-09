@@ -57,11 +57,11 @@ namespace PrimeERP.Composition.Renderers
                 ButtonsSource = new List<PrimeERP.UI.Components.Actions.ToolbarAction>
                 {
                     PrimeERP.UI.Components.Actions.ToolbarAction.Print(new PrimeERP.UI.ViewModels.RelayCommand(
-                        _ => ListOutput.Print(services, currentTitle, report.Columns, Rows()),
+                        _ => ListOutput.Print(services, currentTitle, report.Columns, Rows(), current.Totals),
                         _ => current != null), view, LocalizationService.Get("Str.Output.PrintReport")),
 
                     PrimeERP.UI.Components.Actions.ToolbarAction.Export(new PrimeERP.UI.ViewModels.RelayCommand(
-                        _ => ListOutput.Export(services, currentTitle, report.Columns, Rows()),
+                        _ => ListOutput.Export(services, currentTitle, report.Columns, Rows(), current.Totals),
                         _ => current != null), view, LocalizationService.Get("Str.Output.ExportReport")),
                 }
             };

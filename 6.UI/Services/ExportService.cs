@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using PrimeERP.Domain.Contracts;
 using System;
 using System.Collections;
@@ -23,7 +23,7 @@ using PrimeERP.Platform.Localization;
 namespace PrimeERP.UI.Services
 {
     /// <summary>يصدّر بيانات AppDataGrid فعلياً</summary>
-    public class ExportService : IExportService, IDocumentExporter
+    public class ExportService : IExportService
     {
         private readonly IPermissionService _permissions;
         private readonly ISettingsService _settings;

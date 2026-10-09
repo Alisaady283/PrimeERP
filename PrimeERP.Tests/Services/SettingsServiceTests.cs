@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Platform.Settings;
 using Xunit;

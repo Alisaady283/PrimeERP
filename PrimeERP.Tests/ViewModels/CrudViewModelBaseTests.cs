@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Parties;
-using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.PageServices.Parties;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;

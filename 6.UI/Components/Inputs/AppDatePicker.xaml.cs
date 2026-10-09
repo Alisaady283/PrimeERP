@@ -66,15 +66,48 @@ namespace PrimeERP.UI.Components.Inputs
             if (e.Text.Length != 1 || !char.IsDigit(e.Text[0])) { e.Handled = true; return; }
 
             var box = (System.Windows.Controls.TextBox)sender;
-            var digits = new string(box.Text.Where(char.IsDigit).ToArray());
-            if (box.SelectionLength == 0 && digits.Length >= 8) { e.Handled = true; return; }
-
-            if (box.SelectionLength > 0) digits = "";
-            digits += e.Text;
-
-            box.Text = FormatDigits(digits);
-            box.CaretIndex = box.Text.Length;
+            var text = box.Text ?? "";
             e.Handled = true;
+
+            if (text.Length == 0 || box.SelectionLength == text.Length)
+            {
+                box.Text = e.Text;
+                box.CaretIndex = box.Text.Length;
+                return;
+            }
+
+            var at = box.SelectionStart;
+            if (at < text.Length && text[at] == '/') at++;
+            if (at < text.Length)
+            {
+                box.Text = Normalize(text[..at] + e.Text + text[(at + 1)..]);
+                at++;
+                if (at < box.Text.Length && box.Text[at] == '/') at++;
+                box.CaretIndex = at;
+                return;
+            }
+
+            var digits = new string(text.Where(char.IsDigit).ToArray());
+            if (digits.Length >= 8) return;
+
+            box.Text = Normalize(FormatDigits(digits + e.Text));
+            box.CaretIndex = box.Text.Length;
+        }
+
+        private static string Normalize(string text)
+        {
+            var parts = text.Split('/');
+            var monthKnown = parts.Length > 1 && parts[1].Length == 2;
+            if (monthKnown) parts[1] = Math.Clamp(int.Parse(parts[1]), 1, 12).ToString("00");
+
+            if (parts[0].Length == 2)
+            {
+                var year = parts.Length > 2 && parts[2].Length == 4 ? int.Parse(parts[2]) : 2000;
+                var last = monthKnown ? DateTime.DaysInMonth(Math.Max(year, 1), int.Parse(parts[1])) : 31;
+                parts[0] = Math.Clamp(int.Parse(parts[0]), 1, last).ToString("00");
+            }
+
+            return string.Join("/", parts);
         }
 
         private static string FormatDigits(string digits)

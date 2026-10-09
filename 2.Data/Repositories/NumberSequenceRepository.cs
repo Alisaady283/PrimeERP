@@ -40,7 +40,12 @@ namespace PrimeERP.Data.Repositories
             int padding = 5, bool resetYearly = true) =>
             Write(db =>
             {
-                if (Rows(db).Any(s => s.Key == key)) return 0;
+                var existing = SetOf(db).FirstOrDefault(s => s.Key == key);
+                if (existing != null)
+                {
+                    if (existing.Prefix == existing.Key && prefix != key) existing.Prefix = prefix;
+                    return 0;
+                }
                 SetOf(db).Add(new NumberSequence
                 {
                     Key = key, Prefix = prefix, NextNumber = 1, Padding = padding, ResetYearly = resetYearly

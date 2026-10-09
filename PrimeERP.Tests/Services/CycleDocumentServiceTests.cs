@@ -5,8 +5,8 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Documents;
 using PrimeERP.Application.DTOs.Inventory;
-using PrimeERP.Application.Legacy.Documents;
-using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.PageServices.Documents;
+using PrimeERP.Application.PageServices.Inventory;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 
@@ -99,8 +99,8 @@ namespace PrimeERP.Tests.Services
             var quote = _db.Services.GetRequiredService<IQuotationService>().Create(Doc(code, null, 1, 5)).Value;
             var order = _db.Services.GetRequiredService<ISalesOrderService>().Create(Doc(code, 1, 1, 5)).Value;
 
-            Assert.StartsWith("Quotation", quote.DocNo);
-            Assert.StartsWith("SalesOrder", order.DocNo);
+            Assert.Matches("^QT[0-9]+$", quote.DocNo);
+            Assert.Matches("^SO[0-9]+$", order.DocNo);
 
             var quotes = _db.Services.GetRequiredService<IQuotationService>().GetPaged(1, 50).Value.Items;
             Assert.DoesNotContain(quotes, d => d.DocNo == order.DocNo);

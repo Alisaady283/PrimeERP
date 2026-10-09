@@ -11,12 +11,14 @@ namespace PrimeERP.Data.Core
         public PrimeDbContext(DbContextOptions<PrimeDbContext> options) : base(options) { }
 
         public DbSet<Account> Accounts => Set<Account>();
+        public DbSet<AllowanceType> AllowanceTypes => Set<AllowanceType>();
         public DbSet<AppSetting> AppSettings => Set<AppSetting>();
         public DbSet<Asset> Assets => Set<Asset>();
         public DbSet<AssetDepreciation> AssetDepreciations => Set<AssetDepreciation>();
         public DbSet<AssetDisposal> AssetDisposals => Set<AssetDisposal>();
         public DbSet<AssetRevaluation> AssetRevaluations => Set<AssetRevaluation>();
         public DbSet<Attendance> Attendances => Set<Attendance>();
+        public DbSet<AttendanceSheet> AttendanceSheets => Set<AttendanceSheet>();
         public DbSet<AuditEntry> AuditLog => Set<AuditEntry>();
         public DbSet<BackupHistoryRecord> BackupHistory => Set<BackupHistoryRecord>();
         public DbSet<BuilderAction> BuilderActions => Set<BuilderAction>();
@@ -28,9 +30,11 @@ namespace PrimeERP.Data.Core
         public DbSet<Cheque> Cheques => Set<Cheque>();
         public DbSet<ChequeMovement> ChequeMovements => Set<ChequeMovement>();
         public DbSet<Customer> Customers => Set<Customer>();
+        public DbSet<DeductionType> DeductionTypes => Set<DeductionType>();
         public DbSet<Department> Departments => Set<Department>();
         public DbSet<DocumentLink> DocumentLinks => Set<DocumentLink>();
         public DbSet<Employee> Employees => Set<Employee>();
+        public DbSet<EmployeeAdvance> EmployeeAdvances => Set<EmployeeAdvance>();
         public DbSet<EmployeeAllowance> EmployeeAllowances => Set<EmployeeAllowance>();
         public DbSet<EmployeeDeduction> EmployeeDeductions => Set<EmployeeDeduction>();
         public DbSet<FiscalPeriod> FiscalPeriods => Set<FiscalPeriod>();
@@ -38,6 +42,7 @@ namespace PrimeERP.Data.Core
         public DbSet<JobTitle> JobTitles => Set<JobTitle>();
         public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
         public DbSet<JournalLine> JournalEntryLines => Set<JournalLine>();
+        public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
         public DbSet<License> Licenses => Set<License>();
         public DbSet<NumberSequence> NumberSequences => Set<NumberSequence>();
         public DbSet<Payroll> Payrolls => Set<Payroll>();
@@ -75,6 +80,12 @@ namespace PrimeERP.Data.Core
                 e.Property(x => x.Balance).HasPrecision(18, 4);
                 e.HasIndex("ParentCode").HasDatabaseName("IX_Accounts_ParentCode");
                 e.HasIndex("Code").HasDatabaseName("IX_Accounts_Code").IsUnique();
+            });
+
+            model.Entity<AllowanceType>(e =>
+            {
+                e.ToTable("AllowanceTypes");
+                e.HasKey(x => x.Id);
             });
 
             model.Entity<AppSetting>(e =>
@@ -120,6 +131,7 @@ namespace PrimeERP.Data.Core
                 e.Ignore(x => x.KindName);
                 e.Property(x => x.NewValue).HasPrecision(18, 4);
                 e.Property(x => x.OldValue).HasPrecision(18, 4);
+                e.Property(x => x.SalvageValue).HasPrecision(18, 4);
                 e.HasIndex("AssetId").HasDatabaseName("IX_AssetRevaluations_AssetId");
             });
 
@@ -138,6 +150,12 @@ namespace PrimeERP.Data.Core
                 e.HasIndex("Code").HasDatabaseName("IX_Assets_Code").IsUnique();
             });
 
+            model.Entity<AttendanceSheet>(e =>
+            {
+                e.ToTable("AttendanceSheets");
+                e.HasKey(x => x.Id);
+            });
+
             model.Entity<Attendance>(e =>
             {
                 e.ToTable("Attendances");
@@ -148,7 +166,6 @@ namespace PrimeERP.Data.Core
                 e.Property(x => x.CheckOut).HasConversion(v => v == null ? (int?)null : (int)v.Value.TotalMinutes, v => v == null ? (TimeSpan?)null : TimeSpan.FromMinutes(v.Value));
                 e.Ignore(x => x.EmployeeCode);
                 e.Ignore(x => x.EmployeeName);
-                e.Property(x => x.OvertimeHours).HasPrecision(18, 4);
                 e.HasIndex("EmployeeId").HasDatabaseName("IX_Attendances_EmployeeId");
             });
 
@@ -237,6 +254,12 @@ namespace PrimeERP.Data.Core
                 e.HasIndex("Code").HasDatabaseName("IX_Customers_Code").IsUnique();
             });
 
+            model.Entity<DeductionType>(e =>
+            {
+                e.ToTable("DeductionTypes");
+                e.HasKey(x => x.Id);
+            });
+
             model.Entity<Department>(e =>
             {
                 e.ToTable("Departments");
@@ -252,6 +275,17 @@ namespace PrimeERP.Data.Core
                 e.HasIndex("SourceLineId").HasDatabaseName("IX_DocumentLinks_SourceLineId");
             });
 
+            model.Entity<EmployeeAdvance>(e =>
+            {
+                e.ToTable("EmployeeAdvances");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Amount).HasPrecision(18, 4);
+                e.Ignore(x => x.EmployeeCode);
+                e.Ignore(x => x.EmployeeName);
+                e.Ignore(x => x.TreasuryName);
+                e.Ignore(x => x.TypeName);
+            });
+
             model.Entity<EmployeeAllowance>(e =>
             {
                 e.ToTable("EmployeeAllowances");
@@ -259,6 +293,7 @@ namespace PrimeERP.Data.Core
                 e.Property(x => x.Amount).HasPrecision(18, 4);
                 e.Ignore(x => x.EmployeeCode);
                 e.Ignore(x => x.EmployeeName);
+                e.Ignore(x => x.TypeName);
                 e.HasIndex("EmployeeId").HasDatabaseName("IX_EmployeeAllowances_EmployeeId");
             });
 
@@ -269,6 +304,7 @@ namespace PrimeERP.Data.Core
                 e.Property(x => x.Amount).HasPrecision(18, 4);
                 e.Ignore(x => x.EmployeeCode);
                 e.Ignore(x => x.EmployeeName);
+                e.Ignore(x => x.TypeName);
                 e.HasIndex("EmployeeId").HasDatabaseName("IX_EmployeeDeductions_EmployeeId");
             });
 
@@ -282,6 +318,10 @@ namespace PrimeERP.Data.Core
                 e.Property(x => x.InsuranceAmount).HasPrecision(18, 4);
                 e.Ignore(x => x.JobTitleName);
                 e.Property(x => x.TaxAmount).HasPrecision(18, 4);
+                e.Property(x => x.WorkEnd).HasColumnName("WorkEndMinutes");
+                e.Property(x => x.WorkEnd).HasConversion(v => v == null ? (int?)null : (int)v.Value.TotalMinutes, v => v == null ? (TimeSpan?)null : TimeSpan.FromMinutes(v.Value));
+                e.Property(x => x.WorkStart).HasColumnName("WorkStartMinutes");
+                e.Property(x => x.WorkStart).HasConversion(v => v == null ? (int?)null : (int)v.Value.TotalMinutes, v => v == null ? (TimeSpan?)null : TimeSpan.FromMinutes(v.Value));
                 e.HasIndex("DepartmentId").HasDatabaseName("IX_Employees_DepartmentId");
                 e.HasIndex("Code").HasDatabaseName("IX_Employees_Code").IsUnique();
             });
@@ -323,6 +363,12 @@ namespace PrimeERP.Data.Core
                 e.Property(x => x.Debit).HasPrecision(18, 4);
                 e.HasIndex("AccountCode").HasDatabaseName("IX_JournalEntryLines_AccountCode");
                 e.HasIndex("EntryId").HasDatabaseName("IX_JournalEntryLines_EntryId");
+            });
+
+            model.Entity<LeaveType>(e =>
+            {
+                e.ToTable("LeaveTypes");
+                e.HasKey(x => x.Id);
             });
 
             model.Entity<License>(e =>

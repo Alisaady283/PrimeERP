@@ -63,8 +63,6 @@ namespace PrimeERP.UI.Components.Shell
         public object       ActionsContent    { get => GetValue(ActionsContentProperty);               set => SetValue(ActionsContentProperty, value); }
 
         public event EventHandler SidebarToggled;
-        public event EventHandler NotificationsClicked;
-        public event EventHandler ProfileClicked;
         public event EventHandler PasswordChangeRequested;
         public event EventHandler LogoutRequested;
         public event EventHandler UpdateRequested;
@@ -75,7 +73,6 @@ namespace PrimeERP.UI.Components.Shell
             InitializeComponent();
             _userMenu = new()
             {
-                (LocalizationService.Get("Str.TopBar.Profile"),        () => ProfileClicked?.Invoke(this, EventArgs.Empty)),
                 (LocalizationService.Get("Str.TopBar.ChangePassword"), () => PasswordChangeRequested?.Invoke(this, EventArgs.Empty)),
                 (LocalizationService.Get("Str.Settings.Update"),       () => UpdateRequested?.Invoke(this, EventArgs.Empty)),
                 (LocalizationService.Get("Str.TopBar.Language"),       () => LanguageToggled?.Invoke(this, EventArgs.Empty)),
@@ -104,7 +101,6 @@ namespace PrimeERP.UI.Components.Shell
 
         private void btnToggleSidebar_Click(object sender, RoutedEventArgs e) => SidebarToggled?.Invoke(this, EventArgs.Empty);
 
-        private void btnNotifications_Click(object sender, RoutedEventArgs e) => NotificationsClicked?.Invoke(this, EventArgs.Empty);
 
         private void userMenu_ItemSelected(object sender, object item)
         {

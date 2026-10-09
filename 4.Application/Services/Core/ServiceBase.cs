@@ -100,6 +100,10 @@ namespace PrimeERP.Application.Services.Core
                 outcome = Result.Fail<T>((refused.InnerException ?? refused).Message,
                     refused is DbUpdateConcurrencyException ? ErrorCode.ConcurrencyConflict : ErrorCode.Conflict);
             }
+            catch (System.Data.Common.DbException concurrent)
+            {
+                outcome = Result.Fail<T>(concurrent.Message, ErrorCode.ConcurrencyConflict);
+            }
 
             return outcome;
         }

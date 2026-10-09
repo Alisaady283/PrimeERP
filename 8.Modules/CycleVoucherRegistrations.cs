@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using PrimeERP.Application.DTOs.Inventory;
-using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.PageServices.Inventory;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Platform.Localization;

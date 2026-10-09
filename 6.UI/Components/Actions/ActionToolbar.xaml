@@ -8,7 +8,7 @@
     <DockPanel LastChildFill="False">
         <StackPanel x:Name="mainPanel" DockPanel.Dock="Left" Orientation="Horizontal"/>
         <actions:AppDropdownButton x:Name="overflowBtn" DockPanel.Dock="Left"
-                                    Text="المزيد" Visibility="Collapsed"
+                                    Text="{DynamicResource Str.Toolbar.More}" Visibility="Collapsed"
                                     ItemSelected="OverflowBtn_ItemSelected"/>
     </DockPanel>
 </UserControl>

@@ -6,7 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Legacy.Treasury;
+using PrimeERP.Application.PageServices.Treasury;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Domain.Enums;

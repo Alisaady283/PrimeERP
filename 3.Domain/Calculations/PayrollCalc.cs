@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Domain.Calculations
 {
@@ -19,27 +20,66 @@ namespace PrimeERP.Domain.Calculations
 
         public static decimal Net(PayrollLine l) => Gross(l) - Withheld(l);
 
-        public static decimal DailyRate(decimal basic) => basic / 30m;
+        public static (DateTime From, DateTime To) Period(int year, int month, int startDay)
+        {
+            var from = new DateTime(year, month, Math.Clamp(startDay, 1, 28));
+            return (from, from.AddMonths(1).AddDays(-1));
+        }
 
-        public static decimal HourlyRate(decimal basic) => DailyRate(basic) / 8m;
+        public static (DateTime From, DateTime To) Cycle(DateTime date, int startDay)
+        {
+            var month = date.Day < Math.Clamp(startDay, 1, 28) ? date.AddMonths(-1) : date;
+            return Period(month.Year, month.Month, startDay);
+        }
 
-        public static decimal Overtime(decimal hours, decimal basic) => Math.Round(hours * HourlyRate(basic), 2);
+        public static DateTime NextPayroll(DateTime? lastStart, DateTime opening) =>
+            lastStart?.AddMonths(1) ?? new DateTime(opening.Year, opening.Month, 1);
 
-        public static decimal Absence(decimal days, decimal basic) => Math.Round(days * DailyRate(basic), 2);
+        public static (TimeSpan Start, TimeSpan End) Shift(Employee employee, PayrollRules rules) =>
+            (employee.WorkStart ?? rules.WorkStart, employee.WorkEnd ?? rules.WorkEnd);
+
+        public static int LateMinutes(Attendance day, TimeSpan start) =>
+            day.Status == AttendanceStatus.Present && day.CheckIn > start ? (int)(day.CheckIn.Value - start).TotalMinutes : 0;
+
+        public static int OvertimeMinutes(Attendance day, TimeSpan end) =>
+            day.Status == AttendanceStatus.Present && day.CheckOut > end ? (int)(day.CheckOut.Value - end).TotalMinutes : 0;
+
+        public static decimal DailyRate(decimal basic, PayrollRules rules, DateTime from, DateTime to) =>
+            basic / (rules.DailyWageDays > 0 ? rules.DailyWageDays : (to - from).Days + 1);
+
+        public static decimal HourlyRate(decimal daily, (TimeSpan Start, TimeSpan End) shift)
+        {
+            var hours = (decimal)(shift.End - shift.Start).TotalHours;
+            return hours > 0 ? daily / hours : 0;
+        }
+
+        public static decimal Minutes(IEnumerable<int> perDay, TimeSpan minimum, decimal hourly, decimal rate) =>
+            Math.Round(perDay.Where(m => m > 0 && m >= minimum.TotalMinutes).Sum() / 60m * hourly * rate, 2);
+
+        public static int UnpaidDays(IEnumerable<Attendance> days, IEnumerable<LeaveType> leaveTypes)
+        {
+            var unpaid = leaveTypes.Where(t => !t.IsPaid).Select(t => t.Id).ToHashSet();
+            return days.Count(d => d.Status == AttendanceStatus.Absent
+                                || d.Status == AttendanceStatus.Leave && d.LeaveTypeId is int type && unpaid.Contains(type));
+        }
 
         /// <summary>سطر راتب الموظف للفترة</summary>
-        public static PayrollLine Line(Employee employee, decimal allowances, decimal deductions,
-            decimal overtimeHours, decimal absenceDays, decimal advanceBalance)
+        public static PayrollLine Line(Employee employee, IEnumerable<EmployeeMovement> allowances, IEnumerable<EmployeeMovement> deductions,
+            IEnumerable<EmployeeMovement> advances, IReadOnlyCollection<Attendance> days, IReadOnlyCollection<LeaveType> leaveTypes,
+            PayrollRules rules, DateTime from, DateTime to)
         {
+            var daily = DailyRate(employee.BasicSalary, rules, from, to);
+            var hourly = HourlyRate(daily, Shift(employee, rules));
             var line = new PayrollLine
             {
                 BasicSalary = employee.BasicSalary,
-                Allowances = employee.FixedAllowances + allowances,
-                Overtime = Overtime(overtimeHours, employee.BasicSalary),
-                Deductions = deductions + Absence(absenceDays, employee.BasicSalary),
+                Allowances = employee.FixedAllowances + allowances.Sum(m => m.Amount),
+                Overtime = Minutes(days.Select(d => d.OvertimeMinutes), rules.OvertimeMinimum, hourly, rules.OvertimeRate),
+                Deductions = deductions.Sum(m => m.Amount) + Math.Round(UnpaidDays(days, leaveTypes) * daily, 2)
+                           + Minutes(days.Select(d => d.LateMinutes), rules.LateMinimum, hourly, rules.LateRate),
                 Insurance = employee.IsInsured ? employee.InsuranceAmount : 0,
                 Tax = employee.TaxAmount,
-                Advances = Math.Max(advanceBalance, 0),
+                Advances = advances.Sum(m => m.Amount),
             };
             line.NetSalary = Net(line);
             return line;
@@ -55,6 +95,9 @@ namespace PrimeERP.Domain.Calculations
             lines.Sum(l => l.Tax),
             lines.Sum(l => l.Deductions));
     }
+
+    public readonly record struct PayrollRules(int DailyWageDays, decimal OvertimeRate, TimeSpan OvertimeMinimum,
+        decimal LateRate, TimeSpan LateMinimum, TimeSpan WorkStart, TimeSpan WorkEnd, int StartDay);
 
     public readonly record struct PayrollTotals(
         decimal Basic, decimal Allowances, decimal Withheld, decimal Net, decimal Insurance, decimal Tax, decimal Deductions);

@@ -58,11 +58,15 @@ namespace PrimeERP.Platform.Settings
             public const string CapitalGains  = "Accounts.CapitalGains";
 
             public const string CapitalLosses = "Accounts.CapitalLosses";
+            public const string FinanceIncome = "Accounts.FinanceIncome";
+            public const string ChequesUnderCollection = "Accounts.ChequesUnderCollection";
+            public const string ChequesPayable = "Accounts.ChequesPayable";
+            public const string FinanceExpense = "Accounts.FinanceExpense";
             public const string Cash             = "Accounts.Cash";
 
             public const string EmployeeAdvances = "Accounts.EmployeeAdvances";
 
-            public static readonly string[] LinkedRoots = { Customers, Suppliers, Cash, Bank, FixedAssets, EmployeeAdvances };
+            public static readonly string[] LinkedRoots = { Customers, Suppliers, Cash, Bank, FixedAssets, AccumulatedDepreciation, EmployeeAdvances };
             public const string Bank             = "Accounts.Bank";
             public const string Sales            = "Accounts.Sales";
             public const string SalesReturns     = "Accounts.SalesReturns";
@@ -98,9 +102,6 @@ namespace PrimeERP.Platform.Settings
             public const string JournalPrefix         = "Documents.JournalPrefix";
             public const string SalesInvoicePrefix    = "Documents.SalesInvoicePrefix";
             public const string PurchaseInvoicePrefix = "Documents.PurchaseInvoicePrefix";
-            public const string StockVoucherPrefix    = "Documents.StockVoucherPrefix";
-            public const string NumberPadding         = "Documents.NumberPadding";
-            public const string ResetNumbersYearly    = "Documents.ResetNumbersYearly";
 
             public const string SimplifiedFlow        = "Documents.SimplifiedFlow";
 
@@ -142,6 +143,26 @@ namespace PrimeERP.Platform.Settings
             public const string AdminToken = "Developer.AdminToken";
         }
 
+        public static class HR
+        {
+            public const string WorkStart       = "HR.WorkStart";
+            public const string WorkEnd         = "HR.WorkEnd";
+            public const string DailyWageDays   = "HR.DailyWageDays";
+            public const string OvertimeRate    = "HR.OvertimeRate";
+            public const string OvertimeMinimum = "HR.OvertimeMinimum";
+            public const string LateRate        = "HR.LateRate";
+            public const string LateMinimum     = "HR.LateMinimum";
+            public const string PayrollStartDay = "HR.PayrollStartDay";
+            public const string PayrollTreasury = "HR.PayrollTreasury";
+        }
+
+        public static class Edition
+        {
+            public const string AdvancesPosted = "System.AdvancesPosted";
+            public const string PayrollPays    = "System.PayrollPays";
+            public const string Version        = "System.Version";
+        }
+
         public static class Security
         {
             public const string PasswordMinLength        = "Security.PasswordMinLength";
@@ -177,31 +198,35 @@ namespace PrimeERP.Platform.Settings
             new(Financial.WarnOnDuplicateCustomerName, "true",     "bool",   "Financial"),
             new(Financial.WarnOnDuplicatePhone,        "true",     "bool",   "Financial"),
 
-            new(Accounts.Customers,        "1202", "string", "Accounts", IsSystem: true),
-            new(Accounts.Suppliers,        "2101", "string", "Accounts", IsSystem: true),
-            new(Accounts.Inventory,        "1201", "string", "Accounts", IsSystem: true),
-            new(Accounts.OpeningAdjustments, "",   "string", "Accounts", IsSystem: true),
-            new(Accounts.DepreciationExpense,     "", "string", "Accounts", IsSystem: true),
-            new(Accounts.AccumulatedDepreciation, "", "string", "Accounts", IsSystem: true),
-            new(Accounts.FixedAssets,             "", "string", "Accounts", IsSystem: true),
-            new(Accounts.CapitalGains,            "", "string", "Accounts", IsSystem: true),
-            new(Accounts.CapitalLosses,           "", "string", "Accounts", IsSystem: true),
-            new(Accounts.Cash,             "1204", "string", "Accounts", IsSystem: true),
-            new(Accounts.EmployeeAdvances, "1205", "string", "Accounts", IsSystem: true),
-            new(Accounts.SalaryExpense,    "5101", "string", "Accounts", IsSystem: true),
-            new(Accounts.AllowanceExpense, "5102", "string", "Accounts", IsSystem: true),
-            new(Accounts.SalariesPayable,  "2102", "string", "Accounts", IsSystem: true),
-            new(Accounts.InsurancePayable, "2103", "string", "Accounts", IsSystem: true),
-            new(Accounts.TaxPayable,       "2104", "string", "Accounts", IsSystem: true),
-            new(Accounts.Bank,             "1203", "string", "Accounts", IsSystem: true),
-            new(Accounts.Sales,            "41",   "string", "Accounts", IsSystem: true),
-            new(Accounts.SalesReturns,     "",     "string", "Accounts", IsSystem: true),
-            new(Accounts.COGS,             "51",   "string", "Accounts", IsSystem: true),
+            new(Accounts.Customers,        "1202",     "string", "Accounts", IsSystem: true),
+            new(Accounts.Suppliers,        "2201",     "string", "Accounts", IsSystem: true),
+            new(Accounts.Inventory,        "1201001",  "string", "Accounts", IsSystem: true),
+            new(Accounts.OpeningAdjustments, "33",      "string", "Accounts", IsSystem: true),
+            new(Accounts.DepreciationExpense, "54",     "string", "Accounts", IsSystem: true),
+            new(Accounts.AccumulatedDepreciation, "1101002", "string", "Accounts", IsSystem: true),
+            new(Accounts.FixedAssets,       "1101001",  "string", "Accounts", IsSystem: true),
+            new(Accounts.CapitalGains,       "4201",     "string", "Accounts", IsSystem: true),
+            new(Accounts.CapitalLosses,      "5601",     "string", "Accounts", IsSystem: true),
+            new(Accounts.FinanceIncome,      "4202",     "string", "Accounts", IsSystem: true),
+            new(Accounts.ChequesUnderCollection, "1203004", "string", "Accounts", IsSystem: true),
+            new(Accounts.ChequesPayable,     "",         "string", "Accounts", IsSystem: true),
+            new(Accounts.FinanceExpense,     "55",       "string", "Accounts", IsSystem: true),
+            new(Accounts.Cash,               "1203007",  "string", "Accounts", IsSystem: true),
+            new(Accounts.EmployeeAdvances,   "1206001",  "string", "Accounts", IsSystem: true),
+            new(Accounts.SalaryExpense,      "53",       "string", "Accounts", IsSystem: true),
+            new(Accounts.AllowanceExpense,   "53",       "string", "Accounts", IsSystem: true),
+            new(Accounts.SalariesPayable,    "2202004",  "string", "Accounts", IsSystem: true),
+            new(Accounts.InsurancePayable,   "2202003",  "string", "Accounts", IsSystem: true),
+            new(Accounts.TaxPayable,         "2203003",  "string", "Accounts", IsSystem: true),
+            new(Accounts.Bank,               "1203003",  "string", "Accounts", IsSystem: true),
+            new(Accounts.Sales,              "4101",     "string", "Accounts", IsSystem: true),
+            new(Accounts.SalesReturns,       "4102",     "string", "Accounts", IsSystem: true),
+            new(Accounts.COGS,               "5101",     "string", "Accounts", IsSystem: true),
             new(Accounts.RetainedEarnings, "32",   "string", "Accounts", IsSystem: true),
-            new(Accounts.VATInput,         "",     "string", "Accounts", IsSystem: true),
-            new(Accounts.VATOutput,        "",     "string", "Accounts", IsSystem: true),
-            new(Accounts.WithholdingReceivable, "", "string", "Accounts", IsSystem: true),
-            new(Accounts.WithholdingPayable,    "", "string", "Accounts", IsSystem: true),
+            new(Accounts.VATInput,         "1207001", "string", "Accounts", IsSystem: true),
+            new(Accounts.VATOutput,        "2203001", "string", "Accounts", IsSystem: true),
+            new(Accounts.WithholdingReceivable, "1207002", "string", "Accounts", IsSystem: true),
+            new(Accounts.WithholdingPayable,    "2203002", "string", "Accounts", IsSystem: true),
             new(Accounts.AutoLinkEnabled,  "true", "bool",   "Accounts"),
 
             new(Print.ChequeOffsetX, "0",  "string", "Print"),
@@ -211,10 +236,7 @@ namespace PrimeERP.Platform.Settings
             new(Print.Terms,         "",   "string", "Print"),
             new(Documents.JournalPrefix,         "JE",   "string", "Documents"),
             new(Documents.SalesInvoicePrefix,    "INV",  "string", "Documents"),
-            new(Documents.PurchaseInvoicePrefix, "PINV", "string", "Documents"),
-            new(Documents.StockVoucherPrefix,    "SV",   "string", "Documents"),
-            new(Documents.NumberPadding,         "5",    "int",    "Documents"),
-            new(Documents.ResetNumbersYearly,    "true", "bool",   "Documents"),
+            new(Documents.PurchaseInvoicePrefix, "PI",   "string", "Documents"),
             new(Documents.SimplifiedFlow,        "true",  "bool",  "Documents"),
             new(Documents.CustomerPrefix,        "C",    "string", "Documents"),
             new(Documents.SupplierPrefix,        "S",    "string", "Documents"),
@@ -240,6 +262,20 @@ namespace PrimeERP.Platform.Settings
             new(Security.PasswordMinLength,     "8",     "int",  "Security", IsSystem: true),
             new(Security.SessionTimeoutMinutes, "60",    "int",  "Security"),
             new(Security.RequirePasswordChange, "false", "bool", "Security"),
+
+            new(Edition.AdvancesPosted, "true", "bool", "System"),
+            new(Edition.PayrollPays,    "true", "bool", "System"),
+            new(Edition.Version,        "",     "string", "System", IsSystem: true),
+
+            new(HR.WorkStart,       "09:00", "string",  "HR"),
+            new(HR.WorkEnd,         "17:00", "string",  "HR"),
+            new(HR.DailyWageDays,   "30",    "int",     "HR"),
+            new(HR.OvertimeRate,    "1.5",   "decimal", "HR"),
+            new(HR.OvertimeMinimum, "01:00", "string",  "HR"),
+            new(HR.LateRate,        "1",     "decimal", "HR"),
+            new(HR.LateMinimum,     "00:15", "string",  "HR"),
+            new(HR.PayrollStartDay, "1",     "int",     "HR"),
+            new(HR.PayrollTreasury, "",      "treasury", "HR"),
         };
     }
 }

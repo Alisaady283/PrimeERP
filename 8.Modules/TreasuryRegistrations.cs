@@ -1,7 +1,7 @@
 using PrimeERP.Application.DTOs.Cheques;
 using PrimeERP.Application.DTOs.Vouchers;
 using PrimeERP.Domain.Entities;
-using PrimeERP.Application.Legacy.Vouchers;
+using PrimeERP.Application.PageServices.Vouchers;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Composition.Registry;
@@ -32,7 +32,7 @@ namespace PrimeERP.Modules
                 Dialog = new DialogDefinition
                 {
                     TitleKey = "Str.Treasuries.Add", TitleEditKey = "Str.Treasuries.Edit", GridColumns = 2,
-                    ServiceType = typeof(PrimeERP.Application.Legacy.Treasury.ITreasuryService),
+                    ServiceType = typeof(PrimeERP.Application.PageServices.Treasury.ITreasuryService),
                     CreateDtoType = typeof(Treasury), UpdateDtoType = typeof(Treasury),
                     Fields = new()
                     {
@@ -50,9 +50,9 @@ namespace PrimeERP.Modules
             RegisterVoucher(registry, "Payments", "Str.Module.Payments", typeof(PaymentVouchersViewModel), typeof(IPaymentVoucherService), "Str.Supplier", "Supplier", "PurchaseInvoice");
 
             RegisterChequeDocument(registry, "ChequeReceipts", "Str.Module.ChequeReceipts", typeof(ChequeReceiptsViewModel),
-                typeof(PrimeERP.Application.Legacy.Cheques.IChequeReceiptDocumentService), "Str.Customer", "Customer");
+                typeof(PrimeERP.Application.PageServices.Cheques.IChequeReceiptDocumentService), "Str.Customer", "Customer");
             RegisterChequeDocument(registry, "ChequeIssues", "Str.Module.ChequeIssues", typeof(ChequeIssuesViewModel),
-                typeof(PrimeERP.Application.Legacy.Cheques.IChequeIssueDocumentService), "Str.Supplier", "Supplier");
+                typeof(PrimeERP.Application.PageServices.Cheques.IChequeIssueDocumentService), "Str.Supplier", "Supplier");
 
             registry.Register(new ModuleDefinition
             {
@@ -144,11 +144,6 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateVoucherDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300, ColumnSpan = 2 },
                     },
                     LineFields = new()
-                    {
-                        new() { Key = nameof(CreateVoucherAllocationDto.InvoiceNo), Header = LocalizationService.Get("Str.Voucher.InvoiceOptional"), Kind = FieldKind.Picker, Width = 260, PickerType = invoicePickerType },
-                        new() { Key = nameof(CreateVoucherAllocationDto.Amount), Header = LocalizationService.Get("Str.Amount"), Kind = FieldKind.Number, Width = 120 },
-                        new() { Key = nameof(CreateVoucherAllocationDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 200 },
-                    }
                 }
             });
         }

@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Collections.Generic;
 using PrimeERP.Domain.Entities.Common;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
@@ -14,13 +16,17 @@ namespace PrimeERP.Application.Services.Ledger.Accounts
         private readonly ITreasuryRepository _treasuries;
         private readonly PartyByKind _parties;
         private readonly ISettingsProvider _settings;
+        private readonly IAccountRepository _accounts;
 
-        public AccountOf(ITreasuryRepository treasuries, PartyByKind parties, ISettingsProvider settings)
+        public AccountOf(ITreasuryRepository treasuries, PartyByKind parties, ISettingsProvider settings, IAccountRepository accounts)
         {
             _treasuries = treasuries;
             _parties = parties;
             _settings = settings;
+            _accounts = accounts;
         }
+
+        public Result<string> Account(int id, string missingKey) => Required(_accounts.GetById(id)?.Code, missingKey);
 
         public Result<string> Treasury(int id, string missingKey) =>
             _treasuries.GetById(id) is { } treasury
@@ -44,6 +50,9 @@ namespace PrimeERP.Application.Services.Ledger.Accounts
         }
 
         public Result<string> Setting(string key, string missingKey) => Required(_settings.Get(key, ""), missingKey);
+
+        public HashSet<string> UnderSetting(string key) =>
+            _accounts.GetAllChildren(_settings.Get(key, "")).Select(a => a.Code).ToHashSet();
 
         /// <summary>حساب الإعداد وجهته بالإشارة</summary>
         public Result<(string Account, bool Debit)> SettingBySign(decimal amount, string positiveKey, string negativeKey, string missingKey)

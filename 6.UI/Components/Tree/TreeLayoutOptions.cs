@@ -15,6 +15,8 @@ namespace PrimeERP.UI.Components.Tree
 
         TreeCheckList,
 
+        Tabs,
+
         DocumentPage,
 
         ChequeBoard

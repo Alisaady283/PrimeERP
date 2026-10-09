@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Application.PageServices.Common;
 using PrimeERP.Domain.Entities;
 
 namespace PrimeERP.Composition.Definitions

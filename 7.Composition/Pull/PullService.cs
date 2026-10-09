@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Documents;
-using PrimeERP.Application.Legacy.Documents;
+using PrimeERP.Application.PageServices.Documents;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Domain.Contracts;

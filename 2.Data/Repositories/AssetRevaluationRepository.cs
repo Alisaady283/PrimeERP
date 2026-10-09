@@ -19,6 +19,9 @@ namespace PrimeERP.Data.Repositories
         void Update(AssetRevaluation revaluation, PrimeDbContext db = null);
         void Delete(int id, string deletedBy, PrimeDbContext db = null);
         void SetJournalEntryId(PrimeDbContext db, int id, int journalEntryId);
+        bool AnyAfter(int assetId, DateTime date, PrimeDbContext db = null);
+        List<AssetRevaluation> ForAsset(int assetId, PrimeDbContext db = null);
+        List<AssetRevaluation> UpTo(DateTime to);
     }
 
     public class AssetRevaluationRepository : RepositoryBase<AssetRevaluation>, IAssetRevaluationRepository
@@ -59,12 +62,22 @@ namespace PrimeERP.Data.Repositories
                 row.RevaluationDate = r.RevaluationDate;
                 row.OldValue = r.OldValue;
                 row.NewValue = r.NewValue;
+                row.SalvageValue = r.SalvageValue;
+                row.UsefulLifeYears = r.UsefulLifeYears;
                 row.Notes = r.Notes ?? "";
                 row.UpdatedBy = r.UpdatedBy;
             }, db);
 
         public void Delete(int id, string deletedBy, PrimeDbContext db = null) =>
             SoftDelete(id, deletedBy, db);
+
+        public List<AssetRevaluation> UpTo(DateTime to) => Fetch(q => q.Where(r => r.RevaluationDate <= to));
+
+        public List<AssetRevaluation> ForAsset(int assetId, PrimeDbContext db = null) =>
+            Fetch(q => q.Where(r => r.AssetId == assetId).OrderBy(r => r.RevaluationDate), db);
+
+        public bool AnyAfter(int assetId, DateTime date, PrimeDbContext db = null) =>
+            Any(q => q.Where(r => r.AssetId == assetId && r.RevaluationDate > date), db);
 
         public void SetJournalEntryId(PrimeDbContext db, int id, int journalEntryId) =>
             Set(x => x.Id == id, s => s.SetProperty(r => r.JournalEntryId, journalEntryId), db);

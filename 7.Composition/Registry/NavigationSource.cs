@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Builder;
+using PrimeERP.Application.PageServices.Builder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +22,9 @@ namespace PrimeERP.Composition.Registry
                 {
                     var rows = modules.Where(m => m.SectionId == section.Id).Select(m => m.Key).ToArray();
 
-                    return (section.Key, section.Title, section.IconKey ?? "IconSettings",
+                    var title = PrimeERP.Platform.Localization.LocalizationService.CurrentLanguage == PrimeERP.Platform.Localization.AppLanguage.Ar
+                        ? section.Title : PrimeERP.Platform.Localization.LocalizationService.GetOr($"Str.Nav.{section.Key}", section.Title);
+                    return (section.Key, title, section.IconKey ?? "IconSettings",
                         seeded ? rows
                             : (section.Modules ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
                 })

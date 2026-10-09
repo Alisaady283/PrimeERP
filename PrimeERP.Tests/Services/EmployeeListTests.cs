@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.HR;
-using PrimeERP.Application.Legacy.HR;
+using PrimeERP.Application.PageServices.HR;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 

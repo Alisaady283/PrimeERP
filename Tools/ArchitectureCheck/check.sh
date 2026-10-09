@@ -153,7 +153,7 @@ if [ -n "$n" ]; then
   fail "خدمة تستدعي DbHelper مباشرة بدل المرور عبر Repository:"
   echo "$n" | sed 's/^/       /'
 else pass; fi
-if grep -q "Db\.Execute(" "4.Application/Legacy/Backup/BackupService.cs" 2>/dev/null; then
+if grep -q "Db\.Execute(" "4.Application/PageServices/Backup/BackupService.cs" 2>/dev/null; then
   warn "BackupService.cs يستدعي DbHelper مباشرة — استثناء مقبول (أوامر BACKUP/RESTORE إدارية، لا CRUD كيان له Repository)"
 fi
 
@@ -172,7 +172,7 @@ else pass; fi
 
 # Service يستدعي Service آخر تنفيذاً لا عقداً (new XService() أو XService.Instance من ملف آخر) — عبر ServiceLocator/DI فقط مقبول
 # (فحص إرشادي: يبحث عن ".Instance" لخدمة أخرى غير عبر ServiceLocator داخل ملفات Services)
-n=$(grep -rlE "\b[A-Z][A-Za-z]+Service\.Instance\b" 4.Application/Services 4.Application/Legacy 6.UI/Services --include="*.cs" 2>/dev/null | xargs -I{} grep -L "class {}" {} 2>/dev/null)
+n=$(grep -rlE "\b[A-Z][A-Za-z]+Service\.Instance\b" 4.Application/Services 4.Application/PageServices 6.UI/Services --include="*.cs" 2>/dev/null | xargs -I{} grep -L "class {}" {} 2>/dev/null)
 # (فحص تقريبي مُعطَّل عمداً — إيجابيات كاذبة كثيرة مع نمط Instance المُستخدَم حالياً)
 
 # Validator يكتب في قاعدة البيانات

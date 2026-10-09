@@ -10,7 +10,7 @@
 | [04-Target.md](04-Target.md) | **المقترح**: القطع الخمس بواجهاتها، والقاعدتان، وشجرة ملفات `4.Application`، وأمثلة الصفحات بعد التحويل |
 | [05-ExecutionPlan.md](05-ExecutionPlan.md) | **آلية التنفيذ**: الخطوات والبوابات والمخاطر والقرارات |
 | [06-UseCases.md](06-UseCases.md) | **الاتجاه**: حالات الاستخدام وهيكل `4.Application` |
-| [07-ServicesReport.md](07-ServicesReport.md) | **تقرير حيّ**: كل خدمة في `Services`، ما تفعله، ومن يستدعيها، وما بقي في `Legacy` |
+| [07-ServicesReport.md](07-ServicesReport.md) | **تقرير حيّ**: كل خدمة في `Services`، ما تفعله، ومن يستدعيها، وما بقي في `PageServices` |
 | [08-GenericLogic.md](08-GenericLogic.md) | **المرحلة الجديدة**: منطقٌ عامّ بالمعاملات للحساب والقيد والتحقق، وموضع كل حساب |
 | [09-OneFunction.md](09-OneFunction.md) | **التالي**: دالة تحقّق واحدة بالمعاملات، وDTO واحد للكيان، وخدمة صفحة بلا نسخ حقول |
 

@@ -52,6 +52,10 @@ def setup():
             );
             """
         )
+        columns = {row["name"] for row in connection.execute("PRAGMA table_info(licenses)")}
+        for column in ("version", "version_at"):
+            if column not in columns:
+                connection.execute(f"ALTER TABLE licenses ADD COLUMN {column} TEXT")
 
 
 def authorized() -> bool:
@@ -69,6 +73,17 @@ def latest_release():
         return connection.execute(
             "SELECT version, package FROM releases ORDER BY created_at DESC LIMIT 1"
         ).fetchone()
+
+
+def release_for(row):
+    if row["version"]:
+        with db() as connection:
+            assigned = connection.execute(
+                "SELECT version, package FROM releases WHERE version = ?", (row["version"],)
+            ).fetchone()
+        if assigned is not None:
+            return assigned
+    return latest_release()
 
 
 @app.get("/health")
@@ -90,14 +105,18 @@ def upsert_license():
     with db() as connection:
         connection.execute(
             """
-            INSERT INTO licenses (serial, customer, location, manifest, simplified, package, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO licenses (serial, customer, location, manifest, simplified, package, version, version_at, created_at, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(serial) DO UPDATE SET
                 customer   = excluded.customer,
                 location   = excluded.location,
                 manifest   = excluded.manifest,
                 simplified = excluded.simplified,
-                package    = COALESCE(excluded.package, licenses.package)
+                is_active  = excluded.is_active,
+                package    = COALESCE(excluded.package, licenses.package),
+                version    = COALESCE(excluded.version, licenses.version),
+                version_at = CASE WHEN excluded.version IS NOT NULL AND excluded.version IS NOT licenses.version
+                                  THEN excluded.version_at ELSE licenses.version_at END
             """,
             (
                 serial,
@@ -106,7 +125,10 @@ def upsert_license():
                 data.get("manifest", ""),
                 1 if data.get("simplified") else 0,
                 data.get("package"),
+                data.get("version") or None,
                 now(),
+                now(),
+                0 if data.get("active") is False else 1,
             ),
         )
 
@@ -156,7 +178,7 @@ def activate():
                 (machine, now(), serial),
             )
 
-    release = latest_release()
+    release = release_for(row)
     package = row["package"] or (release["package"] if release else None)
 
     if not package:
@@ -181,7 +203,7 @@ def update():
 
     with db() as connection:
         row = connection.execute(
-            "SELECT machine FROM licenses WHERE serial = ? AND is_active = 1", (serial,)
+            "SELECT machine, manifest, simplified, version FROM licenses WHERE serial = ? AND is_active = 1", (serial,)
         ).fetchone()
 
     if row is None:
@@ -191,11 +213,12 @@ def update():
     if row["machine"] and machine and not hmac.compare_digest(row["machine"], machine):
         return jsonify(error="هذا السريال مُفعَّل على جهاز آخر"), HTTPStatus.FORBIDDEN
 
-    release = latest_release()
+    pages = dict(manifest=row["manifest"] or "", simplified=bool(row["simplified"]))
+    release = release_for(row)
     if release is None or release["version"] == current:
-        return jsonify(available=False, version=current)
+        return jsonify(available=False, version=current, **pages)
 
-    return jsonify(available=True, version=release["version"], package=f"/package/{release['package']}")
+    return jsonify(available=True, version=release["version"], package=f"/package/{release['package']}", **pages)
 
 
 @app.post("/releases")

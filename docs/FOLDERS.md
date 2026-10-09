@@ -52,22 +52,22 @@
 | **DTOs/Security/** | بيانات المستخدم ومرشّح الأدوار |
 | **DTOs/Treasury/** | مرشّح الخزائن والبنوك |
 | **DTOs/Vouchers/** | بيانات السندات |
-| **Legacy/Accounting/** | الحسابات والقيود والفترات المالية |
-| **Legacy/Admin/** | الإعدادات والتراخيص والنسخ والتحديث |
-| **Legacy/Assets/** | الأصل: اقتناءً وإهلاكاً وتقييماً واستبعاداً |
-| **Legacy/Backup/** | النسخ الاحتياطي والاستعادة |
-| **Legacy/Builder/** | ما يبنيه المستخدم من شاشات |
-| **Legacy/Cheques/** | دورة الشيك |
-| **Legacy/Common/** | الفئات وحساباتها |
-| **Legacy/Documents/** | مستندات الدورة وروابط السحب |
-| **Legacy/HR/** | الموظفون والرواتب والحضور |
-| **Legacy/Inventory/** | الأصناف والمخازن والأرصدة |
-| **Legacy/Parties/** | العملاء والموردون |
-| **Legacy/Purchasing/** | فواتير الشراء ومرتجعاتها |
-| **Legacy/Sales/** | فواتير البيع ومرتجعاتها |
-| **Legacy/Security/** | المستخدمون والأدوار |
-| **Legacy/Treasury/** | الخزائن والبنوك |
-| **Legacy/Vouchers/** | سندات القبض والصرف |
+| **PageServices/Accounting/** | الحسابات والقيود والفترات المالية |
+| **PageServices/Admin/** | الإعدادات والتراخيص والنسخ والتحديث |
+| **PageServices/Assets/** | الأصل: اقتناءً وإهلاكاً وتقييماً واستبعاداً |
+| **PageServices/Backup/** | النسخ الاحتياطي والاستعادة |
+| **PageServices/Builder/** | ما يبنيه المستخدم من شاشات |
+| **PageServices/Cheques/** | دورة الشيك |
+| **PageServices/Common/** | الفئات وحساباتها |
+| **PageServices/Documents/** | مستندات الدورة وروابط السحب |
+| **PageServices/HR/** | الموظفون والرواتب والحضور |
+| **PageServices/Inventory/** | الأصناف والمخازن والأرصدة |
+| **PageServices/Parties/** | العملاء والموردون |
+| **PageServices/Purchasing/** | فواتير الشراء ومرتجعاتها |
+| **PageServices/Sales/** | فواتير البيع ومرتجعاتها |
+| **PageServices/Security/** | المستخدمون والأدوار |
+| **PageServices/Treasury/** | الخزائن والبنوك |
+| **PageServices/Vouchers/** | سندات القبض والصرف |
 | **Reporting/** | خدمات التقارير |
 | **Services/Core/** | أساس كل خدمة: الصلاحية والمعاملة والكيان والترقيم |
 | **Services/Documents/** | المستند والسحب وحركة المخزون وتغيير الحالة وسطور التجارة |
@@ -92,7 +92,6 @@
 | **Components/** | القطع المرئية بأقسامها |
 | **Components/Actions/** | الأزرار وشريطها |
 | **Components/Display/** | الجدول والترقيم والبطاقة |
-| **Components/Documents/** | محرر سطور المستند |
 | **Components/Feedback/** | الحوارات والتنبيهات |
 | **Components/Inputs/** | حقول الإدخال |
 | **Components/Layout/** | ترويسة الصفحة وشريط الفلاتر |
@@ -139,7 +138,6 @@
 | **Architecture/** | حدود الطبقات واكتمال الوحدات |
 | **Composition/** | تصيير الشاشات الحقيقية |
 | **Design/** | الألوان والرموز والنصوص |
-| **Documents/** | المستندات ودوراتها |
 | **Helpers/** | أدوات الاختبار |
 | **Services/** | الخدمات ومنطقها |
 | **Services/Design/** | التصميم والنصوص |

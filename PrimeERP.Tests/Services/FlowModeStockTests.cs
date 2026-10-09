@@ -1,5 +1,5 @@
-using PrimeERP.Application.Legacy.Admin;
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.PageServices.Admin;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Services.Documents;
@@ -11,9 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Sales;
-using PrimeERP.Application.Legacy.Inventory;
-using PrimeERP.Application.Legacy.Parties;
-using PrimeERP.Application.Legacy.Sales;
+using PrimeERP.Application.PageServices.Inventory;
+using PrimeERP.Application.PageServices.Parties;
+using PrimeERP.Application.PageServices.Sales;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using Xunit;
@@ -34,7 +34,7 @@ namespace PrimeERP.Tests.Services
         [InlineData(false, 10)]  // شامل: الفاتورة لا تمسّ الرصيد
         public void SalesInvoice_MovesStock_OnlyInSimplifiedFlow(bool simplified, decimal expectedOnHand)
         {
-            var accounts = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IAccountService>();
+            var accounts = _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Accounting.IAccountService>();
             var settings = _db.Services.GetRequiredService<ISettingsService>();
 
             string LeafUnder(string parentCode, string name)
@@ -47,7 +47,7 @@ namespace PrimeERP.Tests.Services
             settings.Set(SettingKeys.Accounts.Inventory, LeafUnder("1201", "مخزون"));
             settings.Set(SettingKeys.Accounts.Sales, LeafUnder("41", "مبيعات"));
             settings.Set(SettingKeys.Accounts.COGS, LeafUnder("51", "تكلفة مبيعات"));
-            settings.Set(SettingKeys.Accounts.VATOutput, LeafUnder("21", "ضريبة مخرجات"));
+            settings.Set(SettingKeys.Accounts.VATOutput, LeafUnder("2203", "ضريبة مخرجات"));
             settings.SetMany(new Dictionary<string, object> { [SettingKeys.Documents.SimplifiedFlow] = simplified });
 
             var warehouseId = _db.Services.GetRequiredService<Lookup<Warehouse>>().Add("مخزن الاختبار");

@@ -12,6 +12,8 @@ namespace PrimeERP.Domain.Entities
 
         public decimal  OldValue       { get; set; }
         public decimal  NewValue       { get; set; }
+        public decimal  SalvageValue   { get; set; }
+        public int      UsefulLifeYears { get; set; }
         public decimal  Difference     { get; set; }
         public string   KindName       { get; set; }
         public string   Notes          { get; set; }

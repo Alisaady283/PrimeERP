@@ -11,11 +11,13 @@ namespace PrimeERP.Application.Services.Ledger.Accounts
     {
         private readonly IAccountRepository _accounts;
         private readonly Guards _guards;
+        private readonly LinkedAccounts _linked;
 
-        public EditTreeAccount(IAccountRepository accounts, Guards guards)
+        public EditTreeAccount(IAccountRepository accounts, Guards guards, LinkedAccounts linked)
         {
             _accounts = accounts;
             _guards = guards;
+            _linked = linked;
         }
 
         public Result Run(PrimeDbContext db, Account account, string name, string notes, bool isActive)
@@ -23,7 +25,7 @@ namespace PrimeERP.Application.Services.Ledger.Accounts
             account.Name = name;
             account.Notes = notes;
             account.IsActive = isActive;
-            account.IsLeaf = !_guards.HasChildren(account.Code, db);
+            account.IsLeaf = !_linked.IsRoot(account.Code) && !_guards.HasChildren(account.Code, db);
 
             return Check.Valid(account, AddTreeAccount.AccountFields).Then(() =>
             {

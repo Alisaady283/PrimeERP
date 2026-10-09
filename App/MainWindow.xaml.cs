@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +23,8 @@ namespace PrimeERP.App
         public MainWindow(IServiceProvider services)
         {
             InitializeComponent();
+            FlowDirection = PrimeERP.Platform.Localization.LocalizationService.Flow;
+            Loaded += async (_, __) => await PrimeERP.UI.Services.UpdateFlow.SyncAsync(services);
             _services = services;
             _registry = services.GetRequiredService<IModuleRegistry>();
 
@@ -47,7 +49,7 @@ namespace PrimeERP.App
             ["Products"] = "IconProducts", ["Categories"] = "IconFolder", ["Brands"] = "IconBuilding",
             ["Units"] = "IconUnits", ["Warehouses"] = "IconWarehouse",
             ["Assets"] = "IconAssets", ["AssetCategories"] = "IconFolder",
-            ["Employees"] = "IconHR", ["Departments"] = "IconFolder", ["JobTitles"] = "IconFolder", ["Payroll"] = "IconPayroll",
+            ["Employees"] = "IconHR", ["HrLists"] = "IconFolder", ["Payroll"] = "IconPayroll",
             ["SalesInvoices"] = "IconSales", ["SalesReturns"] = "IconSales",
             ["Quotation"] = "IconSales", ["SalesOrder"] = "IconSales",
             ["PurchaseRequest"] = "IconPurchases", ["PurchaseOrder"] = "IconPurchases",
@@ -96,6 +98,33 @@ namespace PrimeERP.App
 
         private async void Shell_UpdateRequested(object sender, EventArgs e) =>
             await PrimeERP.UI.Services.UpdateFlow.RunAsync(_services);
+
+        private void Shell_PasswordChangeRequested(object sender, EventArgs e) =>
+            PrimeERP.Composition.Renderers.DialogRenderer.ShowAndSave(new PrimeERP.Composition.Definitions.DialogDefinition
+            {
+                TitleKey = "Str.TopBar.ChangePassword", TitleEditKey = "Str.TopBar.ChangePassword", GridColumns = 1,
+                ServiceType = typeof(PrimeERP.Application.PageServices.Security.IUserService),
+                CreateDtoType = typeof(PrimeERP.Application.DTOs.Security.ChangePasswordDto),
+                UpdateDtoType = typeof(PrimeERP.Application.DTOs.Security.ChangePasswordDto),
+                CreateMethod = nameof(PrimeERP.Application.PageServices.Security.IUserService.ChangeOwnPassword),
+                Fields = new()
+                {
+                    new() { Key = nameof(PrimeERP.Application.DTOs.Security.ChangePasswordDto.CurrentPassword), LabelKey = "Str.User.CurrentPassword", Kind = PrimeERP.Composition.Definitions.FieldKind.Password, IsRequired = true },
+                    new() { Key = nameof(PrimeERP.Application.DTOs.Security.ChangePasswordDto.NewPassword), LabelKey = "Str.User.NewPassword", Kind = PrimeERP.Composition.Definitions.FieldKind.Password, IsRequired = true },
+                    new() { Key = nameof(PrimeERP.Application.DTOs.Security.ChangePasswordDto.ConfirmPassword), LabelKey = "Str.User.ConfirmPassword", Kind = PrimeERP.Composition.Definitions.FieldKind.Password, IsRequired = true },
+                }
+            }, _services, _services.GetRequiredService<PrimeERP.UI.Services.IToastService>());
+
+        private async void Shell_LanguageToggled(object sender, EventArgs e)
+        {
+            var dialogs = _services.GetRequiredService<PrimeERP.UI.Services.IDialogService>();
+            if (!await dialogs.ConfirmAsync(LocalizationService.Get("Str.TopBar.Language"), LocalizationService.Get("Str.TopBar.LanguageRestart"))) return;
+
+            _services.GetRequiredService<ISettingsProvider>().SetRaw(SettingKeys.UI.Language,
+                LocalizationService.CurrentLanguage == AppLanguage.Ar ? "En" : "Ar");
+            System.Diagnostics.Process.Start(Environment.ProcessPath!);
+            System.Windows.Application.Current.Shutdown();
+        }
 
         private void Shell_LogoutRequested(object sender, EventArgs e)
         {

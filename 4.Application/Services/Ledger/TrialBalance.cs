@@ -25,7 +25,7 @@ namespace PrimeERP.Application.Services.Ledger
 
         public Result<List<TrialBalanceLine>> Of(DateTime from, DateTime to, bool includeZero = false, bool postedOnly = true)
         {
-            var leaves = _accounts.Find(null, null, null, leafOnly: true, includeInactive: false);
+            var leaves = _accounts.Find(null, null, null, leafOnly: true, includeInactive: true);
             var names = _accounts.GetAll(includeInactive: true).ToDictionary(a => a.Code, a => a.Name);
 
             var openingSums = _journal.GetAccountSums(null, from.AddDays(-1), postedOnly).ToDictionary(x => x.AccountCode);
@@ -38,7 +38,7 @@ namespace PrimeERP.Application.Services.Ledger
                 periodSums.TryGetValue(account.Code, out var period);
 
                 var amounts = StatementCalc.Trial(opening.SumDebit, opening.SumCredit, period.SumDebit, period.SumCredit);
-                if (!includeZero && amounts.IsZero) continue;
+                if (amounts.IsZero && (!includeZero || !account.IsActive)) continue;
 
                 var line = Rows.Copy(amounts, Rows.Copy(account, new TrialBalanceLine()));
                 line.ParentName = account.ParentCode != null && names.TryGetValue(account.ParentCode, out var parentName)

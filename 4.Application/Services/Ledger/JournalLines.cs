@@ -16,6 +16,15 @@ namespace PrimeERP.Application.Services.Ledger
         {
             if (debit == 0 && credit == 0) return this;
 
+            var same = _lines.Find(l => l.AccountCode == account);
+            if (same != null)
+            {
+                var net = same.Debit - same.Credit + debit - credit;
+                (same.Debit, same.Credit) = net >= 0 ? (net, 0m) : (0m, -net);
+                if (net == 0) _lines.Remove(same);
+                return this;
+            }
+
             _lines.Add(new CreateJournalLineDto
             { LineNo = _lines.Count + 1, AccountCode = account, Debit = debit, Credit = credit, Notes = note });
             return this;
@@ -32,6 +41,10 @@ namespace PrimeERP.Application.Services.Ledger
             return Signed(into, _lines.Sum(l => l.Credit) - _lines.Sum(l => l.Debit));
         }
 
-        public List<CreateJournalLineDto> ToList() => _lines;
+        public List<CreateJournalLineDto> ToList()
+        {
+            for (var i = 0; i < _lines.Count; i++) _lines[i].LineNo = i + 1;
+            return _lines;
+        }
     }
 }

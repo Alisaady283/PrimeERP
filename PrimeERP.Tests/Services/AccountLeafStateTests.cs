@@ -3,7 +3,7 @@ using PrimeERP.Tests.Helpers;
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 

@@ -30,6 +30,9 @@ namespace PrimeERP.Domain.Entities
         public string     TaxNumber       { get; set; }
 
         public decimal    TaxAmount       { get; set; }
+
+        public TimeSpan?  WorkStart       { get; set; }
+        public TimeSpan?  WorkEnd         { get; set; }
         public int?       AccountId       { get; set; }
 
         public string     AccountCode     { get; set; }

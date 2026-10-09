@@ -47,7 +47,7 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ListBox x:Name="lst" Style="{StaticResource ComboPopupListBoxStyle}"
                              PreviewMouseLeftButtonUp="lst_PreviewMouseLeftButtonUp"
-                             KeyDown="lst_KeyDown"/>
+                             PreviewKeyDown="lst_KeyDown"/>
                 </ScrollViewer>
             </Border>
         </Popup>

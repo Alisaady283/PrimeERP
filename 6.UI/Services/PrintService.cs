@@ -1,6 +1,6 @@
 using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Validation;
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Domain.Contracts;
 using System;

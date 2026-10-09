@@ -1,5 +1,5 @@
 using PrimeERP.Application.DTOs.Inventory;
-using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.PageServices.Inventory;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;

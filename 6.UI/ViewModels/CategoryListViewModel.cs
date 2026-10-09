@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using PrimeERP.Application.DTOs.Common;
-using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Application.PageServices.Common;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;

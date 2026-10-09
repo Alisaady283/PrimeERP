@@ -10,9 +10,9 @@
 2.Data/Core|الاتصال والتنفيذ وبناء الجداول والترحيل
 2.Data/Repositories|مستودع لكل جدول: SQL فقط
 2.Data/Repositories/Base|أسس المستودعات: الصفحة والترتيب والحذف والمستندات
-2.Data/Seeders|بذر عدّادات الترقيم
+2.Data/Seeders|تهيئة الحسابات والإعدادات والصلاحيات وتسلسلات الترقيم الافتراضية
 3.Domain|الطبقة النقيّة: بلا قاعدة بيانات وبلا مراجع
-3.Domain/Contracts|العقود ومفرداتها: طباعة وتصدير وسحب
+3.Domain/Contracts|عقود ومفردات المستندات القابلة للطباعة والسحب
 3.Domain/Entities|كيانات صرفة: خصائص فقط بلا سلوك
 3.Domain/Entities/Common|أسس الكيانات المشتركة
 3.Domain/Enums|تعدادات النظام
@@ -41,23 +41,23 @@
 4.Application/Services/Ledger/Accounts|الحساب: في الشجرة، للكيان، بالاتجاهين، ومع مجمّعه
 4.Application/Services/Entities|الكيان من إعداده: القائمة البسيطة وتحويل الصفّ
 4.Application/Services/Documents|المستند والسحب وحركة المخزون وتغيير الحالة وسطور التجارة
-4.Application/Legacy|خدمات الصفحات: كل صفحة كاملةً هنا، وتستدعي منطقها من Services
-4.Application/Legacy/Accounting|الحسابات والقيود والفترات المالية
-4.Application/Legacy/Admin|الإعدادات والتراخيص والنسخ والتحديث
-4.Application/Legacy/Backup|النسخ الاحتياطي والاستعادة
-4.Application/Legacy/Builder|ما يبنيه المستخدم من شاشات
-4.Application/Legacy/Assets|الأصل: اقتناءً وإهلاكاً وتقييماً واستبعاداً
-4.Application/Legacy/Cheques|دورة الشيك
-4.Application/Legacy/Common|الفئات وحساباتها
-4.Application/Legacy/Documents|مستندات الدورة وروابط السحب
-4.Application/Legacy/HR|الموظفون والرواتب والحضور
-4.Application/Legacy/Inventory|الأصناف والمخازن والأرصدة
-4.Application/Legacy/Parties|العملاء والموردون
-4.Application/Legacy/Purchasing|فواتير الشراء ومرتجعاتها
-4.Application/Legacy/Sales|فواتير البيع ومرتجعاتها
-4.Application/Legacy/Security|المستخدمون والأدوار
-4.Application/Legacy/Treasury|الخزائن والبنوك
-4.Application/Legacy/Vouchers|سندات القبض والصرف
+4.Application/PageServices|خدمات الصفحات: كل صفحة كاملةً هنا، وتستدعي منطقها من Services
+4.Application/PageServices/Accounting|الحسابات والقيود والفترات المالية
+4.Application/PageServices/Admin|الإعدادات والتراخيص والنسخ والتحديث
+4.Application/PageServices/Backup|النسخ الاحتياطي والاستعادة
+4.Application/PageServices/Builder|ما يبنيه المستخدم من شاشات
+4.Application/PageServices/Assets|الأصل: اقتناءً وإهلاكاً وتقييماً واستبعاداً
+4.Application/PageServices/Cheques|دورة الشيك
+4.Application/PageServices/Common|الفئات وحساباتها
+4.Application/PageServices/Documents|مستندات الدورة وروابط السحب
+4.Application/PageServices/HR|الموظفون والرواتب والحضور
+4.Application/PageServices/Inventory|الأصناف والمخازن والأرصدة
+4.Application/PageServices/Parties|العملاء والموردون
+4.Application/PageServices/Purchasing|فواتير الشراء ومرتجعاتها
+4.Application/PageServices/Sales|فواتير البيع ومرتجعاتها
+4.Application/PageServices/Security|المستخدمون والأدوار
+4.Application/PageServices/Treasury|الخزائن والبنوك
+4.Application/PageServices/Vouchers|سندات القبض والصرف
 4.Application/Validation|دالة التحقق الوحيدة Check بشروطٍ معاملاتٍ في Field، وسطور المستند
 5.Design|رموز بصرية: XAML للشاشة وثوابت للتصدير
 5.Design/Icons|الأيقونات
@@ -75,7 +75,7 @@
 6.UI/Components/Shell|الشريط الجانبي والعلوي
 6.UI/Components/Tree|شجرة الحسابات وعقدها
 6.UI/Converters|محوّلات الربط
-6.UI/Services|خدمات الواجهة: حوار وتنبيه وتصدير وتنقّل
+6.UI/Services|خدمات الواجهة: حوار وتنبيه وتصدير وتنقّل، وعقد تصدير المستند القابل للطباعة
 6.UI/ViewModels|نماذج العرض مجموعةً بأقسامها
 6.UI/ViewModels/Base|أسس نماذج العرض: صفحة وCRUD وصلاحية
 7.Composition|التعريفات والمُصيِّرات والسجلّ

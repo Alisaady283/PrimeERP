@@ -9,8 +9,8 @@
             Padding="24,16">
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
@@ -43,7 +43,7 @@
                 </StackPanel>
             </StackPanel>
 
-            <ContentPresenter x:Name="actionsPresenter" Grid.Column="1" VerticalAlignment="Center"/>
+            <ContentPresenter x:Name="actionsPresenter" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right"/>
         </Grid>
     </Border>
 </UserControl>

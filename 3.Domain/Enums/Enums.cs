@@ -57,6 +57,15 @@ namespace PrimeERP.Domain.Enums
         Warehouse  = 5
     }
 
+    public enum AttendanceStatus
+    {
+        Present = 1,
+        Absent  = 2,
+        Leave   = 3,
+        Mission = 4,
+        Holiday = 5,
+    }
+
     public enum EmployeeStatus
     {
         Active   = 1,
@@ -188,6 +197,13 @@ namespace PrimeERP.Domain.Enums
         Cash = 1,
         Bank = 2,
         Supplier = 3
+    }
+
+    public enum DisposalSettlement
+    {
+        Cash = 1,
+        Bank = 2,
+        Account = 4
     }
 
     public enum LinkedEntityType { None, Customer, Supplier }

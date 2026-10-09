@@ -24,10 +24,10 @@ public sealed record Field<T>(Expression<Func<T, object>> Of, string Label,
     Format Format = Format.None, Func<T, bool> Must = null, string MustKey = null);
 ```
 
-والصفحة في `Legacy` تمرّر شروطها معاملات، فلا ملف متحقّق لكل كيان:
+والصفحة في `PageServices` تمرّر شروطها معاملات، فلا ملف متحقّق لكل كيان:
 
 ```csharp
-// Legacy/Parties/CustomerService — شروط الصفحة معاملات
+// PageServices/Parties/CustomerService — شروط الصفحة معاملات
 protected override Field<Customer>[] Fields => new Field<Customer>[]
 {
     new(x => x.Code,  "Str.Field.CustomerCode", Required: true),

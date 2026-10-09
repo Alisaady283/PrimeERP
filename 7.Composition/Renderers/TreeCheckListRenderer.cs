@@ -94,7 +94,13 @@ namespace PrimeERP.Composition.Renderers
                     def.ApplyRules?.Invoke(nodes, null);
                     RefreshSummary();
 
-                    sourcePicker.ItemsSource = def.SourceItems(services);
+                    var before = SelectedSourceId();
+                    var known = (sourcePicker.ItemsSource as IEnumerable<SourceOption>)?.Select(o => o.Id).ToHashSet() ?? new HashSet<int>();
+                    var items = def.SourceItems(services);
+                    sourcePicker.ItemsSource = items;
+                    var added = items.FirstOrDefault(o => !known.Contains(o.Id));
+                    var pick = added?.Id ?? (items.Any(o => o.Id == before) ? before : 0);
+                    if (pick > 0) DialogRenderer.SelectPickerItem(sourcePicker, pick, "Id");
                 };
                 actions.Children.Add(button);
             }
@@ -126,16 +132,37 @@ namespace PrimeERP.Composition.Renderers
             var top = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(24, 8, 24, 0) };
             top.Children.Add(sourcePicker);
 
-            if (def.SourceNote != null)
+            foreach (var source in def.SourceNotes)
             {
                 var note = new AppTextBox
                 {
-                    Label = LocalizationService.Get("Str.Builder.Serial"),
-                    Width = 240, IsReadOnly = true, Margin = new Thickness(12, 0, 0, 0)
+                    Label = LocalizationService.Get(source.LabelKey),
+                    Width = 200, IsReadOnly = source.Save == null, Margin = new Thickness(12, 0, 0, 0)
                 };
 
                 top.Children.Add(note);
-                sourcePicker.SelectionChanged += (_, __) => note.Text = def.SourceNote(services, SelectedSourceId());
+                sourcePicker.SelectionChanged += (_, __) => note.Text = source.Value(services, SelectedSourceId());
+                if (source.Save == null) continue;
+
+                var save = new Btn { Text = LocalizationService.Get("Str.Save"), Variant = "secondary", Size = "sm", Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Bottom };
+                save.Click += (_, __) =>
+                {
+                    if (SelectedSourceId() == 0)
+                    {
+                        toast.Info(LocalizationService.Get("Str.Rule.RequiredFirst", LocalizationService.Get(def.SourceLabelKey)));
+                        return;
+                    }
+
+                    var saved = source.Save(services, SelectedSourceId(), note.Text);
+                    if (saved.IsSuccess) toast.Success(LocalizationService.Get("Str.Success"));
+                    else toast.Error(saved.ErrorMessage);
+
+                    var keep = SelectedSourceId();
+                    sourcePicker.ItemsSource = def.SourceItems(services);
+                    sourcePicker.SelectedValue = null;
+                    DialogRenderer.SelectPickerItem(sourcePicker, keep, "Id");
+                };
+                top.Children.Add(save);
             }
 
             var root = new Grid();

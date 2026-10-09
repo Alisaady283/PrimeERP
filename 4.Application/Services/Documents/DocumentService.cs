@@ -1,9 +1,9 @@
 using PrimeERP.Application.Validation;
-using PrimeERP.Application.Legacy.Documents;
+using PrimeERP.Application.PageServices.Documents;
 using PrimeERP.Application.Services.Core;
 using System;
 using System.Collections.Generic;
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Data.Core;
 using PrimeERP.Domain.Enums;

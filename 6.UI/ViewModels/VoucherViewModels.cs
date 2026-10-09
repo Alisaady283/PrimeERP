@@ -1,8 +1,8 @@
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Cheques;
 using PrimeERP.Application.DTOs.Vouchers;
-using PrimeERP.Application.Legacy.Cheques;
-using PrimeERP.Application.Legacy.Vouchers;
+using PrimeERP.Application.PageServices.Cheques;
+using PrimeERP.Application.PageServices.Vouchers;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
@@ -98,22 +98,22 @@ namespace PrimeERP.UI.ViewModels
 
     public class ChequeReceiptsViewModel : ChequeDocumentViewModelBase
     {
-        public ChequeReceiptsViewModel(PrimeERP.Application.Legacy.Cheques.IChequeReceiptDocumentService documents, IPermissionService permissions,
+        public ChequeReceiptsViewModel(PrimeERP.Application.PageServices.Cheques.IChequeReceiptDocumentService documents, IPermissionService permissions,
             IToastService toast, IDialogService dialogs) : base(documents, permissions, toast, dialogs) { }
     }
 
     public class ChequeIssuesViewModel : ChequeDocumentViewModelBase
     {
-        public ChequeIssuesViewModel(PrimeERP.Application.Legacy.Cheques.IChequeIssueDocumentService documents, IPermissionService permissions,
+        public ChequeIssuesViewModel(PrimeERP.Application.PageServices.Cheques.IChequeIssueDocumentService documents, IPermissionService permissions,
             IToastService toast, IDialogService dialogs) : base(documents, permissions, toast, dialogs) { }
     }
 
     /// <summary>الأرصدة الافتتاحية: حساباتٌ وأصناف</summary>
     public class OpeningBalancesViewModel : CrudViewModelBase<JournalEntryDto, JournalFilter>
     {
-        private readonly PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService _openings;
+        private readonly PrimeERP.Application.PageServices.Accounting.IOpeningBalanceService _openings;
 
-        public OpeningBalancesViewModel(PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService openings,
+        public OpeningBalancesViewModel(PrimeERP.Application.PageServices.Accounting.IOpeningBalanceService openings,
             IPermissionService permissions, IToastService toast, IDialogService dialogs)
             : base(permissions, toast, dialogs) => _openings = openings;
 

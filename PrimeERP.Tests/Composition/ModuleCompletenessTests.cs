@@ -27,6 +27,7 @@ namespace PrimeERP.Tests.Composition
         public void EveryRegisteredModule_HasAKeyInTheNavigationMap()
         {
             var mapped = MappedKeys();
+            mapped.UnionWith(Registry.All().Where(m => m.TabModules != null).SelectMany(m => m.TabModules));
             var orphans = Registry.All().Select(m => m.Key).Where(key => !mapped.Contains(key)).ToList();
 
             Assert.True(orphans.Count == 0,
@@ -110,7 +111,7 @@ namespace PrimeERP.Tests.Composition
                 .Where(type => type != null)
                 .Distinct()
                 .Select(type => _db.Services.GetService(type))
-                .OfType<PrimeERP.Application.Legacy.Inventory.IPermissionGated>()
+                .OfType<PrimeERP.Application.PageServices.Inventory.IPermissionGated>()
                 .Select(service => service.PermissionKey)
                 .Distinct()
                 .Where(key => !defined.Contains(key))

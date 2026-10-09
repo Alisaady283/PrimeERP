@@ -1,3 +1,4 @@
+using System.Linq;
 using PrimeERP.Application.Services.Ledger.Accounts;
 using PrimeERP.Data.Core;
 using PrimeERP.Domain.Entities.Common;
@@ -33,6 +34,14 @@ namespace PrimeERP.Application.Services.Core
         public Result UpdateNameFromAccount(PrimeDbContext db, string accountCode, string name)
         {
             RenameByAccount(db, accountCode, name);
+            return Result.Ok();
+        }
+
+        public Result RepairMissingEntities()
+        {
+            foreach (var root in RootKeys.Select(key => Setting(key, "")).Where(code => !string.IsNullOrWhiteSpace(code)))
+                foreach (var account in Tree.Rows.GetAllChildren(root).Where(a => a.IsLeaf && a.IsActive))
+                    Commit(db => CreateFromAccount(db, account.Code, account.Name, root));
             return Result.Ok();
         }
 

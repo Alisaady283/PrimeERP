@@ -2,8 +2,10 @@ using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.App.Bootstrap;
-using PrimeERP.Application.Legacy.Backup;
+using PrimeERP.Application.PageServices.Backup;
 using PrimeERP.Platform.Design;
+using PrimeERP.Platform.Localization;
+using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
 
@@ -27,6 +29,8 @@ public partial class App : System.Windows.Application
 
         Services = services.BuildServiceProvider();
         Services.EnsureDatabaseReady();
+        LocalizationService.Apply(Services.GetRequiredService<ISettingsProvider>().Get(SettingKeys.UI.Language, "Ar") == "En"
+            ? AppLanguage.En : AppLanguage.Ar);
         Services.RegisterModules();
 
         UIServices.Initialize(Services);

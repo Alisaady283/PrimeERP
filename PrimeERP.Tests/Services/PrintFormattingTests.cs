@@ -1,5 +1,5 @@
 using PrimeERP.UI.Services;
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using System;
 using System.Linq;
 using System.Windows.Documents;

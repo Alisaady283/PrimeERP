@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using PrimeERP.Application.DTOs.Documents;
-using PrimeERP.Application.Legacy.Documents;
+using PrimeERP.Application.PageServices.Documents;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Platform.Localization;

@@ -6,7 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Parties;
-using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.PageServices.Parties;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Domain.Entities;

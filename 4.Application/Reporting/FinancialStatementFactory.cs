@@ -42,30 +42,41 @@ namespace PrimeERP.Application.Reporting
             };
         }
 
+        public static Line Item(string label, decimal amount, int level = 1) =>
+            new() { Statement = Repeat(level) + label, Partial = amount };
+
         public static decimal Sum(List<Line> items) => items.Sum(i => i.Partial ?? 0);
+
+
 
 
         public static List<Line> Closing(IEnumerable<TrialBalanceLine> balance, AccountType type, bool creditNatured,
             Func<string, bool> matches) =>
-            Read(balance, type, matches, l => creditNatured ? l.ClosingCredit - l.ClosingDebit : l.ClosingDebit - l.ClosingCredit);
+            Grouped(balance.Where(l => type == AccountType.Equity ? l.Level == 2
+                    : (type == AccountType.Asset || type == AccountType.Liability) && l.Level > 2 && l.Level < 5),
+                type, matches, l => creditNatured ? l.ClosingCredit - l.ClosingDebit : l.ClosingDebit - l.ClosingCredit);
 
         public static List<Line> Period(IEnumerable<TrialBalanceLine> balance, AccountType type, bool creditNatured,
             Func<string, bool> matches) =>
-            Read(balance, type, matches, l => creditNatured ? l.PeriodCredit - l.PeriodDebit : l.PeriodDebit - l.PeriodCredit);
+            Grouped(balance, type, matches, l => creditNatured ? l.PeriodCredit - l.PeriodDebit : l.PeriodDebit - l.PeriodCredit);
 
-        private static List<Line> Read(IEnumerable<TrialBalanceLine> balance, AccountType type,
-            Func<string, bool> matches, Func<TrialBalanceLine, decimal> amount)
+        public static List<Line> Grouped(IEnumerable<TrialBalanceLine> balance, AccountType type,
+            Func<string, bool> matches, Func<TrialBalanceLine, decimal> amount, int ownLevel = 2) =>
+            Groups(balance, l => l.Type == type && matches(l.Code), amount, ownLevel);
+
+        public static List<Line> Groups(IEnumerable<TrialBalanceLine> balance, Func<TrialBalanceLine, bool> where,
+            Func<TrialBalanceLine, decimal> amount, int ownLevel = 2)
         {
             return balance
-                .Where(l => l.IsLeaf && l.Type == type && matches(l.Code))
-                .GroupBy(GroupOf)
+                .Where(l => l.IsLeaf && where(l))
+                .GroupBy(l => GroupOf(l, ownLevel))
                 .Select(g => new Line { Statement = g.Key.Name, Partial = g.Sum(amount) })
                 .OrderBy(l => l.Statement, StringComparer.Ordinal)
                 .ToList();
         }
 
-        private static (string Code, string Name) GroupOf(TrialBalanceLine leaf) =>
-            string.IsNullOrEmpty(leaf.ParentCode) || leaf.Level <= 2
+        private static (string Code, string Name) GroupOf(TrialBalanceLine leaf, int ownLevel) =>
+            string.IsNullOrEmpty(leaf.ParentCode) || leaf.Level <= ownLevel
                 ? (leaf.Code, leaf.Name)
                 : (leaf.ParentCode, leaf.ParentName ?? leaf.ParentCode);
 

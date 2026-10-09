@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Tests.Helpers;
 using System;
@@ -6,8 +6,8 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Assets;
-using PrimeERP.Application.Legacy.Accounting;
-using PrimeERP.Application.Legacy.Assets;
+using PrimeERP.Application.PageServices.Accounting;
+using PrimeERP.Application.PageServices.Assets;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
@@ -33,7 +33,7 @@ namespace PrimeERP.Tests.Services
 
         private int AssetCategory(string name = "فئة اختبار")
         {
-            var created = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Common.ICategoryService>()
+            var created = _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Common.ICategoryService>()
                 .Create(new Category { Name = name, ModuleKey = "AssetCategories" });
 
             Assert.True(created.IsSuccess, created.ErrorMessage);
@@ -47,9 +47,9 @@ namespace PrimeERP.Tests.Services
 
         private PrimeERP.Domain.Results.Result<PrimeERP.Domain.Entities.Treasury> FundedTreasury(string name, decimal amount = 500000)
         {
-            var treasury = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>()
+            var treasury = _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Treasury.ITreasuryService>()
                 .Create(new PrimeERP.Domain.Entities.Treasury
-                { Name = name, Kind = PrimeERP.Domain.Enums.TreasuryKind.Cash, AccountCode = Leaf("1204", name), IsActive = true });
+                { Name = name, Kind = PrimeERP.Domain.Enums.TreasuryKind.Cash, AccountCode = Leaf("1203007", name), IsActive = true });
 
             Assert.True(treasury.IsSuccess, treasury.ErrorMessage);
 
@@ -58,7 +58,7 @@ namespace PrimeERP.Tests.Services
         }
 
         private void Fund(string accountCode, string name, decimal amount = 500000) =>
-            _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IJournalService>()
+            _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Accounting.IJournalService>()
                 .Create(new CreateJournalDto
                 {
                     EntryDate = DateTime.Today.AddYears(-2), Description = "تمويل " + name,
@@ -75,7 +75,7 @@ namespace PrimeERP.Tests.Services
             var equity = Leaf("31", "رأس المال المدفوع");
             _settings.Set(SettingKeys.Accounts.RetainedEarnings, equity);
 
-            var cash = Leaf("1204", "صندوق افتتاحي");
+            var cash = Leaf("1203007", "صندوق افتتاحي");
             var openings = _db.Services.GetRequiredService<IOpeningBalanceService>();
 
             var unbalanced = openings.Create(new CreateJournalDto
@@ -95,7 +95,7 @@ namespace PrimeERP.Tests.Services
         {
             var equity = Leaf("31", "رأس مال للتعديل");
             _settings.Set(SettingKeys.Accounts.RetainedEarnings, equity);
-            var cash = Leaf("1204", "صندوق للتعديل");
+            var cash = Leaf("1203007", "صندوق للتعديل");
 
             var openings = _db.Services.GetRequiredService<IOpeningBalanceService>();
             var journals = _db.Services.GetRequiredService<IJournalService>();
@@ -141,7 +141,7 @@ namespace PrimeERP.Tests.Services
             _settings.Set(SettingKeys.Company.StartDate, start);
 
             var equity = Leaf("31", "رأس المال المدفوع");
-            var cash = Leaf("1204", "صندوق افتتاحي");
+            var cash = Leaf("1203007", "صندوق افتتاحي");
 
             var created = _db.Services.GetRequiredService<IOpeningBalanceService>().Create(new CreateJournalDto
             {
@@ -358,7 +358,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void AnAssetFundedByTheSeededMainCashBox_FailsWhileItsAccountIsMissing_AndPassesAfterTheRepair()
         {
-            var treasuries = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>();
+            var treasuries = _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Treasury.ITreasuryService>();
             var repo = _db.Services.GetRequiredService<PrimeERP.Data.Repositories.ITreasuryRepository>();
             var assets = _db.Services.GetRequiredService<IAssetService>();
 
@@ -400,8 +400,8 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void Asset_IsNotSaved_WhenItsAcquisitionEntryFails()
         {
-            var treasuryAccount = Leaf("1204", "صندوق بفرع");
-            var treasury = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Treasury.ITreasuryService>()
+            var treasuryAccount = Leaf("1203007", "صندوق بفرع");
+            var treasury = _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Treasury.ITreasuryService>()
                 .Create(new PrimeERP.Domain.Entities.Treasury
                 { Name = "صندوق بفرع", Kind = PrimeERP.Domain.Enums.TreasuryKind.Cash, AccountCode = treasuryAccount, IsActive = true });
 

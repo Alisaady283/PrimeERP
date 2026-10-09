@@ -1,9 +1,9 @@
 using PrimeERP.Application.Services.Ledger.Accounts;
 using PrimeERP.Application.Services.Ledger;
-using PrimeERP.Application.Legacy.Security;
-using PrimeERP.Application.Legacy.Inventory;
-using PrimeERP.Application.Legacy.HR;
-using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.PageServices.Security;
+using PrimeERP.Application.PageServices.Inventory;
+using PrimeERP.Application.PageServices.HR;
+using PrimeERP.Application.PageServices.Parties;
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.Validation;

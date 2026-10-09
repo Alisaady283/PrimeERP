@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Data.Core;
 using System;
@@ -11,7 +11,7 @@ using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Services;
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
 using Xunit;
 
@@ -41,7 +41,7 @@ namespace PrimeERP.Tests.Services
 
         public void Dispose() => _db.Dispose();
 
-        private int AssetRootId() => _accountRepo.GetByCode("1204").Id;
+        private int CashRootId() => _accountRepo.GetByCode("1203007").Id;
         private int RevenueRootId() => _accountRepo.GetByCode("41").Id;
         private int ExpenseRootId() => _accountRepo.GetByCode("51").Id;
 
@@ -49,7 +49,7 @@ namespace PrimeERP.Tests.Services
             _accounts.Create(new CreateAccountDto { ParentId = parentId, Name = name, IsLeaf = true }).Value.Code;
 
         private (string Cash, string Revenue) CreateCashAndRevenue() =>
-            (CreateLeaf(AssetRootId(), "نقدية اختبار"), CreateLeaf(RevenueRootId(), "إيراد اختباري"));
+            (CreateLeaf(CashRootId(), "نقدية اختبار"), CreateLeaf(RevenueRootId(), "إيراد اختباري"));
 
         private static CreateJournalDto BuildDto(DateTime date, params (string Code, decimal Debit, decimal Credit)[] lines) => new()
         {
@@ -296,7 +296,7 @@ namespace PrimeERP.Tests.Services
         public void Unpost_ClosingEntry_Fails()
         {
             _settings.Set(SettingKeys.Accounts.RetainedEarnings, "32");
-            var cash = CreateLeaf(AssetRootId(), "نقدية للإقفال");
+            var cash = CreateLeaf(CashRootId(), "نقدية للإقفال");
             var revenue = CreateLeaf(RevenueRootId(), "إيراد للإقفال");
 
             var fiscal = _db.Services.GetRequiredService<IFiscalPeriodService>();

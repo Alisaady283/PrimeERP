@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Parties;
-using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.PageServices.Parties;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.ViewModels;

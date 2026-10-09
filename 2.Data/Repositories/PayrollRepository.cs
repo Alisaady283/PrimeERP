@@ -19,6 +19,8 @@ namespace PrimeERP.Data.Repositories
         void InsertLine(PrimeDbContext db, int payrollId, PayrollLine line);
         void SetJournalEntryId(PrimeDbContext db, int payrollId, int? journalEntryId);
         void SetPosted(PrimeDbContext db, int payrollId, bool posted);
+        DateTime? LastPeriodStart();
+        bool HasPeriod(DateTime start);
     }
 
     public class PayrollRepository : RepositoryBase<Payroll>, IPayrollRepository
@@ -68,5 +70,9 @@ namespace PrimeERP.Data.Repositories
 
         public void SetPosted(PrimeDbContext db, int payrollId, bool posted) =>
             Set(p => p.Id == payrollId, s => s.SetProperty(r => r.IsPosted, posted), db);
+
+        public DateTime? LastPeriodStart() => One(q => q.OrderByDescending(p => p.PeriodStart))?.PeriodStart;
+
+        public bool HasPeriod(DateTime start) => Any(q => q.Where(p => p.PeriodStart == start));
     }
 }

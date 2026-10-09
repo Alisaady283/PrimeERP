@@ -6,7 +6,7 @@ using PrimeERP.Platform.Audit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PrimeERP.Application.Legacy.HR;
+using PrimeERP.Application.PageServices.HR;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Data.Repositories.Base;

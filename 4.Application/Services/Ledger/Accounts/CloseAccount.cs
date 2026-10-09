@@ -9,11 +9,13 @@ namespace PrimeERP.Application.Services.Ledger.Accounts
     {
         private readonly IAccountRepository _accounts;
         private readonly Guards _guards;
+        private readonly LinkedAccounts _linked;
 
-        public CloseAccount(IAccountRepository accounts, Guards guards)
+        public CloseAccount(IAccountRepository accounts, Guards guards, LinkedAccounts linked)
         {
             _accounts = accounts;
             _guards = guards;
+            _linked = linked;
         }
 
         public void Run(PrimeDbContext db, string code)
@@ -21,7 +23,7 @@ namespace PrimeERP.Application.Services.Ledger.Accounts
             var parentCode = _accounts.GetByCode(code, db)?.ParentCode;
             _accounts.Delete(code, db);
 
-            if (!string.IsNullOrWhiteSpace(parentCode) && !_guards.HasChildren(parentCode, db))
+            if (!string.IsNullOrWhiteSpace(parentCode) && !_linked.IsRoot(parentCode) && !_guards.HasChildren(parentCode, db))
                 _accounts.SetIsLeaf(parentCode, true, db);
         }
 

@@ -1,6 +1,6 @@
-using PrimeERP.Application.Legacy.Backup;
-using PrimeERP.Application.Legacy.Admin;
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.PageServices.Backup;
+using PrimeERP.Application.PageServices.Admin;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Application.Services.Ledger;
 using System;
 using System.Threading.Tasks;
@@ -43,18 +43,20 @@ namespace PrimeERP.Composition.Renderers
                 foreach (var def in allDefs.Where(d => d.Category == cat.Category))
                 {
                     var isAccount = cat.Category == "Accounts" && def.DataType == "string";
+                    var isTreasury = def.DataType == "treasury";
                     var field = new FieldDefinition
                     {
                         Key = def.Key, LabelKey = LabelKeyOf(def.Key),
-                        Kind = isAccount ? FieldKind.Picker
+                        Kind = isAccount || isTreasury ? FieldKind.Picker
                              : def.Key == SettingKeys.Company.LogoData ? FieldKind.Image
-                             : def.DataType switch { "bool" => FieldKind.Check, "int" => FieldKind.Number, _ => FieldKind.Text },
-                        PickerType = isAccount ? "Account" : null,
+                             : def.DataType switch { "bool" => FieldKind.Check, "int" or "decimal" => FieldKind.Number, _ => FieldKind.Text },
+                        PickerType = isAccount ? "Account" : isTreasury ? "Treasury" : null,
                         PickerValueField = isAccount ? "Code" : "Id",
                     };
 
                     var control = DialogRenderer.BuildField(field);
                     if (isAccount) ((AppComboBox)control).ItemsSource = accountRows.Value.ToList();
+                    if (isTreasury) DialogRenderer.LoadPickerItems((AppComboBox)control, field, services);
                     if (field.Kind == FieldKind.Image) control.Width = 420; else control.Width = 260;
                     control.Margin = new Thickness(0, 0, 16, 16);
 
@@ -62,12 +64,13 @@ namespace PrimeERP.Composition.Renderers
                     object typedValue = field.Kind switch
                     {
                         FieldKind.Check => bool.TryParse(currentValue, out var b) && b,
-                        FieldKind.Number => decimal.TryParse(currentValue, out var n) ? n : 0,
+                        FieldKind.Number => decimal.TryParse(currentValue, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : 0,
+                        FieldKind.Picker when isTreasury => int.TryParse(currentValue, out var treasuryId) ? (object)treasuryId : null,
                         FieldKind.Picker => currentValue,
                         FieldKind.Image => currentValue,
                         _ => currentValue
                     };
-                    if (field.Kind == FieldKind.Picker) DialogRenderer.SelectPickerItem((AppComboBox)control, typedValue, "Code");
+                    if (field.Kind == FieldKind.Picker) DialogRenderer.SelectPickerItem((AppComboBox)control, typedValue, field.PickerValueField);
                     else DialogRenderer.SetControlValue(control, field, typedValue);
 
                     controls[def.Key] = (field, control);
@@ -89,7 +92,7 @@ namespace PrimeERP.Composition.Renderers
                 foreach (var (key, (field, control)) in controls)
                     values[key] = DialogRenderer.GetControlValue(control, field.Kind);
 
-                var accounts = services.GetRequiredService<PrimeERP.Application.Legacy.Accounting.IAccountService>();
+                var accounts = services.GetRequiredService<PrimeERP.Application.PageServices.Accounting.IAccountService>();
                 foreach (var rootKey in SettingKeys.Accounts.LinkedRoots)
                 {
                     if (!values.TryGetValue(rootKey, out var code) || code is not string text || string.IsNullOrWhiteSpace(text)) continue;

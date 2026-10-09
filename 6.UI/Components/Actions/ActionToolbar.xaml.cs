@@ -69,7 +69,7 @@ namespace PrimeERP.UI.Components.Actions
             Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
             {
                 CacheWidths();
-                ApplyOverflow(ActualWidth);
+                ApplyOverflow(Available);
             });
         }
 
@@ -98,7 +98,21 @@ namespace PrimeERP.UI.Components.Actions
             }
         }
 
-        private void ActionToolbar_SizeChanged(object sender, SizeChangedEventArgs e) => ApplyOverflow(e.NewSize.Width);
+        private void ActionToolbar_SizeChanged(object sender, SizeChangedEventArgs e) => ApplyOverflow(Available);
+
+        private double _offered = double.PositiveInfinity;
+
+        private double Available => double.IsInfinity(_offered) ? ActualWidth : _offered;
+
+        protected override Size MeasureOverride(Size constraint)
+        {
+            if (!double.IsInfinity(constraint.Width) && constraint.Width != _offered)
+            {
+                _offered = constraint.Width;
+                Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () => ApplyOverflow(Available));
+            }
+            return base.MeasureOverride(constraint);
+        }
 
         private void ApplyOverflow(double availableWidth)
         {

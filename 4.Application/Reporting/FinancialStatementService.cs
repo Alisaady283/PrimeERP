@@ -1,5 +1,5 @@
 using PrimeERP.Domain.Calculations;
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Audit;
@@ -7,7 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.Reporting;
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.DTOs.Accounting;
+using PrimeERP.Data.Repositories;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Localization;
@@ -29,12 +31,18 @@ namespace PrimeERP.Application.Reporting
     {
         private readonly IJournalService _journal;
         private readonly ISettingsService _settingsService;
+        private readonly IAccountRepository _accounts;
+        private readonly IJournalRepository _journalRows;
 
-        public FinancialStatementService(IJournalService journal, ISettingsService settingsService, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+        public FinancialStatementService(IJournalService journal, ISettingsService settingsService, IAccountRepository accounts,
+            IJournalRepository journalRows, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
+            IAuditLogger audit)
         : base(permissions, settings, localization, audit)
         {
             _journal = journal;
             _settingsService = settingsService;
+            _accounts = accounts;
+            _journalRows = journalRows;
         }
 
         private static Result<ReportData> Ok(List<F.Line> rows, Dictionary<string, string> totals) =>
@@ -78,30 +86,60 @@ namespace PrimeERP.Application.Reporting
 
             var sales     = F.Period(result.Value, AccountType.Revenue, true,  F.StartsWith("41"));
             var cogs      = string.IsNullOrWhiteSpace(cogsAccount)
-            ? new List<F.Line>()
-            : F.Period(result.Value, AccountType.Expense, false, F.StartsWith(cogsAccount));
-            var operating = F.Period(result.Value, AccountType.Expense, false, F.StartsWithBut("51", cogsAccount));
-            var otherIn   = F.Period(result.Value, AccountType.Revenue, true,  F.StartsWith("42"));
-            var otherOut  = F.Period(result.Value, AccountType.Expense, false, F.StartsWithBut("52", cogsAccount));
+                ? new List<F.Line>()
+                : F.Period(result.Value, AccountType.Expense, false, F.StartsWith(cogsAccount));
+            var otherRevenue = F.Period(result.Value, AccountType.Revenue, true, F.StartsWith("42"));
 
-            var grossProfit     = StatementCalc.GrossProfit(F.Sum(sales), F.Sum(cogs));
-            var operatingProfit = StatementCalc.OperatingProfit(grossProfit, F.Sum(operating));
-            var netIncome       = StatementCalc.NetIncome(operatingProfit, F.Sum(otherIn), F.Sum(otherOut));
+            var expenses = new List<F.Line>();
+            var operatingExpenses = 0m;
+            for (var code = 51; code <= 56; code++)
+            {
+                var prefix = code.ToString();
+                var category = F.Period(result.Value, AccountType.Expense, false, F.StartsWith(prefix));
+                if (category.Count == 0 || prefix == "51" && cogsAccount == prefix) continue;
 
-            var rows = F.Group(Localization.Get("Str.Revenue"), sales, Localization.Get("Str.Statement.TotalRevenue"))
-            .Concat(F.Group(Localization.Get("Str.Statement.Cogs"), cogs, Localization.Get("Str.Statement.TotalCost")))
-            .Append(F.Grand(Localization.Get("Str.Statement.GrossProfit"), grossProfit))
-            .Concat(F.Group(Localization.Get("Str.Statement.OperatingExpenses"), operating, Localization.Get("Str.Statement.TotalOperatingExpenses")))
-            .Append(F.Grand(Localization.Get("Str.Statement.OperatingProfit"), operatingProfit))
-            .Concat(F.Group(Localization.Get("Str.Statement.OtherRevenue"), otherIn, Localization.Get("Str.Statement.TotalOtherRevenue")))
-            .Concat(F.Group(Localization.Get("Str.Statement.OtherExpenses"), otherOut, Localization.Get("Str.Statement.TotalOtherExpenses")))
-            .Append(F.Grand(LocalizationService.Get("Str.NetIncome"), netIncome))
-            .ToList();
+                var matches = prefix == "51"
+                    ? F.StartsWithBut(prefix, cogsAccount)
+                    : F.StartsWith(prefix);
+                var accounts = F.Period(result.Value, AccountType.Expense, false, matches);
+                var amount = F.Sum(accounts);
+                var title = category[0].Statement;
+
+                expenses.Add(new F.Line { Statement = title, Partial = -amount });
+                operatingExpenses += amount;
+            }
+
+            var incomeTax = F.Period(result.Value, AccountType.Expense, false, F.StartsWith("57"));
+
+            var salesAmount = F.Sum(sales);
+            var cogsAmount = F.Sum(cogs);
+            var otherRevenueAmount = F.Sum(otherRevenue);
+            var incomeTaxAmount = F.Sum(incomeTax);
+            var salesTitle = result.Value.FirstOrDefault(account => account.Code == "41")?.Name
+                ?? Localization.Get("Str.Revenue");
+            var grossProfit = StatementCalc.GrossProfit(salesAmount, cogsAmount);
+            var profitBeforeTax = StatementCalc.ProfitBeforeTax(grossProfit, otherRevenueAmount, operatingExpenses);
+            var netIncome = StatementCalc.AfterTax(profitBeforeTax, incomeTaxAmount);
+
+            var rows = new List<F.Line>
+            {
+                F.Grand(salesTitle, salesAmount),
+                F.Grand(Localization.Get("Str.Statement.Cogs"), -cogsAmount),
+                F.Grand(Localization.Get("Str.Statement.GrossProfit"), grossProfit),
+                F.Grand(Localization.Get("Str.Statement.OtherRevenue"), otherRevenueAmount)
+            };
+            rows.AddRange(expenses);
+            rows.Add(F.Grand(Localization.Get("Str.Statement.TotalOperatingExpenses"), -operatingExpenses));
+            rows.Add(F.Grand(Localization.Get("Str.Statement.ProfitBeforeTax"), profitBeforeTax));
+            rows.Add(F.Grand(Localization.Get("Str.Statement.IncomeTax"), -incomeTaxAmount));
+            rows.Add(F.Grand(LocalizationService.Get("Str.NetIncome"), netIncome));
+
             return Ok(rows, new Dictionary<string, string>
             {
-            ["Gross"] = Localization.Get("Str.Statement.GrossProfitIs", grossProfit),
-            ["Operating"] = Localization.Get("Str.Statement.OperatingProfitIs", operatingProfit),
-            ["Net"] = $"{LocalizationService.Get("Str.NetIncome")}: {netIncome:N2}"
+                ["Gross"] = Localization.Get("Str.Statement.GrossProfitIs", grossProfit),
+                ["BeforeTax"] = Localization.Get("Str.Statement.ProfitBeforeTaxIs", profitBeforeTax),
+                ["Tax"] = Localization.Get("Str.Statement.IncomeTaxIs", incomeTaxAmount),
+                ["Net"] = $"{LocalizationService.Get("Str.NetIncome")}: {netIncome:N2}"
             });
         }
 
@@ -114,8 +152,8 @@ namespace PrimeERP.Application.Reporting
 
             var currentAssets    = F.Closing(result.Value, AccountType.Asset, false, F.StartsWith("12"));
             var nonCurrentAssets = F.Closing(result.Value, AccountType.Asset, false, F.StartsWith("11"));
-            var currentLiab      = F.Closing(result.Value, AccountType.Liability, true, F.StartsWith("21"));
-            var longTermLiab     = F.Closing(result.Value, AccountType.Liability, true, F.StartsWith("22"));
+            var currentLiab      = F.Closing(result.Value, AccountType.Liability, true, F.StartsWith("22"));
+            var longTermLiab     = F.Closing(result.Value, AccountType.Liability, true, F.StartsWith("21"));
             var equity           = F.Closing(result.Value, AccountType.Equity, true, _ => true);
 
             var assetsTotal      = F.Sum(currentAssets) + F.Sum(nonCurrentAssets);
@@ -150,36 +188,74 @@ namespace PrimeERP.Application.Reporting
 
             var balance = _journal.GetTrialBalance(from, to, includeZero: true);
             if (!balance.IsSuccess) return Result.Fail<ReportData>(balance.ErrorMessage);
+            var lines = balance.Value;
 
-            bool IsCash(string code) => F.StartsWith("1203", "1204")(code);
+            var period = _journalRows.GetAccountSums(from, to, postedOnly: true, exceptSource: Entries.ClosingSource)
+                .ToDictionary(s => s.AccountCode, s => s.SumCredit - s.SumDebit);
 
-            var cash = balance.Value.Where(l => l.IsLeaf && IsCash(l.Code)).ToList();
+            string L(string key) => Localization.Get("Str.Statement." + key);
+            string Code(string key) => _settingsService.Get(key, "");
+            string NameOf(string key) => _accounts.GetByCode(Code(key))?.Name ?? Code(key);
+            F.Line Named(string key, decimal amount) => new() { Statement = NameOf(key), Partial = amount };
+            F.Line Changed(string label, F.Line line) => new() { Statement = Localization.Get("Str.Statement." + label, line.Statement), Partial = line.Partial };
+            decimal Effect(TrialBalanceLine l) => period.GetValueOrDefault(l.Code);
+            decimal Of(Func<string, bool> code) => period.Where(p => code(p.Key)).Sum(p => p.Value);
+
+            var isCash         = F.StartsWith("1203", "1204");
+            var gains          = F.StartsWith(Code(SettingKeys.Accounts.CapitalGains));
+            var losses         = F.StartsWith(Code(SettingKeys.Accounts.CapitalLosses));
+            var depreciation   = F.StartsWith(Code(SettingKeys.Accounts.DepreciationExpense));
+            var accumulated    = F.StartsWith(Code(SettingKeys.Accounts.AccumulatedDepreciation));
+            var financeExpense = F.StartsWith(Code(SettingKeys.Accounts.FinanceExpense));
+            var currentAssets  = F.StartsWith("12");
+            var currentLiab    = F.StartsWith("22");
+            var fixedAssets    = F.StartsWith("11");
+            var longTermLiab   = F.StartsWith("21");
+
+            var cash = lines.Where(l => l.IsLeaf && isCash(l.Code)).ToList();
             var openingCash = cash.Sum(l => l.OpeningDebit - l.OpeningCredit);
             var closingCash = cash.Sum(l => l.ClosingDebit - l.ClosingCredit);
 
-            var operating = F.Period(balance.Value, AccountType.Revenue, true, _ => true)
-            .Concat(F.Period(balance.Value, AccountType.Expense, false, _ => true)
-            .Select(l => new F.Line { Statement = l.Statement, Partial = -l.Partial }))
-            .Concat(F.Period(balance.Value, AccountType.Asset, false, F.StartsWith("1201", "1202"))
-            .Select(l => new F.Line { Statement = l.Statement, Partial = -l.Partial }))
-            .Concat(F.Period(balance.Value, AccountType.Liability, true, F.StartsWith("21")))
-            .ToList();
+            var netIncome = lines.Where(l => l.IsLeaf && l.Type is AccountType.Revenue or AccountType.Expense).Sum(Effect);
 
-            var investing = F.Period(balance.Value, AccountType.Asset, false, F.StartsWith("11"))
-            .Select(l => new F.Line { Statement = l.Statement, Partial = -l.Partial }).ToList();
+            var adjustments = new List<F.Line>
+            {
+                Named(SettingKeys.Accounts.DepreciationExpense, -Of(depreciation)),
+                Named(SettingKeys.Accounts.CapitalGains,        -Of(gains)),
+                Named(SettingKeys.Accounts.CapitalLosses,       -Of(losses)),
+                Named(SettingKeys.Accounts.FinanceExpense,      -Of(financeExpense)),
+            };
 
-            var financing = F.Period(balance.Value, AccountType.Equity, true, _ => true)
-            .Concat(F.Period(balance.Value, AccountType.Liability, true, F.StartsWith("22")))
-            .ToList();
+            var workingCapital = F.Grouped(lines, AccountType.Asset, code => currentAssets(code) && !isCash(code), Effect, 3)
+                .Select(l => Changed("AssetChange", l))
+                .Concat(F.Grouped(lines, AccountType.Liability, currentLiab, Effect, 3).Select(l => Changed("LiabilityChange", l)))
+                .ToList();
 
-            var netChange = F.Sum(operating) + F.Sum(investing) + F.Sum(financing);
+            var investing = F.Grouped(lines, AccountType.Asset, code => fixedAssets(code) && !accumulated(code), Effect, 3)
+                .Select(l => Changed("AssetChange", l))
+                .Append(Changed("AssetChange", Named(SettingKeys.Accounts.AccumulatedDepreciation, Of(accumulated) + Of(depreciation))))
+                .Append(Named(SettingKeys.Accounts.CapitalGains, Of(gains)))
+                .Append(Named(SettingKeys.Accounts.CapitalLosses, Of(losses)))
+                .ToList();
 
-            var rows = F.Group(Localization.Get("Str.Statement.OperatingCashFlows"), operating, Localization.Get("Str.Statement.NetOperatingFlow"))
-            .Concat(F.Group(Localization.Get("Str.Statement.InvestingCashFlows"), investing, Localization.Get("Str.Statement.NetInvestingFlow")))
-            .Concat(F.Group(Localization.Get("Str.Statement.FinancingCashFlows"), financing, Localization.Get("Str.Statement.NetFinancingFlow")))
-            .Append(F.Grand(Localization.Get("Str.Statement.NetCashChange"), netChange))
-            .Append(F.Grand(Localization.Get("Str.Statement.OpeningCash"), openingCash))
-            .Append(F.Grand(Localization.Get("Str.Statement.ClosingCash"), openingCash + netChange))
+            var financing = F.Grouped(lines, AccountType.Liability, longTermLiab, Effect, 3)
+                .Concat(F.Grouped(lines, AccountType.Equity, _ => true, Effect))
+                .Select(l => Changed("LiabilityChange", l))
+                .Append(Named(SettingKeys.Accounts.FinanceExpense, Of(financeExpense)))
+                .ToList();
+
+            var operating = netIncome + F.Sum(adjustments) + F.Sum(workingCapital);
+            var netChange = operating + F.Sum(investing) + F.Sum(financing);
+
+            var rows = new List<F.Line> { F.Heading(L("OperatingCashFlows")), F.Item(L("NetIncomeAfterTax"), netIncome) }
+            .Concat(F.Group(L("NonCashAdjustments"), adjustments, L("TotalAdjustments")))
+            .Concat(F.Group(L("WorkingCapitalChanges"), workingCapital, L("TotalWorkingCapital")))
+            .Append(F.Grand(L("NetOperatingFlow"), operating, 1))
+            .Concat(F.Group(L("InvestingCashFlows"), investing, L("NetInvestingFlow"), level: 0))
+            .Concat(F.Group(L("FinancingCashFlows"), financing, L("NetFinancingFlow"), level: 0))
+            .Append(F.Grand(L("NetCashChange"), netChange))
+            .Append(F.Grand(L("OpeningCash"), openingCash))
+            .Append(F.Grand(L("ClosingCash"), openingCash + netChange))
             .ToList();
             return Ok(rows, new Dictionary<string, string>
             {

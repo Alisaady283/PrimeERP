@@ -2,7 +2,7 @@ using PrimeERP.Application.Services.Documents;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Legacy.Documents;
+using PrimeERP.Application.PageServices.Documents;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Permissions;
 using Xunit;

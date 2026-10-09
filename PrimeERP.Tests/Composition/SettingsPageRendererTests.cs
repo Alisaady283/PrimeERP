@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;

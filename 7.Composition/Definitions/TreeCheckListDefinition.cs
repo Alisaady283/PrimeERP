@@ -15,7 +15,7 @@ namespace PrimeERP.Composition.Definitions
 
         public Func<IServiceProvider, List<SourceOption>> SourceItems { get; init; }
 
-        public Func<IServiceProvider, int, string> SourceNote { get; init; }
+        public List<SourceNote> SourceNotes { get; init; } = new();
 
         public Func<IServiceProvider, int, List<TreeNodeViewModel>> BuildTree { get; init; }
 
@@ -28,6 +28,13 @@ namespace PrimeERP.Composition.Definitions
         public string SaveTextKey { get; init; } = "Str.Save";
 
         public string PermissionKey { get; init; }
+    }
+
+    public class SourceNote
+    {
+        public string LabelKey { get; init; }
+        public Func<IServiceProvider, int, string> Value { get; init; }
+        public Func<IServiceProvider, int, string, Result> Save { get; init; }
     }
 
     public class SourceOption

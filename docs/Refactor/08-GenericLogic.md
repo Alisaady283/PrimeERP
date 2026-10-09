@@ -4,7 +4,7 @@
 
 ## المبدأ
 
-- الصفحات كاملةً في `Legacy`. يُنقل **المنطق** منها إلى `Services` وتستدعيه، ولا تُنقل الصفحة.
+- الصفحات كاملةً في `PageServices`. يُنقل **المنطق** منها إلى `Services` وتستدعيه، ولا تُنقل الصفحة.
 - `Services` و`Validation` منطقٌ عامّ لا يحمل اسم صفحة. كل حالة استخدام تأخذ ما يخصّ الصفحة **معاملاتٍ**، فتعمل للعملاء والموردين والخزائن والأصول بالكود نفسه.
 - حالة الاستخدام تفعل شيئاً واحداً. ما يجمع شيئين يُركَّب من اثنين، لا دالةٌ شاملة معقّدة.
 - الحساب له موضعٌ واحد معروف. لا دالة تجلب البيانات وتحسب معاً.
@@ -95,17 +95,17 @@ AddMirroredAccount.Run(db, asset, new AccountSpec(ParentFrom: category.AccountCo
 TradeEntry.Lines(Trade.Sale, isReturn: false, party, accounts, totals, cost);
 ```
 
-## صفحة `Legacy` تجمع المنطق من `Services` بالمعاملات
+## صفحة `PageServices` تجمع المنطق من `Services` بالمعاملات
 
 ```csharp
-// Legacy/Sales/SalesInvoiceService — تجميعٌ فقط
+// PageServices/Sales/SalesInvoiceService — تجميعٌ فقط
 var prepared = TradeLines.Prepare(products, pulls, dto.Lines, totals => TradeAccounts.Sales(settings, totals));
 var lines    = TradeEntry.Lines(Trade.Sale, isReturn: false, customer.AccountCode, accounts, totals, cost);
 var entryId  = entries.Post(db, date, description, source, lines);          // Services/Ledger/Entries
 AddEntityAccount.Run(db, customer, specs);                                   // Services/Ledger/Accounts
 ```
 
-### ما يُستخرج من صفحات `Legacy` الحالية
+### ما يُستخرج من صفحات `PageServices` الحالية
 
 | من الصفحة | المنطق المستخرج | إلى |
 |---|---|---|

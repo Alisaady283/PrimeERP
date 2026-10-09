@@ -13,6 +13,7 @@ namespace PrimeERP.Data.Repositories
     {
         AssetDisposal GetById(int id, PrimeDbContext db = null);
         bool AnyForAsset(int assetId, PrimeDbContext db = null);
+        List<AssetDisposal> UpTo(DateTime to);
         (List<AssetDisposal> Items, int Total) GetPaged(int page, int pageSize, string searchText = null,
             int? assetId = null, string sortColumn = "DisposalDate", bool sortDescending = true);
 
@@ -53,6 +54,8 @@ namespace PrimeERP.Data.Repositories
 
         public bool AnyForAsset(int assetId, PrimeDbContext db = null) => Any(q => q.Where(x => x.AssetId == assetId), db);
 
+        public List<AssetDisposal> UpTo(DateTime to) => Fetch(q => q.Where(x => x.DisposalDate <= to));
+
         public int Insert(AssetDisposal d, PrimeDbContext db = null) => Add(d, db);
 
         public void Update(AssetDisposal d, PrimeDbContext db = null) =>
@@ -60,6 +63,7 @@ namespace PrimeERP.Data.Repositories
             {
                 row.AssetId = d.AssetId;
                 row.DisposalDate = d.DisposalDate;
+                row.Settlement = d.Settlement;
                 row.TreasuryId = d.TreasuryId;
                 row.SalePrice = d.SalePrice;
                 row.AssetValue = d.AssetValue;

@@ -15,6 +15,7 @@ namespace PrimeERP.UI.Components.Feedback
         public AppDialogWindow()
         {
             InitializeComponent();
+            FlowDirection = PrimeERP.Platform.Localization.LocalizationService.Flow;
             var active = FindActiveWindow();
             if (Owner == null && active != this) Owner = active;
             const double Chrome = 150;   // الرأس والفوتر
@@ -23,6 +24,21 @@ namespace PrimeERP.UI.Components.Feedback
             CardWidth = (double)FindResource("C.Dialog.Width.Sm");
 
             card.SizeChanged += (_, __) => ClipCorners();
+            SizeChanged += (_, e) => { if (e.HeightChanged) KeepOnScreen(); };
+        }
+
+        public void FillHeight()
+        {
+            SizeToContent = SizeToContent.Manual;
+            Height = MaxHeight;
+            card.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
+            contentScroll.MaxHeight = double.PositiveInfinity;
+        }
+
+        private void KeepOnScreen()
+        {
+            var area = SystemParameters.WorkArea;
+            if (Top + ActualHeight > area.Bottom) Top = Math.Max(area.Top, area.Bottom - ActualHeight);
         }
 
         private double HorizontalGutter => shell.Margin.Left + shell.Margin.Right;

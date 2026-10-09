@@ -89,18 +89,23 @@ namespace PrimeERP.Application.Services.Entities
             if (target.IsAssignableFrom(source)) return true;
             var from = Nullable.GetUnderlyingType(source) ?? source;
             var to = Nullable.GetUnderlyingType(target) ?? target;
-            return from == to || Scalar(from) && Scalar(to);
+            return from == to || Scalar(from) && Scalar(to) || Clock(from, to) || Clock(to, from);
         }
+
+        private static bool Clock(Type time, Type text) => time == typeof(TimeSpan) && text == typeof(string);
 
         private static bool Scalar(Type type) =>
             type.IsEnum || type == typeof(decimal) || type.IsPrimitive && type != typeof(bool) && type != typeof(char);
 
-        private static object To(object value, Type type)
+        public static object To(object value, Type type)
         {
             var target = Nullable.GetUnderlyingType(type) ?? type;
-            if (value == null || value is string { Length: 0 } && target != typeof(string))
-                return type.IsValueType && Nullable.GetUnderlyingType(type) == null ? Activator.CreateInstance(type) : null;
+            var empty = type.IsValueType && Nullable.GetUnderlyingType(type) == null ? Activator.CreateInstance(type) : null;
+            if (value == null || value is string { Length: 0 } && target != typeof(string)) return empty;
             if (target.IsInstanceOfType(value)) return value;
+            if (value is TimeSpan time && target == typeof(string)) return time.ToString(@"hh\:mm");
+            if (value is string clock && target == typeof(TimeSpan))
+                return TimeSpan.TryParse(clock, CultureInfo.InvariantCulture, out var parsed) ? parsed : empty;
             if (target.IsEnum) return Enum.ToObject(target, Convert.ToInt32(value, CultureInfo.InvariantCulture));
 
             var converter = TypeDescriptor.GetConverter(target);

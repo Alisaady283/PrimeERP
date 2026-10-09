@@ -15,6 +15,7 @@ namespace PrimeERP.Data.Repositories
         Employee GetById(int id, PrimeDbContext db = null);
         int IdByCode(string code, PrimeDbContext db = null);
         Dictionary<string, Employee> ByCodes(IEnumerable<string> codes, PrimeDbContext db = null);
+        DateTime? FirstHireDate();
         List<Employee> GetByIds(IEnumerable<int> ids, PrimeDbContext db = null);
 
         Employee GetByAccountCode(string accountCode, PrimeDbContext db = null);
@@ -48,9 +49,11 @@ namespace PrimeERP.Data.Repositories
                                                   || EF.Functions.Like(e.Code, $"%{term}%")))
                         .OrderBy(e => e.Name).Take(maxResults));
 
+        public DateTime? FirstHireDate() => One(q => q.OrderBy(e => e.HireDate))?.HireDate;
+
         public List<Employee> GetAll(bool activeOnly = true) =>
-            Fetch(q => q.Where(e => !activeOnly || e.Status == EmployeeStatus.Active)
-                        .OrderBy(e => e.Code));
+            WithNames<Department>("Departments", Fetch(q => q.Where(e => !activeOnly || e.Status == EmployeeStatus.Active)
+                        .OrderBy(e => e.Code)), (e => e.DepartmentId, (e, name) => e.DepartmentName = name));
 
         public (List<Employee> Items, int Total) GetPaged(
             int page, int pageSize, string searchText = null, int? departmentId = null,

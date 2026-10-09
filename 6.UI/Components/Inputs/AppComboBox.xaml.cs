@@ -85,7 +85,25 @@ namespace PrimeERP.UI.Components.Inputs
         public AppComboBox()
         {
             InitializeComponent();
+            lst.LostKeyboardFocus += (_, __) => CloseIfLeft();
+            Loaded += (_, __) => { if (Window.GetWindow(this) is { } window) window.PreviewMouseDown += Window_PreviewMouseDown; };
+            Unloaded += (_, __) => { if (Window.GetWindow(this) is { } window) window.PreviewMouseDown -= Window_PreviewMouseDown; };
         }
+
+        private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (popup.IsOpen && !IsMouseOver && !popup.IsMouseOver) popup.IsOpen = false;
+        }
+
+        private void CloseIfLeft() =>
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+            {
+                if (popup.IsMouseOver || txtSearch.IsKeyboardFocused || popup.IsKeyboardFocusWithin) return;
+
+                popup.IsOpen = false;
+                if (!_suppressTextChanged)
+                    txtSearch.Text = SelectedItem != null ? GetDisplay(SelectedItem) : "";
+            });
 
         private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -177,19 +195,7 @@ namespace PrimeERP.UI.Components.Inputs
             Filter(IsSearchable ? txtSearch.Text : "");
         }
 
-        private void txtSearch_LostFocus(object sender, RoutedEventArgs e)
-        {
-            Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
-            {
-                if (popup.IsMouseOver) return;
-
-                if (popup.IsKeyboardFocusWithin) return;
-
-                popup.IsOpen = false;
-                if (!_suppressTextChanged)
-                    txtSearch.Text = SelectedItem != null ? GetDisplay(SelectedItem) : "";
-            });
-        }
+        private void txtSearch_LostFocus(object sender, RoutedEventArgs e) => CloseIfLeft();
 
         private void txtSearch_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) => _openOnMouseUp = true;
 
@@ -211,6 +217,11 @@ namespace PrimeERP.UI.Components.Inputs
                 if (lst.ItemContainerGenerator.ContainerFromIndex(0) is ListBoxItem first) first.Focus();
                 else lst.Focus();
 
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Enter && popup.IsOpen && lst.Items.Count > 0)
+            {
+                SelectItem(lst.SelectedItem ?? lst.Items[0]);
                 e.Handled = true;
             }
             else if (e.Key == Key.Escape)

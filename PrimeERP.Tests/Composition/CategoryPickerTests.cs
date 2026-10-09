@@ -7,7 +7,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
-using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Application.PageServices.Common;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;

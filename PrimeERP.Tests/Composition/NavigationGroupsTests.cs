@@ -22,7 +22,8 @@ namespace PrimeERP.Tests.Composition
             var registry = _db.Services.GetRequiredService<IModuleRegistry>();
             var grouped = PrimeERP.Composition.Registry.NavigationMap.Groups().SelectMany(g => g.Keys).ToList();
 
-            var missing = registry.All().Select(m => m.Key).Where(k => !grouped.Contains(k)).ToList();
+            var tabbed = registry.All().Where(m => m.TabModules != null).SelectMany(m => m.TabModules).ToHashSet();
+            var missing = registry.All().Select(m => m.Key).Where(k => !grouped.Contains(k) && !tabbed.Contains(k)).ToList();
             Assert.True(missing.Count == 0, "وحدات مسجَّلة ولا تظهر في الشريط الجانبي: " + string.Join(", ", missing));
 
             var duplicated = grouped.GroupBy(k => k).Where(g => g.Count() > 1).Select(g => g.Key).ToList();

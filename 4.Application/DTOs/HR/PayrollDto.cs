@@ -8,6 +8,8 @@ namespace PrimeERP.Application.DTOs.HR
     {
         public int      Id              { get; set; }
         public string   PayrollNo       { get; set; }
+        public int      Month           { get; set; }
+        public int      Year            { get; set; }
         public DateTime PeriodStart     { get; set; }
         public DateTime PeriodEnd       { get; set; }
         public DateTime PaymentDate     { get; set; }
@@ -66,6 +68,8 @@ namespace PrimeERP.Application.DTOs.HR
     public class CreatePayrollDto
     {
         public int      Id          { get; set; }
+        public int      Month       { get; set; } = DateTime.Today.Month;
+        public int      Year        { get; set; } = DateTime.Today.Year;
         public DateTime PeriodStart { get; set; } = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
         public DateTime PeriodEnd   { get; set; } = DateTime.Today;
         public DateTime PaymentDate { get; set; } = DateTime.Today;

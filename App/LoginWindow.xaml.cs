@@ -18,6 +18,7 @@ namespace PrimeERP.App
         public LoginWindow(IPermissionService permissions, IPermissionStore store)
         {
             InitializeComponent();
+            FlowDirection = PrimeERP.Platform.Localization.LocalizationService.Flow;
             _permissions = permissions;
             _store = store;
             txtUsername.Focus();

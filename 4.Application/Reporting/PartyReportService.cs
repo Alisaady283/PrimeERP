@@ -9,8 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.Legacy.Accounting;
-using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.PageServices.Accounting;
+using PrimeERP.Application.PageServices.Parties;
 using PrimeERP.Domain.Results;
 
 namespace PrimeERP.Application.Reporting

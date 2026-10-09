@@ -18,5 +18,17 @@ namespace PrimeERP.UI.Components
             }
             return null;
         }
+
+        public static System.Collections.Generic.IEnumerable<T> FindChildren<T>(DependencyObject parent) where T : DependencyObject
+        {
+            if (parent == null) yield break;
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typed) { yield return typed; continue; }
+
+                foreach (var found in FindChildren<T>(child)) yield return found;
+            }
+        }
     }
 }

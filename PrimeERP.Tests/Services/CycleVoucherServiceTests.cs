@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Inventory;
-using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.PageServices.Inventory;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 
@@ -92,8 +92,8 @@ namespace PrimeERP.Tests.Services
             var receipt = _db.Services.GetRequiredService<IGoodsReceiptService>().Create(Doc(code, warehouseId, 1)).Value;
             var delivery = _db.Services.GetRequiredService<IDeliveryNoteService>().Create(Doc(code, warehouseId, 1)).Value;
 
-            Assert.StartsWith("GoodsReceipt", receipt.DocNo);
-            Assert.StartsWith("DeliveryNote", delivery.DocNo);
+            Assert.Matches("^GR[0-9]+$", receipt.DocNo);
+            Assert.Matches("^DN[0-9]+$", delivery.DocNo);
 
             var receipts = _db.Services.GetRequiredService<IGoodsReceiptService>().GetPaged(1, 50).Value.Items;
             Assert.DoesNotContain(receipts, d => d.DocNo == delivery.DocNo);

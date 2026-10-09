@@ -13,19 +13,18 @@ namespace PrimeERP.Composition.Renderers
     /// <summary>طباعة أي قائمة معروضة وتصديرها</summary>
     public static class ListOutput
     {
-        public static void Print(IServiceProvider services, string title, List<GridColumn> columns, List<object> rows)
+        public static void Print(IServiceProvider services, string title, List<GridColumn> columns, List<object> rows, Dictionary<string, string> totals = null)
         {
             var toast = services.GetRequiredService<IToastService>();
             if (rows.Count == 0) { toast.Info(LocalizationService.Get("Str.Output.NoPrintData")); return; }
 
-            var orientation = columns.Count > 6 ? PrintOrientation.Landscape : PrintOrientation.Portrait;
-            var printable = PrimeERP.Composition.Print.PrintDocuments.Report(new ReportResult { Title = title, Columns = columns, Rows = rows }, orientation);
+            var printable = ReportDocument(title, columns, rows, totals);
 
             var printed = services.GetRequiredService<IPrintService>().PrintPreview(printable);
             if (printed.IsFailure) toast.Error(printed.ErrorMessage);
         }
 
-        public static void Export(IServiceProvider services, string title, List<GridColumn> columns, List<object> rows)
+        public static void Export(IServiceProvider services, string title, List<GridColumn> columns, List<object> rows, Dictionary<string, string> totals = null)
         {
             var toast = services.GetRequiredService<IToastService>();
             if (rows.Count == 0) { toast.Info(LocalizationService.Get("Str.Output.NoExportData")); return; }
@@ -42,8 +41,11 @@ namespace PrimeERP.Composition.Renderers
             {
                 switch (System.IO.Path.GetExtension(dialog.FileName).ToLowerInvariant())
                 {
-                    case ".csv": export.ExportToCsv(rows, columns, dialog.FileName); break;
-                    case ".pdf": export.ExportToPdf(rows, columns, dialog.FileName, title); break;
+                    case ".pdf":
+                        var printable = ReportDocument(title, columns, rows, totals);
+                        var result = services.GetRequiredService<IPrintService>().ExportToPdf(printable, dialog.FileName);
+                        if (result.IsFailure) { toast.Error(result.ErrorMessage); return; }
+                        break;
                     default:     export.ExportToExcel(rows, columns, dialog.FileName); break;
                 }
 
@@ -54,5 +56,25 @@ namespace PrimeERP.Composition.Renderers
                 toast.Error(LocalizationService.Get("Str.Output.ExportFailed", ex.Message));
             }
         }
+            private static PrimeERP.Domain.Contracts.IPrintable ReportDocument(
+                string title,
+                List<GridColumn> columns,
+                List<object> rows,
+                Dictionary<string, string> totals)
+            {
+                var orientation = columns.Count > 6
+                    ? PrintOrientation.Landscape
+                    : PrintOrientation.Portrait;
+
+                return PrimeERP.Composition.Print.PrintDocuments.Report(
+                    new ReportResult
+                    {
+                        Title = title,
+                        Columns = columns,
+                        Rows = rows,
+                        Totals = totals
+                    },
+                    orientation);
+            }
     }
 }

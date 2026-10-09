@@ -6,7 +6,7 @@ using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Audit;
 using System;
 using System.Linq;
-using PrimeERP.Application.Legacy.Sales;
+using PrimeERP.Application.PageServices.Sales;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Localization;
 

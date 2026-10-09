@@ -36,9 +36,11 @@ namespace PrimeERP.Composition.Definitions
 
         public string PickerCategoryModuleKey { get; init; }
 
-        public string PickerValueField { get; init; } = "Id";
+        public string PickerValueField { get; init; }
 
         public object DefaultValue { get; init; }
+
+        public string DefaultSetting { get; init; }
 
         public string DisplayFormat { get; init; }
 
@@ -63,5 +65,7 @@ namespace PrimeERP.Composition.Definitions
         public required Type UpdateDtoType { get; init; }
 
         public Dictionary<string, object> FixedValues { get; init; }
+
+        public string CreateMethod { get; init; } = "Create";
     }
 }

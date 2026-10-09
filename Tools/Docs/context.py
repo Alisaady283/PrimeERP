@@ -17,15 +17,17 @@ SHARED = {e for e in ("StockAdjustment", "StockAdjustmentLine", "CycleDocument",
 RENAME = {("Asset", "DepreciationAccountCode"): "DepAccountCode",
           ("Category", "DepreciationAccountCode"): "DepAccountCode",
           ("Attendance", "CheckIn"): "CheckInMinutes",
-          ("Attendance", "CheckOut"): "CheckOutMinutes"}
+          ("Attendance", "CheckOut"): "CheckOutMinutes",
+          ("Employee", "WorkEnd"): "WorkEndMinutes",
+          ("Employee", "WorkStart"): "WorkStartMinutes"}
 
-MINUTES = {("Attendance", "CheckIn"), ("Attendance", "CheckOut")}
+MINUTES = {("Attendance", "CheckIn"), ("Attendance", "CheckOut"), ("Employee", "WorkEnd"), ("Employee", "WorkStart")}
 
 # خاصيةٌ محسوبة أو مملوءة بضمّة: تُتجاهَل صراحةً. وما عداها عمودٌ يُنشئه SchemaSync إن نقص
 DERIVED = {"Lines", "Allocations", "CategoryName", "BrandName", "EmployeeName", "EmployeeCode",
            "UnitName", "RoleName", "JobTitleName", "DepartmentName", "CurrentStock",
            "AccountBalance", "KindName", "ParentName", "AssetCode", "AssetName", "TreasuryName",
-           "BookValue", "GainOrLoss", "Difference"}
+           "BookValue", "GainOrLoss", "Difference", "TypeName"}
 
 
 def build():

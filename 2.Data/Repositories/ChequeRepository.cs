@@ -16,13 +16,14 @@ namespace PrimeERP.Data.Repositories
         (List<Cheque> Items, int Total) GetPaged(ChequeDirection? direction, ChequeStatus? status, int page, int pageSize, string searchText);
         List<ChequeMovement> GetMovements(int chequeId);
         List<Cheque> GetOpenForParty(int partyId, DateTime from, DateTime to);
+        List<Cheque> GetOpen();
         int Insert(PrimeDbContext db, Cheque c);
         void SetStatus(PrimeDbContext db, int id, ChequeStatus status, int? treasuryId);
         void Update(PrimeDbContext db, Cheque c);
         void Delete(PrimeDbContext db, int id);
         void DeleteMovements(PrimeDbContext db, int chequeId);
         void InsertMovement(PrimeDbContext db, ChequeMovement m);
-        void ClearMovementEntry(PrimeDbContext db, int movementId);
+        void SetMovementEntry(PrimeDbContext db, int movementId, int? entryId);
     }
 
     public class ChequeRepository : RepositoryBase<Cheque>, IChequeRepository
@@ -50,14 +51,18 @@ namespace PrimeERP.Data.Repositories
             return Page(page, pageSize, Shape, DocumentOrder(c => c.DueDate, true, c => c.ChequeNo));
         }
 
+        public List<Cheque> GetOpen() =>
+            Fetch(q => q.Where(c => c.Status == ChequeStatus.InHand || c.Status == ChequeStatus.Deposited || c.Status == ChequeStatus.Issued
+                                 || c.Status == ChequeStatus.Bounced && c.Direction == ChequeDirection.Incoming));
+
         public List<Cheque> GetOpenForParty(int partyId, DateTime from, DateTime to) =>
             Fetch(q => q.Where(c => c.PartyId == partyId
                                  && c.Status != ChequeStatus.Collected && c.Status != ChequeStatus.Paid
                                  && c.IssueDate >= from && c.IssueDate <= to)
                         .OrderBy(c => c.DueDate));
 
-        public void ClearMovementEntry(PrimeDbContext db, int movementId) =>
-            SetIn<ChequeMovement>(Movements, m => m.Id == movementId, s => s.SetProperty(m => m.JournalEntryId, (int?)null), db);
+        public void SetMovementEntry(PrimeDbContext db, int movementId, int? entryId) =>
+            SetIn<ChequeMovement>(Movements, m => m.Id == movementId, s => s.SetProperty(m => m.JournalEntryId, entryId), db);
 
         public List<ChequeMovement> GetMovements(int chequeId) =>
             FetchOf<ChequeMovement>(Movements, q => q.Where(m => m.ChequeId == chequeId).OrderBy(m => m.Id));

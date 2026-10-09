@@ -1,5 +1,5 @@
 using PrimeERP.Application.Services.Ledger.Accounts;
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Data.Core;
 using System;
@@ -12,9 +12,9 @@ using PrimeERP.Platform.Settings;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Services;
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.PageServices.Parties;
 using PrimeERP.Application.DTOs.Parties;
 using Xunit;
 
@@ -41,7 +41,7 @@ namespace PrimeERP.Tests.Services
         public void Dispose() => _db.Dispose();
 
         private int CustomersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("1202").Id;
-        private int SuppliersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("2101").Id;
+        private int SuppliersRootId() => _db.Services.GetRequiredService<IAccountRepository>().GetByCode("2201").Id;
 
         private int SeedPostedEntry(string date, params (string Code, decimal Debit, decimal Credit)[] lines)
         {
@@ -74,6 +74,8 @@ namespace PrimeERP.Tests.Services
                 LastCreatedFor = (accountCode, name);
                 return Result.Ok(new Customer { Id = 999, Code = "C-TEST", AccountCode = accountCode, Name = name });
             }
+
+            public Result RepairMissingEntities() => Result.Ok();
 
             public Result DeleteByAccountCode(PrimeDbContext db, string accountCode)
             {
@@ -116,6 +118,8 @@ namespace PrimeERP.Tests.Services
                 LastCreatedFor = (accountCode, name);
                 return Result.Ok(new Supplier { Id = 999, Code = "S-TEST", AccountCode = accountCode, Name = name });
             }
+
+            public Result RepairMissingEntities() => Result.Ok();
 
             public Result DeleteByAccountCode(PrimeDbContext db, string accountCode)
             {
@@ -302,13 +306,28 @@ namespace PrimeERP.Tests.Services
             Assert.False(result.IsSuccess);
         }
 
+        [Theory]
+        [InlineData("1202")]
+        [InlineData("2201")]
+        [InlineData("1203003")]
+        [InlineData("1203007")]
+        [InlineData("1101001")]
+        [InlineData("1101002")]
+        public void LinkedRootAccounts_CannotBeDeleted(string code)
+        {
+            var account = _service.GetByCode(code);
+            Assert.True(account.IsSuccess, account.ErrorMessage);
+
+            Assert.False(_service.Delete(account.Value.Id).IsSuccess);
+        }
+
         [Fact]
         public void Delete_AccountWithTransactions_Fails()
         {
             var account = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "له قيد", IsLeaf = true });
             Assert.True(account.IsSuccess);
 
-            SeedPostedEntry("2026-01-01", (account.Value.Code, 100m, 0m), ("1204", 0m, 100m));
+            SeedPostedEntry("2026-01-01", (account.Value.Code, 100m, 0m), ("12030070001", 0m, 100m));
 
             var result = _service.Delete(account.Value.Id);
 
@@ -337,8 +356,8 @@ namespace PrimeERP.Tests.Services
             var account = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "حساب رصيد", IsLeaf = true });
             Assert.True(account.IsSuccess);
 
-            SeedPostedEntry("2026-01-01", (account.Value.Code, 300m, 0m), ("1204", 0m, 300m));
-            SeedPostedEntry("2026-01-05", (account.Value.Code, 0m, 50m), ("1204", 50m, 0m));
+            SeedPostedEntry("2026-01-01", (account.Value.Code, 300m, 0m), ("12030070001", 0m, 300m));
+            SeedPostedEntry("2026-01-05", (account.Value.Code, 0m, 50m), ("12030070001", 50m, 0m));
 
             var result = _service.RecalculateBalance(account.Value.Code);
             Assert.True(result.IsSuccess, result.ErrorMessage);
@@ -353,8 +372,8 @@ namespace PrimeERP.Tests.Services
             var account = _service.Create(new CreateAccountDto { ParentId = CustomersRootId(), Name = "حساب كشف", IsLeaf = true });
             Assert.True(account.IsSuccess);
 
-            SeedPostedEntry("2026-01-01", (account.Value.Code, 200m, 0m), ("1204", 0m, 200m));
-            SeedPostedEntry("2026-01-10", (account.Value.Code, 0m, 80m), ("1204", 80m, 0m));
+            SeedPostedEntry("2026-01-01", (account.Value.Code, 200m, 0m), ("12030070001", 0m, 200m));
+            SeedPostedEntry("2026-01-10", (account.Value.Code, 0m, 80m), ("12030070001", 80m, 0m));
 
             var result = _service.GetStatement(account.Value.Code, new DateTime(2026, 1, 1), new DateTime(2026, 1, 31));
 

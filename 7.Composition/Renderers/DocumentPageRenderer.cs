@@ -57,7 +57,7 @@ namespace PrimeERP.Composition.Renderers
             {
                 if (editor == null) return;
                 if (!DocumentRenderer.TrySaveEditor(def, services, toast, editor)) return;
-                Load(null);
+                if (editor.Reopen != null) editor.Reopen(); else Load(null);
             };
 
             actions.Children.Add(btnNew);
@@ -65,7 +65,7 @@ namespace PrimeERP.Composition.Renderers
             var btnPrint = new Btn { Text = LocalizationService.Get("Str.Print"), Variant = "secondary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
             btnPrint.Click += (_, __) => DocumentPrinter.PrintSelected(definition, services, editor?.EditItem);
 
-            actions.Children.Add(btnPrint);
+            if (def.PrintTitleKey != null) actions.Children.Add(btnPrint);
             actions.Children.Add(btnSave);
             header.ActionsContent = actions;
 

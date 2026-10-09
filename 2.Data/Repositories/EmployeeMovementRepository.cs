@@ -15,7 +15,9 @@ namespace PrimeERP.Data.Repositories
         (List<T> Items, int Total) GetPaged(int page, int pageSize, string searchText, int? employeeId,
             string sortColumn, bool sortDescending);
 
-        Dictionary<int, decimal> SumByEmployee(int month, int year);
+        Dictionary<int, List<T>> PendingByEmployee(int year, int month);
+        void Settle(PrimeDbContext db, IEnumerable<int> ids, int payrollId);
+        void Release(PrimeDbContext db, int payrollId);
 
         int Insert(T item, PrimeDbContext db = null);
         void Update(T item, PrimeDbContext db = null);
@@ -25,13 +27,20 @@ namespace PrimeERP.Data.Repositories
     public interface IEmployeeAllowanceRepository : IEmployeeMovementRepository<EmployeeAllowance> { }
     public interface IEmployeeDeductionRepository : IEmployeeMovementRepository<EmployeeDeduction> { }
 
+    public interface IEmployeeAdvanceRepository : IEmployeeMovementRepository<EmployeeAdvance>
+    {
+        void SetEntry(PrimeDbContext db, int id, int? journalEntryId);
+    }
+
     public abstract class EmployeeMovementRepository<T> : RepositoryBase<T>, IEmployeeMovementRepository<T>
         where T : EmployeeMovement, new()
     {
 
         /// <summary>اسم الموظف وكوده عرضٌ فقط</summary>
-        private static List<T> WithEmployee(List<T> rows) =>
-            WithCodeNames<Employee>("Employees", rows, m => m.EmployeeId, (m, code, name) => (m.EmployeeCode, m.EmployeeName) = (code, name));
+        private List<T> WithEmployee(List<T> rows) =>
+            WithType(WithCodeNames<Employee>("Employees", rows, m => m.EmployeeId, (m, code, name) => (m.EmployeeCode, m.EmployeeName) = (code, name)));
+
+        protected abstract List<T> WithType(List<T> rows);
 
         public override T GetById(int id, PrimeDbContext db = null) =>
             WithEmployee(Fetch(q => q.Where(m => m.Id == id), db)).FirstOrDefault();
@@ -56,15 +65,18 @@ namespace PrimeERP.Data.Repositories
             return (WithEmployee(items), total);
         }
 
-        public Dictionary<int, decimal> SumByEmployee(int month, int year)
+        public Dictionary<int, List<T>> PendingByEmployee(int year, int month) =>
+            Fetch(q => q.Where(m => m.PayrollId == null && (m.Year < year || m.Year == year && m.Month <= month)))
+                .GroupBy(m => m.EmployeeId).ToDictionary(g => g.Key, g => g.ToList());
+
+        public void Settle(PrimeDbContext db, IEnumerable<int> ids, int payrollId)
         {
-            using var db = DbContextFactory.Open();
-            return Rows(db).AsNoTracking()
-                .Where(m => m.Month == month && m.Year == year)
-                .GroupBy(m => m.EmployeeId)
-                .Select(g => new { g.Key, Total = g.Sum(m => m.Amount) })
-                .ToDictionary(x => x.Key, x => x.Total);
+            var list = ids.ToList();
+            Set(m => list.Contains(m.Id), s => s.SetProperty(r => r.PayrollId, payrollId), db);
         }
+
+        public void Release(PrimeDbContext db, int payrollId) =>
+            Set(m => m.PayrollId == payrollId, s => s.SetProperty(r => r.PayrollId, (int?)null), db);
 
         public int Insert(T item, PrimeDbContext db = null) => Add(item, db);
 
@@ -78,10 +90,27 @@ namespace PrimeERP.Data.Repositories
     public class EmployeeAllowanceRepository : EmployeeMovementRepository<EmployeeAllowance>, IEmployeeAllowanceRepository
     {
         protected override string TableName => "EmployeeAllowances";
+
+        protected override List<EmployeeAllowance> WithType(List<EmployeeAllowance> rows) =>
+            WithNames<AllowanceType>("AllowanceTypes", rows, (m => m.TypeId, (m, name) => m.TypeName = name));
     }
 
     public class EmployeeDeductionRepository : EmployeeMovementRepository<EmployeeDeduction>, IEmployeeDeductionRepository
     {
         protected override string TableName => "EmployeeDeductions";
+
+        protected override List<EmployeeDeduction> WithType(List<EmployeeDeduction> rows) =>
+            WithNames<DeductionType>("DeductionTypes", rows, (m => m.TypeId, (m, name) => m.TypeName = name));
+    }
+
+    public class EmployeeAdvanceRepository : EmployeeMovementRepository<EmployeeAdvance>, IEmployeeAdvanceRepository
+    {
+        protected override string TableName => "EmployeeAdvances";
+
+        protected override List<EmployeeAdvance> WithType(List<EmployeeAdvance> rows) =>
+            WithNames<Treasury>("Treasuries", rows, (m => m.TreasuryId, (m, name) => m.TreasuryName = name));
+
+        public void SetEntry(PrimeDbContext db, int id, int? journalEntryId) =>
+            Set(m => m.Id == id, s => s.SetProperty(r => r.JournalEntryId, journalEntryId), db);
     }
 }

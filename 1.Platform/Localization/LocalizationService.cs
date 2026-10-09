@@ -17,6 +17,8 @@ namespace PrimeERP.Platform.Localization
 
         public static event EventHandler LanguageChanged;
 
+        public static FlowDirection Flow => CurrentLanguage == AppLanguage.Ar ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+
         public static void Apply(AppLanguage language)
         {
             var app = System.Windows.Application.Current;

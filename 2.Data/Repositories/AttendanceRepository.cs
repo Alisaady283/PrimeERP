@@ -1,90 +1,73 @@
 using System;
-using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 using PrimeERP.Data.Core;
 using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Data.Repositories
 {
     /// <summary>مستودع Attendance</summary>
     public interface IAttendanceRepository
     {
-        Attendance GetById(int id, PrimeDbContext db = null);
-        (List<Attendance> Items, int Total) GetPaged(int page, int pageSize, string searchText, int? employeeId,
-            string sortColumn, bool sortDescending);
-
-        Dictionary<int, decimal> OvertimeByEmployee(DateTime from, DateTime to);
-
-        Dictionary<int, int> AbsenceDaysByEmployee(DateTime from, DateTime to);
-
-        int Insert(Attendance a, PrimeDbContext db = null);
-        void Update(Attendance a, PrimeDbContext db = null);
-        void Delete(int id, string deletedBy, PrimeDbContext db = null);
+        AttendanceSheet GetById(int id, PrimeDbContext db = null);
+        (List<AttendanceSheet> Items, int Total) GetPaged(int page, int pageSize, string searchText);
+        int? SheetOn(DateTime date);
+        Dictionary<int, Attendance> LinesOf(int sheetId);
+        Dictionary<int, Dictionary<AttendanceStatus, int>> Counts(IEnumerable<int> sheetIds);
+        Dictionary<int, List<Attendance>> DaysByEmployee(DateTime from, DateTime to);
+        int InsertHeader(PrimeDbContext db, AttendanceSheet sheet);
+        void InsertLine(PrimeDbContext db, int sheetId, Attendance line);
+        void DeleteDocument(PrimeDbContext db, int id);
     }
 
-    public class AttendanceRepository : RepositoryBase<Attendance>, IAttendanceRepository
+    public class AttendanceRepository : RepositoryBase<AttendanceSheet>, IAttendanceRepository
     {
-        protected override string TableName => "Attendances";
+        protected override string TableName => "AttendanceSheets";
+        protected override string LineTable => "Attendances";
+        protected override string LineForeignKey => "SheetId";
 
+        public (List<AttendanceSheet> Items, int Total) GetPaged(int page, int pageSize, string searchText) =>
+            Page(page, pageSize, q => string.IsNullOrWhiteSpace(searchText) ? q : q.Where(s => EF.Functions.Like(s.Notes, $"%{searchText}%")),
+                By(s => s.Date, descending: true));
 
-        private static TimeSpan? Minutes(object value) =>
-            value == DBNull.Value ? null : TimeSpan.FromMinutes(Convert.ToInt32(value));
+        public int? SheetOn(DateTime date) => One(q => q.Where(s => s.Date == date.Date))?.Id;
 
+        public Dictionary<int, Attendance> LinesOf(int sheetId) =>
+            FetchOf<Attendance>(LineTable, q => q.Where(a => a.SheetId == sheetId)).ToDictionary(a => a.EmployeeId);
 
-        /// <summary>اسم الموظف وكوده عرضٌ فقط</summary>
-        private static List<Attendance> WithEmployee(List<Attendance> rows) =>
-            WithCodeNames<Employee>("Employees", rows, a => a.EmployeeId, (a, code, name) => (a.EmployeeCode, a.EmployeeName) = (code, name));
-
-        public override Attendance GetById(int id, PrimeDbContext db = null) =>
-            WithEmployee(Fetch(q => q.Where(a => a.Id == id), db)).FirstOrDefault();
-
-        public (List<Attendance> Items, int Total) GetPaged(int page, int pageSize, string searchText, int? employeeId,
-            string sortColumn, bool sortDescending)
+        public Dictionary<int, Dictionary<AttendanceStatus, int>> Counts(IEnumerable<int> sheetIds)
         {
-            using var db = DbContextFactory.Open();
+            var ids = sheetIds.ToList();
+            return Scope(null, db => RowsOf<Attendance>(db, LineTable).AsNoTracking()
+                    .Where(a => ids.Contains(a.SheetId))
+                    .GroupBy(a => new { a.SheetId, a.Status })
+                    .Select(g => new { g.Key.SheetId, g.Key.Status, Count = g.Count() })
+                    .ToList())
+                .GroupBy(c => c.SheetId)
+                .ToDictionary(g => g.Key, g => g.ToDictionary(c => c.Status, c => c.Count));
+        }
 
-            IQueryable<Attendance> Shape(IQueryable<Attendance> rows)
+        public Dictionary<int, List<Attendance>> DaysByEmployee(DateTime from, DateTime to) =>
+            FetchOf<Attendance>(LineTable, q => q.Where(a => a.SheetId > 0 && a.Date >= from.Date && a.Date <= to.Date))
+                .GroupBy(a => a.EmployeeId).ToDictionary(g => g.Key, g => g.ToList());
+
+        public int InsertHeader(PrimeDbContext db, AttendanceSheet sheet) => Add(sheet, db);
+
+        public void InsertLine(PrimeDbContext db, int sheetId, Attendance line) =>
+            Write(ctx =>
             {
-                var q = rows;
-                if (employeeId != null) q = q.Where(a => a.EmployeeId == employeeId);
-                if (!string.IsNullOrWhiteSpace(searchText))
-                    q = q.Where(a => db.Employees.Any(e => e.Id == a.EmployeeId && EF.Functions.Like(e.Name, $"%{searchText}%")));
-                return q;
-            }
+                line.SheetId = sheetId;
+                SetOf<Attendance>(ctx, LineTable).Add(line);
+                return 0;
+            }, db);
 
-            var (items, total) = Page(page, pageSize, Shape,
-                sortColumn == "OvertimeHours" ? By(a => a.OvertimeHours, sortDescending) : By(a => a.Date, sortDescending), db);
-            return (WithEmployee(items), total);
-        }
-
-        public Dictionary<int, decimal> OvertimeByEmployee(DateTime from, DateTime to)
+        public void DeleteDocument(PrimeDbContext db, int id)
         {
-            using var db = DbContextFactory.Open();
-            return Rows(db).AsNoTracking()
-                .Where(a => a.Date >= from && a.Date <= to)
-                .GroupBy(a => a.EmployeeId)
-                .Select(g => new { g.Key, Total = g.Sum(a => a.OvertimeHours) })
-                .ToDictionary(x => x.Key, x => x.Total);
+            RemoveIn<Attendance>(LineTable, a => a.SheetId == id, db);
+            Remove(s => s.Id == id, db);
         }
-
-        public Dictionary<int, int> AbsenceDaysByEmployee(DateTime from, DateTime to)
-        {
-            using var db = DbContextFactory.Open();
-            return Rows(db).AsNoTracking()
-                .Where(a => a.IsAbsent && a.Date >= from && a.Date <= to)
-                .GroupBy(a => a.EmployeeId)
-                .Select(g => new { g.Key, Days = g.Count() })
-                .ToDictionary(x => x.Key, x => x.Days);
-        }
-
-        public int Insert(Attendance a, PrimeDbContext db = null) => Add(a, db);
-
-        public void Update(Attendance a, PrimeDbContext db = null) =>
-            Modify(a, db);
-
-        public void Delete(int id, string deletedBy, PrimeDbContext db = null) =>
-            SoftDelete(id, deletedBy, db);
     }
 }

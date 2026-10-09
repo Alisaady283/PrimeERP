@@ -7,8 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Treasury;
 using PrimeERP.Application.DTOs.Vouchers;
-using PrimeERP.Application.Legacy.Accounting;
-using PrimeERP.Application.Legacy.Treasury;
+using PrimeERP.Application.PageServices.Accounting;
+using PrimeERP.Application.PageServices.Treasury;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Platform.Design;
@@ -41,14 +41,16 @@ namespace PrimeERP.Tests.Composition
                 var accounts = _db.Services.GetRequiredService<IAccountService>();
                 var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
 
+                string Root(string key) => _db.Services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>().Get(key, "");
+
                 string LeafUnder(string parentCode, string name) =>
                     accounts.Create(new CreateAccountDto
                     { ParentId = accounts.GetByCode(parentCode).Value.Id, Name = name, IsLeaf = true, SkipAutoLink = true }).Value.Code;
 
                 var cash = treasuries.Create(new PrimeERP.Domain.Entities.Treasury
-                { Name = "صندوق الاختبار", Kind = PrimeERP.Domain.Enums.TreasuryKind.Cash, AccountCode = LeafUnder("1201", "صندوق"), IsActive = true });
+                { Name = "صندوق الاختبار", Kind = PrimeERP.Domain.Enums.TreasuryKind.Cash, AccountCode = LeafUnder(Root(PrimeERP.Platform.Settings.SettingKeys.Accounts.Cash), "صندوق"), IsActive = true });
                 var bank = treasuries.Create(new PrimeERP.Domain.Entities.Treasury
-                { Name = "بنك الاختبار", Kind = PrimeERP.Domain.Enums.TreasuryKind.Bank, AccountCode = LeafUnder("1201", "بنك"), BankName = "بنك مصر", IsActive = true });
+                { Name = "بنك الاختبار", Kind = PrimeERP.Domain.Enums.TreasuryKind.Bank, AccountCode = LeafUnder(Root(PrimeERP.Platform.Settings.SettingKeys.Accounts.Bank), "بنك"), BankName = "بنك مصر", IsActive = true });
                 Assert.True(cash.IsSuccess, cash.ErrorMessage);
                 Assert.True(bank.IsSuccess, bank.ErrorMessage);
 
@@ -137,7 +139,7 @@ namespace PrimeERP.Tests.Composition
         }
 
         private static string[] Names(AppComboBox combo) =>
-            combo.ItemsSource?.Cast<object>().Select(i => i.GetType().GetProperty("Display").GetValue(i)?.ToString()).ToArray()
+            combo.ItemsSource?.Cast<object>().Select(i => i.GetType().GetProperty("Display").GetValue(i)?.ToString()?.Split(" - ").Last()).ToArray()
             ?? Array.Empty<string>();
 
         private static void Select(AppComboBox combo, int id)

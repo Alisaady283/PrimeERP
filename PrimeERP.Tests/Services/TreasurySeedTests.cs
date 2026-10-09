@@ -1,11 +1,11 @@
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using PrimeERP.Application.Services.Ledger;
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Treasury;
-using PrimeERP.Application.Legacy.Accounting;
-using PrimeERP.Application.Legacy.Treasury;
+using PrimeERP.Application.PageServices.Accounting;
+using PrimeERP.Application.PageServices.Treasury;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
@@ -23,7 +23,7 @@ namespace PrimeERP.Tests.Services
         public void Dispose() => _db.Dispose();
 
         [Fact]
-        public void SeedDefaults_CreatesOneCashAndOneBank_EachLinkedUnderItsParentAccount()
+        public void SeedDefaults_CreatesOnlyTheMainCash_UnderItsParentAccount()
         {
             var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
             var accounts = _db.Services.GetRequiredService<IAccountService>();
@@ -32,15 +32,14 @@ namespace PrimeERP.Tests.Services
             treasuries.SeedDefaults(); // مرتين — لا يكرّر
 
             var all = treasuries.GetAll().Value;
-            Assert.Equal(2, all.Count);
+            Assert.Single(all);
 
             var cash = all.Single(t => t.Kind == TreasuryKind.Cash);
-            var bank = all.Single(t => t.Kind == TreasuryKind.Bank);
 
-            Assert.StartsWith("1204", cash.AccountCode);
-            Assert.StartsWith("1203", bank.AccountCode);
+            Assert.StartsWith("1203007", cash.AccountCode);
             Assert.True(accounts.GetByCode(cash.AccountCode).IsSuccess);
-            Assert.True(accounts.GetByCode(bank.AccountCode).IsSuccess);
+            Assert.False(accounts.GetByCode("1203007").Value.IsLeaf);
+            Assert.False(accounts.GetByCode("1203003").Value.IsLeaf);
         }
 
         [Fact]
@@ -49,8 +48,8 @@ namespace PrimeERP.Tests.Services
             var accounts = _db.Services.GetRequiredService<IAccountService>();
             var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
 
-            var cashRoot = accounts.GetByCode("1204").Value;
-            var bankRoot = accounts.GetByCode("1203").Value;
+            var cashRoot = accounts.GetByCode("1203007").Value;
+            var bankRoot = accounts.GetByCode("1203003").Value;
 
             var cashLeaf = accounts.Create(new PrimeERP.Application.DTOs.Accounting.CreateAccountDto
             { ParentId = cashRoot.Id, Name = "صندوق الفرع", IsLeaf = true });
@@ -73,6 +72,12 @@ namespace PrimeERP.Tests.Services
 
             Assert.True(accounts.Delete(cashLeaf.Value.Id).IsSuccess);
             Assert.DoesNotContain(treasuries.GetAll().Value, t => t.AccountCode == cashLeaf.Value.Code);
+            Assert.True(accounts.Delete(bankLeaf.Value.Id).IsSuccess);
+            Assert.DoesNotContain(treasuries.GetAll().Value, t => t.AccountCode == bankLeaf.Value.Code);
+            Assert.False(accounts.GetByCode("1203007").Value.IsLeaf);
+            Assert.False(accounts.GetByCode("1203003").Value.IsLeaf);
+            Assert.False(accounts.Delete(cashRoot.Id).IsSuccess);
+            Assert.False(accounts.Delete(bankRoot.Id).IsSuccess);
         }
 
         [Fact]
@@ -93,7 +98,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void WhenTheRootAccountCannotHoldChildren_CreationFailsWithAReason()
         {
-            var settings = _db.Services.GetRequiredService<PrimeERP.Application.Legacy.Admin.ISettingsService>();
+            var settings = _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Admin.ISettingsService>();
             var treasuries = _db.Services.GetRequiredService<ITreasuryService>();
 
             settings.Set(PrimeERP.Platform.Settings.SettingKeys.Accounts.Bank, "9999");

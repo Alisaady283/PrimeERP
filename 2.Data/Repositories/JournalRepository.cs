@@ -22,7 +22,7 @@ namespace PrimeERP.Data.Repositories
         int CountUnpostedBetween(DateTime from, DateTime to);
         decimal SumPosted(string accountCode, DateTime? from, DateTime? to, PrimeDbContext db = null);
         List<(string AccountCode, decimal SumDebit, decimal SumCredit)> GetAccountSums(DateTime? from, DateTime? to, bool postedOnly,
-            PrimeDbContext db = null);
+            PrimeDbContext db = null, string exceptSource = null);
         HashSet<string> AccountsWithLines(IEnumerable<string> accountCodes);
         Dictionary<int, int> GetLineCounts(IEnumerable<int> entryIds);
         (List<JournalEntry> Items, int Total) GetPaged(
@@ -70,6 +70,7 @@ namespace PrimeERP.Data.Repositories
             public int EntryId { get; init; }
             public string EntryDate { get; init; }
             public string EntryNo { get; init; }
+            public string Source { get; init; }
             public string Description { get; init; }
             public DateTime CreatedAt { get; init; }
             public int LineNo { get; init; }
@@ -91,7 +92,7 @@ namespace PrimeERP.Data.Repositories
                       && (until == null || string.Compare(e.EntryDate, until) <= 0)
                    select new DatedLine
                    {
-                       EntryId = e.Id, EntryDate = e.EntryDate, EntryNo = e.EntryNo, Description = e.Description,
+                       EntryId = e.Id, EntryDate = e.EntryDate, EntryNo = e.EntryNo, Source = e.Source, Description = e.Description,
                        CreatedAt = e.CreatedAt, LineNo = l.LineNo, AccountCode = l.AccountCode, Debit = l.Debit, Credit = l.Credit
                    };
         }
@@ -139,8 +140,9 @@ namespace PrimeERP.Data.Repositories
         }
 
         public List<(string AccountCode, decimal SumDebit, decimal SumCredit)> GetAccountSums(
-            DateTime? from, DateTime? to, bool postedOnly, PrimeDbContext db = null) =>
+            DateTime? from, DateTime? to, bool postedOnly, PrimeDbContext db = null, string exceptSource = null) =>
             Scope(db, ctx => Dated(ctx, from, to, postedOnly)
+                .Where(l => exceptSource == null || l.Source != exceptSource)
                 .GroupBy(l => l.AccountCode)
                 .Select(g => new { Code = g.Key, Debit = g.Sum(x => x.Debit), Credit = g.Sum(x => x.Credit) })
                 .AsEnumerable()

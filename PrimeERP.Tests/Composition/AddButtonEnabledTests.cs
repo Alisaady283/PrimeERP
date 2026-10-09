@@ -41,7 +41,7 @@ namespace PrimeERP.Tests.Composition
                     var disabled = new List<string>();
 
                     foreach (var definition in _db.Services.GetRequiredService<IModuleRegistry>().All()
-                                 .Where(d => d.Dialog != null || d.DocumentDialog != null))
+                                 .Where(d => (d.Dialog != null || d.DocumentDialog != null) && (d.EnabledActions == null || d.EnabledActions.Contains("new"))))
                     {
                         var page = CrudPageRenderer.Render(definition, _db.Services);
                         page.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));

@@ -5,12 +5,12 @@ using PrimeERP.Application.DTOs.HR;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Purchasing;
 using PrimeERP.Application.DTOs.Sales;
-using PrimeERP.Application.Legacy.Accounting;
-using PrimeERP.Application.Legacy.Assets;
-using PrimeERP.Application.Legacy.HR;
-using PrimeERP.Application.Legacy.Inventory;
-using PrimeERP.Application.Legacy.Purchasing;
-using PrimeERP.Application.Legacy.Sales;
+using PrimeERP.Application.PageServices.Accounting;
+using PrimeERP.Application.PageServices.Assets;
+using PrimeERP.Application.PageServices.HR;
+using PrimeERP.Application.PageServices.Inventory;
+using PrimeERP.Application.PageServices.Purchasing;
+using PrimeERP.Application.PageServices.Sales;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
@@ -206,6 +206,26 @@ namespace PrimeERP.UI.ViewModels
 
         protected override int IdOf(PayrollDto item) => item.Id;
         protected override Result DeleteItem(int id) => _payrolls.Delete(id);
+    }
+
+    public class AttendanceViewModel : CrudViewModelBase<AttendanceDayDto, AttendanceFilter>
+    {
+        private readonly IAttendanceService _sheets;
+
+        public AttendanceViewModel(IAttendanceService sheets, IPermissionService permissions, IToastService toast, IDialogService dialogs)
+            : base(permissions, toast, dialogs) => _sheets = sheets;
+
+        protected override string PermissionPrefix => "HR";
+
+        protected override Result<PagedResult<AttendanceDayDto>> FetchPage(int page, int pageSize, AttendanceFilter filter)
+        {
+            var f = filter ?? new AttendanceFilter();
+            f.SearchText = SearchText;
+            return _sheets.GetPaged(page, pageSize, f);
+        }
+
+        protected override int IdOf(AttendanceDayDto item) => item.Id;
+        protected override Result DeleteItem(int id) => _sheets.Delete(id);
     }
 
     public class AssetDepreciationsViewModel : CrudViewModelBase<AssetDepreciation, AssetDepreciationFilter>

@@ -10,6 +10,7 @@ namespace PrimeERP.UI.Services
         public ToastHostWindow()
         {
             InitializeComponent();
+            FlowDirection = PrimeERP.Platform.Localization.LocalizationService.Flow;
             Loaded += (s, e) => Reposition();
         }
 

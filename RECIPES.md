@@ -23,7 +23,7 @@
 | ١ | الكيان | `3.Domain/Entities/Treasury.cs` — خصائص فقط |
 | ٢ | المستودع | `2.Data/Repositories/TreasuryRepository.cs` — يرث `RepositoryBase<T>` بـLINQ |
 | ٣ | المرشِّح | `4.Application/DTOs/Treasury/TreasuryFilter.cs` — الكيان هو الصفّ والمُدخل، وحقلا العرض `AccountBalance`/`KindName` عليه في `DERIVED` |
-| ٤ | الخدمة | `4.Application/Legacy/Treasury/TreasuryService.cs` خدمة الصفحة، ومنطقها في `4.Application/Services/…` |
+| ٤ | الخدمة | `4.Application/PageServices/Treasury/TreasuryService.cs` خدمة الصفحة، ومنطقها في `4.Application/Services/…` |
 | ٥ | نموذج العرض | `TreasuriesViewModel` في `6.UI/ViewModels/ListViewModels.cs` — يرث `CrudViewModelBase` ويُعلن `PermissionPrefix` |
 | ٦ | الإعلان | `8.Modules/TreasuryRegistrations.cs:21` |
 | ٧ | الشروط الثلاثة | `NavigationMap.cs:19` · `Strings.ar.xaml:217` · `DependencyInjection.cs:162` |
@@ -102,7 +102,7 @@ RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Ed
 | ٢ | `2.Data/Repositories/` | يرث `RepositoryBase<T>` · `Shape` شرطاً · `By`/`DocumentOrder` ترتيباً — LINQ فقط |
 | ٣ | `4.Application/DTOs/` | `XFilter` وحده — الكيان هو الصفّ والمُدخل (`ARCHITECTURE.md § الكيان والـDTO`) |
 | ٤ | `4.Application/Validation/` | لا ملفّ: شروط `Field<T>` معاملاتٌ إلى `Check.Valid` |
-| ٥ | `4.Application/Legacy/<القسم>/` خدمة الصفحة، ومنطقها حالة استخدام في `4.Application/Services/` | يرث `ServiceBase` ويُعلن الثلاثة |
+| ٥ | `4.Application/PageServices/<القسم>/` خدمة الصفحة، ومنطقها حالة استخدام في `4.Application/Services/` | يرث `ServiceBase` ويُعلن الثلاثة |
 | ٦ | `6.UI/ViewModels/` | يرث `CrudViewModelBase<TDto,TFilter>` ويُعلن `PermissionPrefix` فقط |
 | ٧ | `8.Modules/ModuleRegistrations.cs` | `ModuleDefinition` بأعمدتها وحوارها |
 | ٨ | الشروط الثلاثة | الخريطة + القاموسان + التسجيل |

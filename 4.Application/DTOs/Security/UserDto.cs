@@ -25,6 +25,13 @@ namespace PrimeERP.Application.DTOs.Security
         public bool   IsActive    { get; set; } = true;
     }
 
+    public class ChangePasswordDto
+    {
+        public string CurrentPassword { get; set; }
+        public string NewPassword     { get; set; }
+        public string ConfirmPassword { get; set; }
+    }
+
     public class UpdateUserDto
     {
         public int    Id          { get; set; }

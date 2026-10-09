@@ -13,22 +13,16 @@ namespace PrimeERP.Tests.Services
         public NumberSequenceServiceTests(TestDatabaseFixture db) => _service = db.Services.GetRequiredService<INumberSequenceService>();
 
         [Fact]
-        public void Next_FirstCall_StartsAtOneWithFiveDigitPadding()
+        public void Next_FirstCall_IsThePrefixAndOne()
         {
-            var number = _service.Next("Test.Seq.First");
-            var year = System.DateTime.Now.Year;
-
-            Assert.Equal($"Test.Seq.First-{year}-00001", number);
+            Assert.Equal("Test.Seq.First1", _service.Next("Test.Seq.First"));
         }
 
         [Fact]
         public void Next_SecondCall_IncrementsBySequentialKey()
         {
             _service.Next("Test.Seq.Increment");
-            var second = _service.Next("Test.Seq.Increment");
-            var year = System.DateTime.Now.Year;
-
-            Assert.Equal($"Test.Seq.Increment-{year}-00002", second);
+            Assert.Equal("Test.Seq.Increment2", _service.Next("Test.Seq.Increment"));
         }
 
         [Fact]
@@ -52,7 +46,7 @@ namespace PrimeERP.Tests.Services
 
             Assert.StartsWith("Test.Seq.KeyA", a1);
             Assert.StartsWith("Test.Seq.KeyB", b1);
-            Assert.EndsWith("00002", a2);
+            Assert.Equal("Test.Seq.KeyA2", a2);
         }
     }
 }

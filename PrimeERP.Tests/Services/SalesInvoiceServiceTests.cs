@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Application.Services.Entities;
 using PrimeERP.Application.Services.Documents;
@@ -12,11 +12,11 @@ using PrimeERP.Application.DTOs.Accounting;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Sales;
-using PrimeERP.Application.Legacy.Accounting;
-using PrimeERP.Application.Legacy.Common;
-using PrimeERP.Application.Legacy.Inventory;
-using PrimeERP.Application.Legacy.Parties;
-using PrimeERP.Application.Legacy.Sales;
+using PrimeERP.Application.PageServices.Accounting;
+using PrimeERP.Application.PageServices.Common;
+using PrimeERP.Application.PageServices.Inventory;
+using PrimeERP.Application.PageServices.Parties;
+using PrimeERP.Application.PageServices.Sales;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
@@ -49,7 +49,7 @@ namespace PrimeERP.Tests.Services
             settings.Set(SettingKeys.Accounts.Sales, LeafUnder("41", "مبيعات اختبار"));
             settings.Set(SettingKeys.Accounts.COGS, LeafUnder("51", "تكلفة مبيعات اختبار"));
             settings.Set(SettingKeys.Accounts.Inventory, LeafUnder("1201", "مخزون اختبار"));
-            settings.Set(SettingKeys.Accounts.VATOutput, LeafUnder("21", "ضريبة مبيعات مستحقة"));
+            settings.Set(SettingKeys.Accounts.VATOutput, LeafUnder("2203", "ضريبة مبيعات مستحقة"));
 
             var categories = _db.Services.GetRequiredService<ICategoryService>();
             var category = categories.Create(new Category { Name = "فئة اختبار", ModuleKey = "Products" }).Value;

@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections.Generic;
 using PrimeERP.Application.Reporting;
 using PrimeERP.Composition.Definitions;
@@ -82,7 +83,7 @@ namespace PrimeERP.Modules
 
             Register(registry, "AssetRegister", "Str.Module.AssetRegister",
                 typeof(IAssetReportService), nameof(IAssetReportService.Register),
-                AssetCategory(), AssetRegisterColumns(), arguments: new[] { "CategoryId" });
+                StandardFields.DateRange().Concat(AssetCategory()).ToList(), AssetRegisterColumns(), arguments: new[] { "From", "To", "CategoryId" });
 
             Register(registry, "AssetsByCategory", "Str.Module.AssetsByCategory",
                 typeof(IAssetReportService), nameof(IAssetReportService.ByCategory),
@@ -130,7 +131,7 @@ namespace PrimeERP.Modules
 
         private static List<ParameterDefinition> AssetCategory() => new()
         {
-            new() { Key = "CategoryId", LabelKey = "Str.Category", Kind = FieldKind.Picker,
+            new() { Key = "CategoryId", LabelKey = "Str.Asset.Type", Kind = FieldKind.Picker,
                     PickerType = "Category", PickerCategoryModuleKey = "AssetCategories" }
         };
 
@@ -215,7 +216,7 @@ namespace PrimeERP.Modules
         private static List<GridColumn> ItemCardColumns() => new()
         {
             new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(ItemCardRow.Date), Width = 95 },
-            new() { Header = LocalizationService.Get("Str.SourceDoc"), Binding = nameof(ItemCardRow.SourceDoc), Width = 120, IsStarWidth = true },
+            new() { Header = LocalizationService.Get("Str.SourceDoc"), Binding = nameof(ItemCardRow.SourceDoc), Width = 120 },
 
             Money(LocalizationService.Get("Str.Reports.InQty"), nameof(ItemCardRow.InQty)),
             Money(LocalizationService.Get("Str.Reports.InPrice"), nameof(ItemCardRow.InPrice)),
@@ -242,19 +243,24 @@ namespace PrimeERP.Modules
 
         private static List<GridColumn> AssetRegisterColumns() => new()
         {
-            new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetRegisterRow.Code), Width = 100 },
-            new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetRegisterRow.Name), Width = 200, IsStarWidth = true },
-            new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(AssetRegisterRow.CategoryName), Width = 140 },
-            new() { Header = LocalizationService.Get("Str.Asset.PurchaseDate"), Binding = nameof(AssetRegisterRow.PurchaseDate), Width = 105 },
+            new() { Header = LocalizationService.Get("Str.Serial"), Binding = nameof(AssetRegisterRow.No), Width = 50, Align = ColumnAlign.Center },
+            new() { Header = LocalizationService.Get("Str.Asset.Type"), Binding = nameof(AssetRegisterRow.CategoryName), Width = 130 },
+            new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetRegisterRow.Name), Width = 180, IsStarWidth = true },
+            new() { Header = LocalizationService.Get("Str.Supplier"), Binding = nameof(AssetRegisterRow.SupplierName), Width = 140 },
+            new() { Header = LocalizationService.Get("Str.Asset.PurchaseDate"), Binding = nameof(AssetRegisterRow.PurchaseDate), Width = 100 },
             Money(LocalizationService.Get("Str.Asset.Cost"), nameof(AssetRegisterRow.PurchaseCost)),
-            Money(LocalizationService.Get("Str.Asset.Revalued"), nameof(AssetRegisterRow.Revalued)),
-            Money(LocalizationService.Get("Str.Asset.Accumulated"), nameof(AssetRegisterRow.Accumulated)),
-            Money(LocalizationService.Get("Str.Asset.BookValue"), nameof(AssetRegisterRow.BookValue)),
+            Money(LocalizationService.Get("Str.Asset.RevaluationAdditions"), nameof(AssetRegisterRow.Additions)),
+            Money(LocalizationService.Get("Str.Asset.Reductions"), nameof(AssetRegisterRow.Reductions)),
+            new() { Header = LocalizationService.Get("Str.Asset.Rate"), Binding = nameof(AssetRegisterRow.Rate), Width = 80, Align = ColumnAlign.Center, Format = "N2" },
+            Money(LocalizationService.Get("Str.Asset.AccumulatedStart"), nameof(AssetRegisterRow.AccumulatedStart)),
+            Money(LocalizationService.Get("Str.Asset.Charge"), nameof(AssetRegisterRow.Charge)),
+            Money(LocalizationService.Get("Str.Asset.AccumulatedEnd"), nameof(AssetRegisterRow.AccumulatedEnd)),
+            Money(LocalizationService.Get("Str.Asset.NetValue"), nameof(AssetRegisterRow.Net)),
         };
 
         private static List<GridColumn> AssetCategoryColumns() => new()
         {
-            new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(AssetRegisterRow.Name), Width = 300, IsStarWidth = true },
+            new() { Header = LocalizationService.Get("Str.Asset.Type"), Binding = nameof(AssetRegisterRow.Name), Width = 300, IsStarWidth = true },
             Money(LocalizationService.Get("Str.Asset.Cost"), nameof(AssetRegisterRow.PurchaseCost)),
             Money(LocalizationService.Get("Str.Asset.Revalued"), nameof(AssetRegisterRow.Revalued)),
             Money(LocalizationService.Get("Str.Asset.Accumulated"), nameof(AssetRegisterRow.Accumulated)),

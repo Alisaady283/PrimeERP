@@ -42,6 +42,8 @@ namespace PrimeERP.Composition.Renderers
             public Action<PullDialog.PulledLine> AddPulledRow;
 
             public Action<Dictionary<string, object>> ApplyPulledHeader;
+
+            public Action Reopen;
         }
 
         internal static DocumentEditor BuildEditor(DocumentDialogDefinition def, IServiceProvider services, IToastService toast, object editItem)
@@ -60,7 +62,7 @@ namespace PrimeERP.Composition.Renderers
                 editItem = detailResult.GetType().GetProperty("Value").GetValue(detailResult);
             }
 
-            var headerControls = DialogRenderer.BuildAndPopulateFields(def.HeaderFields, services, editItem, isEdit);
+            var headerControls = DialogRenderer.BuildAndPopulateFields(def.HeaderFields, services, editItem, isEdit, def.DtoType);
             var headerGrid = DialogRenderer.BuildGrid(def.HeaderFields, 2, headerControls, width: null);
             headerGrid.HorizontalAlignment = HorizontalAlignment.Stretch;
 
@@ -122,7 +124,8 @@ namespace PrimeERP.Composition.Renderers
                 {
                     Icon = (Geometry)System.Windows.Application.Current.FindResource("IconDelete"),
                     TooltipText = LocalizationService.Get("Str.RemoveLine"),
-                    Variant = "danger"
+                    Variant = "danger",
+                    Visibility = def.FixedLines ? Visibility.Collapsed : Visibility.Visible
                 };
                 Grid.SetColumn(removeBtn, col);
                 rowGrid.Children.Add(removeBtn);
@@ -177,18 +180,22 @@ namespace PrimeERP.Composition.Renderers
                             };
                     }
             }
-            else
+            else if (def.OpenBy == null && def.LineFields.Count > 0)
             {
-                AddRow(null);
+                for (var i = 0; i < def.DefaultLines; i++) AddRow(null);
             }
 
-            var addLineBtn = new Btn { Text = LocalizationService.Get("Str.AddLine"), Variant = "secondary", Size = "sm", Margin = new Thickness(0, 4, 0, 0) };
+            var addLineBtn = new Btn
+            {
+                Text = LocalizationService.Get("Str.AddLine"), Variant = "secondary", Size = "sm", Margin = new Thickness(0, 4, 0, 0),
+                Visibility = def.FixedLines ? Visibility.Collapsed : Visibility.Visible
+            };
             addLineBtn.Click += (_, __) => AddRow(null);
 
             var linesScroll = new ScrollViewer
             {
                 Content = linesHost,
-                MaxHeight = 320,
+                MaxHeight = double.PositiveInfinity,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
@@ -210,8 +217,11 @@ namespace PrimeERP.Composition.Renderers
             var pullBar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
             body.Children.Add(pullBar);
             body.Children.Add(headerGrid);
-            body.Children.Add(new Separator { Margin = new Thickness(0, 4, 0, 12) });
-            body.Children.Add(linesSection);
+            if (def.LineFields.Count > 0)
+            {
+                body.Children.Add(new Separator { Margin = new Thickness(0, 4, 0, 12) });
+                body.Children.Add(linesSection);
+            }
 
             var editor = new DocumentEditor
             {
@@ -234,11 +244,29 @@ namespace PrimeERP.Composition.Renderers
                     if (DialogRenderer.GetControlValue(control, headerField.Kind) != null) continue;
 
                     if (headerField.Kind == FieldKind.Picker)
-                        DialogRenderer.SelectPickerItem((AppComboBox)control, value, headerField.PickerValueField);
+                        DialogRenderer.SelectPickerItem((AppComboBox)control, value, ((AppComboBox)control).SelectedValuePath);
                     else
                         DialogRenderer.SetControlValue(control, headerField, value);
                 }
             };
+
+            if (!isEdit && def.OpenBy != null)
+            {
+                editor.Reopen = () => Open(def, services, toast, headerControls, rows, RemoveRow, line => AddRow(line), initial: false);
+                Open(def, services, toast, headerControls, rows, RemoveRow, line => AddRow(line), initial: true);
+
+                foreach (var key in def.OpenBy)
+                    switch (headerControls[key])
+                    {
+                        case AppDatePicker date:
+                            DependencyPropertyDescriptor.FromProperty(AppDatePicker.SelectedDateProperty, typeof(AppDatePicker))
+                                .AddValueChanged(date, (_, _) => editor.Reopen());
+                            break;
+                        case AppComboBox combo:
+                            combo.SelectionChanged += (_, _) => editor.Reopen();
+                            break;
+                    }
+            }
 
             editor.AddPulledRow = pulled =>
             {
@@ -252,6 +280,33 @@ namespace PrimeERP.Composition.Renderers
             };
 
             return editor;
+        }
+
+        private static void Open(DocumentDialogDefinition def, IServiceProvider services, IToastService toast,
+            Dictionary<string, FrameworkElement> headerControls, List<EditorRow> rows, Action<EditorRow> remove, Action<object> add, bool initial)
+        {
+            var keys = initial ? Array.Empty<object>() : def.OpenBy
+                .Select(key => DialogRenderer.GetControlValue(headerControls[key], def.HeaderFields.First(f => f.Key == key).Kind)).ToArray();
+            if (keys.Any(k => k == null)) return;
+
+            var types = keys.Select(k => k.GetType()).ToArray();
+            var method = DialogRenderer.FindMethod(def.ServiceType, "Open", types);
+            if (method == null) { toast.Error(LocalizationService.Get("Str.Composition.MissingMethod", def.ServiceType.Name, $"Open({string.Join(", ", types.Select(t => t.Name))})")); return; }
+
+            var result = (Result)method.Invoke(Resolve.Service(def, services), keys);
+            if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
+            var opened = result.GetType().GetProperty("Value").GetValue(result);
+
+            foreach (var field in def.HeaderFields.Where(f => initial || !def.OpenBy.Contains(f.Key)))
+            {
+                var value = DialogRenderer.ReadValue(opened, field.Key);
+                if (value == null) continue;
+                if (field.Kind == FieldKind.Picker) DialogRenderer.SelectPickerItem((AppComboBox)headerControls[field.Key], value, ((AppComboBox)headerControls[field.Key]).SelectedValuePath);
+                else DialogRenderer.SetControlValue(headerControls[field.Key], field, value);
+            }
+
+            foreach (var row in rows.ToList()) remove(row);
+            foreach (var line in DialogRenderer.ReadValue(opened, def.LinesPropertyName) as IEnumerable ?? Array.Empty<object>()) add(line);
         }
 
         private static (FrameworkElement Bar, Action Refresh) BuildTotalsBar(DocumentDialogDefinition def, List<EditorRow> rows)
@@ -357,17 +412,8 @@ namespace PrimeERP.Composition.Renderers
             return key != null && DialogRenderer.GetControlValue(row.Controls[key], FieldKind.Picker) == null;
         }
 
-        private static string PickerValueFieldOf(Type lineDtoType, LineFieldDefinition field)
-        {
-            if (field.Kind != FieldKind.Picker) return "Id";
-            if (field.PickerValueField != null) return field.PickerValueField;
-
-            var property = lineDtoType.GetProperty(field.Key);
-            if (property == null) return "Code";
-
-            var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
-            return type == typeof(string) ? "Code" : "Id";
-        }
+        private static string PickerValueFieldOf(Type lineDtoType, LineFieldDefinition field) =>
+            DialogRenderer.ValueFieldOf(lineDtoType, field.Key, field.PickerValueField);
 
         private static void SetRowValue(EditorRow row, DocumentDialogDefinition def, string key, object value)
         {
@@ -427,6 +473,7 @@ namespace PrimeERP.Composition.Renderers
             var title = editor.IsEdit ? LocalizationService.Get(def.TitleEditKey) : LocalizationService.Get(def.TitleKey);
             var footer = new StackPanel { Orientation = Orientation.Horizontal, Children = { btnCancel, btnSave } };
             var window = new ComposedDialogWindow(title, editor.Body, footer, width: ComputeDialogWidth(def));
+            window.FillHeight();
 
             btnCancel.Click += (_, __) => window.Close();
             btnSave.Click += (_, __) =>
@@ -490,7 +537,7 @@ namespace PrimeERP.Composition.Renderers
 
                     var value = DialogRenderer.GetControlValue(row.Controls[lf.Key], lf.Kind);
                     if (value == null) continue;
-                    prop.SetValue(lineDto, Convert.ChangeType(value, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType));
+                    prop.SetValue(lineDto, PrimeERP.Application.Services.Entities.Rows.To(value, prop.PropertyType));
                 }
                 lineDtoType.GetProperty("LineNo")?.SetValue(lineDto, lineNo++);
 
@@ -505,7 +552,7 @@ namespace PrimeERP.Composition.Renderers
                 linesList.Add(lineDto);
             }
             if (!rowsValid) return false;
-            if (linesList.Count == 0) { toast.Error(LocalizationService.Get("Str.Document.NoLines")); return false; }
+            if (linesList.Count == 0 && def.LineFields.Count > 0) { toast.Error(LocalizationService.Get("Str.Document.NoLines")); return false; }
 
             def.DtoType.GetProperty(def.LinesPropertyName).SetValue(dto, linesList);
 

@@ -1,5 +1,5 @@
 using PrimeERP.Domain.Calculations;
-using PrimeERP.Application.Legacy.Documents;
+using PrimeERP.Application.PageServices.Documents;
 using PrimeERP.Platform.Localization;
 using System;
 using System.Collections.Generic;

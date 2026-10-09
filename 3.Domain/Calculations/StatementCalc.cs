@@ -22,6 +22,12 @@ namespace PrimeERP.Domain.Calculations
         public static decimal NetIncome(decimal operatingProfit, decimal otherIncome, decimal otherExpense) =>
             operatingProfit + otherIncome - otherExpense;
 
+        public static decimal ProfitBeforeTax(decimal grossProfit, decimal otherRevenue, decimal operatingExpenses) =>
+            grossProfit + otherRevenue - operatingExpenses;
+
+        public static decimal AfterTax(decimal profitBeforeTax, decimal incomeTax) =>
+            profitBeforeTax - incomeTax;
+
         /// <summary>فرق الميزانية، وصفرٌ حين تتوازن</summary>
         public static decimal BalanceGap(decimal assets, decimal liabilities, decimal equity) => assets - liabilities - equity;
 

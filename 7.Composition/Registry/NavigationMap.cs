@@ -15,7 +15,7 @@ namespace PrimeERP.Composition.Registry
             ("Inventory", "IconWarehouse", new[] { "Products", "Categories", "Brands", "Units", "Warehouses", "StockIn", "StockOut", "StockTransfer", "GoodsReceipt", "GoodsIssue", "DeliveryNote", "SalesReceipt" }),
             ("Treasury", "IconAccounts", new[] { "Treasuries", "Receipts", "Payments", "ChequeReceipts", "ChequeIssues", "Cheques" }),
             ("Assets", "IconAssets", new[] { "Assets", "AssetCategories", "AssetRevaluations", "AssetDepreciations", "AssetDisposals" }),
-            ("HR", "IconHR", new[] { "Employees", "Departments", "JobTitles", "Attendances", "EmployeeAllowances", "EmployeeDeductions", "Payroll" }),
+            ("HR", "IconHR", new[] { "Employees", "HrLists", "Attendances", "EmployeeAllowances", "EmployeeDeductions", "EmployeeAdvances", "Payroll" }),
             ("Reports", "IconReports", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "AccountStatement", "CustomerStatement", "SupplierStatement", "ItemCard", "Payslip", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport", "AssetRegister", "AssetsByCategory" }),
             ("Settings", "IconSettings", new[] { "Settings", "Users", "Roles", "RolePermissions", "UserPermissions" }),
             ("Builder", "IconSettings", new[] { "BuilderSections", "BuilderModules", "BuilderColumns", "BuilderActions", "BuilderFilters", "BuilderExport" }),

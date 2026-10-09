@@ -1,9 +1,9 @@
-using PrimeERP.Application.Legacy.Builder;
+using PrimeERP.Application.PageServices.Builder;
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Parties;
-using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.PageServices.Parties;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;

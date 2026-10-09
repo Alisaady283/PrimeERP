@@ -10,8 +10,8 @@ using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Cheques;
 using PrimeERP.Application.DTOs.Parties;
-using PrimeERP.Application.Legacy.Cheques;
-using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.PageServices.Cheques;
+using PrimeERP.Application.PageServices.Parties;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
@@ -22,9 +22,9 @@ using PrimeERP.UI.Components.Inputs;
 using PrimeERP.UI.Services;
 using Xunit;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Application.DTOs.Treasury;
-using PrimeERP.Application.Legacy.Treasury;
+using PrimeERP.Application.PageServices.Treasury;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
 
@@ -61,7 +61,7 @@ namespace PrimeERP.Tests.Composition
             var accounts = _services.GetRequiredService<IAccountService>();
             var accountRepo = _services.GetRequiredService<IAccountRepository>();
             var bankAccount = accounts.Create(new CreateAccountDto
-            { ParentId = accountRepo.GetByCode("1204").Id, Name = "حساب بنك الشيكات", SkipAutoLink = true }).Value.Code;
+            { ParentId = accountRepo.GetByCode("1203003").Id, Name = "حساب بنك الشيكات", SkipAutoLink = true }).Value.Code;
             var bank = _services.GetRequiredService<ITreasuryService>().Create(new Treasury
             { Name = "بنك الاختبار", AccountCode = bankAccount, Kind = PrimeERP.Domain.Enums.TreasuryKind.Bank });
             Assert.True(bank.IsSuccess, bank.ErrorMessage);

@@ -1,0 +1,163 @@
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Application.Validation;
+using PrimeERP.Application.Services.Core;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Enums;
+using PrimeERP.Domain.Results;
+using PrimeERP.Data.Core;
+using PrimeERP.Data.Repositories;
+using PrimeERP.Platform.Audit;
+using PrimeERP.Platform.Localization;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.Platform.Settings;
+using Timer = System.Timers.Timer;
+
+namespace PrimeERP.Application.PageServices.Backup
+{
+    /// <summary>المكان الوحيد لأخذ/استعادة/التحقق من النسخ</summary>
+    public class BackupService : ServiceBase, IBackupService
+    {
+        protected override string PermissionPrefix => "Settings";
+        protected override string StringPrefix => "Str.Backup";
+        protected override string EntityName => "BackupHistory";
+
+        /// <summary>أقصى ما يقبله المؤقّت</summary>
+        private const int MaxIntervalHours = 576;
+
+        private readonly IBackupRepository _repo;
+        private Timer _autoTimer;
+        private bool _auto;
+
+        public BackupService(IPermissionService permissions, ISettingsProvider settings,
+                              ILocalizationService localization, IAuditLogger audit, IBackupRepository repo)
+            : base(permissions, settings, localization, audit)
+        {
+            _repo = repo;
+            settings.Changed += Restart;
+        }
+
+        public event Action<string> BackupFailed;
+
+        public Result<BackupHistoryRecord> Create(string folder = null, string note = null, BackupType type = BackupType.Manual)
+        {
+            if (!Can("Backup")) return Fail<BackupHistoryRecord>("PermissionDenied", ErrorCode.Unauthorized);
+
+            try
+            {
+                folder ??= _repo.FolderOf(Setting(SettingKeys.Backup.AutoBackupPath, ""));
+                var record = _repo.Snapshot(folder, note, type);
+                Audit.Log(EntityName, record.Id, AuditAction.Insert,
+                    newValue: new { record.FileName, record.SizeBytes }, details: Msg("CreatedLog", type));
+
+                var retentionCount = Setting(SettingKeys.Backup.RetentionCount, 10);
+                ApplyRetention(folder, retentionCount);
+
+                return Result.Ok(record);
+            }
+            catch (NotSupportedException)
+            {
+                return Fail<BackupHistoryRecord>("PostgreSqlUnsupported", ErrorCode.Unexpected);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail<BackupHistoryRecord>($"{Msg("CreateFailed")}: {ex.Message}", ErrorCode.Unexpected);
+            }
+        }
+
+        public Result Restore(string filePath)
+        {
+            if (!Can("Restore")) return Fail("RestorePermissionDenied", ErrorCode.Unauthorized);
+
+            var validation = Validate(filePath);
+            if (validation.IsFailure)
+                return Result.Fail(validation.ErrorMessage, validation.ErrorCode);
+
+            var safetyBackup = Create(note: Msg("PreRestoreNote"), type: BackupType.PreRestore);
+            if (safetyBackup.IsFailure)
+                return Result.Fail($"{Msg("SafetyBackupFailed")}: {safetyBackup.ErrorMessage}", ErrorCode.Unexpected);
+
+            try
+            {
+                _repo.RestoreFrom(filePath);
+
+                Audit.Log(EntityName, 0, AuditAction.Update, details: Msg("RestoredLog", Path.GetFileName(filePath)));
+                return Result.Ok();
+            }
+            catch (NotSupportedException)
+            {
+                return Fail("PostgreSqlUnsupported", ErrorCode.Unexpected);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail($"{Msg("RestoreFailed")}: {ex.Message}", ErrorCode.Unexpected);
+            }
+        }
+
+        public Result<bool> Validate(string filePath)
+        {
+            if (!File.Exists(filePath)) return Fail<bool>("FileNotFound", ErrorCode.NotFound);
+            if (new FileInfo(filePath).Length <= 0) return Fail<bool>("FileEmpty", ErrorCode.ValidationFailed);
+
+            var (ok, error) = _repo.Verify(filePath);
+            if (ok) return Result.Ok(true);
+
+            return string.IsNullOrEmpty(error)
+                ? Fail<bool>("NotAPrimeErpDatabase", ErrorCode.ValidationFailed)
+                : Result.Fail<bool>($"{Msg("CorruptFile")}: {error}", ErrorCode.Unexpected);
+        }
+
+        public List<BackupHistoryRecord> List(string folder = null) => _repo.InFolder(folder);
+
+        public Result ApplyRetention(string folder, int keepCount)
+        {
+            try
+            {
+                _repo.Prune(folder, keepCount);
+                return Result.Ok();
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail($"{Msg("RetentionFailed")}: {ex.Message}", ErrorCode.Unexpected);
+            }
+        }
+
+        public void StartAutoBackup()
+        {
+            StopAutoBackup();
+            _auto = true;
+
+            if (!Setting(SettingKeys.Backup.AutoBackupEnabled, false)) return;
+
+            var hours = Math.Clamp(Setting(SettingKeys.Backup.AutoBackupIntervalHours, 24), 1, MaxIntervalHours);
+
+            _autoTimer = new Timer(TimeSpan.FromHours(hours).TotalMilliseconds) { AutoReset = true };
+            _autoTimer.Elapsed += (s, e) => Scheduled();
+            _autoTimer.Start();
+        }
+
+        public void StopAutoBackup()
+        {
+            _auto = false;
+            _autoTimer?.Stop();
+            _autoTimer?.Dispose();
+            _autoTimer = null;
+        }
+
+        private void Scheduled()
+        {
+            var made = Create(note: Msg("ScheduledNote"), type: BackupType.Auto);
+            if (made.IsFailure) BackupFailed?.Invoke(Msg("ScheduledFailed", made.ErrorMessage));
+        }
+
+        /// <summary>المؤقّت يتبع إعداده</summary>
+        private void Restart(string key)
+        {
+            if (_auto && (key == SettingKeys.Backup.AutoBackupEnabled || key == SettingKeys.Backup.AutoBackupIntervalHours))
+                StartAutoBackup();
+        }
+    }
+}

@@ -17,7 +17,7 @@ namespace PrimeERP.Application.Services.Core
         {
             _repo.EnsureRow(key);
             var row = _repo.GetRow(key);
-            return Format(row.Prefix, DateTime.Now.Year, row.NextNumber, row.Padding, row.ResetYearly);
+            return $"{row.Prefix}{row.NextNumber}";
         }
 
         public string Next(string key)
@@ -35,16 +35,8 @@ namespace PrimeERP.Application.Services.Core
         private string NextCore(PrimeDbContext db, string key)
         {
             var row = _repo.GetRow(db, key);
-            var year = DateTime.Now.Year;
-            var number = row.ResetYearly && row.LastYear != year ? 1 : row.NextNumber;
-
-            _repo.UpdateNext(db, key, number + 1, year);
-
-            return Format(row.Prefix, year, number, row.Padding, row.ResetYearly);
+            _repo.UpdateNext(db, key, row.NextNumber + 1, DateTime.Now.Year);
+            return $"{row.Prefix}{row.NextNumber}";
         }
-
-        private static string Format(string prefix, int year, int number, int padding, bool yearly) =>
-            yearly ? $"{prefix}-{year}-{number.ToString("D" + padding)}"
-                   : $"{prefix}{number.ToString("D" + padding)}";
     }
 }

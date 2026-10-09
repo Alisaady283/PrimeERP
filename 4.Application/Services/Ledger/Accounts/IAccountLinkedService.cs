@@ -10,5 +10,6 @@ namespace PrimeERP.Application.Services.Ledger.Accounts
         Result CreateFromAccount(PrimeDbContext db, string accountCode, string name, string rootCode);
         Result UpdateNameFromAccount(PrimeDbContext db, string accountCode, string name);
         Result DeleteByAccountCode(PrimeDbContext db, string accountCode);
+        Result RepairMissingEntities();
     }
 }

@@ -1,5 +1,5 @@
 using PrimeERP.Application.DTOs.HR;
-using PrimeERP.Application.Legacy.HR;
+using PrimeERP.Application.PageServices.HR;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
@@ -37,32 +37,17 @@ namespace PrimeERP.UI.ViewModels
             : base(service, permissions, toast, dialogs) { }
     }
 
+    public class AdvanceViewModel : EmployeeMovementViewModel
+    {
+        public AdvanceViewModel(IAdvanceService service, IPermissionService permissions,
+            IToastService toast, IDialogService dialogs)
+            : base(service, permissions, toast, dialogs) { }
+    }
+
     public class DeductionViewModel : EmployeeMovementViewModel
     {
         public DeductionViewModel(IDeductionService service, IPermissionService permissions,
             IToastService toast, IDialogService dialogs)
             : base(service, permissions, toast, dialogs) { }
-    }
-
-    public class AttendanceViewModel : CrudViewModelBase<AttendanceDto, AttendanceFilter>
-    {
-        private readonly IAttendanceService _attendances;
-
-        public AttendanceViewModel(IAttendanceService attendances, IPermissionService permissions,
-            IToastService toast, IDialogService dialogs)
-            : base(permissions, toast, dialogs) => _attendances = attendances;
-
-        protected override string PermissionPrefix => "HR";
-
-        protected override Result<PagedResult<AttendanceDto>> FetchPage(int page, int pageSize, AttendanceFilter filter)
-        {
-            var f = filter ?? new AttendanceFilter();
-            f.SearchText = SearchText;
-            return _attendances.GetPaged(page, pageSize, f);
-        }
-
-        protected override int IdOf(AttendanceDto item) => item.Id;
-
-        protected override Result DeleteItem(int id) => _attendances.Delete(id);
     }
 }

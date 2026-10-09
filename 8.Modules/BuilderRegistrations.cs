@@ -1,5 +1,5 @@
-using PrimeERP.Application.Legacy.Builder;
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Builder;
+using PrimeERP.Application.PageServices.Admin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -201,9 +201,20 @@ namespace PrimeERP.Modules
                     .Select(l => new SourceOption
                     {
                         Id = l.Id,
-                        Display = string.IsNullOrWhiteSpace(l.Location) ? l.CustomerName : $"{l.CustomerName} — {l.Location}"
+                        Display = (string.IsNullOrWhiteSpace(l.Location) ? l.CustomerName : $"{l.CustomerName} — {l.Location}")
+                                  + (l.IsActive ? "" : $" ({LocalizationService.Get("Str.Builder.Stopped")})")
                     }).ToList(),
-                SourceNote = (services, id) => Licensed(services, id)?.Serial ?? "",
+                SourceNotes = new()
+                {
+                    new() { LabelKey = "Str.Builder.Serial", Value = (services, id) => Licensed(services, id)?.Serial ?? "" },
+                    new()
+                    {
+                        LabelKey = "Str.Builder.Version", Value = (services, id) => Licensed(services, id)?.Version ?? "",
+                        Save = (services, id, version) => services.GetRequiredService<ILicenseService>()
+                            .SetVersion(new EditionVersionDto { LicenseId = id, Version = version })
+                    },
+                    new() { LabelKey = "Str.Builder.VersionDate", Value = (services, id) => Licensed(services, id) is { Version.Length: > 0 } license ? $"{license.UpdatedAt:yyyy-MM-dd}" : "" },
+                },
                 BuildTree = (services, id) => LicenseTree(services, id),
                 ApplyRules = Inherit,
                 Save = (services, id, nodes) => CreateEdition(services, id, nodes),
@@ -211,11 +222,27 @@ namespace PrimeERP.Modules
                 {
                     new() { TextKey = "Str.Builder.NewSerial", Variant = "primary", RequiresSource = false, Run = (services, _, __) => NewSerial(services) },
                     new() { TextKey = "Str.Builder.Installer", RunAsync = (services, id, _) => CustomerInstaller(services, id) },
+                    new() { TextKey = "Str.Builder.ToggleCustomer", RunAsync = (services, id, _) => Task.FromResult(services.GetRequiredService<ILicenseService>().ToggleActive(id)) },
+                    new() { TextKey = "Str.Builder.DeleteCustomer", Variant = "danger", RunAsync = (services, id, _) => DeleteCustomer(services, id) },
                     new() { TextKey = "Str.SelectAll", RequiresSource = false, Run = (_, __, nodes) => SetAll(nodes, NodeCheckState.Checked) },
                     new() { TextKey = "Str.ClearAll",  RequiresSource = false, Run = (_, __, nodes) => SetAll(nodes, NodeCheckState.Unchecked) },
                 }
             }
         });
+
+        private static string CurrentVersion(IServiceProvider services) =>
+            services.GetRequiredService<Platform.Settings.ISettingsProvider>().Get(Platform.Settings.SettingKeys.Edition.Version, "") is { Length: > 0 } set
+                ? set : PrimeERP.Platform.AppInfo.Version;
+
+        private static async Task<Result> DeleteCustomer(IServiceProvider services, int licenseId)
+        {
+            var license = Licensed(services, licenseId);
+            if (license == null) return Result.Fail(LocalizationService.Get("Str.Builder.PickCustomer"), ErrorCode.ValidationFailed);
+
+            var confirmed = await services.GetRequiredService<UI.Services.IDialogService>().ConfirmAsync(
+                LocalizationService.Get("Str.Builder.DeleteCustomer"), LocalizationService.Get("Str.Builder.DeleteCustomerConfirm", license.CustomerName), isDangerous: true);
+            return confirmed ? services.GetRequiredService<ILicenseService>().Delete(licenseId) : Result.Fail(LocalizationService.Get("Str.Builder.CreateCancelled"), ErrorCode.ValidationFailed);
+        }
 
         private static LicenseDto Licensed(IServiceProvider services, int id) =>
             id <= 0 ? null : services.GetRequiredService<ILicenseService>().GetById(id).Value;
@@ -308,20 +335,23 @@ namespace PrimeERP.Modules
 
                 foreach (var key in group.Keys.Where(modules.ContainsKey))
                 {
-                    var tabbed = modules[key].LayoutKind == LayoutKind.Settings;
+                    var tabbed = modules[key].LayoutKind is LayoutKind.Settings or LayoutKind.Tabs;
                     var page = new TreeNodeViewModel
                     {
                         Id = key, DisplayText = LocalizationService.Get(modules[key].TitleKey), IsLeaf = !tabbed,
                         CheckState = NodeCheckState.Checked, IsCheckEnabled = !always
                     };
 
-                    if (tabbed)
-                        foreach (var (category, titleKey) in SettingsTabs.All)
-                            page.AddChild(new TreeNodeViewModel
-                            {
-                                Id = SettingsTabs.Key(category), DisplayText = LocalizationService.Get(titleKey), IsLeaf = true,
-                                CheckState = NodeCheckState.Checked, IsCheckEnabled = !always
-                            });
+                    var tabs = modules[key].LayoutKind == LayoutKind.Tabs
+                        ? modules[key].TabModules.Where(modules.ContainsKey).Select(tab => (Id: tab, TitleKey: modules[tab].TitleKey))
+                        : tabbed ? SettingsTabs.All.Select(t => (Id: SettingsTabs.Key(t.Category), t.TitleKey)) : Enumerable.Empty<(string Id, string TitleKey)>();
+
+                    foreach (var (id, titleKey) in tabs)
+                        page.AddChild(new TreeNodeViewModel
+                        {
+                            Id = id, DisplayText = LocalizationService.Get(titleKey), IsLeaf = true,
+                            CheckState = NodeCheckState.Checked, IsCheckEnabled = !always
+                        });
 
                     section.AddChild(page);
                 }
@@ -379,6 +409,21 @@ namespace PrimeERP.Modules
                 .SelectMany(page => page.Children.Where(tab => tab.CheckState == NodeCheckState.Checked)
                     .Select(tab => tab.Id).Prepend(page.Id))
                 .ToList();
+
+            var versioned = DialogRenderer.ShowAndSave(new DialogDefinition
+            {
+                TitleKey = "Str.Builder.Version", TitleEditKey = "Str.Builder.Version", GridColumns = 1,
+                ServiceType = typeof(ILicenseService),
+                CreateDtoType = typeof(EditionVersionDto), UpdateDtoType = typeof(EditionVersionDto),
+                CreateMethod = nameof(ILicenseService.SetVersion),
+                FixedValues = new() { [nameof(EditionVersionDto.LicenseId)] = licenseId },
+                Fields = new List<FieldDefinition>
+                {
+                    new() { Key = nameof(EditionVersionDto.Version), LabelKey = "Str.Builder.Version", Kind = FieldKind.Text, IsRequired = true, MaxLength = 20,
+                            DefaultValue = CurrentVersion(services) },
+                }
+            }, services, services.GetRequiredService<UI.Services.IToastService>());
+            if (!versioned) return Result.Fail(LocalizationService.Get("Str.Builder.CreateCancelled"), ErrorCode.ValidationFailed);
 
             var folder = FolderOutput.Pick(LocalizationService.Get("Str.Builder.ChooseFolder"));
 

@@ -8,6 +8,7 @@ namespace PrimeERP.Domain.Entities
         public string CustomerName { get; set; }
         public string Location     { get; set; }
         public string Serial       { get; set; }
+        public string Version      { get; set; }
 
         public string Manifest     { get; set; }
         public bool   Simplified   { get; set; }

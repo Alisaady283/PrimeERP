@@ -1,10 +1,14 @@
 using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Audit;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using PrimeERP.Data.Repositories;
+using PrimeERP.Domain.Calculations;
+using PrimeERP.Domain.Enums;
 using PrimeERP.Application.DTOs.Assets;
-using PrimeERP.Application.Legacy.Assets;
+using PrimeERP.Application.PageServices.Assets;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Localization;
@@ -14,28 +18,65 @@ namespace PrimeERP.Application.Reporting
     /// <summary>تقريرا الأصول</summary>
     public interface IAssetReportService
     {
-        Result<ReportData> Register(int? categoryId);
+        Result<ReportData> Register(DateTime from, DateTime to, int? categoryId);
         Result<ReportData> ByCategory();
     }
 
     public class AssetReportService : ReportServiceBase, IAssetReportService
     {
         private readonly IAssetService _assets;
+        private readonly IAssetDepreciationRepository _charges;
+        private readonly IAssetRevaluationRepository _revaluations;
+        private readonly IAssetDisposalRepository _disposals;
+        private readonly IPartyRepository<Supplier> _suppliers;
 
-        public AssetReportService(IAssetService assets, IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
-            : base(permissions, settings, localization, audit) => _assets = assets;
+        public AssetReportService(IAssetService assets, IAssetDepreciationRepository charges, IAssetRevaluationRepository revaluations,
+            IAssetDisposalRepository disposals, IPartyRepository<Supplier> suppliers,
+            IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit)
+            : base(permissions, settings, localization, audit)
+        {
+            _assets = assets; _charges = charges; _revaluations = revaluations; _disposals = disposals; _suppliers = suppliers;
+        }
 
-        public Result<ReportData> Register(int? categoryId)
+        public Result<ReportData> Register(DateTime from, DateTime to, int? categoryId)
         {
             var gate = Gate(); if (gate != null) return gate;
 
             var loaded = Load(categoryId);
             if (loaded.IsFailure) return Result.Fail<ReportData>(loaded.ErrorMessage);
 
-            var rows = loaded.Value.Select(Row).ToList();
+            var charges = _charges.UpTo(to).ToLookup(c => c.AssetId);
+            var revaluations = _revaluations.UpTo(to).ToLookup(r => r.AssetId);
+            var disposals = _disposals.UpTo(to).GroupBy(d => d.AssetId).ToDictionary(g => g.Key, g => g.First());
+            var suppliers = _suppliers.NamesOf(loaded.Value.Where(a => a.AcquisitionMethod == AssetAcquisition.Supplier && a.FundingId != null)
+                .Select(a => a.FundingId.Value));
 
-            return Result.Ok(new ReportData { Rows = rows, Totals = Totals(rows) });
+            var rows = loaded.Value
+                .Where(a => (a.PurchaseDate ?? from) <= to && !(disposals.TryGetValue(a.Id, out var gone) && gone.DisposalDate < from))
+                .OrderBy(a => a.CategoryName).ThenBy(a => a.Code)
+                .Select((a, i) =>
+                {
+                    var roll = AssetCalc.Roll(a, charges[a.Id], revaluations[a.Id], disposals.GetValueOrDefault(a.Id), from);
+                    return new AssetRegisterRow
+                    {
+                        No = i + 1, CategoryName = a.CategoryName, Name = a.Name, Code = a.Code,
+                        SupplierName = a.FundingId is int supplier ? suppliers.GetValueOrDefault(supplier) : null,
+                        PurchaseDate = a.PurchaseDate?.ToString("yyyy-MM-dd"), PurchaseCost = a.PurchaseCost,
+                        Additions = roll.Additions, Reductions = roll.Reductions, Rate = roll.Rate,
+                        AccumulatedStart = roll.AccumulatedStart, Charge = roll.Charge, AccumulatedEnd = roll.AccumulatedEnd, Net = roll.Net
+                    };
+                }).ToList();
+
+            return Result.Ok(new ReportData { Rows = rows, Totals = RollTotals(rows) });
         }
+
+        private static Dictionary<string, string> RollTotals(List<AssetRegisterRow> rows) => new()
+        {
+            ["Cost"] = $"{LocalizationService.Get("Str.Asset.Cost")}: {rows.Sum(r => r.PurchaseCost):N2}",
+            ["Charge"] = $"{LocalizationService.Get("Str.Asset.Charge")}: {rows.Sum(r => r.Charge):N2}",
+            ["AccumulatedEnd"] = $"{LocalizationService.Get("Str.Asset.AccumulatedEnd")}: {rows.Sum(r => r.AccumulatedEnd):N2}",
+            ["Net"] = $"{LocalizationService.Get("Str.Asset.NetValue")}: {rows.Sum(r => r.Net):N2}"
+        };
 
         public Result<ReportData> ByCategory()
         {

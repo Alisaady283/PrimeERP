@@ -1,7 +1,8 @@
-using PrimeERP.Application.Legacy.Security;
+using PrimeERP.Application.PageServices.Security;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Application.Services.Entities;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Entities.Common;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -11,23 +12,24 @@ using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.DTOs.Parties;
 using PrimeERP.Application.DTOs.Assets;
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Application.DTOs.HR;
-using PrimeERP.Application.Legacy.Assets;
-using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Application.PageServices.Assets;
+using PrimeERP.Application.PageServices.Common;
 using PrimeERP.Application.DTOs.Security;
 using PrimeERP.Application.DTOs.Sales;
-using PrimeERP.Application.Legacy.HR;
+using PrimeERP.Application.PageServices.HR;
 using PrimeERP.Application.DTOs.Purchasing;
-using PrimeERP.Application.Legacy.Purchasing;
-using PrimeERP.Application.Legacy.Sales;
-using PrimeERP.Application.Legacy.Inventory;
-using PrimeERP.Application.Legacy.Parties;
+using PrimeERP.Application.PageServices.Purchasing;
+using PrimeERP.Application.PageServices.Sales;
+using PrimeERP.Application.PageServices.Inventory;
+using PrimeERP.Application.PageServices.Parties;
 using PrimeERP.Composition.Definitions;
 using PrimeERP.Composition.Print;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Platform.Localization;
 using PrimeERP.Platform.Permissions;
+using PrimeERP.Platform.Settings;
 using PrimeERP.UI.Components.Display;
 using PrimeERP.UI.Components.Tree;
 using PrimeERP.UI.ViewModels;
@@ -178,7 +180,7 @@ namespace PrimeERP.Modules
                     ServiceType = typeof(IJournalService),
                     DtoType = typeof(CreateJournalDto),
                     LineDtoType = typeof(CreateJournalLineDto),
-                    LinesPropertyName = nameof(CreateJournalDto.Lines),
+                    LinesPropertyName = nameof(CreateJournalDto.Lines), DefaultLines = 2,
                     HeaderFields = new()
                     {
                         new() { Key = nameof(CreateJournalDto.EntryDate), LabelKey = "Str.EntryDate", Kind = FieldKind.Date, IsRequired = true },
@@ -242,36 +244,21 @@ namespace PrimeERP.Modules
             RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Edit", typeof(BrandsViewModel));
             RegisterLookup(registry, "AssetCategories", "Str.Module.AssetCategories", "AssetCategories.Add", "AssetCategories.Edit", typeof(AssetCategoriesViewModel));
 
-            registry.Register(new ModuleDefinition
-            {
-                Key = "Departments", TitleKey = "Str.Module.Departments", PermissionPrefix = "Departments",
-                ViewModelFactory = s => RowPage.ViewModel<Lookup<Department>>(s, "Departments"),
-                Columns = new()
-                {
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Department.Name), Width = 220, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(Department.IsActive), Width = 80, Align = ColumnAlign.Center },
-                },
-                Dialog = RowPage.Dialog<Lookup<Department>>("Str.Departments.Add", new List<FieldDefinition>
-                {
-                    new() { Key = nameof(Department.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                    new() { Key = nameof(Department.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
-                }, "Str.Departments.Edit", gridColumns: 1)
-            });
+            RegisterNameList<Department>(registry, "Departments");
+            RegisterNameList<JobTitle>(registry, "JobTitles");
+            RegisterNameList<AllowanceType>(registry, "AllowanceTypes");
+            RegisterNameList<DeductionType>(registry, "DeductionTypes");
+            RegisterNameList<LeaveType>(registry, "LeaveTypes",
+                (new() { Header = LocalizationService.Get("Str.LeaveType.DaysPerYear"), Binding = nameof(LeaveType.DaysPerYear), Width = 120, Align = ColumnAlign.Center },
+                 new() { Key = nameof(LeaveType.DaysPerYear), LabelKey = "Str.LeaveType.DaysPerYear", Kind = FieldKind.Number }),
+                (new() { Header = LocalizationService.Get("Str.LeaveType.IsPaid"), Binding = nameof(LeaveType.IsPaid), Width = 90, Align = ColumnAlign.Center },
+                 new() { Key = nameof(LeaveType.IsPaid), LabelKey = "Str.LeaveType.IsPaid", Kind = FieldKind.Check, DefaultValue = true }));
 
             registry.Register(new ModuleDefinition
             {
-                Key = "JobTitles", TitleKey = "Str.Module.JobTitles", PermissionPrefix = "JobTitles",
-                ViewModelFactory = s => RowPage.ViewModel<Lookup<JobTitle>>(s, "JobTitles"),
-                Columns = new()
-                {
-                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(JobTitle.Name), Width = 220, IsStarWidth = true },
-                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(JobTitle.IsActive), Width = 80, Align = ColumnAlign.Center },
-                },
-                Dialog = RowPage.Dialog<Lookup<JobTitle>>("Str.JobTitles.Add", new List<FieldDefinition>
-                {
-                    new() { Key = nameof(JobTitle.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
-                    new() { Key = nameof(JobTitle.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
-                }, "Str.JobTitles.Edit", gridColumns: 1)
+                Key = "HrLists", TitleKey = "Str.Module.HrLists", PermissionPrefix = "HrLists",
+                LayoutKind = LayoutKind.Tabs,
+                TabModules = new[] { "Departments", "JobTitles", "AllowanceTypes", "DeductionTypes", "LeaveTypes" }
             });
 
             registry.Register(new ModuleDefinition
@@ -361,6 +348,7 @@ namespace PrimeERP.Modules
                 Key = "AssetDepreciations",
                 TitleKey = "Str.Module.AssetDepreciations",
                 PermissionPrefix = "Assets",
+                EnabledActions = new[] { "delete", "print", "export", "refresh" },
                 ViewModelType = typeof(AssetDepreciationsViewModel),
                 RowActions = new()
                 {
@@ -369,7 +357,7 @@ namespace PrimeERP.Modules
                         Label = LocalizationService.Get("Str.Module.AssetDepreciations"), Variant = "primary", PermissionKey = "Assets.Create",
                         RequiresSelection = false,
                         Execute = (services, _) => services
-                            .GetRequiredService<PrimeERP.Application.Legacy.Assets.IAssetDepreciationService>()
+                            .GetRequiredService<PrimeERP.Application.PageServices.Assets.IAssetDepreciationService>()
                             .RunFor(DateTime.Today)
                     }
                 },
@@ -436,6 +424,8 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(AssetRevaluation.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
                         new() { Key = nameof(AssetRevaluation.RevaluationDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
                         new() { Key = nameof(AssetRevaluation.NewValue), LabelKey = "Str.Asset.NewValue", Kind = FieldKind.Number, Positive = true, Message = "Str.Asset.RevaluationZero" },
+                        new() { Key = nameof(AssetRevaluation.SalvageValue), LabelKey = "Str.Asset.Salvage", Kind = FieldKind.Number, Min = 0 },
+                        new() { Key = nameof(AssetRevaluation.UsefulLifeYears), LabelKey = "Str.Asset.RemainingLife", Kind = FieldKind.Number, Min = 0, Max = 100 },
                         new() { Key = nameof(AssetRevaluation.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }
                 }
@@ -474,7 +464,9 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(AssetDisposal.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
                         new() { Key = nameof(AssetDisposal.DisposalDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
-                        new() { Key = nameof(AssetDisposal.TreasuryId), LabelKey = "Str.Treasury", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Treasury" },
+                        new() { Key = nameof(AssetDisposal.Settlement), LabelKey = "Str.Asset.Acquisition", Kind = FieldKind.Picker, IsRequired = true, PickerType = "DisposalSettlement" },
+                        new() { Key = nameof(AssetDisposal.TreasuryId), LabelKey = "Str.Asset.Settlement", Kind = FieldKind.Picker, IsRequired = true,
+                                PickerType = "AssetFunding", PickerFilterField = nameof(AssetDisposal.Settlement) },
                         new() { Key = nameof(AssetDisposal.SalePrice), LabelKey = "Str.Asset.SalePrice", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
                         new() { Key = nameof(AssetDisposal.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
                     }
@@ -517,6 +509,8 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(Employee.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 120 },
                         new() { Key = nameof(Employee.HireDate), LabelKey = "Str.HireDate", Kind = FieldKind.Date, IsRequired = true },
                         new() { Key = nameof(Employee.BasicSalary), LabelKey = "Str.Salary", Kind = FieldKind.Number },
+                        new() { Key = nameof(Employee.WorkStart), LabelKey = "Str.Employee.WorkStart", Kind = FieldKind.Text, MaxLength = 5, DefaultSetting = SettingKeys.HR.WorkStart },
+                        new() { Key = nameof(Employee.WorkEnd), LabelKey = "Str.Employee.WorkEnd", Kind = FieldKind.Text, MaxLength = 5, DefaultSetting = SettingKeys.HR.WorkEnd },
                         new() { Key = nameof(Employee.Status), LabelKey = "Str.Status", Kind = FieldKind.Picker, PickerType = "EmployeeStatus", IsRequired = true,
                                 DefaultValue = (int)PrimeERP.Domain.Enums.EmployeeStatus.Active },
                         new() { Key = nameof(Employee.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
@@ -779,21 +773,24 @@ namespace PrimeERP.Modules
                 Columns = new()
                 {
                     new() { Header = LocalizationService.Get("Str.DocNo"), Binding = nameof(PayrollDto.PayrollNo), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.Month"), Binding = nameof(PayrollDto.Month), Width = 70, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Year"), Binding = nameof(PayrollDto.Year), Width = 80, Align = ColumnAlign.Center },
                     new() { Header = LocalizationService.Get("Str.PaymentDate"), Binding = nameof(PayrollDto.PaymentDate), Width = 110, Format = "yyyy-MM-dd" },
                     new() { Header = LocalizationService.Get("Str.NetTotal"), Binding = nameof(PayrollDto.NetTotal), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
                     new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(PayrollDto.StatusText), Width = 100, Align = ColumnAlign.Center },
                 },
-                RowActions = PayrollRowActions(),
                 DocumentDialog = new DocumentDialogDefinition
                 {
                     PrintTitleKey = "Str.Print.Title.Payroll",
                     TitleKey = "Str.Payroll.Add", TitleEditKey = "Str.Payroll.Edit",
                     ServiceType = typeof(IPayrollService), DtoType = typeof(CreatePayrollDto), LineDtoType = typeof(CreatePayrollLineDto),
-                    LinesPropertyName = nameof(CreatePayrollDto.Lines),
+                    LinesPropertyName = nameof(CreatePayrollDto.Lines), OpenBy = new[] { nameof(CreatePayrollDto.Month), nameof(CreatePayrollDto.Year) },
                     HeaderFields = new()
                     {
-                        new() { Key = nameof(CreatePayrollDto.PeriodStart), LabelKey = "Str.PeriodStart", Kind = FieldKind.Date, IsRequired = true },
-                        new() { Key = nameof(CreatePayrollDto.PeriodEnd), LabelKey = "Str.PeriodEnd", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreatePayrollDto.Month), LabelKey = "Str.Month", Kind = FieldKind.Picker, PickerType = "Month", IsRequired = true },
+                        new() { Key = nameof(CreatePayrollDto.Year), LabelKey = "Str.Year", Kind = FieldKind.Picker, PickerType = "Year", IsRequired = true },
+                        new() { Key = nameof(CreatePayrollDto.PeriodStart), LabelKey = "Str.PeriodStart", Kind = FieldKind.ReadOnly, DisplayFormat = "yyyy-MM-dd" },
+                        new() { Key = nameof(CreatePayrollDto.PeriodEnd), LabelKey = "Str.PeriodEnd", Kind = FieldKind.ReadOnly, DisplayFormat = "yyyy-MM-dd" },
                         new() { Key = nameof(CreatePayrollDto.PaymentDate), LabelKey = "Str.PaymentDate", Kind = FieldKind.Date, IsRequired = true },
                         new() { Key = nameof(CreatePayrollDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
                     },
@@ -848,14 +845,14 @@ namespace PrimeERP.Modules
                 {
                     PrintTitleKey = "Str.Print.Title.Opening",
                     TitleKey = "Str.Module.OpeningBalances", TitleEditKey = "Str.Module.OpeningBalances",
-                    ServiceType = typeof(PrimeERP.Application.Legacy.Accounting.IOpeningBalanceService),
+                    ServiceType = typeof(PrimeERP.Application.PageServices.Accounting.IOpeningBalanceService),
                     DtoType = typeof(CreateJournalDto), LineDtoType = typeof(CreateJournalLineDto),
-                    LinesPropertyName = nameof(CreateJournalDto.Lines), DocumentKind = "OpeningBalances",
+                    LinesPropertyName = nameof(CreateJournalDto.Lines), DocumentKind = "OpeningBalances", DefaultLines = 2,
                     HeaderFields = new()
                     {
                         new() { Key = nameof(CreateJournalDto.EntryDate), LabelKey = "Str.StartDate", Kind = FieldKind.Date, IsReadOnly = true },
                         new() { Key = nameof(CreateJournalDto.Description), LabelKey = "Str.Description", Kind = FieldKind.Text, IsReadOnly = true,
-                                DefaultValue = PrimeERP.Application.Legacy.Accounting.OpeningBalanceService.FixedDescription },
+                                DefaultValue = PrimeERP.Application.PageServices.Accounting.OpeningBalanceService.FixedDescription },
                     },
                     LineFields = new()
                     {
@@ -878,7 +875,7 @@ namespace PrimeERP.Modules
         private static DocumentDialogDefinition OpeningStockDialog() => new()
         {
             TitleKey = "Str.Module.OpeningStock", TitleEditKey = "Str.Module.OpeningStock",
-            ServiceType = typeof(PrimeERP.Application.Legacy.Inventory.IOpeningStockService),
+            ServiceType = typeof(PrimeERP.Application.PageServices.Inventory.IOpeningStockService),
             DtoType = typeof(CreateOpeningStockDto), LineDtoType = typeof(CreateOpeningStockLineDto),
             LinesPropertyName = nameof(CreateOpeningStockDto.Lines), DocumentKind = "OpeningStock",
             AllowPost = false,
@@ -900,25 +897,23 @@ namespace PrimeERP.Modules
         };
 
 
-        private static List<RowAction> PayrollRowActions() => new()
-        {
-            new()
+        private static void RegisterNameList<T>(IModuleRegistry registry, string key,
+            params (GridColumn Column, FieldDefinition Field)[] extras) where T : BaseModel, new() =>
+            registry.Register(new ModuleDefinition
             {
-                Label = LocalizationService.Get("Str.Action.Post"), Variant = "primary", PermissionKey = PermissionKeys.HR.PaySalary,
-                AppliesTo = item => IsPosted(item) is false,
-                Execute = (services, item) => services.GetRequiredService<IPayrollService>().Post(IdOf(item))
-            },
-            new()
-            {
-                Label = LocalizationService.Get("Str.Action.Unpost"), Variant = "secondary", PermissionKey = PermissionKeys.HR.PaySalary,
-                AppliesTo = item => IsPosted(item) is true,
-                Execute = (services, item) => services.GetRequiredService<IPayrollService>().Unpost(IdOf(item))
-            }
-        };
-
-        private static bool? IsPosted(object item) => item.GetType().GetProperty("IsPosted")?.GetValue(item) as bool?;
-
-        private static int IdOf(object item) => (int)item.GetType().GetProperty("Id").GetValue(item);
+                Key = key, TitleKey = $"Str.Module.{key}", PermissionPrefix = key,
+                ViewModelFactory = s => RowPage.ViewModel<Lookup<T>>(s, key),
+                Columns = new List<GridColumn>
+                {
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = "Name", Width = 220, IsStarWidth = true },
+                }.Concat(extras.Select(x => x.Column)).Append(
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = "IsActive", Width = 80, Align = ColumnAlign.Center }).ToList(),
+                Dialog = RowPage.Dialog<Lookup<T>>($"Str.{key}.Add", new List<FieldDefinition>
+                {
+                    new() { Key = "Name", LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                }.Concat(extras.Select(x => x.Field)).Append(
+                    new() { Key = "IsActive", LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true }).ToList(), $"Str.{key}.Edit", gridColumns: 1)
+            });
 
         private static void RegisterLookup(IModuleRegistry registry, string moduleKey, string titleKey, string addKey, string editKey, Type viewModelType)
         {

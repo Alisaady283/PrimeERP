@@ -5,7 +5,7 @@ using PrimeERP.Data.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PrimeERP.Application.Legacy.Common;
+using PrimeERP.Application.PageServices.Common;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;

@@ -1,0 +1,25 @@
+using System;
+using System.Collections.Generic;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Enums;
+using PrimeERP.Domain.Results;
+
+namespace PrimeERP.Application.PageServices.Backup
+{
+    /// <summary>عقد النسخ الاحتياطي</summary>
+    public interface IBackupService
+    {
+        Result<BackupHistoryRecord> Create(string folder = null, string note = null, BackupType type = BackupType.Manual);
+        Result Restore(string filePath);
+        Result<bool> Validate(string filePath);
+        List<BackupHistoryRecord> List(string folder = null);
+
+        Result ApplyRetention(string folder, int keepCount);
+
+        void StartAutoBackup();
+        void StopAutoBackup();
+
+        event Action<string> BackupFailed;
+    }
+}

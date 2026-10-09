@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Admin;
+using PrimeERP.Application.PageServices.Admin;
 using PrimeERP.Application.Services.Ledger;
 using PrimeERP.Data.Core;
 using System;
@@ -12,7 +12,7 @@ using PrimeERP.Platform.Settings;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Platform.Localization;
 using PrimeERP.UI.Services;
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Application.DTOs.Accounting;
 using Xunit;
 
@@ -182,7 +182,7 @@ namespace PrimeERP.Tests.Services
         public void ClosePeriod_WithUnpostedEntries_Fails()
         {
             var year = _service.CreateYear(new DateTime(2026, 1, 1), 12);
-            SeedEntry("2026-01-10", posted: false, ("1204", 100m, 0m), ("1203", 0m, 100m));
+            SeedEntry("2026-01-10", posted: false, ("12030070001", 100m, 0m), ("33", 0m, 100m));
 
             var result = _service.ClosePeriod(year.Value.Periods.First().Id);
 
@@ -249,8 +249,8 @@ namespace PrimeERP.Tests.Services
             Assert.True(revenueAccount.IsSuccess);
             Assert.True(expenseAccount.IsSuccess);
 
-            SeedPostedEntry("2026-01-05", (revenueAccount.Value.Code, 0m, 1000m), ("1204", 1000m, 0m));
-            SeedPostedEntry("2026-01-10", (expenseAccount.Value.Code, 400m, 0m), ("1204", 0m, 400m));
+            SeedPostedEntry("2026-01-05", (revenueAccount.Value.Code, 0m, 1000m), ("12030070001", 1000m, 0m));
+            SeedPostedEntry("2026-01-10", (expenseAccount.Value.Code, 400m, 0m), ("12030070001", 0m, 400m));
             _accounts.RecalculateAllBalances();
 
             var closePeriod = _service.ClosePeriod(year.Value.Periods.Single().Id);
@@ -288,7 +288,7 @@ namespace PrimeERP.Tests.Services
             var revenueAccount = _accounts.Create(new CreateAccountDto { ParentId = RevenueRootId(), Name = "إيراد 2", IsLeaf = true });
             Assert.True(revenueAccount.IsSuccess);
 
-            SeedPostedEntry("2026-01-05", (revenueAccount.Value.Code, 0m, 500m), ("1204", 500m, 0m));
+            SeedPostedEntry("2026-01-05", (revenueAccount.Value.Code, 0m, 500m), ("12030070001", 500m, 0m));
             _accounts.RecalculateAllBalances();
 
             _service.ClosePeriod(year.Value.Periods.Single().Id);

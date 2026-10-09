@@ -109,6 +109,15 @@ namespace PrimeERP.Application.Reporting
     /// <summary>سطر سجلّ الأصول</summary>
     public class AssetRegisterRow
     {
+        public int     No              { get; set; }
+        public string  SupplierName    { get; set; }
+        public decimal Additions       { get; set; }
+        public decimal Reductions      { get; set; }
+        public decimal Rate            { get; set; }
+        public decimal AccumulatedStart { get; set; }
+        public decimal Charge          { get; set; }
+        public decimal AccumulatedEnd  { get; set; }
+        public decimal Net             { get; set; }
         public string  Code            { get; set; }
         public string  Name            { get; set; }
         public string  CategoryName    { get; set; }

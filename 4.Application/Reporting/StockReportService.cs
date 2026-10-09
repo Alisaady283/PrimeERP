@@ -11,7 +11,7 @@ using PrimeERP.Platform.Audit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PrimeERP.Application.Legacy.Inventory;
+using PrimeERP.Application.PageServices.Inventory;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 

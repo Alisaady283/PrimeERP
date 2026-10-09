@@ -41,12 +41,10 @@ namespace PrimeERP.UI.Components.Shell
         public string        UserRole    { get => (string)GetValue(UserRoleProperty);           set => SetValue(UserRoleProperty, value); }
 
         public event EventHandler<string> NavigationRequested;
-        public event EventHandler NotificationsClicked;
-        public event EventHandler ProfileClicked;
         public event EventHandler PasswordChangeRequested;
         public event EventHandler LogoutRequested;
-        public event EventHandler LanguageToggled;
         public event EventHandler UpdateRequested;
+        public event EventHandler LanguageToggled;
 
         public object TopBarActionsContent { get => topBar.ActionsContent; set => topBar.ActionsContent = value; }
 
@@ -57,12 +55,10 @@ namespace PrimeERP.UI.Components.Shell
         {
             InitializeComponent();
 
-            topBar.NotificationsClicked     += (s, e) => NotificationsClicked?.Invoke(this, e);
-            topBar.ProfileClicked           += (s, e) => ProfileClicked?.Invoke(this, e);
             topBar.PasswordChangeRequested  += (s, e) => PasswordChangeRequested?.Invoke(this, e);
             topBar.LogoutRequested          += (s, e) => LogoutRequested?.Invoke(this, e);
-            topBar.LanguageToggled          += (s, e) => LanguageToggled?.Invoke(this, e);
             topBar.UpdateRequested          += (s, e) => UpdateRequested?.Invoke(this, e);
+            topBar.LanguageToggled          += (s, e) => LanguageToggled?.Invoke(this, e);
         }
 
         private static void OnNavItemsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

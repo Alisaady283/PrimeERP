@@ -22,6 +22,8 @@ namespace PrimeERP.Composition.Definitions
 
         public LayoutKind LayoutKind { get; init; } = LayoutKind.Grid;
 
+        public string[] TabModules { get; init; }
+
         public TreeLayoutOptions TreeOptions { get; init; }
 
         public DialogDefinition Dialog { get; init; }

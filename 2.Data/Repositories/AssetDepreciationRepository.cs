@@ -23,6 +23,8 @@ namespace PrimeERP.Data.Repositories
         int Insert(AssetDepreciation charge, PrimeDbContext db = null);
         void Delete(int id, PrimeDbContext db = null);
         void SetJournalEntryId(PrimeDbContext db, int id, int journalEntryId);
+        bool AnyAfter(int assetId, DateTime date, PrimeDbContext db = null);
+        List<AssetDepreciation> UpTo(DateTime to);
     }
 
     public class AssetDepreciationRepository : RepositoryBase<AssetDepreciation>, IAssetDepreciationRepository
@@ -68,8 +70,13 @@ namespace PrimeERP.Data.Repositories
 
         public int Insert(AssetDepreciation c, PrimeDbContext db = null) => Add(c, db);
 
+        public List<AssetDepreciation> UpTo(DateTime to) => Fetch(q => q.Where(c => c.PeriodDate <= to));
+
         public void Delete(int id, PrimeDbContext db = null) =>
             Remove(c => c.Id == id, db);
+
+        public bool AnyAfter(int assetId, DateTime date, PrimeDbContext db = null) =>
+            Any(q => q.Where(c => c.AssetId == assetId && c.PeriodDate > date), db);
 
         public void SetJournalEntryId(PrimeDbContext db, int id, int journalEntryId) =>
             Set(c => c.Id == id, s => s.SetProperty(r => r.JournalEntryId, journalEntryId), db);

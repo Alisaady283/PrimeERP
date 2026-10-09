@@ -11,10 +11,20 @@ namespace PrimeERP.Data.Seeders
             EnsureFromSetting(numberSequences, settings, "Customer", SettingKeys.Documents.CustomerPrefix, "C");
             EnsureFromSetting(numberSequences, settings, "Supplier", SettingKeys.Documents.SupplierPrefix, "S");
             EnsureFromSetting(numberSequences, settings, "Product",  SettingKeys.Documents.ProductPrefix,  "P");
+            EnsureFromSetting(numberSequences, settings, "SalesInvoice",    SettingKeys.Documents.SalesInvoicePrefix,    "INV");
+            EnsureFromSetting(numberSequences, settings, "PurchaseInvoice", SettingKeys.Documents.PurchaseInvoicePrefix, "PI");
 
-            numberSequences.EnsureRow("Treasury",  "TR", padding: 4, resetYearly: false);
-            numberSequences.EnsureRow("Warehouse", "WH", padding: 4, resetYearly: false);
+            foreach (var (key, prefix) in Prefixes) numberSequences.EnsureRow(key, prefix);
         }
+
+        private static readonly (string Key, string Prefix)[] Prefixes =
+        {
+            ("Treasury", "TR"), ("Warehouse", "WH"), ("Asset", "AS"), ("Employee", "EM"), ("Payroll", "PAY"),
+            ("SalesReturn", "SR"), ("PurchaseReturn", "PR"), ("Quotation", "QT"), ("SalesOrder", "SO"),
+            ("PurchaseRequest", "RQ"), ("PurchaseOrder", "PO"), ("GoodsReceipt", "GR"), ("GoodsIssue", "GI"),
+            ("DeliveryNote", "DN"), ("SalesReceipt", "SN"), ("StockIn", "IN"), ("StockOut", "OUT"),
+            ("StockTransfer", "TRF"), ("StockMovement", "MV"), ("ReceiptVoucher", "RV"), ("PaymentVoucher", "PV"),
+        };
 
         private static void EnsureFromSetting(INumberSequenceRepository numberSequences, ISettingStore settings,
             string key, string settingKey, string fallbackPrefix)

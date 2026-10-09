@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Modules;
 using PrimeERP.Platform.Permissions;
@@ -35,7 +35,7 @@ namespace PrimeERP.Tests.Services
         {
             var first  = Leaf("1202", "عميل أ");
             var second = Leaf("1202", "عميل ب");
-            var cash   = Leaf("1204", "صندوق");
+            var cash   = Leaf("1203007", "صندوق");
 
             var journal = _db.Services.GetRequiredService<IJournalService>();
 

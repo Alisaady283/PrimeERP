@@ -9,7 +9,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Accounting;
-using PrimeERP.Application.Legacy.Accounting;
+using PrimeERP.Application.PageServices.Accounting;
 using PrimeERP.Composition.Registry;
 using PrimeERP.Composition.Renderers;
 using PrimeERP.Data.Repositories;
@@ -37,7 +37,7 @@ namespace PrimeERP.Tests.Composition
             var accounts = _db.Services.GetRequiredService<IAccountRepository>();
             var svc = _db.Services.GetRequiredService<IAccountService>();
 
-            var cashParentId = accounts.GetByCode("1204").Id;
+            var cashParentId = accounts.GetByCode("1203007").Id;
             var salesParentId = accounts.GetByCode("41").Id;
 
             var cash = svc.Create(new CreateAccountDto { ParentId = cashParentId, Name = "صندوق اختباري", IsLeaf = true });

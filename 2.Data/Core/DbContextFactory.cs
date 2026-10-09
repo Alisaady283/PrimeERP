@@ -43,7 +43,7 @@ namespace PrimeERP.Data.Core
         public static T RunTransaction<T>(Func<PrimeDbContext, T> action)
         {
             using var db = Open();
-            using var tx = db.Database.BeginTransaction();
+            using var tx = db.Database.BeginTransaction(System.Data.IsolationLevel.Serializable);
             try
             {
                 var result = action(db);

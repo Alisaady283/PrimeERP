@@ -10,6 +10,7 @@ namespace PrimeERP.Domain.Entities
         public string   AssetName    { get; set; }
         public System.DateTime DisposalDate { get; set; }
 
+        public Enums.DisposalSettlement Settlement { get; set; } = Enums.DisposalSettlement.Cash;
         public int      TreasuryId   { get; set; }
         public string   TreasuryName { get; set; }
         public decimal  SalePrice    { get; set; }

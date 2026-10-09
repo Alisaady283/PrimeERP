@@ -69,6 +69,12 @@ namespace PrimeERP.Composition.Definitions
 
         public string PrintTitleKey { get; init; }
 
+        public string[] OpenBy { get; init; }
+
+        public bool FixedLines { get; init; }
+
+        public int DefaultLines { get; init; } = 1;
+
         public List<PrintColumnDefinition> PrintColumns { get; init; }
 
         public List<PrintTotalDefinition> PrintTotals { get; init; }

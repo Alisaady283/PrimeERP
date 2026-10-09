@@ -1,4 +1,4 @@
-using PrimeERP.Application.Legacy.Builder;
+using PrimeERP.Application.PageServices.Builder;
 using PrimeERP.Tests.Helpers;
 using System;
 using System.Collections.Generic;
@@ -258,7 +258,7 @@ namespace PrimeERP.Tests.Services
             var built = catalog.Columns(moduleId);
             catalog.EnsureBuiltTable(module, built);
 
-            var rows = new PrimeERP.Application.Legacy.Builder.DynamicEntityService(module, built,
+            var rows = new PrimeERP.Application.PageServices.Builder.DynamicEntityService(module, built,
                 _db.Services.GetRequiredService<IPermissionService>(),
                 _db.Services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>(),
                 _db.Services.GetRequiredService<PrimeERP.Platform.Localization.ILocalizationService>(),

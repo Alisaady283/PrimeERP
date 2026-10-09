@@ -89,8 +89,8 @@ namespace PrimeERP.Composition.Print
                 .Select(item => columns.ToDictionary(c => c.Key, c => item.GetType().GetProperty(c.Key)?.GetValue(item)))
                 .ToList();
 
-            var section = new PrintSection { Type = PrintSectionType.Table, Columns = columns, Rows = rows };
-            if (rows.Count > 0) section.TotalsRow = TotalsRow(columns, rows);
+            var sections = new List<PrintSection> { new() { Type = PrintSectionType.Table, Columns = columns, Rows = rows } };
+            if (result.Totals is { Count: > 0 }) sections.Add(new() { Type = PrintSectionType.Text, Text = "\n\n" + string.Join(Environment.NewLine + Environment.NewLine, result.Totals.Values.Select(v => v.Replace(" / ", " | "))) });
 
             return new ComposedPrintable
             {
@@ -98,7 +98,7 @@ namespace PrimeERP.Composition.Print
                 Subtitle = result.SubTitle ?? result.GeneratedAt.ToString("yyyy-MM-dd HH:mm"),
                 Orientation = orientation,
                 Signatures = new(),
-                Sections = new() { section }
+                Sections = sections
             };
         }
 

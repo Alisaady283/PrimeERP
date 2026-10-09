@@ -7,8 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.HR;
-using PrimeERP.Application.Legacy.Accounting;
-using PrimeERP.Application.Legacy.HR;
+using PrimeERP.Application.PageServices.Accounting;
+using PrimeERP.Application.PageServices.HR;
 using PrimeERP.Platform.Permissions;
 using Xunit;
 
@@ -23,6 +23,8 @@ namespace PrimeERP.Tests.Services
         public PayrollServiceTests()
         {
             AppSession.DevMode = true;
+            _db.Services.GetRequiredService<PrimeERP.Application.PageServices.Admin.ISettingsService>()
+                .Set(PrimeERP.Platform.Settings.SettingKeys.Edition.PayrollPays, false);
 
             var departments = _db.Services.GetRequiredService<Lookup<Department>>();
             var jobTitles = _db.Services.GetRequiredService<Lookup<JobTitle>>();
@@ -52,12 +54,12 @@ namespace PrimeERP.Tests.Services
         };
 
         [Fact]
-        public void ANewPayroll_IsADraftWithNoJournal()
+        public void ANewPayroll_PostsItsEntry()
         {
             var result = Payrolls.Create(TheExample());
 
             Assert.True(result.IsSuccess, result.ErrorMessage);
-            Assert.False(result.Value.IsPosted, "المسير رُحِّل عند الإنشاء — والترحيل زرٌّ مستقلّ");
+            Assert.True(result.Value.IsPosted);
             Assert.Equal(23300m, result.Value.NetTotal);   // 25300 − 2000
         }
 
@@ -83,29 +85,24 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void PostingProvesTheAccrual_AndLeavesTheTreasuryUntouched()
         {
-            var payrollId = Payrolls.Create(TheExample()).Value.Id;
-
-            var posted = Payrolls.Post(payrollId);
-            Assert.True(posted.IsSuccess, posted.ErrorMessage);
-            Assert.True(Payrolls.GetById(payrollId).Value.IsPosted);
+            var created = Payrolls.Create(TheExample());
+            Assert.True(created.IsSuccess, created.ErrorMessage);
 
             var balances = PostedBalances();
 
-            Assert.Equal(24000m, balances["5101"]);
-            Assert.Equal(1300m, balances["5102"]);
+            Assert.Equal(25300m, balances["53"]);
 
-            Assert.Equal(-23300m, balances["2102"]);
-            Assert.Equal(-1000m, balances["2103"]);
-            Assert.Equal(-500m, balances["2104"]);
+            Assert.Equal(-23300m, balances["2202004"]);
+            Assert.Equal(-1000m, balances["2202003"]);
+            Assert.Equal(-500m, balances["2203003"]);
 
-            Assert.False(balances.ContainsKey("1204"), "المسير مسّ الخزينة — والصرف مستندٌ مستقلّ");
+            Assert.False(balances.ContainsKey("12030070001"), "المسير مسّ الخزينة — والصرف مستندٌ مستقلّ");
         }
 
         [Fact]
         public void TheAdvanceIsWithheld_OnTheEmployeesOwnAccount()
         {
-            var payrollId = Payrolls.Create(TheExample()).Value.Id;
-            Payrolls.Post(payrollId);
+            Payrolls.Create(TheExample());
 
             var employeeAccount = _db.Services.GetRequiredService<IEmployeeService>()
                 .GetPaged(1, 10).Value.Items.First(e => e.Code == _employeeCode);
@@ -120,7 +117,7 @@ namespace PrimeERP.Tests.Services
         [Fact]
         public void TheEntryIsBalanced()
         {
-            Payrolls.Post(Payrolls.Create(TheExample()).Value.Id);
+            Payrolls.Create(TheExample());
 
             var trial = _db.Services.GetRequiredService<IJournalService>()
                 .GetTrialBalance(DateTime.Today.AddDays(-1), DateTime.Today.AddDays(1)).Value;
@@ -130,13 +127,11 @@ namespace PrimeERP.Tests.Services
         }
 
         [Fact]
-        public void UnpostingRemovesTheEntry()
+        public void DeletingRemovesTheEntry()
         {
             var payrollId = Payrolls.Create(TheExample()).Value.Id;
-            Payrolls.Post(payrollId);
 
-            Assert.True(Payrolls.Unpost(payrollId).IsSuccess);
-            Assert.False(Payrolls.GetById(payrollId).Value.IsPosted);
+            Assert.True(Payrolls.Delete(payrollId).IsSuccess);
             Assert.Empty(PostedBalances());
         }
 
@@ -162,15 +157,6 @@ namespace PrimeERP.Tests.Services
             Assert.Equal(23300m, line.NetSalary);
         }
 
-
-        [Fact]
-        public void PostingTwice_IsRefused()
-        {
-            var payrollId = Payrolls.Create(TheExample()).Value.Id;
-            Payrolls.Post(payrollId);
-
-            Assert.False(Payrolls.Post(payrollId).IsSuccess);
-        }
 
         private Dictionary<string, decimal> PostedBalances() =>
             _db.Services.GetRequiredService<IJournalService>()

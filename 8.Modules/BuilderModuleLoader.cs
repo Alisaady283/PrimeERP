@@ -1,5 +1,5 @@
 using PrimeERP.Domain.Calculations;
-using PrimeERP.Application.Legacy.Builder;
+using PrimeERP.Application.PageServices.Builder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -71,7 +71,8 @@ namespace PrimeERP.Modules
             registry.Register(coded with
             {
                 Columns = merged,
-                EnabledActions = actions.Select(a => a.ActionKey).ToArray(),
+                EnabledActions = actions.Select(a => a.ActionKey)
+                    .Where(key => coded.EnabledActions == null || coded.EnabledActions.Contains(key)).ToArray(),
                 Filters = coded.Report != null ? coded.Filters : Filters(filters, built, coded),
                 Report = coded.Report == null ? null
                     : coded.Report with { Columns = merged, Parameters = Parameters(filters, coded.Report) }
@@ -229,7 +230,8 @@ namespace PrimeERP.Modules
                 return written.TryGetValue(row.Name ?? "", out var column)
                     ? column with
                       {
-                          Header = row.Header, Width = width, Footer = Footer(row.Footer),
+                          Header = LocalizationService.CurrentLanguage == AppLanguage.Ar ? row.Header : column.Header,
+                          Width = width, Footer = Footer(row.Footer),
                           IsStarWidth = proportional || column.IsStarWidth
                       }
                     : Column(row) with { Width = width, IsStarWidth = proportional };
