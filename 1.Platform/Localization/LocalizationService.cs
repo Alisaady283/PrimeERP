@@ -17,6 +17,11 @@ namespace PrimeERP.Platform.Localization
 
         public static event EventHandler LanguageChanged;
 
+        public static string Pick(string arabic, string english, string fallback = null) =>
+            CurrentLanguage == AppLanguage.En
+                ? (!string.IsNullOrWhiteSpace(english) ? english : !string.IsNullOrWhiteSpace(fallback) ? fallback : arabic)
+                : (!string.IsNullOrWhiteSpace(arabic) ? arabic : fallback);
+
         public static FlowDirection Flow => CurrentLanguage == AppLanguage.Ar ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
 
         public static void Apply(AppLanguage language)

@@ -141,7 +141,7 @@ namespace PrimeERP.Modules
 
             var ordered = filters.OrderBy(f => f.SortOrder)
                 .Where(f => written.ContainsKey(f.Key))
-                .Select(f => written[f.Key] with { LabelKey = f.Label })
+                .Select(f => written[f.Key] with { LabelKey = LocalizationService.Pick(f.Label, f.LabelEn, written[f.Key].LabelKey) })
                 .ToList();
 
             return ordered.Concat(coded.Parameters.Where(p => ordered.All(o => o.Key != p.Key))).ToList();
@@ -150,6 +150,8 @@ namespace PrimeERP.Modules
         private static ModuleDefinition Build(BuilderModule module, List<BuilderColumn> columns,
             List<BuilderAction> actions, List<BuilderFilter> filters, HashSet<string> built)
         {
+            var title = LocalizationService.Pick(module.Title, module.TitleEn);
+
             DynamicEntityService Service(IServiceProvider s) => new(module, columns,
                 s.GetRequiredService<IPermissionService>(), s.GetRequiredService<ISettingsProvider>(),
                 s.GetRequiredService<ILocalizationService>(), s.GetRequiredService<IAuditLogger>());
@@ -157,11 +159,11 @@ namespace PrimeERP.Modules
             if (module.Kind == BuilderKind.Report)
                 return new ModuleDefinition
                 {
-                    Key = module.Key, TitleKey = module.Title, PermissionPrefix = module.Key,
+                    Key = module.Key, TitleKey = title, PermissionPrefix = module.Key,
                     LayoutKind = LayoutKind.Report,
                     Report = new ReportDefinition
                     {
-                        Key = module.Key, TitleKey = module.Title, PermissionKey = $"{module.Key}.View",
+                        Key = module.Key, TitleKey = title, PermissionKey = $"{module.Key}.View",
                         ServiceType = typeof(IBuilderReportService),
                         Method = nameof(IBuilderReportService.Rows),
                         Arguments = new[] { "ModuleKey", "From", "To" },
@@ -174,7 +176,7 @@ namespace PrimeERP.Modules
             return new ModuleDefinition
             {
                 Key = module.Key,
-                TitleKey = module.Title,
+                TitleKey = title,
                 PermissionPrefix = module.Key,
                 ViewModelFactory = s => new DynamicViewModel(Service(s), module.Key,
                     s.GetRequiredService<IPermissionService>(),
@@ -185,7 +187,7 @@ namespace PrimeERP.Modules
                 EnabledActions = actions.Count == 0 ? null : actions.Select(a => a.ActionKey).ToArray(),
                 Dialog = module.Kind != BuilderKind.Record ? null : new DialogDefinition
                 {
-                    TitleKey = module.Title, TitleEditKey = module.Title,
+                    TitleKey = title, TitleEditKey = title,
                     ServiceType = typeof(DynamicEntityService),
                     ServiceFactory = s => Service(s),
                     CreateDtoType = typeof(ExpandoObject),
@@ -194,7 +196,7 @@ namespace PrimeERP.Modules
                 },
                 DocumentDialog = module.Kind != BuilderKind.Movement ? null : new DocumentDialogDefinition
                 {
-                    TitleKey = module.Title, TitleEditKey = module.Title,
+                    TitleKey = title, TitleEditKey = title,
                     ServiceType = typeof(DynamicEntityService),
                     ServiceFactory = s => Service(s),
                     DtoType = typeof(ExpandoObject),
@@ -230,7 +232,7 @@ namespace PrimeERP.Modules
                 return written.TryGetValue(row.Name ?? "", out var column)
                     ? column with
                       {
-                          Header = LocalizationService.CurrentLanguage == AppLanguage.Ar ? row.Header : column.Header,
+                          Header = LocalizationService.CurrentLanguage == AppLanguage.Ar ? row.Header : LocalizationService.Pick(row.Header, row.HeaderEn, column.Header),
                           Width = width, Footer = Footer(row.Footer),
                           IsStarWidth = proportional || column.IsStarWidth
                       }
@@ -243,7 +245,7 @@ namespace PrimeERP.Modules
 
         private static GridColumn Column(BuilderColumn c) => new()
         {
-            Header = c.Header,
+            Header = LocalizationService.Pick(c.Header, c.HeaderEn),
             Binding = c.Name,
             Width = c.Width,
             Align = c.DataType is BuilderDataType.Number or BuilderDataType.Money ? ColumnAlign.Center : ColumnAlign.Auto,
@@ -260,7 +262,7 @@ namespace PrimeERP.Modules
                 .Select(c => new FieldDefinition
                 {
                     Key = c.Name,
-                    LabelKey = c.Header,
+                    LabelKey = LocalizationService.Pick(c.Header, c.HeaderEn),
                     Kind = Kind(c.DataType),
                     IsRequired = c.IsRequired,
                     MaxLength = c.MaxLength ?? 0,
@@ -272,7 +274,7 @@ namespace PrimeERP.Modules
                 .Select(c => new LineFieldDefinition
                 {
                     Key = c.Name,
-                    Header = c.Header,
+                    Header = LocalizationService.Pick(c.Header, c.HeaderEn),
                     Kind = Kind(c.DataType),
                     Width = c.Width,
                     IsRequired = c.IsRequired,
@@ -308,7 +310,7 @@ namespace PrimeERP.Modules
             return new FilterDefinition
             {
                 Key = filter.Key,
-                LabelKey = string.IsNullOrWhiteSpace(filter.Label) ? declared?.LabelKey : filter.Label,
+                LabelKey = LocalizationService.Pick(filter.Label, filter.LabelEn, declared?.LabelKey),
                 Kind = filter.Kind == "Toggle" ? FilterKind.Toggle : FilterKind.Combo,
                 PickerType = declared?.PickerType ?? Reference(filter.RefModule, built),
                 PickerCategoryModuleKey = declared?.PickerCategoryModuleKey

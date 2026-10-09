@@ -44,12 +44,14 @@ namespace PrimeERP.Modules
             {
                 new() { Header = LocalizationService.Get("Str.Builder.Key"), Binding = nameof(BuilderSection.Key), Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Title"), Binding = nameof(BuilderSection.Title), Width = 240, IsStarWidth = true },
+                new() { Header = LocalizationService.Get("Str.Builder.TitleEn"), Binding = nameof(BuilderSection.TitleEn), Width = 200 },
                 new() { Header = LocalizationService.Get("Str.Builder.Order"), Binding = nameof(BuilderSection.SortOrder), Width = 90, Align = ColumnAlign.Center },
             },
             Dialog = RowPage.Dialog<BuilderSectionsService>("Str.Builder.Section", new()
             {
                 new() { Key = nameof(BuilderSection.Key), LabelKey = "Str.Builder.Key", Kind = FieldKind.Text, IsRequired = true, MaxLength = 60 },
                 new() { Key = nameof(BuilderSection.Title), LabelKey = "Str.Builder.Title", Kind = FieldKind.Text, IsRequired = true, MaxLength = 120 },
+                new() { Key = nameof(BuilderSection.TitleEn), LabelKey = "Str.Builder.TitleEn", Kind = FieldKind.Text, MaxLength = 120 },
                 new() { Key = nameof(BuilderSection.IconKey), LabelKey = "Str.Builder.Icon", Kind = FieldKind.Text, MaxLength = 60 },
             })
         });
@@ -66,6 +68,7 @@ namespace PrimeERP.Modules
             {
                 new() { Header = LocalizationService.Get("Str.Builder.Key"), Binding = nameof(BuilderModule.Key), Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Title"), Binding = nameof(BuilderModule.Title), Width = 220, IsStarWidth = true },
+                new() { Header = LocalizationService.Get("Str.Builder.TitleEn"), Binding = nameof(BuilderModule.TitleEn), Width = 180 },
                 new() { Header = LocalizationService.Get("Str.Builder.Sections"), Binding = "SectionName", Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Kind"), Binding = "KindName", Width = 100, Align = ColumnAlign.Center },
                 new() { Header = LocalizationService.Get("Str.Builder.Order"), Binding = nameof(BuilderModule.SortOrder), Width = 80, Align = ColumnAlign.Center },
@@ -77,6 +80,7 @@ namespace PrimeERP.Modules
                 new() { Key = nameof(BuilderModule.SectionId), LabelKey = "Str.Builder.Sections", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderSection" },
                 new() { Key = nameof(BuilderModule.Key), LabelKey = "Str.Builder.Key", Kind = FieldKind.Text, IsRequired = true, MaxLength = 60, IsReadOnlyOnEdit = true },
                 new() { Key = nameof(BuilderModule.Title), LabelKey = "Str.Builder.Title", Kind = FieldKind.Text, IsRequired = true, MaxLength = 160 },
+                new() { Key = nameof(BuilderModule.TitleEn), LabelKey = "Str.Builder.TitleEn", Kind = FieldKind.Text, MaxLength = 160 },
                 new() { Key = nameof(BuilderModule.TableName), LabelKey = "Str.Builder.Table", Kind = FieldKind.Text, MaxLength = 60,
                         VisibleWhenField = nameof(BuilderModule.Kind), VisibleWhenValue = (int)Domain.Enums.BuilderKind.Record },
                 new() { Key = nameof(BuilderModule.LineTable), LabelKey = "Str.Builder.LineTable", Kind = FieldKind.Text, MaxLength = 60,
@@ -102,6 +106,7 @@ namespace PrimeERP.Modules
             {
                 new() { Header = LocalizationService.Get("Str.Builder.ColumnName"), Binding = nameof(BuilderColumn.Name), Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Header"), Binding = nameof(BuilderColumn.Header), Width = 200, IsStarWidth = true },
+                new() { Header = LocalizationService.Get("Str.Builder.HeaderEn"), Binding = nameof(BuilderColumn.HeaderEn), Width = 180 },
                 new() { Header = LocalizationService.Get("Str.Builder.Modules"), Binding = "ModuleName", Width = 160 },
                 new() { Header = LocalizationService.Get("Str.Builder.Sections"), Binding = "SectionName", Width = 140 },
                 new() { Header = LocalizationService.Get("Str.Builder.Kind"), Binding = nameof(BuilderColumn.DataType), Width = 110, Align = ColumnAlign.Center },
@@ -112,6 +117,7 @@ namespace PrimeERP.Modules
             {
                 new() { Key = nameof(BuilderColumn.ModuleId), LabelKey = "Str.Builder.Modules", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderModule" },
                 new() { Key = nameof(BuilderColumn.Header), LabelKey = "Str.Builder.Header", Kind = FieldKind.Text, IsRequired = true, MaxLength = 120 },
+                new() { Key = nameof(BuilderColumn.HeaderEn), LabelKey = "Str.Builder.HeaderEn", Kind = FieldKind.Text, MaxLength = 120 },
                 new() { Key = nameof(BuilderColumn.Name), LabelKey = "Str.Builder.ColumnName", Kind = FieldKind.Text, IsRequired = true, MaxLength = 60 },
                 new() { Key = nameof(BuilderColumn.DataType), LabelKey = "Str.Builder.DataType", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderDataType" },
                 new() { Key = nameof(BuilderColumn.RefModule), LabelKey = "Str.Builder.FromTable", Kind = FieldKind.Picker, PickerType = "BuilderModule",
@@ -182,6 +188,7 @@ namespace PrimeERP.Modules
                 new() { Key = nameof(BuilderFilter.ModuleId), LabelKey = "Str.Builder.Modules", Kind = FieldKind.Picker, IsRequired = true, PickerType = "BuilderModule" },
                 new() { Key = nameof(BuilderFilter.Key), LabelKey = "Str.Builder.Key", Kind = FieldKind.Text, IsRequired = true, MaxLength = 60 },
                 new() { Key = nameof(BuilderFilter.Label), LabelKey = "Str.Builder.Header", Kind = FieldKind.Text, MaxLength = 120 },
+                new() { Key = nameof(BuilderFilter.LabelEn), LabelKey = "Str.Builder.HeaderEn", Kind = FieldKind.Text, MaxLength = 120 },
                 new() { Key = nameof(BuilderFilter.Kind), LabelKey = "Str.Builder.Kind", Kind = FieldKind.Picker, PickerType = "BuilderFilterKind" },
                 new() { Key = nameof(BuilderFilter.RefModule), LabelKey = "Str.Builder.FromTable", Kind = FieldKind.Picker, PickerType = "BuilderModule" },
             })
@@ -196,7 +203,7 @@ namespace PrimeERP.Modules
                 TitleKey = "Str.Builder.Export",
                 SourceLabelKey = "Str.Builder.Customer",
                 Mode = TreeCheckMode.TwoState,
-                SaveTextKey = "Str.Builder.CreateProgram",
+                SaveTextKey = "Str.Save",
                 SourceItems = services => services.GetRequiredService<ILicenseService>().GetAll().Value
                     .Select(l => new SourceOption
                     {
@@ -217,10 +224,11 @@ namespace PrimeERP.Modules
                 },
                 BuildTree = (services, id) => LicenseTree(services, id),
                 ApplyRules = Inherit,
-                Save = (services, id, nodes) => CreateEdition(services, id, nodes),
+                Save = (services, id, nodes) => Task.FromResult(services.GetRequiredService<ILicenseService>().SaveManifest(id, Keys(nodes))),
                 Actions = new List<TreeCheckListAction>
                 {
                     new() { TextKey = "Str.Builder.NewSerial", Variant = "primary", RequiresSource = false, Run = (services, _, __) => NewSerial(services) },
+                    new() { TextKey = "Str.Builder.CreateProgram", RunAsync = (services, id, nodes) => CreateEdition(services, id, nodes) },
                     new() { TextKey = "Str.Builder.Installer", RunAsync = (services, id, _) => CustomerInstaller(services, id) },
                     new() { TextKey = "Str.Builder.ToggleCustomer", RunAsync = (services, id, _) => Task.FromResult(services.GetRequiredService<ILicenseService>().ToggleActive(id)) },
                     new() { TextKey = "Str.Builder.DeleteCustomer", Variant = "danger", RunAsync = (services, id, _) => DeleteCustomer(services, id) },
@@ -230,9 +238,12 @@ namespace PrimeERP.Modules
             }
         });
 
-        private static string CurrentVersion(IServiceProvider services) =>
-            services.GetRequiredService<Platform.Settings.ISettingsProvider>().Get(Platform.Settings.SettingKeys.Edition.Version, "") is { Length: > 0 } set
-                ? set : PrimeERP.Platform.AppInfo.Version;
+        private static List<string> Keys(List<TreeNodeViewModel> roots) =>
+            roots.SelectMany(section => section.Children)
+                .Where(page => page.CheckState == NodeCheckState.Checked)
+                .SelectMany(page => page.Children.Where(tab => tab.CheckState == NodeCheckState.Checked)
+                    .Select(tab => tab.Id).Prepend(page.Id))
+                .ToList();
 
         private static async Task<Result> DeleteCustomer(IServiceProvider services, int licenseId)
         {
@@ -404,26 +415,7 @@ namespace PrimeERP.Modules
             var license = Licensed(services, licenseId);
             if (license == null) return Result.Fail(LocalizationService.Get("Str.Builder.PickCustomer"), ErrorCode.ValidationFailed);
 
-            var keys = roots.SelectMany(section => section.Children)
-                .Where(page => page.CheckState == NodeCheckState.Checked)
-                .SelectMany(page => page.Children.Where(tab => tab.CheckState == NodeCheckState.Checked)
-                    .Select(tab => tab.Id).Prepend(page.Id))
-                .ToList();
-
-            var versioned = DialogRenderer.ShowAndSave(new DialogDefinition
-            {
-                TitleKey = "Str.Builder.Version", TitleEditKey = "Str.Builder.Version", GridColumns = 1,
-                ServiceType = typeof(ILicenseService),
-                CreateDtoType = typeof(EditionVersionDto), UpdateDtoType = typeof(EditionVersionDto),
-                CreateMethod = nameof(ILicenseService.SetVersion),
-                FixedValues = new() { [nameof(EditionVersionDto.LicenseId)] = licenseId },
-                Fields = new List<FieldDefinition>
-                {
-                    new() { Key = nameof(EditionVersionDto.Version), LabelKey = "Str.Builder.Version", Kind = FieldKind.Text, IsRequired = true, MaxLength = 20,
-                            DefaultValue = CurrentVersion(services) },
-                }
-            }, services, services.GetRequiredService<UI.Services.IToastService>());
-            if (!versioned) return Result.Fail(LocalizationService.Get("Str.Builder.CreateCancelled"), ErrorCode.ValidationFailed);
+            var keys = Keys(roots);
 
             var folder = FolderOutput.Pick(LocalizationService.Get("Str.Builder.ChooseFolder"));
 

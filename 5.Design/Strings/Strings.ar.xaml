@@ -1192,6 +1192,10 @@
     <sys:String x:Key="Str.TopBar.Language">اللغة / English</sys:String>
     <sys:String x:Key="Str.TopBar.LanguageRestart">يُعاد تشغيل البرنامج لتطبيق اللغة. متابعة؟</sys:String>
     <sys:String x:Key="Str.Builder.Version">رقم الإصدار</sys:String>
+    <sys:String x:Key="Str.Builder.TitleEn">الاسم بالإنجليزية</sys:String>
+    <sys:String x:Key="Str.Builder.HeaderEn">العنوان بالإنجليزية</sys:String>
+    <sys:String x:Key="Str.Settings.Label.System.Arabic">العربية متاحة</sys:String>
+    <sys:String x:Key="Str.Settings.Label.System.English">الإنجليزية متاحة</sys:String>
     <sys:String x:Key="Str.Builder.Stopped">موقوف</sys:String>
     <sys:String x:Key="Str.Builder.ToggleCustomer">إيقاف / تفعيل العميل</sys:String>
     <sys:String x:Key="Str.Builder.DeleteCustomer">حذف العميل</sys:String>

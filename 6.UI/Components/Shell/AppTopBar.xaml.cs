@@ -102,6 +102,12 @@ namespace PrimeERP.UI.Components.Shell
         private void btnToggleSidebar_Click(object sender, RoutedEventArgs e) => SidebarToggled?.Invoke(this, EventArgs.Empty);
 
 
+        public void HideLanguage()
+        {
+            _userMenu.RemoveAll(m => m.Label == LocalizationService.Get("Str.TopBar.Language"));
+            userMenu.Items = _userMenu.Select(m => m.Label).ToArray();
+        }
+
         private void userMenu_ItemSelected(object sender, object item)
         {
             var label = item as string;

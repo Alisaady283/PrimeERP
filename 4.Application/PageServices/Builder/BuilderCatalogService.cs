@@ -1,3 +1,4 @@
+using PrimeERP.Platform.Localization;
 using PrimeERP.Application.Services.Entities;
 using System.Collections.Generic;
 using PrimeERP.Data.Repositories;
@@ -69,12 +70,17 @@ namespace PrimeERP.Application.PageServices.Builder
                 previous = section.Key;
             }
 
+            var english = LocalizationService.CurrentLanguage == AppLanguage.En;
+            var titles = coded.ToDictionary(c => c.Key, c => c.Title);
             foreach (var (section, i) in _repo.Sections().OrderBy(s => s.SortOrder).ThenBy(s => s.Id).Select((s, i) => (s, i)))
-                if (section.SortOrder != (i + 1) * 10)
-                {
-                    section.SortOrder = (i + 1) * 10;
-                    _repo.SaveSection(section);
-                }
+            {
+                var translate = english && string.IsNullOrWhiteSpace(section.TitleEn) && titles.ContainsKey(section.Key);
+                if (section.SortOrder == (i + 1) * 10 && !translate) continue;
+
+                section.SortOrder = (i + 1) * 10;
+                if (translate) section.TitleEn = titles[section.Key];
+                _repo.SaveSection(section);
+            }
         }
 
         public void SeedModules(IEnumerable<CodedPage> pages)
@@ -91,6 +97,7 @@ namespace PrimeERP.Application.PageServices.Builder
             var columned = _repo.Columns(0).Select(c => c.ModuleId).ToHashSet();
             var filtered = _repo.Filters(0).Select(f => f.ModuleId).ToHashSet();
             var orders = _repo.Modules().ToDictionary(m => m.Key, m => m.SortOrder);
+            var rows = _repo.Modules().ToDictionary(m => m.Id);
 
             string previous = null, previousSection = null;
             foreach (var page in coded)
@@ -99,7 +106,11 @@ namespace PrimeERP.Application.PageServices.Builder
 
                 if (existing.Contains(page.Key))
                 {
-                    if (seeded.TryGetValue(page.Key, out var seededId)) Backfill(seededId, page, columned, filtered);
+                    if (seeded.TryGetValue(page.Key, out var seededId))
+                    {
+                        Backfill(seededId, page, columned, filtered);
+                        if (rows.TryGetValue(seededId, out var row)) Translate(row, page);
+                    }
                     previous = page.Key;
                     continue;
                 }
@@ -130,6 +141,31 @@ namespace PrimeERP.Application.PageServices.Builder
                         module.SortOrder = (i + 1) * 10;
                         _repo.SaveModule(module);
                     }
+        }
+
+        private void Translate(BuilderModule module, CodedPage page)
+        {
+            if (LocalizationService.CurrentLanguage != AppLanguage.En) return;
+
+            if (string.IsNullOrWhiteSpace(module.TitleEn))
+            {
+                module.TitleEn = page.Title;
+                _repo.SaveModule(module);
+            }
+
+            var headers = page.Columns.Where(c => c.Name != null).GroupBy(c => c.Name).ToDictionary(g => g.Key, g => g.First().Header);
+            foreach (var column in _repo.Columns(module.Id).Where(c => string.IsNullOrWhiteSpace(c.HeaderEn) && headers.ContainsKey(c.Name ?? "")))
+            {
+                column.HeaderEn = headers[column.Name];
+                _repo.SaveColumn(module.Id, column);
+            }
+
+            var labels = page.Filters.Where(f => f.Key != null).GroupBy(f => f.Key).ToDictionary(g => g.Key, g => g.First().Label);
+            foreach (var filter in _repo.Filters(module.Id).Where(f => string.IsNullOrWhiteSpace(f.LabelEn) && labels.ContainsKey(f.Key ?? "")))
+            {
+                filter.LabelEn = labels[filter.Key];
+                _repo.SaveFilter(module.Id, filter);
+            }
         }
 
         private void Backfill(int moduleId, CodedPage page, HashSet<int> columned, HashSet<int> filtered)

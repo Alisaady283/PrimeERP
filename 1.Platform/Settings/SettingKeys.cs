@@ -161,6 +161,8 @@ namespace PrimeERP.Platform.Settings
             public const string AdvancesPosted = "System.AdvancesPosted";
             public const string PayrollPays    = "System.PayrollPays";
             public const string Version        = "System.Version";
+            public const string Arabic         = "System.Arabic";
+            public const string English        = "System.English";
         }
 
         public static class Security
@@ -266,6 +268,8 @@ namespace PrimeERP.Platform.Settings
             new(Edition.AdvancesPosted, "true", "bool", "System"),
             new(Edition.PayrollPays,    "true", "bool", "System"),
             new(Edition.Version,        "",     "string", "System", IsSystem: true),
+            new(Edition.Arabic,         "true", "bool",   "System"),
+            new(Edition.English,        "true", "bool",   "System"),
 
             new(HR.WorkStart,       "09:00", "string",  "HR"),
             new(HR.WorkEnd,         "17:00", "string",  "HR"),

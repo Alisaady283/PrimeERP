@@ -97,6 +97,7 @@ namespace PrimeERP.Data.Repositories
                 if (row == null) return 0;
                 row.Key = s.Key;
                 row.Title = s.Title;
+                row.TitleEn = s.TitleEn ?? "";
                 row.IconKey = s.IconKey ?? "";
                 row.SortOrder = s.SortOrder;
                 row.Modules = s.Modules ?? "";
@@ -117,6 +118,7 @@ namespace PrimeERP.Data.Repositories
                 if (row == null) return 0;
                 row.Key = m.Key;
                 row.Title = m.Title;
+                row.TitleEn = m.TitleEn ?? "";
                 row.Kind = m.Kind;
                 row.SectionId = m.SectionId;
                 row.TableName = m.TableName ?? "";

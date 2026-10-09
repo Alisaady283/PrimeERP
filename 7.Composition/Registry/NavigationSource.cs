@@ -22,8 +22,8 @@ namespace PrimeERP.Composition.Registry
                 {
                     var rows = modules.Where(m => m.SectionId == section.Id).Select(m => m.Key).ToArray();
 
-                    var title = PrimeERP.Platform.Localization.LocalizationService.CurrentLanguage == PrimeERP.Platform.Localization.AppLanguage.Ar
-                        ? section.Title : PrimeERP.Platform.Localization.LocalizationService.GetOr($"Str.Nav.{section.Key}", section.Title);
+                    var title = PrimeERP.Platform.Localization.LocalizationService.Pick(section.Title, section.TitleEn,
+                        PrimeERP.Platform.Localization.LocalizationService.GetOr($"Str.Nav.{section.Key}", null));
                     return (section.Key, title, section.IconKey ?? "IconSettings",
                         seeded ? rows
                             : (section.Modules ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));

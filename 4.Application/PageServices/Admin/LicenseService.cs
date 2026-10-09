@@ -77,6 +77,7 @@ namespace PrimeERP.Application.PageServices.Admin
                 l.CustomerName = dto.CustomerName.Trim();
                 l.Location = dto.Location?.Trim();
                 l.Serial = NewSerial();
+                l.Version = Setting(SettingKeys.Edition.Version, "") is { Length: > 0 } version ? version : PrimeERP.Platform.AppInfo.Version;
                 l.Manifest = string.Join(",", dto.ModuleKeys ?? new());
             });
 

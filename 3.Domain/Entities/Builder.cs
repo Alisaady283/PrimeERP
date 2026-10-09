@@ -15,6 +15,7 @@ namespace PrimeERP.Domain.Entities
     {
         public string Key      { get; set; }
         public string Title    { get; set; }
+        public string TitleEn  { get; set; }
         public string IconKey  { get; set; }
         public int    SortOrder { get; set; }
         public bool   IsProtected { get; set; }
@@ -27,6 +28,7 @@ namespace PrimeERP.Domain.Entities
     {
         public string          Key        { get; set; }
         public string          Title      { get; set; }
+        public string          TitleEn    { get; set; }
         public BuilderKind     Kind       { get; set; }
         public int             SectionId  { get; set; }
         public string          TableName  { get; set; }   // فارغ للتقرير
@@ -44,6 +46,7 @@ namespace PrimeERP.Domain.Entities
     {
         public string          Name        { get; set; }   // اسم العمود في القاعدة
         public string          Header      { get; set; }   // الاسم الظاهر
+        public string          HeaderEn    { get; set; }
         public BuilderDataType DataType    { get; set; }
         public bool            IsRequired  { get; set; }
         public bool            IsUnique    { get; set; }
@@ -77,6 +80,7 @@ namespace PrimeERP.Domain.Entities
     {
         public string Key       { get; set; }
         public string Label     { get; set; }
+        public string LabelEn   { get; set; }
         public string Kind      { get; set; }   // Combo / Toggle / DateRange
         public string RefModule { get; set; }
     }

@@ -48,6 +48,8 @@ namespace PrimeERP.UI.Components.Shell
 
         public object TopBarActionsContent { get => topBar.ActionsContent; set => topBar.ActionsContent = value; }
 
+        public void HideLanguage() => topBar.HideLanguage();
+
         public object SidebarLogoContent   { get => sidebar.LogoContent;   set => sidebar.LogoContent = value; }
         public object SidebarFooterContent { get => sidebar.FooterContent; set => sidebar.FooterContent = value; }
 

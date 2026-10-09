@@ -1192,6 +1192,10 @@
     <sys:String x:Key="Str.TopBar.Language">Language / العربية</sys:String>
     <sys:String x:Key="Str.TopBar.LanguageRestart">The program restarts to apply the language. Continue?</sys:String>
     <sys:String x:Key="Str.Builder.Version">Version</sys:String>
+    <sys:String x:Key="Str.Builder.TitleEn">English name</sys:String>
+    <sys:String x:Key="Str.Builder.HeaderEn">English header</sys:String>
+    <sys:String x:Key="Str.Settings.Label.System.Arabic">Arabic available</sys:String>
+    <sys:String x:Key="Str.Settings.Label.System.English">English available</sys:String>
     <sys:String x:Key="Str.Builder.Stopped">stopped</sys:String>
     <sys:String x:Key="Str.Builder.ToggleCustomer">Stop / reactivate customer</sys:String>
     <sys:String x:Key="Str.Builder.DeleteCustomer">Delete customer</sys:String>

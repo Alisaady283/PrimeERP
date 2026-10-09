@@ -46,7 +46,22 @@ namespace PrimeERP.Composition.Renderers
                 summary.Text = LocalizationService.Get("Str.Permissions.Granted", granted, keyNodes.Count);
             }
 
+            var editable = new List<(SourceNote Source, AppTextBox Box)>();
+
             int SelectedSourceId() => sourcePicker.SelectedValue is int id ? id : 0;
+
+            void RefreshSources()
+            {
+                var before = SelectedSourceId();
+                var shown = (sourcePicker.ItemsSource as IEnumerable<SourceOption> ?? Enumerable.Empty<SourceOption>()).ToList();
+                var items = def.SourceItems(services);
+                if (items.Select(o => (o.Id, o.Display)).SequenceEqual(shown.Select(o => (o.Id, o.Display)))) return;
+
+                sourcePicker.ItemsSource = items;
+                var added = items.FirstOrDefault(o => shown.All(s => s.Id != o.Id));
+                var pick = added?.Id ?? (items.Any(o => o.Id == before) ? before : 0);
+                if (pick > 0) DialogRenderer.SelectPickerItem(sourcePicker, pick, "Id");
+            }
 
             void LoadTree()
             {
@@ -94,13 +109,7 @@ namespace PrimeERP.Composition.Renderers
                     def.ApplyRules?.Invoke(nodes, null);
                     RefreshSummary();
 
-                    var before = SelectedSourceId();
-                    var known = (sourcePicker.ItemsSource as IEnumerable<SourceOption>)?.Select(o => o.Id).ToHashSet() ?? new HashSet<int>();
-                    var items = def.SourceItems(services);
-                    sourcePicker.ItemsSource = items;
-                    var added = items.FirstOrDefault(o => !known.Contains(o.Id));
-                    var pick = added?.Id ?? (items.Any(o => o.Id == before) ? before : 0);
-                    if (pick > 0) DialogRenderer.SelectPickerItem(sourcePicker, pick, "Id");
+                    RefreshSources();
                 };
                 actions.Children.Add(button);
             }
@@ -117,6 +126,12 @@ namespace PrimeERP.Composition.Renderers
                 saveButton.IsEnabled = false;
                 try
                 {
+                    foreach (var (source, box) in editable)
+                    {
+                        var noted = source.Save(services, SelectedSourceId(), box.Text);
+                        if (noted.IsFailure) { toast.Error(noted.ErrorMessage); return; }
+                    }
+
                     var result = await def.Save(services, SelectedSourceId(), nodes);
                     if (result.IsSuccess) toast.Success(LocalizationService.Get("Str.Success"));
                     else toast.Error(result.ErrorMessage);
@@ -142,27 +157,7 @@ namespace PrimeERP.Composition.Renderers
 
                 top.Children.Add(note);
                 sourcePicker.SelectionChanged += (_, __) => note.Text = source.Value(services, SelectedSourceId());
-                if (source.Save == null) continue;
-
-                var save = new Btn { Text = LocalizationService.Get("Str.Save"), Variant = "secondary", Size = "sm", Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Bottom };
-                save.Click += (_, __) =>
-                {
-                    if (SelectedSourceId() == 0)
-                    {
-                        toast.Info(LocalizationService.Get("Str.Rule.RequiredFirst", LocalizationService.Get(def.SourceLabelKey)));
-                        return;
-                    }
-
-                    var saved = source.Save(services, SelectedSourceId(), note.Text);
-                    if (saved.IsSuccess) toast.Success(LocalizationService.Get("Str.Success"));
-                    else toast.Error(saved.ErrorMessage);
-
-                    var keep = SelectedSourceId();
-                    sourcePicker.ItemsSource = def.SourceItems(services);
-                    sourcePicker.SelectedValue = null;
-                    DialogRenderer.SelectPickerItem(sourcePicker, keep, "Id");
-                };
-                top.Children.Add(save);
+                if (source.Save != null) editable.Add((source, note));
             }
 
             var root = new Grid();

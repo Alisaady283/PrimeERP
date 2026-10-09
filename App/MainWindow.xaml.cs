@@ -31,6 +31,8 @@ namespace PrimeERP.App
             shell.CompanyName = services.GetRequiredService<ISettingsService>().Get(SettingKeys.Company.Name, "PrimeERP");
             shell.UserName = AppSession.DisplayName;
             shell.UserRole = AppSession.RoleName;
+            var settings = services.GetRequiredService<ISettingsProvider>();
+            if (!settings.Get(SettingKeys.Edition.Arabic, true) || !settings.Get(SettingKeys.Edition.English, true)) shell.HideLanguage();
 
             shell.NavItems = BuildNavGroups();
 
