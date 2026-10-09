@@ -16,6 +16,24 @@ SERVER_URL = "https://primelogic-eg.com/erp"
 REMOTE_REPO = "/home/ubuntu/PrimeERP"
 REMOTE_PACKAGES = "/home/ubuntu/primeerp-data/packages"
 OUT = ROOT / "bin" / "Release-package"
+LOCAL = Path(__file__).with_name("deploy.local.json")
+
+
+def ssh_key():
+    key = os.environ.get("PRIMEERP_SSH_KEY")
+    if not key and LOCAL.exists():
+        key = json.loads(LOCAL.read_text(encoding="utf-8")).get("key")
+    if not key:
+        key = input("مسار مفتاح SSH للخادم (يُحفظ مرّةً): ").strip().strip('"')
+        LOCAL.write_text(json.dumps({"key": key}, ensure_ascii=False), encoding="utf-8")
+    if not Path(key).exists():
+        LOCAL.unlink(missing_ok=True)
+        sys.exit(f"المفتاح غير موجود: {key}")
+    return key
+
+
+def remote(tool, *args):
+    return [tool, "-i", ssh_key(), "-o", "StrictHostKeyChecking=accept-new", *args]
 
 
 def run(*args, cwd=ROOT):
@@ -45,7 +63,7 @@ def local_token():
 
 
 def update_server(branch):
-    run("ssh", "-t", HOST, f"cd {REMOTE_REPO} && git fetch origin && git checkout {branch} && git pull origin {branch} "
+    run(*remote("ssh", "-t", HOST), f"cd {REMOTE_REPO} && git fetch origin +refs/heads/{branch}:refs/remotes/origin/{branch} && git checkout -B {branch} origin/{branch} "
                      f"&& server/.venv/bin/pip install -q -r server/requirements.txt && sudo systemctl restart primeerp-api")
     with urllib.request.urlopen(f"{SERVER_URL}/health", timeout=20) as response:
         print("الخادم:", response.read().decode())
@@ -69,7 +87,7 @@ def build_package(version, with_settings):
 
 
 def publish_release(archive, version, token, notes):
-    run("scp", str(archive), f"{HOST}:{REMOTE_PACKAGES}/{archive.name}")
+    run(*remote("scp"), str(archive), f"{HOST}:{REMOTE_PACKAGES}/{archive.name}")
 
     request = urllib.request.Request(
         f"{SERVER_URL}/releases",
@@ -83,7 +101,7 @@ def publish_setup():
     setup = OUT / "setup"
     run("dotnet", "publish", "PrimeERP.Setup/PrimeERP.Setup.csproj", "-c", "Release", "-r", "win-x64",
         "--self-contained", "true", "-p:PublishSingleFile=true", "-o", str(setup))
-    run("scp", str(setup / "PrimeERP.Setup.exe"), f"{HOST}:{REMOTE_PACKAGES}/PrimeERP.Setup.exe")
+    run(*remote("scp"), str(setup / "PrimeERP.Setup.exe"), f"{HOST}:{REMOTE_PACKAGES}/PrimeERP.Setup.exe")
 
 
 def main():

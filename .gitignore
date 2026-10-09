@@ -12,3 +12,5 @@ __pycache__/
 bin/
 obj/
 *.pyc
+
+Tools/Release/deploy.local.json
