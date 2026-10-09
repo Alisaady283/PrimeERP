@@ -298,6 +298,7 @@ namespace PrimeERP.App.Bootstrap
 
                 settings.SetRaw(SettingKeys.License.Serial, Read("serial"));
                 settings.SetRaw(SettingKeys.License.Customer, Read("customer"));
+                if (!string.IsNullOrWhiteSpace(Read("version"))) settings.SetRaw(SettingKeys.License.Version, Read("version"));
 
                 var pages = Read("manifest");
                 if (!string.IsNullOrWhiteSpace(pages)) settings.SetRaw(SettingKeys.UI.Manifest, pages);

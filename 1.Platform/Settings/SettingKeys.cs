@@ -135,6 +135,7 @@ namespace PrimeERP.Platform.Settings
         {
             public const string Serial   = "License.Serial";
             public const string Customer = "License.Customer";
+            public const string Version  = "License.Version";
         }
 
         public static class Developer

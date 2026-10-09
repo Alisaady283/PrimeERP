@@ -29,22 +29,34 @@ namespace PrimeERP.UI.Services
             var title = LocalizationService.Get("Str.Settings.Update");
             if (!await dialogs.ConfirmAsync(title, LocalizationService.Get("Str.Settings.UpdateAvailable", check.Value.Version))) return;
 
-            using var handle = dialogs.ShowProgress(title, LocalizationService.Get("Str.Settings.Downloading", check.Value.Version));
+            var handle = dialogs.ShowProgress(title, LocalizationService.Get("Str.Settings.Downloading", check.Value.Version));
             var stage = LocalizationService.Get("Str.Settings.DownloadStage");
             var progress = new Progress<double>(percent => handle.Report(percent, stage));
 
-            var file = await updates.DownloadAsync(check.Value, progress);
-            if (file.IsFailure) { toast.Error(file.ErrorMessage); return; }
+            var files = await updates.DownloadAsync(check.Value, progress);
+            handle.Dispose();
+            if (files.IsFailure) { toast.Error(files.ErrorMessage); return; }
+
+            if (files.Value.Changed == 0 && files.Value.Removed == 0)
+            {
+                updates.MarkInstalled(check.Value.Version);
+                toast.Success(LocalizationService.Get("Str.Settings.UpToDate", check.Value.Version));
+                return;
+            }
 
             if (!await dialogs.ConfirmAsync(title, LocalizationService.Get("Str.Settings.InstallNow", check.Value.Version))) return;
 
             try
             {
                 var folder = AppContext.BaseDirectory.TrimEnd('\\');
+                var staged = files.Value.Folder;
                 var script = $"Wait-Process -Id {Environment.ProcessId} -ErrorAction SilentlyContinue; " +
-                             $"Expand-Archive -LiteralPath '{file.Value}' -DestinationPath '{folder}' -Force; Start-Process '{Environment.ProcessPath}'";
+                             $"Copy-Item -Path '{staged}\\files\\*' -Destination '{folder}' -Recurse -Force; " +
+                             $"Get-Content '{staged}\\removed.txt' | ForEach-Object {{ Remove-Item -LiteralPath (Join-Path '{folder}' $_) -Force -ErrorAction SilentlyContinue }}; " +
+                             $"Start-Process '{Environment.ProcessPath}'";
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("powershell", $"-NoProfile -WindowStyle Hidden -Command \"{script}\"")
                     { UseShellExecute = true, Verb = "runas" });
+                updates.MarkInstalled(check.Value.Version);
                 System.Windows.Application.Current.Shutdown();
             }
             catch (Exception ex)

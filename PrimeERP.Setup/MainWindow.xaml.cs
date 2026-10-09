@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using System.IO.Compression;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
@@ -50,16 +50,24 @@ namespace PrimeERP.Setup
                 var activation = await Activate(serial);
                 if (activation == null) return;
 
-                var package = activation.Value.GetProperty("package").GetString();
-                var archive = Path.Combine(Path.GetTempPath(), "PrimeERP-package.zip");
+                var list = activation.Value.GetProperty("files").GetString();
+                var source = $"{Server}{list[..list.LastIndexOf('/')]}";
 
                 Say("جارٍ تنزيل النسخة…");
-                if (!await Download($"{Server}{package}", archive)) return;
-
-                Say("جارٍ فكّ الحزمة…");
                 Directory.CreateDirectory(folder);
-                ZipFile.ExtractToDirectory(archive, folder, overwriteFiles: true);
-                File.Delete(archive);
+                var listed = Path.Combine(folder, "files.json");
+                if (!await Download($"{Server}{list}", listed)) return;
+
+                var files = JsonDocument.Parse(File.ReadAllText(listed)).RootElement.GetProperty("files").EnumerateObject()
+                    .Select(file => file.Name).ToList();
+                for (var i = 0; i < files.Count; i++)
+                {
+                    var target = Path.Combine(folder, files[i]);
+                    Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                    var url = $"{source}/{string.Join("/", files[i].Split('/').Select(Uri.EscapeDataString))}";
+                    if (!await Download(url, target, track: false)) return;
+                    progress.Value = (i + 1) * 100d / files.Count;
+                }
 
                 WriteLicense(folder, serial, activation.Value);
                 Shortcut(folder);
@@ -91,7 +99,7 @@ namespace PrimeERP.Setup
             return null;
         }
 
-        private async Task<bool> Download(string url, string target)
+        private async Task<bool> Download(string url, string target, bool track = true)
         {
             using var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
             if (!response.IsSuccessStatusCode) { Say("تعذّر تنزيل الحزمة"); return false; }
@@ -109,7 +117,7 @@ namespace PrimeERP.Setup
                 await file.WriteAsync(buffer.AsMemory(0, read));
                 done += read;
 
-                if (total > 0) progress.Value = done * 100d / total;
+                if (track && total > 0) progress.Value = done * 100d / total;
             }
 
             return true;
@@ -124,6 +132,7 @@ namespace PrimeERP.Setup
                 serial,
                 customer = Read("customer"),
                 manifest = Read("manifest"),
+                version = Read("version"),
                 simplified = activation.TryGetProperty("simplified", out var s) && s.GetBoolean()
             };
 

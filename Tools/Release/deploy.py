@@ -1,22 +1,26 @@
 import argparse
+import hashlib
 import json
 import os
-import re
 import shutil
-import sqlite3
 import subprocess
 import sys
+import tarfile
+import urllib.error
 import urllib.request
-import zipfile
 from pathlib import Path
 
+#رفع التحديثات ونشرها على الخادم
 ROOT = Path(__file__).resolve().parents[2]
 HOST = "ubuntu@primelogic-eg.com"
 SERVER_URL = "https://primelogic-eg.com/erp"
 REMOTE_REPO = "/home/ubuntu/PrimeERP"
 REMOTE_PACKAGES = "/home/ubuntu/primeerp-data/packages"
+REMOTE_CURRENT = "/home/ubuntu/primeerp-data/current"
 OUT = ROOT / "bin" / "Release-package"
 LOCAL = Path(__file__).with_name("deploy.local.json")
+LISTING = "files.json"
+SKIP = {"appsettings.json", "license.json", LISTING}
 
 
 def ssh_key():
@@ -47,21 +51,6 @@ def current_branch():
                           capture_output=True, check=True).stdout.strip()
 
 
-def project_version():
-    text = (ROOT / "PrimeERP.csproj").read_text(encoding="utf-8")
-    match = re.search(r"<Version>([^<]+)</Version>", text)
-    return match.group(1) if match else "1.0.0"
-
-
-def local_token():
-    path = Path(os.path.expandvars(r"%LOCALAPPDATA%\PrimeERP\PrimeERP.db"))
-    if not path.exists():
-        return ""
-    with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as db:
-        row = db.execute("SELECT Value FROM AppSettings WHERE Key = 'Developer.AdminToken'").fetchone()
-    return row[0] if row else ""
-
-
 def update_server(branch):
     run(*remote("ssh", "-t", HOST), f"cd {REMOTE_REPO} && git fetch origin +refs/heads/{branch}:refs/remotes/origin/{branch} && git checkout -B {branch} origin/{branch} "
                      f"&& server/.venv/bin/pip install -q -r server/requirements.txt && sudo systemctl restart primeerp-api")
@@ -69,32 +58,62 @@ def update_server(branch):
         print("الخادم:", response.read().decode())
 
 
-def build_package(version, with_settings):
-    if OUT.exists():
-        shutil.rmtree(OUT)
+def fingerprint(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as stream:
+        for block in iter(lambda: stream.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def build():
     publish = OUT / "files"
-    run("dotnet", "publish", "PrimeERP.csproj", "-c", "Release", "-r", "win-x64", "--self-contained", "true",
-        f"-p:Version={version}", "-o", str(publish))
-
-    archive = OUT / f"PrimeERP-{version}.zip"
-    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as package:
-        for file in publish.rglob("*"):
-            if file.is_dir() or (file.name == "appsettings.json" and not with_settings):
-                continue
-            package.write(file, file.relative_to(publish))
-    print(f"الحزمة: {archive} ({archive.stat().st_size // (1024 * 1024)} م.ب)")
-    return archive
+    if publish.exists():
+        shutil.rmtree(publish)
+    run("dotnet", "publish", "PrimeERP.csproj", "-c", "Release", "-r", "win-x64", "--self-contained", "true", "-o", str(publish))
+    return publish, {
+        file.relative_to(publish).as_posix(): {"sha256": fingerprint(file), "size": file.stat().st_size}
+        for file in sorted(publish.rglob("*")) if file.is_file() and file.name not in SKIP
+    }
 
 
-def publish_release(archive, version, token, notes):
-    run(*remote("scp"), str(archive), f"{HOST}:{REMOTE_PACKAGES}/{archive.name}")
+def server_files():
+    try:
+        with urllib.request.urlopen(f"{SERVER_URL}/files/{LISTING}", timeout=30) as response:
+            return json.loads(response.read().decode()).get("files", {})
+    except urllib.error.HTTPError as error:
+        if error.code == 404:
+            return {}
+        raise
 
-    request = urllib.request.Request(
-        f"{SERVER_URL}/releases",
-        data=json.dumps({"version": version, "package": archive.name, "notes": notes}).encode(),
-        headers={"Content-Type": "application/json", "X-Admin-Token": token}, method="POST")
-    with urllib.request.urlopen(request, timeout=60) as response:
-        print("الإصدار:", response.read().decode())
+
+def sync_files():
+    publish, local = build()
+    online = server_files()
+    changed = [name for name, entry in local.items() if online.get(name, {}).get("sha256") != entry["sha256"]]
+    removed = [name for name in online if name not in local]
+
+    if not changed and not removed:
+        print("لا تغيير في ملفات البرنامج — لا شيء يُرفع")
+        return
+
+    listing = OUT / LISTING
+    listing.write_text(json.dumps({"files": local}, ensure_ascii=False), encoding="utf-8")
+    gone = OUT / "removed.txt"
+    gone.write_text("\n".join(removed), encoding="utf-8")
+    batch = OUT / "files.tar.gz"
+    with tarfile.open(batch, "w:gz") as archive:
+        for name in changed:
+            archive.add(publish / name, arcname=name)
+        archive.add(listing, arcname=LISTING)
+        archive.add(gone, arcname="removed.txt")
+
+    size = sum(local[name]["size"] for name in changed)
+    print(f"يُرفع {len(changed)} ملفاً ({size / (1024 * 1024):.1f} م.ب) ويُحذف {len(removed)}")
+    run(*remote("scp"), str(batch), f"{HOST}:/tmp/primeerp-files.tar.gz")
+    run(*remote("ssh", HOST), f"mkdir -p {REMOTE_CURRENT} && tar -xzf /tmp/primeerp-files.tar.gz -C {REMOTE_CURRENT} "
+                              f"&& cd {REMOTE_CURRENT} && xargs -a removed.txt -d '\\n' -r rm -f -- "
+                              f"&& rm -f removed.txt /tmp/primeerp-files.tar.gz")
 
 
 def publish_setup():
@@ -105,32 +124,20 @@ def publish_setup():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="رفع التحديثات على الخادم")
-    parser.add_argument("--version", help="رقم الإصدار — يُبنى إصدارٌ (≈80 م.ب) ويُنشر حين يُعطى وحده")
+    parser = argparse.ArgumentParser(description="رفع التحديثات على الخادم: كوده من GitHub، وملفات البرنامج المتغيّرة وحدها")
     parser.add_argument("--branch", help="فرع كود الخادم (افتراضيّه الحالي)")
-    parser.add_argument("--notes", default="", help="ملاحظات الإصدار")
-    parser.add_argument("--token", help="توكن المطوّر (افتراضيّه من إعدادات البرنامج)")
-    parser.add_argument("--release-only", action="store_true", help="نشر إصدار البرنامج وحده")
+    parser.add_argument("--server-only", action="store_true", help="كود الخادم وحده")
+    parser.add_argument("--files-only", action="store_true", help="ملفات البرنامج وحدها")
     parser.add_argument("--setup", action="store_true", help="رفع المنصِّب PrimeERP.Setup.exe أيضاً")
-    parser.add_argument("--with-settings", action="store_true", help="تضمين appsettings.json في الحزمة")
     args = parser.parse_args()
 
-    if not args.release_only:
+    if not args.files_only:
         update_server(args.branch or current_branch())
-
-    if not args.version and not args.release_only:
-        print("تمّ تحديث الخادم وحده — لنشر إصدار البرنامج أعطِ --version")
-        return
-
-    token = args.token or os.environ.get("PRIMEERP_ADMIN_TOKEN") or local_token()
-    if not token:
-        sys.exit("لا توكن مطوّر: مرّره بـ --token أو اضبطه في إعدادات البرنامج")
-
-    version = args.version or project_version()
-    publish_release(build_package(version, args.with_settings), version, token, args.notes)
+    if not args.server_only:
+        sync_files()
     if args.setup:
         publish_setup()
-    print(f"تمّ: الإصدار {version} منشور، والعملاء المُسنَد إليهم يجدونه عند فحص التحديث")
+    print("تمّ")
 
 
 if __name__ == "__main__":

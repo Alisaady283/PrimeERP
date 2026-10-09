@@ -33,7 +33,7 @@ namespace PrimeERP.Modules
                     BuildTree = (services, roleId) =>
                     {
                         var granted = services.GetRequiredService<IPermissionStore>().GetRolePermissions(roleId).ToHashSet();
-                        var roots = PermissionTreeFactory.Build();
+                        var roots = PermissionTreeFactory.Build(services.GetRequiredService<IModuleRegistry>());
                         foreach (var node in PermissionTreeFactory.KeyNodes(roots))
                             node.CheckState = granted.Contains(node.Id) ? NodeCheckState.Checked : NodeCheckState.Unchecked;
 
@@ -82,7 +82,7 @@ namespace PrimeERP.Modules
                     BuildTree = (services, userId) =>
                     {
                         var admin = services.GetRequiredService<IPermissionAdminService>();
-                        var roots = PermissionTreeFactory.Build();
+                        var roots = PermissionTreeFactory.Build(services.GetRequiredService<IModuleRegistry>());
 
                         foreach (var node in PermissionTreeFactory.KeyNodes(roots))
                         {

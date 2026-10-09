@@ -16,6 +16,7 @@ from flask import Flask, jsonify, request, send_from_directory
 BASE = Path(__file__).resolve().parent
 DB = Path(os.environ.get("PRIMEERP_DB", BASE / "licenses.db"))
 PACKAGES = Path(os.environ.get("PRIMEERP_PACKAGES", BASE / "packages"))
+CURRENT = Path(os.environ.get("PRIMEERP_CURRENT", PACKAGES.parent / "current"))
 ADMIN_TOKEN = os.environ.get("PRIMEERP_ADMIN_TOKEN", "")
 
 app = Flask(__name__)
@@ -29,6 +30,7 @@ def db():
 
 def setup():
     PACKAGES.mkdir(parents=True, exist_ok=True)
+    CURRENT.mkdir(parents=True, exist_ok=True)
     with db() as connection:
         connection.executescript(
             """
@@ -43,12 +45,6 @@ def setup():
                 activated_at TEXT,
                 created_at   TEXT NOT NULL,
                 is_active    INTEGER DEFAULT 1
-            );
-            CREATE TABLE IF NOT EXISTS releases (
-                version    TEXT PRIMARY KEY,
-                package    TEXT NOT NULL,
-                notes      TEXT,
-                created_at TEXT NOT NULL
             );
             """
         )
@@ -66,24 +62,6 @@ def authorized() -> bool:
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
-
-
-def latest_release():
-    with db() as connection:
-        return connection.execute(
-            "SELECT version, package FROM releases ORDER BY created_at DESC LIMIT 1"
-        ).fetchone()
-
-
-def release_for(row):
-    if row["version"]:
-        with db() as connection:
-            assigned = connection.execute(
-                "SELECT version, package FROM releases WHERE version = ?", (row["version"],)
-            ).fetchone()
-        if assigned is not None:
-            return assigned
-    return latest_release()
 
 
 @app.get("/health")
@@ -178,18 +156,15 @@ def activate():
                 (machine, now(), serial),
             )
 
-    release = release_for(row)
-    package = row["package"] or (release["package"] if release else None)
-
-    if not package:
-        return jsonify(error="لا حزمة منشورة بعد"), HTTPStatus.SERVICE_UNAVAILABLE
+    if not (CURRENT / "files.json").exists():
+        return jsonify(error="لا ملفات منشورة بعد"), HTTPStatus.SERVICE_UNAVAILABLE
 
     return jsonify(
         customer=row["customer"],
         manifest=row["manifest"] or "",
         simplified=bool(row["simplified"]),
-        version=release["version"] if release else "",
-        package=f"/package/{package}",
+        version=row["version"] or "",
+        files="/files/files.json",
     )
 
 
@@ -213,41 +188,19 @@ def update():
     if row["machine"] and machine and not hmac.compare_digest(row["machine"], machine):
         return jsonify(error="هذا السريال مُفعَّل على جهاز آخر"), HTTPStatus.FORBIDDEN
 
-    pages = dict(manifest=row["manifest"] or "", simplified=bool(row["simplified"]))
-    release = release_for(row)
-    if release is None or release["version"] == current:
-        return jsonify(available=False, version=current, **pages)
-
-    return jsonify(available=True, version=release["version"], package=f"/package/{release['package']}", **pages)
-
-
-@app.post("/releases")
-def publish_release():
-    if not authorized():
-        return jsonify(error="غير مصرّح"), HTTPStatus.UNAUTHORIZED
-
-    data = request.get_json(silent=True) or {}
-    version = (data.get("version") or "").strip()
-    package = (data.get("package") or "").strip()
-
-    if not version or not package:
-        return jsonify(error="الإصدار والحزمة مطلوبان"), HTTPStatus.BAD_REQUEST
-
-    with db() as connection:
-        connection.execute(
-            """
-            INSERT INTO releases (version, package, notes, created_at) VALUES (?, ?, ?, ?)
-            ON CONFLICT(version) DO UPDATE SET package = excluded.package, notes = excluded.notes
-            """,
-            (version, package, data.get("notes", ""), now()),
-        )
-
-    return jsonify(ok=True)
+    assigned = row["version"] or ""
+    return jsonify(available=bool(assigned) and assigned != current, version=assigned or current,
+                   files="/files/files.json", manifest=row["manifest"] or "", simplified=bool(row["simplified"]))
 
 
 @app.get("/package/<path:name>")
 def package(name):
     return send_from_directory(PACKAGES, name, as_attachment=True)
+
+
+@app.get("/files/<path:name>")
+def files(name):
+    return send_from_directory(CURRENT, name, as_attachment=True)
 
 
 setup()

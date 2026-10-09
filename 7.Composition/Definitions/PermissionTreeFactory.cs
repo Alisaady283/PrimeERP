@@ -9,11 +9,13 @@ namespace PrimeERP.Composition.Definitions
     /// <summary>يبني شجرة الصلاحيات من PermissionKeys</summary>
     public static class PermissionTreeFactory
     {
-        public static List<TreeNodeViewModel> Build()
+        public static List<TreeNodeViewModel> Build(PrimeERP.Composition.Registry.IModuleRegistry registry = null)
         {
+            var pages = registry?.All().Select(m => m.PermissionPrefix).ToHashSet();
             var groups = PermissionKeys.All()
                 .Distinct()
                 .GroupBy(k => k.Split('.')[0])
+                .Where(g => pages == null || pages.Contains(g.Key))
                 .OrderBy(g => g.Key);
 
             var roots = new List<TreeNodeViewModel>();

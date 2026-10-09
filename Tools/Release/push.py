@@ -4,6 +4,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+# رفع التعديلات على GitHub مع رسالة تلقائية إذا لم تُقدّم رسالة
 ROOT = Path(__file__).resolve().parents[2]
 SKIP = {"err.txt"}
 
