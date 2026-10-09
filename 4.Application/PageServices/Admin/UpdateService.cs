@@ -60,6 +60,7 @@ namespace PrimeERP.Application.PageServices.Admin
             if (!body.TryGetProperty("manifest", out var manifest)) return false;
 
             var pages = manifest.GetString() ?? "";
+            if (string.IsNullOrWhiteSpace(pages)) return false;
             var simplified = body.TryGetProperty("simplified", out var flag) && flag.GetBoolean();
             if (pages == Setting(SettingKeys.UI.Manifest, "") && simplified == Setting(SettingKeys.Documents.SimplifiedFlow, true)) return false;
 

@@ -291,18 +291,18 @@ namespace PrimeERP.App.Bootstrap
             try
             {
                 var file = System.Text.Json.JsonDocument.Parse(System.IO.File.ReadAllText(path)).RootElement;
-                var settings = services.GetRequiredService<ISettingsService>();
+                var settings = services.GetRequiredService<ISettingsProvider>();
 
                 string Read(string name) => file.TryGetProperty(name, out var value) ? value.GetString() ?? "" : "";
 
-                settings.Set(SettingKeys.License.Serial, Read("serial"));
-                settings.Set(SettingKeys.License.Customer, Read("customer"));
+                settings.SetRaw(SettingKeys.License.Serial, Read("serial"));
+                settings.SetRaw(SettingKeys.License.Customer, Read("customer"));
 
                 var pages = Read("manifest");
-                if (!string.IsNullOrWhiteSpace(pages)) settings.Set(SettingKeys.UI.Manifest, pages);
+                if (!string.IsNullOrWhiteSpace(pages)) settings.SetRaw(SettingKeys.UI.Manifest, pages);
 
                 if (file.TryGetProperty("simplified", out var simplified))
-                    settings.Set(SettingKeys.Documents.SimplifiedFlow, simplified.GetBoolean() ? "true" : "false");
+                    settings.SetRaw(SettingKeys.Documents.SimplifiedFlow, simplified.GetBoolean() ? "true" : "false");
 
                 System.IO.File.Delete(path);
             }

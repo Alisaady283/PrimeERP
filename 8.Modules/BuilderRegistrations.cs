@@ -272,7 +272,7 @@ namespace PrimeERP.Modules
             {
                 page.CheckState = license.ModuleKeys.Contains(page.Id) ? NodeCheckState.Checked : NodeCheckState.Unchecked;
                 foreach (var tab in page.Children)
-                    tab.CheckState = page.CheckState == NodeCheckState.Checked && tabs.Contains(tab.Id)
+                    tab.CheckState = page.CheckState == NodeCheckState.Checked && (tabs.Contains(tab.Id) || license.ModuleKeys.Contains(tab.Id))
                         ? NodeCheckState.Checked
                         : NodeCheckState.Unchecked;
             }
