@@ -113,12 +113,12 @@ namespace PrimeERP.Composition.Renderers
         }
 
 
-        public static void PrintSelected(ModuleDefinition definition, IServiceProvider services, object item) =>
+        public static void PrintSelected(ModuleDefinition definition, IServiceProvider services, object item, bool roll = false) =>
             WithDocument(definition, services, item, (printable, toast) =>
             {
                 var printed = services.GetRequiredService<IPrintService>().PrintPreview(printable);
                 if (printed.IsFailure) toast.Error(printed.ErrorMessage);
-            });
+            }, roll);
 
         public static void ExportSelected(ModuleDefinition definition, IServiceProvider services, object item) =>
             WithDocument(definition, services, item, (printable, toast) =>
@@ -137,10 +137,12 @@ namespace PrimeERP.Composition.Renderers
             });
 
         private static void WithDocument(ModuleDefinition definition, IServiceProvider services, object item,
-            Action<IPrintable, IToastService> use)
+            Action<IPrintable, IToastService> use, bool roll = false)
         {
             var toast = services.GetRequiredService<IToastService>();
-            var def = definition.DocumentDialog;
+            var def = roll && definition.DocumentDialog?.PrintColumns is { } columns
+                ? definition.DocumentDialog with { PrintColumns = columns.Where(c => TradePaper.ReceiptColumns.Contains(c.Key)).ToList() }
+                : definition.DocumentDialog;
 
             if (def == null) { toast.Error(LocalizationService.Get("Str.Output.NoPrintable")); return; }
             if (item == null) { toast.Error(LocalizationService.Get("Str.Document.PickFirst")); return; }
@@ -162,7 +164,7 @@ namespace PrimeERP.Composition.Renderers
             var printable = document is PrimeERP.Application.DTOs.Vouchers.VoucherDetailDto voucher
                 ? VoucherDocument(voucher, definition.Key == "Receipts", settings)
                 : PrintDocuments.Trade(def, title, document, PaperFrom(settings, doc: document),
-                    StockSignatures(def));
+                    StockSignatures(def), roll);
 
             use(printable, toast);
         }

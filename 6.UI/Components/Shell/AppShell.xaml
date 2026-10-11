@@ -19,7 +19,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <shell:AppTopBar Grid.Row="0" x:Name="topBar" SidebarToggled="topBar_SidebarToggled"/>
+            <shell:AppTopBar Grid.Row="0" x:Name="topBar"/>
 
             <Border Grid.Row="1" Background="{DynamicResource PageBg}"
                     Padding="{DynamicResource P.Space.4.Uniform}">

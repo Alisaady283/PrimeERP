@@ -116,7 +116,7 @@ namespace PrimeERP.Application.PageServices.Sales
 
                     inserted.Add((source, _returns.InsertLine(db, id, line), line.Qty));
                     var moveResult = simplifiedFlow
-                        ? Stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, costs.UnitCosts[i],
+                        ? Stock.Move(db, line, dto.WarehouseId, MovementType.In, line.Qty, costs.UnitCosts[i],
                             StockSource, id, returnNo, dto.ReturnDate)
                         : Result.Ok();
                     if (moveResult.IsFailure) throw new InvalidOperationException(moveResult.ErrorMessage);

@@ -98,6 +98,78 @@ namespace PrimeERP.Application.Reporting
         public decimal BalanceAfter  { get; set; }
     }
 
+    public class PayrollSummaryRow
+    {
+        public string  PayrollNo   { get; set; }
+        public string  Period      { get; set; }
+        public decimal Basic       { get; set; }
+        public decimal Allowances  { get; set; }
+        public decimal Deductions  { get; set; }
+        public decimal Net         { get; set; }
+    }
+
+    public class AttendanceSummaryRow
+    {
+        public string Code            { get; set; }
+        public string Name            { get; set; }
+        public int    Present         { get; set; }
+        public int    Absent          { get; set; }
+        public int    Leave           { get; set; }
+        public int    LateMinutes     { get; set; }
+        public int    OvertimeMinutes { get; set; }
+    }
+
+    public class AdvanceRow
+    {
+        public string  Date     { get; set; }
+        public string  Code     { get; set; }
+        public string  Name     { get; set; }
+        public decimal Amount   { get; set; }
+        public string  Status   { get; set; }
+    }
+
+    public class CashierRow
+    {
+        public string  Cashier    { get; set; }
+        public int     Shifts     { get; set; }
+        public int     Sales      { get; set; }
+        public int     Returns    { get; set; }
+        public decimal Collected  { get; set; }
+        public decimal Refunded   { get; set; }
+        public decimal Difference { get; set; }
+    }
+
+    public class ProductionRow
+    {
+        public string  OrderNo    { get; set; }
+        public string  Date       { get; set; }
+        public string  Product    { get; set; }
+        public decimal Qty        { get; set; }
+        public decimal Materials  { get; set; }
+        public decimal Operations { get; set; }
+        public decimal Total      { get; set; }
+        public decimal UnitCost   { get; set; }
+    }
+
+    public class QuantityCostRow
+    {
+        public string  Code { get; set; }
+        public string  Name { get; set; }
+        public decimal Qty  { get; set; }
+        public decimal Cost { get; set; }
+    }
+
+    public class BatchRow
+    {
+        public string  Code      { get; set; }
+        public string  Name      { get; set; }
+        public string  Warehouse { get; set; }
+        public string  Batch     { get; set; }
+        public string  Expiry    { get; set; }
+        public decimal Qty       { get; set; }
+        public string  State     { get; set; }
+    }
+
     public class SalesReportRow
     {
         public string  InvoiceNo { get; set; }

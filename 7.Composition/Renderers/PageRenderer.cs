@@ -19,6 +19,7 @@ namespace PrimeERP.Composition.Renderers
                 LayoutKind.DocumentPage => DocumentPageRenderer.Render(definition, services),
                 LayoutKind.ChequeBoard => ChequeBoardRenderer.Render(definition, services),
                 LayoutKind.Tabs => TabsPageRenderer.Render(definition, services),
+                LayoutKind.Pos => PosRenderer.Render(definition, services),
                 _ => throw new NotSupportedException($"LayoutKind غير مدعوم: {definition.LayoutKind}")
             };
     }

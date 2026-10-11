@@ -59,7 +59,7 @@ namespace PrimeERP.Application.PageServices.Security
                 UserFields(_store, isEdit: true));
             if (check.IsFailure) return check;
 
-            _store.UpdateUser(dto.Id, dto.DisplayName, dto.RoleId, dto.IsActive);
+            _store.UpdateUser(dto.Id, dto.DisplayName, dto.RoleId, dto.IsActive, dto.BranchId);
             if (!string.IsNullOrWhiteSpace(dto.Password))
             {
                 var (hash, salt) = PasswordHasher.Hash(dto.Password);

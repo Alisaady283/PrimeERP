@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace PrimeERP.Application.Services.Entities
 {
     /// <summary>إعلان صفحة كيان</summary>
@@ -7,5 +9,7 @@ namespace PrimeERP.Application.Services.Entities
         public required string Strings { get; init; }
         public string NameLabel { get; init; }
         public string Sequence { get; init; }
+        public IReadOnlyDictionary<string, string> Defaults { get; init; }
+        public bool BranchScoped { get; init; }
     }
 }

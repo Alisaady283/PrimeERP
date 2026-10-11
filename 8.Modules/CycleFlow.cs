@@ -20,12 +20,12 @@ namespace PrimeERP.Modules
 
         public static List<PullSource> IntoPurchaseInvoice() => new()
         {
-            Unmatched("GoodsReceipt", Purchases),
+            Unmatched("GoodsReceipt", Purchases, FlowScope.FullCycleOnly),
         };
 
         public static List<PullSource> IntoSalesInvoice() => new()
         {
-            Unmatched("DeliveryNote", Sales),
+            Unmatched("DeliveryNote", Sales, FlowScope.FullCycleOnly),
         };
 
         public static List<PullSource> IntoPurchaseReturn() => new()
@@ -53,10 +53,10 @@ namespace PrimeERP.Modules
             MatchFields = new List<string> { matchField },
         };
 
-        private static PullSource Unmatched(string sourceKind, string permissionKey) => new()
+        private static PullSource Unmatched(string sourceKind, string permissionKey, FlowScope scope = FlowScope.Both) => new()
         {
             SourceKind = sourceKind, Label = LabelOf(sourceKind), PermissionKey = permissionKey,
-            MatchFields = new List<string>(),
+            MatchFields = new List<string>(), FlowScope = scope,
         };
 
         /// <summary>عنوان السحب من مصدره</summary>

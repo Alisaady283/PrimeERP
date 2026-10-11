@@ -26,6 +26,8 @@ namespace PrimeERP.Application.PageServices.Admin
         Result<LicenseDto> Create(CreateLicenseDto dto);
         Result SaveManifest(int id, List<string> moduleKeys);
         Result SetVersion(EditionVersionDto dto);
+        Result SetSimplified(int id, bool simplified);
+        Result SetEnglish(int id, bool english);
         Result ToggleActive(int id);
         Result Delete(int id);
     }
@@ -79,6 +81,7 @@ namespace PrimeERP.Application.PageServices.Admin
                 l.Serial = NewSerial();
                 l.Version = Setting(SettingKeys.Edition.Version, "") is { Length: > 0 } version ? version : PrimeERP.Platform.AppInfo.Version;
                 l.Manifest = string.Join(",", dto.ModuleKeys ?? new());
+                l.English = Language(dto.English);
             });
 
             license.Id = _repo.Insert(license);
@@ -95,57 +98,43 @@ namespace PrimeERP.Application.PageServices.Admin
             return Result.Ok(ToDto(license));
         }
 
-        public Result SaveManifest(int id, List<string> moduleKeys)
-        {
-            if (!Can("Edit")) return FailDenied();
-
-            var license = _repo.GetById(id);
-            if (license == null) return Result.Fail(Msg("LicenseNotFound"), ErrorCode.NotFound);
-
-            license.Manifest = string.Join(",", moduleKeys ?? new List<string>());
-
-            var published = Publish(license);
-            if (published.IsFailure) return published;
-
-            _repo.Update(license);
-
-            Audit.Log(EntityName, id, AuditAction.Update, newValue: new { pages = moduleKeys?.Count ?? 0 });
-
-            return Result.Ok();
-        }
+        public Result SaveManifest(int id, List<string> moduleKeys) =>
+            Change(id, license => license.Manifest = string.Join(",", moduleKeys ?? new List<string>()),
+                new { pages = moduleKeys?.Count ?? 0 });
 
         public Result SetVersion(EditionVersionDto dto)
         {
-            if (!Can("Edit")) return FailDenied();
-
-            var license = _repo.GetById(dto.LicenseId);
-            if (license == null) return Result.Fail(Msg("LicenseNotFound"), ErrorCode.NotFound);
-
             var input = Check.Valid(dto, new Field<EditionVersionDto>(x => x.Version, "Str.Builder.Version", Required: true));
             if (input.IsFailure) return input;
 
-            license.Version = dto.Version.Trim();
-            var published = Publish(license);
-            if (published.IsFailure) return published;
-
-            _repo.Update(license);
-            Audit.Log(EntityName, license.Id, AuditAction.Update, newValue: new { license.Version });
-            return Result.Ok();
+            return Change(dto.LicenseId, license => license.Version = dto.Version.Trim(), new { version = dto.Version.Trim() });
         }
 
-        public Result ToggleActive(int id)
+        public Result SetSimplified(int id, bool simplified) =>
+            Change(id, license => license.Simplified = simplified, new { simplified });
+
+        public Result SetEnglish(int id, bool english) =>
+            Change(id, license => license.English = Language(english), new { english });
+
+        private bool Language(bool english) =>
+            !Setting(SettingKeys.Edition.Arabic, true) || (english && Setting(SettingKeys.Edition.English, true));
+
+        public Result ToggleActive(int id) =>
+            Change(id, license => license.IsActive = !license.IsActive, new { toggled = true });
+
+        private Result Change(int id, Action<License> apply, object audited)
         {
             if (!Can("Edit")) return FailDenied();
 
             var license = _repo.GetById(id);
             if (license == null) return Result.Fail(Msg("LicenseNotFound"), ErrorCode.NotFound);
 
-            license.IsActive = !license.IsActive;
+            apply(license);
             var published = Publish(license);
             if (published.IsFailure) return published;
 
             _repo.Update(license);
-            Audit.Log(EntityName, id, AuditAction.Update, newValue: new { license.IsActive });
+            Audit.Log(EntityName, id, AuditAction.Update, newValue: audited);
             return Result.Ok();
         }
 
@@ -172,6 +161,7 @@ namespace PrimeERP.Application.PageServices.Admin
             location = license.Location ?? "",
             manifest = license.Manifest ?? "",
             simplified = license.Simplified,
+            english = license.English,
             version = license.Version,
             active = license.IsActive
         }, "SerialRegisterFailed");

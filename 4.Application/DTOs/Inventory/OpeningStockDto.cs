@@ -21,5 +21,7 @@ namespace PrimeERP.Application.DTOs.Inventory
         public decimal UnitCost  { get; set; }
         public decimal Value     { get; set; }
         public string  Notes     { get; set; }
+        public string  BatchNo   { get; set; }
+        public System.DateTime? ExpiryDate { get; set; }
     }
 }

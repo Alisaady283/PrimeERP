@@ -10,6 +10,7 @@
     <FontFamily x:Key="P.Font.Family.Numeric">Segoe UI, Tahoma, Arial</FontFamily>
     <FontFamily x:Key="P.Font.Family.Mono">Cascadia Mono, Consolas, Courier New</FontFamily>
     <FontFamily x:Key="P.Font.Family.Display">Dubai Medium, Dubai, Segoe UI, Tahoma</FontFamily>
+    <FontFamily x:Key="P.Font.Family.Glyph">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
     <sys:Double x:Key="P.Font.Size.100">11</sys:Double>
     <sys:Double x:Key="P.Font.Size.200">12</sys:Double>
     <sys:Double x:Key="P.Font.Size.300">13</sys:Double>
@@ -86,6 +87,10 @@
 
     <!-- قياساتٌ يتقاسمها أكثر من مكوّن -->
     <sys:Double x:Key="C.IconButton.Size">34</sys:Double>
+    <sys:Double x:Key="C.TitleBar.Height">32</sys:Double>
+    <sys:Double x:Key="C.TitleBar.ButtonWidth">46</sys:Double>
+    <sys:Double x:Key="C.TitleBar.GlyphSize">10</sys:Double>
+    <Thickness  x:Key="C.Window.MaximizedInset">8</Thickness>
     <sys:Double x:Key="C.Control.Size.Xs">24</sys:Double>
     <GridLength x:Key="C.Control.Size.Xs.Column">24</GridLength>
     <sys:Double x:Key="C.Stepper.Height">18</sys:Double>

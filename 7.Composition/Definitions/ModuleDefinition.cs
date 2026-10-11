@@ -29,6 +29,7 @@ namespace PrimeERP.Composition.Definitions
         public DialogDefinition Dialog { get; init; }
 
         public DocumentDialogDefinition DocumentDialog { get; init; }
+        public DocumentDialogDefinition ReturnDialog { get; init; }
 
         /// <summary>صفٌّ يحرّره محرّر نوعه</summary>
         public string RowKindProperty { get; init; }

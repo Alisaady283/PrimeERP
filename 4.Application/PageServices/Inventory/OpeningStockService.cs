@@ -153,7 +153,8 @@ namespace PrimeERP.Application.PageServices.Inventory
                 foreach (var line in lines)
                 {
                     var moved = _stock.RecordMovement(db, line.ProductId, dto.WarehouseId,
-                        MovementType.In, line.Qty, line.UnitCost, EntityName, entryId, entryNo, dto.Date, line.Notes);
+                        MovementType.In, line.Qty, line.UnitCost, EntityName, entryId, entryNo, dto.Date, line.Notes,
+                        string.IsNullOrWhiteSpace(line.BatchNo) ? null : line.BatchNo.Trim(), line.ExpiryDate);
                     if (moved.IsFailure) return moved;
                 }
 

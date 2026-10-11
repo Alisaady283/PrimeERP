@@ -18,6 +18,7 @@ namespace PrimeERP.Data.Repositories
         Dictionary<int, Attendance> LinesOf(int sheetId);
         Dictionary<int, Dictionary<AttendanceStatus, int>> Counts(IEnumerable<int> sheetIds);
         Dictionary<int, List<Attendance>> DaysByEmployee(DateTime from, DateTime to);
+        List<(int EmployeeId, int Present, int Absent, int Leave, int LateMinutes, int OvertimeMinutes)> Summary(DateTime from, DateTime to);
         int InsertHeader(PrimeDbContext db, AttendanceSheet sheet);
         void InsertLine(PrimeDbContext db, int sheetId, Attendance line);
         void DeleteDocument(PrimeDbContext db, int id);
@@ -53,6 +54,23 @@ namespace PrimeERP.Data.Repositories
         public Dictionary<int, List<Attendance>> DaysByEmployee(DateTime from, DateTime to) =>
             FetchOf<Attendance>(LineTable, q => q.Where(a => a.SheetId > 0 && a.Date >= from.Date && a.Date <= to.Date))
                 .GroupBy(a => a.EmployeeId).ToDictionary(g => g.Key, g => g.ToList());
+
+        public List<(int EmployeeId, int Present, int Absent, int Leave, int LateMinutes, int OvertimeMinutes)> Summary(DateTime from, DateTime to) =>
+            Scope(null, ctx => SetOf<Attendance>(ctx, LineTable).AsNoTracking()
+                .Where(a => a.Date >= from && a.Date <= to)
+                .GroupBy(a => a.EmployeeId)
+                .Select(g => new
+                {
+                    g.Key,
+                    Present = g.Count(a => a.Status == Domain.Enums.AttendanceStatus.Present),
+                    Absent = g.Count(a => a.Status == Domain.Enums.AttendanceStatus.Absent),
+                    Leave = g.Count(a => a.Status == Domain.Enums.AttendanceStatus.Leave),
+                    Late = g.Sum(a => a.LateMinutes),
+                    Overtime = g.Sum(a => a.OvertimeMinutes)
+                })
+                .ToList()
+                .Select(x => (x.Key, x.Present, x.Absent, x.Leave, x.Late, x.Overtime))
+                .ToList());
 
         public int InsertHeader(PrimeDbContext db, AttendanceSheet sheet) => Add(sheet, db);
 

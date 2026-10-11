@@ -43,9 +43,21 @@ namespace PrimeERP.Application.Services.Entities
         protected override Field<TEntity>[] Fields => _fields;
 
         public Result<List<IDictionary<string, object>>> GetAll(bool includeInactive = false) =>
-            Result.Ok(_rows.GetAll(includeInactive).Select(ToDto).ToList());
+            Result.Ok(Scoped(_rows.GetAll(includeInactive)).Select(ToDto).ToList());
+
+        private IEnumerable<TEntity> Scoped(IEnumerable<TEntity> rows) =>
+            !_spec.BranchScoped || AppSession.BranchId == null ? rows
+                : rows.Where(r => Equals(typeof(TEntity).GetProperty("BranchId")?.GetValue(r), AppSession.BranchId));
 
         public Dictionary<int, string> NamesOf(IEnumerable<int> ids) => _rows.NamesOf(ids);
+
+        public Result SeedDefault()
+        {
+            if (_spec.Defaults == null || _rows.GetAll(includeInactive: true).Count > 0) return Result.Ok();
+
+            var created = Add(_spec.Defaults.ToDictionary(field => field.Key, field => (object)LocalizationService.Get(field.Value)));
+            return created.IsSuccess ? Result.Ok() : Result.Fail(created.ErrorMessage, created.ErrorCode);
+        }
 
         protected override TEntity FindById(int id) => _rows.GetById(id);
 

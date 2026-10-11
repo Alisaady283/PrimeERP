@@ -93,10 +93,10 @@ namespace PrimeERP.UI.Components.Feedback
                 var isPlain = value == StatusVariant.Brand;
 
                 headerBorder.Background = isPlain
-                    ? (Brush)FindResource("SurfaceHeader")
+                    ? (Brush)FindResource("DialogHeaderSurface")
                     : Variant(value, "Soft");
 
-                var foreground = isPlain ? (Brush)FindResource("TextPrimary") : Variant(value, "SoftText");
+                var foreground = isPlain ? (Brush)FindResource("DialogHeaderText") : Variant(value, "SoftText");
                 txtHeaderTitle.Foreground = foreground;
                 txtHeaderSubtitle.Foreground = foreground;
                 headerIcon.Stroke = foreground;
@@ -135,17 +135,25 @@ namespace PrimeERP.UI.Components.Feedback
         {
             if (e.Key == Key.Escape)
             {
+                if (InOpenDropDown(Keyboard.FocusedElement as DependencyObject)) return;
                 OnEscapePressed();
                 e.Handled = true;
             }
             else if (e.Key == Key.Enter)
             {
-                if (Keyboard.FocusedElement is TextBox { AcceptsReturn: true })
+                if (Keyboard.FocusedElement is TextBox { AcceptsReturn: true } || InOpenDropDown(Keyboard.FocusedElement as DependencyObject))
                     return;
 
                 OnEnterPressed();
                 e.Handled = true;
             }
+        }
+
+        private static bool InOpenDropDown(DependencyObject element)
+        {
+            for (var node = element; node != null; node = LogicalTreeHelper.GetParent(node) ?? (node is Visual or System.Windows.Media.Media3D.Visual3D ? System.Windows.Media.VisualTreeHelper.GetParent(node) : null))
+                if (node is PrimeERP.UI.Components.Inputs.AppComboBox combo) return combo.IsDropDownOpen;
+            return false;
         }
 
         private void btnClose_Click(object sender, RoutedEventArgs e) => OnEscapePressed();

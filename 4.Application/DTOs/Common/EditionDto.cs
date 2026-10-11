@@ -7,6 +7,10 @@ namespace PrimeERP.Application.DTOs.Common
     {
         public List<string> ModuleKeys   { get; set; } = new();
         public bool         Simplified   { get; set; }
+        public bool         English      { get; set; }
+        public string       Serial       { get; set; }
+        public string       Customer     { get; set; }
+        public string       Version      { get; set; }
         public string       TargetFolder { get; set; }
     }
 

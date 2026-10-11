@@ -97,5 +97,7 @@ namespace PrimeERP.Domain.Contracts
         bool Framed => false;
 
         bool HalfPage => false;
+
+        bool Roll => false;
     }
 }

@@ -12,6 +12,13 @@ namespace PrimeERP.UI.Components.Shell
     {
         private readonly List<(string Label, Action Raise)> _userMenu;
 
+        private static readonly (string Key, string Source)[] Palette =
+        {
+            ("TextPrimary", "TopBarText"), ("TextSecondary", "TopBarIcon"), ("TextMuted", "TopBarTextMuted"),
+            ("SurfaceDefault", "TopBarSurface"), ("SurfaceRaised", "TopBarSurface"), ("SurfaceSunken", "TopBarHover"),
+            ("SurfaceCanvas", "TopBarHover"), ("TableRowSelected", "TopBarHover"), ("OutlineDefault", "TopBarBorder")
+        };
+
         public static readonly DependencyProperty BreadcrumbProperty =
             DependencyProperty.Register(nameof(Breadcrumb), typeof(List<string>), typeof(AppTopBar),
                 new PropertyMetadata(null, (d, e) => ((AppTopBar)d).breadcrumb.Items = (List<string>)e.NewValue ?? new List<string>()));
@@ -62,7 +69,6 @@ namespace PrimeERP.UI.Components.Shell
         public string       UserInitial       { get => (string)GetValue(UserInitialProperty);         set => SetValue(UserInitialProperty, value); }
         public object       ActionsContent    { get => GetValue(ActionsContentProperty);               set => SetValue(ActionsContentProperty, value); }
 
-        public event EventHandler SidebarToggled;
         public event EventHandler PasswordChangeRequested;
         public event EventHandler LogoutRequested;
         public event EventHandler UpdateRequested;
@@ -71,6 +77,7 @@ namespace PrimeERP.UI.Components.Shell
         public AppTopBar()
         {
             InitializeComponent();
+            foreach (var (key, source) in Palette) Resources[key] = FindResource(source);
             _userMenu = new()
             {
                 (LocalizationService.Get("Str.TopBar.ChangePassword"), () => PasswordChangeRequested?.Invoke(this, EventArgs.Empty)),
@@ -99,7 +106,6 @@ namespace PrimeERP.UI.Components.Shell
             c.notifBadgeText.Text = count > 99 ? "99+" : count.ToString();
         }
 
-        private void btnToggleSidebar_Click(object sender, RoutedEventArgs e) => SidebarToggled?.Invoke(this, EventArgs.Empty);
 
 
         public void HideLanguage()

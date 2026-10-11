@@ -12,6 +12,7 @@ namespace PrimeERP.Domain.Entities
 
         public string Manifest     { get; set; }
         public bool   Simplified   { get; set; }
+        public bool   English      { get; set; }
 
         public string MachineHash  { get; set; }
         public bool   IsActive     { get; set; } = true;

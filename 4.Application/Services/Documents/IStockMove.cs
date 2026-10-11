@@ -17,7 +17,14 @@ namespace PrimeERP.Application.Services.Documents
         Result<List<Domain.Entities.StockMovement>> GetMovements(DateTime from, DateTime to, int? warehouseId = null, int maxResults = 500);
 
         Result RecordMovement(PrimeDbContext db, int productId, int warehouseId, Domain.Enums.MovementType type,
+            decimal qty, decimal unitCost, string sourceDocType, int? sourceDocId, string sourceDocNo, DateTime? date = null, string notes = null,
+            string batch = null, DateTime? expiry = null);
+
+        Result Move(PrimeDbContext db, Domain.Entities.Common.IProductLine line, int warehouseId, Domain.Enums.MovementType type,
             decimal qty, decimal unitCost, string sourceDocType, int? sourceDocId, string sourceDocNo, DateTime? date = null, string notes = null);
+
+        Result Transfer(PrimeDbContext db, Domain.Entities.Common.IProductLine line, int fromWarehouseId, int toWarehouseId,
+            decimal qty, string sourceDocType, int sourceDocId, string sourceDocNo, DateTime date);
 
         void RemoveMovements(PrimeDbContext db, string sourceDocType, int sourceDocId);
 

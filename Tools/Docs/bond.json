@@ -74,7 +74,17 @@
   "EmployeeDeductions": "EmployeeDeduction",
   "Attendances": "Attendance",
   "Licenses": "License",
-  "NumberSequences": "NumberSequence"
+  "NumberSequences": "NumberSequence",
+  "Branches": "Branch",
+  "PosShifts": "PosShift",
+  "HeldSales": "HeldSale",
+  "WorkCenters": "WorkCenter",
+  "BillsOfMaterials": "BillOfMaterials",
+  "BomLines": "BomLine",
+  "ProductionOrders": "ProductionOrder",
+  "ProductionOrderLines": "ProductionOrderLine",
+  "ScrapDocuments": "StockAdjustment",
+  "ScrapLines": "StockAdjustmentLine"
  },
  "skip": [
   "AssetDepreciationLines",

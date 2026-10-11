@@ -112,7 +112,7 @@ namespace PrimeERP.Application.PageServices.Purchasing
                     var line = lines[i];
                     inserted.Add((dto.Lines[i], _invoices.InsertLine(db, id, line), line.Qty));
                     var moveResult = simplifiedFlow
-                        ? Stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, line.UnitPrice,
+                        ? Stock.Move(db, line, dto.WarehouseId, MovementType.In, line.Qty, line.UnitPrice,
                             StockSource, id, invoiceNo, dto.InvoiceDate)
                         : Result.Ok();
                     if (moveResult.IsFailure) throw new InvalidOperationException(moveResult.ErrorMessage);

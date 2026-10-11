@@ -15,6 +15,7 @@ namespace PrimeERP.Data.Repositories
         DbConnection Open(string databasePath);
         void CopyProgram(string source, string target, double share, Action<int> report);
         void PointAtDatabase(string settingsFile, string databasePath);
+        void WriteJson(string path, object content);
     }
 
     public class EditionRepository : IEditionRepository
@@ -62,9 +63,15 @@ namespace PrimeERP.Data.Repositories
                 : new JsonObject();
 
             settings["Database"] ??= new JsonObject();
+            settings["Database"]["Provider"] = nameof(DatabaseProvider.Sqlite);
             settings["Database"]["FilePath"] = databasePath;
 
-            File.WriteAllText(settingsFile, settings.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(settingsFile, settings.ToJsonString(Indented));
         }
+
+        public void WriteJson(string path, object content) =>
+            File.WriteAllText(path, JsonSerializer.Serialize(content, Indented));
+
+        private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
     }
 }

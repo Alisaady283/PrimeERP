@@ -28,6 +28,7 @@ namespace PrimeERP.Domain.Entities
         public int?        CostAccountId      { get; set; }
         public bool        IsStockTracked     { get; set; } = true;
         public bool        IsService          { get; set; } = false;
+        public bool        HasExpiry          { get; set; }
         public string      Notes              { get; set; }
         public bool        IsActive           { get; set; } = true;
 

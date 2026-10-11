@@ -56,7 +56,7 @@ namespace PrimeERP.App
             }
 
             _permissions.LoadForUser(user.Id);
-            AppSession.SignIn(user.Id, user.Username, user.DisplayName, user.RoleId, user.RoleName, AppSession.Permissions.ToList());
+            AppSession.SignIn(user.Id, user.Username, user.DisplayName, user.RoleId, user.RoleName, AppSession.Permissions.ToList(), user.BranchId);
             _store.UpdateLastLogin(user.Id);
 
             LoginSucceeded = true;

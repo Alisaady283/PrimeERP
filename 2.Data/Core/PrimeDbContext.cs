@@ -70,6 +70,14 @@ namespace PrimeERP.Data.Core
         public DbSet<Voucher> Vouchers => Set<Voucher>();
         public DbSet<VoucherAllocation> VoucherAllocations => Set<VoucherAllocation>();
         public DbSet<Warehouse> Warehouses => Set<Warehouse>();
+        public DbSet<Branch> Branches => Set<Branch>();
+        public DbSet<PosShift> PosShifts => Set<PosShift>();
+        public DbSet<HeldSale> HeldSales => Set<HeldSale>();
+        public DbSet<WorkCenter> WorkCenters => Set<WorkCenter>();
+        public DbSet<BillOfMaterials> BillsOfMaterials => Set<BillOfMaterials>();
+        public DbSet<BomLine> BomLines => Set<BomLine>();
+        public DbSet<ProductionOrder> ProductionOrders => Set<ProductionOrder>();
+        public DbSet<ProductionOrderLine> ProductionOrderLines => Set<ProductionOrderLine>();
 
         protected override void OnModelCreating(ModelBuilder model)
         {
@@ -671,6 +679,96 @@ namespace PrimeERP.Data.Core
                 e.Property(x => x.Amount).HasPrecision(18, 4);
                 e.HasIndex("VoucherDate").HasDatabaseName("IX_Vouchers_VoucherDate");
                 e.HasIndex("VoucherNo").HasDatabaseName("IX_Vouchers_VoucherNo").IsUnique();
+            });
+
+            model.Entity<PosShift>(e =>
+            {
+                e.ToTable("PosShifts");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.OpeningCash).HasPrecision(18, 4);
+                e.Property(x => x.CashIn).HasPrecision(18, 4);
+                e.Property(x => x.CashOut).HasPrecision(18, 4);
+                e.Property(x => x.CountedCash).HasPrecision(18, 4);
+                e.Property(x => x.Difference).HasPrecision(18, 4);
+                e.HasIndex("UserId").HasDatabaseName("IX_PosShifts_UserId");
+            });
+
+            model.Entity<HeldSale>(e =>
+            {
+                e.ToTable("HeldSales");
+                e.HasKey(x => x.Id);
+                e.HasIndex("BranchId").HasDatabaseName("IX_HeldSales_BranchId");
+            });
+
+            model.Entity<WorkCenter>(e =>
+            {
+                e.ToTable("WorkCenters");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.CostPerHour).HasPrecision(18, 4);
+                e.HasIndex("Code").HasDatabaseName("IX_WorkCenters_Code").IsUnique();
+            });
+
+            model.Entity<BillOfMaterials>(e =>
+            {
+                e.ToTable("BillsOfMaterials");
+                e.HasKey(x => x.Id);
+                e.Ignore(x => x.Lines);
+                e.Property(x => x.Qty).HasPrecision(18, 4);
+                e.HasIndex("Code").HasDatabaseName("IX_BillsOfMaterials_Code").IsUnique();
+            });
+
+            model.Entity<BomLine>(e =>
+            {
+                e.ToTable("BomLines");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Qty).HasPrecision(18, 4);
+                e.Property(x => x.WastePercent).HasPrecision(18, 4);
+                e.HasIndex("BomId").HasDatabaseName("IX_BomLines_BomId");
+            });
+
+            model.Entity<ProductionOrder>(e =>
+            {
+                e.ToTable("ProductionOrders");
+                e.HasKey(x => x.Id);
+                e.Ignore(x => x.Lines);
+                e.Property(x => x.Qty).HasPrecision(18, 4);
+                e.Property(x => x.MaterialsCost).HasPrecision(18, 4);
+                e.Property(x => x.OperationsCost).HasPrecision(18, 4);
+                e.Property(x => x.TotalCost).HasPrecision(18, 4);
+                e.HasIndex("OrderNo").HasDatabaseName("IX_ProductionOrders_OrderNo").IsUnique();
+            });
+
+            model.Entity<ProductionOrderLine>(e =>
+            {
+                e.ToTable("ProductionOrderLines");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Qty).HasPrecision(18, 4);
+                e.Property(x => x.UnitCost).HasPrecision(18, 4);
+                e.HasIndex("OrderId").HasDatabaseName("IX_ProductionOrderLines_OrderId");
+            });
+
+            model.SharedTypeEntity<StockAdjustment>("ScrapDocuments", e =>
+            {
+                e.ToTable("ScrapDocuments");
+                e.HasKey(x => x.Id);
+                e.Ignore(x => x.Lines);
+                e.HasIndex("DocNo").HasDatabaseName("IX_ScrapDocuments_DocNo").IsUnique();
+            });
+
+            model.SharedTypeEntity<StockAdjustmentLine>("ScrapLines", e =>
+            {
+                e.ToTable("ScrapLines");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Qty).HasPrecision(18, 4);
+                e.Property(x => x.UnitCost).HasPrecision(18, 4);
+                e.HasIndex("DocumentId").HasDatabaseName("IX_ScrapLines_DocumentId");
+            });
+
+            model.Entity<Branch>(e =>
+            {
+                e.ToTable("Branches");
+                e.HasKey(x => x.Id);
+                e.HasIndex("Code").HasDatabaseName("IX_Branches_Code").IsUnique();
             });
 
             model.Entity<Warehouse>(e =>

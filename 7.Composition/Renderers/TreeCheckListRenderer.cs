@@ -46,7 +46,7 @@ namespace PrimeERP.Composition.Renderers
                 summary.Text = LocalizationService.Get("Str.Permissions.Granted", granted, keyNodes.Count);
             }
 
-            var editable = new List<(SourceNote Source, AppTextBox Box)>();
+            var editable = new List<(SourceNote Source, Func<string> Read)>();
 
             int SelectedSourceId() => sourcePicker.SelectedValue is int id ? id : 0;
 
@@ -126,15 +126,17 @@ namespace PrimeERP.Composition.Renderers
                 saveButton.IsEnabled = false;
                 try
                 {
-                    foreach (var (source, box) in editable)
+                    foreach (var (source, read) in editable)
                     {
-                        var noted = source.Save(services, SelectedSourceId(), box.Text);
+                        var noted = source.Save(services, SelectedSourceId(), read());
                         if (noted.IsFailure) { toast.Error(noted.ErrorMessage); return; }
                     }
 
                     var result = await def.Save(services, SelectedSourceId(), nodes);
-                    if (result.IsSuccess) toast.Success(LocalizationService.Get("Str.Success"));
-                    else toast.Error(result.ErrorMessage);
+                    if (result.IsFailure) { toast.Error(result.ErrorMessage); return; }
+
+                    toast.Success(LocalizationService.Get("Str.Success"));
+                    LoadTree();
                 }
                 finally { saveButton.IsEnabled = true; }
             };
@@ -149,15 +151,22 @@ namespace PrimeERP.Composition.Renderers
 
             foreach (var source in def.SourceNotes)
             {
-                var note = new AppTextBox
-                {
-                    Label = LocalizationService.Get(source.LabelKey),
-                    Width = 200, IsReadOnly = source.Save == null, Margin = new Thickness(12, 0, 0, 0)
-                };
+                var label = LocalizationService.Get(source.LabelKey);
+                var margin = new Thickness(12, 0, 0, 0);
 
+                if (source.Kind == FieldKind.Check)
+                {
+                    var check = new AppCheckBox { Label = label, Margin = margin, VerticalAlignment = VerticalAlignment.Center, IsEnabled = source.Save != null };
+                    top.Children.Add(check);
+                    sourcePicker.SelectionChanged += (_, __) => check.IsChecked = source.Value(services, SelectedSourceId()) == bool.TrueString;
+                    if (source.Save != null) editable.Add((source, () => check.IsChecked.ToString()));
+                    continue;
+                }
+
+                var note = new AppTextBox { Label = label, Width = 200, IsReadOnly = source.Save == null, Margin = margin };
                 top.Children.Add(note);
                 sourcePicker.SelectionChanged += (_, __) => note.Text = source.Value(services, SelectedSourceId());
-                if (source.Save != null) editable.Add((source, note));
+                if (source.Save != null) editable.Add((source, () => note.Text));
             }
 
             var root = new Grid();

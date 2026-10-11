@@ -4,6 +4,7 @@ using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.Validation;
 using PrimeERP.Data.Core;
 using PrimeERP.Data.Repositories;
+using PrimeERP.Domain.Calculations;
 using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
@@ -62,6 +63,34 @@ namespace PrimeERP.Application.PageServices.Inventory
         protected override List<Product> FindSearch(string term, int maxResults) => _products.Search(term, maxResults);
 
         protected override void Number(Product p, string code) => p.Code = code;
+
+        protected override Result Prepare(Product p, Product stored)
+        {
+            p.Barcode = string.IsNullOrWhiteSpace(p.Barcode)
+                ? Setting(SettingKeys.Documents.AutoBarcode, false) ? BarcodeCalc.Internal(Setting(SettingKeys.Documents.BarcodePrefix, "20"), p.Code) : null
+                : p.Barcode.Trim();
+
+            if (p.Barcode == null) return Result.Ok();
+
+            if (BarcodeCalc.IsNumeric(p.Barcode) && BarcodeCalc.IsGtinLength(p.Barcode) && p.Barcode[0] != '2' && !BarcodeCalc.IsValidGtin(p.Barcode))
+                return Fail("BarcodeCheckDigit", ErrorCode.ValidationFailed);
+
+            return _products.ExistsBarcode(p.Barcode, p.Id) ? Fail("BarcodeTaken", ErrorCode.ValidationFailed) : Result.Ok();
+        }
+
+        public Result<(Product Product, ScannedCode Code)> Scan(string raw)
+        {
+            if (!Can("View")) return FailDenied<(Product, ScannedCode)>();
+
+            var scale = new ScaleFormat(Setting(SettingKeys.Documents.ScalePrefix, "21"), Setting(SettingKeys.Documents.ScaleItemDigits, 5),
+                Setting(SettingKeys.Documents.ScaleWeighted, true), Setting(SettingKeys.Documents.ScaleDecimals, 3));
+            var code = BarcodeCalc.Read(raw, scale);
+
+            var product = _products.ByBarcodes(new[] { code.Key }).GetValueOrDefault(code.Key) ?? _products.GetByCode(code.Key);
+            return product == null
+                ? Fail<(Product, ScannedCode)>("BarcodeNotFound", ErrorCode.NotFound, code.Key)
+                : Ok((product, code));
+        }
 
         protected override int Insert(PrimeDbContext db, Product p) => _products.Insert(p, db);
         protected override void Save(PrimeDbContext db, Product p) => _products.Update(p, db);

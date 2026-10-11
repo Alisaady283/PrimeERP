@@ -1,0 +1,132 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- الهوية: كحلي (Navy) — اسم الملف اسم الهوية، ومحتواه ألوانها؛ والنسخة الجديدة تُنسخ منه بالمفاتيح والتعليقات نفسها -->
+
+    <!-- Surface -->
+    <SolidColorBrush x:Key="PageBg" Color="#FFFFFF"/>  <!-- خلفية منطقة الصفحة -->
+    <SolidColorBrush x:Key="SurfaceCanvas"     Color="#EFF2F7"/>  <!-- خلفية النافذة الرئيسية وتمرير عناصر القوائم -->
+    <SolidColorBrush x:Key="SurfaceBackground" Color="#F7F9FC"/>  <!-- غير مستعمل -->
+    <SolidColorBrush x:Key="SurfaceDefault"    Color="#FFFFFF"/>  <!-- خلفية الحقول والأزرار والجداول -->
+    <SolidColorBrush x:Key="SurfaceRaised"     Color="#FFFFFF"/>  <!-- خلفية القوائم المنسدلة والجداول المرتفعة -->
+    <SolidColorBrush x:Key="SurfaceOverlay"    Color="#FFFFFF"/>  <!-- خلفية نوافذ الحوار -->
+    <SolidColorBrush x:Key="SurfaceSunken"     Color="#EFF2F7"/>  <!-- خلفية تمرير زرّ الأيقونة والحقل المعطّل -->
+    <SolidColorBrush x:Key="SurfaceHeader"     Color="#F7F9FC"/>  <!-- غير مستعمل -->
+
+    <!-- Border -->
+    <SolidColorBrush x:Key="OutlineSubtle"  Color="#EFF2F7"/>  <!-- حدّ خفيف داخل الحوار والطباعة -->
+    <SolidColorBrush x:Key="OutlineDefault" Color="#E1E6EF"/>  <!-- حدّ الحقول والأزرار والحوار -->
+    <SolidColorBrush x:Key="OutlineStrong"  Color="#CBD3E0"/>  <!-- حدّ قوي وشريط التمرير -->
+    <SolidColorBrush x:Key="OutlineFocus"   Color="#0F2442"/>  <!-- حدّ الحقل عند التركيز -->
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="TextPrimary"   Color="#1B2233"/>  <!-- الخطّ الأساسي -->
+    <SolidColorBrush x:Key="TextSecondary" Color="#4E5975"/>  <!-- الخطّ الثانوي وأيقونات الأزرار -->
+    <SolidColorBrush x:Key="TextTertiary"  Color="#6B7794"/>  <!-- خطّ الشارة المحايدة -->
+    <SolidColorBrush x:Key="TextMuted"     Color="#98A3B8"/>  <!-- الخطّ الباهت والتلميحات -->
+    <SolidColorBrush x:Key="TextOnBrand"   Color="#FFFFFF"/>  <!-- الخطّ فوق لون الهوية -->
+    <SolidColorBrush x:Key="TextLink"      Color="#0F2442"/>  <!-- غير مستعمل -->
+
+    <!-- Brand -->
+    <SolidColorBrush x:Key="BrandDefault"    Color="#0F2442"/>  <!-- لون الهوية: زرّ الدخول والأزرار الأساسية -->
+    <SolidColorBrush x:Key="BrandHover"      Color="#0C1D36"/>  <!-- لون الهوية عند التمرير -->
+    <SolidColorBrush x:Key="BrandActive"     Color="#09172A"/>  <!-- غير مستعمل -->
+    <SolidColorBrush x:Key="BrandSoft"       Color="#ECF0F6"/>  <!-- خلفية فاتحة بلون الهوية -->
+    <SolidColorBrush x:Key="BrandSoftBorder" Color="#A9BDD6"/>  <!-- حدّ الشارة بلون الهوية -->
+    <SolidColorBrush x:Key="BrandSoftText"   Color="#0C1D36"/>  <!-- خطّ الشارة بلون الهوية -->
+
+    <!-- Grid -->
+    <SolidColorBrush x:Key="GridHeaderBg" Color="#EFF2F7"/>  <!-- خلفية صفوف العناوين داخل الجدول -->
+    <SolidColorBrush x:Key="GridHeaderFg" Color="#1B2233"/>  <!-- غير مستعمل -->
+    <SolidColorBrush x:Key="GridRowAltBg" Color="#F7F9FC"/>  <!-- خلفية الصفّ المتناوب في الجدول -->
+
+    <SolidColorBrush x:Key="TreeFolder" Color="#E9B949"/>  <!-- أيقونة المجلّد في الشجرة -->
+    <SolidColorBrush x:Key="LoginBg" Color="#F7F7F7"/>  <!-- خلفية نافذة الدخول -->
+    <SolidColorBrush x:Key="ToolbarBg" Color="#FFFFFF"/>  <!-- خلفية شريط الأدوات وشريط التصفية -->
+
+    <!-- Status -->
+    <SolidColorBrush x:Key="Success"         Color="#277F55"/>  <!-- لون النجاح -->
+    <SolidColorBrush x:Key="SuccessHover"    Color="#1E6544"/>  <!-- النجاح عند التمرير -->
+    <SolidColorBrush x:Key="SuccessSoft"     Color="#EDF6F0"/>  <!-- خلفية النجاح الفاتحة -->
+    <SolidColorBrush x:Key="SuccessSoftText" Color="#1E6544"/>  <!-- خطّ النجاح -->
+
+    <SolidColorBrush x:Key="Danger"         Color="#B03E34"/>  <!-- لون الخطأ والحذف -->
+    <SolidColorBrush x:Key="DangerHover"    Color="#8F312A"/>  <!-- الخطأ عند التمرير -->
+    <SolidColorBrush x:Key="DangerSoft"     Color="#FCEFEE"/>  <!-- خلفية الخطأ الفاتحة -->
+    <SolidColorBrush x:Key="DangerSoftText" Color="#8F312A"/>  <!-- خطّ الخطأ -->
+
+    <SolidColorBrush x:Key="Warning"         Color="#B07817"/>  <!-- لون التنبيه -->
+    <SolidColorBrush x:Key="WarningHover"    Color="#8D5F12"/>  <!-- التنبيه عند التمرير -->
+    <SolidColorBrush x:Key="WarningSoft"     Color="#FDF5E9"/>  <!-- خلفية التنبيه الفاتحة -->
+    <SolidColorBrush x:Key="WarningSoftText" Color="#8D5F12"/>  <!-- خطّ التنبيه -->
+
+    <SolidColorBrush x:Key="Info"         Color="#3A66A0"/>  <!-- لون المعلومة -->
+    <SolidColorBrush x:Key="InfoHover"    Color="#2F5382"/>  <!-- المعلومة عند التمرير -->
+    <SolidColorBrush x:Key="InfoSoft"     Color="#EEF3FA"/>  <!-- خلفية المعلومة الفاتحة -->
+    <SolidColorBrush x:Key="InfoSoftText" Color="#2F5382"/>  <!-- خطّ المعلومة -->
+
+    <!-- Nav -->
+    <SolidColorBrush x:Key="NavSurface"       Color="#0F2442"/>  <!-- خلفية السايدبار -->
+    <SolidColorBrush x:Key="NavSurfaceRaised" Color="#16305A"/>  <!-- غير مستعمل -->
+    <SolidColorBrush x:Key="NavText"          Color="#C9D3E3"/>  <!-- خطّ السايدبار -->
+    <SolidColorBrush x:Key="NavTextHover"     Color="#FFFFFF"/>  <!-- خطّ السايدبار عند التمرير -->
+    <SolidColorBrush x:Key="NavTextSelected"  Color="#FFFFFF"/>  <!-- خطّ الصفحة المفتوحة واسم البرنامج -->
+    <SolidColorBrush x:Key="NavIcon"          Color="#8FA0BC"/>  <!-- أيقونات السايدبار ولاحقة ERP -->
+    <SolidColorBrush x:Key="NavIconHover"     Color="#FFFFFF"/>  <!-- أيقونة السايدبار عند التمرير -->
+    <SolidColorBrush x:Key="NavIconSelected"  Color="#FFFFFF"/>  <!-- أيقونة الصفحة المفتوحة -->
+    <SolidColorBrush x:Key="NavHover"         Color="#1A3560"/>  <!-- خلفية التمرير والصفحة المفتوحة والفواصل في السايدبار -->
+    <SolidColorBrush x:Key="NavSelected"      Color="#1E3D64"/>  <!-- غير مستعمل -->
+    <SolidColorBrush x:Key="NavSelectedBar"   Color="#FFFFFF"/>  <!-- شريط علامة الصفحة المفتوحة -->
+    <SolidColorBrush x:Key="NavSectionLabel"  Color="#8FA0BC"/>  <!-- غير مستعمل -->
+    <SolidColorBrush x:Key="NavDivider"       Color="#1E3D64"/>  <!-- غير مستعمل -->
+
+    <!-- Dialog -->
+    <SolidColorBrush x:Key="DialogHeaderSurface" Color="#0F2442"/>  <!-- خلفية رأس الفورم ونوافذ الحوار -->
+    <SolidColorBrush x:Key="DialogHeaderText"    Color="#FFFFFF"/>  <!-- عنوان رأس الفورم وأيقونتاه -->
+
+    <!-- TitleBar -->
+    <SolidColorBrush x:Key="TitleBarSurface"    Color="#0F2442"/>  <!-- خلفية شريط العنوان أعلى النافذة -->
+    <SolidColorBrush x:Key="TitleBarIcon"       Color="#FFFFFF"/>  <!-- أيقونات التصغير والتكبير والإغلاق -->
+    <SolidColorBrush x:Key="TitleBarHover"      Color="#1A3560"/>  <!-- خلفية زرّ التصغير والتكبير عند التمرير -->
+    <SolidColorBrush x:Key="TitleBarCloseHover" Color="#E81123"/>  <!-- خلفية زرّ الإغلاق عند التمرير -->
+
+    <!-- TopBar -->
+    <SolidColorBrush x:Key="TopBarSurface"   Color="#0F2442"/>  <!-- خلفية الهيدر وقائمة المستخدم -->
+    <SolidColorBrush x:Key="TopBarBorder"    Color="#1E3D64"/>  <!-- حدّ الهيدر السفلي -->
+    <SolidColorBrush x:Key="TopBarText"      Color="#FFFFFF"/>  <!-- خطّ الهيدر -->
+    <SolidColorBrush x:Key="TopBarIcon"      Color="#C9D3E3"/>  <!-- أيقونات الهيدر -->
+    <SolidColorBrush x:Key="TopBarIconHover" Color="#FFFFFF"/>  <!-- غير مستعمل -->
+    <SolidColorBrush x:Key="TopBarTextMuted" Color="#8FA0BC"/>  <!-- الخطّ الباهت في الهيدر -->
+    <SolidColorBrush x:Key="TopBarHover"     Color="#1A3560"/>  <!-- التمرير في الهيدر -->
+    <SolidColorBrush x:Key="TopBarAvatar"    Color="#2A4A78"/>  <!-- دائرة حرف المستخدم -->
+
+    <!-- Table -->
+    <SolidColorBrush x:Key="TableHeaderBg"        Color="#1E3D64"/>  <!-- خلفية رأس الجدول — درجةٌ داكنة من السايدبار -->
+    <SolidColorBrush x:Key="TableHeaderText"      Color="#FFFFFF"/>  <!-- خطّ رأس الجدول -->
+    <SolidColorBrush x:Key="TableHeaderBorder"    Color="#0F2442"/>  <!-- حدّ رأس الجدول -->
+    <SolidColorBrush x:Key="TableRowHover"        Color="#ECF0F6"/>  <!-- خلفية صفّ الجدول عند التمرير -->
+    <SolidColorBrush x:Key="TableRowSelected"     Color="#D4DEEB"/>  <!-- خلفية الصفّ المحدّد في الجدول والقوائم -->
+    <SolidColorBrush x:Key="TableRowSelectedText" Color="#1B2233"/>  <!-- غير مستعمل -->
+    <SolidColorBrush x:Key="TableBorder"          Color="#EFF2F7"/>  <!-- غير مستعمل -->
+    <SolidColorBrush x:Key="TableFooterBg"        Color="#EFF2F7"/>  <!-- غير مستعمل -->
+
+    <!-- Interaction -->
+    <SolidColorBrush x:Key="StateHoverOverlay"   Color="#1B2233" Opacity="0.04"/>  <!-- غير مستعمل -->
+    <SolidColorBrush x:Key="StatePressedOverlay" Color="#1B2233" Opacity="0.08"/>  <!-- غير مستعمل -->
+    <sys:Double x:Key="StateDisabledOpacity">0.45</sys:Double>  <!-- غير مستعمل -->
+    <SolidColorBrush x:Key="StateSelectedBg" Color="#D4DEEB"/>  <!-- غير مستعمل -->
+    <SolidColorBrush x:Key="FocusRing"       Color="#0F2442"/>  <!-- غير مستعمل -->
+    <sys:Double x:Key="FocusRingWidth">2</sys:Double>  <!-- غير مستعمل -->
+
+    <!-- Shadow -->
+    <DropShadowEffect x:Key="ShadowSm" BlurRadius="{DynamicResource P.Shadow.Sm.Blur}" ShadowDepth="{DynamicResource P.Shadow.Sm.Depth}" Opacity="{DynamicResource P.Shadow.Sm.Opacity}" Color="#1B2233" Direction="270"/>  <!-- ظلّ صغير للبطاقات -->
+    <DropShadowEffect x:Key="ShadowMd" BlurRadius="{DynamicResource P.Shadow.Md.Blur}" ShadowDepth="{DynamicResource P.Shadow.Md.Depth}" Opacity="{DynamicResource P.Shadow.Md.Opacity}" Color="#1B2233" Direction="270"/>  <!-- ظلّ القوائم المنسدلة -->
+    <DropShadowEffect x:Key="ShadowLg" BlurRadius="{DynamicResource P.Shadow.Lg.Blur}" ShadowDepth="{DynamicResource P.Shadow.Lg.Depth}" Opacity="{DynamicResource P.Shadow.Lg.Opacity}" Color="#1B2233" Direction="270"/>  <!-- ظلّ نوافذ الحوار والدخول -->
+    <DropShadowEffect x:Key="ShadowXl" BlurRadius="{DynamicResource P.Shadow.Xl.Blur}" ShadowDepth="{DynamicResource P.Shadow.Xl.Depth}" Opacity="{DynamicResource P.Shadow.Xl.Opacity}" Color="#1B2233" Direction="270"/>  <!-- غير مستعمل -->
+
+    <!-- Scrim -->
+    <SolidColorBrush x:Key="Scrim" Color="#000000" Opacity="0.35"/>  <!-- تعتيم خلف شاشة التحميل -->
+
+</ResourceDictionary>

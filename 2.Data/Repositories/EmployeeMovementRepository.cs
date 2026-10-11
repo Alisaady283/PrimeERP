@@ -16,6 +16,7 @@ namespace PrimeERP.Data.Repositories
             string sortColumn, bool sortDescending);
 
         Dictionary<int, List<T>> PendingByEmployee(int year, int month);
+        List<T> Between(DateTime from, DateTime to);
         void Settle(PrimeDbContext db, IEnumerable<int> ids, int payrollId);
         void Release(PrimeDbContext db, int payrollId);
 
@@ -44,6 +45,9 @@ namespace PrimeERP.Data.Repositories
 
         public override T GetById(int id, PrimeDbContext db = null) =>
             WithEmployee(Fetch(q => q.Where(m => m.Id == id), db)).FirstOrDefault();
+
+        public List<T> Between(DateTime from, DateTime to) =>
+            WithEmployee(Fetch(q => q.Where(m => m.Date >= from && m.Date <= to).OrderBy(m => m.Date)));
 
         public (List<T> Items, int Total) GetPaged(int page, int pageSize, string searchText, int? employeeId,
             string sortColumn, bool sortDescending)

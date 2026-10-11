@@ -29,6 +29,7 @@ namespace PrimeERP.Composition.Definitions
         public string   PatternMessage { get; init; }
 
         public FlowScope FlowScope { get; init; } = FlowScope.Both;
+        public Func<PrimeERP.Platform.Settings.ISettingsProvider, bool> ShownWhen { get; init; }
         public int ColumnSpan { get; init; } = 1;
 
         public string PickerType { get; init; }

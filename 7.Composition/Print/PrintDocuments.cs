@@ -23,7 +23,7 @@ namespace PrimeERP.Composition.Print
             public string BarcodeText { get; init; }
         }
 
-        public static IPrintable Trade(DocumentDialogDefinition definition, string title, object document, PaperOptions paper = null, List<string> signatures = null)
+        public static IPrintable Trade(DocumentDialogDefinition definition, string title, object document, PaperOptions paper = null, List<string> signatures = null, bool roll = false)
         {
             var doc = new DocumentReader(document);
             var sections = new List<PrintSection>();
@@ -32,7 +32,7 @@ namespace PrimeERP.Composition.Print
             var number = doc.Number();
             var docDate = doc.Display("DocDate") ?? doc.Display("InvoiceDate") ?? doc.Display("ReturnDate") ?? "";
 
-            if (!string.IsNullOrWhiteSpace(party))
+            if (!roll && !string.IsNullOrWhiteSpace(party))
                 sections.Add(new PrintSection
                 {
                     Type = PrintSectionType.Parties,
@@ -57,19 +57,20 @@ namespace PrimeERP.Composition.Print
             if (!string.IsNullOrWhiteSpace(paper?.BarcodeText))
                 sections.Add(new PrintSection { Type = PrintSectionType.Barcode, Text = paper.BarcodeText });
 
-            if (!string.IsNullOrWhiteSpace(paper?.Terms))
+            if (!roll && !string.IsNullOrWhiteSpace(paper?.Terms))
                 sections.Add(new PrintSection { Type = PrintSectionType.Terms, Text = paper.Terms });
 
             return new ComposedPrintable
             {
                 Title = title,
                 Subtitle = number,
-                Orientation = ColumnCount(definition) > 5 ? PrintOrientation.Landscape : PrintOrientation.Portrait,
+                Orientation = !roll && ColumnCount(definition) > 5 ? PrintOrientation.Landscape : PrintOrientation.Portrait,
                 Header = HeaderFields(definition, doc, party, number, docDate),
                 Footer = doc.NotesField(),
-                Signatures = signatures ?? TradeSignatures().ToList(),
-                CopyLabels = paper?.CopyLabels ?? new(),
-                LinesPerPage = paper?.LinesPerPage ?? 0,
+                Signatures = roll ? new() : signatures ?? TradeSignatures().ToList(),
+                Roll = roll,
+                CopyLabels = roll ? new() : paper?.CopyLabels ?? new(),
+                LinesPerPage = roll ? 0 : paper?.LinesPerPage ?? 0,
                 Sections = sections
             };
         }
@@ -330,7 +331,7 @@ namespace PrimeERP.Composition.Print
             public Dictionary<string, string> FooterFields => Footer;
 
             public bool ShowCompanyHeader => true;
-            public bool ShowPageNumbers => true;
+            public bool ShowPageNumbers => !Roll;
             public bool ShowSignatures => Signatures is { Count: > 0 };
             public List<string> SignatureLabels => Signatures;
 
@@ -339,6 +340,7 @@ namespace PrimeERP.Composition.Print
 
             public bool Framed { get; init; }
             public bool HalfPage { get; init; }
+            public bool Roll { get; init; }
 
             public List<PrintSection> BuildSections() => Sections;
         }

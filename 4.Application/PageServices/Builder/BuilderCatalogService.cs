@@ -86,16 +86,13 @@ namespace PrimeERP.Application.PageServices.Builder
         public void SeedModules(IEnumerable<CodedPage> pages)
         {
             var coded = pages.ToList();
-            var live = coded.Select(p => p.Key).ToHashSet();
-
-            foreach (var stale in _repo.Modules().Where(m => m.IsCoded && !live.Contains(m.Key)))
-                _repo.DeleteModule(stale.Id);
 
             var sections = _repo.Sections().ToDictionary(s => s.Key, s => s.Id);
             var existing = _repo.ModuleKeys().ToHashSet();
             var seeded = _repo.Modules().ToDictionary(m => m.Key, m => m.Id);
             var columned = _repo.Columns(0).Select(c => c.ModuleId).ToHashSet();
             var filtered = _repo.Filters(0).Select(f => f.ModuleId).ToHashSet();
+            var actioned = _repo.Actions(0).Select(a => a.ModuleId).ToHashSet();
             var orders = _repo.Modules().ToDictionary(m => m.Key, m => m.SortOrder);
             var rows = _repo.Modules().ToDictionary(m => m.Id);
 
@@ -108,7 +105,7 @@ namespace PrimeERP.Application.PageServices.Builder
                 {
                     if (seeded.TryGetValue(page.Key, out var seededId))
                     {
-                        Backfill(seededId, page, columned, filtered);
+                        Backfill(seededId, page, columned, filtered, actioned);
                         if (rows.TryGetValue(seededId, out var row)) Translate(row, page);
                     }
                     previous = page.Key;
@@ -168,8 +165,11 @@ namespace PrimeERP.Application.PageServices.Builder
             }
         }
 
-        private void Backfill(int moduleId, CodedPage page, HashSet<int> columned, HashSet<int> filtered)
+        private void Backfill(int moduleId, CodedPage page, HashSet<int> columned, HashSet<int> filtered, HashSet<int> actioned)
         {
+            if (page.Actions.Count > 0 && !actioned.Contains(moduleId))
+                _repo.ReplaceActions(moduleId, page.Actions);
+
             if (page.Columns.Count > 0 && !columned.Contains(moduleId))
                 _repo.ReplaceColumns(moduleId, page.Columns);
 

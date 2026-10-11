@@ -19,6 +19,7 @@ namespace PrimeERP.Composition.Renderers
                 ?? throw new InvalidOperationException($"الوحدة '{definition.Key}' بتخطيط DocumentPage بلا DocumentDialogDefinition.");
 
             var toast = services.GetRequiredService<IToastService>();
+            def = DocumentRenderer.Shown(def, services);
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });

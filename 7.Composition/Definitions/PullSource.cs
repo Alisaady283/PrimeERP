@@ -11,6 +11,7 @@ namespace PrimeERP.Composition.Definitions
         public List<string> MatchFields { get; init; } = new();
         public bool AllowPartial { get; init; } = true;
         public bool AllowMultiSource { get; init; } = true;
+        public FlowScope FlowScope { get; init; } = FlowScope.Both;
     }
 
     public enum StockEffect

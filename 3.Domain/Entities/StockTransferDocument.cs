@@ -26,5 +26,7 @@ namespace PrimeERP.Domain.Entities
         public string  ProductName { get; set; }
         public decimal Qty         { get; set; }
         public string  Notes       { get; set; }
+        public string  BatchNo     { get; set; }
+        public DateTime? ExpiryDate { get; set; }
     }
 }

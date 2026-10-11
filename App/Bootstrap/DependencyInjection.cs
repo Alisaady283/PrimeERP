@@ -79,6 +79,11 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<ILookupRepository<JobTitle>>(_ => new LookupRepository<JobTitle>("JobTitles"));
             services.AddSingleton<ILookupRepository<Unit>>(_ => new LookupRepository<Unit>("Units"));
             services.AddSingleton<ILookupRepository<Warehouse>>(_ => new LookupRepository<Warehouse>("Warehouses"));
+            services.AddSingleton<ILookupRepository<Branch>>(_ => new LookupRepository<Branch>("Branches"));
+            services.AddSingleton<ILookupRepository<WorkCenter>>(_ => new LookupRepository<WorkCenter>("WorkCenters"));
+            services.AddSingleton<IBillOfMaterialsRepository, BillOfMaterialsRepository>();
+            services.AddSingleton<IProductionOrderRepository, ProductionOrderRepository>();
+            services.AddSingleton<IScrapRepository, ScrapRepository>();
             services.AddSingleton<IBuilderRepository, BuilderRepository>();
             services.AddSingleton<PrimeERP.Application.PageServices.Builder.IBuilderCatalog, PrimeERP.Application.PageServices.Builder.BuilderCatalog>();
             services.AddSingleton<PrimeERP.Application.PageServices.Builder.BuilderSectionsService>();
@@ -151,6 +156,9 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<PrimeERP.Application.Reporting.IStockReportService, PrimeERP.Application.Reporting.StockReportService>();
             services.AddSingleton<PrimeERP.Application.Reporting.IPartyReportService, PrimeERP.Application.Reporting.PartyReportService>();
             services.AddSingleton<PrimeERP.Application.Reporting.ISalesReportService, PrimeERP.Application.Reporting.SalesReportService>();
+            services.AddSingleton<PrimeERP.Application.Reporting.IHrReportService, PrimeERP.Application.Reporting.HrReportService>();
+            services.AddSingleton<PrimeERP.Application.Reporting.IPosReportService, PrimeERP.Application.Reporting.PosReportService>();
+            services.AddSingleton<PrimeERP.Application.Reporting.IManufacturingReportService, PrimeERP.Application.Reporting.ManufacturingReportService>();
             services.AddSingleton<PrimeERP.Application.Reporting.IAssetReportService, PrimeERP.Application.Reporting.AssetReportService>();
             services.AddSingleton<PrimeERP.Application.Reporting.IPayslipReportService, PrimeERP.Application.Reporting.PayslipReportService>();
             services.AddSingleton<PrimeERP.Application.Reporting.IBuilderReportService, PrimeERP.Application.Reporting.BuilderReportService>();
@@ -174,6 +182,8 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<JobTitle>>(sp, LookupPages.JobTitles));
             services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<Unit>>(sp, LookupPages.Units));
             services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<Warehouse>>(sp, LookupPages.Warehouses));
+            services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<Branch>>(sp, LookupPages.Branches));
+            services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<WorkCenter>>(sp, LookupPages.WorkCenters));
             services.AddSingleton<IStockMove, StockMove>();
             services.AddSingleton<PrimeERP.Application.PageServices.Inventory.IOpeningStockService, PrimeERP.Application.PageServices.Inventory.OpeningStockService>();
             services.AddSingleton<PrimeERP.Application.Services.Documents.IDocumentPull,
@@ -183,11 +193,20 @@ namespace PrimeERP.App.Bootstrap
             services.AddSingleton<PrimeERP.Composition.Pull.IPullService>(sp => sp.GetRequiredService<PrimeERP.Composition.Pull.PullService>());
             services.AddSingleton<PrimeERP.Domain.Contracts.IPullSourceReader>(sp => sp.GetRequiredService<PrimeERP.Composition.Pull.PullService>());
             services.AddSingleton<ISalesInvoiceService, SalesInvoiceService>();
+            services.AddSingleton<IPosService, PosService>();
+            services.AddSingleton<IPosShiftRepository, PosShiftRepository>();
+            services.AddSingleton<IHeldSaleRepository, HeldSaleRepository>();
+            services.AddSingleton<PosShiftReport>();
             services.AddSingleton<IPurchaseInvoiceService, PurchaseInvoiceService>();
             services.AddSingleton<ISalesReturnService, SalesReturnService>();
             services.AddSingleton<IPurchaseReturnService, PurchaseReturnService>();
             services.AddSingleton<IStockInService, StockInService>();
             services.AddSingleton<IStockOutService, StockOutService>();
+            services.AddSingleton<IScrapService, ScrapService>();
+            services.AddSingleton<PrimeERP.Application.Services.Documents.Production>();
+            services.AddSingleton<PrimeERP.Application.PageServices.Manufacturing.IBillOfMaterialsService, PrimeERP.Application.PageServices.Manufacturing.BillOfMaterialsService>();
+            services.AddSingleton<PrimeERP.Application.PageServices.Manufacturing.IProductionOrderService, PrimeERP.Application.PageServices.Manufacturing.ProductionOrderService>();
+            services.AddSingleton<PrimeERP.Application.PageServices.Manufacturing.IUnbuildService, PrimeERP.Application.PageServices.Manufacturing.UnbuildService>();
             services.AddSingleton<PrimeERP.Application.PageServices.Documents.IPurchaseRequestService, PrimeERP.Application.PageServices.Documents.PurchaseRequestService>();
             services.AddSingleton<PrimeERP.Application.PageServices.Documents.IPurchaseOrderService, PrimeERP.Application.PageServices.Documents.PurchaseOrderService>();
             services.AddSingleton<PrimeERP.Application.PageServices.Documents.IQuotationService, PrimeERP.Application.PageServices.Documents.QuotationService>();
@@ -306,15 +325,23 @@ namespace PrimeERP.App.Bootstrap
                 if (file.TryGetProperty("simplified", out var simplified))
                     settings.SetRaw(SettingKeys.Documents.SimplifiedFlow, simplified.GetBoolean() ? "true" : "false");
 
+                if (file.TryGetProperty("english", out var english))
+                    settings.SetRaw(SettingKeys.UI.Language, english.GetBoolean() ? "En" : "Ar");
+
                 System.IO.File.Delete(path);
             }
             catch { }
         }
 
+        private static void ApplyLanguage(ISettingsProvider settings)
+        {
+            var english = settings.Get(SettingKeys.Edition.English, true);
+            var arabic = settings.Get(SettingKeys.Edition.Arabic, true) || !english;
+            LocalizationService.Apply(english && (!arabic || settings.Get(SettingKeys.UI.Language, "Ar") == "En") ? AppLanguage.En : AppLanguage.Ar);
+        }
+
         public static IServiceProvider RegisterModules(this IServiceProvider services)
         {
-            ApplyLicenseFile(services);
-
             var manifest = services.GetRequiredService<ISettingsService>().Get(SettingKeys.UI.Manifest, "");
             if (!string.IsNullOrWhiteSpace(manifest))
                 services.GetRequiredService<IModuleRegistry>().Manifest =
@@ -322,6 +349,7 @@ namespace PrimeERP.App.Bootstrap
 
             ModuleRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             HrRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
+            ManufacturingRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             ReportRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             PermissionModuleRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
             CycleVoucherRegistrations.RegisterAll(services.GetRequiredService<IModuleRegistry>());
@@ -342,17 +370,23 @@ namespace PrimeERP.App.Bootstrap
             SchemaSync.Run();
 
             SettingSeeder.Seed(services.GetRequiredService<ISettingStore>());
+            ApplyLicenseFile(services);
+            ApplyLanguage(services.GetRequiredService<ISettingsProvider>());
 
-
-            AccountSeeder.Seed(services.GetRequiredService<IAccountRepository>());
+            AccountSeeder.Seed(services.GetRequiredService<IAccountRepository>(), LocalizationService.CurrentLanguage == AppLanguage.En);
 
 
             var numberSequences = services.GetRequiredService<INumberSequenceRepository>();
             NumberSequenceSeeder.Seed(numberSequences, services.GetRequiredService<ISettingStore>());
 
             services.GetRequiredService<SettingAccounts>().RepairRoots(PrimeERP.Platform.Settings.SettingKeys.Accounts.LinkedRoots);
+            var settingAccounts = services.GetRequiredService<SettingAccounts>();
+            settingAccounts.Ensure(SettingKeys.Accounts.ProductionOverhead, "51", LocalizationService.Get("Str.Account.ProductionOverhead"));
+            settingAccounts.Ensure(SettingKeys.Accounts.ScrapExpense, "56", LocalizationService.Get("Str.Account.ScrapExpense"));
+            settingAccounts.Ensure(SettingKeys.Accounts.CashOverShort, "56", LocalizationService.Get("Str.Account.CashOverShort"));
             var treasuryService = services.GetRequiredService<PrimeERP.Application.PageServices.Treasury.ITreasuryService>();
             treasuryService.SeedDefaults();
+            services.GetRequiredService<Lookup<Warehouse>>().SeedDefault();
             treasuryService.RepairMissingAccounts();
             foreach (var linked in services.GetServices<PrimeERP.Application.Services.Ledger.Accounts.IAccountLinkedService>())
                 linked.RepairMissingEntities();

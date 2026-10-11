@@ -9,10 +9,33 @@
         MinHeight="600"
         FlowDirection="RightToLeft">
 
-    <shell:AppShell x:Name="shell"
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="{StaticResource C.TitleBar.Height}" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
+    <Window.Style>
+        <Style TargetType="Window">
+            <Style.Triggers>
+                <Trigger Property="WindowState" Value="Maximized">
+                    <Setter Property="BorderThickness" Value="{DynamicResource C.Window.MaximizedInset}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Style>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <shell:AppTitleBar Grid.Row="0"/>
+
+        <shell:AppShell Grid.Row="1" x:Name="shell"
                      NavigationRequested="Shell_NavigationRequested"
                      UpdateRequested="Shell_UpdateRequested"
                      LogoutRequested="Shell_LogoutRequested"
                      PasswordChangeRequested="Shell_PasswordChangeRequested"
                      LanguageToggled="Shell_LanguageToggled"/>
+    </Grid>
 </Window>

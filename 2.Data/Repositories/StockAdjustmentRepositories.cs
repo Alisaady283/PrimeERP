@@ -23,6 +23,7 @@ namespace PrimeERP.Data.Repositories
     public interface IGoodsReceiptRepository : IStockInRepository { }
     public interface IGoodsIssueRepository : IStockInRepository { }
     public interface IDeliveryNoteRepository : IStockInRepository { }
+    public interface IScrapRepository : IStockInRepository { }
     public interface ISalesReceiptRepository : IStockInRepository { }
 
 /// <summary>مستودع StockIn</summary>
@@ -50,6 +51,11 @@ namespace PrimeERP.Data.Repositories
     public class DeliveryNoteRepository : StockAdjustmentRepositoryBase, IDeliveryNoteRepository
     {
         public DeliveryNoteRepository() : base("DeliveryNoteDocuments", "DeliveryNoteLines") { }
+    }
+
+    public class ScrapRepository : StockAdjustmentRepositoryBase, IScrapRepository
+    {
+        public ScrapRepository() : base("ScrapDocuments", "ScrapLines") { }
     }
 
     public class SalesReceiptRepository : StockAdjustmentRepositoryBase, ISalesReceiptRepository

@@ -83,6 +83,8 @@ namespace PrimeERP.UI.Components.Shell
             InitializeComponent();
             itemsHost.ItemsSource = _rootItems;
             logoPresenter.Content ??= DefaultBrand();
+            btnToggle.Resources["TextSecondary"] = FindResource("NavIcon");
+            btnToggle.Resources["SurfaceSunken"] = FindResource("NavHover");
 
             Loaded += (s, e) => AppSession.PermissionsChanged += OnPermissionsChanged;
             Unloaded += (s, e) => AppSession.PermissionsChanged -= OnPermissionsChanged;
@@ -139,9 +141,14 @@ namespace PrimeERP.UI.Components.Shell
         private static void OnIsCollapsedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var c = (AppSidebar)d;
-            var targetWidth = (bool)e.NewValue ? 56.0 : 240.0;
-            c.root.BeginAnimation(WidthProperty, new DoubleAnimation(targetWidth, TimeSpan.FromSeconds(0.2)));
+            var collapsed = (bool)e.NewValue;
+            c.root.BeginAnimation(WidthProperty, new DoubleAnimation(collapsed ? 56.0 : 240.0, TimeSpan.FromSeconds(0.2)));
+            c.logoPresenter.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
+            c.btnToggle.HorizontalAlignment = collapsed ? HorizontalAlignment.Center : HorizontalAlignment.Right;
+            c.btnToggle.Margin = collapsed ? new Thickness(0) : (Thickness)c.FindResource("P.Space.2.Right");
         }
+
+        private void btnToggle_Click(object sender, RoutedEventArgs e) => IsCollapsed = !IsCollapsed;
 
         private void NavRow_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {

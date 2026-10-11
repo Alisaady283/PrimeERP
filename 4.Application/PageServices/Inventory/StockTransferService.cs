@@ -90,8 +90,8 @@ namespace PrimeERP.Application.PageServices.Inventory
                 foreach (var line in resolved)
                 {
                     _repo.InsertLine(db, id, line);
-                    foreach (var (warehouse, direction) in new[] { (dto.FromWarehouseId, MovementType.Out), (dto.ToWarehouseId, MovementType.In) })
-                        Move(db, line, warehouse, direction, id, docNo, dto.MovementDate);
+                    var moved = Stock.Transfer(db, line, dto.FromWarehouseId, dto.ToWarehouseId, line.Qty, StockSource, id, docNo, dto.MovementDate);
+                    if (moved.IsFailure) throw new InvalidOperationException(moved.ErrorMessage);
                 }
                 return id;
             });
@@ -101,12 +101,6 @@ namespace PrimeERP.Application.PageServices.Inventory
         {
             Stock.RemoveMovements(db, StockSource, head.Id);
             _repo.DeleteDocument(db, head.Id);
-        }
-
-        private void Move(PrimeDbContext db, StockTransferLine line, int warehouseId, MovementType direction, int id, string docNo, DateTime date)
-        {
-            var moved = Stock.RecordMovement(db, line.ProductId, warehouseId, direction, line.Qty, 0, StockSource, id, docNo, date);
-            if (moved.IsFailure) throw new InvalidOperationException(moved.ErrorMessage);
         }
 
         private static T ToDto<T>(StockTransferDocument d, IReadOnlyDictionary<int, string> warehouses) where T : StockTransferDto, new() => Rows.Copy<T>(d, new(), to =>

@@ -133,7 +133,8 @@ namespace PrimeERP.Setup
                 customer = Read("customer"),
                 manifest = Read("manifest"),
                 version = Read("version"),
-                simplified = activation.TryGetProperty("simplified", out var s) && s.GetBoolean()
+                simplified = activation.TryGetProperty("simplified", out var s) && s.GetBoolean(),
+                english = activation.TryGetProperty("english", out var e) && e.GetBoolean()
             };
 
             File.WriteAllText(Path.Combine(folder, "license.json"), JsonSerializer.Serialize(license));

@@ -91,8 +91,6 @@ namespace PrimeERP.UI.Components.Shell
             NavigationRequested?.Invoke(this, key);
         }
 
-        private void topBar_SidebarToggled(object sender, EventArgs e) => sidebar.IsCollapsed = !sidebar.IsCollapsed;
-
         private void UpdateBreadcrumb()
         {
             var path = FindPath(NavItems, SelectedKey);

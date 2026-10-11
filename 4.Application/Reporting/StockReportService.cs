@@ -23,6 +23,8 @@ namespace PrimeERP.Application.Reporting
         Result<ReportData> Balances(DateTime from, DateTime to);
         Result<ReportData> Movements(DateTime from, DateTime to, int? warehouseId);
         Result<ReportData> ItemCard(int productId);
+        Result<ReportData> Batches();
+        Result<ReportData> Expiry();
     }
 
     public class StockReportService : ReportServiceBase, IStockReportService
@@ -159,6 +161,29 @@ namespace PrimeERP.Application.Reporting
                 Rows = rows,
                 Totals = new() { ["Product"] = productResult.Value.Name }
             });
+        }
+
+        public Result<ReportData> Batches() => BatchReport(_ => true);
+
+        public Result<ReportData> Expiry() => BatchReport(state => state != "Valid");
+
+        private Result<ReportData> BatchReport(Func<string, bool> keep)
+        {
+            var gate = Gate(); if (gate != null) return gate;
+            var alertDays = Setting(SettingKeys.Edition.ExpiryAlertDays, 90);
+            var batches = _movements.AllBatches();
+            var products = _productRows.GetByIds(batches.Select(b => b.ProductId)).ToDictionary(p => p.Id);
+            var warehouses = _warehouses.NamesOf(batches.Select(b => b.WarehouseId));
+            var rows = batches
+                .Select(b => (Batch: b, State: InventoryCosting.ExpiryState(b.Expiry, DateTime.Today, alertDays)))
+                .Where(x => keep(x.State))
+                .Select(x => new BatchRow
+                {
+                    Code = products.GetValueOrDefault(x.Batch.ProductId)?.Code, Name = products.GetValueOrDefault(x.Batch.ProductId)?.Name,
+                    Warehouse = warehouses.GetValueOrDefault(x.Batch.WarehouseId), Batch = x.Batch.Batch, Expiry = x.Batch.Expiry?.ToString("yyyy-MM-dd"),
+                    Qty = x.Batch.Balance, State = LocalizationService.Get($"Str.Reports.Expiry.{x.State}")
+                }).ToList();
+            return Result.Ok(new ReportData { Rows = rows });
         }
     }
 }

@@ -14,6 +14,7 @@ namespace PrimeERP.Application.DTOs.Common
         public DateTime UpdatedAt    { get; set; }
         public List<string> ModuleKeys { get; set; } = new();
         public bool     Simplified   { get; set; }
+        public bool     English      { get; set; }
         public bool     IsActivated  { get; set; }
         public bool     IsActive     { get; set; }
         public DateTime CreatedAt    { get; set; }
@@ -32,5 +33,6 @@ namespace PrimeERP.Application.DTOs.Common
         public string Location     { get; set; }
         public List<string> ModuleKeys { get; set; } = new();
         public bool   Simplified   { get; set; }
+        public bool   English      { get; set; }
     }
 }

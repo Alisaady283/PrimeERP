@@ -18,6 +18,8 @@ namespace PrimeERP.Data.Repositories
         List<Product> GetByIds(IEnumerable<int> ids, PrimeDbContext db = null);
         List<Product> Search(string term, int maxResults);
         bool ExistsCode(string code, int? excludeId = null);
+        bool ExistsBarcode(string barcode, int excludeId);
+        Dictionary<string, Product> ByBarcodes(IEnumerable<string> barcodes, PrimeDbContext db = null);
         (List<Product> Items, int Total) GetPaged(
             int page, int pageSize, string searchText = null, bool? isActive = null, int? categoryId = null,
             string sortColumn = "Name", bool sortDescending = false);
@@ -46,6 +48,11 @@ namespace PrimeERP.Data.Repositories
         public bool ExistsCode(string code, int? excludeId = null) =>
             Count(q => q.Where(p => p.Code == code
                                  && (excludeId == null || p.Id != excludeId))) > 0;
+
+        public bool ExistsBarcode(string barcode, int excludeId) =>
+            Count(q => q.Where(p => p.Barcode == barcode && p.Id != excludeId)) > 0;
+
+        public Dictionary<string, Product> ByBarcodes(IEnumerable<string> barcodes, PrimeDbContext db = null) => By(nameof(Product.Barcode), barcodes, db);
 
         public (List<Product> Items, int Total) GetPaged(
             int page, int pageSize, string searchText = null, bool? isActive = null, int? categoryId = null,

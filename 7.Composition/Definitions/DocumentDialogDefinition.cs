@@ -13,6 +13,7 @@ namespace PrimeERP.Composition.Definitions
         public bool IsRequired { get; init; }
         public bool Positive { get; init; }
         public string PickerType { get; init; }
+        public Func<PrimeERP.Platform.Settings.ISettingsProvider, bool> ShownWhen { get; init; }
         public bool PickerLeafOnly { get; init; }
 
         public string PickerValueField { get; init; }
@@ -54,7 +55,7 @@ namespace PrimeERP.Composition.Definitions
         public required string NetKey { get; init; }
     }
 
-    public class DocumentDialogDefinition
+    public record DocumentDialogDefinition
     {
         public required string TitleKey { get; init; }
         public required string TitleEditKey { get; init; }

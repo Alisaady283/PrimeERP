@@ -21,6 +21,8 @@ namespace PrimeERP.Composition.Print
             new() { Key = "Notes",       Header = LocalizationService.Get("Str.Notes"),     Width = 1.6, IsText = true },
         };
 
+        public static readonly string[] ReceiptColumns = { "ProductName", "Qty", "UnitPrice", "NetAmount" };
+
         public static LineFieldDefinition NetColumn() => new()
         {
             Key = "NetAmount", Header = LocalizationService.Get("Str.Print.NetAmount"), Kind = FieldKind.ReadOnly, Width = 110

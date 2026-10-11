@@ -15,6 +15,7 @@ namespace PrimeERP.Platform.Permissions
         public static string DisplayName { get; private set; }
         public static int    RoleId      { get; private set; }
         public static string RoleName    { get; private set; }
+        public static int?   BranchId    { get; private set; }
         public static bool   IsAuthenticated { get; private set; }
 
 #if DEBUG
@@ -28,8 +29,9 @@ namespace PrimeERP.Platform.Permissions
         public static HashSet<string> Permissions { get; } = new();
 
         public static void SignIn(int userId, string username, string displayName,
-                                  int roleId, string roleName, IEnumerable<string> permissions)
+                                  int roleId, string roleName, IEnumerable<string> permissions, int? branchId = null)
         {
+            BranchId        = branchId;
             UserId          = userId;
             Username        = username;
             DisplayName     = displayName;

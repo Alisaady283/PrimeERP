@@ -34,6 +34,8 @@ namespace PrimeERP.Application.DTOs.Inventory
         public decimal Qty         { get; set; }
         public decimal UnitCost    { get; set; }
         public string  Notes       { get; set; }
+        public string  BatchNo     { get; set; }
+        public System.DateTime? ExpiryDate { get; set; }
 
         public string  SourceType   { get; set; }
         public int     SourceId     { get; set; }
@@ -50,6 +52,8 @@ namespace PrimeERP.Application.DTOs.Inventory
         public decimal Qty         { get; set; }
         public decimal UnitCost    { get; set; }
         public string  Notes       { get; set; }
+        public string  BatchNo     { get; set; }
+        public System.DateTime? ExpiryDate { get; set; }
 
         public string  SourceType   { get; set; }
         public int     SourceId     { get; set; }

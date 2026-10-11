@@ -11,6 +11,7 @@ namespace PrimeERP.Domain.Entities
         public string    Salt         { get; set; }
         public string    DisplayName  { get; set; }
         public int       RoleId       { get; set; }
+        public int?      BranchId     { get; set; }
         public string    RoleName     { get; set; }
         public bool      IsActive     { get; set; } = true;
         public DateTime? LastLoginAt  { get; set; }

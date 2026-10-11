@@ -85,6 +85,70 @@ namespace PrimeERP.Modules
                 typeof(IAssetReportService), nameof(IAssetReportService.Register),
                 StandardFields.DateRange().Concat(AssetCategory()).ToList(), AssetRegisterColumns(), arguments: new[] { "From", "To", "CategoryId" });
 
+            Register(registry, "PayrollSummary", "Str.Module.PayrollSummary", typeof(IHrReportService), nameof(IHrReportService.PayrollSummary),
+                StandardFields.DateRange(), new()
+                {
+                    Text("Str.Payroll.No", nameof(PayrollSummaryRow.PayrollNo), 110), Text("Str.Period", nameof(PayrollSummaryRow.Period), 200, star: true),
+                    Money(LocalizationService.Get("Str.Payroll.Basic"), nameof(PayrollSummaryRow.Basic)),
+                    Money(LocalizationService.Get("Str.Reports.Allowances"), nameof(PayrollSummaryRow.Allowances)),
+                    Money(LocalizationService.Get("Str.Reports.Deductions"), nameof(PayrollSummaryRow.Deductions)),
+                    Money(LocalizationService.Get("Str.Reports.Net"), nameof(PayrollSummaryRow.Net)),
+                });
+
+            Register(registry, "AttendanceSummary", "Str.Module.AttendanceSummary", typeof(IHrReportService), nameof(IHrReportService.AttendanceSummary),
+                StandardFields.DateRange(), new()
+                {
+                    Text("Str.Code", nameof(AttendanceSummaryRow.Code), 90), Text("Str.Name", nameof(AttendanceSummaryRow.Name), 200, star: true),
+                    Count("Str.Reports.Present", nameof(AttendanceSummaryRow.Present)), Count("Str.Reports.Absent", nameof(AttendanceSummaryRow.Absent)),
+                    Count("Str.Reports.Leave", nameof(AttendanceSummaryRow.Leave)), Count("Str.Reports.LateMinutes", nameof(AttendanceSummaryRow.LateMinutes)),
+                    Count("Str.Reports.OvertimeMinutes", nameof(AttendanceSummaryRow.OvertimeMinutes)),
+                });
+
+            Register(registry, "AdvancesReport", "Str.Module.AdvancesReport", typeof(IHrReportService), nameof(IHrReportService.Advances),
+                StandardFields.DateRange(), new()
+                {
+                    Text("Str.InvoiceDate", nameof(AdvanceRow.Date), 110), Text("Str.Code", nameof(AdvanceRow.Code), 90),
+                    Text("Str.Name", nameof(AdvanceRow.Name), 200, star: true), Money(LocalizationService.Get("Str.Amount"), nameof(AdvanceRow.Amount)),
+                    Text("Str.Status", nameof(AdvanceRow.Status), 120),
+                });
+
+            Register(registry, "CashierReport", "Str.Module.CashierReport", typeof(IPosReportService), nameof(IPosReportService.Cashiers),
+                StandardFields.DateRange(), new()
+                {
+                    Text("Str.Pos.Cashier", nameof(CashierRow.Cashier), 180, star: true), Count("Str.Reports.Shifts", nameof(CashierRow.Shifts)),
+                    Count("Str.Pos.Sales", nameof(CashierRow.Sales)), Count("Str.Pos.Returns", nameof(CashierRow.Returns)),
+                    Money(LocalizationService.Get("Str.Pos.CashIn"), nameof(CashierRow.Collected)), Money(LocalizationService.Get("Str.Pos.CashOut"), nameof(CashierRow.Refunded)),
+                    Money(LocalizationService.Get("Str.Pos.Difference"), nameof(CashierRow.Difference)),
+                });
+
+            Register(registry, "ProductionCostReport", "Str.Module.ProductionCostReport", typeof(IManufacturingReportService), nameof(IManufacturingReportService.ProductionCost),
+                StandardFields.DateRange(), new()
+                {
+                    Text("Str.DocNo", nameof(ProductionRow.OrderNo), 110), Text("Str.InvoiceDate", nameof(ProductionRow.Date), 110),
+                    Text("Str.Bom.Product", nameof(ProductionRow.Product), 200, star: true), Money(LocalizationService.Get("Str.Qty"), nameof(ProductionRow.Qty)),
+                    Money(LocalizationService.Get("Str.Production.Materials"), nameof(ProductionRow.Materials)),
+                    Money(LocalizationService.Get("Str.Production.Operations"), nameof(ProductionRow.Operations)),
+                    Money(LocalizationService.Get("Str.Production.Total"), nameof(ProductionRow.Total)),
+                    Money(LocalizationService.Get("Str.UnitCost"), nameof(ProductionRow.UnitCost)),
+                });
+
+            foreach (var (key, method, qtyKey) in new[]
+            {
+                ("ConsumptionReport", nameof(IManufacturingReportService.Consumption), "Str.Qty"),
+                ("WorkCenterLoadReport", nameof(IManufacturingReportService.WorkCenterLoad), "Str.Reports.Minutes"),
+                ("ScrapReport", nameof(IManufacturingReportService.Scrap), "Str.Qty"),
+            })
+                Register(registry, key, $"Str.Module.{key}", typeof(IManufacturingReportService), method, StandardFields.DateRange(), QuantityCost(qtyKey));
+
+            foreach (var (key, method) in new[] { ("BatchReport", nameof(IStockReportService.Batches)), ("ExpiryReport", nameof(IStockReportService.Expiry)) })
+                Register(registry, key, $"Str.Module.{key}", typeof(IStockReportService), method, new List<ParameterDefinition>(), new()
+                {
+                    Text("Str.Code", nameof(BatchRow.Code), 90), Text("Str.Name", nameof(BatchRow.Name), 200, star: true),
+                    Text("Str.Warehouse", nameof(BatchRow.Warehouse), 140), Text("Str.Batch", nameof(BatchRow.Batch), 110),
+                    Text("Str.ExpiryDate", nameof(BatchRow.Expiry), 110), Money(LocalizationService.Get("Str.Qty"), nameof(BatchRow.Qty)),
+                    Text("Str.Status", nameof(BatchRow.State), 110),
+                }, arguments: System.Array.Empty<string>());
+
             Register(registry, "AssetsByCategory", "Str.Module.AssetsByCategory",
                 typeof(IAssetReportService), nameof(IAssetReportService.ByCategory),
                 new List<ParameterDefinition>(), AssetCategoryColumns(),
@@ -142,6 +206,22 @@ namespace PrimeERP.Modules
             return list;
         }
 
+
+        private static GridColumn Text(string headerKey, string binding, double width, bool star = false) => new()
+        {
+            Header = LocalizationService.Get(headerKey), Binding = binding, Width = width, IsStarWidth = star
+        };
+
+        private static GridColumn Count(string headerKey, string binding) => new()
+        {
+            Header = LocalizationService.Get(headerKey), Binding = binding, Width = 100, Align = ColumnAlign.Center
+        };
+
+        private static List<GridColumn> QuantityCost(string qtyKey) => new()
+        {
+            Text("Str.Code", nameof(QuantityCostRow.Code), 100), Text("Str.Name", nameof(QuantityCostRow.Name), 220, star: true),
+            Money(LocalizationService.Get(qtyKey), nameof(QuantityCostRow.Qty)), Money(LocalizationService.Get("Str.Reports.Cost"), nameof(QuantityCostRow.Cost)),
+        };
 
         private static GridColumn Money(string header, string binding, string group = null) => new()
         {

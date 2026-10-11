@@ -26,7 +26,7 @@ namespace PrimeERP.Platform.Permissions
         User FindByUsername(string username);
         bool UsernameExists(string username);
         int InsertUser(User user);
-        void UpdateUser(int id, string displayName, int roleId, bool isActive);
+        void UpdateUser(int id, string displayName, int roleId, bool isActive, int? branchId);
         void UpdateUserPassword(int id, string passwordHash, string salt);
         void UpdateLastLogin(int userId);
         void DeleteUser(int id);

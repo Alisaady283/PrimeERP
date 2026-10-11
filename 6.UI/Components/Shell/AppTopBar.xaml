@@ -10,7 +10,7 @@
         <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
     </UserControl.Resources>
 
-    <Border Background="{DynamicResource SurfaceDefault}" BorderBrush="{DynamicResource OutlineDefault}" BorderThickness="0,0,0,1">
+    <Border Background="{DynamicResource TopBarSurface}" BorderBrush="{DynamicResource TopBarBorder}" BorderThickness="0,0,0,1">
         <Grid MinHeight="60" Margin="{DynamicResource P.Space.4.Horizontal}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -22,9 +22,6 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-
-            <actionsctl:AppIconButton Grid.Column="0" x:Name="btnToggleSidebar" Icon="{StaticResource IconMenu}"
-                                       TooltipText="{DynamicResource Str.TopBar.ToggleSidebar}" Click="btnToggleSidebar_Click" Margin="0,0,14,0"/>
 
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <display:AppBreadcrumb x:Name="breadcrumb"/>
@@ -60,7 +57,7 @@
             <ContentPresenter Grid.Column="6" x:Name="actionsPresenter" VerticalAlignment="Center" Margin="{DynamicResource C.Field.Gap}"/>
 
             <StackPanel Grid.Column="7" Orientation="Horizontal" VerticalAlignment="Center">
-                <Border Width="{DynamicResource C.IconButton.Size}" Height="{DynamicResource C.IconButton.Size}" CornerRadius="17" Background="{DynamicResource BrandDefault}" Margin="{DynamicResource C.Field.GapSm}">
+                <Border Width="{DynamicResource C.IconButton.Size}" Height="{DynamicResource C.IconButton.Size}" CornerRadius="17" Background="{DynamicResource TopBarAvatar}" Margin="{DynamicResource C.Field.GapSm}">
                     <TextBlock x:Name="userInitialText" HorizontalAlignment="Center" VerticalAlignment="Center"
                                Foreground="White" FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
                                FontFamily="{DynamicResource P.Font.Family.Primary}"/>

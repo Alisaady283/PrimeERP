@@ -51,7 +51,7 @@ namespace PrimeERP.UI.Services
 
             try
             {
-                var pageSize = PageSizeFor(document.Orientation, document.HalfPage);
+                var pageSize = PageSizeFor(document.Orientation, document.HalfPage, document.Roll);
                 var labels = document.CopyLabels is { Count: > 0 } ? document.CopyLabels : new List<string> { null };
 
                 var combined = new FixedDocument();
@@ -150,7 +150,7 @@ namespace PrimeERP.UI.Services
         private static double ContentWidthFor(IPrintable document)
         {
             var margin = Res<double>("PageMargin");
-            var width = PageSizeFor(document.Orientation, document.HalfPage).Width - margin * 2;
+            var width = PageSizeFor(document.Orientation, document.HalfPage, document.Roll).Width - margin * 2;
             if (document.Framed) width -= margin + 3;
 
             return width - 12;
@@ -633,9 +633,10 @@ namespace PrimeERP.UI.Services
             return value.ToString();
         }
 
-        private static Size PageSizeFor(PrintOrientation orientation, bool halfPage = false)
+        private static Size PageSizeFor(PrintOrientation orientation, bool halfPage = false, bool roll = false)
         {
-            const double a4Width = 793.7, a4Height = 1122.5;
+            const double a4Width = 793.7, a4Height = 1122.5, roll80Width = 302.4;
+            if (roll) return new Size(roll80Width, a4Height);
 
             var size = orientation == PrintOrientation.Landscape
                 ? new Size(a4Height, a4Width)

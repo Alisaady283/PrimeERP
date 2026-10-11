@@ -11,7 +11,7 @@ notes = dict(line.split("|", 1) for line in
 
 XAML = [("Strings.", "النصوص الظاهرة"), ("Style.", "نمط عنصر WPF"), ("Icons.xaml", "الأيقونات"),
         ("Theme.xaml", "دمج طبقات التصميم"), ("PrintTheme.", "ألوان الطباعة"),
-        ("Colors.xaml", "ألوان النظام"), ("Sizes.xaml", "مقاسات النظام")]
+        ("Sizes.xaml", "مقاسات النظام")]
 
 SUFFIX = [("Service", "خدمة"), ("Repository", "مستودع"), ("ViewModel", "نموذج عرض"), ("Renderer", "مُصيِّر"),
           ("Registrations", "تسجيل وحدات"), ("Definition", "تعريف"), ("Validator", "تحقق"), ("Dto", "بيانات"),
@@ -30,6 +30,7 @@ def trim(text):
 def describe(path: Path):
     name = path.stem
     if path.suffix == ".xaml":
+        if path.parent.name == "Colors": return f"ألوان هوية {path.stem}"
         for key, text in XAML:
             if path.name.startswith(key) or path.name == key: return text
         return "واجهة"

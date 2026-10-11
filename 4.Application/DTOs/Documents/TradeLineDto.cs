@@ -18,6 +18,8 @@ namespace PrimeERP.Application.DTOs.Documents
         public decimal LineTotal          { get; set; }
         public decimal NetAmount          { get; set; }
         public string  Notes              { get; set; }
+        public string  BatchNo     { get; set; }
+        public System.DateTime? ExpiryDate { get; set; }
 
         public string  SourceType   { get; set; }
         public int     SourceId     { get; set; }
@@ -36,6 +38,8 @@ namespace PrimeERP.Application.DTOs.Documents
         public decimal VatPercent         { get; set; }
         public decimal WithholdingPercent { get; set; }
         public string  Notes              { get; set; }
+        public string  BatchNo     { get; set; }
+        public System.DateTime? ExpiryDate { get; set; }
 
         public string  SourceType   { get; set; }
         public int     SourceId     { get; set; }

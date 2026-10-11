@@ -7,4 +7,10 @@ namespace PrimeERP.Composition.Definitions
         FullCycleOnly,
         SimplifiedOnly
     }
+
+    public static class FlowScopes
+    {
+        public static bool Allows(this FlowScope scope, bool simplified) =>
+            scope == FlowScope.Both || scope == (simplified ? FlowScope.SimplifiedOnly : FlowScope.FullCycleOnly);
+    }
 }

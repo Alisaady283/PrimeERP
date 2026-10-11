@@ -16,6 +16,9 @@ namespace PrimeERP.Data.Repositories
 
         void DeleteBySource(PrimeDbContext db, string sourceDocType, int sourceDocId);
         decimal GetBalance(int productId, int? warehouseId, PrimeDbContext db = null);
+        List<(string Batch, DateTime? Expiry, decimal Balance)> BatchBalances(int productId, int warehouseId, PrimeDbContext db = null);
+        List<(int ProductId, int WarehouseId, string Batch, DateTime? Expiry, decimal Balance)> AllBatches();
+        List<StockMovement> BySource(string sourceDocType, DateTime from, DateTime to);
         bool AnyForProduct(int productId);
         List<StockMovement> GetHistory(int productId, int? warehouseId, int maxResults);
 
@@ -56,6 +59,29 @@ namespace PrimeERP.Data.Repositories
                     .Sum(m => (decimal?)(m.MovementType == MovementType.Out ? -m.Qty : m.Qty)) ?? 0m;
             });
         }
+
+        public List<(string Batch, DateTime? Expiry, decimal Balance)> BatchBalances(int productId, int warehouseId, PrimeDbContext db = null) =>
+            Scope(db, ctx => Rows(ctx).AsNoTracking()
+                .Where(m => m.ProductId == productId && m.WarehouseId == warehouseId)
+                .GroupBy(m => new { m.BatchNo, m.ExpiryDate })
+                .Select(g => new { g.Key.BatchNo, g.Key.ExpiryDate, Balance = g.Sum(m => m.MovementType == MovementType.Out ? -m.Qty : m.Qty) })
+                .ToList()
+                .Select(b => (b.BatchNo, b.ExpiryDate, b.Balance))
+                .ToList());
+
+        public List<(int ProductId, int WarehouseId, string Batch, DateTime? Expiry, decimal Balance)> AllBatches() =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking()
+                .Where(m => m.BatchNo != null)
+                .GroupBy(m => new { m.ProductId, m.WarehouseId, m.BatchNo, m.ExpiryDate })
+                .Select(g => new { g.Key.ProductId, g.Key.WarehouseId, g.Key.BatchNo, g.Key.ExpiryDate, Balance = g.Sum(m => m.MovementType == MovementType.Out ? -m.Qty : m.Qty) })
+                .Where(b => b.Balance != 0)
+                .OrderBy(b => b.ExpiryDate)
+                .ToList()
+                .Select(b => (b.ProductId, b.WarehouseId, b.BatchNo, b.ExpiryDate, b.Balance))
+                .ToList());
+
+        public List<StockMovement> BySource(string sourceDocType, DateTime from, DateTime to) =>
+            Fetch(q => q.Where(m => m.SourceDocType == sourceDocType && m.MovementDate >= from && m.MovementDate <= to).OrderBy(m => m.MovementDate));
 
         public List<(int ProductId, int WarehouseId, decimal Balance)> GetAllBalances()
         {

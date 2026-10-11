@@ -21,6 +21,7 @@ namespace PrimeERP.Data.Repositories
         void SetPosted(PrimeDbContext db, int payrollId, bool posted);
         DateTime? LastPeriodStart();
         bool HasPeriod(DateTime start);
+        List<Payroll> Between(DateTime from, DateTime to);
     }
 
     public class PayrollRepository : RepositoryBase<Payroll>, IPayrollRepository
@@ -74,5 +75,8 @@ namespace PrimeERP.Data.Repositories
         public DateTime? LastPeriodStart() => One(q => q.OrderByDescending(p => p.PeriodStart))?.PeriodStart;
 
         public bool HasPeriod(DateTime start) => Any(q => q.Where(p => p.PeriodStart == start));
+
+        public List<Payroll> Between(DateTime from, DateTime to) =>
+            Fetch(q => q.Where(p => p.IsPosted && p.PaymentDate >= from && p.PaymentDate <= to).OrderBy(p => p.PaymentDate));
     }
 }

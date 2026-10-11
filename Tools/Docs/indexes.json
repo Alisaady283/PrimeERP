@@ -852,5 +852,105 @@
    ],
    "origin": "c"
   }
+ ],
+ "Branches": [
+  {
+   "name": "IX_Branches_Code",
+   "unique": true,
+   "columns": [
+    "Code"
+   ],
+   "origin": "c"
+  }
+ ],
+ "PosShifts": [
+  {
+   "name": "IX_PosShifts_UserId",
+   "unique": false,
+   "columns": [
+    "UserId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "HeldSales": [
+  {
+   "name": "IX_HeldSales_BranchId",
+   "unique": false,
+   "columns": [
+    "BranchId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "WorkCenters": [
+  {
+   "name": "IX_WorkCenters_Code",
+   "unique": true,
+   "columns": [
+    "Code"
+   ],
+   "origin": "c"
+  }
+ ],
+ "BillsOfMaterials": [
+  {
+   "name": "IX_BillsOfMaterials_Code",
+   "unique": true,
+   "columns": [
+    "Code"
+   ],
+   "origin": "c"
+  }
+ ],
+ "BomLines": [
+  {
+   "name": "IX_BomLines_BomId",
+   "unique": false,
+   "columns": [
+    "BomId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "ProductionOrders": [
+  {
+   "name": "IX_ProductionOrders_OrderNo",
+   "unique": true,
+   "columns": [
+    "OrderNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "ProductionOrderLines": [
+  {
+   "name": "IX_ProductionOrderLines_OrderId",
+   "unique": false,
+   "columns": [
+    "OrderId"
+   ],
+   "origin": "c"
+  }
+ ],
+ "ScrapDocuments": [
+  {
+   "name": "IX_ScrapDocuments_DocNo",
+   "unique": true,
+   "columns": [
+    "DocNo"
+   ],
+   "origin": "c"
+  }
+ ],
+ "ScrapLines": [
+  {
+   "name": "IX_ScrapLines_DocumentId",
+   "unique": false,
+   "columns": [
+    "DocumentId"
+   ],
+   "origin": "c"
+  }
  ]
 }

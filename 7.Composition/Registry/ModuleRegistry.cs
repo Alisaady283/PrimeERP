@@ -23,10 +23,6 @@ namespace PrimeERP.Composition.Registry
         public IReadOnlyList<ModuleDefinition> All() => _modules.Values.ToList();
 
         public IReadOnlyList<ModuleDefinition> VisibleFor(bool simplifiedFlow) =>
-            _modules.Values
-                .Where(m => m.FlowScope == FlowScope.Both
-                         || (simplifiedFlow ? m.FlowScope == FlowScope.SimplifiedOnly
-                                            : m.FlowScope == FlowScope.FullCycleOnly))
-                .ToList();
+            _modules.Values.Where(m => m.FlowScope.Allows(simplifiedFlow)).ToList();
     }
 }

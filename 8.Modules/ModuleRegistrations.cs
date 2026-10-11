@@ -231,6 +231,7 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(Product.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
                         new() { Key = nameof(Product.Barcode), LabelKey = "Str.Barcode", Kind = FieldKind.Text, MaxLength = 60 },
+                        new() { Key = nameof(Product.HasExpiry), LabelKey = "Str.Product.HasExpiry", Kind = FieldKind.Check, ShownWhen = PrimeERP.Platform.Settings.Editions.TracksExpiry },
                         new() { Key = nameof(Product.CostPrice), LabelKey = "Str.CostPrice", Kind = FieldKind.Number, IsRequired = true },
                         new() { Key = nameof(Product.SalePrice), LabelKey = "Str.SalePrice", Kind = FieldKind.Number, IsRequired = true },
                         new() { Key = nameof(Product.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Products" },
@@ -281,6 +282,25 @@ namespace PrimeERP.Modules
 
             registry.Register(new ModuleDefinition
             {
+                Key = "Branches", TitleKey = "Str.Module.Branches", PermissionPrefix = "Branches",
+                ViewModelFactory = s => RowPage.ViewModel<Lookup<Branch>>(s, "Branches"),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Branch.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Branch.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(Branch.IsActive), Width = 80, Align = ColumnAlign.Center },
+                },
+                Dialog = RowPage.Dialog<Lookup<Branch>>("Str.Branches.Add", new List<FieldDefinition>
+                {
+                    new() { Key = nameof(Branch.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                    new() { Key = nameof(Branch.WarehouseId), LabelKey = "Str.Branch.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
+                    new() { Key = nameof(Branch.TreasuryId), LabelKey = "Str.Branch.Treasury", Kind = FieldKind.Picker, PickerType = "Treasury", IsRequired = true },
+                    new() { Key = nameof(Branch.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                }, "Str.Branches.Edit", gridColumns: 1)
+            });
+
+            registry.Register(new ModuleDefinition
+            {
                 Key = "Warehouses", TitleKey = "Str.Module.Warehouses", PermissionPrefix = "Warehouses",
                 ViewModelFactory = s => RowPage.ViewModel<Lookup<Warehouse>>(s, "Warehouses"),
                 Columns = new()
@@ -295,6 +315,7 @@ namespace PrimeERP.Modules
                     new() { Key = nameof(Warehouse.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
                     new() { Key = nameof(Warehouse.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
                     new() { Key = nameof(Warehouse.ManagerName), LabelKey = "Str.ManagerName", Kind = FieldKind.Text, MaxLength = 150 },
+                    new() { Key = nameof(Warehouse.BranchId), LabelKey = "Str.Branch", Kind = FieldKind.Picker, PickerType = "Branch" },
                     new() { Key = nameof(Warehouse.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
                 }, "Str.Warehouses.Edit", gridColumns: 1)
             });
@@ -557,6 +578,7 @@ namespace PrimeERP.Modules
                         new() { Key = nameof(CreateUserDto.Username), LabelKey = "Str.Username", Kind = FieldKind.Text, IsRequired = true, MaxLength = 100, IsReadOnlyOnEdit = true },
                         new() { Key = nameof(CreateUserDto.DisplayName), LabelKey = "Str.DisplayName", Kind = FieldKind.Text, IsRequired = true, MaxLength = 150 },
                         new() { Key = nameof(CreateUserDto.RoleId), LabelKey = "Str.Role", Kind = FieldKind.Picker, PickerType = "Role", IsRequired = true },
+                        new() { Key = nameof(CreateUserDto.BranchId), LabelKey = "Str.Branch", Kind = FieldKind.Picker, PickerType = "Branch" },
                         new() { Key = nameof(CreateUserDto.Password), LabelKey = "Str.Password", Kind = FieldKind.Password, IsRequired = true },
                         new() { Key = nameof(CreateUserDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
                     }
@@ -574,34 +596,34 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.NetTotal"), Binding = nameof(SalesInvoiceDto.NetTotal), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
                     new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(SalesInvoiceDto.StatusText), Width = 100, Align = ColumnAlign.Center },
                 },
-                DocumentDialog = new DocumentDialogDefinition
+                DocumentDialog = SalesInvoiceDialog()
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Pos", TitleKey = "Str.Module.Pos", PermissionPrefix = "Pos",
+                LayoutKind = LayoutKind.Pos,
+                DocumentDialog = SalesInvoiceDialog(),
+                ReturnDialog = SalesReturnDialog()
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "PosShifts", TitleKey = "Str.Module.PosShifts", PermissionPrefix = "Pos",
+                ViewModelFactory = s => RowPage.ViewModel<PrimeERP.Application.PageServices.Sales.PosShiftReport>(s, "Pos"),
+                EnabledActions = new[] { "print", "export", "refresh" },
+                Columns = new()
                 {
-                    PrintTitleKey = "Str.Print.Title.SalesInvoice",
-                    PrintColumns = TradePaper.Columns(),
-                    PrintTotals = TradePaper.Totals(),
-                    LineMath = TradePaper.LineMath(),
-                    TitleKey = "Str.SalesInvoices.Add", TitleEditKey = "Str.SalesInvoices.Edit",
-                    ServiceType = typeof(ISalesInvoiceService), DtoType = typeof(CreateSalesInvoiceDto), LineDtoType = typeof(CreateSalesInvoiceLineDto),
-                    LinesPropertyName = nameof(CreateSalesInvoiceDto.Lines),
-                    PullSources = CycleFlow.IntoSalesInvoice(),
-                    HeaderFields = new()
-                    {
-                        new() { Key = nameof(CreateSalesInvoiceDto.InvoiceDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
-                        new() { Key = nameof(CreateSalesInvoiceDto.CustomerId), LabelKey = "Str.Customer", Kind = FieldKind.Picker, PickerType = "Customer", IsRequired = true },
-                        new() { Key = nameof(CreateSalesInvoiceDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true, FlowScope = FlowScope.SimplifiedOnly },
-                        new() { Key = nameof(CreateSalesInvoiceDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
-                    },
-                    LineFields = new()
-                    {
-                        new() { Key = nameof(CreateSalesInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
-                        StandardFields.Qty(),
-                        StandardFields.Price(),
-                        new() { Key = nameof(CreateSalesInvoiceLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
-                        new() { Key = nameof(CreateSalesInvoiceLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
-                        new() { Key = nameof(CreateSalesInvoiceLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
-                        TradePaper.NetColumn(),
-                        new() { Key = nameof(CreateSalesInvoiceLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
-                    }
+                    new() { Header = LocalizationService.Get("Str.Pos.OpenedAt"), Binding = nameof(PosShift.OpenedAt), Width = 140, Format = "yyyy-MM-dd HH:mm" },
+                    new() { Header = LocalizationService.Get("Str.Pos.ClosedAt"), Binding = nameof(PosShift.ClosedAt), Width = 140, Format = "yyyy-MM-dd HH:mm" },
+                    new() { Header = LocalizationService.Get("Str.Pos.Cashier"), Binding = nameof(PosShift.UserName), Width = 160, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Pos.Opening"), Binding = nameof(PosShift.OpeningCash), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Pos.CashIn"), Binding = nameof(PosShift.CashIn), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Pos.CashOut"), Binding = nameof(PosShift.CashOut), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Pos.Counted"), Binding = nameof(PosShift.CountedCash), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Pos.Difference"), Binding = nameof(PosShift.Difference), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Pos.Sales"), Binding = nameof(PosShift.SalesCount), Width = 80, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Pos.Returns"), Binding = nameof(PosShift.ReturnsCount), Width = 80, Align = ColumnAlign.Center },
                 }
             });
 
@@ -637,6 +659,8 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
                         StandardFields.Qty(),
+                        StandardFields.Batch(),
+                        StandardFields.Expiry(),
                         StandardFields.Price(),
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
                         new() { Key = nameof(CreatePurchaseInvoiceLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
@@ -657,35 +681,7 @@ namespace PrimeERP.Modules
                     new() { Header = LocalizationService.Get("Str.Customer"), Binding = nameof(SalesReturnDto.CustomerName), Width = 200, IsStarWidth = true },
                     new() { Header = LocalizationService.Get("Str.NetTotal"), Binding = nameof(SalesReturnDto.NetTotal), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
                 },
-                DocumentDialog = new DocumentDialogDefinition
-                {
-                    PrintTitleKey = "Str.Print.Title.SalesReturn",
-                    PrintColumns = TradePaper.Columns(),
-                    PrintTotals = TradePaper.Totals(),
-                    LineMath = TradePaper.LineMath(),
-                    TitleKey = "Str.SalesReturns.Add", TitleEditKey = "Str.SalesReturns.Edit",
-                    ServiceType = typeof(ISalesReturnService), DtoType = typeof(CreateSalesReturnDto), LineDtoType = typeof(CreateSalesReturnLineDto),
-                    LinesPropertyName = nameof(CreateSalesReturnDto.Lines),
-                    PullSources = CycleFlow.IntoSalesReturn(),
-                    HeaderFields = new()
-                    {
-                        new() { Key = nameof(CreateSalesReturnDto.ReturnDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
-                        new() { Key = nameof(CreateSalesReturnDto.CustomerId), LabelKey = "Str.Customer", Kind = FieldKind.Picker, PickerType = "Customer", IsRequired = true },
-                        new() { Key = nameof(CreateSalesReturnDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true, FlowScope = FlowScope.SimplifiedOnly },
-                        new() { Key = nameof(CreateSalesReturnDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
-                    },
-                    LineFields = new()
-                    {
-                        new() { Key = nameof(CreateSalesReturnLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
-                        StandardFields.Qty(),
-                        StandardFields.Price(),
-                        new() { Key = nameof(CreateSalesReturnLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
-                        new() { Key = nameof(CreateSalesReturnLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
-                        new() { Key = nameof(CreateSalesReturnLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
-                        TradePaper.NetColumn(),
-                        new() { Key = nameof(CreateSalesReturnLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
-                    }
-                }
+                DocumentDialog = SalesReturnDialog()
             });
 
             registry.Register(new ModuleDefinition
@@ -719,6 +715,7 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreatePurchaseReturnLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
                         StandardFields.Qty(),
+                        StandardFields.Batch(),
                         StandardFields.Price(),
                         new() { Key = nameof(CreatePurchaseReturnLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
                         new() { Key = nameof(CreatePurchaseReturnLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
@@ -762,6 +759,7 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreateStockTransferLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
                         StandardFields.Qty(),
+                        StandardFields.Batch(),
                         new() { Key = nameof(CreateStockTransferLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }
                 }
@@ -872,6 +870,69 @@ namespace PrimeERP.Modules
             registry.Register(new ModuleDefinition { Key = "Settings", TitleKey = "Str.Module.Settings", PermissionPrefix = "Settings", LayoutKind = LayoutKind.Settings });
         }
 
+        internal static DocumentDialogDefinition SalesReturnDialog() => new()
+        {
+            PrintTitleKey = "Str.Print.Title.SalesReturn",
+            PrintColumns = TradePaper.Columns(),
+            PrintTotals = TradePaper.Totals(),
+            LineMath = TradePaper.LineMath(),
+            TitleKey = "Str.SalesReturns.Add", TitleEditKey = "Str.SalesReturns.Edit",
+            ServiceType = typeof(ISalesReturnService), DtoType = typeof(CreateSalesReturnDto), LineDtoType = typeof(CreateSalesReturnLineDto),
+            LinesPropertyName = nameof(CreateSalesReturnDto.Lines),
+            PullSources = CycleFlow.IntoSalesReturn(),
+            HeaderFields = new()
+            {
+                new() { Key = nameof(CreateSalesReturnDto.ReturnDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
+                new() { Key = nameof(CreateSalesReturnDto.CustomerId), LabelKey = "Str.Customer", Kind = FieldKind.Picker, PickerType = "Customer", IsRequired = true },
+                new() { Key = nameof(CreateSalesReturnDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true, FlowScope = FlowScope.SimplifiedOnly },
+                new() { Key = nameof(CreateSalesReturnDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
+            },
+            LineFields = new()
+            {
+                new() { Key = nameof(CreateSalesReturnLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
+                StandardFields.Qty(),
+                StandardFields.Batch(),
+                StandardFields.Expiry(),
+                StandardFields.Price(),
+                new() { Key = nameof(CreateSalesReturnLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
+                new() { Key = nameof(CreateSalesReturnLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
+                new() { Key = nameof(CreateSalesReturnLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
+                TradePaper.NetColumn(),
+                new() { Key = nameof(CreateSalesReturnLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
+            }
+        };
+
+        internal static DocumentDialogDefinition SalesInvoiceDialog() => new()
+        {
+            PrintTitleKey = "Str.Print.Title.SalesInvoice",
+            PrintColumns = TradePaper.Columns(),
+            PrintTotals = TradePaper.Totals(),
+            LineMath = TradePaper.LineMath(),
+            TitleKey = "Str.SalesInvoices.Add", TitleEditKey = "Str.SalesInvoices.Edit",
+            ServiceType = typeof(ISalesInvoiceService), DtoType = typeof(CreateSalesInvoiceDto), LineDtoType = typeof(CreateSalesInvoiceLineDto),
+            LinesPropertyName = nameof(CreateSalesInvoiceDto.Lines),
+            PullSources = CycleFlow.IntoSalesInvoice(),
+            HeaderFields = new()
+            {
+                new() { Key = nameof(CreateSalesInvoiceDto.InvoiceDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
+                new() { Key = nameof(CreateSalesInvoiceDto.CustomerId), LabelKey = "Str.Customer", Kind = FieldKind.Picker, PickerType = "Customer", IsRequired = true },
+                new() { Key = nameof(CreateSalesInvoiceDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true, FlowScope = FlowScope.SimplifiedOnly },
+                new() { Key = nameof(CreateSalesInvoiceDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
+            },
+            LineFields = new()
+            {
+                new() { Key = nameof(CreateSalesInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
+                StandardFields.Qty(),
+                StandardFields.Batch(),
+                StandardFields.Price(),
+                new() { Key = nameof(CreateSalesInvoiceLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
+                new() { Key = nameof(CreateSalesInvoiceLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
+                new() { Key = nameof(CreateSalesInvoiceLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
+                TradePaper.NetColumn(),
+                new() { Key = nameof(CreateSalesInvoiceLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
+            }
+        };
+
         private static DocumentDialogDefinition OpeningStockDialog() => new()
         {
             TitleKey = "Str.Module.OpeningStock", TitleEditKey = "Str.Module.OpeningStock",
@@ -888,6 +949,8 @@ namespace PrimeERP.Modules
             {
                 new() { Key = nameof(CreateOpeningStockLineDto.ProductId), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 260, IsRequired = true, PickerType = "Product" },
                 StandardFields.Qty(),
+                StandardFields.Batch(),
+                StandardFields.Expiry(),
                 StandardFields.Price(nameof(CreateOpeningStockLineDto.UnitCost), "Str.CostPrice"),
                 new() { Key = nameof(CreateOpeningStockLineDto.Value), Header = LocalizationService.Get("Str.Balance"), Kind = FieldKind.ReadOnly, Width = 120 },
                 new() { Key = nameof(CreateOpeningStockLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },

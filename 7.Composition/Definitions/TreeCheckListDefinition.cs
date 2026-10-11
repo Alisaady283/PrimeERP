@@ -33,6 +33,7 @@ namespace PrimeERP.Composition.Definitions
     public class SourceNote
     {
         public string LabelKey { get; init; }
+        public FieldKind Kind { get; init; } = FieldKind.Text;
         public Func<IServiceProvider, int, string> Value { get; init; }
         public Func<IServiceProvider, int, string, Result> Save { get; init; }
     }

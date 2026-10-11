@@ -343,7 +343,7 @@ namespace PrimeERP.UI.Components.Display
                     FontWeight = FontWeights.SemiBold,
                     Margin = new Thickness(4, 8, 4, 8)
                 };
-                text.SetResourceReference(TextBlock.ForegroundProperty, "GridHeaderFg");
+                text.SetResourceReference(TextBlock.ForegroundProperty, "TableHeaderText");
 
                 Grid.SetColumn(text, index);
                 Grid.SetColumnSpan(text, span);

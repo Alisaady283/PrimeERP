@@ -385,7 +385,16 @@
 
 | # | الملف | الوظيفة |
 |---|---|---|
-| 5.01 | Colors.xaml | ألوان النظام |
+| 5.01 | Colors/Navy.xaml | ألوان هوية كحلي — كل ملف في `Colors/` هوية باسمه |
+| 5.01a | Colors/Azure.xaml | ألوان هوية أزرق سماوي |
+| 5.01b | Colors/Burgundy.xaml | ألوان هوية عنّابي |
+| 5.01c | Colors/Emerald.xaml | ألوان هوية زمرّدي |
+| 5.01d | Colors/Graphite.xaml | ألوان هوية غرافيت |
+| 5.01e | Colors/Gray.xaml | ألوان هوية رمادي فاتح |
+| 5.01f | Colors/Indigo.xaml | ألوان هوية نيلي |
+| 5.01g | Colors/Olive.xaml | ألوان هوية زيتي |
+| 5.01h | Colors/Plum.xaml | ألوان هوية برقوقي |
+| 5.01i | Colors/Teal.xaml | ألوان هوية بترولي |
 | 5.02 | Sizes.xaml | مقاسات النظام |
 | 5.03 | Theme.xaml | دمج طبقات التصميم |
 | | **Icons/** | الأيقونات |
@@ -537,6 +546,7 @@
 | 6.117 | ToastService.cs | يعرض إشعارات Toast فوق أي |
 | 6.118 | UIServices.cs | نقطة وصول واحدة لحاوية DI |
 | 6.119 | UpdateFlow.cs | البحث عن تحديث وتنزيله |
+| 6.119b | AppTitleBar.xaml.cs | شريط عنوان النافذة بلون البرنامج وأزرار التصغير والتكبير والإغلاق |
 | | **ViewModels/** | نماذج العرض مجموعةً بأقسامها |
 | 6.120 | AccountsViewModel.cs | نماذج عرض AccountsViewModel |
 | 6.121 | BaseViewModel.cs | نماذج عرض BaseViewModel |

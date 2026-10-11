@@ -66,6 +66,13 @@ namespace PrimeERP.Domain.Enums
         Holiday = 5,
     }
 
+    public enum BomLineKind
+    {
+        Component = 1,
+        ByProduct = 2,
+        Operation = 3
+    }
+
     public enum EmployeeStatus
     {
         Active   = 1,

@@ -253,7 +253,7 @@ namespace PrimeERP.Composition.Renderers
 
         private static void ApplyFlowScope(List<FieldDefinition> fieldDefs, Dictionary<string, FrameworkElement> controls, IServiceProvider services)
         {
-            var scoped = fieldDefs.Where(f => f.FlowScope != PrimeERP.Composition.Definitions.FlowScope.Both).ToList();
+            var scoped = fieldDefs.Where(f => f.FlowScope != PrimeERP.Composition.Definitions.FlowScope.Both || f.ShownWhen != null).ToList();
             if (scoped.Count == 0) return;
 
             var settings = services?.GetService(typeof(PrimeERP.Platform.Settings.ISettingsProvider)) as PrimeERP.Platform.Settings.ISettingsProvider;
@@ -263,9 +263,8 @@ namespace PrimeERP.Composition.Renderers
             {
                 if (!controls.TryGetValue(field.Key, out var control)) continue;
 
-                var matches = field.FlowScope == (simplified
-                    ? PrimeERP.Composition.Definitions.FlowScope.SimplifiedOnly
-                    : PrimeERP.Composition.Definitions.FlowScope.FullCycleOnly);
+                var matches = field.FlowScope.Allows(simplified)
+                              && (field.ShownWhen == null || (settings != null && field.ShownWhen(settings)));
 
                 control.Visibility = matches ? Visibility.Visible : Visibility.Collapsed;
             }
@@ -393,7 +392,7 @@ namespace PrimeERP.Composition.Renderers
                 FieldKind.Date => new AppDatePicker { Label = label, IsRequired = field.IsRequired },
                 FieldKind.Check => new AppCheckBox { Label = label },
                 FieldKind.TextArea => new AppTextArea { Label = label, IsRequired = field.IsRequired, MaxLength = field.MaxLength, Rows = 3 },
-                FieldKind.Picker => new AppComboBox { Label = label, IsRequired = field.IsRequired, DisplayMemberPath = "Display", SelectedValuePath = field.PickerValueField ?? "Id" },
+                FieldKind.Picker => new AppComboBox { Label = label, IsRequired = field.IsRequired, AllowClear = !field.IsRequired, DisplayMemberPath = "Display", SelectedValuePath = field.PickerValueField ?? "Id" },
                 FieldKind.Password => new AppPasswordBox { Label = label, IsRequired = field.IsRequired },
                 FieldKind.Image => new AppImagePicker(label),
                 _ => new AppTextBox { Label = label }
@@ -612,6 +611,23 @@ namespace PrimeERP.Composition.Renderers
             else if (field.PickerType == "Warehouse")
             {
                 combo.ItemsSource = LookupRows<PrimeERP.Domain.Entities.Warehouse>(services, withCode: true);
+            }
+            else if (field.PickerType == "WorkCenter")
+            {
+                combo.ItemsSource = LookupRows<PrimeERP.Domain.Entities.WorkCenter>(services, withCode: true);
+            }
+            else if (field.PickerType == "BomLineKind")
+            {
+                combo.ItemsSource = EnumRows<PrimeERP.Domain.Enums.BomLineKind>("Str.Bom.Kind");
+            }
+            else if (field.PickerType == "Bom")
+            {
+                var result = services.GetRequiredService<PrimeERP.Application.PageServices.Manufacturing.IBillOfMaterialsService>().Active();
+                if (result.IsSuccess) combo.ItemsSource = result.Value.Select(b => new PickerRow { Id = b.Id, Code = b.Code, Display = $"{b.Code} - {b.Name}" }).ToList();
+            }
+            else if (field.PickerType == "Branch")
+            {
+                combo.ItemsSource = LookupRows<PrimeERP.Domain.Entities.Branch>(services, withCode: true);
             }
             else if (field.PickerType == "Employee")
             {
