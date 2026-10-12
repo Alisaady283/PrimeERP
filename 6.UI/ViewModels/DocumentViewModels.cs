@@ -128,11 +128,11 @@ namespace PrimeERP.UI.ViewModels
         protected override Result DeleteItem(int id) => _returns.Delete(id);
     }
 
-    public class StockInViewModel : CrudViewModelBase<StockAdjustmentDto, StockAdjustmentFilter>
+    public abstract class StockVoucherViewModelBase : CrudViewModelBase<StockAdjustmentDto, StockAdjustmentFilter>
     {
         private readonly IStockInService _docs;
 
-        public StockInViewModel(IStockInService docs, IPermissionService permissions, IToastService toast, IDialogService dialogs)
+        protected StockVoucherViewModelBase(IStockInService docs, IPermissionService permissions, IToastService toast, IDialogService dialogs)
             : base(permissions, toast, dialogs) => _docs = docs;
 
         protected override string PermissionPrefix => "Inventory";
@@ -148,24 +148,14 @@ namespace PrimeERP.UI.ViewModels
         protected override Result DeleteItem(int id) => _docs.Delete(id);
     }
 
-    public class StockOutViewModel : CrudViewModelBase<StockAdjustmentDto, StockAdjustmentFilter>
+    public class StockInViewModel : StockVoucherViewModelBase
     {
-        private readonly IStockOutService _docs;
+        public StockInViewModel(IStockInService docs, IPermissionService p, IToastService t, IDialogService d) : base(docs, p, t, d) { }
+    }
 
-        public StockOutViewModel(IStockOutService docs, IPermissionService permissions, IToastService toast, IDialogService dialogs)
-            : base(permissions, toast, dialogs) => _docs = docs;
-
-        protected override string PermissionPrefix => "Inventory";
-
-        protected override Result<PagedResult<StockAdjustmentDto>> FetchPage(int page, int pageSize, StockAdjustmentFilter filter)
-        {
-            var f = filter ?? new StockAdjustmentFilter();
-            f.SearchText = SearchText;
-            return _docs.GetPaged(page, pageSize, f);
-        }
-
-        protected override int IdOf(StockAdjustmentDto item) => item.Id;
-        protected override Result DeleteItem(int id) => _docs.Delete(id);
+    public class StockOutViewModel : StockVoucherViewModelBase
+    {
+        public StockOutViewModel(IStockOutService docs, IPermissionService p, IToastService t, IDialogService d) : base(docs, p, t, d) { }
     }
 
     public class StockTransferViewModel : CrudViewModelBase<StockTransferDto, StockTransferFilter>

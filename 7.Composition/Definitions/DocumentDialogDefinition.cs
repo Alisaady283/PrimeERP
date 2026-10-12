@@ -13,6 +13,7 @@ namespace PrimeERP.Composition.Definitions
         public bool IsRequired { get; init; }
         public bool Positive { get; init; }
         public string PickerType { get; init; }
+        public Func<PrimeERP.Platform.Settings.ISettingsProvider, bool> ShownWhen { get; init; }
         public bool PickerLeafOnly { get; init; }
 
         public string PickerValueField { get; init; }
@@ -26,6 +27,7 @@ namespace PrimeERP.Composition.Definitions
         public double Width { get; init; } = 1;
         public bool IsText { get; init; }
         public string Format { get; init; } = "N2";
+        public Func<PrimeERP.Platform.Settings.ISettingsProvider, bool> ShownWhen { get; init; }
     }
 
     /// <summary>سطر واحد في صندوق إجماليات</summary>
@@ -54,7 +56,7 @@ namespace PrimeERP.Composition.Definitions
         public required string NetKey { get; init; }
     }
 
-    public class DocumentDialogDefinition
+    public record DocumentDialogDefinition
     {
         public required string TitleKey { get; init; }
         public required string TitleEditKey { get; init; }

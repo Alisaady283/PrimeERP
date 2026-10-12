@@ -9,7 +9,7 @@ using PrimeERP.Domain.Enums;
 namespace PrimeERP.Data.Repositories.Base
 {
     /// <summary>عقد مستودع الفواتير</summary>
-    public interface IInvoiceRepository<TInvoice, TLine>
+    public interface IInvoiceRepository<TInvoice, TLine> : IFlowLines
     {
         void DeleteDocument(PrimeDbContext db, int id);
         TInvoice GetById(int id, PrimeDbContext db = null);
@@ -21,6 +21,15 @@ namespace PrimeERP.Data.Repositories.Base
         int InsertLine(PrimeDbContext db, int invoiceId, TLine line);
         void SetJournalEntryId(PrimeDbContext db, int invoiceId, int journalEntryId);
         List<TInvoice> Between(DateTime from, DateTime to);
+        List<(int Year, int Month, decimal Value, int Count)> Monthly(DateTime from, DateTime to);
+        List<(int PartyId, decimal Value, int Count)> ByParty(DateTime from, DateTime to);
+        List<(int ProductId, decimal Qty, decimal Value)> ByProduct(DateTime from, DateTime to);
+        List<(int PartyId, DateTime Date, DateTime? DueDate, decimal Remaining)> Open();
+        List<TInvoice> OfParty(int partyId, PrimeDbContext db = null);
+        List<(int PartyId, DateTime First, DateTime Last)> FirstLast(DateTime to);
+        (decimal Net, decimal Paid) Settled(DateTime from, DateTime to);
+        void SetSettlement(PrimeDbContext db, IEnumerable<(int Id, decimal Paid, decimal Remaining)> settled);
+        List<int> UnsettledParties();
     }
 
     /// <summary>أساس فاتورة: رأس وسطور</summary>
@@ -46,6 +55,12 @@ namespace PrimeERP.Data.Repositories.Base
             Remove(i => i.Id == id, db);
         }
 
+
+        public List<FlowLine> FlowLines(DateTime from, DateTime to) =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking().Where(i => i.InvoiceDate >= from && i.InvoiceDate <= to)
+                .Join(RowsOf<TLine>(ctx, LinesTable).AsNoTracking(), i => i.Id, l => l.InvoiceId,
+                    (i, l) => new FlowLine(i.Id, i.InvoiceNo, i.InvoiceDate, (int?)EF.Property<int>(i, PartyColumn), l.Id, l.ProductCode, l.ProductName, l.Qty))
+                .ToList());
 
         public List<TLine> GetLines(int invoiceId, PrimeDbContext db = null) =>
             FetchOf<TLine>(LinesTable, q => q.Where(l => l.InvoiceId == invoiceId).OrderBy(l => l.LineNo), db);
@@ -76,6 +91,62 @@ namespace PrimeERP.Data.Repositories.Base
         public List<TInvoice> Between(DateTime from, DateTime to) =>
             Fetch(q => q.Where(i => i.InvoiceDate >= from.Date && i.InvoiceDate < to.Date.AddDays(1))
                         .OrderBy(i => i.InvoiceDate).ThenBy(i => i.InvoiceNo));
+
+        private IQueryable<TInvoice> Valid(PrimeDbContext ctx, DateTime from, DateTime to) =>
+            Rows(ctx).AsNoTracking().Where(i => i.Status != InvoiceStatus.Cancelled && i.InvoiceDate >= from.Date && i.InvoiceDate < to.Date.AddDays(1));
+
+        public List<(int Year, int Month, decimal Value, int Count)> Monthly(DateTime from, DateTime to) =>
+            Scope(null, ctx => Valid(ctx, from, to)
+                .GroupBy(i => new { i.InvoiceDate.Year, i.InvoiceDate.Month })
+                .Select(g => new { g.Key.Year, g.Key.Month, Value = g.Sum(i => i.SubTotal - i.DiscountAmount), Count = g.Count() })
+                .AsEnumerable().Select(x => (x.Year, x.Month, x.Value, x.Count)).ToList());
+
+        public List<(int PartyId, decimal Value, int Count)> ByParty(DateTime from, DateTime to) =>
+            Scope(null, ctx => Valid(ctx, from, to)
+                .GroupBy(i => EF.Property<int>(i, PartyColumn))
+                .Select(g => new { g.Key, Value = g.Sum(i => i.SubTotal - i.DiscountAmount), Count = g.Count() })
+                .AsEnumerable().Select(x => (x.Key, x.Value, x.Count)).ToList());
+
+        public List<(int ProductId, decimal Qty, decimal Value)> ByProduct(DateTime from, DateTime to) =>
+            Scope(null, ctx => Valid(ctx, from, to)
+                .Join(RowsOf<TLine>(ctx, LinesTable).AsNoTracking(), i => i.Id, l => l.InvoiceId, (i, l) => l)
+                .GroupBy(l => l.ProductId)
+                .Select(g => new { g.Key, Qty = g.Sum(l => l.Qty), Value = g.Sum(l => l.LineTotal - l.DiscountAmount) })
+                .AsEnumerable().Select(x => (x.Key, x.Qty, x.Value)).ToList());
+
+        public List<(int PartyId, DateTime Date, DateTime? DueDate, decimal Remaining)> Open() =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking()
+                .Where(i => i.Status != InvoiceStatus.Cancelled && i.RemainingAmount > 0)
+                .Select(i => new { Party = EF.Property<int>(i, PartyColumn), i.InvoiceDate, i.DueDate, i.RemainingAmount })
+                .AsEnumerable().Select(x => (x.Party, x.InvoiceDate, x.DueDate, x.RemainingAmount)).ToList());
+
+        public List<(int PartyId, DateTime First, DateTime Last)> FirstLast(DateTime to) =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking()
+                .Where(i => i.Status != InvoiceStatus.Cancelled && i.InvoiceDate < to.Date.AddDays(1))
+                .GroupBy(i => EF.Property<int>(i, PartyColumn))
+                .Select(g => new { g.Key, First = g.Min(i => i.InvoiceDate), Last = g.Max(i => i.InvoiceDate) })
+                .AsEnumerable().Select(x => (x.Key, x.First, x.Last)).ToList());
+
+        public (decimal Net, decimal Paid) Settled(DateTime from, DateTime to) =>
+            Scope(null, ctx => Valid(ctx, from, to)
+                .GroupBy(_ => 1)
+                .Select(g => new { Net = g.Sum(i => i.NetTotal), Paid = g.Sum(i => i.PaidAmount) })
+                .AsEnumerable().Select(x => (x.Net, x.Paid)).FirstOrDefault());
+
+        public List<TInvoice> OfParty(int partyId, PrimeDbContext db = null) =>
+            Fetch(q => q.Where(i => EF.Property<int>(i, PartyColumn) == partyId && i.Status != InvoiceStatus.Cancelled)
+                        .OrderBy(i => i.InvoiceDate).ThenBy(i => i.Id), db);
+
+        public void SetSettlement(PrimeDbContext db, IEnumerable<(int Id, decimal Paid, decimal Remaining)> settled)
+        {
+            foreach (var (id, paid, remaining) in settled)
+                Set(i => i.Id == id, s => s.SetProperty(i => i.PaidAmount, paid).SetProperty(i => i.RemainingAmount, remaining), db);
+        }
+
+        public List<int> UnsettledParties() =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking()
+                .Where(i => i.Status != InvoiceStatus.Cancelled && i.NetTotal > 0 && i.PaidAmount + i.RemainingAmount == 0)
+                .Select(i => EF.Property<int>(i, PartyColumn)).Distinct().ToList());
 
         public int InsertHeader(PrimeDbContext db, TInvoice invoice) => Add(invoice, db);
 

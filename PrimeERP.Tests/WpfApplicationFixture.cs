@@ -24,7 +24,7 @@ namespace PrimeERP.Tests
         {
             var main = typeof(PrimeERP.App.Bootstrap.DependencyInjection).Assembly.GetName().Name;
 
-            foreach (var file in new[] { "5.Design/Sizes.xaml", "5.Design/Colors.xaml",
+            foreach (var file in new[] { "5.Design/Sizes.xaml", "5.Design/Colors/Navy.xaml",
                                          "5.Design/Theme.xaml", "5.Design/Strings/Strings.ar.xaml" })
                 System.Windows.Application.Current.Resources.MergedDictionaries.Add(new ResourceDictionary
                 {

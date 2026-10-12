@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ using PrimeERP.UI.Components.Actions;
 using PrimeERP.UI.Components.Inputs;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.UI.Services;
+using PrimeERP.Application.Services.Documents;
 using Btn = PrimeERP.UI.Components.Actions.AppButton;
 
 namespace PrimeERP.Composition.Renderers
@@ -35,9 +37,12 @@ namespace PrimeERP.Composition.Renderers
         {
             public FrameworkElement Body;
             public Dictionary<string, FrameworkElement> HeaderControls;
+            public Panel Header;
             public List<EditorRow> Rows;
             public object EditItem;
             public bool IsEdit;
+
+            public Func<IReadOnlyDictionary<string, object>, EditorRow> AddLine;
 
             public Action<PullDialog.PulledLine> AddPulledRow;
 
@@ -225,11 +230,12 @@ namespace PrimeERP.Composition.Renderers
 
             var editor = new DocumentEditor
             {
-                Body = body, HeaderControls = headerControls, Rows = rows,
+                Body = body, HeaderControls = headerControls, Header = headerGrid, Rows = rows,
                 EditItem = editItem, IsEdit = isEdit
             };
 
             foreach (var pullButton in BuildPullButtons(def, services, () => editor)) pullBar.Children.Add(pullButton);
+            if (isEdit && BuildTraceButton(def, services, () => editor) is { } trace) pullBar.Children.Add(trace);
             pullBar.Visibility = pullBar.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
             editor.ApplyPulledHeader = header =>
@@ -268,16 +274,19 @@ namespace PrimeERP.Composition.Renderers
                     }
             }
 
-            editor.AddPulledRow = pulled =>
+            linesHost.PreviewKeyDown += (_, e) => MoveInLines(e, rows, def, () => AddRow(null), linesHost.FlowDirection);
+
+            editor.AddLine = values =>
             {
                 var target = rows.LastOrDefault(r => IsEmptyRow(r, def)) ?? AddRow(null);
-                target.Link = pulled;
-
-                SetRowValue(target, def, "ProductCode", pulled.ProductCode);
-                SetRowValue(target, def, "Qty", pulled.Qty);
-                SetRowValue(target, def, "UnitPrice", pulled.UnitValue);
-                SetRowValue(target, def, "UnitCost", pulled.UnitValue);
+                foreach (var (key, value) in values) SetRowValue(target, def, key, value);
+                return target;
             };
+
+            editor.AddPulledRow = pulled => editor.AddLine(new Dictionary<string, object>
+            {
+                ["ProductCode"] = pulled.ProductCode, ["Qty"] = pulled.Qty, ["UnitPrice"] = pulled.UnitValue, ["UnitCost"] = pulled.UnitValue
+            }).Link = pulled;
 
             return editor;
         }
@@ -415,7 +424,34 @@ namespace PrimeERP.Composition.Renderers
         private static string PickerValueFieldOf(Type lineDtoType, LineFieldDefinition field) =>
             DialogRenderer.ValueFieldOf(lineDtoType, field.Key, field.PickerValueField);
 
-        private static void SetRowValue(EditorRow row, DocumentDialogDefinition def, string key, object value)
+        private static void MoveInLines(KeyEventArgs e, List<EditorRow> rows, DocumentDialogDefinition def, Func<EditorRow> addRow, FlowDirection flow)
+        {
+            var keys = def.LineFields.Where(f => f.Kind != FieldKind.ReadOnly).Select(f => f.Key).ToList();
+            var r = rows.FindIndex(x => x.Row.IsKeyboardFocusWithin);
+            if (r < 0) return;
+            var c = keys.FindIndex(k => rows[r].Controls.TryGetValue(k, out var control) && control.IsKeyboardFocusWithin);
+            if (c < 0 || rows[r].Controls[keys[c]] is AppComboBox { IsDropDownOpen: true }) return;
+
+            var forward = flow == FlowDirection.RightToLeft ? Key.Left : Key.Right;
+            var back = flow == FlowDirection.RightToLeft ? Key.Right : Key.Left;
+            var tab = e.Key == Key.Tab && Keyboard.Modifiers == ModifierKeys.None;
+            var shiftTab = e.Key == Key.Tab && Keyboard.Modifiers == ModifierKeys.Shift;
+            int row = r, col = c;
+
+            if (tab || e.Key == forward) { if (++col == keys.Count) { col = 0; row++; } }
+            else if (shiftTab || e.Key == back) { if (--col < 0) { if (r == 0) return; col = keys.Count - 1; row--; } }
+            else if (e.Key == Key.Down) { if (r == rows.Count - 1) return; row++; }
+            else if (e.Key == Key.Up) { if (r == 0) return; row--; }
+            else return;
+
+            if (row == rows.Count) { if (!tab) return; addRow(); }
+
+            var target = rows[row].Controls[keys[col]];
+            target.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() => target.MoveFocus(new TraversalRequest(FocusNavigationDirection.First))));
+            e.Handled = true;
+        }
+
+        internal static void SetRowValue(EditorRow row, DocumentDialogDefinition def, string key, object value)
         {
             var field = def.LineFields.FirstOrDefault(f => f.Key == key);
             if (field == null || !row.Controls.TryGetValue(key, out var control)) return;
@@ -429,10 +465,13 @@ namespace PrimeERP.Composition.Renderers
         internal static List<Btn> BuildPullButtons(DocumentDialogDefinition def, IServiceProvider services, Func<DocumentEditor> current)
         {
             var permissions = services.GetRequiredService<IPermissionService>();
+            var simplified = services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>()
+                .Get(PrimeERP.Platform.Settings.SettingKeys.Documents.SimplifiedFlow, true);
             var buttons = new List<Btn>();
 
             foreach (var source in def.PullSources ?? new List<PullSource>())
             {
+                if (!source.FlowScope.Allows(simplified)) continue;
                 if (!string.IsNullOrEmpty(source.PermissionKey) && !permissions.Can(source.PermissionKey)) continue;
 
                 var button = new Btn { Text = source.Label, Variant = "secondary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
@@ -459,11 +498,49 @@ namespace PrimeERP.Composition.Renderers
             return buttons;
         }
 
+        internal static Btn BuildTraceButton(DocumentDialogDefinition def, IServiceProvider services, Func<DocumentEditor> current)
+        {
+            if (def.DocumentKind == null) return null;
+
+            var button = new Btn { Text = LocalizationService.Get("Str.Document.Trace"), Variant = "secondary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
+            button.Click += async (_, __) =>
+            {
+                var item = current()?.EditItem;
+                if (item?.GetType().GetProperty("Id")?.GetValue(item) is not int id || id == 0) return;
+
+                var chain = services.GetRequiredService<IDocumentPull>().GetChain(def.DocumentKind, id);
+                var nodes = chain.IsSuccess ? chain.Value : new List<ChainNode>();
+                string Lines(bool upstream) => string.Join("\n", nodes.Where(n => n.Upstream == upstream)
+                    .Select(n => $"{LocalizationService.Get($"Str.Module.{n.DocType}")} {n.DocNo} — {n.Qty:N2}"));
+
+                var message = nodes.Count == 0 ? LocalizationService.Get("Str.Document.TraceEmpty") : string.Join("\n\n", new[]
+                {
+                    nodes.Any(n => n.Upstream) ? $"{LocalizationService.Get("Str.Document.TraceFrom")}\n{Lines(true)}" : null,
+                    nodes.Any(n => !n.Upstream) ? $"{LocalizationService.Get("Str.Document.TraceInto")}\n{Lines(false)}" : null,
+                }.Where(x => x != null));
+
+                await services.GetRequiredService<IDialogService>().ShowMessageAsync(LocalizationService.Get("Str.Document.Trace"), message);
+            };
+            return button;
+        }
+
         internal static bool TrySaveEditor(DocumentDialogDefinition def, IServiceProvider services, IToastService toast, DocumentEditor editor) =>
             TrySave(def, services, toast, editor.HeaderControls, editor.Rows, editor.EditItem, editor.IsEdit);
 
+        internal static DocumentDialogDefinition Shown(DocumentDialogDefinition def, IServiceProvider services)
+        {
+            var settings = services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>();
+            return def.LineFields.All(f => f.ShownWhen == null) && (def.PrintColumns?.All(c => c.ShownWhen == null) ?? true) ? def
+                : def with
+                {
+                    LineFields = def.LineFields.Where(f => f.ShownWhen == null || f.ShownWhen(settings)).ToList(),
+                    PrintColumns = def.PrintColumns?.Where(c => c.ShownWhen == null || c.ShownWhen(settings)).ToList()
+                };
+        }
+
         public static bool ShowAndSave(DocumentDialogDefinition def, IServiceProvider services, IToastService toast, object editItem = null)
         {
+            def = Shown(def, services);
             var editor = BuildEditor(def, services, toast, editItem);
             if (editor == null) return false;
 
@@ -503,9 +580,27 @@ namespace PrimeERP.Composition.Renderers
         private static bool TrySave(DocumentDialogDefinition def, IServiceProvider services, IToastService toast,
             Dictionary<string, FrameworkElement> headerControls, List<EditorRow> rows, object editItem, bool isEdit)
         {
-            if (!FieldValidation.Validate(def.HeaderFields, headerControls)) return false;
+            var dto = ReadDto(def, toast, headerControls, rows, editItem, isEdit);
+            if (dto == null) return false;
 
             var service = Resolve.Service(def, services);
+            var method = DialogRenderer.FindMethod(def.ServiceType, isEdit ? "Update" : "Create", def.DtoType);
+            if (method == null) { toast.Error(LocalizationService.Get("Str.Composition.MissingMethod", def.ServiceType.Name, $"{(isEdit ? "Update" : "Create")}({def.DtoType.Name})")); return false; }
+
+            var result = (Result)method.Invoke(service, new[] { dto });
+            if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return false; }
+
+            toast.Success(LocalizationService.Get("Str.Success"));
+            return true;
+        }
+
+        internal static object ReadDto(DocumentDialogDefinition def, IToastService toast, DocumentEditor editor) =>
+            ReadDto(def, toast, editor.HeaderControls, editor.Rows, editor.EditItem, editor.IsEdit);
+
+        private static object ReadDto(DocumentDialogDefinition def, IToastService toast,
+            Dictionary<string, FrameworkElement> headerControls, List<EditorRow> rows, object editItem, bool isEdit)
+        {
+            if (!FieldValidation.Validate(def.HeaderFields, headerControls)) return null;
 
             var dto = Activator.CreateInstance(def.DtoType);
             DialogRenderer.ApplyFields(def.HeaderFields, headerControls, dto, editOnly: isEdit);
@@ -551,19 +646,11 @@ namespace PrimeERP.Composition.Renderers
 
                 linesList.Add(lineDto);
             }
-            if (!rowsValid) return false;
-            if (linesList.Count == 0 && def.LineFields.Count > 0) { toast.Error(LocalizationService.Get("Str.Document.NoLines")); return false; }
+            if (!rowsValid) return null;
+            if (linesList.Count == 0 && def.LineFields.Count > 0) { toast.Error(LocalizationService.Get("Str.Document.NoLines")); return null; }
 
             def.DtoType.GetProperty(def.LinesPropertyName).SetValue(dto, linesList);
-
-            var method = DialogRenderer.FindMethod(def.ServiceType, isEdit ? "Update" : "Create", def.DtoType);
-            if (method == null) { toast.Error(LocalizationService.Get("Str.Composition.MissingMethod", def.ServiceType.Name, $"{(isEdit ? "Update" : "Create")}({def.DtoType.Name})")); return false; }
-
-            var result = (Result)method.Invoke(service, new[] { dto });
-            if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return false; }
-
-            toast.Success(LocalizationService.Get("Str.Success"));
-            return true;
+            return dto;
         }
     }
 }

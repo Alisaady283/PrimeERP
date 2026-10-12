@@ -52,6 +52,8 @@ def setup():
         for column in ("version", "version_at"):
             if column not in columns:
                 connection.execute(f"ALTER TABLE licenses ADD COLUMN {column} TEXT")
+        if "english" not in columns:
+            connection.execute("ALTER TABLE licenses ADD COLUMN english INTEGER DEFAULT 0")
 
 
 def authorized() -> bool:
@@ -83,13 +85,14 @@ def upsert_license():
     with db() as connection:
         connection.execute(
             """
-            INSERT INTO licenses (serial, customer, location, manifest, simplified, package, version, version_at, created_at, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO licenses (serial, customer, location, manifest, simplified, english, package, version, version_at, created_at, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(serial) DO UPDATE SET
                 customer   = excluded.customer,
                 location   = excluded.location,
                 manifest   = excluded.manifest,
                 simplified = excluded.simplified,
+                english    = excluded.english,
                 is_active  = excluded.is_active,
                 package    = COALESCE(excluded.package, licenses.package),
                 version    = COALESCE(excluded.version, licenses.version),
@@ -102,6 +105,7 @@ def upsert_license():
                 data.get("location", ""),
                 data.get("manifest", ""),
                 1 if data.get("simplified") else 0,
+                1 if data.get("english") else 0,
                 data.get("package"),
                 data.get("version") or None,
                 now(),
@@ -163,6 +167,7 @@ def activate():
         customer=row["customer"],
         manifest=row["manifest"] or "",
         simplified=bool(row["simplified"]),
+        english=bool(row["english"]),
         version=row["version"] or "",
         files="/files/files.json",
     )

@@ -519,24 +519,6 @@
         </Setter>
     </Style>
 
-    <!-- DataGrid -->
-
-    <Style TargetType="DataGrid">
-        <Setter Property="Background" Value="{DynamicResource SurfaceDefault}"/>
-        <Setter Property="RowBackground" Value="{DynamicResource SurfaceDefault}"/>
-        <Setter Property="AlternatingRowBackground" Value="{DynamicResource SurfaceCanvas}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource OutlineDefault}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource OutlineDefault}"/>
-        <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource OutlineDefault}"/>
-        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-        <Setter Property="FontFamily" Value="{DynamicResource P.Font.Family.Primary}"/>
-        <Setter Property="FontSize" Value="{DynamicResource P.Font.Size.300}"/>
-        <Setter Property="RowHeight" Value="38"/>
-        <Setter Property="HeadersVisibility" Value="Column"/>
-        <Setter Property="CanUserAddRows" Value="False"/>
-    </Style>
-
     <!-- Popup -->
 
     <Style TargetType="Popup">

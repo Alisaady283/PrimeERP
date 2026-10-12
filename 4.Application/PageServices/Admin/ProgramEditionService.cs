@@ -1,16 +1,9 @@
-using PrimeERP.Application.PageServices.Backup;
 using PrimeERP.Application.Services.Core;
-using PrimeERP.Data.Core;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using PrimeERP.Application.DTOs.Common;
 using PrimeERP.Application.Validation;
 using PrimeERP.Data.Repositories;
-using PrimeERP.Domain.Entities;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
@@ -32,31 +25,22 @@ namespace PrimeERP.Application.PageServices.Admin
         protected override string StringPrefix => "Str.Builder";
         protected override string EntityName => "ProgramEdition";
 
-        private const double FilesShare = 88;
-        private const double DatabaseShare = 8;
+        private const double FilesShare = 96;
 
         private readonly IEditionRepository _edition;
-        private readonly ILicenseRepository _licenses;
-        private readonly IBackupRepository _backupRepo;
-        private readonly ISettingRepository _settingRows;
 
         public ProgramEditionService(IPermissionService permissions, ISettingsProvider settings,
-            ILocalizationService localization, IAuditLogger audit,
-            IEditionRepository edition, ILicenseRepository licenses,
-            IBackupRepository backupRepo, ISettingRepository settingRows)
+            ILocalizationService localization, IAuditLogger audit, IEditionRepository edition)
             : base(permissions, settings, localization, audit)
         {
-            _backupRepo = backupRepo;
             _edition = edition;
-            _licenses = licenses;
-            _settingRows = settingRows;
         }
 
         public Result Create(CreateEditionDto edition, IProgress<EditionProgress> progress = null)
         {
             if (!Can("Create")) return FailDenied();
 
-            var invalid = Check.Valid(edition, EditionFields(_backupRepo.Capability));
+            var invalid = Check.Valid(edition, EditionFields());
             if (invalid.IsFailure) return invalid;
 
             var source = Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory);
@@ -67,16 +51,20 @@ namespace PrimeERP.Application.PageServices.Admin
                 var stage = Msg("CopyingFiles");
                 _edition.CopyProgram(source, target, FilesShare, percent => progress?.Report(new EditionProgress(percent, stage)));
 
-                progress?.Report(new EditionProgress(FilesShare, Msg("CopyingDatabase")));
-                var database = _backupRepo.CopyInto(target);
-
-                progress?.Report(new EditionProgress(FilesShare + DatabaseShare, Msg("WritingManifest")));
-                StripDeveloperData(database);
-                WriteEditionSettings(database, edition);
-                _edition.PointAtDatabase(Path.Combine(target, "appsettings.json"), database);
+                progress?.Report(new EditionProgress(FilesShare, Msg("WritingManifest")));
+                _edition.PointAtDatabase(Path.Combine(target, "appsettings.json"), Path.Combine(target, "PrimeERP.db"));
+                _edition.WriteJson(Path.Combine(target, "license.json"), new
+                {
+                    serial = edition.Serial ?? "",
+                    customer = edition.Customer ?? "",
+                    manifest = string.Join(",", edition.ModuleKeys),
+                    simplified = edition.Simplified,
+                    english = edition.English,
+                    version = edition.Version ?? ""
+                });
 
                 Audit.Log(EntityName, 0, AuditAction.Insert,
-                    newValue: new { target, edition.Simplified, pages = edition.ModuleKeys.Count });
+                    newValue: new { target, edition.Serial, edition.Simplified, pages = edition.ModuleKeys.Count });
 
                 return Result.Ok();
             }
@@ -86,33 +74,11 @@ namespace PrimeERP.Application.PageServices.Admin
             }
         }
 
-        private void StripDeveloperData(string databasePath)
-        {
-            using var connection = _edition.Open(databasePath);
-            using var db = DbContextFactory.On(connection);
-
-            _settingRows.RemoveByPrefix(db, "Developer.");
-            _licenses.Clear(db);
-        }
-
-        private void WriteEditionSettings(string databasePath, CreateEditionDto edition)
-        {
-            using var connection = _edition.Open(databasePath);
-            using var db = DbContextFactory.On(connection);
-
-            _settingRows.UpsertMany(new[]
-            {
-                SettingsProvider.BuildRecord(SettingKeys.UI.Manifest, string.Join(",", edition.ModuleKeys)),
-                SettingsProvider.BuildRecord(SettingKeys.Documents.SimplifiedFlow, edition.Simplified)
-            }, db);
-        }
-
         /// <summary>شروط النسخة المنشأة</summary>
-        private static Field<CreateEditionDto>[] EditionFields(BackupCapability capability) => new Field<CreateEditionDto>[]
+        private static Field<CreateEditionDto>[] EditionFields() => new Field<CreateEditionDto>[]
         {
             new(x => x.TargetFolder, "Str.Field.EditionPath", Required: true),
             new(x => x.ModuleKeys, "", Required: true, Message: "Str.Builder.PickOnePage"),
-            new(x => x.TargetFolder, "", Must: _ => capability == BackupCapability.FileCopy, Message: "Str.Builder.EditionLocalOnly"),
             new(x => x.TargetFolder, "", Must: d => string.IsNullOrWhiteSpace(d.TargetFolder) ||
                 !Path.TrimEndingDirectorySeparator(Path.GetFullPath(d.TargetFolder))
                     .StartsWith(Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory), StringComparison.OrdinalIgnoreCase),

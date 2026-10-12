@@ -46,14 +46,16 @@ namespace PrimeERP.Application.PageServices.Vouchers
         private readonly PartyByKind _parties;
         private readonly ITreasuryRepository _treasuries;
         private readonly AccountOf _accountOf;
+        private readonly Settlement _settlement;
 
         protected VoucherServiceBase(IVoucherRepository repo, Entries journals,
             INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
             ILocalizationService localization, IAuditLogger audit, VoucherKind kind,
             PartyByKind parties, ITreasuryRepository treasuries,
-            AccountOf accountOf)
+            AccountOf accountOf, Settlement settlement)
             : base(permissions, settings, localization, audit, journals: journals)
         {
+            _settlement = settlement;
             _repo = repo; _numbers = numbers; _kind = kind;
             _parties = parties; _treasuries = treasuries; _accountOf = accountOf;
         }
@@ -100,6 +102,8 @@ namespace PrimeERP.Application.PageServices.Vouchers
                     new Field<CreateVoucherDto>(x => x.PartyId, "", Required: true, Message: IsReceipt ? "Str.Voucher.CustomerRequired" : "Str.Voucher.SupplierRequired")),
                 DocumentLines.Within(dto.Allocations, a => a.Amount, dto.Amount, "Str.Voucher.AllocationsExceed"));
             if (input.IsFailure) return input.As<Func<PrimeDbContext, int>>();
+            var named = _settlement.CheckNamed(PartyOf, dto.PartyId.Value, (dto.Allocations ?? new()).Select(a => a.InvoiceNo));
+            if (named.IsFailure) return named.As<Func<PrimeDbContext, int>>();
 
             var accounts = _accountOf.Treasury(dto.TreasuryId, "Str.Voucher.TreasuryAccountMissing").Then(cash =>
                 _accountOf.Party(PartyOf, dto.PartyId.Value, "Str.Voucher.PartyAccountMissing").Then(party => Result.Ok((cash, party))));
@@ -122,13 +126,14 @@ namespace PrimeERP.Application.PageServices.Vouchers
                     _repo.InsertAllocation(db, id, Rows.Copy(allocation, new VoucherAllocation(), to =>
                     {
                         to.LineNo = lineNo++;
-                        to.InvoiceType = EntityName;
+                        to.InvoiceType = IsReceipt ? "SalesInvoices" : "PurchaseInvoices";
                     }));
 
                 var (debit, credit) = TwoSided.By(IsReceipt, cashAccount, partyAccount);
                 var entryId = Posting.Entry(Journals, db, voucher.VoucherDate, Msg(IsReceipt ? "ReceiptEntry" : "PaymentEntry", voucher.VoucherNo),
                     EntityName, debit, credit, voucher.Amount);
                 _repo.SetLinks(db, id, entryId, null);
+                _settlement.Recalculate(db, PartyOf, dto.PartyId);
                 return id;
             });
         }
@@ -137,6 +142,7 @@ namespace PrimeERP.Application.PageServices.Vouchers
         {
             Posting.Reverse(Journals, db, head.JournalEntryId);
             _repo.Delete(db, head.Id);
+            _settlement.Recalculate(db, head.PartyKind, head.PartyId);
         }
 
         private static T ToDto<T>(Voucher v, IReadOnlyDictionary<int, string> parties, IReadOnlyDictionary<int, string> treasuries)
@@ -156,9 +162,9 @@ namespace PrimeERP.Application.PageServices.Vouchers
             INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
             ILocalizationService localization, IAuditLogger audit,
             PartyByKind parties, ITreasuryRepository treasuries,
-            AccountOf accountOf)
+            AccountOf accountOf, Settlement settlement)
             : base(repo, journals, numbers, permissions, settings, localization, audit, VoucherKind.Receipt,
-                   parties, treasuries, accountOf) { }
+                   parties, treasuries, accountOf, settlement) { }
     }
 
     public class PaymentVoucherService : VoucherServiceBase, IPaymentVoucherService
@@ -167,8 +173,8 @@ namespace PrimeERP.Application.PageServices.Vouchers
             INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
             ILocalizationService localization, IAuditLogger audit,
             PartyByKind parties, ITreasuryRepository treasuries,
-            AccountOf accountOf)
+            AccountOf accountOf, Settlement settlement)
             : base(repo, journals, numbers, permissions, settings, localization, audit, VoucherKind.Payment,
-                   parties, treasuries, accountOf) { }
+                   parties, treasuries, accountOf, settlement) { }
     }
 }

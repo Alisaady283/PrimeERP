@@ -33,6 +33,10 @@ namespace PrimeERP.UI.Components.Display
             DependencyProperty.Register(nameof(Trend), typeof(double?), typeof(AppStatCard),
                 new PropertyMetadata(null, OnTrendChanged));
 
+        public static readonly DependencyProperty TrendInvertedProperty =
+            DependencyProperty.Register(nameof(TrendInverted), typeof(bool), typeof(AppStatCard),
+                new PropertyMetadata(false, (d, _) => OnTrendChanged(d, new DependencyPropertyChangedEventArgs(TrendProperty, null, ((AppStatCard)d).Trend))));
+
         public static readonly DependencyProperty CommandProperty =
             DependencyProperty.Register(nameof(Command), typeof(ICommand), typeof(AppStatCard),
                 new PropertyMetadata(null));
@@ -44,6 +48,7 @@ namespace PrimeERP.UI.Components.Display
         public string   Color    { get => (string)GetValue(ColorProperty);    set => SetValue(ColorProperty, value); }
         public double?  Trend    { get => (double?)GetValue(TrendProperty);   set => SetValue(TrendProperty, value); }
         public ICommand Command  { get => (ICommand)GetValue(CommandProperty);set => SetValue(CommandProperty, value); }
+        public bool     TrendInverted { get => (bool)GetValue(TrendInvertedProperty); set => SetValue(TrendInvertedProperty, value); }
 
         public event EventHandler Click;
 
@@ -91,14 +96,23 @@ namespace PrimeERP.UI.Components.Display
             var isUp = trend.Value >= 0;
             c.txtTrend.Text = $"{(isUp ? "▲" : "▼")} {Math.Abs(trend.Value):N1}%";
 
-            var bg = isUp ? (Brush)c.FindResource("SuccessSoft") : (Brush)c.FindResource("DangerSoft");
-            var fg = isUp ? (Brush)c.FindResource("Success")     : (Brush)c.FindResource("Danger");
+            var isGood = isUp != c.TrendInverted;
+            var bg = isGood ? (Brush)c.FindResource("SuccessSoft") : (Brush)c.FindResource("DangerSoft");
+            var fg = isGood ? (Brush)c.FindResource("Success")     : (Brush)c.FindResource("Danger");
             c.trendBadge.Background = bg;
             c.txtTrend.Foreground = fg;
         }
 
         private void ApplyColor()
         {
+            if (Color?.StartsWith("series") == true && TryFindResource($"ChartSeries{Color[6..]}") is SolidColorBrush series)
+            {
+                var c = series.Color;
+                iconWrap.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(30, c.R, c.G, c.B));
+                icon.Stroke = series;
+                return;
+            }
+
             var (bg, fg) = Color switch
             {
                 "success" => ((Brush)FindResource("SuccessSoft"),       (Brush)FindResource("Success")),

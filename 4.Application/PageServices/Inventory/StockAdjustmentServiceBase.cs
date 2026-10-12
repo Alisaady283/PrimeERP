@@ -19,6 +19,8 @@ using PrimeERP.Platform.Audit;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
 using PrimeERP.Platform.Localization;
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Services.Ledger.Accounts;
 
 namespace PrimeERP.Application.PageServices.Inventory
 {
@@ -39,17 +41,23 @@ namespace PrimeERP.Application.PageServices.Inventory
         private readonly INumberSequenceService _numbers;
         private readonly MovementType _direction;
         private readonly string _sequenceKey, _permissionAction, _entityName;
+        private readonly AccountOf _accountsOf;
+        private readonly string _counterAccountKey;
 
         protected StockAdjustmentServiceBase(TRepo repo, IProductRepository products, ILookupRepository<Warehouse> warehouses, IStockMove stock,
             INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
             ILocalizationService localization, IAuditLogger audit, IDocumentPull links,
-            MovementType direction, string sequenceKey, string permissionAction, string entityName)
-            : base(permissions, settings, localization, audit, links, stock: stock)
+            MovementType direction, string sequenceKey, string permissionAction, string entityName,
+            Entries journals = null, AccountOf accountsOf = null, string counterAccountKey = null)
+            : base(permissions, settings, localization, audit, links, journals: journals, stock: stock)
         {
             Repo = repo; _products = products; _warehouses = warehouses; _numbers = numbers;
             _direction = direction;
             _sequenceKey = sequenceKey; _permissionAction = permissionAction; _entityName = entityName;
+            _accountsOf = accountsOf; _counterAccountKey = counterAccountKey;
         }
+
+        protected override int? EntryOf(StockAdjustment head) => head.JournalEntryId;
 
         protected override string PermissionPrefix => "Inventory";
         protected override string StringPrefix => "Str.Stock";
@@ -100,18 +108,23 @@ namespace PrimeERP.Application.PageServices.Inventory
             if (pulls.IsFailure) return pulls.As<Func<PrimeDbContext, int>>();
             var resolved = lines.Value;
 
+            var accounts = Posts ? Accounts() : Result.Ok(("", ""));
+            if (accounts.IsFailure) return accounts.As<Func<PrimeDbContext, int>>();
+
             return Result.Ok<Func<PrimeDbContext, int>>(db =>
             {
                 var docNo = _numbers.Next(db, _sequenceKey);
+                var entryId = Posts ? Entry(db, dto, docNo, resolved, accounts.Value) : null;
                 var id = Repo.InsertHeader(db, Rows.Copy(dto, new StockAdjustment(), to =>
                 {
                     to.DocNo = docNo;
+                    to.JournalEntryId = entryId;
                 }));
 
                 var inserted = resolved.Select((line, i) =>
                 {
                     var lineId = Repo.InsertLine(db, id, line);
-                    var moved = Stock.RecordMovement(db, line.ProductId, dto.WarehouseId, _direction, line.Qty, line.UnitCost,
+                    var moved = Stock.Move(db, line, dto.WarehouseId, _direction, line.Qty, line.UnitCost,
                         StockSource, id, docNo, dto.MovementDate);
                     if (moved.IsFailure) throw new InvalidOperationException(moved.ErrorMessage);
                     return ((IPullableLine)dto.Lines[i], lineId, line.Qty);
@@ -122,8 +135,26 @@ namespace PrimeERP.Application.PageServices.Inventory
             });
         }
 
+        private bool Posts => _counterAccountKey != null;
+
+        private Result<(string Counter, string Inventory)> Accounts() =>
+            _accountsOf.Setting(_counterAccountKey, "Str.Stock.CounterMissing").Then(counter =>
+                _accountsOf.Setting(SettingKeys.Accounts.Inventory, "Str.Trade.InventoryMissing").Then(inventory => Result.Ok((counter, inventory))));
+
+        private int? Entry(PrimeDbContext db, CreateStockAdjustmentDto dto, string docNo, List<StockAdjustmentLine> lines, (string Counter, string Inventory) accounts)
+        {
+            var costs = Stock.GetIssueCosts(db, lines.Select(l => (l.ProductId, l.Qty)).ToList());
+            if (costs.IsFailure) throw new InvalidOperationException(costs.ErrorMessage);
+            for (var i = 0; i < lines.Count; i++) lines[i].UnitCost = InventoryCosting.UnitCostOf(costs.Value.Lines[i], lines[i].Qty);
+
+            var outgoing = _direction == MovementType.Out;
+            return Posting.Entry(Journals, db, dto.MovementDate, Msg("EntryDescription", docNo), _entityName,
+                outgoing ? accounts.Counter : accounts.Inventory, outgoing ? accounts.Inventory : accounts.Counter, costs.Value.Total);
+        }
+
         protected override void Remove(PrimeDbContext db, StockAdjustment head)
         {
+            if (Posts) Posting.Reverse(Journals, db, head.JournalEntryId);
             Links.RemovePull(_entityName, head.Id, db);
             Stock.RemoveMovements(db, StockSource, head.Id);
             Repo.DeleteDocument(db, head.Id);
@@ -153,35 +184,13 @@ namespace PrimeERP.Application.PageServices.Inventory
             : base(repo, products, warehouses, stock, numbers, permissions, settings, localization, audit, links, MovementType.Out, "StockOut", "StockOut", "StockOut") { }
     }
 
-    public class GoodsReceiptService : StockAdjustmentServiceBase<IGoodsReceiptRepository>, IGoodsReceiptService
+    public class ScrapService : StockAdjustmentServiceBase<IScrapRepository>, IScrapService
     {
-        public GoodsReceiptService(IGoodsReceiptRepository repo, IProductRepository products, ILookupRepository<Warehouse> warehouses, IStockMove stock,
+        public ScrapService(IScrapRepository repo, IProductRepository products, ILookupRepository<Warehouse> warehouses, IStockMove stock,
             INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
-            ILocalizationService localization, IAuditLogger audit, IDocumentPull links)
-            : base(repo, products, warehouses, stock, numbers, permissions, settings, localization, audit, links, MovementType.In, "GoodsReceipt", "GoodsReceipt", "GoodsReceipt") { }
+            ILocalizationService localization, IAuditLogger audit, IDocumentPull links, Entries journals, AccountOf accountsOf)
+            : base(repo, products, warehouses, stock, numbers, permissions, settings, localization, audit, links, MovementType.Out, "Scrap", "Scrap", "Scrap",
+                journals, accountsOf, SettingKeys.Accounts.ScrapExpense) { }
     }
 
-    public class GoodsIssueService : StockAdjustmentServiceBase<IGoodsIssueRepository>, IGoodsIssueService
-    {
-        public GoodsIssueService(IGoodsIssueRepository repo, IProductRepository products, ILookupRepository<Warehouse> warehouses, IStockMove stock,
-            INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
-            ILocalizationService localization, IAuditLogger audit, IDocumentPull links)
-            : base(repo, products, warehouses, stock, numbers, permissions, settings, localization, audit, links, MovementType.Out, "GoodsIssue", "GoodsIssue", "GoodsIssue") { }
-    }
-
-    public class DeliveryNoteService : StockAdjustmentServiceBase<IDeliveryNoteRepository>, IDeliveryNoteService
-    {
-        public DeliveryNoteService(IDeliveryNoteRepository repo, IProductRepository products, ILookupRepository<Warehouse> warehouses, IStockMove stock,
-            INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
-            ILocalizationService localization, IAuditLogger audit, IDocumentPull links)
-            : base(repo, products, warehouses, stock, numbers, permissions, settings, localization, audit, links, MovementType.Out, "DeliveryNote", "DeliveryNote", "DeliveryNote") { }
-    }
-
-    public class SalesReceiptService : StockAdjustmentServiceBase<ISalesReceiptRepository>, ISalesReceiptService
-    {
-        public SalesReceiptService(ISalesReceiptRepository repo, IProductRepository products, ILookupRepository<Warehouse> warehouses, IStockMove stock,
-            INumberSequenceService numbers, IPermissionService permissions, ISettingsProvider settings,
-            ILocalizationService localization, IAuditLogger audit, IDocumentPull links)
-            : base(repo, products, warehouses, stock, numbers, permissions, settings, localization, audit, links, MovementType.In, "SalesReceipt", "SalesReceipt", "SalesReceipt") { }
-    }
 }

@@ -22,8 +22,6 @@ namespace PrimeERP.Composition.Definitions
     {
         public Func<object, string> RowKind { get; init; }
 
-        public bool AlternatingRows { get; init; } = true;
-
         public string Title { get; init; }
         public string SubTitle { get; init; }
         public required List<GridColumn> Columns { get; init; }
@@ -48,6 +46,5 @@ namespace PrimeERP.Composition.Definitions
         public required List<GridColumn> Columns { get; init; }
         public string TitleOverrideTotalKey { get; init; }
         public Func<object, string> RowKind { get; init; }
-        public bool AlternatingRows { get; init; } = true;
     }
 }

@@ -9,6 +9,7 @@ namespace PrimeERP.Application.DTOs.Security
         public string   Username    { get; set; }
         public string   DisplayName { get; set; }
         public int      RoleId      { get; set; }
+        public int?     BranchId    { get; set; }
         public string   RoleName    { get; set; }
         public bool     IsActive    { get; set; }
         public string   StatusText  { get; set; }
@@ -22,6 +23,7 @@ namespace PrimeERP.Application.DTOs.Security
         public string Password    { get; set; }
         public string DisplayName { get; set; }
         public int    RoleId      { get; set; }
+        public int?   BranchId    { get; set; }
         public bool   IsActive    { get; set; } = true;
     }
 
@@ -38,6 +40,7 @@ namespace PrimeERP.Application.DTOs.Security
         public string Password    { get; set; }
         public string DisplayName { get; set; }
         public int    RoleId      { get; set; }
+        public int?   BranchId    { get; set; }
         public bool   IsActive    { get; set; }
     }
 

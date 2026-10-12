@@ -175,7 +175,7 @@ registry.Register(new ModuleDefinition
 
 | الخطأ | موضعه الوحيد |
 |---|---|
-| لون — أيّ لون | `5.Design/Colors.xaml` |
+| لون — أيّ لون | ملف الهوية `5.Design/Colors/<الهوية>.xaml`، وكل الهويات بالمفاتيح نفسها |
 | مسافة، خطّ، ظلّ، استدارة، مقاس مكوّن | `5.Design/Sizes.xaml` |
 | شكل عنصر WPF | `5.Design/Styles/Style.<النوع>.xaml` — يقرأ حالة مكوّنه بـ`AncestorType=UserControl`، ولا يسمّي صنفاً من `6.UI` |
 | رصيدٌ يُنقَص بحذف مستندٍ أو تعديله | النقد `Guards.CashStaysPositive`، والمخزون `StockMove.StaysPositive` — كلاهما بأثر القديم سالباً والجديد موجباً عند الباب. حذف المستند المخزني: `StockSource` يُعلَن في الخدمة ويفحصه `DocumentService.Removable` بـ`StockMove.Removable` |

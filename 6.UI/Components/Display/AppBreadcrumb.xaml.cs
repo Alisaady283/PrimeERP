@@ -15,7 +15,14 @@ namespace PrimeERP.UI.Components.Display
             DependencyProperty.Register(nameof(Items), typeof(IEnumerable<string>), typeof(AppBreadcrumb),
                 new PropertyMetadata(null, OnItemsChanged));
 
+        public static readonly DependencyProperty TrailingProperty =
+            DependencyProperty.Register(nameof(Trailing), typeof(bool), typeof(AppBreadcrumb),
+                new PropertyMetadata(false, OnItemsChanged));
+
         public IEnumerable<string> Items { get => (IEnumerable<string>)GetValue(ItemsProperty); set => SetValue(ItemsProperty, value); }
+
+        /// <summary>المسار يسبق عنواناً على السطر نفسه: كل عنصرٍ باهتٌ يليه «/»</summary>
+        public bool Trailing { get => (bool)GetValue(TrailingProperty); set => SetValue(TrailingProperty, value); }
 
         public event EventHandler<int> ItemClick;
 
@@ -34,14 +41,14 @@ namespace PrimeERP.UI.Components.Display
 
             for (int i = 0; i < items.Count; i++)
             {
-                bool isLast = i == items.Count - 1;
+                bool isLast = i == items.Count - 1 && !Trailing;
                 int index = i;
 
                 var text = new TextBlock
                 {
                     Text = items[i],
                     VerticalAlignment = VerticalAlignment.Center,
-                    FontSize = (double)FindResource("P.Font.Size.200"),
+                    FontSize = (double)FindResource(Trailing ? "P.Font.Size.500" : "P.Font.Size.200"),
                     FontFamily = (FontFamily)FindResource("P.Font.Family.Primary"),
 
                     FontWeight = isLast ? FontWeights.SemiBold : FontWeights.Normal
@@ -56,7 +63,17 @@ namespace PrimeERP.UI.Components.Display
 
                 pnlItems.Children.Add(text);
 
-                if (!isLast)
+                if (Trailing)
+                {
+                    var slash = new TextBlock
+                    {
+                        Text = "/", Margin = new Thickness(8, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center,
+                        FontSize = (double)FindResource("P.Font.Size.400"), FontFamily = (FontFamily)FindResource("P.Font.Family.Primary")
+                    };
+                    slash.SetResourceReference(TextBlock.ForegroundProperty, "OutlineStrong");
+                    pnlItems.Children.Add(slash);
+                }
+                else if (!isLast)
                 {
                     pnlItems.Children.Add(new Path
                     {

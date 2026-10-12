@@ -9,6 +9,7 @@ namespace PrimeERP.Domain.Entities
         public string Name        { get; set; }
         public string Location    { get; set; }
         public string ManagerName { get; set; }
+        public int?   BranchId    { get; set; }
         public bool   IsActive    { get; set; } = true;
     }
 }

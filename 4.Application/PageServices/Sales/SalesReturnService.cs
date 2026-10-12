@@ -37,13 +37,16 @@ namespace PrimeERP.Application.PageServices.Sales
         private readonly IPartyRepository<Customer> _customers;
         private readonly INumberSequenceService _numbers;
 
+        private readonly Settlement _settlement;
+
         public SalesReturnService(IReturnRepository<SalesReturn, SalesReturnLine> returns, IProductRepository products,
             IPartyRepository<Customer> customers, IStockMove stock, Entries journal,
             INumberSequenceService numbers, IDocumentPull links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
-            AccountOf accountOf)
+            AccountOf accountOf, Settlement settlement)
             : base(permissions, settings, localization, audit, links, journal, stock)
         {
+            _settlement = settlement;
             _returns = returns; _products = products; _customers = customers;
             _numbers = numbers; _accountOf = accountOf;
         }
@@ -105,7 +108,7 @@ namespace PrimeERP.Application.PageServices.Sales
                     to.NetTotal = totals.Net;
                 }));
 
-                var costs = Stock.GetReturnCosts(db, "SalesInvoice",
+                var costs = Stock.GetSourceCosts(db, "SalesInvoice",
                     lines.Select((line, i) => (line.ProductId, line.Qty, dto.Lines[i].SourceId, dto.Lines[i].SourceLineId)).ToList(), simplifiedFlow);
 
                 var inserted = new List<(IPullableLine Line, int TargetLineId, decimal Qty)>();
@@ -116,7 +119,7 @@ namespace PrimeERP.Application.PageServices.Sales
 
                     inserted.Add((source, _returns.InsertLine(db, id, line), line.Qty));
                     var moveResult = simplifiedFlow
-                        ? Stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.In, line.Qty, costs.UnitCosts[i],
+                        ? Stock.Move(db, line, dto.WarehouseId, MovementType.In, line.Qty, costs.UnitCosts[i],
                             StockSource, id, returnNo, dto.ReturnDate)
                         : Result.Ok();
                     if (moveResult.IsFailure) throw new InvalidOperationException(moveResult.ErrorMessage);
@@ -127,6 +130,7 @@ namespace PrimeERP.Application.PageServices.Sales
                 var journalLines = TradeEntry.Lines(false, partyAccount.Value, accounts.Main, accounts.Vat, accounts.Withholding, totals, accounts.Cogs, accounts.Inventory, costs.Total);
                 _returns.SetJournalEntryId(db, id, Posting.Entry(Journals, db, dto.ReturnDate, Msg("EntryDescription", returnNo),
                     nameof(JournalSource.Sales), journalLines));
+                _settlement.Recalculate(db, PartyKind.Customer, dto.CustomerId);
                 return id;
             });
         }
@@ -137,6 +141,7 @@ namespace PrimeERP.Application.PageServices.Sales
             Stock.RemoveMovements(db, StockSource, head.Id);
             Links.RemovePull(EntityName, head.Id, db);
             _returns.DeleteDocument(db, head.Id);
+            _settlement.Recalculate(db, PartyKind.Customer, head.CustomerId);
         }
 
         private static T ToDto<T>(SalesReturn r, IReadOnlyDictionary<int, string> names) where T : SalesReturnDto, new() => Rows.Copy<T>(r, new(), to =>

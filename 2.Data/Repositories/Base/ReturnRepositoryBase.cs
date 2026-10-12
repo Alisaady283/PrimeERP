@@ -8,7 +8,7 @@ using PrimeERP.Domain.Entities.Common;
 namespace PrimeERP.Data.Repositories.Base
 {
     /// <summary>عقد مستودع المرتجعات</summary>
-    public interface IReturnRepository<TReturn, TLine>
+    public interface IReturnRepository<TReturn, TLine> : IFlowLines
     {
         void DeleteDocument(PrimeDbContext db, int id);
         TReturn GetById(int id, PrimeDbContext db = null);
@@ -19,6 +19,8 @@ namespace PrimeERP.Data.Repositories.Base
         int InsertHeader(PrimeDbContext db, TReturn document);
         int InsertLine(PrimeDbContext db, int returnId, TLine line);
         void SetJournalEntryId(PrimeDbContext db, int returnId, int journalEntryId);
+        decimal Total(DateTime from, DateTime to);
+        List<TReturn> OfParty(int partyId, PrimeDbContext db = null);
     }
 
     /// <summary>أساس مرتجع: رأس وسطور</summary>
@@ -44,6 +46,20 @@ namespace PrimeERP.Data.Repositories.Base
             Remove(r => r.Id == id, db);
         }
 
+
+        public List<TReturn> OfParty(int partyId, PrimeDbContext db = null) =>
+            Fetch(q => q.Where(r => EF.Property<int>(r, PartyColumn) == partyId).OrderBy(r => r.ReturnDate).ThenBy(r => r.Id), db);
+
+        public decimal Total(DateTime from, DateTime to) =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking()
+                .Where(r => r.ReturnDate >= from.Date && r.ReturnDate < to.Date.AddDays(1))
+                .Sum(r => (decimal?)(r.SubTotal - r.DiscountAmount)) ?? 0m);
+
+        public List<FlowLine> FlowLines(DateTime from, DateTime to) =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking().Where(r => r.ReturnDate >= from && r.ReturnDate <= to)
+                .Join(RowsOf<TLine>(ctx, LinesTable).AsNoTracking(), r => r.Id, l => l.ReturnId,
+                    (r, l) => new FlowLine(r.Id, r.ReturnNo, r.ReturnDate, (int?)EF.Property<int>(r, PartyColumn), l.Id, l.ProductCode, l.ProductName, l.Qty))
+                .ToList());
 
         public List<TLine> GetLines(int returnId, PrimeDbContext db = null) =>
             FetchOf<TLine>(LinesTable, q => q.Where(l => l.ReturnId == returnId).OrderBy(l => l.LineNo), db);

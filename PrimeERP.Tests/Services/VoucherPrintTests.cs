@@ -130,8 +130,8 @@ namespace PrimeERP.Tests.Services
         }
 
         [Theory]
-        [InlineData("GoodsReceipt", new[] { "Str.Print.Storekeeper", "Str.Print.Approval" })]
-        [InlineData("DeliveryNote", new[] { "Str.Print.Receiver", "Str.Print.Storekeeper", "Str.Print.Approval" })]
+        [InlineData("StockIn", new[] { "Str.Print.Storekeeper", "Str.Print.Approval" })]
+        [InlineData("StockOut", new[] { "Str.Print.Receiver", "Str.Print.Storekeeper", "Str.Print.Approval" })]
         public void StockVouchers_SignAtTheStore(string moduleKey, string[] expectedKeys)
         {
             var module = _db.Services.GetRequiredService<PrimeERP.Composition.Registry.IModuleRegistry>().Get(moduleKey);

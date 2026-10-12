@@ -7,6 +7,7 @@ using PrimeERP.Data.Core;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
+using PrimeERP.Tests.Helpers;
 
 namespace PrimeERP.Tests
 {
@@ -22,7 +23,7 @@ namespace PrimeERP.Tests
             // ⚠️ registers the pack:// scheme before any print test
             WpfApplicationFixture.Ensure();
 
-            DbPath = Path.Combine(Path.GetTempPath(), $"PrimeERP.Tests.{Guid.NewGuid():N}.db");
+            DbPath = TestPaths.Unique("PrimeERP.Tests", ".db");
 
             DbConfig.Use(new DbConfig
             {
@@ -65,10 +66,7 @@ namespace PrimeERP.Tests
             });
         }
 
-        public void Dispose()
-        {
-            try { File.Delete(DbPath); } catch { /* قد يكون الملف مقفلاً لحظياً — لا يهم في بيئة الاختبار */ }
-        }
+        public void Dispose() => TestPaths.DeleteDatabase(DbPath);
     }
 
     [CollectionDefinition("Database")]

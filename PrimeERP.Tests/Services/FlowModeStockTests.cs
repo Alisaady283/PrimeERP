@@ -60,7 +60,7 @@ namespace PrimeERP.Tests.Services
                 .Create(new Customer { Name = "عميل", IsActive = true });
             Assert.True(customer.IsSuccess, customer.ErrorMessage);
 
-            var stockIn = _db.Services.GetRequiredService<IGoodsReceiptService>().Create(new CreateStockAdjustmentDto
+            var stockIn = _db.Services.GetRequiredService<IStockInService>().Create(new CreateStockAdjustmentDto
             {
                 WarehouseId = warehouseId,
                 MovementDate = DateTime.Today,

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using PrimeERP.Application.Services.Entities;
 
 namespace PrimeERP.Modules
@@ -11,6 +12,11 @@ namespace PrimeERP.Modules
         public static readonly EntitySpec LeaveTypes = new() { Key = "LeaveTypes", Strings = "Str.LeaveType", NameLabel = "Str.LeaveType.Name" };
         public static readonly EntitySpec JobTitles = new() { Key = "JobTitles", Strings = "Str.JobTitle", NameLabel = "Str.JobTitle.Name" };
         public static readonly EntitySpec Units = new() { Key = "Units", Strings = "Str.Unit", NameLabel = "Str.Unit.Name" };
-        public static readonly EntitySpec Warehouses = new() { Key = "Warehouses", Strings = "Str.Warehouse", NameLabel = "Str.Warehouse.Name", Sequence = "Warehouse" };
+        public static readonly EntitySpec WorkCenters = new() { Key = "WorkCenters", Strings = "Str.WorkCenter", NameLabel = "Str.Name", Sequence = "WorkCenter" };
+
+        public static readonly EntitySpec Branches = new() { Key = "Branches", Strings = "Str.Branch", NameLabel = "Str.Branch.Name", Sequence = "Branch" };
+
+        public static readonly EntitySpec Warehouses = new() { Key = "Warehouses", Strings = "Str.Warehouse", NameLabel = "Str.Warehouse.Name", Sequence = "Warehouse", BranchScoped = true,
+            Defaults = new Dictionary<string, string> { ["Name"] = "Str.Warehouse.Main", ["Location"] = "Str.Warehouse.MainLocation" } };
     }
 }

@@ -28,6 +28,7 @@ namespace PrimeERP.Platform.Localization
         {
             var app = System.Windows.Application.Current;
             if (app == null) return;
+            if (!app.Dispatcher.CheckAccess()) { app.Dispatcher.Invoke(() => Apply(language)); return; }
 
             var dicts = app.Resources.MergedDictionaries;
 

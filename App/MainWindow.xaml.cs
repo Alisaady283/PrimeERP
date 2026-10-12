@@ -57,10 +57,10 @@ namespace PrimeERP.App
             ["PurchaseRequest"] = "IconPurchases", ["PurchaseOrder"] = "IconPurchases",
             ["PurchaseInvoices"] = "IconPurchases", ["PurchaseReturns"] = "IconPurchases",
             ["StockIn"] = "IconWarehouse", ["StockOut"] = "IconWarehouse", ["StockTransfer"] = "IconWarehouse",
-            ["GoodsReceipt"] = "IconWarehouse", ["GoodsIssue"] = "IconWarehouse",
-            ["DeliveryNote"] = "IconWarehouse", ["SalesReceipt"] = "IconWarehouse",
             ["Treasuries"] = "IconAccounts", ["Receipts"] = "IconJournal", ["Payments"] = "IconJournal", ["Cheques"] = "IconJournal",
             ["ChequeReceipts"] = "IconJournal", ["ChequeIssues"] = "IconJournal", ["OpeningBalances"] = "IconJournal",
+            ["ExecutiveAnalytics"] = "IconDashboard", ["SalesAnalytics"] = "IconSales", ["PurchaseAnalytics"] = "IconPurchases",
+            ["InventoryAnalytics"] = "IconWarehouse", ["LiquidityAnalytics"] = "IconAccounts", ["PeopleAnalytics"] = "IconHR", ["ProductionAnalytics"] = "IconProducts",
             ["Settings"] = "IconSettings", ["Users"] = "IconUsers", ["Roles"] = "IconLock",
             ["RolePermissions"] = "IconLock", ["UserPermissions"] = "IconLock",
         };

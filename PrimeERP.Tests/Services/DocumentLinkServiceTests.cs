@@ -24,7 +24,7 @@ namespace PrimeERP.Tests.Services
         private static DocumentLink Link(int sourceLineId, int targetId, decimal qty) => new()
         {
             SourceType = "PurchaseOrder", SourceId = 100, SourceNo = "PO-1", SourceLineId = sourceLineId,
-            TargetType = "GoodsReceipt", TargetId = targetId, TargetLineId = targetId * 10,
+            TargetType = "StockIn", TargetId = targetId, TargetLineId = targetId * 10,
             PulledQty = qty
         };
 
@@ -58,7 +58,7 @@ namespace PrimeERP.Tests.Services
             _service.RecordPull(new[] { Link(lineId, 4, 3m), Link(lineId, 5, 2m) });
             Assert.Equal(5m, _service.GetRemainingQty("PurchaseOrder", lineId, 10m));
 
-            _service.RemovePull("GoodsReceipt", 4);
+            _service.RemovePull("StockIn", 4);
 
             Assert.Equal(8m, _service.GetRemainingQty("PurchaseOrder", lineId, 10m));
         }
@@ -77,11 +77,11 @@ namespace PrimeERP.Tests.Services
         {
             _service.RecordPull(new[] { Link(5005, 7, 1m) });
 
-            var target = _service.GetChain("GoodsReceipt", 7).Value;
+            var target = _service.GetChain("StockIn", 7).Value;
             Assert.Contains(target, c => c.DocType == "PurchaseOrder" && c.DocId == 100);
 
             var source = _service.GetChain("PurchaseOrder", 100).Value;
-            Assert.Contains(source, c => c.DocType == "GoodsReceipt");
+            Assert.Contains(source, c => c.DocType == "StockIn");
         }
 
         [Fact]

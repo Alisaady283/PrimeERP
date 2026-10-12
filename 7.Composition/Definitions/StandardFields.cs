@@ -21,6 +21,18 @@ namespace PrimeERP.Composition.Definitions
         };
 
         /// <summary>كمية السطر أكبر من صفر</summary>
+        public static LineFieldDefinition Batch() => new()
+        {
+            Key = "BatchNo", Header = LocalizationService.Get("Str.Batch"), Kind = FieldKind.Text, Width = 110,
+            ShownWhen = PrimeERP.Platform.Settings.Editions.TracksExpiry
+        };
+
+        public static LineFieldDefinition Expiry() => new()
+        {
+            Key = "ExpiryDate", Header = LocalizationService.Get("Str.ExpiryDate"), Kind = FieldKind.Date, Width = 120,
+            ShownWhen = PrimeERP.Platform.Settings.Editions.TracksExpiry
+        };
+
         public static LineFieldDefinition Qty() => new()
         {
             Key = "Qty", Header = LocalizationService.Get("Str.Qty"), Kind = FieldKind.Number, Width = 90, Positive = true

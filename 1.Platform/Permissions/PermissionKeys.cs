@@ -79,6 +79,21 @@ namespace PrimeERP.Platform.Permissions
             public const string View = "Units.View", Create = "Units.Create", Edit = "Units.Edit", Delete = "Units.Delete";
         }
 
+        public static class Manufacturing
+        {
+            public const string View = "Manufacturing.View", Create = "Manufacturing.Create", Edit = "Manufacturing.Edit", Delete = "Manufacturing.Delete";
+        }
+
+        public static class Pos
+        {
+            public const string View = "Pos.View", Open = "Pos.Open", Close = "Pos.Close", ManualReturn = "Pos.ManualReturn";
+        }
+
+        public static class Branches
+        {
+            public const string View = "Branches.View", Create = "Branches.Create", Edit = "Branches.Edit", Delete = "Branches.Delete";
+        }
+
         public static class Warehouses
         {
             public const string View = "Warehouses.View", Create = "Warehouses.Create", Edit = "Warehouses.Edit", Delete = "Warehouses.Delete";
@@ -156,11 +171,8 @@ namespace PrimeERP.Platform.Permissions
 
             public const string OpeningStock = "Inventory.OpeningStock";
             public const string StockOut = "Inventory.StockOut";
+            public const string Scrap    = "Inventory.Scrap";
 
-            public const string GoodsReceipt = "Inventory.GoodsReceipt";
-            public const string GoodsIssue   = "Inventory.GoodsIssue";
-            public const string DeliveryNote = "Inventory.DeliveryNote";
-            public const string SalesReceipt = "Inventory.SalesReceipt";
             public const string Transfer = "Inventory.Transfer";
             public const string Export   = "Inventory.Export";
             public const string Print    = "Inventory.Print";

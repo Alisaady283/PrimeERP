@@ -20,12 +20,12 @@ namespace PrimeERP.Modules
 
         public static List<PullSource> IntoPurchaseInvoice() => new()
         {
-            Unmatched("GoodsReceipt", Purchases),
+            Unmatched("StockIn", Purchases, FlowScope.FullCycleOnly),
         };
 
         public static List<PullSource> IntoSalesInvoice() => new()
         {
-            Unmatched("DeliveryNote", Sales),
+            Unmatched("StockOut", Sales, FlowScope.FullCycleOnly),
         };
 
         public static List<PullSource> IntoPurchaseReturn() => new()
@@ -38,8 +38,18 @@ namespace PrimeERP.Modules
             By("SalesInvoices", Sales, "CustomerId"),
         };
 
-        public static PullSource IntoStockVoucher(string sourceKind) =>
-            Unmatched(sourceKind, "Inventory.Create");
+        public static List<PullSource> IntoStockIn() => new()
+        {
+            IntoStockVoucher("PurchaseOrder"), IntoStockVoucher("SalesReturns"),
+        };
+
+        public static List<PullSource> IntoStockOut() => new()
+        {
+            IntoStockVoucher("SalesOrder"), IntoStockVoucher("PurchaseReturns"),
+        };
+
+        private static PullSource IntoStockVoucher(string sourceKind) =>
+            Unmatched(sourceKind, "Inventory.Create", FlowScope.FullCycleOnly);
 
         private const string Sales     = "Sales.Create";
         private const string Purchases = "Purchases.Create";
@@ -53,10 +63,10 @@ namespace PrimeERP.Modules
             MatchFields = new List<string> { matchField },
         };
 
-        private static PullSource Unmatched(string sourceKind, string permissionKey) => new()
+        private static PullSource Unmatched(string sourceKind, string permissionKey, FlowScope scope = FlowScope.Both) => new()
         {
             SourceKind = sourceKind, Label = LabelOf(sourceKind), PermissionKey = permissionKey,
-            MatchFields = new List<string>(),
+            MatchFields = new List<string>(), FlowScope = scope,
         };
 
         /// <summary>عنوان السحب من مصدره</summary>

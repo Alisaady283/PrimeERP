@@ -11,6 +11,8 @@ namespace PrimeERP.UI.Components.Tree
 
         Report,
 
+        Dashboard,
+
         Settings,
 
         TreeCheckList,
@@ -19,7 +21,9 @@ namespace PrimeERP.UI.Components.Tree
 
         DocumentPage,
 
-        ChequeBoard
+        ChequeBoard,
+
+        Pos
     }
 
     public enum SelectableRule { All, LeafOnly }

@@ -29,10 +29,6 @@ public partial class App : System.Windows.Application
 
         Services = services.BuildServiceProvider();
         Services.EnsureDatabaseReady();
-        var settings = Services.GetRequiredService<ISettingsProvider>();
-        var english = settings.Get(SettingKeys.Edition.English, true);
-        var arabic = settings.Get(SettingKeys.Edition.Arabic, true) || !english;
-        LocalizationService.Apply(english && (!arabic || settings.Get(SettingKeys.UI.Language, "Ar") == "En") ? AppLanguage.En : AppLanguage.Ar);
         Services.RegisterModules();
 
         UIServices.Initialize(Services);

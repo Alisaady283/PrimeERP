@@ -21,6 +21,9 @@ namespace PrimeERP.Data.Repositories
         void SetPosted(PrimeDbContext db, int payrollId, bool posted);
         DateTime? LastPeriodStart();
         bool HasPeriod(DateTime start);
+        List<Payroll> Between(DateTime from, DateTime to);
+        List<(int Year, int Month, decimal Gross, decimal Deductions, decimal Net)> Monthly(DateTime from, DateTime to);
+        List<(int EmployeeId, decimal Gross, decimal Net)> CostByEmployee(DateTime from, DateTime to);
     }
 
     public class PayrollRepository : RepositoryBase<Payroll>, IPayrollRepository
@@ -74,5 +77,24 @@ namespace PrimeERP.Data.Repositories
         public DateTime? LastPeriodStart() => One(q => q.OrderByDescending(p => p.PeriodStart))?.PeriodStart;
 
         public bool HasPeriod(DateTime start) => Any(q => q.Where(p => p.PeriodStart == start));
+
+        private IQueryable<Payroll> Posted(PrimeDbContext ctx, DateTime from, DateTime to) =>
+            Rows(ctx).AsNoTracking().Where(p => p.IsPosted && p.PaymentDate >= from.Date && p.PaymentDate < to.Date.AddDays(1));
+
+        public List<(int Year, int Month, decimal Gross, decimal Deductions, decimal Net)> Monthly(DateTime from, DateTime to) =>
+            Scope(null, ctx => Posted(ctx, from, to)
+                .GroupBy(p => new { p.PaymentDate.Year, p.PaymentDate.Month })
+                .Select(g => new { g.Key.Year, g.Key.Month, Gross = g.Sum(p => p.TotalBasic + p.TotalAllowances), Deductions = g.Sum(p => p.TotalDeductions), Net = g.Sum(p => p.NetTotal) })
+                .AsEnumerable().Select(x => (x.Year, x.Month, x.Gross, x.Deductions, x.Net)).ToList());
+
+        public List<(int EmployeeId, decimal Gross, decimal Net)> CostByEmployee(DateTime from, DateTime to) =>
+            Scope(null, ctx => Posted(ctx, from, to)
+                .Join(RowsOf<PayrollLine>(ctx, LineTable).AsNoTracking(), p => p.Id, l => l.PayrollId, (p, l) => l)
+                .GroupBy(l => l.EmployeeId)
+                .Select(g => new { g.Key, Gross = g.Sum(l => l.BasicSalary + l.Allowances + l.Overtime), Net = g.Sum(l => l.NetSalary) })
+                .AsEnumerable().Select(x => (x.Key, x.Gross, x.Net)).ToList());
+
+        public List<Payroll> Between(DateTime from, DateTime to) =>
+            Fetch(q => q.Where(p => p.IsPosted && p.PaymentDate >= from && p.PaymentDate <= to).OrderBy(p => p.PaymentDate));
     }
 }

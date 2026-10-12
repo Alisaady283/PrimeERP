@@ -30,7 +30,8 @@ namespace PrimeERP.Application.Services.Documents
                     DiscountPercent = l.DiscountPercent, DiscountAmount = a.Discount,
                     VatPercent = l.VatPercent, VatAmount = a.Vat,
                     WithholdingPercent = l.WithholdingPercent, WithholdingAmount = a.Withholding,
-                    LineTotal = a.Gross, NetAmount = a.Net, Notes = l.Notes
+                    LineTotal = a.Gross, NetAmount = a.Net, Notes = l.Notes,
+                    BatchNo = string.IsNullOrWhiteSpace(l.BatchNo) ? null : l.BatchNo.Trim(), ExpiryDate = l.ExpiryDate
                 });
             });
             if (lines.IsFailure) return lines.As<(List<TLine>, LineAmounts)>();
@@ -46,7 +47,8 @@ namespace PrimeERP.Application.Services.Documents
                 DiscountPercent = l.DiscountPercent, DiscountAmount = l.DiscountAmount,
                 VatPercent = l.VatPercent, VatAmount = l.VatAmount,
                 WithholdingPercent = l.WithholdingPercent, WithholdingAmount = l.WithholdingAmount,
-                LineTotal = l.LineTotal, NetAmount = l.NetAmount, Notes = l.Notes
+                LineTotal = l.LineTotal, NetAmount = l.NetAmount, Notes = l.Notes,
+                BatchNo = l.BatchNo, ExpiryDate = l.ExpiryDate
             }).ToList();
 
         /// <summary>السطور ثم السحب ثم الحسابات</summary>

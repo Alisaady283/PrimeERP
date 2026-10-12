@@ -79,6 +79,7 @@ namespace PrimeERP.Composition.Renderers
 
                 if (cat.Category == "Backup") panel.Children.Add(BuildBackupPanel(services, toast));
                 if (cat.Category == "Print") panel.Children.Add(BuildChequeCalibration(services, toast));
+                if (cat.Category == "System" && BuildDatabasePanel(services, toast) is { } database) panel.Children.Add(database);
 
                 return new AppTabItem { Header = LocalizationService.Get(cat.TitleKey), Content = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
             }).ToList();
@@ -122,6 +123,87 @@ namespace PrimeERP.Composition.Renderers
             root.Children.Add(saveButton);
 
             return root;
+        }
+
+        private static FrameworkElement BuildDatabasePanel(IServiceProvider services, IToastService toast)
+        {
+            var databaseSettings = services.GetRequiredService<IDatabaseSettingsService>();
+            var current = databaseSettings.Get();
+            if (current.IsFailure) return null;
+
+            FrameworkElement Field(string key, string labelKey, FieldKind kind, string pickerType = null)
+            {
+                var definition = new FieldDefinition { Key = key, LabelKey = labelKey, Kind = kind, PickerType = pickerType, IsRequired = pickerType != null };
+                var control = DialogRenderer.BuildField(definition);
+                if (control is AppComboBox combo) DialogRenderer.LoadPickerItems(combo, definition, services);
+                control.Width = 260;
+                control.Margin = new Thickness(0, 0, 16, 16);
+                return control;
+            }
+
+            var provider = (AppComboBox)Field("Provider", "Str.Database.Provider", FieldKind.Picker, "DatabaseProvider");
+            var folder = (AppTextBox)Field("Folder", "Str.Database.Folder", FieldKind.Text);
+            var browse = new Btn { Text = LocalizationService.Get("Str.Database.Browse"), Variant = "secondary", Size = "sm", Margin = new Thickness(0, 0, 16, 16), VerticalAlignment = VerticalAlignment.Bottom };
+            var fileName = (AppTextBox)Field("FileName", "Str.Database.FileName", FieldKind.Text);
+            var host = (AppTextBox)Field("Host", "Str.Database.Host", FieldKind.Text);
+            var port = (AppNumericBox)Field("Port", "Str.Database.Port", FieldKind.Number);
+            var database = (AppTextBox)Field("Database", "Str.Database.Name", FieldKind.Text);
+            var integrated = (AppCheckBox)Field("UseIntegratedSecurity", "Str.Database.IntegratedSecurity", FieldKind.Check);
+            var username = (AppTextBox)Field("Username", "Str.Database.Username", FieldKind.Text);
+            var password = (AppPasswordBox)Field("Password", "Str.Database.Password", FieldKind.Password);
+
+            var dto = current.Value;
+            provider.SelectedValue = dto.Provider;
+            folder.Text = dto.Folder;
+            fileName.Text = dto.FileName;
+            host.Text = dto.Host;
+            port.Value = dto.Port;
+            database.Text = dto.Database;
+            integrated.IsChecked = dto.UseIntegratedSecurity;
+            username.Text = dto.Username;
+
+            var fileFields = new FrameworkElement[] { folder, browse, fileName };
+            var serverFields = new FrameworkElement[] { host, port, database, integrated };
+            var loginFields = new FrameworkElement[] { username, password };
+            void Arrange()
+            {
+                var isFile = provider.SelectedValue is int selected && selected == (int)PrimeERP.Data.Core.DatabaseProvider.Sqlite;
+                foreach (var f in fileFields) f.Visibility = isFile ? Visibility.Visible : Visibility.Collapsed;
+                foreach (var f in serverFields) f.Visibility = isFile ? Visibility.Collapsed : Visibility.Visible;
+                foreach (var f in loginFields) f.Visibility = isFile || integrated.IsChecked ? Visibility.Collapsed : Visibility.Visible;
+            }
+            provider.SelectionChanged += (_, __) => Arrange();
+            integrated.CheckedChanged += (_, __) => Arrange();
+            browse.Click += (_, __) => { if (FolderOutput.Pick(LocalizationService.Get("Str.Database.Folder")) is { } picked) folder.Text = picked; };
+            Arrange();
+
+            var apply = new Btn { Text = LocalizationService.Get("Str.Database.SaveRestart"), Variant = "primary", Size = "sm", HorizontalAlignment = HorizontalAlignment.Left };
+            apply.Click += async (_, __) =>
+            {
+                var dialogs = services.GetRequiredService<IDialogService>();
+                if (!await dialogs.ConfirmAsync(LocalizationService.Get("Str.Database.Title"), LocalizationService.Get("Str.Database.RestartConfirm"))) return;
+
+                var result = databaseSettings.Save(new PrimeERP.Application.DTOs.Common.DatabaseSettingsDto
+                {
+                    Provider = provider.SelectedValue is int selected ? selected : 0,
+                    Folder = folder.Text, FileName = fileName.Text,
+                    Host = host.Text, Port = (int)port.Value, Database = database.Text,
+                    UseIntegratedSecurity = integrated.IsChecked, Username = username.Text, Password = password.Password
+                });
+                if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
+
+                System.Diagnostics.Process.Start(Environment.ProcessPath!);
+                System.Windows.Application.Current.Shutdown();
+            };
+
+            var title = new TextBlock { Text = LocalizationService.Get("Str.Database.Title"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 4) };
+            title.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
+            var hint = new TextBlock { Text = LocalizationService.Get("Str.Database.Hint"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) };
+            hint.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondary");
+            var fields = new WrapPanel();
+            foreach (var f in new FrameworkElement[] { provider, folder, browse, fileName, host, port, database, integrated, username, password }) fields.Children.Add(f);
+
+            return new StackPanel { Width = 900, Children = { title, hint, fields, apply } };
         }
 
         private static FrameworkElement BuildChequeCalibration(IServiceProvider services, IToastService toast)

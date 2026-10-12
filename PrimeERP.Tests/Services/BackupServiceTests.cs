@@ -12,7 +12,7 @@ namespace PrimeERP.Tests.Services
     public class BackupServiceTests : IDisposable
     {
         private readonly IBackupService _service;
-        private readonly string _folder = Path.Combine(Path.GetTempPath(), $"PrimeERP.Tests.Backups.{Guid.NewGuid():N}");
+        private readonly string _folder = PrimeERP.Tests.Helpers.TestPaths.Unique("PrimeERP.Tests.Backups");
 
         public BackupServiceTests(TestDatabaseFixture db) => _service = db.Services.GetRequiredService<IBackupService>();
 

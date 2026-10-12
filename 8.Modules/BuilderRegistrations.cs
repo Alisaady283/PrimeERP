@@ -3,6 +3,7 @@ using PrimeERP.Application.PageServices.Admin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using PrimeERP.Platform.Settings;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Application.DTOs.Common;
@@ -220,6 +221,18 @@ namespace PrimeERP.Modules
                         Save = (services, id, version) => services.GetRequiredService<ILicenseService>()
                             .SetVersion(new EditionVersionDto { LicenseId = id, Version = version })
                     },
+                    new()
+                    {
+                        LabelKey = "Str.Builder.Simplified", Kind = FieldKind.Check,
+                        Value = (services, id) => (Licensed(services, id)?.Simplified ?? false).ToString(),
+                        Save = (services, id, value) => services.GetRequiredService<ILicenseService>().SetSimplified(id, value == bool.TrueString)
+                    },
+                    new()
+                    {
+                        LabelKey = "Str.Builder.English", Kind = FieldKind.Check,
+                        Value = (services, id) => (Licensed(services, id)?.English ?? false).ToString(),
+                        Save = (services, id, value) => services.GetRequiredService<ILicenseService>().SetEnglish(id, value == bool.TrueString)
+                    },
                     new() { LabelKey = "Str.Builder.VersionDate", Value = (services, id) => Licensed(services, id) is { Version.Length: > 0 } license ? $"{license.UpdatedAt:yyyy-MM-dd}" : "" },
                 },
                 BuildTree = (services, id) => LicenseTree(services, id),
@@ -322,8 +335,15 @@ namespace PrimeERP.Modules
                     new() { Key = nameof(CreateLicenseDto.CustomerName), LabelKey = "Str.Builder.Customer", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
                     new() { Key = nameof(CreateLicenseDto.Location), LabelKey = "Str.Builder.Location", Kind = FieldKind.Text, MaxLength = 200 },
                     new() { Key = nameof(CreateLicenseDto.Simplified), LabelKey = "Str.Builder.Simplified", Kind = FieldKind.Check },
-                }
+                    new() { Key = nameof(CreateLicenseDto.English), LabelKey = "Str.Builder.English", Kind = FieldKind.Check },
+                }.Where(field => field.Key != nameof(CreateLicenseDto.English) || BothLanguages(services)).ToList()
             }, services, services.GetRequiredService<UI.Services.IToastService>());
+
+        private static bool BothLanguages(IServiceProvider services)
+        {
+            var settings = services.GetRequiredService<ISettingsProvider>();
+            return settings.Get(SettingKeys.Edition.Arabic, true) && settings.Get(SettingKeys.Edition.English, true);
+        }
 
         private static List<TreeNodeViewModel> EditionTree(IServiceProvider services, bool simplified)
         {
@@ -423,6 +443,10 @@ namespace PrimeERP.Modules
             {
                 ModuleKeys = keys,
                 Simplified = license.Simplified,
+                English = license.English,
+                Serial = license.Serial,
+                Customer = license.CustomerName,
+                Version = license.Version,
                 TargetFolder = folder
             };
 

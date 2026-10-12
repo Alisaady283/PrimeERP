@@ -184,7 +184,7 @@ namespace PrimeERP.UI.Services
                     container.PaddingTop((float)rule.GapAbove * ToPoints)
                              .PaddingBottom((float)rule.GapBelow * ToPoints)
                              .BorderBottom((float)rule.Thickness * ToPoints)
-                             .BorderColor(ExportTheme.BrandHex);
+                             .BorderColor(PaperTheme.Hex("BrandSolid"));
                     break;
             }
         }
@@ -310,6 +310,10 @@ namespace PrimeERP.UI.Services
                 case PrintSectionType.Barcode:
                     RenderBarcode(col, section.Text);
                     break;
+
+                case PrintSectionType.Image when !string.IsNullOrWhiteSpace(section.Text):
+                    col.Item().PaddingBottom(6).Image(Convert.FromBase64String(section.Text)).FitArea();
+                    break;
             }
         }
 
@@ -381,7 +385,7 @@ namespace PrimeERP.UI.Services
             if (section.Totals is { Count: > 0 })
                 foreach (var total in section.Totals)
                     col.Item().PaddingTop(2)
-                       .Background(total.IsBold ? ExportTheme.BrandSoftHex : ExportTheme.HeaderBackgroundHex)
+                       .Background(total.IsBold ? PaperTheme.Hex("BrandSoft") : ExportTheme.HeaderBackgroundHex)
                        .Padding(5).Row(line =>
                        {
                            line.RelativeItem();

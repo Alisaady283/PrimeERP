@@ -19,6 +19,8 @@ namespace PrimeERP.Application.Reporting
         protected override string EntityName => "Report";
 
         /// <summary>يُنادى أول كل تقرير</summary>
-        protected Result<ReportData> Gate() => Can("View") ? null : FailDenied<ReportData>();
+        protected Result<ReportData> Gate() => Gate<ReportData>();
+
+        protected Result<T> Gate<T>() => Can("View") ? null : FailDenied<T>();
     }
 }

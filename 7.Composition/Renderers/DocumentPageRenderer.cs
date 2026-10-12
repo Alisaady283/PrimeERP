@@ -19,6 +19,7 @@ namespace PrimeERP.Composition.Renderers
                 ?? throw new InvalidOperationException($"الوحدة '{definition.Key}' بتخطيط DocumentPage بلا DocumentDialogDefinition.");
 
             var toast = services.GetRequiredService<IToastService>();
+            def = DocumentRenderer.Shown(def, services);
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -62,6 +63,7 @@ namespace PrimeERP.Composition.Renderers
 
             actions.Children.Add(btnNew);
             foreach (var pullButton in DocumentRenderer.BuildPullButtons(def, services, () => editor)) actions.Children.Add(pullButton);
+            if (DocumentRenderer.BuildTraceButton(def, services, () => editor) is { } trace) actions.Children.Add(trace);
             var btnPrint = new Btn { Text = LocalizationService.Get("Str.Print"), Variant = "secondary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
             btnPrint.Click += (_, __) => DocumentPrinter.PrintSelected(definition, services, editor?.EditItem);
 

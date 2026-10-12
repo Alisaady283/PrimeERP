@@ -72,15 +72,31 @@ namespace PrimeERP.Data.Core
             _ => $"Data Source={FilePath};Default Timeout={CommandTimeout}"
         };
 
+        /// <summary>ملف الإعداد بجوار البرنامج</summary>
+        public static string SettingsFile => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+
+        /// <summary>الإعداد بمساره النهائي: الملف النسبي يسكن مجلد بيانات البرنامج</summary>
         public static DbConfig Load()
+        {
+            var config = Read(SettingsFile);
+            if (config.Provider == DatabaseProvider.Sqlite && !Path.IsPathRooted(config.FilePath))
+            {
+                Directory.CreateDirectory(PrimeERP.Platform.AppInfo.DataFolder);
+                config.FilePath = Path.Combine(PrimeERP.Platform.AppInfo.DataFolder, config.FilePath);
+            }
+            return config;
+        }
+
+        /// <summary>قسم Database كما هو مكتوبٌ في الملف</summary>
+        public static DbConfig Read(string settingsFile)
         {
             var config = new DbConfig();
 
             try
             {
                 var root = new ConfigurationBuilder()
-                    .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                    .SetBasePath(Path.GetDirectoryName(Path.GetFullPath(settingsFile)))
+                    .AddJsonFile(Path.GetFileName(settingsFile), optional: true, reloadOnChange: false)
                     .Build();
 
                 var section = root.GetSection("Database");
@@ -113,13 +129,34 @@ namespace PrimeERP.Data.Core
             {
             }
 
-            if (config.Provider == DatabaseProvider.Sqlite && !Path.IsPathRooted(config.FilePath))
-            {
-                Directory.CreateDirectory(PrimeERP.Platform.AppInfo.DataFolder);
-                config.FilePath = Path.Combine(PrimeERP.Platform.AppInfo.DataFolder, config.FilePath);
-            }
-
             return config;
+        }
+
+        /// <summary>يكتب قسم Database ويُبقي باقي الملف، ويُنشئ مجلد ملف SQLite</summary>
+        public void Save(string settingsFile)
+        {
+            var settings = File.Exists(settingsFile)
+                ? System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(settingsFile)) ?? new System.Text.Json.Nodes.JsonObject()
+                : new System.Text.Json.Nodes.JsonObject();
+
+            settings["Database"] = new System.Text.Json.Nodes.JsonObject
+            {
+                ["Provider"] = Provider.ToString(),
+                ["FilePath"] = FilePath,
+                ["Host"] = Host,
+                ["Port"] = Port,
+                ["Database"] = Database,
+                ["Username"] = Username,
+                ["Password"] = Password,
+                ["UseIntegratedSecurity"] = UseIntegratedSecurity,
+                ["CommandTimeout"] = CommandTimeout,
+                ["EnableRetryOnFailure"] = EnableRetryOnFailure,
+                ["MaxRetryCount"] = MaxRetryCount,
+            };
+
+            if (Provider == DatabaseProvider.Sqlite && Path.GetDirectoryName(FilePath) is { Length: > 0 } folder)
+                Directory.CreateDirectory(folder);
+            File.WriteAllText(settingsFile, settings.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
         }
     }
 }

@@ -19,10 +19,9 @@ namespace PrimeERP.Data.Seeders
 
         private static readonly (string Key, string Prefix)[] Prefixes =
         {
-            ("Treasury", "TR"), ("Warehouse", "WH"), ("Asset", "AS"), ("Employee", "EM"), ("Payroll", "PAY"),
+            ("Treasury", "TR"), ("Warehouse", "WH"), ("Branch", "BR"), ("WorkCenter", "WC"), ("Bom", "BOM"), ("Production", "MO"), ("Unbuild", "UB"), ("Scrap", "SC"), ("Asset", "AS"), ("Employee", "EM"), ("Payroll", "PAY"),
+            ("PurchaseRequest", "RQ"), ("PurchaseOrder", "PO"), ("StockIn", "IN"), ("StockOut", "OUT"),
             ("SalesReturn", "SR"), ("PurchaseReturn", "PR"), ("Quotation", "QT"), ("SalesOrder", "SO"),
-            ("PurchaseRequest", "RQ"), ("PurchaseOrder", "PO"), ("GoodsReceipt", "GR"), ("GoodsIssue", "GI"),
-            ("DeliveryNote", "DN"), ("SalesReceipt", "SN"), ("StockIn", "IN"), ("StockOut", "OUT"),
             ("StockTransfer", "TRF"), ("StockMovement", "MV"), ("ReceiptVoucher", "RV"), ("PaymentVoucher", "PV"),
         };
 

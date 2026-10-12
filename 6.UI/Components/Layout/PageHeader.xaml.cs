@@ -24,6 +24,7 @@ namespace PrimeERP.UI.Components.Layout
                 new PropertyMetadata(null, OnActionsContentChanged));
 
         public string   Title          { get => (string)GetValue(TitleProperty);          set => SetValue(TitleProperty, value); }
+        public Thickness HeaderPadding { get => headerBorder.Padding; set => headerBorder.Padding = value; }
         public string   Subtitle       { get => (string)GetValue(SubtitleProperty);        set => SetValue(SubtitleProperty, value); }
         public Geometry Icon           { get => (Geometry)GetValue(IconProperty);          set => SetValue(IconProperty, value); }
         public object   ActionsContent { get => GetValue(ActionsContentProperty);          set => SetValue(ActionsContentProperty, value); }

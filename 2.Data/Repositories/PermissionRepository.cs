@@ -106,12 +106,13 @@ namespace PrimeERP.Data.Repositories
 
         public int InsertUser(User user) => Add(user);
 
-        public void UpdateUser(int id, string displayName, int roleId, bool isActive) =>
+        public void UpdateUser(int id, string displayName, int roleId, bool isActive, int? branchId) =>
             Edit(u => u.Id == id, user =>
             {
                 user.DisplayName = displayName;
                 user.RoleId = roleId;
                 user.IsActive = isActive;
+                user.BranchId = branchId;
             });
 
         public void UpdateUserPassword(int id, string passwordHash, string salt) =>

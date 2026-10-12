@@ -16,6 +16,9 @@ namespace PrimeERP.Data.Repositories
 
         void DeleteBySource(PrimeDbContext db, string sourceDocType, int sourceDocId);
         decimal GetBalance(int productId, int? warehouseId, PrimeDbContext db = null);
+        List<(string Batch, DateTime? Expiry, decimal Balance)> BatchBalances(int productId, int warehouseId, PrimeDbContext db = null);
+        List<(int ProductId, int WarehouseId, string Batch, DateTime? Expiry, decimal Balance)> AllBatches();
+        List<StockMovement> BySource(string sourceDocType, DateTime from, DateTime to);
         bool AnyForProduct(int productId);
         List<StockMovement> GetHistory(int productId, int? warehouseId, int maxResults);
 
@@ -33,6 +36,10 @@ namespace PrimeERP.Data.Repositories
         List<StockMovement> GetBySource(string sourceDocType, int sourceDocId, PrimeDbContext db = null);
         Dictionary<(int ProductId, int WarehouseId), decimal> BalancesOf(IReadOnlyCollection<(int ProductId, int WarehouseId)> pairs, PrimeDbContext db = null);
         bool AnyInWarehouse(string sourceDocType, int warehouseId, int exceptSourceId);
+        List<(int ProductId, int WarehouseId, decimal Qty, decimal Value)> Valuation(DateTime asOf);
+        List<(int Year, int Month, decimal Cost)> MonthlyCost(string sourceDocType, DateTime from, DateTime to);
+        Dictionary<int, decimal> CostByProduct(string sourceDocType, DateTime from, DateTime to);
+        Dictionary<int, DateTime> LastMovement(string sourceDocType);
     }
 
     public class StockMovementRepository : RepositoryBase<StockMovement>, IStockMovementRepository
@@ -56,6 +63,29 @@ namespace PrimeERP.Data.Repositories
                     .Sum(m => (decimal?)(m.MovementType == MovementType.Out ? -m.Qty : m.Qty)) ?? 0m;
             });
         }
+
+        public List<(string Batch, DateTime? Expiry, decimal Balance)> BatchBalances(int productId, int warehouseId, PrimeDbContext db = null) =>
+            Scope(db, ctx => Rows(ctx).AsNoTracking()
+                .Where(m => m.ProductId == productId && m.WarehouseId == warehouseId)
+                .GroupBy(m => new { m.BatchNo, m.ExpiryDate })
+                .Select(g => new { g.Key.BatchNo, g.Key.ExpiryDate, Balance = g.Sum(m => m.MovementType == MovementType.Out ? -m.Qty : m.Qty) })
+                .ToList()
+                .Select(b => (b.BatchNo, b.ExpiryDate, b.Balance))
+                .ToList());
+
+        public List<(int ProductId, int WarehouseId, string Batch, DateTime? Expiry, decimal Balance)> AllBatches() =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking()
+                .Where(m => m.BatchNo != null)
+                .GroupBy(m => new { m.ProductId, m.WarehouseId, m.BatchNo, m.ExpiryDate })
+                .Select(g => new { g.Key.ProductId, g.Key.WarehouseId, g.Key.BatchNo, g.Key.ExpiryDate, Balance = g.Sum(m => m.MovementType == MovementType.Out ? -m.Qty : m.Qty) })
+                .Where(b => b.Balance != 0)
+                .OrderBy(b => b.ExpiryDate)
+                .ToList()
+                .Select(b => (b.ProductId, b.WarehouseId, b.BatchNo, b.ExpiryDate, b.Balance))
+                .ToList());
+
+        public List<StockMovement> BySource(string sourceDocType, DateTime from, DateTime to) =>
+            Fetch(q => q.Where(m => m.SourceDocType == sourceDocType && m.MovementDate >= from && m.MovementDate <= to).OrderBy(m => m.MovementDate));
 
         public List<(int ProductId, int WarehouseId, decimal Balance)> GetAllBalances()
         {
@@ -94,6 +124,40 @@ namespace PrimeERP.Data.Repositories
                 .AsEnumerable()
                 .Select(x => (x.ProductId, x.WarehouseId, x.Opening, x.In, x.Out))
                 .ToList());
+
+        public List<(int ProductId, int WarehouseId, decimal Qty, decimal Value)> Valuation(DateTime asOf) =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking()
+                .Where(m => m.MovementDate < asOf.Date.AddDays(1))
+                .Select(m => new
+                {
+                    m.ProductId, m.WarehouseId,
+                    Qty = m.MovementType == MovementType.Out ? -m.Qty : m.Qty,
+                    Value = m.MovementType == MovementType.Out ? -m.TotalCost : m.TotalCost
+                })
+                .GroupBy(m => new { m.ProductId, m.WarehouseId })
+                .Select(g => new { g.Key.ProductId, g.Key.WarehouseId, Qty = g.Sum(m => m.Qty), Value = g.Sum(m => m.Value) })
+                .AsEnumerable().Select(x => (x.ProductId, x.WarehouseId, x.Qty, x.Value)).ToList());
+
+        public List<(int Year, int Month, decimal Cost)> MonthlyCost(string sourceDocType, DateTime from, DateTime to) =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking()
+                .Where(m => m.SourceDocType == sourceDocType && m.MovementDate >= from.Date && m.MovementDate < to.Date.AddDays(1))
+                .GroupBy(m => new { m.MovementDate.Year, m.MovementDate.Month })
+                .Select(g => new { g.Key.Year, g.Key.Month, Cost = g.Sum(m => m.TotalCost) })
+                .AsEnumerable().Select(x => (x.Year, x.Month, x.Cost)).ToList());
+
+        public Dictionary<int, decimal> CostByProduct(string sourceDocType, DateTime from, DateTime to) =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking()
+                .Where(m => m.SourceDocType == sourceDocType && m.MovementDate >= from.Date && m.MovementDate < to.Date.AddDays(1))
+                .GroupBy(m => m.ProductId)
+                .Select(g => new { g.Key, Cost = g.Sum(m => m.TotalCost) })
+                .ToDictionary(x => x.Key, x => x.Cost));
+
+        public Dictionary<int, DateTime> LastMovement(string sourceDocType) =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking()
+                .Where(m => m.SourceDocType == sourceDocType)
+                .GroupBy(m => m.ProductId)
+                .Select(g => new { g.Key, Last = g.Max(m => m.MovementDate) })
+                .ToDictionary(x => x.Key, x => x.Last));
 
         public List<StockMovement> GetMovements(DateTime from, DateTime to, int? warehouseId, int maxResults) =>
             Fetch(q => q.Where(m => m.MovementDate >= from && m.MovementDate <= to

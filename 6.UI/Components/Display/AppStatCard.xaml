@@ -11,53 +11,60 @@
             Padding="18"
             MouseLeftButtonUp="Root_MouseLeftButtonUp">
         <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0">
-                <TextBlock x:Name="txtTitle"
-                           FontSize="{DynamicResource P.Font.Size.200}"
-                           FontFamily="{DynamicResource P.Font.Family.Primary}"
-                           Foreground="{DynamicResource TextMuted}"/>
-                <TextBlock x:Name="txtValue"
-                           FontSize="{DynamicResource P.Font.Size.700}"
-                           FontWeight="{DynamicResource P.Font.Weight.Bold}"
-                           FontFamily="{DynamicResource P.Font.Family.Primary}"
-                           Foreground="{DynamicResource TextPrimary}"
-                           Margin="{DynamicResource P.Space.1.Top}"/>
-                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                    <TextBlock x:Name="txtSubtitle"
-                               VerticalAlignment="Center"
-                               FontSize="{DynamicResource P.Font.Size.200}"
-                               FontFamily="{DynamicResource P.Font.Family.Primary}"
-                               Foreground="{DynamicResource TextSecondary}"
-                               Visibility="Collapsed"/>
-                    <Border x:Name="trendBadge"
-                            CornerRadius="{DynamicResource P.Radius.Sm}"
-                            Padding="6,2"
-                            Margin="{DynamicResource P.Space.2.Left}"
-                            Visibility="Collapsed">
-                        <TextBlock x:Name="txtTrend"
-                                   FontSize="{DynamicResource P.Font.Size.200}"
-                                   FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
-                                   FontFamily="{DynamicResource P.Font.Family.Primary}"/>
-                    </Border>
-                </StackPanel>
-            </StackPanel>
+            <TextBlock x:Name="txtTitle" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"
+                       TextWrapping="Wrap" Margin="0,0,8,0"
+                       FontSize="{DynamicResource P.Font.Size.200}"
+                       FontFamily="{DynamicResource P.Font.Family.Primary}"
+                       Foreground="{DynamicResource TextMuted}"/>
 
-            <Border x:Name="iconWrap" Grid.Column="1"
-                    Width="44" Height="44"
+            <Border x:Name="iconWrap" Grid.Row="0" Grid.Column="1"
+                    Width="36" Height="36"
                     CornerRadius="{DynamicResource P.Radius.Md}"
-                    VerticalAlignment="Top"
                     Visibility="Collapsed">
                 <Path x:Name="icon"
-                      Stretch="Uniform" Width="{DynamicResource C.Icon.Size.Md}" Height="{DynamicResource C.Icon.Size.Md}"
+                      Stretch="Uniform" Width="18" Height="18"
                       HorizontalAlignment="Center" VerticalAlignment="Center"
                       StrokeThickness="1.8"
                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
             </Border>
+
+            <Viewbox Grid.Row="1" Grid.ColumnSpan="2" StretchDirection="DownOnly" Stretch="Uniform"
+                     HorizontalAlignment="Left" Margin="0,10,0,0">
+                <TextBlock x:Name="txtValue"
+                           FontSize="{DynamicResource P.Font.Size.700}"
+                           FontWeight="{DynamicResource P.Font.Weight.Bold}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           Foreground="{DynamicResource TextPrimary}"/>
+            </Viewbox>
+
+            <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,6,0,0">
+                <TextBlock x:Name="txtSubtitle"
+                           VerticalAlignment="Center"
+                           FontSize="{DynamicResource P.Font.Size.200}"
+                           FontFamily="{DynamicResource P.Font.Family.Primary}"
+                           Foreground="{DynamicResource TextSecondary}"
+                           Visibility="Collapsed"/>
+                <Border x:Name="trendBadge"
+                        CornerRadius="{DynamicResource P.Radius.Sm}"
+                        Padding="6,2"
+                        Margin="{DynamicResource P.Space.2.Left}"
+                        Visibility="Collapsed">
+                    <TextBlock x:Name="txtTrend"
+                               FontSize="{DynamicResource P.Font.Size.200}"
+                               FontWeight="{DynamicResource P.Font.Weight.SemiBold}"
+                               FontFamily="{DynamicResource P.Font.Family.Primary}"/>
+                </Border>
+            </StackPanel>
         </Grid>
     </Border>
 </UserControl>

@@ -19,6 +19,10 @@ namespace PrimeERP.Data.Repositories
         void InsertAllocation(PrimeDbContext db, int voucherId, VoucherAllocation a);
         void SetLinks(PrimeDbContext db, int voucherId, int? journalEntryId, int? chequeId);
         void Delete(PrimeDbContext db, int id);
+        List<Voucher> OfParty(VoucherKind kind, int partyId, PrimeDbContext db = null);
+        List<VoucherAllocation> AllocationsOf(IEnumerable<int> voucherIds, PrimeDbContext db = null);
+        void ReplaceAutoAllocations(PrimeDbContext db, int voucherId, IEnumerable<VoucherAllocation> allocations);
+        List<(DateTime Date, string VoucherNo, string InvoiceNo, decimal Amount)> PaymentsOf(VoucherKind kind, IEnumerable<string> invoiceNos);
     }
 
     public class VoucherRepository : RepositoryBase<Voucher>, IVoucherRepository
@@ -64,6 +68,37 @@ namespace PrimeERP.Data.Repositories
                 row.JournalEntryId = journalEntryId;
                 row.ChequeId = chequeId;
             }, db);
+
+        public List<Voucher> OfParty(VoucherKind kind, int partyId, PrimeDbContext db = null) =>
+            Fetch(q => q.Where(v => v.Kind == kind && v.PartyId == partyId).OrderBy(v => v.VoucherDate).ThenBy(v => v.Id), db);
+
+        public List<VoucherAllocation> AllocationsOf(IEnumerable<int> voucherIds, PrimeDbContext db = null)
+        {
+            var ids = voucherIds.Distinct().ToList();
+            return FetchOf<VoucherAllocation>(Allocations, q => q.Where(a => ids.Contains(a.VoucherId)).OrderBy(a => a.LineNo), db);
+        }
+
+        public void ReplaceAutoAllocations(PrimeDbContext db, int voucherId, IEnumerable<VoucherAllocation> allocations)
+        {
+            RemoveIn<VoucherAllocation>(Allocations, a => a.VoucherId == voucherId && a.IsAuto, db);
+            var next = GetAllocations(voucherId, db).Select(a => a.LineNo).DefaultIfEmpty(0).Max();
+            foreach (var allocation in allocations)
+            {
+                allocation.IsAuto = true;
+                allocation.LineNo = ++next;
+                InsertAllocation(db, voucherId, allocation);
+            }
+        }
+
+        public List<(DateTime Date, string VoucherNo, string InvoiceNo, decimal Amount)> PaymentsOf(VoucherKind kind, IEnumerable<string> invoiceNos)
+        {
+            var numbers = invoiceNos.Distinct().ToList();
+            return Scope(null, ctx => RowsOf<VoucherAllocation>(ctx, Allocations).AsNoTracking()
+                .Where(a => numbers.Contains(a.InvoiceNo))
+                .Join(Rows(ctx).AsNoTracking().Where(v => v.Kind == kind), a => a.VoucherId, v => v.Id, (a, v) => new { v.VoucherDate, v.VoucherNo, a.InvoiceNo, a.Amount })
+                .OrderBy(x => x.VoucherDate)
+                .AsEnumerable().Select(x => (x.VoucherDate, x.VoucherNo, x.InvoiceNo, x.Amount)).ToList());
+        }
 
         public void Delete(PrimeDbContext db, int id)
         {

@@ -18,6 +18,9 @@ namespace PrimeERP.Application.DTOs.Purchasing
         public decimal  VatAmount     { get; set; }
         public decimal  WithholdingAmount     { get; set; }
         public decimal  NetTotal      { get; set; }
+        public decimal  PaidAmount      { get; set; }
+        public decimal  RemainingAmount { get; set; }
+        public DateTime? DueDate        { get; set; }
         public string   StatusText    { get; set; }
         public DateTime CreatedAt     { get; set; }
     }

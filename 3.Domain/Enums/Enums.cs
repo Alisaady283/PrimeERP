@@ -66,6 +66,13 @@ namespace PrimeERP.Domain.Enums
         Holiday = 5,
     }
 
+    public enum BomLineKind
+    {
+        Component = 1,
+        ByProduct = 2,
+        Operation = 3
+    }
+
     public enum EmployeeStatus
     {
         Active   = 1,
@@ -207,4 +214,19 @@ namespace PrimeERP.Domain.Enums
     }
 
     public enum LinkedEntityType { None, Customer, Supplier }
+
+    /// <summary>حال سطرٍ في سلسلة السحب</summary>
+    public enum FlowState { Open, Partial, Awaiting, Complete }
+
+    /// <summary>عمر الرصيد المستحق</summary>
+    public enum AgingBucket { NotDue, Days30, Days60, Days90, Days120, Days150, Over150 }
+
+    /// <summary>فئة الصنف بحصته من القيمة</summary>
+    public enum AbcClass { A, B, C }
+
+    /// <summary>سرعة حركة الصنف</summary>
+    public enum MovementSpeed { Dead, Slow, Normal, Fast }
+
+    /// <summary>حال الطرف من آخر تعاملٍ معه</summary>
+    public enum PartyState { Active, Cooling, Lost }
 }

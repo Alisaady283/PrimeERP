@@ -68,6 +68,7 @@ namespace PrimeERP.UI.Components.Inputs
         public bool         IsSearchable      { get => (bool)GetValue(IsSearchableProperty);           set => SetValue(IsSearchableProperty, value); }
         public string        Placeholder       { get => (string)GetValue(PlaceholderProperty);          set => SetValue(PlaceholderProperty, value); }
         public bool           AllowClear        { get => (bool)GetValue(AllowClearProperty);             set => SetValue(AllowClearProperty, value); }
+        public bool           IsDropDownOpen    => popup.IsOpen;
         public string          Label             { get => (string)GetValue(LabelProperty);                set => SetValue(LabelProperty, value); }
         public string           ErrorText         { get => (string)GetValue(ErrorTextProperty);            set => SetValue(ErrorTextProperty, value); }
 
@@ -224,9 +225,10 @@ namespace PrimeERP.UI.Components.Inputs
                 SelectItem(lst.SelectedItem ?? lst.Items[0]);
                 e.Handled = true;
             }
-            else if (e.Key == Key.Escape)
+            else if (e.Key == Key.Escape && popup.IsOpen)
             {
                 popup.IsOpen = false;
+                e.Handled = true;
             }
         }
 
@@ -250,6 +252,7 @@ namespace PrimeERP.UI.Components.Inputs
             else if (e.Key == Key.Escape)
             {
                 popup.IsOpen = false;
+                txtSearch.Focus();
                 e.Handled = true;
             }
         }

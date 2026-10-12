@@ -48,6 +48,9 @@ namespace PrimeERP.Platform.Settings
             public const string Customers        = "Accounts.Customers";
             public const string Suppliers        = "Accounts.Suppliers";
             public const string Inventory        = "Accounts.Inventory";
+            public const string ProductionOverhead = "Accounts.ProductionOverhead";
+            public const string ScrapExpense     = "Accounts.ScrapExpense";
+            public const string CashOverShort    = "Accounts.CashOverShort";
 
             public const string OpeningAdjustments = "Accounts.OpeningAdjustments";
             public const string DepreciationExpense     = "Accounts.DepreciationExpense";
@@ -108,6 +111,13 @@ namespace PrimeERP.Platform.Settings
             public const string CustomerPrefix = "Documents.CustomerPrefix";
             public const string SupplierPrefix = "Documents.SupplierPrefix";
             public const string ProductPrefix  = "Documents.ProductPrefix";
+
+            public const string AutoBarcode      = "Documents.AutoBarcode";
+            public const string BarcodePrefix    = "Documents.BarcodePrefix";
+            public const string ScalePrefix      = "Documents.ScalePrefix";
+            public const string ScaleItemDigits  = "Documents.ScaleItemDigits";
+            public const string ScaleWeighted    = "Documents.ScaleWeighted";
+            public const string ScaleDecimals    = "Documents.ScaleDecimals";
         }
 
         public static class UI
@@ -117,6 +127,7 @@ namespace PrimeERP.Platform.Settings
             public const string DateFormat        = "UI.DateFormat";
             public const string PageSize          = "UI.PageSize";
             public const string SidebarCollapsed  = "UI.SidebarCollapsed";
+            public const string Identity          = "UI.Identity";
 
             public const string Manifest          = "UI.Manifest";
 
@@ -164,6 +175,10 @@ namespace PrimeERP.Platform.Settings
             public const string Version        = "System.Version";
             public const string Arabic         = "System.Arabic";
             public const string English        = "System.English";
+            public const string TrackExpiry    = "System.TrackExpiry";
+            public const string Pharmacy       = "System.Pharmacy";
+            public const string ManufacturingOperations = "System.ManufacturingOperations";
+            public const string ExpiryAlertDays = "System.ExpiryAlertDays";
         }
 
         public static class Security
@@ -204,6 +219,9 @@ namespace PrimeERP.Platform.Settings
             new(Accounts.Customers,        "1202",     "string", "Accounts", IsSystem: true),
             new(Accounts.Suppliers,        "2201",     "string", "Accounts", IsSystem: true),
             new(Accounts.Inventory,        "1201001",  "string", "Accounts", IsSystem: true),
+            new(Accounts.ProductionOverhead, "",        "string", "Accounts", IsSystem: true),
+            new(Accounts.ScrapExpense,     "",         "string", "Accounts", IsSystem: true),
+            new(Accounts.CashOverShort,    "",         "string", "Accounts", IsSystem: true),
             new(Accounts.OpeningAdjustments, "33",      "string", "Accounts", IsSystem: true),
             new(Accounts.DepreciationExpense, "54",     "string", "Accounts", IsSystem: true),
             new(Accounts.AccumulatedDepreciation, "1101002", "string", "Accounts", IsSystem: true),
@@ -244,12 +262,19 @@ namespace PrimeERP.Platform.Settings
             new(Documents.CustomerPrefix,        "C",    "string", "Documents"),
             new(Documents.SupplierPrefix,        "S",    "string", "Documents"),
             new(Documents.ProductPrefix,         "P",    "string", "Documents"),
+            new(Documents.AutoBarcode,           "false", "bool",  "Documents"),
+            new(Documents.BarcodePrefix,         "20",   "string", "Documents"),
+            new(Documents.ScalePrefix,           "21",   "string", "Documents"),
+            new(Documents.ScaleItemDigits,       "5",    "int",    "Documents"),
+            new(Documents.ScaleWeighted,         "true", "bool",   "Documents"),
+            new(Documents.ScaleDecimals,         "3",    "int",    "Documents"),
 
             new(UI.Language,         "Ar",          "string", "UI"),
             new(UI.UseArabicNumerals,"false",       "bool",   "UI"),
             new(UI.DateFormat,       "yyyy-MM-dd",  "string", "UI"),
             new(UI.PageSize,         "25",          "int",    "UI"),
             new(UI.SidebarCollapsed, "false",       "bool",   "UI"),
+            new(UI.Identity,         "Navy",        "string", "UI"),
 
             new(Backup.AutoBackupEnabled,       "false", "bool",   "Backup"),
             new(Backup.AutoBackupPath,          "",      "string", "Backup"),
@@ -271,6 +296,10 @@ namespace PrimeERP.Platform.Settings
             new(Edition.Version,        "",     "string", "System", IsSystem: true),
             new(Edition.Arabic,         "true", "bool",   "System"),
             new(Edition.English,        "true", "bool",   "System"),
+            new(Edition.TrackExpiry,    "false", "bool",  "System"),
+            new(Edition.Pharmacy,       "false", "bool",  "System"),
+            new(Edition.ManufacturingOperations, "false", "bool", "System"),
+            new(Edition.ExpiryAlertDays, "90",  "int",    "System"),
 
             new(HR.WorkStart,       "09:00", "string",  "HR"),
             new(HR.WorkEnd,         "17:00", "string",  "HR"),

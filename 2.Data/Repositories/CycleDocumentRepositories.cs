@@ -8,7 +8,7 @@ using PrimeERP.Domain.Entities;
 namespace PrimeERP.Data.Repositories
 {
     /// <summary>مستودع CycleDocument</summary>
-    public interface ICycleDocumentRepository
+    public interface ICycleDocumentRepository : IFlowLines
     {
         CycleDocument GetById(int id, PrimeDbContext db = null);
         List<CycleDocumentLine> GetLines(int documentId, PrimeDbContext db = null);

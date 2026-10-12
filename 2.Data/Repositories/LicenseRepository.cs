@@ -45,6 +45,7 @@ namespace PrimeERP.Data.Repositories
                 row.Location = l.Location ?? "";
                 row.Manifest = l.Manifest ?? "";
                 row.Simplified = l.Simplified;
+                row.English = l.English;
                 row.Version = l.Version;
                 row.MachineHash = l.MachineHash ?? "";
                 row.IsActive = l.IsActive;

@@ -20,5 +20,7 @@ namespace PrimeERP.Domain.Entities
         public int?         SourceDocId   { get; set; }
         public string       SourceDocNo   { get; set; }
         public string       Notes         { get; set; }
+        public string       BatchNo       { get; set; }
+        public DateTime?    ExpiryDate    { get; set; }
     }
 }

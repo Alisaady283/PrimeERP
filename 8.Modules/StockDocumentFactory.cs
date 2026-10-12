@@ -12,12 +12,13 @@ namespace PrimeERP.Modules
     internal static class StockDocumentFactory
     {
         internal static void Register(IModuleRegistry registry, string key, string titleKey, Type viewModel, Type service,
-            FlowScope scope, StockEffect stock = StockEffect.None, PullSource pullSource = null,
-            string printTitleKey = null, string addTitleKey = null, string editTitleKey = null, bool allowPost = true)
+            FlowScope scope, StockEffect stock = StockEffect.None, List<PullSource> pullSources = null,
+            string printTitleKey = null, string addTitleKey = null, string editTitleKey = null, bool allowPost = true,
+            Func<IServiceProvider, object> viewModelFactory = null, string permissionPrefix = "Inventory")
         {
             registry.Register(new ModuleDefinition
             {
-                Key = key, TitleKey = titleKey, PermissionPrefix = "Inventory", ViewModelType = viewModel,
+                Key = key, TitleKey = titleKey, PermissionPrefix = permissionPrefix, ViewModelType = viewModel, ViewModelFactory = viewModelFactory,
                 FlowScope = scope,
                 Columns = new()
                 {
@@ -30,12 +31,12 @@ namespace PrimeERP.Modules
                 {
                     PrintTitleKey = printTitleKey,
                     TitleKey = addTitleKey ?? titleKey, TitleEditKey = editTitleKey ?? titleKey,
-                    DocumentKind = pullSource == null ? null : key,
+                    DocumentKind = pullSources == null ? null : key,
                     ServiceType = service, DtoType = typeof(CreateStockAdjustmentDto), LineDtoType = typeof(CreateStockAdjustmentLineDto),
                     LinesPropertyName = nameof(CreateStockAdjustmentDto.Lines),
                     AllowPost = allowPost,
                     AffectsStock = stock,
-                    PullSources = pullSource == null ? new List<PullSource>() : new List<PullSource> { pullSource },
+                    PullSources = pullSources ?? new List<PullSource>(),
                     HeaderFields = new()
                     {
                         new() { Key = nameof(CreateStockAdjustmentDto.MovementDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
@@ -46,6 +47,8 @@ namespace PrimeERP.Modules
                     {
                         new() { Key = nameof(CreateStockAdjustmentLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
                         StandardFields.Qty(),
+                        StandardFields.Batch(),
+                        StandardFields.Expiry(),
                         new() { Key = nameof(CreateStockAdjustmentLineDto.UnitCost), Header = LocalizationService.Get("Str.UnitCost"), Kind = FieldKind.Number, Width = 100 },
                         new() { Key = nameof(CreateStockAdjustmentLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
                     }

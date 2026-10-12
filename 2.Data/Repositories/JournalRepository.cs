@@ -24,6 +24,7 @@ namespace PrimeERP.Data.Repositories
         List<(string AccountCode, decimal SumDebit, decimal SumCredit)> GetAccountSums(DateTime? from, DateTime? to, bool postedOnly,
             PrimeDbContext db = null, string exceptSource = null);
         HashSet<string> AccountsWithLines(IEnumerable<string> accountCodes);
+        List<(string Month, decimal Net)> MonthlyNet(string accountPrefix, DateTime from, DateTime to);
         Dictionary<int, int> GetLineCounts(IEnumerable<int> entryIds);
         (List<JournalEntry> Items, int Total) GetPaged(
             int page, int pageSize,
@@ -148,6 +149,13 @@ namespace PrimeERP.Data.Repositories
                 .AsEnumerable()
                 .Select(x => (x.Code, x.Debit, x.Credit))
                 .ToList());
+
+        public List<(string Month, decimal Net)> MonthlyNet(string accountPrefix, DateTime from, DateTime to) =>
+            Scope(null, ctx => Dated(ctx, from, to, postedOnly: true)
+                .Where(l => l.AccountCode.StartsWith(accountPrefix))
+                .GroupBy(l => l.EntryDate.Substring(0, 7))
+                .Select(g => new { g.Key, Net = g.Sum(x => x.Debit - x.Credit) })
+                .AsEnumerable().Select(x => (x.Key, x.Net)).ToList());
 
         public Dictionary<int, int> GetLineCounts(IEnumerable<int> entryIds)
         {

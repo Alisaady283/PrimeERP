@@ -8,6 +8,7 @@ using System.Linq;
 using PrimeERP.Application.PageServices.Common;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Entities.Common;
 using PrimeERP.Domain.Enums;
 using PrimeERP.Domain.Results;
 using PrimeERP.Platform.Audit;
@@ -26,12 +27,15 @@ namespace PrimeERP.Application.Services.Documents
 
         private readonly IStockMovementRepository _movements;
         private readonly INumberSequenceService _numbers;
+        private readonly IProductRepository _products;
 
         public StockMove(IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization,
-            IAuditLogger audit, IStockMovementRepository movements, INumberSequenceService numbers) : base(permissions, settings, localization, audit)
+            IAuditLogger audit, IStockMovementRepository movements, INumberSequenceService numbers, IProductRepository products)
+            : base(permissions, settings, localization, audit)
         {
             _movements = movements;
             _numbers = numbers;
+            _products = products;
         }
 
         public Result<decimal> GetBalance(int productId, int? warehouseId = null) =>
@@ -47,7 +51,8 @@ namespace PrimeERP.Application.Services.Documents
             Result.Ok(_movements.GetMovements(from, to, warehouseId, maxResults));
 
         public Result RecordMovement(PrimeDbContext db, int productId, int warehouseId, MovementType type,
-            decimal qty, decimal unitCost, string sourceDocType, int? sourceDocId, string sourceDocNo, DateTime? date = null, string notes = null)
+            decimal qty, decimal unitCost, string sourceDocType, int? sourceDocId, string sourceDocNo, DateTime? date = null, string notes = null,
+            string batch = null, DateTime? expiry = null)
         {
             var shape = type == MovementType.Adjustment ? Result.Ok() : Check.Valid(qty, new Field<decimal>(q => q, "Str.Qty", Positive: true));
             if (shape.IsFailure) return shape;
@@ -58,16 +63,88 @@ namespace PrimeERP.Application.Services.Documents
             if (currentBalance + signedQty < 0)
                 return Fail("Insufficient", ErrorCode.ValidationFailed);
 
+            if (batch != null && signedQty < 0
+                && _movements.BatchBalances(productId, warehouseId, db).Where(b => b.Batch == batch).Sum(b => b.Balance) + signedQty < 0)
+                return Fail("Insufficient", ErrorCode.ValidationFailed);
+
             var movement = new StockMovement
             {
                 MovementNo = _numbers.Next(db, "StockMovement"), MovementDate = date ?? DateTime.Now,
                 ProductId = productId, WarehouseId = warehouseId, MovementType = type, Qty = qty, UnitCost = unitCost,
                 TotalCost = Math.Abs(qty) * unitCost, BalanceAfter = currentBalance + signedQty,
-                SourceDocType = sourceDocType, SourceDocId = sourceDocId, SourceDocNo = sourceDocNo, Notes = notes
+                SourceDocType = sourceDocType, SourceDocId = sourceDocId, SourceDocNo = sourceDocNo, Notes = notes,
+                BatchNo = batch, ExpiryDate = expiry
             };
 
             _movements.Insert(movement, db);
             return Result.Ok();
+        }
+
+        public Result Move(PrimeDbContext db, IProductLine line, int warehouseId, MovementType type,
+            decimal qty, decimal unitCost, string sourceDocType, int? sourceDocId, string sourceDocNo, DateTime? date = null, string notes = null)
+        {
+            if (!Expires(line, db))
+                return RecordMovement(db, line.ProductId, warehouseId, type, qty, unitCost, sourceDocType, sourceDocId, sourceDocNo, date, notes);
+
+            if (InventoryCosting.Signed(type, qty) > 0)
+                return string.IsNullOrWhiteSpace(line.BatchNo) || line.ExpiryDate == null
+                    ? Fail("BatchRequired", ErrorCode.ValidationFailed, line.ProductCode)
+                    : RecordMovement(db, line.ProductId, warehouseId, type, qty, unitCost, sourceDocType, sourceDocId, sourceDocNo, date, notes,
+                        line.BatchNo.Trim(), line.ExpiryDate);
+
+            var picks = Picks(db, line, warehouseId, qty, date ?? DateTime.Today);
+            if (picks.IsFailure) return picks;
+
+            foreach (var pick in picks.Value)
+            {
+                var moved = RecordMovement(db, line.ProductId, warehouseId, type, pick.Qty, unitCost, sourceDocType, sourceDocId, sourceDocNo, date, notes,
+                    pick.Batch, pick.Expiry);
+                if (moved.IsFailure) return moved;
+            }
+            return Result.Ok();
+        }
+
+        public Result Transfer(PrimeDbContext db, IProductLine line, int fromWarehouseId, int toWarehouseId,
+            decimal qty, string sourceDocType, int sourceDocId, string sourceDocNo, DateTime date)
+        {
+            var picks = Expires(line, db)
+                ? Picks(db, line, fromWarehouseId, qty, date)
+                : Result.Ok(new List<InventoryCosting.BatchStock> { new(null, null, qty) });
+            if (picks.IsFailure) return picks;
+
+            foreach (var pick in picks.Value)
+            {
+                var moved = RecordMovement(db, line.ProductId, fromWarehouseId, MovementType.Out, pick.Qty, 0, sourceDocType, sourceDocId, sourceDocNo, date,
+                    batch: pick.Batch, expiry: pick.Expiry);
+                if (moved.IsFailure) return moved;
+
+                moved = RecordMovement(db, line.ProductId, toWarehouseId, MovementType.In, pick.Qty, 0, sourceDocType, sourceDocId, sourceDocNo, date,
+                    batch: pick.Batch, expiry: pick.Expiry);
+                if (moved.IsFailure) return moved;
+            }
+            return Result.Ok();
+        }
+
+        private bool Expires(IProductLine line, PrimeDbContext db) =>
+            Settings.TracksExpiry() && _products.GetById(line.ProductId, db)?.HasExpiry == true;
+
+        private Result<List<InventoryCosting.BatchStock>> Picks(PrimeDbContext db, IProductLine line, int warehouseId, decimal qty, DateTime date)
+        {
+            var stock = _movements.BatchBalances(line.ProductId, warehouseId, db)
+                .Select(b => new InventoryCosting.BatchStock(b.Batch, b.Expiry, b.Balance)).ToList();
+
+            if (!string.IsNullOrWhiteSpace(line.BatchNo))
+            {
+                var chosen = stock.Where(b => b.Batch == line.BatchNo.Trim()).ToList();
+                if (chosen.Any(b => b.Expiry != null && b.Expiry.Value.Date < date.Date))
+                    return Fail<List<InventoryCosting.BatchStock>>("BatchExpired", ErrorCode.ValidationFailed, line.BatchNo, line.ProductCode);
+                stock = chosen;
+            }
+
+            var picks = InventoryCosting.Fefo(stock, qty, date);
+            return picks == null
+                ? Fail<List<InventoryCosting.BatchStock>>("NoValidBatch", ErrorCode.ValidationFailed, line.ProductCode)
+                : Result.Ok(picks);
         }
 
         public void RemoveMovements(PrimeDbContext db, string sourceDocType, int sourceDocId) =>
@@ -101,7 +178,16 @@ namespace PrimeERP.Application.Services.Documents
             Result.Ok(_movements.GetForCosting(productId));
 
         /// <summary>تكلفة المرتجع من صرفه الأصلي</summary>
-        public (List<decimal> UnitCosts, decimal Total) GetReturnCosts(PrimeDbContext db, string sourceDocType,
+        /// <summary>تكلفة ما صرفه إذنٌ سلفاً: من حركة الإذن المسحوب منه وإلا متوسط اللحظة، بلا فحص رصيد</summary>
+        public (List<decimal> Lines, decimal Total) GetIssuedCosts(PrimeDbContext db, string sourceDocType,
+            List<(int ProductId, decimal Qty, int SourceId, int SourceLineId)> lines)
+        {
+            var (unitCosts, total) = GetSourceCosts(db, sourceDocType, lines, recordsStock: false);
+            return (unitCosts.Select((unitCost, i) => unitCost * lines[i].Qty).ToList(), total);
+        }
+
+        /// <summary>تكلفة السطر من حركة مستند مصدره، وإلا متوسط اللحظة</summary>
+        public (List<decimal> UnitCosts, decimal Total) GetSourceCosts(PrimeDbContext db, string sourceDocType,
             List<(int ProductId, decimal Qty, int SourceId, int SourceLineId)> lines, bool recordsStock)
         {
             var unitCosts = Costs(db, lines, l => l.ProductId, (l, balance) =>

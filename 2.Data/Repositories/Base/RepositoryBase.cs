@@ -139,15 +139,19 @@ namespace PrimeERP.Data.Repositories.Base
         }
 
         /// <summary>صفوفٌ بأكوادها في ضمّةٍ واحدة</summary>
-        public Dictionary<string, T> ByCodes(IEnumerable<string> codes, PrimeDbContext db = null)
+        public Dictionary<string, T> ByCodes(IEnumerable<string> codes, PrimeDbContext db = null) => By("Code", codes, db);
+
+        protected Dictionary<string, T> By(string column, IEnumerable<string> values, PrimeDbContext db = null)
         {
-            var wanted = codes.Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().ToList();
+            var wanted = values.Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().ToList();
             return wanted.Count == 0
                 ? new Dictionary<string, T>()
                 : Scope(db, ctx => Rows(ctx).AsNoTracking()
-                    .Where(e => wanted.Contains(EF.Property<string>(e, "Code")))
-                    .Select(e => new { Code = EF.Property<string>(e, "Code"), Row = e })
-                    .ToDictionary(x => x.Code, x => x.Row));
+                    .Where(e => wanted.Contains(EF.Property<string>(e, column)))
+                    .Select(e => new { Key = EF.Property<string>(e, column), Row = e })
+                    .AsEnumerable()
+                    .GroupBy(x => x.Key)
+                    .ToDictionary(g => g.Key, g => g.First().Row));
         }
 
         /// <summary>ترتيبٌ بعمودٍ واحد</summary>

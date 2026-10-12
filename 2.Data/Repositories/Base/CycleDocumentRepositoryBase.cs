@@ -27,6 +27,12 @@ namespace PrimeERP.Data.Repositories.Base
             FetchOf<CycleDocumentLine>(_lineTable,
                 q => q.Where(l => l.DocumentId == documentId).OrderBy(l => l.LineNo), db);
 
+        public List<FlowLine> FlowLines(DateTime from, DateTime to) =>
+            Scope(null, ctx => Rows(ctx).AsNoTracking().Where(d => d.DocDate >= from && d.DocDate <= to)
+                .Join(RowsOf<CycleDocumentLine>(ctx, _lineTable).AsNoTracking(), d => d.Id, l => l.DocumentId,
+                    (d, l) => new FlowLine(d.Id, d.DocNo, d.DocDate, d.PartyId, l.Id, l.ProductCode, l.ProductName, l.Qty))
+                .ToList());
+
         public Dictionary<int, (decimal Qty, decimal Total)> Totals(IEnumerable<int> documentIds)
         {
             var ids = documentIds.Distinct().ToList();

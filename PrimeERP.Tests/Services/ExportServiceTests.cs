@@ -34,7 +34,7 @@ namespace PrimeERP.Tests.Services
         }
 
         private string TempFile(string extension) =>
-            _tempFiles.AddAndReturn(Path.Combine(Path.GetTempPath(), $"PrimeERP.Tests.Export.{Guid.NewGuid():N}.{extension}"));
+            _tempFiles.AddAndReturn(PrimeERP.Tests.Helpers.TestPaths.Unique("PrimeERP.Tests.Export", $".{extension}"));
 
         private class Row
         {

@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:shell="clr-namespace:PrimeERP.UI.Components.Shell"
              xmlns:conv="clr-namespace:PrimeERP.UI.Converters"
+             xmlns:actionsctl="clr-namespace:PrimeERP.UI.Components.Actions"
              Foreground="{DynamicResource NavText}">
     <UserControl.Resources>
         <conv:IconKeyToGeometryConverter x:Key="IconConv"/>
@@ -140,7 +141,10 @@
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0" Height="61">
-                <ContentPresenter x:Name="logoPresenter" Margin="16,0" VerticalAlignment="Center"/>
+                <ContentPresenter x:Name="logoPresenter" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <actionsctl:AppIconButton x:Name="btnToggle" Icon="{StaticResource IconMenu}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                          Margin="{DynamicResource P.Space.2.Right}"
+                                          TooltipText="{DynamicResource Str.TopBar.ToggleSidebar}" Click="btnToggle_Click"/>
                 <Border Height="{DynamicResource P.Border.Thin}" VerticalAlignment="Bottom" Background="{DynamicResource NavHover}"/>
             </Grid>
 

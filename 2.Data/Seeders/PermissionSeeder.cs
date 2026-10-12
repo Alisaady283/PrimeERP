@@ -27,7 +27,7 @@ namespace PrimeERP.Data.Seeders
                 Username     = "admin",
                 PasswordHash = hash,
                 Salt         = salt,
-                DisplayName  = "مدير النظام",
+                DisplayName  = "Admin",
                 RoleId       = roleId,
                 IsActive     = true
             });

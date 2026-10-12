@@ -11,6 +11,7 @@ namespace PrimeERP.Domain.Entities
         public DateTime MovementDate  { get; set; }
         public int      WarehouseId   { get; set; }
         public string   Notes         { get; set; }
+        public int?     JournalEntryId { get; set; }
 
         public List<StockAdjustmentLine> Lines { get; set; } = new();
     }
@@ -26,5 +27,7 @@ namespace PrimeERP.Domain.Entities
         public decimal Qty         { get; set; }
         public decimal UnitCost    { get; set; }
         public string  Notes       { get; set; }
+        public string  BatchNo     { get; set; }
+        public DateTime? ExpiryDate { get; set; }
     }
 }

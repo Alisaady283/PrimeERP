@@ -51,7 +51,7 @@ namespace PrimeERP.UI.Services
 
             try
             {
-                var pageSize = PageSizeFor(document.Orientation, document.HalfPage);
+                var pageSize = PageSizeFor(document.Orientation, document.HalfPage, document.Roll);
                 var labels = document.CopyLabels is { Count: > 0 } ? document.CopyLabels : new List<string> { null };
 
                 var combined = new FixedDocument();
@@ -135,7 +135,7 @@ namespace PrimeERP.UI.Services
                 flow.Blocks.Add(BuildKeyValues(document.HeaderFields));
 
             foreach (var section in document.BuildSections() ?? new List<PrintSection>())
-                foreach (var block in BuildSectionBlocks(section, document.LinesPerPage, ContentWidthFor(document)))
+                foreach (var block in BuildSectionBlocks(section, document.LinesPerPage, ContentWidthFor(document), ContentHeightFor(document)))
                     flow.Blocks.Add(block);
 
             if (document.FooterFields is { Count: > 0 })
@@ -147,10 +147,18 @@ namespace PrimeERP.UI.Services
             return document.Framed ? Frame(flow) : flow;
         }
 
+        /// <summary>ارتفاع ما يبقى للمحتوى بعد الهوامش ورأس الشركة والعنوان والتذييل</summary>
+        private static double ContentHeightFor(IPrintable document)
+        {
+            const double HeaderReserve = 190;
+            var margin = Res<double>("PageMargin");
+            return PageSizeFor(document.Orientation, document.HalfPage, document.Roll).Height - margin * 2 - HeaderReserve;
+        }
+
         private static double ContentWidthFor(IPrintable document)
         {
             var margin = Res<double>("PageMargin");
-            var width = PageSizeFor(document.Orientation, document.HalfPage).Width - margin * 2;
+            var width = PageSizeFor(document.Orientation, document.HalfPage, document.Roll).Width - margin * 2;
             if (document.Framed) width -= margin + 3;
 
             return width - 12;
@@ -276,7 +284,7 @@ namespace PrimeERP.UI.Services
             })
             { Padding = new Thickness(2, 3, 8, 3) };
 
-        private IEnumerable<Block> BuildSectionBlocks(PrintSection section, int linesPerPage, double contentWidth)
+        private IEnumerable<Block> BuildSectionBlocks(PrintSection section, int linesPerPage, double contentWidth, double contentHeight)
         {
             switch (section.Type)
             {
@@ -348,6 +356,19 @@ namespace PrimeERP.UI.Services
 
                 case PrintSectionType.Barcode:
                     if (BuildBarcode(section.Text) is { } barcode) yield return barcode;
+                    break;
+
+                case PrintSectionType.Image when !string.IsNullOrWhiteSpace(section.Text):
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.StreamSource = new System.IO.MemoryStream(Convert.FromBase64String(section.Text));
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    var fit = Math.Min(1, Math.Min(contentWidth / bitmap.Width, contentHeight / bitmap.Height));
+                    var picture = new Paragraph { TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 0, 0, 8) };
+                    picture.Inlines.Add(new InlineUIContainer(new System.Windows.Controls.Image { Source = bitmap, Width = bitmap.Width * fit, Height = bitmap.Height * fit, Stretch = Stretch.Uniform }));
+                    yield return picture;
                     break;
 
                 case PrintSectionType.Table:
@@ -633,9 +654,10 @@ namespace PrimeERP.UI.Services
             return value.ToString();
         }
 
-        private static Size PageSizeFor(PrintOrientation orientation, bool halfPage = false)
+        private static Size PageSizeFor(PrintOrientation orientation, bool halfPage = false, bool roll = false)
         {
-            const double a4Width = 793.7, a4Height = 1122.5;
+            const double a4Width = 793.7, a4Height = 1122.5, roll80Width = 302.4;
+            if (roll) return new Size(roll80Width, a4Height);
 
             var size = orientation == PrintOrientation.Landscape
                 ? new Size(a4Height, a4Width)

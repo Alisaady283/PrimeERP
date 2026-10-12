@@ -87,6 +87,7 @@
 | 2.43 | VoucherRepository.cs | مستودع Voucher |
 | | **Repositories/Base/** | أسس المستودعات: الصفحة والترتيب والحذف والمستندات |
 | 2.44 | CycleDocumentRepositoryBase.cs | أساس مستودع CycleDocument |
+| 2.44a | FlowLine.cs | سطر مستندٍ في سلسلة السحب، ومستودعٌ يُعطي سطور مستنداته في فترة |
 | 2.45 | InvoiceRepositoryBase.cs | أساس فاتورة: رأس وسطور |
 | 2.46 | LookupRepositoryBase.cs | ما يتقاسمه مستودعات القوائم |
 | 2.47 | PartyRepositoryBase.cs | ما يتقاسمه مستودعا العملاء والموردين |
@@ -108,6 +109,8 @@
 | 3.03 | InventoryCosting.cs | تسعير المخزون بالمتوسط المرجَّح المتحرّك |
 | 3.04 | LayoutCalc.cs | مقاييس العرض والطباعة |
 | 3.05 | LineCalc.cs | مصدر واحد لحساب مبالغ المستندات |
+| 3.05a | AnalyticsCalc.cs | مؤشرات التحليل المسمّاة: النمو والحصة وأيام الرصيد ودورة النقد والأعمار وABC والدوران والركود |
+| 3.05b | SettlementCalc.cs | توزيع السداد: المسمّى أولاً ثم الأقدم، والاستحقاق من شروط الدفع |
 | 3.06 | PartyCalc.cs | قواعد الطرف النقيّة |
 | 3.07 | PayrollCalc.cs | حساب الراتب |
 | 3.08 | StatementCalc.cs | مقاييس القوائم المالية |
@@ -196,6 +199,7 @@
 | | **DTOs/Common/** | بيانات مشتركة: ترخيص ونسخة |
 | 4.09 | CategoryFilter.cs | مرشّح الفئات |
 | 4.10 | EditionDto.cs | طلب إنشاء نسخة برنامج |
+| 4.10a | DatabaseSettingsDto.cs | قاعدة البيانات في ملف الإعداد: نوعها ومجلد ملفها واسمه أو خادمها |
 | 4.11 | LicenseDto.cs | بيانات الترخيص |
 | | **DTOs/Documents/** | بيانات مستندات الدورة |
 | 4.12 | CycleDocumentDto.cs | بيانات مستند الدورة |
@@ -237,6 +241,7 @@
 | 4.39 | OpeningBalanceService.cs | الأرصدة الافتتاحية ليست جدولاً موازياً |
 | | **PageServices/Admin/** | الإعدادات والتراخيص والنسخ والتحديث |
 | 4.40 | ISettingsService.cs | عقد الإعدادات |
+| 4.40a | DatabaseSettingsService.cs | قاعدة البيانات تُقرأ من appsettings.json وتُكتب فيه، والتغيير يسري بعد إعادة التشغيل |
 | 4.41 | LicenseService.cs | تراخيص العملاء |
 | 4.42 | ProgramEditionService.cs | نسخةُ برنامجٍ مستقلّة في مسارٍ |
 | 4.43 | SettingsService.cs | طبقة الأعمال فوق ISettingsProvider |
@@ -312,6 +317,10 @@
 | 4.98 | PartyReportService.cs | أرصدة الأطراف وكشوفها |
 | 4.99 | PayslipReportService.cs | قسيمة راتب موظف |
 | 4.100 | ReportData.cs | مخرَج التقرير |
+| 4.100a | FlowReportService.cs | تقارير متابعة السحب: المصدر ومقدار ما سُحب منه في المرحلة التالية والأخيرة |
+| 4.100b | AnalyticsData.cs | مخرَج لوحة التحليل: بطاقاتٌ ورسومٌ بمفاتيحها |
+| 4.100c | AnalyticsService.cs | لوحات التحليل الخمس من تجميعات المستودعات ومؤشرات الدومين |
+| 4.100d | AgingReportService.cs | أعمار ديون العملاء والموردين حتى +١٥٠، وسداد كل فاتورة وتاريخ آخر دفعة |
 | 4.101 | ReportRows.cs | ميزان المراجعة القياسي |
 | 4.102 | ReportServiceBase.cs | ما يتقاسمه كل تقرير |
 | 4.103 | SalesReportService.cs | تقرير المبيعات |
@@ -340,6 +349,7 @@
 | 4.123 | Tree.cs | الشجرة من صفوفٍ مسطّحة |
 | | **Services/Ledger/** | قلب القيد، أرصدة الحسابات، الفترة، القيد بطرفيه والتجارة، الحرّاس، رصيد الطرف |
 | 4.124 | AccountBalances.cs | أرصدة الحسابات من قيودها |
+| | Settlement.cs | سداد فواتير الطرف يُعاد حسابه كاملاً بترتيب التاريخ بعد كل فاتورة أو مرتجع أو سند |
 | 4.125 | ClosingEntry.cs | قيد إقفال السنة |
 | 4.126 | DepreciationCharges.cs | أقساط الإهلاك وأثرها |
 | 4.127 | DisposalEntry.cs | قيد استبعاد الأصل |
@@ -385,7 +395,16 @@
 
 | # | الملف | الوظيفة |
 |---|---|---|
-| 5.01 | Colors.xaml | ألوان النظام |
+| 5.01 | Colors/Navy.xaml | ألوان هوية كحلي — كل ملف في `Colors/` هوية باسمه |
+| 5.01a | Colors/Azure.xaml | ألوان هوية أزرق سماوي |
+| 5.01b | Colors/Burgundy.xaml | ألوان هوية عنّابي |
+| 5.01c | Colors/Emerald.xaml | ألوان هوية زمرّدي |
+| 5.01d | Colors/Graphite.xaml | ألوان هوية غرافيت |
+| 5.01e | Colors/Gray.xaml | ألوان هوية رمادي فاتح |
+| 5.01f | Colors/Indigo.xaml | ألوان هوية نيلي |
+| 5.01g | Colors/Olive.xaml | ألوان هوية زيتي |
+| 5.01h | Colors/Plum.xaml | ألوان هوية برقوقي |
+| 5.01i | Colors/Teal.xaml | ألوان هوية بترولي |
 | 5.02 | Sizes.xaml | مقاسات النظام |
 | 5.03 | Theme.xaml | دمج طبقات التصميم |
 | | **Icons/** | الأيقونات |
@@ -440,6 +459,7 @@
 | 6.28 | AppPagination.xaml.cs | عرض AppPagination |
 | 6.29 | AppStatCard.xaml | واجهة |
 | 6.30 | AppStatCard.xaml.cs | عرض AppStatCard |
+| 6.30a | AppChart.cs | رسمٌ بياني متحرّك (أعمدة، أشرطة، خط، مساحة، حلقة) من ChartData بألوان الهوية |
 | 6.31 | AppTabControl.xaml | واجهة |
 | 6.32 | AppTabControl.xaml.cs | عرض AppTabControl |
 | 6.33 | AppTabItem.cs | عرض AppTabItem |
@@ -530,6 +550,7 @@
 | 6.110 | NavigationService.cs | ينقل بين صفحات مسجَّلة بمفتاح |
 | 6.111 | PaperNodeRenderer.cs | مترجم PaperNode إلى عناصر WPF |
 | 6.112 | PaperTheme.cs | قيم الورق كلها من PrintTheme.xaml |
+| | VisualSnapshot.cs | صورة PNG لعنصرٍ معروض كما يُرى (مع قلب RTL) للطباعة والتصدير |
 | 6.113 | PrintDialogHost.cs | الواجهة المرئية للطباعة |
 | 6.114 | PrintService.cs | يبني مستندات الطباعة من IPrintable |
 | 6.115 | ToastHostWindow.xaml | واجهة |
@@ -537,12 +558,12 @@
 | 6.117 | ToastService.cs | يعرض إشعارات Toast فوق أي |
 | 6.118 | UIServices.cs | نقطة وصول واحدة لحاوية DI |
 | 6.119 | UpdateFlow.cs | البحث عن تحديث وتنزيله |
+| 6.119b | AppTitleBar.xaml.cs | شريط عنوان النافذة بلون البرنامج وأزرار التصغير والتكبير والإغلاق |
 | | **ViewModels/** | نماذج العرض مجموعةً بأقسامها |
 | 6.120 | AccountsViewModel.cs | نماذج عرض AccountsViewModel |
 | 6.121 | BaseViewModel.cs | نماذج عرض BaseViewModel |
 | 6.122 | CategoryListViewModel.cs | قائمة فئات الوحدة |
 | 6.123 | CycleDocumentViewModels.cs | نماذج عرض CycleDocumentViewModelBase |
-| 6.124 | CycleVoucherViewModels.cs | نماذج عرض CycleVoucherViewModelBase |
 | 6.125 | DocumentViewModels.cs | نماذج عرض JournalsViewModel |
 | 6.126 | DynamicViewModel.cs | نموذج عرض أي شاشة صفوفها |
 | 6.127 | HrMovementViewModels.cs | البدل والخصم شاشةٌ واحدة بخدمتين |
@@ -569,6 +590,7 @@
 | 7.07 | PermissionTreeFactory.cs | يبني شجرة الصلاحيات من PermissionKeys |
 | 7.08 | PullSource.cs | مصدر السحب وأثره المخزني |
 | 7.09 | ReportDefinition.cs | وصف التقرير ومعاملاته |
+| 7.09a | DashboardDefinition.cs | لوحة تحليل: سؤالها وبطاقاتها ورسومها والخدمة التي تحسبها |
 | 7.10 | RowAction.cs | إجراء إضافي على السجل المحدَّد |
 | 7.11 | RowPage.cs | صفحة صفوفٍ من خدمتها |
 | 7.12 | SettingsTabs.cs | تبويبات صفحة الإعدادات |
@@ -600,6 +622,8 @@
 | 7.34 | PaginationBar.cs | شريط الترقيم مربوطاً بنموذج العرض |
 | 7.35 | PullDialog.cs | نافذة "سحب من" |
 | 7.36 | ReportRenderer.cs | تصيير التقرير |
+| 7.36a | ReportParameters.cs | معاملات صفحةٍ تستدعي خدمةً بالاسم، والاستدعاء بقيمها |
+| 7.36b | DashboardRenderer.cs | تصيير لوحة التحليل: البطاقات ثم الرسوم، وكلٌّ يفتح تقريره |
 | 7.37 | Resolve.cs | حلّ نموذج العرض والخدمة |
 | 7.38 | SettingsPageRenderer.cs | تصيير صفحة الإعدادات |
 | 7.39 | ToolbarActions.cs | أزرار الصفحة بعد ترشيحها بما |
@@ -615,13 +639,13 @@
 | 8.02 | BuilderRegistrations.cs | شاشات وحدة البناء نفسها |
 | 8.03 | CycleDocumentRegistrations.cs | تسجيل مستندات الدورة |
 | 8.04 | CycleFlow.cs | سلسلة السحب في الدورة الشاملة |
-| 8.05 | CycleVoucherRegistrations.cs | تسجيل سندات الدورة |
 | 8.06 | FinancialStatementColumns.cs | أعمدة القوائم المالية |
 | 8.07 | HrRegistrations.cs | شاشات الموارد البشرية التي يجمع |
 | 8.08 | LookupPages.cs | إعلانات صفحات القوائم |
 | 8.09 | ModuleRegistrations.cs | يسجّل كل وحدة عمل فعلية |
 | 8.10 | PermissionModuleRegistrations.cs | شاشتا الصلاحيات |
 | 8.11 | ReportRegistrations.cs | التقارير الثلاثة عشر |
+| 8.11a | AnalyticsRegistrations.cs | لوحات قسم التحليلات: لكلٍّ سؤالٌ إداري |
 | 8.12 | StockDocumentFactory.cs | رأس المستند المخزني وسطوره |
 | 8.13 | TreasuryRegistrations.cs | الخزائن والسندات والشيكات |
 
@@ -702,12 +726,17 @@
 | 11.46 | CategoryServiceTests.cs | الفئات وحساباتها |
 | 11.47 | CustomerServiceTests.cs | قاعدة بيانات خاصة معزولة لكل |
 | 11.48 | CycleDocumentServiceTests.cs | مستندات الدورة |
-| 11.49 | CycleVoucherServiceTests.cs | سندات الدورة |
+| 11.49 | CycleVoucherServiceTests.cs | إذنا الإضافة والصرف |
 | 11.50 | DocumentLinkServiceTests.cs | تتبّع السحب |
 | 11.51 | EmployeeListTests.cs | القائمة تحمل اسمَي القسم والوظيفة |
 | 11.52 | ExportServiceTests.cs | تصدير CSV وExcel وPDF فعلي |
 | 11.53 | FiscalPeriodServiceTests.cs | قاعدة معزولة لكل اختبار |
 | 11.54 | FlowModeStockTests.cs | الفرق بين الوضعين |
+| 11.54a | FlowReportTests.cs | تقارير متابعة السحب |
+| 11.54b | AnalyticsTests.cs | مؤشرات التحليل ولوحاته |
+| 11.54c | SettlementTests.cs | توزيع السداد وأعمار الديون |
+| 11.54d | Tools/DemoDataTool.cs | بياناتٌ وهمية عبر الخدمات إلى ملف PRIMEERP_DEMO_DB بعد نسخةٍ احتياطية |
+| 11.54e | Tools/DashboardSnapshotTool.cs | صور لوحات التحليل لمراجعة التصميم إلى PRIMEERP_SNAPSHOT_OUT |
 | 11.55 | InventoryCostingTests.cs | المتوسط المرجَّح المتحرّك |
 | 11.56 | ItemCardReportTests.cs | تقرير حركة الصنف بالمتوسط المرجَّح |
 | 11.57 | JournalServiceTests.cs | قاعدة بيانات خاصة معزولة لكل |

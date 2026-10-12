@@ -33,5 +33,6 @@ namespace PrimeERP.Domain.Entities
         public string  InvoiceNo   { get; set; }
         public decimal Amount      { get; set; }
         public string  Notes       { get; set; }
+        public bool    IsAuto      { get; set; }
     }
 }

@@ -40,13 +40,16 @@ namespace PrimeERP.Application.PageServices.Sales
         private readonly ILookupRepository<Warehouse> _warehouses;
         private readonly INumberSequenceService _numbers;
 
+        private readonly Settlement _settlement;
+
         public SalesInvoiceService(IInvoiceRepository<SalesInvoice, SalesInvoiceLine> invoices, IProductRepository products,
             IPartyRepository<Customer> customers, ILookupRepository<Warehouse> warehouses, IStockMove stock,
             Entries journal, INumberSequenceService numbers, IDocumentPull links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
-            AccountOf accountOf)
+            AccountOf accountOf, Settlement settlement)
             : base(permissions, settings, localization, audit, links, journal, stock)
         {
+            _settlement = settlement;
             _invoices = invoices; _products = products; _customers = customers; _warehouses = warehouses;
             _numbers = numbers; _accountOf = accountOf;
         }
@@ -102,6 +105,7 @@ namespace PrimeERP.Application.PageServices.Sales
                 var id = _invoices.InsertHeader(db, Rows.Copy(dto, new SalesInvoice(), to =>
                 {
                     to.InvoiceNo = invoiceNo;
+                    to.DueDate = SettlementCalc.DueDate(dto.InvoiceDate, _customers.GetById(dto.CustomerId, db)?.PaymentTermDays ?? 0);
                     to.SubTotal = totals.Gross;
                     to.DiscountAmount = totals.Discount;
                     to.VatAmount = totals.Vat;
@@ -110,8 +114,9 @@ namespace PrimeERP.Application.PageServices.Sales
                     to.Status = InvoiceStatus.Confirmed;
                 }));
 
-                // تكلفة الصرف من متوسط اللحظة
-                var costs = Stock.GetIssueCosts(db, lines.Select(x => (x.ProductId, x.Qty)).ToList());
+                var costs = simplifiedFlow
+                    ? Stock.GetIssueCosts(db, lines.Select(x => (x.ProductId, x.Qty)).ToList())
+                    : Result.Ok(Stock.GetIssuedCosts(db, "StockOut", lines.Select((x, i) => (x.ProductId, x.Qty, dto.Lines[i].SourceId, dto.Lines[i].SourceLineId)).ToList()));
                 if (costs.IsFailure) throw new InvalidOperationException(costs.ErrorMessage);
 
                 var inserted = new List<(IPullableLine Line, int TargetLineId, decimal Qty)>();
@@ -121,7 +126,7 @@ namespace PrimeERP.Application.PageServices.Sales
                     inserted.Add((dto.Lines[i], _invoices.InsertLine(db, id, line), line.Qty));
 
                     var moveResult = simplifiedFlow
-                        ? Stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.Out, line.Qty,
+                        ? Stock.Move(db, line, dto.WarehouseId, MovementType.Out, line.Qty,
                             InventoryCosting.UnitCostOf(costs.Value.Lines[i], line.Qty), StockSource, id, invoiceNo, dto.InvoiceDate)
                         : Result.Ok();
                     if (moveResult.IsFailure) throw new InvalidOperationException(moveResult.ErrorMessage);
@@ -132,6 +137,7 @@ namespace PrimeERP.Application.PageServices.Sales
                 var journalLines = TradeEntry.Lines(true, partyAccount.Value, accounts.Main, accounts.Vat, accounts.Withholding, totals, accounts.Cogs, accounts.Inventory, costs.Value.Total);
                 _invoices.SetJournalEntryId(db, id, Posting.Entry(Journals, db, dto.InvoiceDate, Msg("EntryDescription", invoiceNo),
                     nameof(JournalSource.Sales), journalLines));
+                _settlement.Recalculate(db, PartyKind.Customer, dto.CustomerId);
                 return id;
             });
         }
@@ -142,6 +148,7 @@ namespace PrimeERP.Application.PageServices.Sales
             Stock.RemoveMovements(db, StockSource, head.Id);
             Links.RemovePull(EntityName, head.Id, db);
             _invoices.DeleteDocument(db, head.Id);
+            _settlement.Recalculate(db, PartyKind.Customer, head.CustomerId);
         }
 
         private T ToDto<T>(SalesInvoice i, IReadOnlyDictionary<int, string> names, IReadOnlyDictionary<int, string> warehouses)

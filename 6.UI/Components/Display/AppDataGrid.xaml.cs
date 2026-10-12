@@ -95,21 +95,6 @@ namespace PrimeERP.UI.Components.Display
 
         public Func<object, string> RowHighlightSelector { get; set; }
 
-        public static readonly DependencyProperty UseAlternatingRowsProperty =
-            DependencyProperty.Register(nameof(UseAlternatingRows), typeof(bool), typeof(AppDataGrid),
-                new PropertyMetadata(true, (d, _) => ((AppDataGrid)d).grid.AlternatingRowBackground =
-                    ((AppDataGrid)d).AlternatingRowBrush));
-
-        public bool UseAlternatingRows
-        {
-            get => (bool)GetValue(UseAlternatingRowsProperty);
-            set => SetValue(UseAlternatingRowsProperty, value);
-        }
-
-        private Brush AlternatingRowBrush => UseAlternatingRows
-            ? (Brush)FindResource("GridRowAltBg")
-            : Brushes.Transparent;
-
         public IReadOnlyList<object> SelectedItems => grid.SelectedItems.Cast<object>().ToList();
 
         public event EventHandler<object> RowDoubleClick;
@@ -333,7 +318,7 @@ namespace PrimeERP.UI.Components.Display
             {
                 var group = _visibleColumns[index].Group;
                 var span = 1;
-                while (index + span < _visibleColumns.Count && _visibleColumns[index + span].Group == group) span++;
+                while (!string.IsNullOrEmpty(group) && index + span < _visibleColumns.Count && _visibleColumns[index + span].Group == group) span++;
 
                 var text = new TextBlock
                 {
@@ -343,11 +328,18 @@ namespace PrimeERP.UI.Components.Display
                     FontWeight = FontWeights.SemiBold,
                     Margin = new Thickness(4, 8, 4, 8)
                 };
-                text.SetResourceReference(TextBlock.ForegroundProperty, "GridHeaderFg");
+                text.SetResourceReference(TextBlock.ForegroundProperty, "TableHeaderText");
 
-                Grid.SetColumn(text, index);
-                Grid.SetColumnSpan(text, span);
-                groupHeader.Children.Add(text);
+                var cell = new Border
+                {
+                    Child = text,
+                    BorderThickness = new Thickness(index == 0 ? 0 : 1, 0, 0, 1)
+                };
+                cell.SetResourceReference(Border.BackgroundProperty, "TableHeaderBg");
+                cell.SetResourceReference(Border.BorderBrushProperty, "TableHeaderBorder");
+                Grid.SetColumn(cell, index);
+                Grid.SetColumnSpan(cell, span);
+                groupHeader.Children.Add(cell);
 
                 if (string.IsNullOrEmpty(group)) dataColumns[index].Header = "";
 

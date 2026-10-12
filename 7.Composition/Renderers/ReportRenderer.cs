@@ -23,24 +23,7 @@ namespace PrimeERP.Composition.Renderers
 
             var header = new PageHeader();
 
-            var paramPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(24, 16, 24, 0) };
-            var controls = new Dictionary<string, FrameworkElement>();
-            foreach (var p in report.Parameters)
-            {
-                var fieldDef = new FieldDefinition
-                {
-                    Key = p.Key, LabelKey = p.LabelKey, Kind = p.Kind,
-                    PickerType = p.PickerType, PickerCategoryModuleKey = p.PickerCategoryModuleKey,
-                    PickerLeafOnly = p.PickerLeafOnly
-                };
-                var control = DialogRenderer.BuildField(fieldDef);
-                if (p.Kind == FieldKind.Picker) DialogRenderer.LoadPickerItems((PrimeERP.UI.Components.Inputs.AppComboBox)control, fieldDef, services);
-                if (p.DefaultValue != null) DialogRenderer.SetControlValue(control, fieldDef, p.DefaultValue);
-                control.Width = 200;
-                control.Margin = new Thickness(0, 0, 12, 0);
-                controls[p.Key] = control;
-                paramPanel.Children.Add(control);
-            }
+            var (paramPanel, readParameters) = ReportParameters.Build(report.Parameters, services);
 
             var runButton = new PrimeERP.UI.Components.Actions.AppButton { Text = LocalizationService.Get("Str.Report.Run"), Variant = "primary", Size = "sm" };
             paramPanel.Children.Add(runButton);
@@ -68,11 +51,7 @@ namespace PrimeERP.Composition.Renderers
 
             void RunReport()
             {
-                var paramValues = new Dictionary<string, object>();
-                foreach (var p in report.Parameters)
-                    paramValues[p.Key] = DialogRenderer.GetControlValue(controls[p.Key], p.Kind);
-
-                var result = Run(report, services, paramValues);
+                var result = Run(report, services, readParameters());
                 if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
 
                 current = result.Value;
@@ -83,7 +62,6 @@ namespace PrimeERP.Composition.Renderers
                     currentTitle = $"{currentTitle} — {suffix}";
 
                 resultGrid.RowHighlightSelector = report.RowKind;
-                resultGrid.UseAlternatingRows = report.AlternatingRows;
                 resultGrid.ColumnsSource = report.Columns;
                 resultGrid.ItemsSource = current.Rows;
                 resultGrid.SummaryText = current.Totals is { Count: > 0 }
@@ -114,32 +92,10 @@ namespace PrimeERP.Composition.Renderers
         public static Result<PrimeERP.Application.Reporting.ReportData> Run(
             ReportDefinition report, IServiceProvider services, Dictionary<string, object> parameters)
         {
-            var service = services.GetRequiredService(report.ServiceType);
-            var method = report.ServiceType.GetMethod(report.Method);
-
-            if (method == null)
-                return Result.Fail<PrimeERP.Application.Reporting.ReportData>(
-                    LocalizationService.Get("Str.Composition.MissingMethod", report.ServiceType.Name, report.Method));
-
             if (report.FixedArguments != null)
                 foreach (var fixedArgument in report.FixedArguments) parameters[fixedArgument.Key] = fixedArgument.Value;
 
-            var signature = method.GetParameters();
-            var args = new object[signature.Length];
-
-            for (var i = 0; i < signature.Length; i++)
-            {
-                var key = i < report.Arguments.Length ? report.Arguments[i] : signature[i].Name;
-                parameters.TryGetValue(key, out var value);
-
-                var target = Nullable.GetUnderlyingType(signature[i].ParameterType) ?? signature[i].ParameterType;
-                args[i] = value == null
-                    ? (signature[i].ParameterType.IsValueType && Nullable.GetUnderlyingType(signature[i].ParameterType) == null
-                        ? Activator.CreateInstance(signature[i].ParameterType) : null)
-                    : Convert.ChangeType(value, target);
-            }
-
-            return (Result<PrimeERP.Application.Reporting.ReportData>)method.Invoke(service, args);
+            return ReportParameters.Invoke<PrimeERP.Application.Reporting.ReportData>(report.ServiceType, report.Method, report.Arguments, parameters, services);
         }
     }
 }

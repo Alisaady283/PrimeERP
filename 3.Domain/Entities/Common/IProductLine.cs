@@ -1,3 +1,5 @@
+using System;
+
 namespace PrimeERP.Domain.Entities.Common
 {
     /// <summary>سطرٌ بصنفه</summary>
@@ -6,5 +8,7 @@ namespace PrimeERP.Domain.Entities.Common
         int    ProductId   { get; set; }
         string ProductCode { get; set; }
         string ProductName { get; set; }
+        string BatchNo     { get; set; }
+        DateTime? ExpiryDate { get; set; }
     }
 }

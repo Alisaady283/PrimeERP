@@ -121,6 +121,12 @@ namespace PrimeERP.Composition.Pull
                 : 0m;
         }
 
+        public string DocNoOf(string docType, int docId)
+        {
+            var service = ResolveService(docType);
+            return service == null ? null : (ReadValue(Invoke(service, "GetById", docId), "Value") as ISourceDocument)?.DocNo;
+        }
+
         private static readonly string[] HeaderKeys = { "PartyId", "CustomerId", "SupplierId", "WarehouseId" };
 
         private static Dictionary<string, object> ReadHeaderValues(object detail)

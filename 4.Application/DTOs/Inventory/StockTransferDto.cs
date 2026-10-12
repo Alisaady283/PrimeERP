@@ -28,6 +28,8 @@ namespace PrimeERP.Application.DTOs.Inventory
         public string  ProductName { get; set; }
         public decimal Qty         { get; set; }
         public string  Notes       { get; set; }
+        public string  BatchNo     { get; set; }
+        public System.DateTime? ExpiryDate { get; set; }
     }
 
     public class CreateStockTransferLineDto
@@ -36,6 +38,8 @@ namespace PrimeERP.Application.DTOs.Inventory
         public string  ProductCode { get; set; }
         public decimal Qty         { get; set; }
         public string  Notes       { get; set; }
+        public string  BatchNo     { get; set; }
+        public System.DateTime? ExpiryDate { get; set; }
     }
 
     public class CreateStockTransferDto

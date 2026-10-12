@@ -26,10 +26,8 @@ namespace PrimeERP.Tests.Composition
             _db.Services.GetRequiredService<IModuleRegistry>().Get("RolePermissions").TreeCheckList;
 
         [Theory]
-        [InlineData("GoodsReceipt")]
-        [InlineData("GoodsIssue")]
-        [InlineData("DeliveryNote")]
-        [InlineData("SalesReceipt")]
+        [InlineData("StockIn")]
+        [InlineData("StockOut")]
         public void AStockVoucher_OpensForARoleGrantedIt(string moduleKey)
         {
             var roleId = _db.Permissions.InsertRole($"Keeper{moduleKey}", "أمين مخزن");
@@ -50,10 +48,8 @@ namespace PrimeERP.Tests.Composition
         }
 
         [Theory]
-        [InlineData("Inventory.GoodsReceipt")]
-        [InlineData("Inventory.GoodsIssue")]
-        [InlineData("Inventory.DeliveryNote")]
-        [InlineData("Inventory.SalesReceipt")]
+        [InlineData("Inventory.StockIn")]
+        [InlineData("Inventory.StockOut")]
         public void AStockVoucherKey_AppearsInTheRoleScreen(string key)
         {
             var roleId = _db.Permissions.InsertRole($"Empty{key}", "فارغ");

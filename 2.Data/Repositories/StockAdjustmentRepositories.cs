@@ -20,10 +20,7 @@ namespace PrimeERP.Data.Repositories
 
     public interface IStockOutRepository : IStockInRepository { }
 
-    public interface IGoodsReceiptRepository : IStockInRepository { }
-    public interface IGoodsIssueRepository : IStockInRepository { }
-    public interface IDeliveryNoteRepository : IStockInRepository { }
-    public interface ISalesReceiptRepository : IStockInRepository { }
+    public interface IScrapRepository : IStockInRepository { }
 
 /// <summary>مستودع StockIn</summary>
 
@@ -37,23 +34,9 @@ namespace PrimeERP.Data.Repositories
         public StockOutRepository() : base("StockOutDocuments", "StockOutLines") { }
     }
 
-    public class GoodsReceiptRepository : StockAdjustmentRepositoryBase, IGoodsReceiptRepository
+    public class ScrapRepository : StockAdjustmentRepositoryBase, IScrapRepository
     {
-        public GoodsReceiptRepository() : base("GoodsReceiptDocuments", "GoodsReceiptLines") { }
+        public ScrapRepository() : base("ScrapDocuments", "ScrapLines") { }
     }
 
-    public class GoodsIssueRepository : StockAdjustmentRepositoryBase, IGoodsIssueRepository
-    {
-        public GoodsIssueRepository() : base("GoodsIssueDocuments", "GoodsIssueLines") { }
-    }
-
-    public class DeliveryNoteRepository : StockAdjustmentRepositoryBase, IDeliveryNoteRepository
-    {
-        public DeliveryNoteRepository() : base("DeliveryNoteDocuments", "DeliveryNoteLines") { }
-    }
-
-    public class SalesReceiptRepository : StockAdjustmentRepositoryBase, ISalesReceiptRepository
-    {
-        public SalesReceiptRepository() : base("SalesReceiptDocuments", "SalesReceiptLines") { }
-    }
 }

@@ -8,7 +8,7 @@ namespace PrimeERP.Domain.Contracts
     /// <summary>عقد الطباعة ومفرداته</summary>
     public enum PrintOrientation { Portrait, Landscape }
 
-    public enum PrintSectionType { Title, KeyValues, Table, Text, Spacer, Callout, Parties, AmountInWords, Terms, Barcode }
+    public enum PrintSectionType { Title, KeyValues, Table, Text, Spacer, Callout, Parties, AmountInWords, Terms, Barcode, Image }
 
     public static class PrintTotals
     {
@@ -97,5 +97,7 @@ namespace PrimeERP.Domain.Contracts
         bool Framed => false;
 
         bool HalfPage => false;
+
+        bool Roll => false;
     }
 }

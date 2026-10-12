@@ -22,6 +22,7 @@ namespace PrimeERP.Application.Services.Documents
         public int    DocId   { get; init; }
         public string DocNo   { get; init; }
         public decimal Qty    { get; init; }
+        public bool   Upstream { get; init; }
     }
 
     public interface IDocumentPull
@@ -135,14 +136,18 @@ namespace PrimeERP.Application.Services.Documents
             var chain = new List<ChainNode>();
 
             foreach (var link in _links.GetByTarget(docType, docId))
-                chain.Add(new ChainNode { DocType = link.SourceType, DocId = link.SourceId, DocNo = link.SourceNo, Qty = link.PulledQty });
+                chain.Add(new ChainNode { DocType = link.SourceType, DocId = link.SourceId, DocNo = link.SourceNo, Qty = link.PulledQty, Upstream = true });
 
             foreach (var link in _links.GetBySource(docType, docId))
                 chain.Add(new ChainNode { DocType = link.TargetType, DocId = link.TargetId, Qty = link.PulledQty });
 
             return Result.Ok(chain
-                .GroupBy(c => new { c.DocType, c.DocId })
-                .Select(g => new ChainNode { DocType = g.Key.DocType, DocId = g.Key.DocId, DocNo = g.First().DocNo, Qty = g.Sum(x => x.Qty) })
+                .GroupBy(c => new { c.DocType, c.DocId, c.Upstream })
+                .Select(g => new ChainNode
+                {
+                    DocType = g.Key.DocType, DocId = g.Key.DocId, Upstream = g.Key.Upstream, Qty = g.Sum(x => x.Qty),
+                    DocNo = g.First().DocNo ?? _sources?.DocNoOf(g.Key.DocType, g.Key.DocId)
+                })
                 .ToList());
         }
     }

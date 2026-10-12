@@ -9,15 +9,17 @@ namespace PrimeERP.Composition.Registry
     {
         public static readonly (string Key, string IconKey, string[] Modules)[] Coded =
         {
-            ("Accounting", "IconAccounts", new[] { "Accounts", "Journals", "OpeningBalances" }),
-            ("Sales", "IconSales", new[] { "Quotation", "SalesOrder", "SalesInvoices", "SalesReturns", "Customers" }),
-            ("Purchases", "IconPurchases", new[] { "PurchaseRequest", "PurchaseOrder", "PurchaseInvoices", "PurchaseReturns", "Suppliers" }),
-            ("Inventory", "IconWarehouse", new[] { "Products", "Categories", "Brands", "Units", "Warehouses", "StockIn", "StockOut", "StockTransfer", "GoodsReceipt", "GoodsIssue", "DeliveryNote", "SalesReceipt" }),
+            ("Accounting", "IconAccounts", new[] { "Accounts", "Journals", "OpeningBalances", "TrialBalance", "AccountStatement", "IncomeStatement", "BalanceSheet", "CashFlow" }),
+            ("Sales", "IconSales", new[] { "Quotation", "SalesOrder", "SalesInvoices", "SalesReturns", "Customers", "CustomerBalances", "CustomerStatement", "SalesReport", "QuotationFollowUp", "SalesOrderFollowUp", "SalesReturnsByInvoice", "SalesReturnsUnlinked", "CustomerAging", "CustomerInvoiceSettlement" }),
+            ("Pos", "IconSales", new[] { "Pos", "PosShifts", "CashierReport" }),
+            ("Purchases", "IconPurchases", new[] { "PurchaseRequest", "PurchaseOrder", "PurchaseInvoices", "PurchaseReturns", "Suppliers", "SupplierBalances", "SupplierStatement", "PurchaseRequestFollowUp", "PurchaseOrderFollowUp", "PurchaseReturnsByInvoice", "PurchaseReturnsUnlinked", "SupplierAging", "SupplierInvoiceSettlement" }),
+            ("Inventory", "IconWarehouse", new[] { "Products", "Categories", "Brands", "Units", "Warehouses", "StockIn", "StockOut", "StockTransfer", "StockBalances", "ItemCard", "StockReport", "BatchReport", "ExpiryReport", "SalesReturnsPending", "PurchaseReturnsPending" }),
+            ("Manufacturing", "IconWarehouse", new[] { "BillsOfMaterials", "ProductionOrders", "Unbuild", "Scrap", "WorkCenters", "ProductionCostReport", "ConsumptionReport", "WorkCenterLoadReport", "ScrapReport" }),
             ("Treasury", "IconAccounts", new[] { "Treasuries", "Receipts", "Payments", "ChequeReceipts", "ChequeIssues", "Cheques" }),
-            ("Assets", "IconAssets", new[] { "Assets", "AssetCategories", "AssetRevaluations", "AssetDepreciations", "AssetDisposals" }),
-            ("HR", "IconHR", new[] { "Employees", "HrLists", "Attendances", "EmployeeAllowances", "EmployeeDeductions", "EmployeeAdvances", "Payroll" }),
-            ("Reports", "IconReports", new[] { "TrialBalance", "CustomerBalances", "SupplierBalances", "StockBalances", "AccountStatement", "CustomerStatement", "SupplierStatement", "ItemCard", "Payslip", "IncomeStatement", "BalanceSheet", "CashFlow", "StockReport", "SalesReport", "AssetRegister", "AssetsByCategory" }),
-            ("Settings", "IconSettings", new[] { "Settings", "Users", "Roles", "RolePermissions", "UserPermissions" }),
+            ("Assets", "IconAssets", new[] { "Assets", "AssetCategories", "AssetRevaluations", "AssetDepreciations", "AssetDisposals", "AssetRegister", "AssetsByCategory" }),
+            ("HR", "IconHR", new[] { "Employees", "HrLists", "Attendances", "EmployeeAllowances", "EmployeeDeductions", "EmployeeAdvances", "Payroll", "Payslip", "PayrollSummary", "AttendanceSummary", "AdvancesReport" }),
+            ("Reports", "IconReports", new[] { "ExecutiveAnalytics", "SalesAnalytics", "PurchaseAnalytics", "InventoryAnalytics", "LiquidityAnalytics", "PeopleAnalytics", "ProductionAnalytics" }),
+            ("Settings", "IconSettings", new[] { "Settings", "Branches", "Users", "Roles", "RolePermissions", "UserPermissions" }),
             ("Builder", "IconSettings", new[] { "BuilderSections", "BuilderModules", "BuilderColumns", "BuilderActions", "BuilderFilters", "BuilderExport" }),
         };
 

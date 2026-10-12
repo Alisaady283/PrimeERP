@@ -37,13 +37,16 @@ namespace PrimeERP.Application.PageServices.Purchasing
         private readonly IPartyRepository<Supplier> _suppliers;
         private readonly INumberSequenceService _numbers;
 
+        private readonly Settlement _settlement;
+
         public PurchaseReturnService(IReturnRepository<PurchaseReturn, PurchaseReturnLine> returns, IProductRepository products,
             IPartyRepository<Supplier> suppliers, IStockMove stock, Entries journal,
             INumberSequenceService numbers, IDocumentPull links,
             IPermissionService permissions, ISettingsProvider settings, ILocalizationService localization, IAuditLogger audit,
-            AccountOf accountOf)
+            AccountOf accountOf, Settlement settlement)
             : base(permissions, settings, localization, audit, links, journal, stock)
         {
+            _settlement = settlement;
             _returns = returns; _products = products; _suppliers = suppliers;
             _numbers = numbers; _accountOf = accountOf;
         }
@@ -111,7 +114,7 @@ namespace PrimeERP.Application.PageServices.Purchasing
                     var line = lines[i];
                     inserted.Add((dto.Lines[i], _returns.InsertLine(db, id, line), line.Qty));
                     var moveResult = simplifiedFlow
-                        ? Stock.RecordMovement(db, line.ProductId, dto.WarehouseId, MovementType.Out, line.Qty, line.UnitPrice,
+                        ? Stock.Move(db, line, dto.WarehouseId, MovementType.Out, line.Qty, line.UnitPrice,
                             StockSource, id, returnNo, dto.ReturnDate)
                         : Result.Ok();
                     if (moveResult.IsFailure) throw new InvalidOperationException(moveResult.ErrorMessage);
@@ -122,6 +125,7 @@ namespace PrimeERP.Application.PageServices.Purchasing
                 var journalLines = TradeEntry.Lines(true, partyAccount.Value, accounts.Inventory, accounts.Vat, accounts.Withholding, totals);
                 _returns.SetJournalEntryId(db, id, Posting.Entry(Journals, db, dto.ReturnDate, Msg("EntryDescription", returnNo),
                     nameof(JournalSource.Purchase), journalLines));
+                _settlement.Recalculate(db, PartyKind.Supplier, dto.SupplierId);
                 return id;
             });
         }
@@ -132,6 +136,7 @@ namespace PrimeERP.Application.PageServices.Purchasing
             Stock.RemoveMovements(db, StockSource, head.Id);
             Links.RemovePull(EntityName, head.Id, db);
             _returns.DeleteDocument(db, head.Id);
+            _settlement.Recalculate(db, PartyKind.Supplier, head.SupplierId);
         }
 
         private static T ToDto<T>(PurchaseReturn r, IReadOnlyDictionary<int, string> names) where T : PurchaseReturnDto, new() => Rows.Copy<T>(r, new(), to =>

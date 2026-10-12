@@ -45,6 +45,8 @@ namespace PrimeERP.Domain.Entities.Common
         public decimal LineTotal          { get; set; }
         public decimal NetAmount          { get; set; }
         public string  Notes              { get; set; }
+        public string  BatchNo            { get; set; }
+        public DateTime? ExpiryDate       { get; set; }
     }
 
     public abstract class InvoiceLineBase : DocumentLineBase

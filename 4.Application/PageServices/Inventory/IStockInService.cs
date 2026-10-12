@@ -15,8 +15,5 @@ namespace PrimeERP.Application.PageServices.Inventory
 
     public interface IStockOutService : IStockInService { }
 
-    public interface IGoodsReceiptService : IStockInService { }
-    public interface IGoodsIssueService : IStockInService { }
-    public interface IDeliveryNoteService : IStockInService { }
-    public interface ISalesReceiptService : IStockInService { }
+    public interface IScrapService : IStockInService { }
 }

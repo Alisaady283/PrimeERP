@@ -11,6 +11,8 @@ namespace PrimeERP.Composition.Print
         {
             new() { Key = "ProductCode", Header = LocalizationService.Get("Str.Code"),        Width = 1.3, IsText = true },
             new() { Key = "ProductName", Header = LocalizationService.Get("Str.Line.ProductName"),    Width = 2.4, IsText = true },
+            new() { Key = "BatchNo",     Header = LocalizationService.Get("Str.Batch"),     Width = 1.0, IsText = true, ShownWhen = PrimeERP.Platform.Settings.Editions.TracksExpiry },
+            new() { Key = "ExpiryDate",  Header = LocalizationService.Get("Str.ExpiryDate"), Width = 1.0, Format = "yyyy-MM-dd", ShownWhen = PrimeERP.Platform.Settings.Editions.TracksExpiry },
             new() { Key = "Qty",         Header = LocalizationService.Get("Str.Qty"),       Width = 0.8 },
             new() { Key = "UnitPrice",   Header = LocalizationService.Get("Str.Line.Price"),        Width = 1.0 },
             new() { Key = "LineTotal",   Header = LocalizationService.Get("Str.Total"),     Width = 1.1 },
@@ -20,6 +22,8 @@ namespace PrimeERP.Composition.Print
             new() { Key = "NetAmount",   Header = LocalizationService.Get("Str.Print.NetAmount"),  Width = 1.2 },
             new() { Key = "Notes",       Header = LocalizationService.Get("Str.Notes"),     Width = 1.6, IsText = true },
         };
+
+        public static readonly string[] ReceiptColumns = { "ProductName", "Qty", "UnitPrice", "NetAmount" };
 
         public static LineFieldDefinition NetColumn() => new()
         {
