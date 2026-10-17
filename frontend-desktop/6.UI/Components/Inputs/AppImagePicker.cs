@@ -1,0 +1,73 @@
+using PrimeERP.UI.Services;
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using PrimeERP.Platform.Localization;
+
+
+namespace PrimeERP.UI.Components.Inputs
+{
+    /// <summary>حقل صورة قيمته نص Base64</summary>
+    public class AppImagePicker : UserControl
+    {
+        private readonly Image _preview = new() { Stretch = Stretch.Uniform, Height = 96, Margin = new Thickness(0, 0, 12, 0) };
+        private readonly TextBlock _empty = new() { Text = LocalizationService.Get("Str.Image.None"), VerticalAlignment = VerticalAlignment.Center };
+        private string _base64;
+        private string _error;
+        private readonly int? _size;
+
+        public AppImagePicker(string label, int? size = null)
+        {
+            _size = size;
+            var pick = new Actions.AppButton { Text = LocalizationService.Get("Str.Image.Pick"), Variant = "secondary", Size = "sm", Margin = new Thickness(0, 0, 0, 6) };
+            var clear = new Actions.AppButton { Text = LocalizationService.Get("Str.Image.Remove"), Variant = "ghost", Size = "sm" };
+
+            pick.Click += (_, __) => PickFile();
+            clear.Click += (_, __) => Value = null;
+
+            _empty.SetResourceReference(TextBlock.ForegroundProperty, "TextMuted");
+
+            var buttons = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { pick, clear } };
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Children = { _preview, _empty, buttons } };
+
+            var caption = new TextBlock { Text = label, Margin = new Thickness(0, 0, 0, 6) };
+            caption.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondary");
+
+            Content = new StackPanel { Children = { caption, row } };
+            Render();
+        }
+
+        public string Value
+        {
+            get => _base64;
+            set { _base64 = string.IsNullOrWhiteSpace(value) ? null : value; Render(); }
+        }
+
+        private void PickFile()
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = LocalizationService.Get("Str.Image.DialogTitle"),
+                Filter = LocalizationService.Get("Str.Image.Filter")
+            };
+            if (dialog.ShowDialog() != true) return;
+
+            try { Value = _size is { } size ? ImageData.Encode(dialog.FileName, size, jpeg: true) : ImageData.Encode(dialog.FileName); _error = null; }
+            catch (Exception ex) { Value = null; _error = LocalizationService.Get("Str.Image.ReadFailed", ex.Message); }
+
+            Render();
+        }
+
+        private void Render()
+        {
+            var image = ImageData.Decode(_base64);
+            _preview.Source = image;
+            _preview.Visibility = image == null ? Visibility.Collapsed : Visibility.Visible;
+            _empty.Visibility = image == null ? Visibility.Visible : Visibility.Collapsed;
+            _empty.Text = _error ?? LocalizationService.Get("Str.Image.None");
+            _empty.SetResourceReference(TextBlock.ForegroundProperty, _error == null ? "TextMuted" : "Danger");
+        }
+    }
+}

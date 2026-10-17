@@ -5,7 +5,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, "Tools/Docs")
+sys.path.insert(0, "Tools")
 from model import entities
+from layers import place
 
 TABLES = json.load(open("Tools/Docs/schema.json", encoding="utf-8"))
 BOND = json.load(open("Tools/Docs/bond.json", encoding="utf-8"))["bond"]
@@ -104,7 +106,7 @@ def emit(table, entity, ents, shared_type):
 
 
 if __name__ == "__main__":
-    target = Path("2.Data/Core/PrimeDbContext.cs")
+    target = place("2.Data/Core/PrimeDbContext.cs")
     target.write_text(build(), encoding="utf-8")
     print(f"{target}: {len(target.read_text(encoding='utf-8').splitlines())} سطراً | "
           f"{len(BOND)} جدولاً")

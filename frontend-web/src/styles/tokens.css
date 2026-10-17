@@ -1,0 +1,68 @@
+/* رموز التصميم — مصدرٌ واحد للويب (app.css) والأندرويد (frontend-android/src/global.css) */
+@theme static {
+  --font-sans: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+
+  /* مقاساتٌ تناسب العربية */
+  --text-xs: 0.78125rem;
+  --text-xs--line-height: 1.5;
+  --text-sm--line-height: 1.6;
+  --text-base--line-height: 1.65;
+
+  --color-card: #ffffff;
+  --color-paper: #eff2f7;
+  --color-paper-soft: #f7f9fc;
+  --color-line: #e1e6ef;
+  --color-line-strong: #cbd3e0;
+
+  --color-ink: #1b2233;
+  --color-ink-soft: #4e5975;
+  --color-ink-tertiary: #6b7794;
+  --color-ink-faint: #98a3b8;
+
+  --color-brand: #0f2442;
+  --color-brand-hover: #0c1d36;
+  --color-brand-active: #09172a;
+  --color-brand-soft: #ecf0f6;
+  --color-brand-soft-line: #a9bdd6;
+  --color-selected: #d4deeb;
+
+  --color-field: #0f2442;
+  --color-field-raised: #16305a;
+  --color-field-hover: #1a3560;
+  --color-field-line: #1e3d64;
+  --color-on-field: #ffffff;
+  --color-on-field-soft: #c9d3e3;
+  --color-on-field-faint: #8fa0bc;
+
+  --color-success: #277f55;
+  --color-success-soft: #edf6f0;
+  --color-danger: #b03e34;
+  --color-danger-soft: #fcefee;
+  --color-warning: #b07817;
+  --color-warning-soft: #fdf5e9;
+  --color-info: #3a66a0;
+  --color-info-soft: #eef3fa;
+
+  /* ألوان الرسوم — درجات Tailwind v4 (فاتح · أساس · غامق)، والترتيب مُتحقَّقٌ لعمى الألوان */
+  --color-chart-1-light: oklch(70.7% 0.165 254.624);
+  --color-chart-1: oklch(62.3% 0.214 259.815);
+  --color-chart-1-dark: oklch(54.6% 0.245 262.881);
+  --color-chart-2-light: oklch(76.9% 0.188 70.08);
+  --color-chart-2: oklch(66.6% 0.179 58.318);
+  --color-chart-2-dark: oklch(55.5% 0.163 48.998);
+  --color-chart-3-light: oklch(70.2% 0.183 293.541);
+  --color-chart-3: oklch(60.6% 0.25 292.717);
+  --color-chart-3-dark: oklch(54.1% 0.281 293.009);
+  --color-chart-4-light: oklch(69.6% 0.17 162.48);
+  --color-chart-4: oklch(59.6% 0.145 163.225);
+  --color-chart-4-dark: oklch(50.8% 0.118 165.612);
+  --color-chart-5-light: oklch(71.2% 0.194 13.428);
+  --color-chart-5: oklch(64.5% 0.246 16.439);
+  --color-chart-5-dark: oklch(58.6% 0.253 17.585);
+  --color-chart-6-light: oklch(71.5% 0.143 215.221);
+  --color-chart-6: oklch(60.9% 0.126 221.723);
+  --color-chart-6-dark: oklch(52% 0.105 223.128);
+
+  --shadow-card: 0 1px 2px rgb(27 34 51 / 0.04), 0 4px 16px -4px rgb(27 34 51 / 0.08);
+  --shadow-pop: 0 12px 40px -8px rgb(15 36 66 / 0.28);
+}

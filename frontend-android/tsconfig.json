@@ -1,0 +1,26 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@/lib/platform": [
+        "./src/lib/platform.ts"
+      ],
+      "@/*": [
+        "../frontend-web/src/*"
+      ],
+      "~/*": [
+        "./src/*"
+      ],
+      "@strings/*": [
+        "../backend/1.Platform/Localization/Strings/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ]
+}

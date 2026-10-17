@@ -26,7 +26,7 @@
 | ٤ | الخدمة | `4.Application/PageServices/Treasury/TreasuryService.cs` خدمة الصفحة، ومنطقها في `4.Application/Services/…` |
 | ٥ | نموذج العرض | `TreasuriesViewModel` في `6.UI/ViewModels/ListViewModels.cs` — يرث `CrudViewModelBase` ويُعلن `PermissionPrefix` |
 | ٦ | الإعلان | `8.Modules/TreasuryRegistrations.cs:21` |
-| ٧ | الشروط الثلاثة | `NavigationMap.cs:19` · `Strings.ar.xaml:217` · `DependencyInjection.cs:162` |
+| ٧ | الشروط الثلاثة | `NavigationMap.cs:19` · `Strings/ar.json` · `DependencyInjection.cs:162` |
 
 الإعلان نفسه — هذا ما يصير شاشةً كاملة، بلا XAML وبلا code-behind:
 
@@ -84,7 +84,7 @@ RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Ed
 | ٣ | `App/Bootstrap/DependencyInjection.cs` | `AddSingleton<I…, …>()` |
 | ٤ | `8.Modules/ReportRegistrations.cs` | استدعاء `Register(...)` واحد + دالّة أعمدة |
 | ٥ | `NavigationMap.Coded` | المفتاح في قسم `Reports` |
-| ٦ | `Strings.{ar,en}.xaml` | `Str.Module.<المفتاح>` + عناوين الأعمدة |
+| ٦ | `Strings/{ar,en}.json` | `Str.Module.<المفتاح>` + عناوين الأعمدة |
 
 **يُستورَد**: `StandardFields.DateRange()` للفترة · `Money(header, binding)` لعمود مالي · `Party`/`Account`/`Warehouse` للبارامترات المتكرّرة · `FinancialStatementFactory.RowKind` للقوائم المالية.
 

@@ -39,7 +39,7 @@ namespace PrimeERP.Tests.Services
 
             var service = _db.Services.GetRequiredService<IAnalyticsService>();
             var method = typeof(IAnalyticsService).GetMethod(module.Dashboard.Method);
-            var result = (Result<AnalyticsData>)method.Invoke(service, new object[] { new DateTime(DateTime.Today.Year, 1, 1), DateTime.Today });
+            var result = (Result<AnalyticsData>)method.Invoke(service, new object[] { new DateTime(DateTime.Today.Year, 1, 1), DateTime.Today, null });
 
             Assert.True(result.IsSuccess, result.ErrorMessage);
             Assert.All(module.Dashboard.Cards, c => Assert.True(result.Value.Cards.ContainsKey(c.Key), $"{key}: {c.Key}"));

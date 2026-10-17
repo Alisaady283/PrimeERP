@@ -8,6 +8,7 @@ using PrimeERP.Application.DTOs.Inventory;
 using PrimeERP.Application.PageServices.Documents;
 using PrimeERP.Application.PageServices.Inventory;
 using PrimeERP.Composition.Definitions;
+using PrimeERP.Application.Services.Documents;
 using PrimeERP.Composition.Pull;
 using PrimeERP.Platform.Permissions;
 using Xunit;

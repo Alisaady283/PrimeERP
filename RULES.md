@@ -107,7 +107,7 @@
 | `4.Application/Services/Core` | أسس الخدمات والترقيم | منطقُ مجالٍ بعينه | `ServiceBase` · `CrudServiceBase` · `EntityService` · `LinkedEntityService` الكيان ورقةً في الشجرة · `NumberSequenceService` |
 | `4.Application/Services/Ledger` | القيد: إنشاؤه وترحيله وعكسه وحرّاسه وعرضه، والأرصدة | حساب الشجرة (مجلده التالي)، صيغة حساب | `Entries` · `Posting` · `PeriodGate` · `JournalLines` · `TradeEntry` · `TwoSided` · `OpeningEntry` · `DisposalEntry` · `RevaluationEntry` · `PayrollEntry` · `ClosingEntry` · `NewFiscalYear` · `DepreciationCharges` · `Guards` · `AccountBalances` (`Refresh`/`RefreshAll`) · `PartyByKind` الطرف بنوعه: اسمه وحسابه ورصيده · `Statement` (ومعه `WithCheques`) · `TrialBalance` ميزان المراجعة |
 | `4.Application/Services/Ledger/Accounts` | الحساب في الشجرة: إضافة وتعديل وحذف بقطعٍ منفصلة، وحساب الكيان أو الإعداد | قيدٌ أو رصيد | `AddTreeAccount` · `AddEntityAccount` · `AddLinkedAccount` · `AddMirroredAccount` · `EditTreeAccount` · `EditLinkedAccount` · `RenameAccount` · `CloseAccount` · `CloseLinkedAccount` · `LinkedAccounts` · `RepairAccounts` · `AccountOf` · `SettingAccounts` · `AccountCases` · `AccountSpec` |
-| `4.Application/Services/Documents` | المستند: رأسٌ وسطور، سحبه، أثره المخزني، حالته كترحيل، حساباته | صيغة المبالغ (`LineCalc`) | `DocumentService` · `DocumentPull` (`ValidatePulls` · `RecordPulls` · `Attach`) · `StockMove` (و`StaysPositive` · `Effects` · `Removable` حارس المخزون) · `StatusChange` · `TradeLines` · `TradeAccounts` (المبيعات ومرتجعاتها والمشتريات) · `ProductLines` |
+| `4.Application/Services/Documents` | المستند: رأسٌ وسطور، سحبه، أثره المخزني، حالته كترحيل، حساباته | صيغة المبالغ (`LineCalc`) | `DocumentService` · `DocumentPull` (`ValidatePulls` · `RecordPulls` · `Attach`) · `PullCandidates` المتبقّي للسحب · `StockMove` (و`StaysPositive` · `Effects` · `Removable` حارس المخزون) · `StatusChange` · `TradeLines` · `TradeAccounts` (المبيعات ومرتجعاتها والمشتريات) · `ProductLines` |
 | `4.Application/Services/Entities` | شكلٌ عامّ للبيانات لا يخصّ مجالاً: قائمة بسيطة، شجرة، نسخ بالاسم، حالة بلونها، سطورٌ بكودها | ما يعرف قيداً أو مستنداً أو حساباً | `Lookup<T>` · `EntitySpec` · `Rows` · `Tree` · `ByCode` |
 | `4.Application/DTOs` | شكلٌ يختلف عن الكيان: المستند وسطوره، المُدخل المختلف، إخفاء السرّ، المرشِّح — وعقود السحب | نسخةُ حقول كيان، منطق | `IPullableLine` رابط السطر بمصدره · `ISourceDocument`/`ISourceLine` المستند الذي يُسحَب منه وسطره |
 | `4.Application/PageServices/<القسم>` | الصفحة: صلاحية، جلب، استدعاء خدماتها بالمعاملات، تدقيق، نتيجة، وإعلاناتها (`AccountSpec`، جدول الحالات، شروط `Field`). وتستدعي صفحةً أخرى أو ترثها حين تجمع تلك ما تحتاجه — استدعاءٌ واحد أقلّ من إعادة استدعاء خدماتها | كل ما في الصفوف أعلاه، وإعادة بناء ما تجمعه صفحةٌ أخرى | — |
@@ -133,6 +133,10 @@ registry.Register(new ModuleDefinition
 });
 ```
 
+`PermissionPrefix` مجال الصفحة (مفاتيح الخدمة ونموذج العرض)، وصلاحيات الصفحة نفسها تُولَّد من صفّها في `BuilderModules` باسمها — لا يُضاف لها ثابتٌ في `PermissionKeys`، ولا يُفحص في الإعلان مفتاحٌ قياسيٌّ للمجال بل `PagePermission`.
+
+تنبيهٌ أو إرسالٌ لنظامٍ خارجي لا يُكتب في الخدمة: حدث الحفظ يأتي من سجلّ التدقيق، والفحص الدوري `IAlertScan` يُسجَّل، والقناة `IAlertChannel` تُسجَّل، والقاعدة صفّ في `AlertRules` — وكل مفتاحٍ سرّي إعدادٌ `secret`.
+
 **يُستورَد مصنعٌ قبل الإعلان اليدوي**:
 
 | المصنع | يبني |
@@ -154,12 +158,24 @@ registry.Register(new ModuleDefinition
 | الشرط | الموضع | ما يحدث بدونه |
 |---|---|---|
 | مفتاحها في قسمها | `7.Composition/Registry/NavigationMap.Coded` | لا تظهر في الشريط الجانبي، ولا تُبذَر في وحدة البناء، ولا تُختار في إنشاء برنامج |
-| عنوانها في القاموسَين | `5.Design/Strings/Strings.{ar,en}.xaml` | اختبار العناوين يسقط |
+| عنوانها في القاموسَين | `1.Platform/Localization/Strings/{ar,en}.json` | اختبار العناوين يسقط |
 | خدمتها مسجَّلة | `App/Bootstrap/DependencyInjection.cs` | المُصيِّر يرفع استثناءً عند فتحها |
 
 ولا عمل بعدها: البذر يحوّل الصفحة صفّاً في الوصف بأعمدتها وأزرارها وفلاترها، و«إنشاء برنامج» يقرأ القسم نفسه. **الاثنان يقرآن التسجيل والخريطة، لا قائمةً تُحدَّث بيدك** — فأي قائمة أسماء شاشات مكتوبة يدوياً كسرٌ يُحذَف.
 
 يحرس الشروطَ اختبارُ `ModuleCompletenessTests`: مفتاحٌ خارج الخريطة، أو مفتاحٌ في الخريطة بلا وحدة، أو نوعٌ مُعلَن لا يحلّه الحاوي، أو شاشةٌ تُرحّل قيداً بلا زرّ حذف — كلّها تُسقط الاختبارات.
+
+---
+
+## الواجهات الثلاث
+
+1. **المنطق لا يُكتب في الصفحة**: الطلب والقاعدة والحساب ومحتوى التلميح في وحدة منطقٍ بلا عرض في `frontend-web/src` (`features/<ميزة>/<ميزة>.ts` · `lib/`)، تستدعيها صفحة الويب وصفحة الأندرويد؛ والدسكتوب ينقلها نظيراً C# باسمها في موضعها. السطر المكتوب في صفحتين خطأ موضع.
+2. **التوزيع من الويب**: شاشة الدسكتوب والأندرويد تتبع توزيع شاشة الويب؛ وما يخالفه يُراجَع على لقطة الويب قبل البناء.
+3. **الأفعال داخل ما تخصّه**: طباعة المستند وتصديره وحذفه داخل المستند، وتعليق السلّة واسترجاعها والدفع داخل السلّة — لا أزرار في شريط الصفحة تأكل مساحة العمل.
+4. **البطاقة مكوّنٌ واحد**: كل بطاقةٍ قطعةٌ تأخذ بياناتها بخصائصها وتُستعمل حيث تُحتاج؛ ومقاييسها تُحسب مع البيانات وتُعرض عند المرور أو اللمس، فوق الرسم في مكانه، وتختفي بالابتعاد.
+5. **الحركة من الرموز**: لا مدّة ولا منحنى مكتوبٌ في قطعة — `lib/motion.ts` و`Motion.cs`.
+6. **الإعلان قبل الكود**: ما يحتاجه سلوكٌ جديد (مجموع · توازن · مربّعات · معاملٌ مطلوب) خاصيةٌ في الوصف تقرؤها المنصّات الثلاث، لا شرطٌ في شاشة.
+7. **التصميم القائم يبقى**: ما يعمل ويقبله المستخدم لا يُعاد بناؤه بمعيارٍ آخر؛ يُكمَل الناقص فوقه (السجلّان `WEB.md` · `ANDROID.md`).
 
 ---
 
@@ -180,7 +196,7 @@ registry.Register(new ModuleDefinition
 | شكل عنصر WPF | `5.Design/Styles/Style.<النوع>.xaml` — يقرأ حالة مكوّنه بـ`AncestorType=UserControl`، ولا يسمّي صنفاً من `6.UI` |
 | رصيدٌ يُنقَص بحذف مستندٍ أو تعديله | النقد `Guards.CashStaysPositive`، والمخزون `StockMove.StaysPositive` — كلاهما بأثر القديم سالباً والجديد موجباً عند الباب. حذف المستند المخزني: `StockSource` يُعلَن في الخدمة ويفحصه `DocumentService.Removable` بـ`StockMove.Removable` |
 | صفّ قائمةٍ يحرّره غير محرّر الصفحة | `ModuleDefinition.RowKindProperty` و`KindDialogs` (بـ`DocumentKind`) — لا شرطٌ في المُصيِّر |
-| نصّ ظاهر للمستخدم | `5.Design/Strings/Strings.{ar,en}.xaml`. الخدمة تقرؤه بـ`Msg(key)` تحت بادئتها أو `Localization.Get(key)` لغيرها، وما ليس خدمةً (متحقّق، طباعة، دالّة ساكنة) بـ`LocalizationService.Get(key, args)`. الثقوب `{0}` مرقَّمة بصيغتها (`{0:N2}`). الخانة التي اسمها `*Key` (`LabelKey` · `TitleKey` · `TextKey` · `PrintTitleKey`) تأخذ مفتاحاً لا نصّاً، والعنوان التابع لمفتاحٍ (إعداد، صلاحية، قسم، مصدر سحب) مفتاحه مشتقّ منه لا جدول نصوص (`ARCHITECTURE.md § قرارات مثبتة`)، وما قد يغيب مفتاحه (صفحةٌ مبنيّة) بـ`LocalizationService.GetOr`. ورسالة التحقّق في الشاشة `Str.Rule.*` نفسها. ولا يبقى في الكود نصٌّ عربي إلا رسالة المبرمج في استثناءٍ لا يصل المستخدم، والبيانات المخزَّنة (بذر الشجرة، «يدوي») |
+| نصّ ظاهر للمستخدم | `1.Platform/Localization/Strings/{ar,en}.json` (مضمَّنان في `PrimeERP.Platform`، يقرؤهما `StringTable`، وسطح المكتب يحوّلهما قاموسَ موارد بـ`LanguageResources`). الخدمة تقرؤه بـ`Msg(key)` تحت بادئتها أو `Localization.Get(key)` لغيرها، وما ليس خدمةً (متحقّق، طباعة، دالّة ساكنة) بـ`LocalizationService.Get(key, args)`. الثقوب `{0}` مرقَّمة بصيغتها (`{0:N2}`). الخانة التي اسمها `*Key` (`LabelKey` · `TitleKey` · `TextKey` · `PrintTitleKey`) تأخذ مفتاحاً لا نصّاً، والعنوان التابع لمفتاحٍ (إعداد، صلاحية، قسم، مصدر سحب) مفتاحه مشتقّ منه لا جدول نصوص (`ARCHITECTURE.md § قرارات مثبتة`)، وما قد يغيب مفتاحه (صفحةٌ مبنيّة) بـ`LocalizationService.GetOr`. ورسالة التحقّق في الشاشة `Str.Rule.*` نفسها. ولا يبقى في الكود نصٌّ عربي إلا رسالة المبرمج في استثناءٍ لا يصل المستخدم، والبيانات المخزَّنة (بذر الشجرة، «يدوي») |
 | أيقونة | `5.Design/Icons/Icons.xaml` |
 | لون طباعة أو تصدير | `5.Design/Surfaces/PrintTheme.xaml` · `5.Design/Surfaces/ExportTheme.cs` |
 | منطق أعمال أو حساب | `4.Application/Services/…` — لا يُكتب في `PageServices` |

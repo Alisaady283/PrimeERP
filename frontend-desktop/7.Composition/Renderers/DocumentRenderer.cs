@@ -1,0 +1,674 @@
+using PrimeERP.Domain.Calculations;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using PrimeERP.Domain.Helpers;
+using System.ComponentModel;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Threading;
+using Microsoft.Extensions.DependencyInjection;
+using PrimeERP.Composition.Definitions;
+using PrimeERP.Domain.Results;
+using PrimeERP.Platform.Localization;
+using PrimeERP.UI.Components.Actions;
+using PrimeERP.UI.Components.Inputs;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.UI.Services;
+using PrimeERP.Application.Services.Documents;
+using Btn = PrimeERP.UI.Components.Actions.AppButton;
+
+namespace PrimeERP.Composition.Renderers
+{
+    /// <summary>تصيير محرّر المستند</summary>
+    public static class DocumentRenderer
+    {
+        internal class EditorRow
+        {
+            public Grid Row;
+            public Dictionary<string, FrameworkElement> Controls;
+            public PullDialog.PulledLine Link;
+        }
+
+        internal class DocumentEditor
+        {
+            public FrameworkElement Body;
+            public Dictionary<string, FrameworkElement> HeaderControls;
+            public Panel Header;
+            public List<EditorRow> Rows;
+            public object EditItem;
+            public bool IsEdit;
+
+            public Func<IReadOnlyDictionary<string, object>, EditorRow> AddLine;
+
+            /// <summary>حذف سطرٍ وإعادة المجاميع — لعرضٍ بديل للسطور (سلّة نقطة البيع)</summary>
+            public Action<EditorRow> RemoveLine;
+
+            public Action<PullDialog.PulledLine> AddPulledRow;
+
+            public Action<Dictionary<string, object>> ApplyPulledHeader;
+
+            public Action Reopen;
+        }
+
+        internal static DocumentEditor BuildEditor(DocumentDialogDefinition def, IServiceProvider services, IToastService toast, object editItem)
+        {
+            bool isEdit = editItem != null;
+
+            if (isEdit)
+            {
+                var id = (int)editItem.GetType().GetProperty("Id").GetValue(editItem);
+                var service0 = Resolve.Service(def, services);
+                var getById = DialogRenderer.FindMethod(def.ServiceType, "GetById", typeof(int));
+                if (getById == null) { toast.Error(LocalizationService.Get("Str.Composition.MissingMethod", def.ServiceType.Name, "GetById(int)")); return null; }
+
+                var detailResult = (Result)getById.Invoke(service0, new object[] { id });
+                if (!detailResult.IsSuccess) { toast.Error(detailResult.ErrorMessage); return null; }
+                editItem = detailResult.GetType().GetProperty("Value").GetValue(detailResult);
+            }
+
+            var headerControls = DialogRenderer.BuildAndPopulateFields(def.HeaderFields, services, editItem, isEdit, def.DtoType);
+            var headerGrid = DialogRenderer.BuildGrid(def.HeaderFields, 2, headerControls, width: null);
+            headerGrid.HorizontalAlignment = HorizontalAlignment.Stretch;
+
+            var rows = new List<EditorRow>();
+            var linesHost = new StackPanel();
+
+            Action refreshTotals = () => { };
+
+            void RemoveRow(EditorRow entry)
+            {
+                linesHost.Children.Remove(entry.Row);
+                rows.Remove(entry);
+                refreshTotals();
+            }
+
+            EditorRow AddRow(object lineItem)
+            {
+                var rowControls = new Dictionary<string, FrameworkElement>();
+                var rowGrid = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+                foreach (var lf in def.LineFields)
+                    rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(lf.Width) });
+                rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                int col = 0;
+                foreach (var lf in def.LineFields)
+                {
+                    var fieldDef = new FieldDefinition
+                    {
+                        Key = lf.Key, LabelKey = "", Kind = lf.Kind, IsRequired = lf.IsRequired, Positive = lf.Positive,
+                        PickerType = lf.PickerType, PickerLeafOnly = lf.PickerLeafOnly,
+                        PickerValueField = PickerValueFieldOf(def.LineDtoType, lf)
+                    };
+                    var control = DialogRenderer.BuildField(fieldDef);
+
+                    if (lf.Kind == FieldKind.Picker)
+                        DialogRenderer.LoadPickerItems((AppComboBox)control, fieldDef, services);
+
+                    if (lineItem == null && lf.Kind == FieldKind.Date)
+                        DialogRenderer.SetControlValue(control, fieldDef, NewRowDate);
+
+                    if (lineItem != null)
+                    {
+                        var value = lineItem.GetType().GetProperty(lf.Key)?.GetValue(lineItem);
+                        if (lf.Kind == FieldKind.Picker && value != null)
+                            DialogRenderer.SelectPickerItem((AppComboBox)control, value, PickerValueFieldOf(def.LineDtoType, lf));
+                        else
+                            DialogRenderer.SetControlValue(control, fieldDef, value);
+                    }
+
+                    control.Width = lf.Width - 8;
+                    control.Margin = new Thickness(0, 0, 8, 0);
+                    Grid.SetColumn(control, col);
+                    rowGrid.Children.Add(control);
+                    rowControls[lf.Key] = control;
+                    col++;
+                }
+
+                var removeBtn = new AppIconButton
+                {
+                    Icon = (Geometry)System.Windows.Application.Current.FindResource("IconDelete"),
+                    TooltipText = LocalizationService.Get("Str.RemoveLine"),
+                    Variant = "danger",
+                    Visibility = def.FixedLines ? Visibility.Collapsed : Visibility.Visible
+                };
+                Grid.SetColumn(removeBtn, col);
+                rowGrid.Children.Add(removeBtn);
+
+                WireLineMath(def, rowControls);
+
+                foreach (var key in def.LineTotals?.Keys ?? new List<string>())
+                {
+                    if (!rowControls.TryGetValue(key, out var totalled) || totalled is not AppNumericBox box) continue;
+
+                    DependencyPropertyDescriptor.FromProperty(AppNumericBox.ValueProperty, typeof(AppNumericBox))
+                        .AddValueChanged(box, (_, _) => refreshTotals());
+                }
+
+                refreshTotals();
+
+                var entry = new EditorRow { Row = rowGrid, Controls = rowControls };
+                removeBtn.Click += (_, __) => RemoveRow(entry);
+
+                rows.Add(entry);
+                linesHost.Children.Add(rowGrid);
+                return entry;
+            }
+
+            var lineHeaderRow = new Grid { Margin = new Thickness(0, 0, 0, 4) };
+            foreach (var lf in def.LineFields)
+                lineHeaderRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(lf.Width) });
+            lineHeaderRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            int headerCol = 0;
+            foreach (var lf in def.LineFields)
+            {
+                var label = new TextBlock { Text = lf.Header, Margin = new Thickness(0, 0, 8, 4) };
+                label.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondary");
+                Grid.SetColumn(label, headerCol);
+                lineHeaderRow.Children.Add(label);
+                headerCol++;
+            }
+
+            if (isEdit)
+            {
+                var existingLines = editItem.GetType().GetProperty(def.LinesPropertyName)?.GetValue(editItem) as IEnumerable;
+                if (existingLines != null)
+                    foreach (var line in existingLines)
+                    {
+                        var row = AddRow(line);
+                        if (line is PrimeERP.Application.DTOs.Documents.IPullableLine { SourceLineId: > 0 } pulled)
+                            row.Link = new PullDialog.PulledLine
+                            {
+                                SourceType = pulled.SourceType, SourceId = pulled.SourceId,
+                                SourceNo = pulled.SourceNo, SourceLineId = pulled.SourceLineId
+                            };
+                    }
+            }
+            else if (def.OpenBy == null && def.LineFields.Count > 0)
+            {
+                for (var i = 0; i < def.DefaultLines; i++) AddRow(null);
+            }
+
+            var addLineBtn = new Btn
+            {
+                Text = LocalizationService.Get("Str.AddLine"), Variant = "secondary", Size = "sm", Margin = new Thickness(0, 4, 0, 0),
+                Visibility = def.FixedLines ? Visibility.Collapsed : Visibility.Visible
+            };
+            addLineBtn.Click += (_, __) => AddRow(null);
+
+            var linesScroll = new ScrollViewer
+            {
+                Content = linesHost,
+                MaxHeight = double.PositiveInfinity,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+            };
+
+            var linesSection = new StackPanel();
+            linesSection.Children.Add(lineHeaderRow);
+            linesSection.Children.Add(linesScroll);
+            linesSection.Children.Add(addLineBtn);
+
+            if (def.LineTotals != null)
+            {
+                var (totalsBar, refresh) = BuildTotalsBar(def, rows);
+                linesSection.Children.Add(totalsBar);
+                refreshTotals = refresh;
+                refresh();
+            }
+
+            var body = new StackPanel();
+            var pullBar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+            body.Children.Add(pullBar);
+            body.Children.Add(headerGrid);
+            if (def.LineFields.Count > 0)
+            {
+                body.Children.Add(new Separator { Margin = new Thickness(0, 4, 0, 12) });
+                body.Children.Add(linesSection);
+            }
+
+            var editor = new DocumentEditor
+            {
+                Body = body, HeaderControls = headerControls, Header = headerGrid, Rows = rows,
+                EditItem = editItem, IsEdit = isEdit, RemoveLine = RemoveRow
+            };
+
+            foreach (var pullButton in BuildPullButtons(def, services, () => editor)) pullBar.Children.Add(pullButton);
+            if (isEdit && BuildTraceButton(def, services, () => editor) is { } trace) pullBar.Children.Add(trace);
+            pullBar.Visibility = pullBar.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+            editor.ApplyPulledHeader = header =>
+            {
+                foreach (var (key, value) in header)
+                {
+                    if (value == null || !headerControls.TryGetValue(key, out var control)) continue;
+
+                    var headerField = def.HeaderFields.FirstOrDefault(f => f.Key == key);
+                    if (headerField == null) continue;
+
+                    if (DialogRenderer.GetControlValue(control, headerField.Kind) != null) continue;
+
+                    if (headerField.Kind == FieldKind.Picker)
+                        DialogRenderer.SelectPickerItem((AppComboBox)control, value, ((AppComboBox)control).SelectedValuePath);
+                    else
+                        DialogRenderer.SetControlValue(control, headerField, value);
+                }
+            };
+
+            if (!isEdit && def.OpenBy != null)
+            {
+                editor.Reopen = () => Open(def, services, toast, headerControls, rows, RemoveRow, line => AddRow(line), initial: false);
+                Open(def, services, toast, headerControls, rows, RemoveRow, line => AddRow(line), initial: true);
+
+                foreach (var key in def.OpenBy)
+                    switch (headerControls[key])
+                    {
+                        case AppDatePicker date:
+                            DependencyPropertyDescriptor.FromProperty(AppDatePicker.SelectedDateProperty, typeof(AppDatePicker))
+                                .AddValueChanged(date, (_, _) => editor.Reopen());
+                            break;
+                        case AppComboBox combo:
+                            combo.SelectionChanged += (_, _) => editor.Reopen();
+                            break;
+                    }
+            }
+
+            linesHost.PreviewKeyDown += (_, e) => MoveInLines(e, rows, def, () => AddRow(null), linesHost.FlowDirection);
+
+            editor.AddLine = values =>
+            {
+                var target = rows.LastOrDefault(r => IsEmptyRow(r, def)) ?? AddRow(null);
+                foreach (var (key, value) in values) SetRowValue(target, def, key, value);
+                return target;
+            };
+
+            editor.AddPulledRow = pulled => editor.AddLine(new Dictionary<string, object>
+            {
+                ["ProductCode"] = pulled.ProductCode, ["Qty"] = pulled.Qty, ["UnitPrice"] = pulled.UnitValue, ["UnitCost"] = pulled.UnitValue
+            }).Link = pulled;
+
+            return editor;
+        }
+
+        private static void Open(DocumentDialogDefinition def, IServiceProvider services, IToastService toast,
+            Dictionary<string, FrameworkElement> headerControls, List<EditorRow> rows, Action<EditorRow> remove, Action<object> add, bool initial)
+        {
+            var keys = initial ? Array.Empty<object>() : def.OpenBy
+                .Select(key => DialogRenderer.GetControlValue(headerControls[key], def.HeaderFields.First(f => f.Key == key).Kind)).ToArray();
+            if (keys.Any(k => k == null)) return;
+
+            var types = keys.Select(k => k.GetType()).ToArray();
+            var method = DialogRenderer.FindMethod(def.ServiceType, "Open", types);
+            if (method == null) { toast.Error(LocalizationService.Get("Str.Composition.MissingMethod", def.ServiceType.Name, $"Open({string.Join(", ", types.Select(t => t.Name))})")); return; }
+
+            var result = (Result)method.Invoke(Resolve.Service(def, services), keys);
+            if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
+            var opened = result.GetType().GetProperty("Value").GetValue(result);
+
+            foreach (var field in def.HeaderFields.Where(f => initial || !def.OpenBy.Contains(f.Key)))
+            {
+                var value = DialogRenderer.ReadValue(opened, field.Key);
+                if (value == null) continue;
+                if (field.Kind == FieldKind.Picker) DialogRenderer.SelectPickerItem((AppComboBox)headerControls[field.Key], value, ((AppComboBox)headerControls[field.Key]).SelectedValuePath);
+                else DialogRenderer.SetControlValue(headerControls[field.Key], field, value);
+            }
+
+            foreach (var row in rows.ToList()) remove(row);
+            foreach (var line in DialogRenderer.ReadValue(opened, def.LinesPropertyName) as IEnumerable ?? Array.Empty<object>()) add(line);
+        }
+
+        private static (FrameworkElement Bar, Action Refresh) BuildTotalsBar(DocumentDialogDefinition def, List<EditorRow> rows)
+        {
+            var bar = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            var values = new Dictionary<string, TextBlock>();
+
+            TextBlock AddCell(string caption, out TextBlock valueBlock)
+            {
+                var label = new TextBlock { Text = caption + ": ", VerticalAlignment = VerticalAlignment.Center };
+                label.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondary");
+
+                valueBlock = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 20, 0) };
+                valueBlock.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
+                valueBlock.SetResourceReference(TextBlock.FontWeightProperty, "P.Font.Weight.Bold");
+
+                bar.Children.Add(label);
+                bar.Children.Add(valueBlock);
+                return label;
+            }
+
+            foreach (var key in def.LineTotals.Keys)
+            {
+                var caption = def.LineFields.FirstOrDefault(f => f.Key == key)?.Header ?? key;
+                AddCell(caption, out var cell);
+                values[key] = cell;
+            }
+
+            TextBlock differenceLabel = null, difference = null;
+            if (def.LineTotals.MustBalance is { Length: 2 })
+                differenceLabel = AddCell(LocalizationService.Get("Str.Difference"), out difference);
+
+            decimal SumOf(string key) => rows
+                .Select(r => r.Controls.TryGetValue(key, out var c) && c is AppNumericBox box ? box.Value : 0m)
+                .Sum();
+
+            void Refresh()
+            {
+                foreach (var (key, cell) in values) cell.Text = SumOf(key).ToString("N2");
+
+                if (difference == null) return;
+
+                var gap = SumOf(def.LineTotals.MustBalance[0]) - SumOf(def.LineTotals.MustBalance[1]);
+                difference.Text = Math.Abs(gap).ToString("N2");
+
+                var brush = gap == 0m ? "TextSecondary" : "Danger";
+                difference.SetResourceReference(TextBlock.ForegroundProperty, brush);
+                differenceLabel.SetResourceReference(TextBlock.ForegroundProperty, brush);
+            }
+
+            return (bar, Refresh);
+        }
+
+        private static void WireLineMath(DocumentDialogDefinition def, Dictionary<string, FrameworkElement> controls)
+        {
+            var math = def.LineMath;
+            if (math == null || !controls.TryGetValue(math.NetKey, out var netControl) || netControl is not AppTextBox net) return;
+
+            decimal Value(string key) =>
+                key != null && controls.TryGetValue(key, out var control) && control is AppNumericBox box ? box.Value : 0m;
+
+            void Recalculate() => net.Text = LineCalc.ForLine(
+                Value(math.QtyKey), Value(math.PriceKey),
+                Value(math.DiscountPercentKey), Value(math.VatPercentKey), Value(math.WithholdingPercentKey))
+                .Net.ToString("N2");
+
+            foreach (var key in new[] { math.QtyKey, math.PriceKey, math.DiscountPercentKey, math.VatPercentKey, math.WithholdingPercentKey })
+            {
+                if (key == null || !controls.TryGetValue(key, out var control) || control is not AppNumericBox box) continue;
+
+                DependencyPropertyDescriptor.FromProperty(AppNumericBox.ValueProperty, typeof(AppNumericBox))
+                    .AddValueChanged(box, (_, _) => Recalculate());
+            }
+
+            Recalculate();
+        }
+
+        private static DateTime NewRowDate => DateTime.Today;
+
+        private static bool IsBlankRow(EditorRow row, DocumentDialogDefinition def)
+        {
+            foreach (var lf in def.LineFields)
+            {
+                var value = DialogRenderer.GetControlValue(row.Controls[lf.Key], lf.Kind);
+                if (value == null) continue;
+                if (value is string text && string.IsNullOrWhiteSpace(text)) continue;
+                if (value is decimal number && number == 0) continue;
+                if (value is DateTime date && date == NewRowDate) continue;
+                return false;
+            }
+            return true;
+        }
+
+        private static bool IsEmptyRow(EditorRow row, DocumentDialogDefinition def)
+        {
+            var key = def.LineFields.FirstOrDefault(f => f.Kind == FieldKind.Picker)?.Key;
+            return key != null && DialogRenderer.GetControlValue(row.Controls[key], FieldKind.Picker) == null;
+        }
+
+        private static string PickerValueFieldOf(Type lineDtoType, LineFieldDefinition field) =>
+            DialogRenderer.ValueFieldOf(lineDtoType, field.Key, field.PickerValueField);
+
+        private static void MoveInLines(KeyEventArgs e, List<EditorRow> rows, DocumentDialogDefinition def, Func<EditorRow> addRow, FlowDirection flow)
+        {
+            var keys = def.LineFields.Where(f => f.Kind != FieldKind.ReadOnly).Select(f => f.Key).ToList();
+            var r = rows.FindIndex(x => x.Row.IsKeyboardFocusWithin);
+            if (r < 0) return;
+            var c = keys.FindIndex(k => rows[r].Controls.TryGetValue(k, out var control) && control.IsKeyboardFocusWithin);
+            if (c < 0 || rows[r].Controls[keys[c]] is AppComboBox { IsDropDownOpen: true }) return;
+
+            var forward = flow == FlowDirection.RightToLeft ? Key.Left : Key.Right;
+            var back = flow == FlowDirection.RightToLeft ? Key.Right : Key.Left;
+            var tab = e.Key == Key.Tab && Keyboard.Modifiers == ModifierKeys.None;
+            var shiftTab = e.Key == Key.Tab && Keyboard.Modifiers == ModifierKeys.Shift;
+            int row = r, col = c;
+
+            if (tab || e.Key == forward) { if (++col == keys.Count) { col = 0; row++; } }
+            else if (shiftTab || e.Key == back) { if (--col < 0) { if (r == 0) return; col = keys.Count - 1; row--; } }
+            else if (e.Key == Key.Down) { if (r == rows.Count - 1) return; row++; }
+            else if (e.Key == Key.Up) { if (r == 0) return; row--; }
+            else return;
+
+            if (row == rows.Count) { if (!tab) return; addRow(); }
+
+            var target = rows[row].Controls[keys[col]];
+            target.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() => target.MoveFocus(new TraversalRequest(FocusNavigationDirection.First))));
+            e.Handled = true;
+        }
+
+        internal static void SetRowValue(EditorRow row, DocumentDialogDefinition def, string key, object value)
+        {
+            var field = def.LineFields.FirstOrDefault(f => f.Key == key);
+            if (field == null || !row.Controls.TryGetValue(key, out var control)) return;
+
+            if (field.Kind == FieldKind.Picker)
+                DialogRenderer.SelectPickerItem((AppComboBox)control, value, PickerValueFieldOf(def.LineDtoType, field));
+            else
+                DialogRenderer.SetControlValue(control, new FieldDefinition { Key = key, LabelKey = "", Kind = field.Kind }, value);
+        }
+
+        internal static List<Btn> BuildPullButtons(DocumentDialogDefinition def, IServiceProvider services, Func<DocumentEditor> current)
+        {
+            var permissions = services.GetRequiredService<IPermissionService>();
+            var simplified = services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>()
+                .Get(PrimeERP.Platform.Settings.SettingKeys.Documents.SimplifiedFlow, true);
+            var buttons = new List<Btn>();
+
+            foreach (var source in def.PullSources ?? new List<PullSource>())
+            {
+                if (!source.FlowScope.Allows(simplified)) continue;
+                if (!string.IsNullOrEmpty(source.PermissionKey) && !permissions.Can(source.PermissionKey)) continue;
+
+                var button = new Btn { Text = source.Label, Variant = "secondary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
+                var captured = source;
+                button.Click += (_, __) =>
+                {
+                    var editor = current();
+                    if (editor == null) return;
+
+                    var match = new Dictionary<string, object>();
+                    foreach (var field in def.HeaderFields)
+                        if (editor.HeaderControls.TryGetValue(field.Key, out var control))
+                            match[field.Key] = DialogRenderer.GetControlValue(control, field.Kind);
+
+                    var picked = PullDialog.Show(captured, services, match);
+                    if (picked == null) return;
+
+                    editor.ApplyPulledHeader(picked.Header);
+                    foreach (var line in picked.Lines) editor.AddPulledRow(line);
+                };
+                buttons.Add(button);
+            }
+
+            return buttons;
+        }
+
+        internal static Btn BuildTraceButton(DocumentDialogDefinition def, IServiceProvider services, Func<DocumentEditor> current)
+        {
+            if (def.DocumentKind == null) return null;
+
+            var button = new Btn { Text = LocalizationService.Get("Str.Document.Trace"), Variant = "secondary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
+            button.Click += async (_, __) =>
+            {
+                var item = current()?.EditItem;
+                if (item?.GetType().GetProperty("Id")?.GetValue(item) is not int id || id == 0) return;
+
+                var chain = services.GetRequiredService<IDocumentPull>().GetChain(def.DocumentKind, id);
+                var nodes = chain.IsSuccess ? chain.Value : new List<ChainNode>();
+                string Lines(bool upstream) => string.Join("\n", nodes.Where(n => n.Upstream == upstream)
+                    .Select(n => $"{LocalizationService.Get($"Str.Module.{n.DocType}")} {n.DocNo} — {n.Qty:N2}"));
+
+                var message = nodes.Count == 0 ? LocalizationService.Get("Str.Document.TraceEmpty") : string.Join("\n\n", new[]
+                {
+                    nodes.Any(n => n.Upstream) ? $"{LocalizationService.Get("Str.Document.TraceFrom")}\n{Lines(true)}" : null,
+                    nodes.Any(n => !n.Upstream) ? $"{LocalizationService.Get("Str.Document.TraceInto")}\n{Lines(false)}" : null,
+                }.Where(x => x != null));
+
+                await services.GetRequiredService<IDialogService>().ShowMessageAsync(LocalizationService.Get("Str.Document.Trace"), message);
+            };
+            return button;
+        }
+
+        internal static bool TrySaveEditor(DocumentDialogDefinition def, IServiceProvider services, IToastService toast, DocumentEditor editor) =>
+            TrySave(def, services, toast, editor.HeaderControls, editor.Rows, editor.EditItem, editor.IsEdit);
+
+        internal static DocumentDialogDefinition Shown(DocumentDialogDefinition def, IServiceProvider services)
+        {
+            var settings = services.GetRequiredService<PrimeERP.Platform.Settings.ISettingsProvider>();
+            return def.LineFields.All(f => f.ShownWhen == null) && (def.PrintColumns?.All(c => c.ShownWhen == null) ?? true) ? def
+                : def with
+                {
+                    LineFields = def.LineFields.Where(f => f.ShownWhen == null || f.ShownWhen(settings)).ToList(),
+                    PrintColumns = def.PrintColumns?.Where(c => c.ShownWhen == null || c.ShownWhen(settings)).ToList()
+                };
+        }
+
+        /// <summary>print/export: طباعة المستند المحفوظ وتصديره من داخله — كتذييل محرّر الويب</summary>
+        public static bool ShowAndSave(DocumentDialogDefinition def, IServiceProvider services, IToastService toast, object editItem = null, Action print = null, Action export = null)
+        {
+            def = Shown(def, services);
+            var editor = BuildEditor(def, services, toast, editItem);
+            if (editor == null) return false;
+
+            var btnCancel = new Btn { Text = LocalizationService.Get("Str.Cancel"), Variant = "secondary", Size = "sm" };
+            var btnSave = new Btn { Text = LocalizationService.Get("Str.Save"), Variant = "primary", Size = "sm", Margin = new Thickness(8, 0, 0, 0) };
+
+            var title = editor.IsEdit ? LocalizationService.Get(def.TitleEditKey) : LocalizationService.Get(def.TitleKey);
+            var footer = new StackPanel { Orientation = Orientation.Horizontal };
+            if (editor.IsEdit && print != null)
+            {
+                var btnPrint = new Btn { Text = LocalizationService.Get("Str.Print"), Variant = "ghost", Size = "sm", Margin = new Thickness(0, 0, 8, 0) };
+                btnPrint.Click += (_, __) => print();
+                footer.Children.Add(btnPrint);
+            }
+            if (editor.IsEdit && export != null)
+            {
+                var btnExport = new Btn { Text = LocalizationService.Get("Str.Output.ExportDocument"), Variant = "ghost", Size = "sm", Margin = new Thickness(0, 0, 8, 0) };
+                btnExport.Click += (_, __) => export();
+                footer.Children.Add(btnExport);
+            }
+            footer.Children.Add(btnCancel);
+            footer.Children.Add(btnSave);
+            var window = new ComposedDialogWindow(title, editor.Body, footer, width: ComputeDialogWidth(def));
+            window.FillHeight();
+
+            btnCancel.Click += (_, __) => window.Close();
+            btnSave.Click += (_, __) =>
+            {
+                if (!TrySave(def, services, toast, editor.HeaderControls, editor.Rows, editor.EditItem, editor.IsEdit)) return;
+                window.Saved = true;
+                window.Close();
+            };
+
+            var frame = new DispatcherFrame();
+            window.Closed += (_, __) => frame.Continue = false;
+            window.Show();
+            Dispatcher.PushFrame(frame);
+
+            return window.Saved;
+        }
+
+        private static double ComputeDialogWidth(DocumentDialogDefinition def)
+        {
+            var contentWidth = def.LineFields.Sum(lf => lf.Width) + 40 + 64;
+            var key = contentWidth <= 560 ? "C.Dialog.Width.Md"
+                    : contentWidth <= 760 ? "C.Dialog.Width.Lg"
+                    : contentWidth <= 1000 ? "C.Dialog.Width.Xl" : "C.Dialog.Width.Xxl";
+            return (double)System.Windows.Application.Current.FindResource(key);
+        }
+
+        private static bool TrySave(DocumentDialogDefinition def, IServiceProvider services, IToastService toast,
+            Dictionary<string, FrameworkElement> headerControls, List<EditorRow> rows, object editItem, bool isEdit)
+        {
+            var dto = ReadDto(def, toast, headerControls, rows, editItem, isEdit);
+            if (dto == null) return false;
+
+            var service = Resolve.Service(def, services);
+            var method = DialogRenderer.FindMethod(def.ServiceType, isEdit ? "Update" : "Create", def.DtoType);
+            if (method == null) { toast.Error(LocalizationService.Get("Str.Composition.MissingMethod", def.ServiceType.Name, $"{(isEdit ? "Update" : "Create")}({def.DtoType.Name})")); return false; }
+
+            var result = (Result)method.Invoke(service, new[] { dto });
+            if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return false; }
+
+            toast.Success(LocalizationService.Get("Str.Success"));
+            return true;
+        }
+
+        internal static object ReadDto(DocumentDialogDefinition def, IToastService toast, DocumentEditor editor) =>
+            ReadDto(def, toast, editor.HeaderControls, editor.Rows, editor.EditItem, editor.IsEdit);
+
+        private static object ReadDto(DocumentDialogDefinition def, IToastService toast,
+            Dictionary<string, FrameworkElement> headerControls, List<EditorRow> rows, object editItem, bool isEdit)
+        {
+            if (!FieldValidation.Validate(def.HeaderFields, headerControls)) return null;
+
+            var dto = Activator.CreateInstance(def.DtoType);
+            DialogRenderer.ApplyFields(def.HeaderFields, headerControls, dto, editOnly: isEdit);
+
+            if (isEdit)
+            {
+                var idValue = editItem.GetType().GetProperty("Id")?.GetValue(editItem);
+                def.DtoType.GetProperty("Id")?.SetValue(dto, idValue);
+            }
+
+            var linesList = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(def.LineDtoType));
+            var lineFieldDefs = def.LineFields
+                .Select(lf => new FieldDefinition { Key = lf.Key, LabelKey = lf.Header, Kind = lf.Kind, IsRequired = lf.IsRequired, Positive = lf.Positive })
+                .ToList();
+            var rowsValid = true;
+            int lineNo = 1;
+            foreach (var row in rows)
+            {
+                if (IsBlankRow(row, def)) continue;
+
+                if (!FieldValidation.Validate(lineFieldDefs, row.Controls)) rowsValid = false;
+
+                var lineDto = Activator.CreateInstance(def.LineDtoType);
+                var lineDtoType = lineDto.GetType();
+                foreach (var lf in def.LineFields)
+                {
+                    var prop = lineDtoType.GetProperty(lf.Key);
+                    if (prop == null || !prop.CanWrite) continue;
+
+                    var value = DialogRenderer.GetControlValue(row.Controls[lf.Key], lf.Kind);
+                    if (value == null) continue;
+                    prop.SetValue(lineDto, PrimeERP.Application.Services.Entities.Rows.To(value, prop.PropertyType));
+                }
+                lineDtoType.GetProperty("LineNo")?.SetValue(lineDto, lineNo++);
+
+                if (row.Link != null && lineDto is PrimeERP.Application.DTOs.Documents.IPullableLine pullable)
+                {
+                    pullable.SourceType   = row.Link.SourceType;
+                    pullable.SourceId     = row.Link.SourceId;
+                    pullable.SourceNo     = row.Link.SourceNo;
+                    pullable.SourceLineId = row.Link.SourceLineId;
+                }
+
+                linesList.Add(lineDto);
+            }
+            if (!rowsValid) return null;
+            if (linesList.Count == 0 && def.LineFields.Count > 0) { toast.Error(LocalizationService.Get("Str.Document.NoLines")); return null; }
+
+            def.DtoType.GetProperty(def.LinesPropertyName).SetValue(dto, linesList);
+            return dto;
+        }
+    }
+}

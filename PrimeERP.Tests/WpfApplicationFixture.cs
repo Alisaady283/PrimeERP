@@ -25,11 +25,13 @@ namespace PrimeERP.Tests
             var main = typeof(PrimeERP.App.Bootstrap.DependencyInjection).Assembly.GetName().Name;
 
             foreach (var file in new[] { "5.Design/Sizes.xaml", "5.Design/Colors/Navy.xaml",
-                                         "5.Design/Theme.xaml", "5.Design/Strings/Strings.ar.xaml" })
+                                         "5.Design/Theme.xaml" })
                 System.Windows.Application.Current.Resources.MergedDictionaries.Add(new ResourceDictionary
                 {
                     Source = new Uri($"pack://application:,,,/{main};component/{file}", UriKind.Absolute)
                 });
+
+            PrimeERP.UI.Services.LanguageResources.Apply(PrimeERP.Platform.Localization.AppLanguage.Ar);
         }
 
         private static void EnsureStarted()

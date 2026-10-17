@@ -1,6 +1,10 @@
 """فهرس الملفات: نسخةٌ بثلاثة مستويات (طبقة/مجلد/ملف) وأخرى بمستويين"""
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from layers import place, named
 
 LAYERS = ["1.Platform", "2.Data", "3.Domain", "4.Application", "5.Design", "6.UI", "7.Composition",
           "8.Modules", "App", "Tools", "PrimeERP.Tests", "PrimeERP.Setup"]
@@ -9,7 +13,7 @@ CODE = (".cs", ".xaml", ".sh")
 notes = dict(line.split("|", 1) for line in
              Path("Tools/Docs/folders.txt").read_text(encoding="utf-8").splitlines() if "|" in line)
 
-XAML = [("Strings.", "النصوص الظاهرة"), ("Style.", "نمط عنصر WPF"), ("Icons.xaml", "الأيقونات"),
+XAML = [("Style.", "نمط عنصر WPF"), ("Icons.xaml", "الأيقونات"),
         ("Theme.xaml", "دمج طبقات التصميم"), ("PrintTheme.", "ألوان الطباعة"),
         ("Sizes.xaml", "مقاسات النظام")]
 
@@ -67,10 +71,10 @@ two = ["# FOLDERS.md — فهرس المجلدات", "",
        "الطبقة ومجلداتها. تفصيل الملفات هناك."]
 
 rows = folders = 0
-for index, layer in enumerate((l for l in LAYERS if Path(l).is_dir()), start=1):
-    found = sorted((f for f in Path(layer).rglob("*")
+for index, layer in enumerate((l for l in LAYERS if place(l).is_dir()), start=1):
+    found = sorted((f for f in place(layer).rglob("*")
                     if f.suffix in CODE and not {"bin", "obj"} & set(f.parts)),
-                   key=lambda f: (str(f.parent).replace("\\", "/"), f.name))
+                   key=lambda f: (named(f.parent), f.name))
     if not found: continue
 
     for out, head in ((three, "| # | الملف | الوظيفة |\n|---|---|---|"),
@@ -79,7 +83,7 @@ for index, layer in enumerate((l for l in LAYERS if Path(l).is_dir()), start=1):
 
     row, seen = 0, None
     for f in found:
-        holder = str(f.parent).replace("\\", "/")
+        holder = named(f.parent)
         if holder != seen:
             seen = holder
             if holder != layer:                      # جذر الطبقة عنوانها، فلا صفّ له

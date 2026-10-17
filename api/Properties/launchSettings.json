@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "PrimeERP.Api": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "applicationUrl": "http://*:5080",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

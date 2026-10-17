@@ -1,11 +1,14 @@
 """خريطة النظام: طبقةٌ في كل بيضة، ودوائر مجلداتها حول جذرها"""
 import math
 import re
+import sys
 from collections import defaultdict
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from layers import place, named
+
 NL = chr(10)
-ROOT = Path(".").resolve()
 
 RING = ["8.Modules", "7.Composition", "6.UI", "5.Design", "4.Application", "3.Domain", "2.Data", "1.Platform"]
 CORE = ["App", "PrimeERP.Tests", "PrimeERP.Setup"]          # الإقلاع والاختبارات والمنصِّب
@@ -35,9 +38,9 @@ def top(path):
 # ── قراءة الكود: C# بـ using، وXAML بمفاتيح الموارد ──
 files, owner, keys = [], {}, {}
 for layer in ALL:
-    for f in (ROOT / layer).rglob("*"):
+    for f in place(layer).rglob("*"):
         if f.suffix not in (".cs", ".xaml") or {"obj", "bin"} & set(f.parts): continue
-        folder = str(f.parent.relative_to(ROOT)).replace("\\", "/")
+        folder = named(f.parent)
         text = f.read_text(encoding="utf-8", errors="ignore")
         files.append((folder, f, text))
         if f.suffix == ".cs":
@@ -62,15 +65,15 @@ for folder, f, text in files:
                 for word in re.findall(r'"([A-Za-z][A-Za-z0-9._]*)"', line):
                     link(folder, keys.get(word))
         for path in PACK.findall(text):                 # قاموسٌ يُحمَّل بمساره
-            hit = ROOT / path
-            if hit.exists(): link(folder, str(hit.parent.relative_to(ROOT)).replace("\\", "/"))
+            hit = place(path)
+            if hit.exists(): link(folder, named(hit.parent))
     else:
         for used in USE.findall(text):
             link(folder, keys.get(used))
         for source in SOURCE.findall(text):             # قاموسٌ يدمج قاموساً
             merged = (f.parent / source).resolve()
             if merged.exists():
-                link(folder, str(merged.parent.relative_to(ROOT)).replace("\\", "/"))
+                link(folder, named(merged.parent))
         for space in CLR.findall(text):                 # قطعةٌ تُستدعى بنطاقها
             link(folder, owner.get(space))
 
@@ -91,9 +94,9 @@ def diameter(label, scale):
 
 def folders_of(layer):
     paths = sorted({top(p) for p in notes
-                    if (p == layer or p.startswith(layer + "/")) and (ROOT / p).is_dir()})
+                    if (p == layer or p.startswith(layer + "/")) and place(p).is_dir()})
     paths = [p for p in paths if p != layer                      # جذرٌ بلا ملفات لا دائرة له
-             or any(f.suffix in (".cs", ".xaml") for f in (ROOT / p).glob("*"))]
+             or any(f.suffix in (".cs", ".xaml") for f in place(p).glob("*"))]
     label = {p: (p[len(layer) + 1:] if p != layer else "الجذر") for p in paths}
     return sorted(((p, label[p]) for p in paths), key=lambda r: (r[1] != "الجذر", r[1]))
 

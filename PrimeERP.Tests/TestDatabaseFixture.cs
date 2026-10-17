@@ -7,7 +7,10 @@ using PrimeERP.Data.Core;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Platform.Permissions;
 using PrimeERP.Platform.Settings;
-using PrimeERP.Tests.Helpers;
+using PrimeERP.Tests.Helpers;
+using PrimeERP.Platform;
+using PrimeERP.Data;
+using PrimeERP.Application;
 
 namespace PrimeERP.Tests
 {
@@ -48,7 +51,7 @@ namespace PrimeERP.Tests
 
             var provider = services.BuildServiceProvider();
 
-            provider.EnsureDatabaseReady();
+            provider.EnsureDatabaseReady(PrimeERP.UI.Services.LanguageResources.Apply);
             provider.RegisterModules();
             return provider;
         }

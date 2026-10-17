@@ -9,7 +9,14 @@ namespace PrimeERP.Tests.Architecture
     /// <summary>حدود الطبقات على IL المُصرَّف</summary>
     public class LayerBoundaryTests
     {
-        private static readonly Assembly MainAssembly = typeof(PrimeERP.Domain.Entities.Account).Assembly;
+        private static readonly Assembly[] Assemblies =
+        {
+            typeof(PrimeERP.Domain.Entities.Account).Assembly,
+            typeof(PrimeERP.Platform.AppInfo).Assembly,
+            typeof(PrimeERP.Data.Core.DbConfig).Assembly,
+            typeof(PrimeERP.Application.Services.Core.ServiceBase).Assembly,
+            typeof(PrimeERP.App.Bootstrap.DependencyInjection).Assembly,
+        };
 
         [Fact]
         public void Data_DoesNotReferenceApplicationOrHigherLayers() =>
@@ -47,7 +54,7 @@ namespace PrimeERP.Tests.Architecture
         {
             var violations = new List<string>();
 
-            var types = MainAssembly.GetTypes()
+            var types = Assemblies.SelectMany(a => a.GetTypes())
                 .Where(t => t.Namespace != null && t.Namespace.StartsWith(layerNamespacePrefix))
                 .Where(t => !t.Name.Contains('<')); // يستبعد الأنواع المُولَّدة آلياً (closures/async state machines)
 

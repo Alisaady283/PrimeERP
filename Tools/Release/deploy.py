@@ -70,7 +70,7 @@ def build():
     publish = OUT / "files"
     if publish.exists():
         shutil.rmtree(publish)
-    run("dotnet", "publish", "PrimeERP.csproj", "-c", "Release", "-r", "win-x64", "--self-contained", "true", "-o", str(publish))
+    run("dotnet", "publish", "frontend-desktop/PrimeERP.csproj", "-c", "Release", "-r", "win-x64", "--self-contained", "true", "-o", str(publish))
     return publish, {
         file.relative_to(publish).as_posix(): {"sha256": fingerprint(file), "size": file.stat().st_size}
         for file in sorted(publish.rglob("*")) if file.is_file() and file.name not in SKIP

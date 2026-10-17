@@ -1,0 +1,1105 @@
+using PrimeERP.Application.PageServices.Security;
+using PrimeERP.Application.Services.Ledger;
+using PrimeERP.Application.Services.Entities;
+using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Entities.Common;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using PrimeERP.Application.DTOs.Accounting;
+using PrimeERP.Application.DTOs.Common;
+using PrimeERP.Application.DTOs.Inventory;
+using PrimeERP.Application.DTOs.Parties;
+using PrimeERP.Application.DTOs.Assets;
+using PrimeERP.Application.PageServices.Accounting;
+using PrimeERP.Application.DTOs.HR;
+using PrimeERP.Application.PageServices.Assets;
+using PrimeERP.Application.PageServices.Common;
+using PrimeERP.Application.DTOs.Security;
+using PrimeERP.Application.DTOs.Sales;
+using PrimeERP.Application.PageServices.HR;
+using PrimeERP.Application.DTOs.Purchasing;
+using PrimeERP.Application.PageServices.Purchasing;
+using PrimeERP.Application.PageServices.Sales;
+using PrimeERP.Application.PageServices.Inventory;
+using PrimeERP.Application.PageServices.Parties;
+using PrimeERP.Composition.Definitions;
+using PrimeERP.Composition.Print;
+using PrimeERP.Composition.Registry;
+using PrimeERP.Platform.Localization;
+using PrimeERP.Platform.Permissions;
+using PrimeERP.Platform.Settings;
+using PrimeERP.UI.Components.Display;
+using PrimeERP.UI.Components.Tree;
+using PrimeERP.UI.ViewModels;
+
+namespace PrimeERP.Modules
+{
+    /// <summary>يسجّل كل وحدة عمل فعلية</summary>
+    public static class ModuleRegistrations
+    {
+        public static void RegisterAll(IModuleRegistry registry)
+        {
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Customers",
+                TitleKey = "Str.Module.Customers",
+                PermissionPrefix = "Customers",
+                ViewModelType = typeof(CustomersViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Customer.Code), Width = 110, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Customer.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(Customer.CategoryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(Customer.Phone), Width = 130 },
+                    new() { Header = LocalizationService.Get("Str.CreditLimit"), Binding = nameof(Customer.CreditLimit), Width = 120, Align = ColumnAlign.Center, Format = "N2", PermissionKey = PermissionKeys.Customers.ColumnCreditLimit },
+                    new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(Customer.Balance), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Customers.Add",
+                    TitleEditKey = "Str.Customers.Edit",
+                    GridColumns = 2,
+                    ServiceType = typeof(ICustomerService),
+                    CreateDtoType = typeof(Customer),
+                    UpdateDtoType = typeof(Customer),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(Customer.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(Customer.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
+                        new() { Key = nameof(Customer.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 150 },
+                        new() { Key = nameof(Customer.CreditLimit), LabelKey = "Str.CreditLimit", Kind = FieldKind.Number },
+                        new() { Key = nameof(Customer.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Customers" },
+                        new() { Key = nameof(Customer.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }.Concat(StandardFields.DialogFields()).ToList()
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Suppliers",
+                TitleKey = "Str.Module.Suppliers",
+                PermissionPrefix = "Suppliers",
+                ViewModelType = typeof(SuppliersViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Supplier.Code), Width = 110, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Supplier.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(Supplier.CategoryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(Supplier.Phone), Width = 130 },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Suppliers.Add",
+                    TitleEditKey = "Str.Suppliers.Edit",
+                    GridColumns = 2,
+                    ServiceType = typeof(ISupplierService),
+                    CreateDtoType = typeof(Supplier),
+                    UpdateDtoType = typeof(Supplier),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(Supplier.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(Supplier.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
+                        new() { Key = nameof(Supplier.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 150 },
+                        new() { Key = nameof(Supplier.CreditLimit), LabelKey = "Str.CreditLimit", Kind = FieldKind.Number },
+                        new() { Key = nameof(Supplier.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Suppliers" },
+                        new() { Key = nameof(Supplier.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }.Concat(StandardFields.DialogFields()).ToList()
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Accounts",
+                TitleKey = "Str.Module.Accounts",
+                PermissionPrefix = "Accounts",
+                ViewModelType = typeof(AccountsViewModel),
+                LayoutKind = LayoutKind.TreeSplit,
+                Filters = new()
+                {
+                    new() { Key = nameof(AccountTreeFilter.TypeFilter), LabelKey = "Str.AccountType", PickerType = "AccountType" },
+                },
+                TreeOptions = new TreeLayoutOptions
+                {
+                    IdField = nameof(AccountDto.Id),
+                    ParentIdField = nameof(AccountDto.ParentId),
+                    CodeField = nameof(AccountDto.Code),
+                    NameField = nameof(AccountDto.Name),
+                    DisplayTemplate = "{Code} - {Name}",
+                    ExtraInfoTemplate = "({Balance:N2})",
+                    ExpandToLevel = 2,
+                    LeafFlagField = nameof(AccountDto.IsLeaf),
+                },
+                Columns = new List<GridColumn>
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"),    Binding = nameof(AccountDto.Code) },
+                    new() { Header = LocalizationService.Get("Str.Name"),    Binding = nameof(AccountDto.Name) },
+                    new() { Header = LocalizationService.Get("Str.Level"),   Binding = nameof(AccountDto.Level) },
+                    new() { Header = LocalizationService.Get("Str.Type"),    Binding = nameof(AccountDto.TypeName) },
+                    new() { Header = LocalizationService.Get("Str.AcceptsEntries"), Binding = nameof(AccountDto.IsLeaf) },
+                    new() { Header = LocalizationService.Get("Str.Balance"), Binding = nameof(AccountDto.Balance), Format = "N2", PermissionKey = PermissionKeys.Accounts.ColumnBalance },
+                }.Concat(StandardFields.AuditColumns()).ToList(),
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Accounts.Add",
+                    TitleEditKey = "Str.Accounts.Edit",
+                    GridColumns = 1,
+                    ServiceType = typeof(IAccountService),
+                    CreateDtoType = typeof(CreateAccountDto),
+                    UpdateDtoType = typeof(UpdateAccountDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateAccountDto.ParentId), LabelKey = "Str.ParentAccount", Kind = FieldKind.Picker, IsRequired = true, IsReadOnlyOnEdit = true, PickerType = "Account" },
+                        new() { Key = nameof(CreateAccountDto.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(CreateAccountDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea },
+                    }.Concat(StandardFields.DialogFields()).ToList()
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Journals",
+                TitleKey = "Str.Module.Journals",
+                PermissionPrefix = "Journal",
+                ViewModelType = typeof(JournalsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.EntryNo"), Binding = nameof(JournalEntryDto.EntryNo), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.EntryDate"), Binding = nameof(JournalEntryDto.EntryDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Description"), Binding = nameof(JournalEntryDto.Description), Width = 260, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Debit"), Binding = nameof(JournalEntryDto.TotalDebit), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Credit"), Binding = nameof(JournalEntryDto.TotalCredit), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(JournalEntryDto.StatusText), Width = 110, Align = ColumnAlign.Center },
+                },
+                DocumentDialog = new DocumentDialogDefinition
+                {
+                    PrintTitleKey = "Str.Print.Title.Journal",
+                    TitleKey = "Str.Journals.Add",
+                    TitleEditKey = "Str.Journals.Edit",
+                    ServiceType = typeof(IJournalService),
+                    DtoType = typeof(CreateJournalDto),
+                    LineDtoType = typeof(CreateJournalLineDto),
+                    LinesPropertyName = nameof(CreateJournalDto.Lines), DefaultLines = 2,
+                    HeaderFields = new()
+                    {
+                        new() { Key = nameof(CreateJournalDto.EntryDate), LabelKey = "Str.EntryDate", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreateJournalDto.Description), LabelKey = "Str.Description", Kind = FieldKind.Text, IsRequired = true, MaxLength = 300 },
+                    },
+                    LineFields = new()
+                    {
+                        new() { Key = nameof(CreateJournalLineDto.AccountCode), Header = LocalizationService.Get("Str.Account"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Account", PickerLeafOnly = true },
+                        new() { Key = nameof(CreateJournalLineDto.Debit), Header = LocalizationService.Get("Str.Debit"), Kind = FieldKind.Number, Width = 110 },
+                        new() { Key = nameof(CreateJournalLineDto.Credit), Header = LocalizationService.Get("Str.Credit"), Kind = FieldKind.Number, Width = 110 },
+                        new() { Key = nameof(CreateJournalLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 180 },
+                    },
+                    LineTotals = new()
+                    {
+                        Keys = new() { nameof(CreateJournalLineDto.Debit), nameof(CreateJournalLineDto.Credit) },
+                        MustBalance = new[] { nameof(CreateJournalLineDto.Debit), nameof(CreateJournalLineDto.Credit) }
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Products",
+                TitleKey = "Str.Module.Products",
+                PermissionPrefix = "Products",
+                ViewModelType = typeof(ProductsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Product.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Product.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(Product.CategoryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.CostPrice"), Binding = nameof(Product.CostPrice), Width = 110, Align = ColumnAlign.Center, Format = "N2", PermissionKey = PermissionKeys.Products.ColumnCostPrice },
+                    new() { Header = LocalizationService.Get("Str.SalePrice"), Binding = nameof(Product.SalePrice), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                },
+                Filters = new()
+                {
+                    new() { Key = nameof(ProductFilter.CategoryId), LabelKey = "Str.Category", PickerType = "Category", PickerCategoryModuleKey = "Products" },
+                },
+                Gallery = new GalleryDefinition(nameof(Product.ImageData), nameof(Product.Name), nameof(Product.Code), nameof(Product.SalePrice)),
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Products.Add",
+                    TitleEditKey = "Str.Products.Edit",
+                    GridColumns = 2,
+                    ServiceType = typeof(IProductService),
+                    CreateDtoType = typeof(Product),
+                    UpdateDtoType = typeof(Product),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(Product.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(Product.Barcode), LabelKey = "Str.Barcode", Kind = FieldKind.Text, MaxLength = 60 },
+                        new() { Key = nameof(Product.HasExpiry), LabelKey = "Str.Product.HasExpiry", Kind = FieldKind.Check, ShownWhen = PrimeERP.Platform.Settings.Editions.TracksExpiry },
+                        new() { Key = nameof(Product.CostPrice), LabelKey = "Str.CostPrice", Kind = FieldKind.Number, IsRequired = true },
+                        new() { Key = nameof(Product.SalePrice), LabelKey = "Str.SalePrice", Kind = FieldKind.Number, IsRequired = true },
+                        new() { Key = nameof(Product.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Products" },
+                        new() { Key = nameof(Product.BrandId), LabelKey = "Str.Brand", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "Brands" },
+                        new() { Key = nameof(Product.ImageData), LabelKey = "Str.Product.Image", Kind = FieldKind.Image, ImageSize = 256, ColumnSpan = 2 },
+                        new() { Key = nameof(Product.Description), LabelKey = "Str.Product.Description", Kind = FieldKind.TextArea, MaxLength = 1000, ColumnSpan = 2 },
+                        new() { Key = nameof(Product.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }.Concat(StandardFields.DialogFields()).ToList()
+                }
+            });
+
+            RegisterLookup(registry, "Categories", "Str.Module.Categories", "Categories.Add", "Categories.Edit", typeof(CategoriesLookupViewModel));
+            RegisterLookup(registry, "Brands", "Str.Module.Brands", "Brands.Add", "Brands.Edit", typeof(BrandsViewModel));
+            RegisterLookup(registry, "AssetCategories", "Str.Module.AssetCategories", "AssetCategories.Add", "AssetCategories.Edit", typeof(AssetCategoriesViewModel));
+
+            RegisterNameList<Department>(registry, "Departments");
+            RegisterNameList<JobTitle>(registry, "JobTitles");
+            RegisterNameList<AllowanceType>(registry, "AllowanceTypes");
+            RegisterNameList<DeductionType>(registry, "DeductionTypes");
+            RegisterNameList<LeaveType>(registry, "LeaveTypes",
+                (new() { Header = LocalizationService.Get("Str.LeaveType.DaysPerYear"), Binding = nameof(LeaveType.DaysPerYear), Width = 120, Align = ColumnAlign.Center },
+                 new() { Key = nameof(LeaveType.DaysPerYear), LabelKey = "Str.LeaveType.DaysPerYear", Kind = FieldKind.Number }),
+                (new() { Header = LocalizationService.Get("Str.LeaveType.IsPaid"), Binding = nameof(LeaveType.IsPaid), Width = 90, Align = ColumnAlign.Center },
+                 new() { Key = nameof(LeaveType.IsPaid), LabelKey = "Str.LeaveType.IsPaid", Kind = FieldKind.Check, DefaultValue = true }));
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "HrLists", TitleKey = "Str.Module.HrLists", PermissionPrefix = "HrLists",
+                LayoutKind = LayoutKind.Tabs,
+                TabModules = new[] { "Departments", "JobTitles", "AllowanceTypes", "DeductionTypes", "LeaveTypes" }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Units", TitleKey = "Str.Module.Units", PermissionPrefix = "Units",
+                ViewModelFactory = s => RowPage.ViewModel<Lookup<Unit>>(s, "Units"),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Unit.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Symbol"), Binding = nameof(Unit.Symbol), Width = 100 },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(Unit.IsActive), Width = 80, Align = ColumnAlign.Center },
+                },
+                Dialog = RowPage.Dialog<Lookup<Unit>>("Str.Units.Add", new List<FieldDefinition>
+                {
+                    new() { Key = nameof(Unit.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                    new() { Key = nameof(Unit.Symbol), LabelKey = "Str.Symbol", Kind = FieldKind.Text, MaxLength = 20 },
+                    new() { Key = nameof(Unit.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                }, "Str.Units.Edit", gridColumns: 1)
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Branches", TitleKey = "Str.Module.Branches", PermissionPrefix = "Branches",
+                ViewModelFactory = s => RowPage.ViewModel<Lookup<Branch>>(s, "Branches"),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Branch.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Branch.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(Branch.IsActive), Width = 80, Align = ColumnAlign.Center },
+                },
+                Dialog = RowPage.Dialog<Lookup<Branch>>("Str.Branches.Add", new List<FieldDefinition>
+                {
+                    new() { Key = nameof(Branch.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                    new() { Key = nameof(Branch.WarehouseId), LabelKey = "Str.Branch.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
+                    new() { Key = nameof(Branch.TreasuryId), LabelKey = "Str.Branch.Treasury", Kind = FieldKind.Picker, PickerType = "Treasury", IsRequired = true },
+                    new() { Key = nameof(Branch.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                }, "Str.Branches.Edit", gridColumns: 1)
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "AlertRules", TitleKey = "Str.Module.AlertRules", PermissionPrefix = "AlertRules",
+                ViewModelFactory = s => RowPage.ViewModel<Lookup<AlertRule>>(s, "AlertRules"),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AlertRule.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AlertRule.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Alert.Event"), Binding = nameof(AlertRule.Event), Width = 180 },
+                    new() { Header = LocalizationService.Get("Str.Alert.Channels"), Binding = nameof(AlertRule.Channels), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.Alert.Recipients"), Binding = nameof(AlertRule.Recipients), Width = 220 },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(AlertRule.IsActive), Width = 80, Align = ColumnAlign.Center },
+                },
+                Dialog = RowPage.Dialog<Lookup<AlertRule>>("Str.AlertRules.Add", new List<FieldDefinition>
+                {
+                    new() { Key = nameof(AlertRule.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                    new() { Key = nameof(AlertRule.Event), LabelKey = "Str.Alert.Event", Kind = FieldKind.Picker, PickerType = "AlertEvent", PickerValueField = "Code", IsRequired = true },
+                    new() { Key = nameof(AlertRule.Channels), LabelKey = "Str.Alert.Channels", Kind = FieldKind.Picker, PickerType = "AlertChannel", PickerValueField = "Code", IsRequired = true },
+                    new() { Key = nameof(AlertRule.Recipients), LabelKey = "Str.Alert.Recipients", Kind = FieldKind.TextArea, MaxLength = 1000 },
+                    new() { Key = nameof(AlertRule.Threshold), LabelKey = "Str.Alert.Threshold", Kind = FieldKind.Number, Min = 0 },
+                    new() { Key = nameof(AlertRule.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                }, "Str.AlertRules.Edit", gridColumns: 1)
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "ApiKeys", TitleKey = "Str.Module.ApiKeys", PermissionPrefix = "ApiKeys",
+                ViewModelFactory = s => RowPage.ViewModel<Lookup<ApiKey>>(s, "ApiKeys"),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(ApiKey.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(ApiKey.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.ApiKey.Prefix"), Binding = nameof(ApiKey.Prefix), Width = 120 },
+                    new() { Header = LocalizationService.Get("Str.ApiKey.ExpiresAt"), Binding = nameof(ApiKey.ExpiresAt), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.ApiKey.LastUsedAt"), Binding = nameof(ApiKey.LastUsedAt), Width = 140, Format = "yyyy-MM-dd HH:mm" },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(ApiKey.IsActive), Width = 80, Align = ColumnAlign.Center },
+                },
+                RowActions = new()
+                {
+                    // المفتاح يُعرض مرةً ويُنسخ للحافظة، ولا يُحفظ إلا بصمته
+                    new()
+                    {
+                        Label = LocalizationService.Get("Str.ApiKey.Issue"), Variant = "primary", PermissionKey = "ApiKeys.Edit",
+                        Execute = (services, row) =>
+                        {
+                            var issued = services.GetRequiredService<PrimeERP.Application.Services.Integration.IApiKeyService>()
+                                .Issue(Convert.ToInt32(((IDictionary<string, object>)row)["Id"]));
+                            if (issued.IsFailure) return issued;
+                            System.Windows.Clipboard.SetText(issued.Value);
+                            _ = services.GetRequiredService<PrimeERP.UI.Services.IDialogService>()
+                                .ShowMessageAsync(LocalizationService.Get("Str.ApiKey.Issue"), LocalizationService.Get("Str.ApiKey.Copied", issued.Value));
+                            return issued;
+                        }
+                    }
+                },
+                Dialog = RowPage.Dialog<Lookup<ApiKey>>("Str.ApiKeys.Add", new List<FieldDefinition>
+                {
+                    new() { Key = nameof(ApiKey.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                    new() { Key = nameof(ApiKey.UserId), LabelKey = "Str.ApiKey.User", Kind = FieldKind.Picker, PickerType = "User", IsRequired = true },
+                    new() { Key = nameof(ApiKey.ExpiresAt), LabelKey = "Str.ApiKey.ExpiresAt", Kind = FieldKind.Date },
+                    new() { Key = nameof(ApiKey.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                }, "Str.ApiKeys.Edit", gridColumns: 1)
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Warehouses", TitleKey = "Str.Module.Warehouses", PermissionPrefix = "Warehouses",
+                ViewModelFactory = s => RowPage.ViewModel<Lookup<Warehouse>>(s, "Warehouses"),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Warehouse.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Warehouse.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Location"), Binding = nameof(Warehouse.Location), Width = 160 },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(Warehouse.IsActive), Width = 80, Align = ColumnAlign.Center },
+                },
+                Dialog = RowPage.Dialog<Lookup<Warehouse>>("Str.Warehouses.Add", new List<FieldDefinition>
+                {
+                    new() { Key = nameof(Warehouse.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                    new() { Key = nameof(Warehouse.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
+                    new() { Key = nameof(Warehouse.ManagerName), LabelKey = "Str.ManagerName", Kind = FieldKind.Text, MaxLength = 150 },
+                    new() { Key = nameof(Warehouse.BranchId), LabelKey = "Str.Branch", Kind = FieldKind.Picker, PickerType = "Branch" },
+                    new() { Key = nameof(Warehouse.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                }, "Str.Warehouses.Edit", gridColumns: 1)
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Assets",
+                TitleKey = "Str.Module.Assets",
+                PermissionPrefix = "Assets",
+                ViewModelType = typeof(AssetsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Asset.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Asset.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Category"), Binding = nameof(Asset.CategoryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.PurchaseDate"), Binding = nameof(Asset.PurchaseDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Asset.Cost"), Binding = nameof(Asset.PurchaseCost), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.BookValue"), Binding = nameof(Asset.CurrentValue), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                },
+                Filters = new()
+                {
+                    new() { Key = nameof(AssetFilter.CategoryId), LabelKey = "Str.Category", PickerType = "Category", PickerCategoryModuleKey = "AssetCategories" },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Assets.Add",
+                    TitleEditKey = "Str.Assets.Edit",
+                    GridColumns = 2,
+                    ServiceType = typeof(IAssetService),
+                    CreateDtoType = typeof(Asset),
+                    UpdateDtoType = typeof(Asset),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(Asset.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(Asset.CategoryId), LabelKey = "Str.Category", Kind = FieldKind.Picker, PickerType = "Category", PickerCategoryModuleKey = "AssetCategories" },
+                        new() { Key = nameof(Asset.PurchaseDate), LabelKey = "Str.PurchaseDate", Kind = FieldKind.Date },
+                        new() { Key = nameof(Asset.PurchaseCost), LabelKey = "Str.PurchaseCost", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
+                        new() { Key = nameof(Asset.AcquisitionMethod), LabelKey = "Str.Asset.Acquisition", Kind = FieldKind.Picker, IsRequired = true, PickerType = "AssetAcquisition" },
+                        new() { Key = nameof(Asset.FundingId), LabelKey = "Str.Asset.Funding", Kind = FieldKind.Picker, IsRequired = true, PickerType = "AssetFunding",
+                                PickerFilterField = nameof(Asset.AcquisitionMethod) },
+                        new() { Key = nameof(Asset.UsefulLifeYears), LabelKey = "Str.Asset.Life", Kind = FieldKind.Number, Min = 0, Max = 100 },
+                        new() { Key = nameof(Asset.SalvageValue), LabelKey = "Str.Asset.Salvage", Kind = FieldKind.Number, Min = 0 },
+                        new() { Key = nameof(Asset.Location), LabelKey = "Str.Location", Kind = FieldKind.Text, MaxLength = 200 },
+                        new() { Key = nameof(Asset.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }.Concat(StandardFields.DialogFields()).ToList()
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "AssetDepreciations",
+                TitleKey = "Str.Module.AssetDepreciations",
+                PermissionPrefix = "Assets",
+                EnabledActions = new[] { "delete", "print", "export", "refresh" },
+                ViewModelType = typeof(AssetDepreciationsViewModel),
+                RowActions = new()
+                {
+                    new()
+                    {
+                        Label = LocalizationService.Get("Str.Module.AssetDepreciations"), Variant = "primary", PermissionKey = "Assets.Create",
+                        RequiresSelection = false,
+                        Execute = (services, _) => services
+                            .GetRequiredService<PrimeERP.Application.PageServices.Assets.IAssetDepreciationService>()
+                            .RunFor(DateTime.Today)
+                    }
+                },
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(AssetDepreciation.PeriodDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetDepreciation.AssetCode), Width = 110, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetDepreciation.AssetName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Description"), Binding = nameof(AssetDepreciation.Notes), Width = 240 },
+                    new() { Header = LocalizationService.Get("Str.Amount"), Binding = nameof(AssetDepreciation.Amount), Width = 130, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                },
+                Filters = new()
+                {
+                    new() { Key = nameof(AssetDepreciationFilter.AssetId), LabelKey = "Str.Assets", PickerType = "Asset" },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Module.AssetDepreciations",
+                    TitleEditKey = "Str.Module.AssetDepreciations",
+                    GridColumns = 2,
+                    ServiceType = typeof(IAssetDepreciationService),
+                    CreateDtoType = typeof(AssetDepreciation),
+                    UpdateDtoType = typeof(AssetDepreciation),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(AssetDepreciation.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
+                        new() { Key = nameof(AssetDepreciation.PeriodDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(AssetDepreciation.Amount), LabelKey = "Str.Amount", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
+                        new() { Key = nameof(AssetDepreciation.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "AssetRevaluations",
+                TitleKey = "Str.Module.AssetRevaluations",
+                PermissionPrefix = "Assets",
+                ViewModelType = typeof(AssetRevaluationsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(AssetRevaluation.RevaluationDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetRevaluation.AssetCode), Width = 100, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetRevaluation.AssetName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Asset.OldValue"), Binding = nameof(AssetRevaluation.OldValue), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.NewValue"), Binding = nameof(AssetRevaluation.NewValue), Width = 140, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.Difference"), Binding = nameof(AssetRevaluation.Difference), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.RevaluationKind"), Binding = nameof(AssetRevaluation.KindName), Width = 90, Align = ColumnAlign.Center },
+                },
+                Filters = new()
+                {
+                    new() { Key = nameof(AssetRevaluationFilter.AssetId), LabelKey = "Str.Assets", PickerType = "Asset" },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Asset.Revaluation",
+                    TitleEditKey = "Str.Asset.Revaluation",
+                    GridColumns = 2,
+                    ServiceType = typeof(IAssetRevaluationService),
+                    CreateDtoType = typeof(AssetRevaluation),
+                    UpdateDtoType = typeof(AssetRevaluation),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(AssetRevaluation.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
+                        new() { Key = nameof(AssetRevaluation.RevaluationDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(AssetRevaluation.NewValue), LabelKey = "Str.Asset.NewValue", Kind = FieldKind.Number, Positive = true, Message = "Str.Asset.RevaluationZero" },
+                        new() { Key = nameof(AssetRevaluation.SalvageValue), LabelKey = "Str.Asset.Salvage", Kind = FieldKind.Number, Min = 0 },
+                        new() { Key = nameof(AssetRevaluation.UsefulLifeYears), LabelKey = "Str.Asset.RemainingLife", Kind = FieldKind.Number, Min = 0, Max = 100 },
+                        new() { Key = nameof(AssetRevaluation.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "AssetDisposals",
+                TitleKey = "Str.Module.AssetDisposals",
+                PermissionPrefix = "Assets",
+                ViewModelType = typeof(AssetDisposalsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Date"), Binding = nameof(AssetDisposal.DisposalDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(AssetDisposal.AssetCode), Width = 100, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(AssetDisposal.AssetName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Treasury"), Binding = nameof(AssetDisposal.TreasuryName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Asset.SalePrice"), Binding = nameof(AssetDisposal.SalePrice), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.BookValue"), Binding = nameof(AssetDisposal.BookValue), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.GainOrLoss"), Binding = nameof(AssetDisposal.GainOrLoss), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Asset.DisposalKind"), Binding = nameof(AssetDisposal.KindName), Width = 90, Align = ColumnAlign.Center },
+                },
+                Filters = new()
+                {
+                    new() { Key = nameof(AssetDisposalFilter.AssetId), LabelKey = "Str.Assets", PickerType = "Asset" },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Asset.Disposal",
+                    TitleEditKey = "Str.Asset.Disposal",
+                    GridColumns = 2,
+                    ServiceType = typeof(IAssetDisposalService),
+                    CreateDtoType = typeof(AssetDisposal),
+                    UpdateDtoType = typeof(AssetDisposal),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(AssetDisposal.AssetId), LabelKey = "Str.Assets", Kind = FieldKind.Picker, IsRequired = true, PickerType = "Asset" },
+                        new() { Key = nameof(AssetDisposal.DisposalDate), LabelKey = "Str.Date", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(AssetDisposal.Settlement), LabelKey = "Str.Asset.Acquisition", Kind = FieldKind.Picker, IsRequired = true, PickerType = "DisposalSettlement" },
+                        new() { Key = nameof(AssetDisposal.TreasuryId), LabelKey = "Str.Asset.Settlement", Kind = FieldKind.Picker, IsRequired = true,
+                                PickerType = "AssetFunding", PickerFilterField = nameof(AssetDisposal.Settlement) },
+                        new() { Key = nameof(AssetDisposal.SalePrice), LabelKey = "Str.Asset.SalePrice", Kind = FieldKind.Number, IsRequired = true, Min = 0 },
+                        new() { Key = nameof(AssetDisposal.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Employees",
+                TitleKey = "Str.Module.Employees",
+                PermissionPrefix = "HR",
+                ViewModelType = typeof(EmployeesViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Code"), Binding = nameof(Employee.Code), Width = 90, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Employee.Name), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Department"), Binding = nameof(Employee.DepartmentName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.JobTitle"), Binding = nameof(Employee.JobTitleName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Phone"), Binding = nameof(Employee.Phone), Width = 120 },
+                    new() { Header = LocalizationService.Get("Str.Salary"), Binding = nameof(Employee.BasicSalary), Width = 110, Align = ColumnAlign.Center, Format = "N2", PermissionKey = PermissionKeys.HR.ColumnSalary },
+                },
+                Filters = new()
+                {
+                    new() { Key = nameof(EmployeeFilter.DepartmentId), LabelKey = "Str.Department", PickerType = "Department" },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Employees.Add",
+                    TitleEditKey = "Str.Employees.Edit",
+                    GridColumns = 2,
+                    ServiceType = typeof(IEmployeeService),
+                    CreateDtoType = typeof(Employee),
+                    UpdateDtoType = typeof(Employee),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(Employee.Name), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                        new() { Key = nameof(Employee.DepartmentId), LabelKey = "Str.Department", Kind = FieldKind.Picker, PickerType = "Department" },
+                        new() { Key = nameof(Employee.JobTitleId), LabelKey = "Str.JobTitle", Kind = FieldKind.Picker, PickerType = "JobTitle" },
+                        new() { Key = nameof(Employee.Phone), LabelKey = "Str.Phone", Kind = FieldKind.Text, MaxLength = 30 },
+                        new() { Key = nameof(Employee.Email), LabelKey = "Str.Email", Kind = FieldKind.Text, MaxLength = 120 },
+                        new() { Key = nameof(Employee.HireDate), LabelKey = "Str.HireDate", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(Employee.BasicSalary), LabelKey = "Str.Salary", Kind = FieldKind.Number },
+                        new() { Key = nameof(Employee.WorkStart), LabelKey = "Str.Employee.WorkStart", Kind = FieldKind.Text, MaxLength = 5, DefaultSetting = SettingKeys.HR.WorkStart },
+                        new() { Key = nameof(Employee.WorkEnd), LabelKey = "Str.Employee.WorkEnd", Kind = FieldKind.Text, MaxLength = 5, DefaultSetting = SettingKeys.HR.WorkEnd },
+                        new() { Key = nameof(Employee.Status), LabelKey = "Str.Status", Kind = FieldKind.Picker, PickerType = "EmployeeStatus", IsRequired = true,
+                                DefaultValue = (int)PrimeERP.Domain.Enums.EmployeeStatus.Active },
+                        new() { Key = nameof(Employee.Notes), LabelKey = "Str.Notes", Kind = FieldKind.TextArea, ColumnSpan = 2 },
+                    }.Concat(StandardFields.DialogFields().Where(f => f.Key != "IsActive")).ToList()
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Roles", TitleKey = "Str.Module.Roles", PermissionPrefix = "Users", ViewModelType = typeof(RolesViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Role.NameAr), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.RoleNameEn"), Binding = nameof(Role.Name), Width = 160 },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Roles.Add", TitleEditKey = "Str.Roles.Edit", GridColumns = 1,
+                    ServiceType = typeof(IRoleService), CreateDtoType = typeof(Role), UpdateDtoType = typeof(Role),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(Role.NameAr), LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 100 },
+                        new() { Key = nameof(Role.Name), LabelKey = "Str.RoleNameEn", Kind = FieldKind.Text, IsRequired = true, MaxLength = 100 },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Users", TitleKey = "Str.Module.Users", PermissionPrefix = "Users", ViewModelType = typeof(UsersViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Username"), Binding = nameof(UserDto.Username), Width = 130 },
+                    new() { Header = LocalizationService.Get("Str.DisplayName"), Binding = nameof(UserDto.DisplayName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Role"), Binding = nameof(UserDto.RoleName), Width = 140 },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(UserDto.StatusText), Width = 90, Align = ColumnAlign.Center },
+                },
+                Dialog = new DialogDefinition
+                {
+                    TitleKey = "Str.Users.Add", TitleEditKey = "Str.Users.Edit", GridColumns = 1,
+                    ServiceType = typeof(IUserService), CreateDtoType = typeof(CreateUserDto), UpdateDtoType = typeof(UpdateUserDto),
+                    Fields = new List<FieldDefinition>
+                    {
+                        new() { Key = nameof(CreateUserDto.Username), LabelKey = "Str.Username", Kind = FieldKind.Text, IsRequired = true, MaxLength = 100, IsReadOnlyOnEdit = true },
+                        new() { Key = nameof(CreateUserDto.DisplayName), LabelKey = "Str.DisplayName", Kind = FieldKind.Text, IsRequired = true, MaxLength = 150 },
+                        new() { Key = nameof(CreateUserDto.RoleId), LabelKey = "Str.Role", Kind = FieldKind.Picker, PickerType = "Role", IsRequired = true },
+                        new() { Key = nameof(CreateUserDto.BranchId), LabelKey = "Str.Branch", Kind = FieldKind.Picker, PickerType = "Branch" },
+                        new() { Key = nameof(CreateUserDto.Password), LabelKey = "Str.Password", Kind = FieldKind.Password, IsRequired = true },
+                        new() { Key = nameof(CreateUserDto.IsActive), LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "SalesInvoices", TitleKey = "Str.Module.SalesInvoices", PermissionPrefix = "Sales", ViewModelType = typeof(SalesInvoicesViewModel),
+                RowActions = new()
+                {
+                    // رابط دفعٍ لباقي الفاتورة من البوابة المفعّلة، وتأكيدها يُنشئ سند القبض
+                    new()
+                    {
+                        Label = LocalizationService.Get("Str.Payment.Request"), PermissionKey = "Receipts.Create",
+                        AppliesTo = row => row is SalesInvoiceDto { RemainingAmount: > 0 },
+                        Execute = (services, row) =>
+                        {
+                            var link = services.GetRequiredService<PrimeERP.Application.Services.Integration.IPaymentLinkService>()
+                                .RequestAsync(((SalesInvoiceDto)row).Id).GetAwaiter().GetResult();
+                            if (link.IsFailure) return link;
+                            System.Windows.Clipboard.SetText(link.Value.Url);
+                            _ = services.GetRequiredService<PrimeERP.UI.Services.IDialogService>()
+                                .ShowMessageAsync(LocalizationService.Get("Str.Payment.Request"), LocalizationService.Get("Str.Payment.LinkReady", link.Value.Url));
+                            return link;
+                        }
+                    },
+                    // تقديم الفاتورة للجهة الضريبية المفعّلة، والمعرّف والرمز يُحفظان ويُطبعان
+                    new()
+                    {
+                        Label = LocalizationService.Get("Str.EInvoice.Submit"), PermissionKey = "Sales.Edit",
+                        Execute = (services, row) =>
+                        {
+                            var submitted = services.GetRequiredService<PrimeERP.Application.Services.Integration.IEInvoiceService>()
+                                .SubmitAsync(((SalesInvoiceDto)row).Id).GetAwaiter().GetResult();
+                            if (submitted.IsFailure) return submitted;
+                            _ = services.GetRequiredService<PrimeERP.UI.Services.IDialogService>()
+                                .ShowMessageAsync(LocalizationService.Get("Str.EInvoice.Submit"), LocalizationService.Get("Str.EInvoice.Accepted", submitted.Value.Uuid));
+                            return submitted;
+                        }
+                    }
+                },
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.InvoiceNo"), Binding = nameof(SalesInvoiceDto.InvoiceNo), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.InvoiceDate"), Binding = nameof(SalesInvoiceDto.InvoiceDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Customer"), Binding = nameof(SalesInvoiceDto.CustomerName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.NetTotal"), Binding = nameof(SalesInvoiceDto.NetTotal), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Aging.Paid"), Binding = nameof(SalesInvoiceDto.PaidAmount), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Aging.Remaining"), Binding = nameof(SalesInvoiceDto.RemainingAmount), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(SalesInvoiceDto.StatusText), Width = 100, Align = ColumnAlign.Center },
+                },
+                DocumentDialog = SalesInvoiceDialog()
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Pos", TitleKey = "Str.Module.Pos", PermissionPrefix = "Pos",
+                LayoutKind = LayoutKind.Pos,
+                DocumentDialog = SalesInvoiceDialog(),
+                ReturnDialog = SalesReturnDialog()
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "PosShifts", TitleKey = "Str.Module.PosShifts", PermissionPrefix = "Pos",
+                ViewModelFactory = s => RowPage.ViewModel<PrimeERP.Application.PageServices.Sales.PosShiftReport>(s, "Pos"),
+                EnabledActions = new[] { "print", "export", "refresh" },
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Pos.OpenedAt"), Binding = nameof(PosShift.OpenedAt), Width = 140, Format = "yyyy-MM-dd HH:mm" },
+                    new() { Header = LocalizationService.Get("Str.Pos.ClosedAt"), Binding = nameof(PosShift.ClosedAt), Width = 140, Format = "yyyy-MM-dd HH:mm" },
+                    new() { Header = LocalizationService.Get("Str.Pos.Cashier"), Binding = nameof(PosShift.UserName), Width = 160, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Pos.Opening"), Binding = nameof(PosShift.OpeningCash), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Pos.CashIn"), Binding = nameof(PosShift.CashIn), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Pos.CashOut"), Binding = nameof(PosShift.CashOut), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Pos.Counted"), Binding = nameof(PosShift.CountedCash), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Pos.Difference"), Binding = nameof(PosShift.Difference), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Pos.Sales"), Binding = nameof(PosShift.SalesCount), Width = 80, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Pos.Returns"), Binding = nameof(PosShift.ReturnsCount), Width = 80, Align = ColumnAlign.Center },
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "PurchaseInvoices", TitleKey = "Str.Module.PurchaseInvoices", PermissionPrefix = "Purchases", ViewModelType = typeof(PurchaseInvoicesViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.InvoiceNo"), Binding = nameof(PurchaseInvoiceDto.InvoiceNo), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.InvoiceDate"), Binding = nameof(PurchaseInvoiceDto.InvoiceDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Supplier"), Binding = nameof(PurchaseInvoiceDto.SupplierName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.NetTotal"), Binding = nameof(PurchaseInvoiceDto.NetTotal), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Aging.Paid"), Binding = nameof(PurchaseInvoiceDto.PaidAmount), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Aging.Remaining"), Binding = nameof(PurchaseInvoiceDto.RemainingAmount), Width = 110, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(PurchaseInvoiceDto.StatusText), Width = 100, Align = ColumnAlign.Center },
+                },
+                DocumentDialog = new DocumentDialogDefinition
+                {
+                    PrintTitleKey = "Str.Print.Title.PurchaseInvoice",
+                    PrintColumns = TradePaper.Columns(),
+                    PrintTotals = TradePaper.Totals(),
+                    LineMath = TradePaper.LineMath(),
+                    TitleKey = "Str.PurchaseInvoices.Add", TitleEditKey = "Str.PurchaseInvoices.Edit",
+                    ServiceType = typeof(IPurchaseInvoiceService), DtoType = typeof(CreatePurchaseInvoiceDto), LineDtoType = typeof(CreatePurchaseInvoiceLineDto),
+                    LinesPropertyName = nameof(CreatePurchaseInvoiceDto.Lines),
+                    PullSources = CycleFlow.IntoPurchaseInvoice(),
+                    HeaderFields = new()
+                    {
+                        new() { Key = nameof(CreatePurchaseInvoiceDto.InvoiceDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreatePurchaseInvoiceDto.SupplierId), LabelKey = "Str.Supplier", Kind = FieldKind.Picker, PickerType = "Supplier", IsRequired = true },
+                        new() { Key = nameof(CreatePurchaseInvoiceDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true, FlowScope = FlowScope.SimplifiedOnly },
+                        new() { Key = nameof(CreatePurchaseInvoiceDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
+                    },
+                    LineFields = new()
+                    {
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
+                        StandardFields.Qty(),
+                        StandardFields.Batch(),
+                        StandardFields.Expiry(),
+                        StandardFields.Price(),
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
+                        TradePaper.NetColumn(),
+                        new() { Key = nameof(CreatePurchaseInvoiceLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "SalesReturns", TitleKey = "Str.Module.SalesReturns", PermissionPrefix = "Sales", ViewModelType = typeof(SalesReturnsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.InvoiceNo"), Binding = nameof(SalesReturnDto.ReturnNo), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.InvoiceDate"), Binding = nameof(SalesReturnDto.ReturnDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Customer"), Binding = nameof(SalesReturnDto.CustomerName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.NetTotal"), Binding = nameof(SalesReturnDto.NetTotal), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                },
+                DocumentDialog = SalesReturnDialog()
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "PurchaseReturns", TitleKey = "Str.Module.PurchaseReturns", PermissionPrefix = "Purchases", ViewModelType = typeof(PurchaseReturnsViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.InvoiceNo"), Binding = nameof(PurchaseReturnDto.ReturnNo), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.InvoiceDate"), Binding = nameof(PurchaseReturnDto.ReturnDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.Supplier"), Binding = nameof(PurchaseReturnDto.SupplierName), Width = 200, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.NetTotal"), Binding = nameof(PurchaseReturnDto.NetTotal), Width = 120, Align = ColumnAlign.Center, Format = "N2" },
+                },
+                DocumentDialog = new DocumentDialogDefinition
+                {
+                    PrintTitleKey = "Str.Print.Title.PurchaseReturn",
+                    PrintColumns = TradePaper.Columns(),
+                    PrintTotals = TradePaper.Totals(),
+                    LineMath = TradePaper.LineMath(),
+                    TitleKey = "Str.PurchaseReturns.Add", TitleEditKey = "Str.PurchaseReturns.Edit",
+                    ServiceType = typeof(IPurchaseReturnService), DtoType = typeof(CreatePurchaseReturnDto), LineDtoType = typeof(CreatePurchaseReturnLineDto),
+                    LinesPropertyName = nameof(CreatePurchaseReturnDto.Lines),
+                    PullSources = CycleFlow.IntoPurchaseReturn(),
+                    HeaderFields = new()
+                    {
+                        new() { Key = nameof(CreatePurchaseReturnDto.ReturnDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreatePurchaseReturnDto.SupplierId), LabelKey = "Str.Supplier", Kind = FieldKind.Picker, PickerType = "Supplier", IsRequired = true },
+                        new() { Key = nameof(CreatePurchaseReturnDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true, FlowScope = FlowScope.SimplifiedOnly },
+                        new() { Key = nameof(CreatePurchaseReturnDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
+                    },
+                    LineFields = new()
+                    {
+                        new() { Key = nameof(CreatePurchaseReturnLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
+                        StandardFields.Qty(),
+                        StandardFields.Batch(),
+                        StandardFields.Price(),
+                        new() { Key = nameof(CreatePurchaseReturnLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
+                        new() { Key = nameof(CreatePurchaseReturnLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
+                        new() { Key = nameof(CreatePurchaseReturnLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
+                        TradePaper.NetColumn(),
+                        new() { Key = nameof(CreatePurchaseReturnLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
+                    }
+                }
+            });
+
+            StockDocumentFactory.Register(registry, "StockIn", "Str.Module.StockIn", typeof(StockInViewModel), typeof(IStockInService),
+                FlowScope.Both, StockEffect.In, CycleFlow.IntoStockIn(),
+                printTitleKey: "Str.Print.Title.StockIn", addTitleKey: "Str.StockIn.Add", editTitleKey: "Str.StockIn.Edit");
+
+            StockDocumentFactory.Register(registry, "StockOut", "Str.Module.StockOut", typeof(StockOutViewModel), typeof(IStockOutService),
+                FlowScope.Both, StockEffect.Out, CycleFlow.IntoStockOut(),
+                printTitleKey: "Str.Print.Title.StockOut", addTitleKey: "Str.StockOut.Add", editTitleKey: "Str.StockOut.Edit");
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "StockTransfer", TitleKey = "Str.Module.StockTransfer", PermissionPrefix = "Inventory", ViewModelType = typeof(StockTransferViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.DocNo"), Binding = nameof(StockTransferDto.DocNo), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.InvoiceDate"), Binding = nameof(StockTransferDto.MovementDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.FromWarehouse"), Binding = nameof(StockTransferDto.FromWarehouseName), Width = 160 },
+                    new() { Header = LocalizationService.Get("Str.ToWarehouse"), Binding = nameof(StockTransferDto.ToWarehouseName), Width = 160, IsStarWidth = true },
+                },
+                DocumentDialog = new DocumentDialogDefinition
+                {
+                    PrintTitleKey = "Str.Print.Title.StockTransfer",
+                    TitleKey = "Str.StockTransfer.Add", TitleEditKey = "Str.StockTransfer.Edit",
+                    ServiceType = typeof(IStockTransferService), DtoType = typeof(CreateStockTransferDto), LineDtoType = typeof(CreateStockTransferLineDto),
+                    LinesPropertyName = nameof(CreateStockTransferDto.Lines),
+                    HeaderFields = new()
+                    {
+                        new() { Key = nameof(CreateStockTransferDto.MovementDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreateStockTransferDto.FromWarehouseId), LabelKey = "Str.FromWarehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
+                        new() { Key = nameof(CreateStockTransferDto.ToWarehouseId), LabelKey = "Str.ToWarehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
+                        new() { Key = nameof(CreateStockTransferDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
+                    },
+                    LineFields = new()
+                    {
+                        new() { Key = nameof(CreateStockTransferLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
+                        StandardFields.Qty(),
+                        StandardFields.Batch(),
+                        new() { Key = nameof(CreateStockTransferLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "Payroll", TitleKey = "Str.Module.Payroll", PermissionPrefix = "HR", ViewModelType = typeof(PayrollViewModel),
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.DocNo"), Binding = nameof(PayrollDto.PayrollNo), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.Month"), Binding = nameof(PayrollDto.Month), Width = 70, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.Year"), Binding = nameof(PayrollDto.Year), Width = 80, Align = ColumnAlign.Center },
+                    new() { Header = LocalizationService.Get("Str.PaymentDate"), Binding = nameof(PayrollDto.PaymentDate), Width = 110, Format = "yyyy-MM-dd" },
+                    new() { Header = LocalizationService.Get("Str.NetTotal"), Binding = nameof(PayrollDto.NetTotal), Width = 130, Align = ColumnAlign.Center, Format = "N2" },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(PayrollDto.StatusText), Width = 100, Align = ColumnAlign.Center },
+                },
+                DocumentDialog = new DocumentDialogDefinition
+                {
+                    PrintTitleKey = "Str.Print.Title.Payroll",
+                    TitleKey = "Str.Payroll.Add", TitleEditKey = "Str.Payroll.Edit",
+                    ServiceType = typeof(IPayrollService), DtoType = typeof(CreatePayrollDto), LineDtoType = typeof(CreatePayrollLineDto),
+                    LinesPropertyName = nameof(CreatePayrollDto.Lines), OpenBy = new[] { nameof(CreatePayrollDto.Month), nameof(CreatePayrollDto.Year) },
+                    HeaderFields = new()
+                    {
+                        new() { Key = nameof(CreatePayrollDto.Month), LabelKey = "Str.Month", Kind = FieldKind.Picker, PickerType = "Month", IsRequired = true },
+                        new() { Key = nameof(CreatePayrollDto.Year), LabelKey = "Str.Year", Kind = FieldKind.Picker, PickerType = "Year", IsRequired = true },
+                        new() { Key = nameof(CreatePayrollDto.PeriodStart), LabelKey = "Str.PeriodStart", Kind = FieldKind.ReadOnly, DisplayFormat = "yyyy-MM-dd" },
+                        new() { Key = nameof(CreatePayrollDto.PeriodEnd), LabelKey = "Str.PeriodEnd", Kind = FieldKind.ReadOnly, DisplayFormat = "yyyy-MM-dd" },
+                        new() { Key = nameof(CreatePayrollDto.PaymentDate), LabelKey = "Str.PaymentDate", Kind = FieldKind.Date, IsRequired = true },
+                        new() { Key = nameof(CreatePayrollDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
+                    },
+                    LineFields = new()
+                    {
+                        new() { Key = nameof(CreatePayrollLineDto.EmployeeCode), Header = LocalizationService.Get("Str.Employee"), Kind = FieldKind.Picker, Width = 200, IsRequired = true, PickerType = "Employee" },
+                        new() { Key = nameof(CreatePayrollLineDto.BasicSalary), Header = LocalizationService.Get("Str.BasicSalary"), Kind = FieldKind.Number, Width = 100, IsRequired = true },
+                        new() { Key = nameof(CreatePayrollLineDto.Allowances), Header = LocalizationService.Get("Str.Allowances"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Overtime), Header = LocalizationService.Get("Str.Payroll.Overtime"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Deductions), Header = LocalizationService.Get("Str.Deductions"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Advances), Header = LocalizationService.Get("Str.Payroll.Advances"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Insurance), Header = LocalizationService.Get("Str.Payroll.Insurance"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.Tax), Header = LocalizationService.Get("Str.Payroll.Tax"), Kind = FieldKind.Number, Width = 90 },
+                        new() { Key = nameof(CreatePayrollLineDto.NetSalary), Header = LocalizationService.Get("Str.Print.NetAmount"), Kind = FieldKind.ReadOnly, Width = 110 },
+                        new() { Key = nameof(CreatePayrollLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 120 },
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition
+            {
+                Key = "OpeningBalances", TitleKey = "Str.Module.OpeningBalances", PermissionPrefix = "Journal",
+                ViewModelType = typeof(OpeningBalancesViewModel),
+                SingleRecord = true,
+                RowKindProperty = nameof(JournalEntryDto.Source),
+                KindDialogs = new() { OpeningStockDialog() },
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.EntryNo"), Binding = nameof(JournalEntryDto.EntryNo), Width = 130 },
+                    new() { Header = LocalizationService.Get("Str.EntryDate"), Binding = nameof(JournalEntryDto.EntryDate), Width = 110 },
+                    new() { Header = LocalizationService.Get("Str.Type"), Binding = nameof(JournalEntryDto.SourceText), Width = 150 },
+                    new() { Header = LocalizationService.Get("Str.Description"), Binding = nameof(JournalEntryDto.Description), Width = 300, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.Debit"), Binding = nameof(JournalEntryDto.TotalDebit), Width = 120, Align = ColumnAlign.Center, Format = "N2", Footer = FooterAggregate.Sum },
+                    new() { Header = LocalizationService.Get("Str.Status"), Binding = nameof(JournalEntryDto.StatusText), Width = 100, Align = ColumnAlign.Center },
+                },
+                RowActions = new()
+                {
+                    new()
+                    {
+                        Label = LocalizationService.Get("Str.Module.OpeningStock"), Variant = "secondary",
+                        PermissionKey = PermissionKeys.Inventory.OpeningStock,
+                        RequiresSelection = false,
+                        Execute = (services, _) =>
+                        {
+                            PrimeERP.Composition.Renderers.DocumentRenderer.ShowAndSave(OpeningStockDialog(), services,
+                                services.GetRequiredService<PrimeERP.UI.Services.IToastService>());
+                            return PrimeERP.Domain.Results.Result.Ok();
+                        }
+                    }
+                },
+                DocumentDialog = new DocumentDialogDefinition
+                {
+                    PrintTitleKey = "Str.Print.Title.Opening",
+                    TitleKey = "Str.Module.OpeningBalances", TitleEditKey = "Str.Module.OpeningBalances",
+                    ServiceType = typeof(PrimeERP.Application.PageServices.Accounting.IOpeningBalanceService),
+                    DtoType = typeof(CreateJournalDto), LineDtoType = typeof(CreateJournalLineDto),
+                    LinesPropertyName = nameof(CreateJournalDto.Lines), DocumentKind = "OpeningBalances", DefaultLines = 2,
+                    HeaderFields = new()
+                    {
+                        new() { Key = nameof(CreateJournalDto.EntryDate), LabelKey = "Str.StartDate", Kind = FieldKind.Date, IsReadOnly = true },
+                        new() { Key = nameof(CreateJournalDto.Description), LabelKey = "Str.Description", Kind = FieldKind.Text, IsReadOnly = true,
+                                DefaultValue = PrimeERP.Application.PageServices.Accounting.OpeningBalanceService.FixedDescription },
+                    },
+                    LineFields = new()
+                    {
+                        new() { Key = nameof(CreateJournalLineDto.AccountCode), Header = LocalizationService.Get("Str.Account"), Kind = FieldKind.Picker, Width = 260, IsRequired = true, PickerType = "Account", PickerLeafOnly = true },
+                        new() { Key = nameof(CreateJournalLineDto.Debit), Header = LocalizationService.Get("Str.Debit"), Kind = FieldKind.Number, Width = 120 },
+                        new() { Key = nameof(CreateJournalLineDto.Credit), Header = LocalizationService.Get("Str.Credit"), Kind = FieldKind.Number, Width = 120 },
+                        new() { Key = nameof(CreateJournalLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
+                    },
+                    LineTotals = new()
+                    {
+                        Keys = new() { nameof(CreateJournalLineDto.Debit), nameof(CreateJournalLineDto.Credit) },
+                        MustBalance = new[] { nameof(CreateJournalLineDto.Debit), nameof(CreateJournalLineDto.Credit) }
+                    }
+                }
+            });
+
+            registry.Register(new ModuleDefinition { Key = "Settings", TitleKey = "Str.Module.Settings", PermissionPrefix = "Settings", LayoutKind = LayoutKind.Settings });
+        }
+
+        internal static DocumentDialogDefinition SalesReturnDialog() => new()
+        {
+            PrintTitleKey = "Str.Print.Title.SalesReturn",
+            PrintColumns = TradePaper.Columns(),
+            PrintTotals = TradePaper.Totals(),
+            LineMath = TradePaper.LineMath(),
+            TitleKey = "Str.SalesReturns.Add", TitleEditKey = "Str.SalesReturns.Edit",
+            ServiceType = typeof(ISalesReturnService), DtoType = typeof(CreateSalesReturnDto), LineDtoType = typeof(CreateSalesReturnLineDto),
+            LinesPropertyName = nameof(CreateSalesReturnDto.Lines),
+            PullSources = CycleFlow.IntoSalesReturn(),
+            HeaderFields = new()
+            {
+                new() { Key = nameof(CreateSalesReturnDto.ReturnDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
+                new() { Key = nameof(CreateSalesReturnDto.CustomerId), LabelKey = "Str.Customer", Kind = FieldKind.Picker, PickerType = "Customer", IsRequired = true },
+                new() { Key = nameof(CreateSalesReturnDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true, FlowScope = FlowScope.SimplifiedOnly },
+                new() { Key = nameof(CreateSalesReturnDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
+            },
+            LineFields = new()
+            {
+                new() { Key = nameof(CreateSalesReturnLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
+                StandardFields.Qty(),
+                StandardFields.Batch(),
+                StandardFields.Expiry(),
+                StandardFields.Price(),
+                new() { Key = nameof(CreateSalesReturnLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
+                new() { Key = nameof(CreateSalesReturnLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
+                new() { Key = nameof(CreateSalesReturnLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
+                TradePaper.NetColumn(),
+                new() { Key = nameof(CreateSalesReturnLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
+            }
+        };
+
+        internal static DocumentDialogDefinition SalesInvoiceDialog() => new()
+        {
+            PrintTitleKey = "Str.Print.Title.SalesInvoice",
+            PrintColumns = TradePaper.Columns(),
+            PrintTotals = TradePaper.Totals(),
+            LineMath = TradePaper.LineMath(),
+            TitleKey = "Str.SalesInvoices.Add", TitleEditKey = "Str.SalesInvoices.Edit",
+            ServiceType = typeof(ISalesInvoiceService), DtoType = typeof(CreateSalesInvoiceDto), LineDtoType = typeof(CreateSalesInvoiceLineDto),
+            LinesPropertyName = nameof(CreateSalesInvoiceDto.Lines),
+            PullSources = CycleFlow.IntoSalesInvoice(),
+            HeaderFields = new()
+            {
+                new() { Key = nameof(CreateSalesInvoiceDto.InvoiceDate), LabelKey = "Str.InvoiceDate", Kind = FieldKind.Date, IsRequired = true },
+                new() { Key = nameof(CreateSalesInvoiceDto.CustomerId), LabelKey = "Str.Customer", Kind = FieldKind.Picker, PickerType = "Customer", IsRequired = true },
+                new() { Key = nameof(CreateSalesInvoiceDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true, FlowScope = FlowScope.SimplifiedOnly },
+                new() { Key = nameof(CreateSalesInvoiceDto.Notes), LabelKey = "Str.Notes", Kind = FieldKind.Text, MaxLength = 300 },
+            },
+            LineFields = new()
+            {
+                new() { Key = nameof(CreateSalesInvoiceLineDto.ProductCode), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 220, IsRequired = true, PickerType = "Product" },
+                StandardFields.Qty(),
+                StandardFields.Batch(),
+                StandardFields.Price(),
+                new() { Key = nameof(CreateSalesInvoiceLineDto.DiscountPercent), Header = LocalizationService.Get("Str.Line.DiscountPercent"), Kind = FieldKind.Number, Width = 70 },
+                new() { Key = nameof(CreateSalesInvoiceLineDto.VatPercent), Header = LocalizationService.Get("Str.Trade.VatPercent"), Kind = FieldKind.Number, Width = 80 },
+                new() { Key = nameof(CreateSalesInvoiceLineDto.WithholdingPercent), Header = LocalizationService.Get("Str.Trade.WithholdingPercent"), Kind = FieldKind.Number, Width = 80 },
+                TradePaper.NetColumn(),
+                new() { Key = nameof(CreateSalesInvoiceLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
+            }
+        };
+
+        private static DocumentDialogDefinition OpeningStockDialog() => new()
+        {
+            TitleKey = "Str.Module.OpeningStock", TitleEditKey = "Str.Module.OpeningStock",
+            ServiceType = typeof(PrimeERP.Application.PageServices.Inventory.IOpeningStockService),
+            DtoType = typeof(CreateOpeningStockDto), LineDtoType = typeof(CreateOpeningStockLineDto),
+            LinesPropertyName = nameof(CreateOpeningStockDto.Lines), DocumentKind = "OpeningStock",
+            AllowPost = false,
+            HeaderFields = new()
+            {
+                new() { Key = nameof(CreateOpeningStockDto.Date), LabelKey = "Str.StartDate", Kind = FieldKind.Date, IsReadOnly = true },
+                new() { Key = nameof(CreateOpeningStockDto.WarehouseId), LabelKey = "Str.Warehouse", Kind = FieldKind.Picker, PickerType = "Warehouse", IsRequired = true },
+            },
+            LineFields = new()
+            {
+                new() { Key = nameof(CreateOpeningStockLineDto.ProductId), Header = LocalizationService.Get("Str.Product"), Kind = FieldKind.Picker, Width = 260, IsRequired = true, PickerType = "Product" },
+                StandardFields.Qty(),
+                StandardFields.Batch(),
+                StandardFields.Expiry(),
+                StandardFields.Price(nameof(CreateOpeningStockLineDto.UnitCost), "Str.CostPrice"),
+                new() { Key = nameof(CreateOpeningStockLineDto.Value), Header = LocalizationService.Get("Str.Balance"), Kind = FieldKind.ReadOnly, Width = 120 },
+                new() { Key = nameof(CreateOpeningStockLineDto.Notes), Header = LocalizationService.Get("Str.Notes"), Kind = FieldKind.Text, Width = 160 },
+            },
+            LineMath = new() { QtyKey = nameof(CreateOpeningStockLineDto.Qty), PriceKey = nameof(CreateOpeningStockLineDto.UnitCost), NetKey = nameof(CreateOpeningStockLineDto.Value) },
+            LineTotals = new() { Keys = new() { nameof(CreateOpeningStockLineDto.Value) } }
+        };
+
+
+        private static void RegisterNameList<T>(IModuleRegistry registry, string key,
+            params (GridColumn Column, FieldDefinition Field)[] extras) where T : BaseModel, new() =>
+            registry.Register(new ModuleDefinition
+            {
+                Key = key, TitleKey = $"Str.Module.{key}", PermissionPrefix = key,
+                ViewModelFactory = s => RowPage.ViewModel<Lookup<T>>(s, key),
+                Columns = new List<GridColumn>
+                {
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = "Name", Width = 220, IsStarWidth = true },
+                }.Concat(extras.Select(x => x.Column)).Append(
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = "IsActive", Width = 80, Align = ColumnAlign.Center }).ToList(),
+                Dialog = RowPage.Dialog<Lookup<T>>($"Str.{key}.Add", new List<FieldDefinition>
+                {
+                    new() { Key = "Name", LabelKey = "Str.Name", Kind = FieldKind.Text, IsRequired = true, MaxLength = 200 },
+                }.Concat(extras.Select(x => x.Field)).Append(
+                    new() { Key = "IsActive", LabelKey = "Str.Active", Kind = FieldKind.Check, DefaultValue = true }).ToList(), $"Str.{key}.Edit", gridColumns: 1)
+            });
+
+        private static void RegisterLookup(IModuleRegistry registry, string moduleKey, string titleKey, string addKey, string editKey, Type viewModelType)
+        {
+            registry.Register(new ModuleDefinition
+            {
+                Key = moduleKey,
+                TitleKey = titleKey,
+                PermissionPrefix = moduleKey,
+                ViewModelType = viewModelType,
+                Columns = new()
+                {
+                    new() { Header = LocalizationService.Get("Str.Name"), Binding = nameof(Category.Name), Width = 220, IsStarWidth = true },
+                    new() { Header = LocalizationService.Get("Str.ParentCategory"), Binding = nameof(Category.ParentName), Width = 160 },
+                    new() { Header = LocalizationService.Get("Str.Active"), Binding = nameof(Category.IsActive), Width = 80, Align = ColumnAlign.Center },
+                },
+                Dialog = CategoryDialogFactory.Build(moduleKey, "Str." + addKey, "Str." + editKey)
+            });
+        }
+    }
+}

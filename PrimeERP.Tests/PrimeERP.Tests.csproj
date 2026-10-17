@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PrimeERP.csproj" />
+    <ProjectReference Include="..\frontend-desktop\PrimeERP.csproj" />
   </ItemGroup>
 
   <ItemGroup>

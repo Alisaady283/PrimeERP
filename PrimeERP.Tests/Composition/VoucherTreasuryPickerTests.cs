@@ -106,23 +106,12 @@ namespace PrimeERP.Tests.Composition
             var registry = _db.Services.GetRequiredService<IModuleRegistry>();
             var keys = registry.All().Select(m => m.TitleKey).Where(k => k.StartsWith("Str.")).Distinct().ToList();
 
-            foreach (var file in new[] { "Strings.ar.xaml", "Strings.en.xaml" })
+            foreach (var language in new[] { AppLanguage.Ar, AppLanguage.En })
             {
-                var path = System.IO.Path.Combine(RepositoryRoot(), "5.Design", "Strings", file);
-                var content = System.IO.File.ReadAllText(path);
-                var missing = keys.Where(k => !content.Contains($"x:Key=\"{k}\"")).ToList();
+                var missing = keys.Where(k => !StringTable.Of(language).ContainsKey(k)).ToList();
 
-                Assert.True(missing.Count == 0, $"{file} ينقصه: " + string.Join(", ", missing));
+                Assert.True(missing.Count == 0, $"{language} ينقصه: " + string.Join(", ", missing));
             }
-        }
-
-        private static string RepositoryRoot()
-        {
-            var directory = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
-            while (directory != null && !System.IO.File.Exists(System.IO.Path.Combine(directory.FullName, "PrimeERP.csproj")))
-                directory = directory.Parent;
-
-            return directory?.FullName ?? throw new InvalidOperationException("تعذّر تحديد جذر المستودع");
         }
 
         private static IEnumerable<T> FindAll<T>(DependencyObject root) where T : DependencyObject

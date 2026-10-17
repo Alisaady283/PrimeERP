@@ -76,6 +76,7 @@ namespace PrimeERP.Tests.Services
             }
 
             public Result RepairMissingEntities() => Result.Ok();
+            public Result SeedDefaults() => Result.Ok();
 
             public Result DeleteByAccountCode(PrimeDbContext db, string accountCode)
             {

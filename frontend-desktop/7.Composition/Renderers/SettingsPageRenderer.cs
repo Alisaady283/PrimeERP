@@ -1,0 +1,323 @@
+using PrimeERP.Application.PageServices.Backup;
+using PrimeERP.Application.PageServices.Admin;
+using PrimeERP.Application.PageServices.Accounting;
+using PrimeERP.Application.Services.Ledger;
+using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using Microsoft.Extensions.DependencyInjection;
+using PrimeERP.Composition.Definitions;
+using PrimeERP.Composition.Registry;
+using PrimeERP.Platform.Localization;
+using PrimeERP.Platform.Settings;
+using PrimeERP.UI.Components.Display;
+using PrimeERP.UI.Components.Inputs;
+using PrimeERP.UI.Components.Layout;
+using PrimeERP.UI.Services;
+using Btn = PrimeERP.UI.Components.Actions.AppButton;
+
+namespace PrimeERP.Composition.Renderers
+{
+    /// <summary>تصيير صفحة الإعدادات</summary>
+    public static class SettingsPageRenderer
+    {
+        public static FrameworkElement Render(ModuleDefinition definition, IServiceProvider services)
+        {
+            var settingsService = services.GetRequiredService<ISettingsService>();
+            var toast = services.GetRequiredService<IToastService>();
+            var allDefs = SettingKeys.All();
+
+            var header = new PageHeader { Subtitle = LocalizationService.Get("Str.Settings.Version", PrimeERP.Platform.AppInfo.Version) };
+            var updateButton = new Btn { Text = LocalizationService.Get("Str.Settings.CheckUpdate"), Variant = "secondary", Size = "sm" };
+            updateButton.Click += async (_, __) => await UpdateFlow.RunAsync(services);
+            header.ActionsContent = updateButton;
+            var controls = new Dictionary<string, (FieldDefinition Field, FrameworkElement Control)>();
+            var accountRows = new Lazy<List<DialogRenderer.PickerRow>>(() => DialogRenderer.AccountRows(services) ?? new());
+
+            var tabs = SettingsTabs.Visible(services.GetRequiredService<IModuleRegistry>().Manifest).Select(cat =>
+            {
+                var panel = new WrapPanel { Margin = new Thickness(24) };
+                foreach (var def in allDefs.Where(d => d.Category == cat.Category))
+                {
+                    var isAccount = cat.Category == "Accounts" && def.DataType == "string";
+                    // إعدادٌ يختار سجلّاً بمعرّفه: الخزينة والعميل (العميل النقدي لنقطة البيع)
+                    var pickerOf = def.DataType switch { "treasury" => "Treasury", "customer" => "Customer", _ => null };
+                    var isRecord = pickerOf != null;
+                    var isChoice = def.Options != null;
+                    var field = new FieldDefinition
+                    {
+                        Key = def.Key, LabelKey = LabelKeyOf(def.Key), IsRequired = isChoice,
+                        Kind = isAccount || isRecord || isChoice ? FieldKind.Picker
+                             : def.Key == SettingKeys.Company.LogoData ? FieldKind.Image
+                             : def.DataType switch { "bool" => FieldKind.Check, "int" or "decimal" => FieldKind.Number, "secret" => FieldKind.Password, _ => FieldKind.Text },
+                        PickerType = isAccount ? "Account" : pickerOf,
+                        PickerValueField = isAccount || isChoice ? "Code" : "Id",
+                    };
+
+                    var control = DialogRenderer.BuildField(field);
+                    if (isAccount) ((AppComboBox)control).ItemsSource = accountRows.Value.ToList();
+                    if (isRecord) DialogRenderer.LoadPickerItems((AppComboBox)control, field, services);
+                    if (isChoice) ((AppComboBox)control).ItemsSource = def.Options
+                        .Select(o => new DialogRenderer.PickerRow { Code = o, Display = LocalizationService.Get($"Str.Settings.Option.{def.Key}.{o}") }).ToList();
+                    if (field.Kind == FieldKind.Image) control.Width = 420; else control.Width = 260;
+                    control.Margin = new Thickness(0, 0, 16, 16);
+
+                    // السرّي لا يُعاد للشاشة: فارغه يُبقي المحفوظ
+                    var currentValue = SettingKeys.IsSecret(def.Key) ? "" : settingsService.Get<string>(def.Key, def.DefaultValue);
+                    object typedValue = field.Kind switch
+                    {
+                        FieldKind.Check => bool.TryParse(currentValue, out var b) && b,
+                        FieldKind.Number => decimal.TryParse(currentValue, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : 0,
+                        FieldKind.Picker when isRecord => int.TryParse(currentValue, out var treasuryId) ? (object)treasuryId : null,
+                        FieldKind.Picker => currentValue,
+                        FieldKind.Image => currentValue,
+                        _ => currentValue
+                    };
+                    if (field.Kind == FieldKind.Picker) DialogRenderer.SelectPickerItem((AppComboBox)control, typedValue, field.PickerValueField);
+                    else DialogRenderer.SetControlValue(control, field, typedValue);
+
+                    controls[def.Key] = (field, control);
+                    panel.Children.Add(control);
+                }
+
+                // الحقل المشروط (ShownWhen «مفتاح=قيمة») يظهر بقيمة حقله في التبويب نفسه
+                foreach (var def in allDefs.Where(d => d.Category == cat.Category && d.ShownWhen != null))
+                {
+                    var (on, value) = (def.ShownWhen.Split('=')[0], def.ShownWhen.Split('=')[1]);
+                    if (!controls.TryGetValue(on, out var source) || source.Control is not AppComboBox combo) continue;
+                    var shown = controls[def.Key].Control;
+                    void Apply() => shown.Visibility = Equals(combo.SelectedValue as string, value) ? Visibility.Visible : Visibility.Collapsed;
+                    combo.SelectionChanged += (_, __) => Apply();
+                    Apply();
+                }
+
+                if (cat.Category == "Backup") panel.Children.Add(BuildBackupPanel(services, toast));
+                if (cat.Category == "Print") panel.Children.Add(BuildChequeCalibration(services, toast));
+                if (cat.Category == "System" && BuildDatabasePanel(services, toast) is { } database) panel.Children.Add(database);
+
+                return new AppTabItem { Header = LocalizationService.Get(cat.TitleKey), Content = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
+            }).ToList();
+
+            var tabControl = new AppTabControl { Tabs = tabs };
+
+            var saveButton = new Btn { Text = LocalizationService.Get("Str.Save"), Variant = "primary", Size = "sm", Margin = new Thickness(24) };
+            saveButton.Click += (_, __) =>
+            {
+                var values = new Dictionary<string, object>();
+                foreach (var (key, (field, control)) in controls)
+                    values[key] = DialogRenderer.GetControlValue(control, field.Kind);
+
+                var accounts = services.GetRequiredService<PrimeERP.Application.PageServices.Accounting.IAccountService>();
+                foreach (var rootKey in SettingKeys.Accounts.LinkedRoots)
+                {
+                    if (!values.TryGetValue(rootKey, out var code) || code is not string text || string.IsNullOrWhiteSpace(text)) continue;
+
+                    var account = accounts.GetByCode(text);
+                    if (account.IsSuccess && account.Value.IsLeaf)
+                    {
+                        toast.Error(LocalizationService.Get("Str.Settings.RootMustBeGroup", LocalizationService.Get(LabelKeyOf(rootKey))));
+                        return;
+                    }
+                }
+
+                var result = settingsService.SetMany(values);
+                if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
+                toast.Success(LocalizationService.Get("Str.Success"));
+            };
+
+            var root = new Grid();
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Grid.SetRow(header, 0);
+            Grid.SetRow(tabControl, 1);
+            Grid.SetRow(saveButton, 2);
+            root.Children.Add(header);
+            root.Children.Add(tabControl);
+            root.Children.Add(saveButton);
+
+            return root;
+        }
+
+        private static FrameworkElement BuildDatabasePanel(IServiceProvider services, IToastService toast)
+        {
+            var databaseSettings = services.GetRequiredService<IDatabaseSettingsService>();
+            var current = databaseSettings.Get();
+            if (current.IsFailure) return null;
+
+            FrameworkElement Field(string key, string labelKey, FieldKind kind, string pickerType = null)
+            {
+                var definition = new FieldDefinition { Key = key, LabelKey = labelKey, Kind = kind, PickerType = pickerType, IsRequired = pickerType != null };
+                var control = DialogRenderer.BuildField(definition);
+                if (control is AppComboBox combo) DialogRenderer.LoadPickerItems(combo, definition, services);
+                control.Width = 260;
+                control.Margin = new Thickness(0, 0, 16, 16);
+                return control;
+            }
+
+            var provider = (AppComboBox)Field("Provider", "Str.Database.Provider", FieldKind.Picker, "DatabaseProvider");
+            var folder = (AppTextBox)Field("Folder", "Str.Database.Folder", FieldKind.Text);
+            var browse = new Btn { Text = LocalizationService.Get("Str.Database.Browse"), Variant = "secondary", Size = "sm", Margin = new Thickness(0, 0, 16, 16), VerticalAlignment = VerticalAlignment.Bottom };
+            var fileName = (AppTextBox)Field("FileName", "Str.Database.FileName", FieldKind.Text);
+            var host = (AppTextBox)Field("Host", "Str.Database.Host", FieldKind.Text);
+            var port = (AppNumericBox)Field("Port", "Str.Database.Port", FieldKind.Number);
+            var database = (AppTextBox)Field("Database", "Str.Database.Name", FieldKind.Text);
+            var integrated = (AppCheckBox)Field("UseIntegratedSecurity", "Str.Database.IntegratedSecurity", FieldKind.Check);
+            var username = (AppTextBox)Field("Username", "Str.Database.Username", FieldKind.Text);
+            var password = (AppPasswordBox)Field("Password", "Str.Database.Password", FieldKind.Password);
+
+            var dto = current.Value;
+            provider.SelectedValue = dto.Provider;
+            folder.Text = dto.Folder;
+            fileName.Text = dto.FileName;
+            host.Text = dto.Host;
+            port.Value = dto.Port;
+            database.Text = dto.Database;
+            integrated.IsChecked = dto.UseIntegratedSecurity;
+            username.Text = dto.Username;
+
+            var fileFields = new FrameworkElement[] { folder, browse, fileName };
+            var serverFields = new FrameworkElement[] { host, port, database, integrated };
+            var loginFields = new FrameworkElement[] { username, password };
+            void Arrange()
+            {
+                var isFile = provider.SelectedValue is int selected && selected == (int)PrimeERP.Data.Core.DatabaseProvider.Sqlite;
+                foreach (var f in fileFields) f.Visibility = isFile ? Visibility.Visible : Visibility.Collapsed;
+                foreach (var f in serverFields) f.Visibility = isFile ? Visibility.Collapsed : Visibility.Visible;
+                foreach (var f in loginFields) f.Visibility = isFile || integrated.IsChecked ? Visibility.Collapsed : Visibility.Visible;
+            }
+            provider.SelectionChanged += (_, __) => Arrange();
+            integrated.CheckedChanged += (_, __) => Arrange();
+            browse.Click += (_, __) => { if (FolderOutput.Pick(LocalizationService.Get("Str.Database.Folder")) is { } picked) folder.Text = picked; };
+            Arrange();
+
+            var apply = new Btn { Text = LocalizationService.Get("Str.Database.SaveRestart"), Variant = "primary", Size = "sm", HorizontalAlignment = HorizontalAlignment.Left };
+            apply.Click += async (_, __) =>
+            {
+                var dialogs = services.GetRequiredService<IDialogService>();
+                if (!await dialogs.ConfirmAsync(LocalizationService.Get("Str.Database.Title"), LocalizationService.Get("Str.Database.RestartConfirm"))) return;
+
+                var result = databaseSettings.Save(new PrimeERP.Application.DTOs.Common.DatabaseSettingsDto
+                {
+                    Provider = provider.SelectedValue is int selected ? selected : 0,
+                    Folder = folder.Text, FileName = fileName.Text,
+                    Host = host.Text, Port = (int)port.Value, Database = database.Text,
+                    UseIntegratedSecurity = integrated.IsChecked, Username = username.Text, Password = password.Password
+                });
+                if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
+
+                System.Diagnostics.Process.Start(Environment.ProcessPath!);
+                System.Windows.Application.Current.Shutdown();
+            };
+
+            var title = new TextBlock { Text = LocalizationService.Get("Str.Database.Title"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 4) };
+            title.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
+            var hint = new TextBlock { Text = LocalizationService.Get("Str.Database.Hint"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) };
+            hint.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondary");
+            var fields = new WrapPanel();
+            foreach (var f in new FrameworkElement[] { provider, folder, browse, fileName, host, port, database, integrated, username, password }) fields.Children.Add(f);
+
+            return new StackPanel { Width = 900, Children = { title, hint, fields, apply } };
+        }
+
+        private static FrameworkElement BuildChequeCalibration(IServiceProvider services, IToastService toast)
+        {
+            var button = new Btn { Text = LocalizationService.Get("Str.Settings.ChequeCalibrationPrint"), Variant = "secondary", Size = "sm", Margin = new Thickness(0, 8, 0, 0) };
+            button.Click += (_, __) =>
+            {
+                var settings = services.GetRequiredService<ISettingsService>();
+                var layout = new PrimeERP.UI.Services.ChequeLayout
+                {
+                    OffsetX = ReadNumber(settings, SettingKeys.Print.ChequeOffsetX),
+                    OffsetY = ReadNumber(settings, SettingKeys.Print.ChequeOffsetY),
+                    Fields =
+                    {
+                        new() { Text = LocalizationService.Get("Str.Cheque.Payee"), X = 3.0, Y = 1.6 },
+                        new() { Text = LocalizationService.Get("Str.Cheque.AmountDigits"), X = 12.5, Y = 1.6 },
+                        new() { Text = LocalizationService.Get("Str.Cheque.AmountWords"), X = 3.0, Y = 2.8 },
+                        new() { Text = LocalizationService.Get("Str.Date"), X = 12.5, Y = 0.8 },
+                    }
+                };
+
+                var sheet = services.GetRequiredService<PrimeERP.UI.Services.IChequePrinter>().BuildCalibrationSheet(layout);
+                if (sheet.IsFailure) { toast.Error(sheet.ErrorMessage); return; }
+
+                services.GetRequiredService<PrimeERP.UI.Services.IPrintService>()
+                    .DialogHost?.ShowPreview(sheet.Value, LocalizationService.Get("Str.Settings.ChequeCalibration"));
+            };
+
+            return new StackPanel { Width = 500, Children = { button } };
+        }
+
+        private static double ReadNumber(ISettingsService settings, string key) =>
+            double.TryParse(settings.Get<string>(key, "0"), out var value) ? value : 0;
+
+        private static FrameworkElement BuildBackupPanel(IServiceProvider services, IToastService toast)
+        {
+            var backup = services.GetRequiredService<IBackupService>();
+            var dialogs = services.GetRequiredService<IDialogService>();
+
+            var panel = new StackPanel { Width = 500 };
+            var createBtn = new Btn { Text = LocalizationService.Get("Str.Backup.CreateNow"), Variant = "primary", Size = "sm", Margin = new Thickness(0, 0, 0, 12) };
+            var listPanel = new StackPanel();
+
+            void RefreshList()
+            {
+                listPanel.Children.Clear();
+                foreach (var b in backup.List())
+                {
+                    var row = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                    var text = new TextBlock { Text = $"{System.IO.Path.GetFileName(b.FilePath)} — {b.CreatedAt:yyyy-MM-dd HH:mm}", VerticalAlignment = VerticalAlignment.Center };
+                    text.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
+                    var restoreBtn = new Btn { Text = LocalizationService.Get("Str.Backup.Restore"), Variant = "secondary", Size = "sm" };
+                    restoreBtn.Click += async (_, __) =>
+                    {
+                        var confirmed = await dialogs.ConfirmAsync(LocalizationService.Get("Str.Backup.Restore"), LocalizationService.Get("Str.Backup.RestoreConfirm"), isDangerous: true);
+                        if (!confirmed) return;
+
+                        PrimeERP.Domain.Results.Result result;
+                        using (dialogs.ShowProgress(LocalizationService.Get("Str.Backup.Restore"),
+                                                    LocalizationService.Get("Str.PleaseWait")))
+                            result = await Task.Run(() => backup.Restore(b.FilePath));
+
+                        if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
+
+                        await dialogs.ShowMessageAsync(LocalizationService.Get("Str.Backup.Restore"),
+                            LocalizationService.Get("Str.Backup.RestoredRestart"), PrimeERP.Domain.Results.StatusVariant.Success);
+                        System.Windows.Application.Current.Shutdown();
+                    };
+
+                    Grid.SetColumn(text, 0);
+                    Grid.SetColumn(restoreBtn, 1);
+                    row.Children.Add(text);
+                    row.Children.Add(restoreBtn);
+                    listPanel.Children.Add(row);
+                }
+            }
+
+            createBtn.Click += async (_, __) =>
+            {
+                using var handle = dialogs.ShowProgress(LocalizationService.Get("Str.Backup.Create"),
+                                                       LocalizationService.Get("Str.PleaseWait"));
+                var result = await Task.Run(() => backup.Create());
+
+                if (!result.IsSuccess) { toast.Error(result.ErrorMessage); return; }
+                toast.Success(LocalizationService.Get("Str.Success"));
+                RefreshList();
+            };
+
+            RefreshList();
+            panel.Children.Add(createBtn);
+            panel.Children.Add(listPanel);
+            return panel;
+        }
+
+        private static string LabelKeyOf(string settingKey) => $"Str.Settings.Label.{settingKey}";
+    }
+}

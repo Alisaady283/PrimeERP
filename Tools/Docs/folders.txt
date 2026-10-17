@@ -1,7 +1,8 @@
 1.Platform|بنية تحتية عابرة لا تعرف الأعمال
 1.Platform/Audit|سجلّ التدقيق: من فعل ماذا ومتى
 1.Platform/Design|عقد تحميل موارد التصميم
-1.Platform/Localization|قاموس النصوص وتبديل اللغة
+1.Platform/Localization|اللغة الحالية ونصوصها
+1.Platform/Localization/Strings|النصوص الظاهرة بالعربية والإنجليزية (JSON) — مصدرٌ واحد لسطح المكتب والخادم والويب
 1.Platform/Net|الشبكة في موضع واحد
 1.Platform/Permissions|مفاتيح الصلاحيات وجلسة المستخدم
 1.Platform/Security|تجزئة كلمات المرور
@@ -61,7 +62,6 @@
 4.Application/Validation|دالة التحقق الوحيدة Check بشروطٍ معاملاتٍ في Field، وسطور المستند
 5.Design|رموز بصرية: XAML للشاشة وثوابت للتصدير
 5.Design/Icons|الأيقونات
-5.Design/Strings|النصوص الظاهرة بالعربية والإنجليزية
 5.Design/Styles|أنماط عناصر WPF
 5.Design/Surfaces|ألوان الورق والتصدير، خارج موارد الشاشة
 6.UI|القطع المرئية وأسس نماذج العرض

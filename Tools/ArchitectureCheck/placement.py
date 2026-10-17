@@ -3,7 +3,8 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from layers import place, named
 LAYERS = ["1.Platform", "2.Data", "3.Domain", "4.Application", "5.Design",
           "6.UI", "7.Composition", "8.Modules", "App", "PrimeERP.Setup"]
 
@@ -28,13 +29,13 @@ SUFFIX_FOLDER = {"Service": "Services", "Repository": "Repositories", "ViewModel
 
 def files():
     for layer in LAYERS:
-        for f in (ROOT / layer).rglob("*.cs"):
+        for f in place(layer).rglob("*.cs"):
             if not any(p in ("obj", "bin") for p in f.parts):
                 yield f
 
 
 def rel(path):
-    return str(path.relative_to(ROOT)).replace("\\", "/")
+    return named(path)
 
 
 def read(f):
@@ -56,7 +57,7 @@ def inventory():
 def violations():
     for f in files():
         found, ns, _ = read(f)
-        parts = f.relative_to(ROOT).parts
+        parts = Path(named(f)).parts
         layer, folders = parts[0], parts[1:-1]
 
         for kind, name in found:

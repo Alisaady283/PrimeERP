@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "uniwind";
+
+/* رموز التصميم نفسها التي يقرؤها الويب — لا قيم هنا */
+@import "../../frontend-web/src/styles/tokens.css";

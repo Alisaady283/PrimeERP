@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\backend\4.Application\PrimeERP.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.104.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+    <PackageReference Include="QuestPDF" Version="2024.10.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- مشروع WPF المؤقّت (‎*_wpftmp.csproj‎) يُنشَأ أثناء ترجمة XAML ويُحذَف عند نجاح البناء، فيبقى متخلّفاً
+       كلما انقطع البناء. عندها يرى dotnet run مشروعين ويتوقّف. التنظيف بعد نجاح البناء لا قبله: حينها
+       لا يكون أي مشروع مؤقّت قيد الاستخدام، فلا يُحذف واحد أثناء ترجمته. -->
+  <Target Name="RemoveStaleWpfTempProjects" AfterTargets="Build" Condition="!$(MSBuildProjectName.EndsWith('_wpftmp'))">
+    <ItemGroup>
+      <_StaleWpfTemp Include="$(MSBuildProjectDirectory)\*_wpftmp.csproj" />
+    </ItemGroup>
+    <Delete Files="@(_StaleWpfTemp)" ContinueOnError="true" />
+  </Target>
+
+</Project>

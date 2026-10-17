@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\1.Platform\PrimeERP.Platform.csproj" />
+    <ProjectReference Include="..\2.Data\PrimeERP.Data.csproj" />
+    <ProjectReference Include="..\3.Domain\PrimeERP.Domain.csproj" />
+  </ItemGroup>
+</Project>

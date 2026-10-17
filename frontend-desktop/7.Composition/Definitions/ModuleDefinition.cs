@@ -1,0 +1,69 @@
+using System;
+using System.Collections.Generic;
+using PrimeERP.UI.Components.Display;
+using PrimeERP.UI.Components.Tree;
+
+namespace PrimeERP.Composition.Definitions
+{
+    /// <summary>وصف تعريفي كامل لصفحة قائمة+CRUD</summary>
+    public record ModuleDefinition
+    {
+        public required string Key { get; init; }
+        public required string TitleKey { get; init; }
+        public required string PermissionPrefix { get; init; }
+
+        /// <summary>بوّابة الصفحة: مفتاحها إن سُجّلت صلاحياتها، وإلا مجالها</summary>
+        public string PagePermission => PrimeERP.Platform.Permissions.PermissionKeys.GateOf(Key, PermissionPrefix);
+
+        /// <summary>مفتاح المجال بمفتاح الصفحة</summary>
+        public string PageKeyOf(string key) =>
+            key != null && key.StartsWith(PermissionPrefix + ".")
+                && System.Array.IndexOf(PrimeERP.Platform.Permissions.PermissionKeys.PageActions, key[(PermissionPrefix.Length + 1)..]) >= 0
+                ? $"{PagePermission}.{key[(PermissionPrefix.Length + 1)..]}" : key;
+
+        public Type ViewModelType { get; init; }
+
+        public Func<IServiceProvider, object> ViewModelFactory { get; init; }
+
+        public string[] EnabledActions { get; init; }
+
+        public List<GridColumn> Columns { get; init; }
+
+        public LayoutKind LayoutKind { get; init; } = LayoutKind.Grid;
+
+        public string[] TabModules { get; init; }
+
+        public TreeLayoutOptions TreeOptions { get; init; }
+
+        public DialogDefinition Dialog { get; init; }
+
+        public DocumentDialogDefinition DocumentDialog { get; init; }
+        public DocumentDialogDefinition ReturnDialog { get; init; }
+
+        /// <summary>صفٌّ يحرّره محرّر نوعه</summary>
+        public string RowKindProperty { get; init; }
+
+        public List<DocumentDialogDefinition> KindDialogs { get; init; }
+
+        public List<FilterDefinition> Filters { get; init; }
+
+        public ReportDefinition Report { get; init; }
+        public DashboardDefinition Dashboard { get; init; }
+
+        public TreeCheckListDefinition TreeCheckList { get; init; }
+
+        public List<RowAction> RowActions { get; init; }
+
+        public bool SingleRecord { get; init; }
+
+        public bool Reorderable { get; init; }
+
+        public FlowScope FlowScope { get; init; } = FlowScope.Both;
+
+        /// <summary>عرض المربّعات بجانب الجدول (AppGallery) — كـgallery في دليل الويب</summary>
+        public GalleryDefinition Gallery { get; init; }
+    }
+
+    /// <summary>خصائص الصفّ التي يعرضها المربّع: الصورة (Base64) والعنوان والتلميح والقيمة بتنسيقها</summary>
+    public record GalleryDefinition(string ImageProperty, string TitleProperty, string HintProperty = null, string ValueProperty = null, string ValueFormat = "N2");
+}

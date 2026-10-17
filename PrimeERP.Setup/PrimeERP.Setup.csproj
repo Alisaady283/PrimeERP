@@ -16,6 +16,6 @@
 
   <!-- بصمة الجهاز مصدرها واحد: المنصّة. المنصِّب يستوردها ولا ينسخها -->
   <ItemGroup>
-    <Compile Include="..\1.Platform\Net\MachineFingerprint.cs" Link="MachineFingerprint.cs" />
+    <Compile Include="..\backend\1.Platform\Net\MachineFingerprint.cs" Link="MachineFingerprint.cs" />
   </ItemGroup>
 </Project>

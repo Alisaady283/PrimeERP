@@ -1,8 +1,10 @@
 """يقرأ الحقيقة من الكود: جداول SchemaBuilder وكيانات 3.Domain — أساسُ توليد نموذج EF"""
 import re
+import sys
 from pathlib import Path
 
-ROOT = Path(".")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from layers import place
 CALL = re.compile(r'\.(Id|Text|Int|Decimal|Bool|DateCol|Audit|SoftDelete|Concurrency|Index|ForeignKey)\(([^)]*)\)')
 
 
@@ -45,7 +47,7 @@ def columns_of(chain):
 def table_names():
     """اسم كل جدول كما يعلنه الصنف: TableName / HeaderTable / LinesTable / base("h","l")"""
     names = {}
-    for f in ROOT.glob("2.Data/Repositories/**/*.cs"):
+    for f in place("2.Data").glob("Repositories/**/*.cs"):
         text = f.read_text(encoding="utf-8")
         for m in re.finditer(r'class\s+(\w+)', text):
             tail = text[m.end():m.end() + 1200]
@@ -61,7 +63,7 @@ def table_names():
 def tables():
     """الجدول ← (أعمدة، فهارس). المُعامَل يُحلّ باسمه من الوارث"""
     literal, template = {}, []
-    for f in list(ROOT.glob("2.Data/**/*.cs")) + list(ROOT.glob("1.Platform/**/*.cs")):
+    for f in list(place("2.Data").glob("**/*.cs")) + list(place("1.Platform").glob("**/*.cs")):
         text = f.read_text(encoding="utf-8")
         for m in re.finditer(r'SchemaBuilder\.Table\((?:"(\w+)"|(\w+))\)(.*?)\.Create\(\)', text, re.S):
             chain = columns_of(m.group(3))
@@ -83,7 +85,7 @@ def tables():
 def entities():
     """كل كيان مع خصائصه الموروثة — بعدّ الأقواس، فالصنف الفارغ لا يبتلع تاليه"""
     own, parent = {}, {}
-    for f in list(ROOT.glob("3.Domain/**/*.cs")) + list(ROOT.glob("2.Data/Repositories/*.cs")):
+    for f in list(place("3.Domain").glob("**/*.cs")) + list(place("2.Data").glob("Repositories/*.cs")):
         text = f.read_text(encoding="utf-8")
         for m in re.finditer(r'public (?:abstract |sealed )?class (\w+)(?:\s*:\s*([\w<>]+))?', text):
             start = text.find("{", m.end())
@@ -115,7 +117,7 @@ def entities():
 def links(tabs, ents):
     """الجدول ← الكيان: من المستودع أولاً، ثم بمطابقة الاسم"""
     found = {}
-    for f in ROOT.glob("2.Data/Repositories/**/*.cs"):
+    for f in place("2.Data").glob("Repositories/**/*.cs"):
         text = f.read_text(encoding="utf-8")
         for m in re.finditer(r'class\s+(\w+)\s*:\s*\w+<(\w+)(?:,\s*(\w+))?>', text):
             tail = text[m.end():m.end() + 1200]

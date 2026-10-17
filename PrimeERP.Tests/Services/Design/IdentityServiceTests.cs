@@ -65,13 +65,7 @@ namespace PrimeERP.Tests.Services.Design
             });
         }
 
-        private static string DesignRoot()
-        {
-            var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "5.Design")))
-                dir = dir.Parent;
-            return Path.Combine(dir!.FullName, "5.Design");
-        }
+        private static string DesignRoot() => Path.Combine(PrimeERP.Tests.Helpers.TestPaths.Root, "frontend-desktop", "5.Design");
 
 
         [Fact]

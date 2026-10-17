@@ -82,15 +82,17 @@ namespace PrimeERP.Tests.Composition
             var nodes = screen.BuildTree(_db.Services, roleId);
 
             foreach (var node in PermissionTreeFactory.KeyNodes(nodes))
-                if (node.Id == "Sales.Print") node.CheckState = NodeCheckState.Checked;
+                if (node.Id == "SalesInvoices.Print") node.CheckState = NodeCheckState.Checked;
 
             Assert.True(screen.Save(_db.Services, roleId, nodes).Result.IsSuccess);
 
             var permissions = _db.Services.GetRequiredService<IPermissionService>();
             permissions.LoadForUser(userId);
 
-            Assert.True(permissions.Can("Sales.Print"));
-            Assert.True(permissions.Can("Sales.View"), "الطباعة مُنحت والعرض لم يلحق بها");
+            Assert.True(permissions.Can("SalesInvoices.Print"));
+            Assert.True(permissions.Can("SalesInvoices.View"), "الطباعة مُنحت والعرض لم يلحق بها");
+            Assert.True(permissions.Can("Sales.Print"), "مفتاح الصفحة لم يمنح مقابله في مجالها");
+            Assert.False(permissions.Can("Quotation.View"), "صفحةٌ لم تُمنح فُتحت بمنح أختها");
 
             Assert.False(permissions.Can("Purchases.View"));
         }
@@ -105,7 +107,7 @@ namespace PrimeERP.Tests.Composition
             var nodes = screen.BuildTree(_db.Services, roleId);
 
             foreach (var node in PermissionTreeFactory.KeyNodes(nodes))
-                if (node.Id == "Journal.View" || node.Id.StartsWith("Sales."))
+                if (node.Id == "Journals.View" || node.Id.StartsWith("SalesInvoices."))
                     node.CheckState = NodeCheckState.Checked;
 
             Assert.True(screen.Save(_db.Services, roleId, nodes).Result.IsSuccess);
@@ -114,14 +116,16 @@ namespace PrimeERP.Tests.Composition
                 .Where(n => n.CheckState == NodeCheckState.Checked)
                 .Select(n => n.Id).ToHashSet();
 
-            Assert.Contains("Journal.View", reopened);
-            Assert.Contains("Sales.View", reopened);
+            Assert.Contains("Journals.View", reopened);
+            Assert.Contains("SalesInvoices.View", reopened);
 
             var permissions = _db.Services.GetRequiredService<IPermissionService>();
             permissions.LoadForUser(userId);
 
-            Assert.True(permissions.Can("Journal.View"), "قيود اليومية محجوبة رغم منحها");
-            Assert.True(permissions.Can("Sales.View"), "المبيعات محجوبة رغم منحها");
+            Assert.True(permissions.Can("Journals.View"), "قيود اليومية محجوبة رغم منحها");
+            Assert.True(permissions.Can("Journal.View"), "مجال القيود لم يلحق بصفحته");
+            Assert.True(permissions.Can("SalesInvoices.View"), "فواتير المبيعات محجوبة رغم منحها");
+            Assert.True(permissions.Can("Sales.View"), "مجال المبيعات لم يلحق بصفحته");
             Assert.False(permissions.Can("Settings.System"), "صلاحية غير ممنوحة صارت مسموحة");
         }
     }

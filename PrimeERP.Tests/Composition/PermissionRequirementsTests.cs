@@ -56,12 +56,12 @@ namespace PrimeERP.Tests.Composition
                 _db.Permissions.InsertRole("Assistant", "مساعد");
                 var (tree, page) = Open("RolePermissions");
 
-                var sales = tree.ItemsSource.Single(r => r.Id == "Sales");
+                var sales = tree.ItemsSource.Single(r => r.Id == "SalesInvoices");
                 var view = sales.Children.First();
                 var others = sales.Children.Skip(1).ToList();
-                var print = others.Single(n => n.Id == "Sales.Print");
+                var print = others.Single(n => n.Id == "SalesInvoices.Print");
 
-                Assert.Equal("Sales.View", view.Id);
+                Assert.Equal("SalesInvoices.View", view.Id);
 
                 Assert.All(others, n => Assert.False(n.IsCheckEnabled));
                 tree.Cycle(print);
@@ -112,7 +112,7 @@ namespace PrimeERP.Tests.Composition
                 _db.AddUser("rehab", "r", "رحاب", roleId);
 
                 var (tree, page) = Open("UserPermissions");
-                var sales = tree.ItemsSource.Single(r => r.Id == "Sales");
+                var sales = tree.ItemsSource.Single(r => r.Id == "SalesInvoices");
                 var view = sales.Children.First();
                 var others = sales.Children.Skip(1).ToList();
 
@@ -121,8 +121,8 @@ namespace PrimeERP.Tests.Composition
 
                 Assert.All(others, n => Assert.True(n.IsCheckEnabled));
 
-                tree.Cycle(others.Single(n => n.Id == "Sales.Print"));
-                Assert.Equal(NodeCheckState.Granted, others.Single(n => n.Id == "Sales.Print").CheckState);
+                tree.Cycle(others.Single(n => n.Id == "SalesInvoices.Print"));
+                Assert.Equal(NodeCheckState.Granted, others.Single(n => n.Id == "SalesInvoices.Print").CheckState);
 
                 ClickToolbar(page, "إعادة الكل للموروث");
                 Assert.All(tree.ItemsSource.SelectMany(r => r.Children),
@@ -168,7 +168,7 @@ namespace PrimeERP.Tests.Composition
                 _db.Permissions.InsertRole("Assistant", "مساعد");
                 var (tree, page) = Open("RolePermissions");
 
-                var sales = tree.ItemsSource.Single(r => r.Id == "Sales");
+                var sales = tree.ItemsSource.Single(r => r.Id == "SalesInvoices");
 
                 var box = Descendants<System.Windows.Controls.Border>(page)
                     .SingleOrDefault(b => b.Name == "checkBox" && ReferenceEquals(b.DataContext, sales));

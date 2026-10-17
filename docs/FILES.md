@@ -16,7 +16,10 @@
 | | **Localization/** | قاموس النصوص وتبديل اللغة |
 | 1.06 | ILocalizationService.cs | عقد النصوص للحقن |
 | 1.07 | LocalizationAdapter.cs | جسر الحقن لقاموس النصوص |
-| 1.08 | LocalizationService.cs | قاموس النصوص واتجاه الواجهة |
+| 1.08 | LocalizationService.cs | اللغة الحالية ونصوصها من StringTable |
+| 1.08a | StringTable.cs | نصوص كل لغة من Strings/{lang}.json المضمَّن — المصدر الواحد لسطح المكتب والخادم والويب |
+| 1.08b | PlatformServices.cs | تسجيل خدمات المنصّة — يستدعيه كل مضيف |
+| 1.08c | ScopeExit.cs | يعيد الحالة السابقة عند انتهاء النطاق |
 | | **Net/** | الشبكة في موضع واحد |
 | 1.09 | HttpGateway.cs | الموضع الوحيد الذي يلمس الشبكة |
 | 1.10 | MachineFingerprint.cs | بصمة الجهاز |
@@ -242,6 +245,11 @@
 | | **PageServices/Admin/** | الإعدادات والتراخيص والنسخ والتحديث |
 | 4.40 | ISettingsService.cs | عقد الإعدادات |
 | 4.40a | DatabaseSettingsService.cs | قاعدة البيانات تُقرأ من appsettings.json وتُكتب فيه، والتغيير يسري بعد إعادة التشغيل |
+| 4.40b | AuthService.cs | التحقق من الدخول — مدخلٌ واحد لنافذة سطح المكتب وللخادم |
+| 4.40c | ApplicationServices.cs | تسجيل خدمات الأعمال وتهيئة القاعدة — لكل مضيف |
+| 4.40d | SourceDocuments.cs | مستندات المصدر في السحب: نوعها ← خدمتها، وقراءتها بسطورها |
+| 4.40e | LookupPages.cs | إعلانات صفحات القوائم (EntitySpec) |
+| 2.00a | DataServices.cs | تسجيل المستودعات — لكل مضيف |
 | 4.41 | LicenseService.cs | تراخيص العملاء |
 | 4.42 | ProgramEditionService.cs | نسخةُ برنامجٍ مستقلّة في مسارٍ |
 | 4.43 | SettingsService.cs | طبقة الأعمال فوق ISettingsProvider |
@@ -409,9 +417,6 @@
 | 5.03 | Theme.xaml | دمج طبقات التصميم |
 | | **Icons/** | الأيقونات |
 | 5.04 | Icons.xaml | الأيقونات |
-| | **Strings/** | النصوص الظاهرة بالعربية والإنجليزية |
-| 5.05 | Strings.ar.xaml | النصوص الظاهرة |
-| 5.06 | Strings.en.xaml | النصوص الظاهرة |
 | | **Styles/** | أنماط عناصر WPF |
 | 5.07 | Implicit.xaml | واجهة |
 | 5.08 | ScrollBars.xaml | واجهة |
@@ -546,6 +551,7 @@
 | 6.106 | IProgressHandle.cs | خدمة واجهة ProgressHandle |
 | 6.107 | IToastService.cs | خدمة واجهة Toast |
 | 6.108 | IdentityService.cs | تحميل موارد التصميم |
+| 6.108a | LanguageResources.cs | اللغة في واجهة WPF: نصوص StringTable قاموسَ موارد لـDynamicResource، واتجاه النوافذ |
 | 6.109 | ImageData.cs | تحويل صورة ↔ Base64 |
 | 6.110 | NavigationService.cs | ينقل بين صفحات مسجَّلة بمفتاح |
 | 6.111 | PaperNodeRenderer.cs | مترجم PaperNode إلى عناصر WPF |
@@ -641,7 +647,6 @@
 | 8.04 | CycleFlow.cs | سلسلة السحب في الدورة الشاملة |
 | 8.06 | FinancialStatementColumns.cs | أعمدة القوائم المالية |
 | 8.07 | HrRegistrations.cs | شاشات الموارد البشرية التي يجمع |
-| 8.08 | LookupPages.cs | إعلانات صفحات القوائم |
 | 8.09 | ModuleRegistrations.cs | يسجّل كل وحدة عمل فعلية |
 | 8.10 | PermissionModuleRegistrations.cs | شاشتا الصلاحيات |
 | 8.11 | ReportRegistrations.cs | التقارير الثلاثة عشر |

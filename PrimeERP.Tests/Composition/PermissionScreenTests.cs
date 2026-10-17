@@ -72,11 +72,11 @@ namespace PrimeERP.Tests.Composition
                 var tree = Descendants<AppTreeView>(page).Single();
                 var leaves = tree.ItemsSource.SelectMany(r => r.Children).ToList();
 
-                var sales = tree.ItemsSource.Single(r => r.Id == "Sales");
+                var sales = tree.ItemsSource.Single(r => r.Id == "SalesInvoices");
                 var view = sales.Children.First();
-                var print = sales.Children.Single(n => n.Id == "Sales.Print");
+                var print = sales.Children.Single(n => n.Id == "SalesInvoices.Print");
 
-                Assert.Equal("Sales.View", view.Id);              // العرض أول بند في القسم
+                Assert.Equal("SalesInvoices.View", view.Id);              // العرض أول بند في القسم
                 Assert.False(print.IsCheckEnabled);               // الباقي معطَّل بلا عرض
 
                 tree.Cycle(print);                                // نقرة لا أثر لها
@@ -150,7 +150,7 @@ namespace PrimeERP.Tests.Composition
                 page.UpdateLayout();
 
                 var tree = Descendants<AppTreeView>(page).Single();
-                var sales = tree.ItemsSource.Single(r => r.Id == "Sales");
+                var sales = tree.ItemsSource.Single(r => r.Id == "SalesInvoices");
                 var view = sales.Children.First();
                 var others = sales.Children.Skip(1).ToList();
 
@@ -159,14 +159,14 @@ namespace PrimeERP.Tests.Composition
                 Assert.True(others.All(n => n.IsCheckEnabled), "الأزرار لم تُفتح بعد تأشير العرض");
                 Assert.All(others, n => Assert.Equal(NodeCheckState.Unchecked, n.CheckState));
 
-                var print = others.Single(n => n.Id == "Sales.Print");
+                var print = others.Single(n => n.Id == "SalesInvoices.Print");
                 tree.Cycle(print);
                 Assert.Equal(NodeCheckState.Checked, print.CheckState);
                 tree.Cycle(print);
                 Assert.Equal(NodeCheckState.Unchecked, print.CheckState);
 
                 tree.Cycle(print);
-                tree.Cycle(others.Single(n => n.Id == "Sales.Create"));
+                tree.Cycle(others.Single(n => n.Id == "SalesInvoices.Create"));
                 tree.Cycle(view);   // إلغاء العرض يلغي الكل
 
                 Assert.All(sales.Children, n => Assert.Equal(NodeCheckState.Unchecked, n.CheckState));

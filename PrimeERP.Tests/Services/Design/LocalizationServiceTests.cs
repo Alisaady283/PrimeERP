@@ -1,5 +1,6 @@
 using System;
 using PrimeERP.Platform.Localization;
+using PrimeERP.UI.Services;
 using Xunit;
 
 namespace PrimeERP.Tests.Services.Design
@@ -15,14 +16,15 @@ namespace PrimeERP.Tests.Services.Design
             {
                 try
                 {
-                    LocalizationService.Apply(AppLanguage.En);
+                    LanguageResources.Apply(AppLanguage.En);
 
                     Assert.Equal(AppLanguage.En, LocalizationService.CurrentLanguage);
                     Assert.Equal("Confirm", LocalizationService.Get("Str.Confirm"));
+                    Assert.Equal("Confirm", System.Windows.Application.Current.Resources["Str.Confirm"]);
                 }
                 finally
                 {
-                    LocalizationService.Apply(AppLanguage.Ar);
+                    LanguageResources.Apply(AppLanguage.Ar);
                 }
             });
         }
@@ -32,7 +34,7 @@ namespace PrimeERP.Tests.Services.Design
         {
             WpfApplicationFixture.Run(() =>
             {
-                LocalizationService.Apply(AppLanguage.Ar);
+                LanguageResources.Apply(AppLanguage.Ar);
 
                 Assert.Equal(AppLanguage.Ar, LocalizationService.CurrentLanguage);
                 Assert.Equal("تأكيد", LocalizationService.Get("Str.Confirm"));
@@ -46,17 +48,17 @@ namespace PrimeERP.Tests.Services.Design
             {
                 try
                 {
-                    LocalizationService.Apply(AppLanguage.Ar);
+                    LanguageResources.Apply(AppLanguage.Ar);
 
-                    LocalizationService.Toggle();
+                    LanguageResources.Toggle();
                     Assert.Equal(AppLanguage.En, LocalizationService.CurrentLanguage);
 
-                    LocalizationService.Toggle();
+                    LanguageResources.Toggle();
                     Assert.Equal(AppLanguage.Ar, LocalizationService.CurrentLanguage);
                 }
                 finally
                 {
-                    LocalizationService.Apply(AppLanguage.Ar);
+                    LanguageResources.Apply(AppLanguage.Ar);
                 }
             });
         }
@@ -66,7 +68,7 @@ namespace PrimeERP.Tests.Services.Design
         {
             WpfApplicationFixture.Run(() =>
             {
-                LocalizationService.Apply(AppLanguage.Ar);
+                LanguageResources.Apply(AppLanguage.Ar);
                 Assert.Equal("Str.NoSuchKey.Ever", LocalizationService.Get("Str.NoSuchKey.Ever"));
             });
         }
@@ -78,20 +80,20 @@ namespace PrimeERP.Tests.Services.Design
             {
                 try
                 {
-                    LocalizationService.Apply(AppLanguage.Ar);
+                    LanguageResources.Apply(AppLanguage.Ar);
 
                     bool raised = false;
                     EventHandler handler = (s, e) => raised = true;
                     LocalizationService.LanguageChanged += handler;
 
-                    try { LocalizationService.Apply(AppLanguage.En); }
+                    try { LanguageResources.Apply(AppLanguage.En); }
                     finally { LocalizationService.LanguageChanged -= handler; }
 
                     Assert.True(raised);
                 }
                 finally
                 {
-                    LocalizationService.Apply(AppLanguage.Ar);
+                    LanguageResources.Apply(AppLanguage.Ar);
                 }
             });
         }
