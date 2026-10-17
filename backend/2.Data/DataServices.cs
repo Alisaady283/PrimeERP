@@ -42,6 +42,10 @@ namespace PrimeERP.Data
             services.AddSingleton<ILookupRepository<Warehouse>>(_ => new LookupRepository<Warehouse>("Warehouses"));
             services.AddSingleton<ILookupRepository<Branch>>(_ => new LookupRepository<Branch>("Branches"));
             services.AddSingleton<ILookupRepository<WorkCenter>>(_ => new LookupRepository<WorkCenter>("WorkCenters"));
+            services.AddSingleton<ILookupRepository<Project>>(_ => new LookupRepository<Project>("Projects"));
+            services.AddSingleton<ILookupRepository<ProjectTask>>(_ => new LookupRepository<ProjectTask>("ProjectTasks"));
+            services.AddSingleton<ILookupRepository<ProjectTimesheet>>(_ => new LookupRepository<ProjectTimesheet>("ProjectTimesheets"));
+            services.AddSingleton<ILookupRepository<ProjectBill>>(_ => new LookupRepository<ProjectBill>("ProjectBills"));
             services.AddSingleton<IBillOfMaterialsRepository, BillOfMaterialsRepository>();
             services.AddSingleton<IProductionOrderRepository, ProductionOrderRepository>();
             services.AddSingleton<IScrapRepository, ScrapRepository>();

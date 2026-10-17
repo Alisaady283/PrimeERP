@@ -21,6 +21,7 @@ namespace PrimeERP.Data.Repositories
         Employee GetByAccountCode(string accountCode, PrimeDbContext db = null);
         void UpdateNameByAccountCode(PrimeDbContext db, string accountCode, string name);
         List<Employee> GetAll(bool activeOnly = true);
+        Dictionary<int, string> NamesOf(IEnumerable<int> ids, PrimeDbContext db = null);
         List<Employee> Search(string term, int maxResults);
         (List<Employee> Items, int Total) GetPaged(
             int page, int pageSize, string searchText = null, int? departmentId = null,

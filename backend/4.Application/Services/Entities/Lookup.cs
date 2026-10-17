@@ -26,14 +26,21 @@ namespace PrimeERP.Application.Services.Entities
         private readonly EntitySpec _spec;
         private readonly ILookupRepository<TEntity> _rows;
         private readonly Field<TEntity>[] _fields;
+        private readonly IServiceProvider _services;
+        private readonly IRowPosting<TEntity> _posting;
 
         public Lookup(EntitySpec spec, ILookupRepository<TEntity> rows, IPermissionService permissions, ISettingsProvider settings,
-            ILocalizationService localization, IAuditLogger audit, INumberSequenceService numbers)
+            ILocalizationService localization, IAuditLogger audit, INumberSequenceService numbers,
+            IServiceProvider services, IEnumerable<IRowPosting<TEntity>> postings)
             : base(permissions, settings, localization, audit, numbers)
         {
             _spec = spec;
             _rows = rows;
-            _fields = spec.NameLabel == null ? Array.Empty<Field<TEntity>>() : new[] { new Field<TEntity>(NameOf(), spec.NameLabel, Required: true) };
+            _services = services;
+            _posting = postings.FirstOrDefault();
+            _fields = (spec.NameLabel == null ? Enumerable.Empty<Field<TEntity>>() : new[] { new Field<TEntity>(Property("Name"), spec.NameLabel, Required: true) })
+                .Concat((spec.Required ?? new Dictionary<string, string>()).Select(r => new Field<TEntity>(Property(r.Key), r.Value, Required: true)))
+                .ToArray();
         }
 
         protected override string PermissionPrefix => _spec.Key;
@@ -43,7 +50,7 @@ namespace PrimeERP.Application.Services.Entities
         protected override Field<TEntity>[] Fields => _fields;
 
         public Result<List<IDictionary<string, object>>> GetAll(bool includeInactive = false) =>
-            Result.Ok(Scoped(_rows.GetAll(includeInactive)).Select(ToDto).ToList());
+            Result.Ok(ToDtos(Scoped(_rows.GetAll(includeInactive)).ToList()));
 
         private IEnumerable<TEntity> Scoped(IEnumerable<TEntity> rows) =>
             !_spec.BranchScoped || AppSession.BranchId == null ? rows
@@ -82,15 +89,48 @@ namespace PrimeERP.Application.Services.Entities
 
         protected override int Insert(PrimeDbContext db, TEntity entity) => _rows.Insert(entity, db);
         protected override void Save(PrimeDbContext db, TEntity entity) => _rows.Update(entity, db);
-        protected override void Erase(PrimeDbContext db, TEntity entity) => _rows.Delete(entity.Id, db);
 
-        protected override object AuditValue(TEntity entity) => ToDto(entity);
-        protected override IDictionary<string, object> ToDto(TEntity entity) => Rows.Of(entity);
+        protected override void Erase(PrimeDbContext db, TEntity entity)
+        {
+            _posting?.Reverse(db, entity);
+            _rows.Delete(entity.Id, db);
+        }
 
-        private static Expression<Func<TEntity, object>> NameOf()
+        // الصفّ الذي يحمل قيده: يُحسب ويُتحقّق قبل الحفظ، ويُقيَّد في معاملته، ويُعكس قبل الحذف
+        protected override Result Prepare(TEntity entity, TEntity stored) =>
+            _posting == null ? Result.Ok() : _posting.Prepare(entity).Then(() => stored == null ? Result.Ok() : _posting.CanReverse(stored));
+
+        protected override Result OnSaved(PrimeDbContext db, TEntity entity, TEntity stored)
+        {
+            if (_posting == null) return Result.Ok();
+            var posted = _posting.Post(db, entity, stored);
+            if (posted.IsSuccess) _rows.Update(entity, db);
+            return posted;
+        }
+
+        protected override Result CanErase(TEntity entity) => _posting?.CanReverse(entity) ?? Result.Ok();
+
+        protected override object AuditValue(TEntity entity) => Rows.Of(entity);
+        protected override IDictionary<string, object> ToDto(TEntity entity) => ToDtos(new List<TEntity> { entity })[0];
+
+        /// <summary>الصفوف بأسماء معرّفاتها — كل مصدرٍ بدفعةٍ واحدة</summary>
+        protected override List<IDictionary<string, object>> ToDtos(List<TEntity> entities)
+        {
+            var rows = entities.Select(Rows.Of).ToList();
+            foreach (var join in _spec.Names ?? Array.Empty<NameJoin>())
+            {
+                var ids = rows.Select(r => r.TryGetValue(join.Id, out var v) ? v as int? : null).Where(v => v is > 0).Select(v => v.Value).Distinct().ToList();
+                var names = ids.Count == 0 ? new Dictionary<int, string>() : join.Of(_services, ids);
+                foreach (var row in rows)
+                    row[join.Name] = row.TryGetValue(join.Id, out var v) && v is int id ? names.GetValueOrDefault(id) : null;
+            }
+            return rows;
+        }
+
+        private static Expression<Func<TEntity, object>> Property(string name)
         {
             var entity = Expression.Parameter(typeof(TEntity), "e");
-            return Expression.Lambda<Func<TEntity, object>>(Expression.Convert(Expression.Property(entity, "Name"), typeof(object)), entity);
+            return Expression.Lambda<Func<TEntity, object>>(Expression.Convert(Expression.Property(entity, name), typeof(object)), entity);
         }
     }
 }

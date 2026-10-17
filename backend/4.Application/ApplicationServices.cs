@@ -111,6 +111,15 @@ namespace PrimeERP.Application
             services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<Branch>>(sp, LookupPages.Branches));
             services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<WorkCenter>>(sp, LookupPages.WorkCenters));
 
+            // المشاريع: صفحات قوائم، والساعات والمستخلصات تحمل قيودها (IRowPosting)
+            services.AddSingleton<IRowPosting<ProjectTimesheet>, PrimeERP.Application.Services.Projects.TimesheetPosting>();
+            services.AddSingleton<IRowPosting<ProjectBill>, PrimeERP.Application.Services.Projects.BillPosting>();
+            services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<Project>>(sp, LookupPages.Projects));
+            services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<ProjectTask>>(sp, LookupPages.ProjectTasks));
+            services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<ProjectTimesheet>>(sp, LookupPages.ProjectTimesheets));
+            services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<ProjectBill>>(sp, LookupPages.ProjectBills));
+            services.AddSingleton<PrimeERP.Application.Reporting.IProjectReportService, PrimeERP.Application.Reporting.ProjectReportService>();
+
             // التنبيهات والتكامل: الحدث من سجلّ التدقيق، والقواعد صفحة، والإرسال من صندوق الصادر
             services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<AlertRule>>(sp, LookupPages.AlertRules));
             services.AddSingleton(sp => ActivatorUtilities.CreateInstance<Lookup<ApiKey>>(sp, LookupPages.ApiKeys));
@@ -242,6 +251,9 @@ namespace PrimeERP.Application
             settingAccounts.Ensure(SettingKeys.Accounts.ProductionOverhead, "51", LocalizationService.Get("Str.Account.ProductionOverhead"));
             settingAccounts.Ensure(SettingKeys.Accounts.ScrapExpense, "56", LocalizationService.Get("Str.Account.ScrapExpense"));
             settingAccounts.Ensure(SettingKeys.Accounts.CashOverShort, "56", LocalizationService.Get("Str.Account.CashOverShort"));
+            settingAccounts.Ensure(SettingKeys.Accounts.ProjectRevenue, "41", LocalizationService.Get("Str.Account.ProjectRevenue"));
+            settingAccounts.Ensure(SettingKeys.Accounts.ProjectCost, "5", LocalizationService.Get("Str.Account.ProjectCost"));
+            settingAccounts.Ensure(SettingKeys.Accounts.RetentionReceivable, "1206", LocalizationService.Get("Str.Account.RetentionReceivable"));
             services.GetRequiredService<PrimeERP.Application.Services.Ledger.Settlement>().RecalculateUnsettled(null);
             var treasuryService = services.GetRequiredService<PrimeERP.Application.PageServices.Treasury.ITreasuryService>();
             treasuryService.SeedDefaults();

@@ -66,6 +66,9 @@ namespace PrimeERP.Platform.Settings
             public const string ChequesUnderCollection = "Accounts.ChequesUnderCollection";
             public const string ChequesPayable = "Accounts.ChequesPayable";
             public const string FinanceExpense = "Accounts.FinanceExpense";
+            public const string ProjectRevenue = "Accounts.ProjectRevenue";
+            public const string ProjectCost = "Accounts.ProjectCost";
+            public const string RetentionReceivable = "Accounts.RetentionReceivable";
             public const string Cash             = "Accounts.Cash";
 
             public const string EmployeeAdvances = "Accounts.EmployeeAdvances";
@@ -241,6 +244,14 @@ namespace PrimeERP.Platform.Settings
             public const string EtaCertThumbprint = "EInvoice.EtaCertThumbprint";
         }
 
+        /// <summary>المشاريع: تحميل الساعات على المشروع، وسعر الساعة وضمان الأعمال الافتراضيان</summary>
+        public static class Projects
+        {
+            public const string PostTimesheets          = "Projects.PostTimesheets";
+            public const string DefaultHourlyCost       = "Projects.DefaultHourlyCost";
+            public const string DefaultRetentionPercent = "Projects.DefaultRetentionPercent";
+        }
+
         public static class Security
         {
             public const string PasswordMinLength        = "Security.PasswordMinLength";
@@ -300,6 +311,12 @@ namespace PrimeERP.Platform.Settings
             new(Accounts.ChequesUnderCollection, "1203004", "string", "Accounts", IsSystem: true),
             new(Accounts.ChequesPayable,     "",         "string", "Accounts", IsSystem: true),
             new(Accounts.FinanceExpense,     "55",       "string", "Accounts", IsSystem: true),
+            new(Accounts.ProjectRevenue,     "",         "string", "Accounts", IsSystem: true),
+            new(Accounts.ProjectCost,        "",         "string", "Accounts", IsSystem: true),
+            new(Accounts.RetentionReceivable, "",        "string", "Accounts", IsSystem: true),
+            new(Projects.PostTimesheets,          "true", "bool",    "Projects"),
+            new(Projects.DefaultHourlyCost,       "0",    "decimal", "Projects"),
+            new(Projects.DefaultRetentionPercent, "0",    "decimal", "Projects"),
             new(Accounts.Cash,               "1203007",  "string", "Accounts", IsSystem: true),
             new(Accounts.EmployeeAdvances,   "1206001",  "string", "Accounts", IsSystem: true),
             new(Accounts.SalaryExpense,      "5301",     "string", "Accounts", IsSystem: true),

@@ -28,9 +28,15 @@ namespace PrimeERP.Data.Repositories.Base
 
     public abstract class LookupRepositoryBase<T> : RepositoryBase<T> where T : class
     {
+        /// <summary>بالاسم، وما لا اسم له (الحركات) الأحدث أولاً</summary>
         public List<T> GetAll(bool includeInactive = false) =>
-            Fetch(q => (includeInactive ? q : q.Where(x => EF.Property<bool>(x, "IsActive")))
-                       .OrderBy(x => EF.Property<string>(x, "Name")));
+            Fetch(q =>
+            {
+                var rows = includeInactive ? q : q.Where(x => EF.Property<bool>(x, "IsActive"));
+                return Named ? rows.OrderBy(x => EF.Property<string>(x, "Name")) : rows.OrderByDescending(x => EF.Property<int>(x, "Id"));
+            });
+
+        private static readonly bool Named = typeof(T).GetProperty("Name") != null;
 
 
         public int Insert(T row, PrimeDbContext db = null) => Add(row, db);

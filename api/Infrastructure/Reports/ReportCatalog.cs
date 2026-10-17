@@ -46,6 +46,7 @@ namespace PrimeERP.Api.Infrastructure.Reports
             R<IManufacturingReportService>("ConsumptionReport", nameof(IManufacturingReportService.Consumption)),
             R<IManufacturingReportService>("WorkCenterLoadReport", nameof(IManufacturingReportService.WorkCenterLoad)),
             R<IManufacturingReportService>("ScrapReport", nameof(IManufacturingReportService.Scrap)),
+            R<IProjectReportService>("ProjectProfitReport", nameof(IProjectReportService.Profitability)),
 
             R<IAssetReportService>("AssetRegister", nameof(IAssetReportService.Register), "From", "To", "CategoryId"),
             Plain<IAssetReportService>("AssetsByCategory", nameof(IAssetReportService.ByCategory)),

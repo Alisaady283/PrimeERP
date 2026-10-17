@@ -229,4 +229,8 @@ namespace PrimeERP.Domain.Enums
 
     /// <summary>حال الطرف من آخر تعاملٍ معه</summary>
     public enum PartyState { Active, Cooling, Lost }
+
+    public enum ProjectStatus { Planned = 1, Active = 2, OnHold = 3, Completed = 4, Cancelled = 5 }
+
+    public enum ProjectTaskStatus { Todo = 1, InProgress = 2, Done = 3, Blocked = 4 }
 }

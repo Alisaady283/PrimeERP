@@ -151,6 +151,23 @@ namespace PrimeERP.Application.Reporting
         public decimal UnitCost   { get; set; }
     }
 
+    /// <summary>ربحية مشروع: المستخلص والتكلفة والإنجاز والميزانية</summary>
+    public class ProjectRow
+    {
+        public string  Code       { get; set; }
+        public string  Name       { get; set; }
+        public string  Customer   { get; set; }
+        public decimal Contract   { get; set; }
+        public decimal Billed     { get; set; }
+        public decimal Retention  { get; set; }
+        public decimal Cost       { get; set; }
+        public decimal Profit     { get; set; }
+        public decimal Margin     { get; set; }
+        public decimal Progress   { get; set; }
+        public decimal BudgetUsed { get; set; }
+        public decimal Hours      { get; set; }
+    }
+
     public class QuantityCostRow
     {
         public string  Code { get; set; }

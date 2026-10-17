@@ -81,6 +81,10 @@ namespace PrimeERP.Data.Core
         public DbSet<PaymentRequest> PaymentRequests => Set<PaymentRequest>();
         public DbSet<EInvoiceSubmission> EInvoiceSubmissions => Set<EInvoiceSubmission>();
         public DbSet<WorkCenter> WorkCenters => Set<WorkCenter>();
+        public DbSet<Project> Projects => Set<Project>();
+        public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
+        public DbSet<ProjectTimesheet> ProjectTimesheets => Set<ProjectTimesheet>();
+        public DbSet<ProjectBill> ProjectBills => Set<ProjectBill>();
         public DbSet<BillOfMaterials> BillsOfMaterials => Set<BillOfMaterials>();
         public DbSet<BomLine> BomLines => Set<BomLine>();
         public DbSet<ProductionOrder> ProductionOrders => Set<ProductionOrder>();
@@ -756,6 +760,47 @@ namespace PrimeERP.Data.Core
                 e.ToTable("ApiKeys");
                 e.HasKey(x => x.Id);
                 e.HasIndex("KeyHash").HasDatabaseName("IX_ApiKeys_KeyHash");
+            });
+
+            model.Entity<Project>(e =>
+            {
+                e.ToTable("Projects");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.ContractValue).HasPrecision(18, 4);
+                e.Property(x => x.Budget).HasPrecision(18, 4);
+                e.Property(x => x.RetentionPercent).HasPrecision(9, 4);
+                e.HasIndex("Code").HasDatabaseName("IX_Projects_Code").IsUnique();
+            });
+
+            model.Entity<ProjectTask>(e =>
+            {
+                e.ToTable("ProjectTasks");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Weight).HasPrecision(9, 4);
+                e.Property(x => x.Progress).HasPrecision(9, 4);
+                e.Property(x => x.BillingPercent).HasPrecision(9, 4);
+                e.HasIndex("ProjectId").HasDatabaseName("IX_ProjectTasks_Project");
+            });
+
+            model.Entity<ProjectTimesheet>(e =>
+            {
+                e.ToTable("ProjectTimesheets");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Hours).HasPrecision(9, 2);
+                e.Property(x => x.HourlyCost).HasPrecision(18, 4);
+                e.Property(x => x.Cost).HasPrecision(18, 4);
+                e.HasIndex("ProjectId").HasDatabaseName("IX_ProjectTimesheets_Project");
+            });
+
+            model.Entity<ProjectBill>(e =>
+            {
+                e.ToTable("ProjectBills");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Percent).HasPrecision(9, 4);
+                e.Property(x => x.Amount).HasPrecision(18, 4);
+                e.Property(x => x.Retention).HasPrecision(18, 4);
+                e.Property(x => x.Net).HasPrecision(18, 4);
+                e.HasIndex("ProjectId").HasDatabaseName("IX_ProjectBills_Project");
             });
 
             model.Entity<WorkCenter>(e =>
