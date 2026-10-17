@@ -2,20 +2,9 @@
 
 يُقرأ أولاً في الجلسة التالية، ويُحذف منه كل بندٍ يُنجز. القواعد في `CLAUDE.md` و`RULES.md`.
 
-## ١) قسم المشاريع لا يظهر إلا صفحةً واحدة — الأولوية
+## ١) بذر الصفحات من الـAPI (يُسأل المستخدم أولاً)
 
-**السبب (مُتحقَّق باستعلام):** جدولا `BuilderSections` و`BuilderModules` في `%LOCALAPPDATA%\PrimeERP\PrimeERP.db` بلا صفٍّ للمشاريع. الصفحات المكتوبة تُبذر في البناء من الدسكتوب وحده (`BuilderModuleLoader.RegisterAll` ← `SeedSections` ثم `SeedModules`)، ومنها تُولَّد صلاحيات الصفحات (`RegisterPagePermissions`). فالويب يرى المفتاح `Projects` وحده لأنه مجالٌ وصفحة معاً.
-
-**الخطوة الأولى:** أغلق الدسكتوب والـAPI، ثم ابنِ الدسكتوب وشغّله مرة. ثم أعد الاستعلام:
-```sql
-select Key from BuilderSections where Key='Projects';
-select Key, PermissionPrefix from BuilderModules where Key like 'Project%';
-```
-المتوقّع خمس صفحات: Projects · ProjectTasks · ProjectTimesheets · ProjectBills · ProjectProfitReport.
-
-**إن ظهرت الصفوف وبقي الويب ناقصاً:** راجع `PermissionKeys` (الربط `Home`/`PageOfKey`) لمجال `Projects`. وراجع صلاحيات الدور، فالمفاتيح الجديدة `ProjectTasks.*` وأخواتها لا تُورَّث إلا من صفّ البناء.
-
-**الإصلاح الجذري المقترح (يُسأل المستخدم أولاً):** أن يبذر الـAPI الصفحات المكتوبة أيضاً، فلا يتوقّف الويب على تشغيل الدسكتوب. يعني ذلك نقل قائمة `NavigationMap.Coded` إلى مصدرٍ مشترك يقرؤه الاثنان.
+صفحات المشاريع الخمس بُذرت بعد تشغيل الدسكتوب (مُتحقَّق باستعلام). الصفحات المكتوبة تُبذر من الدسكتوب وحده، والمقترح أن يبذرها الـAPI أيضاً من مصدرٍ مشترك بدل `NavigationMap.Coded`.
 
 ## ٢) المشاريع — ما لم يُبنَ بعد
 
