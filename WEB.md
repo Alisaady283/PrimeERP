@@ -172,3 +172,9 @@
 ## تصفية BI وتصوير الباركود والصلاحيات (2026-10-14)
 
 النقر على عنصرٍ في رسمٍ يصفّي اللوحة كلها بإعادة الحساب في الخادم (`AnalyticsFilter` · `TradeScope`)، وشريط «مُصفّاة بـ…» بإلغاءٍ و«فتح التفصيل» مُصفّى (`/p/$page?q=`). وأيقونة كاميرا في مسح نقطة البيع (`BarcodeScanner`: `BarcodeDetector` الأصلي إن وُجد وإلا `@zxing/browser` يُحمَّل عند الفتح). وشجرة الصلاحيات من `PermissionCatalog` المشتركة مع الدسكتوب. `npm run build` ناجح.
+
+## قسم المشاريع (2026-10-17)
+
+- صفحات `Projects` · `ProjectTasks` · `ProjectTimesheets` · `ProjectBills` وتقرير `ProjectProfitReport` في `catalog/pages.ts` بقسمٍ `Projects` (أيقونة briefcase) — والأندرويد يقرؤها من الكتالوج نفسه.
+- تبويب «المشاريع» في الإعدادات، والحسابات الثلاثة في تبويب الحسابات.
+

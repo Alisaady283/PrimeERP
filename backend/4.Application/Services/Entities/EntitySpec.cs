@@ -19,5 +19,11 @@ namespace PrimeERP.Application.Services.Entities
     }
 
     /// <summary>اسم معرّفٍ يُقرأ بدفعةٍ من مصدره — Name خاصية الصفّ الناتجة</summary>
-    public sealed record NameJoin(string Id, string Name, Func<IServiceProvider, IEnumerable<int>, Dictionary<int, string>> Of);
+    public sealed record NameJoin(string Id, string Name, Func<IServiceProvider, IEnumerable<int>, Dictionary<int, string>> Of)
+    {
+        /// <summary>نصّ قيمة تعدادٍ بلغة القارئ — {strings}.{الاسم}</summary>
+        public static NameJoin Enum<TEnum>(string id, string name, string strings) where TEnum : struct, System.Enum =>
+            new(id, name, (_, ids) => System.Linq.Enumerable.ToDictionary(ids, v => v,
+                v => PrimeERP.Platform.Localization.LocalizationService.Get($"{strings}.{(TEnum)(object)v}")));
+    }
 }

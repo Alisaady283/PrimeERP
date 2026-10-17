@@ -164,6 +164,8 @@ const aging = (party: string) => [col("code", "Str.Code", "code"), col("name", p
   ...["NotDue", "Days30", "Days60", "Days90", "Days120", "Days150", "Over150"].map((k) => money(k.charAt(0).toLowerCase() + k.slice(1), `Str.Analytics.Aging.${k}`)), money("total", "Str.Aging.Balance")];
 const settlement = (party: string) => [col("invoiceNo", "Str.InvoiceNo", "code"), col("date", "Str.Date", "date"), col("dueDate", "Str.Aging.DueDate", "date"), col("party", party, "text", { width: "minmax(12rem,2fr)" }),
   money("net", "Str.NetTotal"), money("paid", "Str.Aging.Paid"), money("remaining", "Str.Aging.Remaining"), col("lastPayment", "Str.Aging.LastPayment", "date"), col("payments", "Str.Aging.Payments", "count"), col("status", "Str.Status", "status")];
+const projectStatus = enumOf("Str.Project.Status", [[1, "Planned"], [2, "Active"], [3, "OnHold"], [4, "Completed"], [5, "Cancelled"]]);
+const taskStatus = enumOf("Str.ProjectTask.Status", [[1, "Todo"], [2, "InProgress"], [3, "Done"], [4, "Blocked"]]);
 const quantityCost = (qty: string) => [col("code", "Str.Code", "code"), col("name", "Str.Name", "text", { width: "minmax(14rem,2fr)" }), money("qty", qty), money("cost", "Str.Reports.Cost")];
 
 const asset = { page: "Assets" } as const;
@@ -269,6 +271,35 @@ export const pages: PageSpec[] = [
   report("ConsumptionReport", range, quantityCost("Str.Qty")),
   report("WorkCenterLoadReport", range, quantityCost("Str.Reports.Minutes")),
   report("ScrapReport", range, quantityCost("Str.Qty")),
+
+  // المشاريع: المشروع ومهامه وساعاته ومستخلصاته — الساعات والمستخلصات تُقيَّد عند حفظها
+  list({ key: "Projects", title: "Str.Module.Projects", permission: "Projects", formTitles: ["Str.Projects.Add", "Str.Projects.Edit"],
+    columns: [col("code", "Str.Code", "code"), col("name", "Str.Name", "text", { width: "minmax(14rem,2fr)" }), col("customerName", "Str.Project.Customer"), col("managerName", "Str.Project.Manager"),
+      col("startDate", "Str.Project.StartDate", "date"), col("endDate", "Str.Project.EndDate", "date"), money("contractValue", "Str.Project.ContractValue", { total: true }), money("budget", "Str.Project.Budget", { total: true }),
+      col("statusText", "Str.Project.Status", "status")],
+    form: [field("name", "Str.Name", "text", { required: true, max: 200 }), pick("customerId", "Str.Project.Customer", { page: "Customers" }), pick("managerId", "Str.Project.Manager", { page: "Employees" }),
+      pick("status", "Str.Project.Status", projectStatus, { required: true, defaultValue: 1 }), field("startDate", "Str.Project.StartDate", "date"), field("endDate", "Str.Project.EndDate", "date"),
+      num("contractValue", "Str.Project.ContractValue", { min: 0 }), num("budget", "Str.Project.Budget", { min: 0 }), num("retentionPercent", "Str.Project.RetentionPercent", { min: 0 }), notes, active] }),
+  list({ key: "ProjectTasks", title: "Str.Module.ProjectTasks", permission: "Projects", formTitles: ["Str.ProjectTasks.Add", "Str.ProjectTasks.Edit"],
+    columns: [col("code", "Str.Code", "code"), col("name", "Str.Name", "text", { width: "minmax(14rem,2fr)" }), col("projectName", "Str.Project"), col("employeeName", "Str.ProjectTask.Assignee"),
+      col("dueDate", "Str.ProjectTask.DueDate", "date"), col("progress", "Str.ProjectTask.Progress", "percent"), col("statusText", "Str.ProjectTask.Status", "status"), col("isMilestone", "Str.ProjectTask.IsMilestone", "bool")],
+    form: [pick("projectId", "Str.Project", { page: "Projects" }, { required: true }), field("name", "Str.Name", "text", { required: true, max: 200 }), pick("employeeId", "Str.ProjectTask.Assignee", { page: "Employees" }),
+      pick("status", "Str.ProjectTask.Status", taskStatus, { required: true, defaultValue: 1 }), field("startDate", "Str.Project.StartDate", "date"), field("dueDate", "Str.ProjectTask.DueDate", "date"),
+      num("weight", "Str.ProjectTask.Weight", { min: 0, defaultValue: 1 }), num("progress", "Str.ProjectTask.Progress", { min: 0, max: 100 }), field("isMilestone", "Str.ProjectTask.IsMilestone", "switch"),
+      num("billingPercent", "Str.ProjectTask.BillingPercent", { min: 0, max: 100 }), notes, active] }),
+  list({ key: "ProjectTimesheets", title: "Str.Module.ProjectTimesheets", permission: "Projects", formTitles: ["Str.ProjectTimesheets.Add", "Str.ProjectTimesheets.Edit"],
+    columns: [col("code", "Str.Code", "code"), col("date", "Str.Date", "date"), col("projectName", "Str.Project", "text", { width: "minmax(12rem,2fr)" }), col("taskName", "Str.ProjectTask"), col("employeeName", "Str.Employee"),
+      col("hours", "Str.ProjectTimesheet.Hours", "number", { total: true }), money("hourlyCost", "Str.ProjectTimesheet.HourlyCost"), money("cost", "Str.ProjectTimesheet.Cost", { total: true })],
+    form: [pick("projectId", "Str.Project", { page: "Projects" }, { required: true }), pick("taskId", "Str.ProjectTask", { page: "ProjectTasks" }), pick("employeeId", "Str.Employee", { page: "Employees" }, { required: true }),
+      date("date", "Str.Date", { required: true }), num("hours", "Str.ProjectTimesheet.Hours", { required: true, min: 0 }), num("hourlyCost", "Str.ProjectTimesheet.HourlyCost", { min: 0 }), notes] }),
+  list({ key: "ProjectBills", title: "Str.Module.ProjectBills", permission: "Projects", formTitles: ["Str.ProjectBills.Add", "Str.ProjectBills.Edit"],
+    columns: [col("code", "Str.Code", "code"), col("date", "Str.Date", "date"), col("projectName", "Str.Project", "text", { width: "minmax(12rem,2fr)" }), col("taskName", "Str.ProjectTask"),
+      col("percent", "Str.ProjectBill.Percent", "percent"), money("amount", "Str.ProjectBill.Amount", { total: true }), money("retention", "Str.ProjectBill.Retention", { total: true }), money("net", "Str.ProjectBill.Net", { total: true })],
+    form: [pick("projectId", "Str.Project", { page: "Projects" }, { required: true }), pick("taskId", "Str.ProjectTask", { page: "ProjectTasks" }), date("date", "Str.Date", { required: true }),
+      num("percent", "Str.ProjectBill.Percent", { min: 0, max: 100 }), num("amount", "Str.ProjectBill.Amount", { min: 0 }), notes] }),
+  report("ProjectProfitReport", range, [col("code", "Str.Code", "code"), col("name", "Str.Project", "text", { width: "minmax(14rem,2fr)" }), col("customer", "Str.Project.Customer"),
+    money("contract", "Str.Project.ContractValue"), money("billed", "Str.Project.Billed"), money("retention", "Str.ProjectBill.Retention"), money("cost", "Str.Project.Cost"), money("profit", "Str.Project.Profit"),
+    col("margin", "Str.Project.Margin", "percent"), col("progress", "Str.Project.Progress", "percent"), col("budgetUsed", "Str.Project.BudgetUsed", "percent"), col("hours", "Str.Project.Hours", "number")]),
 
   list({ key: "Treasuries", title: "Str.Module.Treasuries", permission: "Treasuries",
     columns: [col("code", "Str.Code", "code"), col("accountCode", "Str.Treasury.AccountCode", "code"), col("name", "Str.Treasury.FullName", "text", { width: "minmax(16rem,2fr)" }), money("accountBalance", "Str.Balance", { total: true }), col("kindName", "Str.Type")],

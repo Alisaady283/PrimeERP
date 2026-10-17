@@ -132,6 +132,22 @@ namespace PrimeERP.Modules
                     Money(LocalizationService.Get("Str.UnitCost"), nameof(ProductionRow.UnitCost)),
                 });
 
+            Register(registry, "ProjectProfitReport", "Str.Module.ProjectProfitReport", typeof(IProjectReportService), nameof(IProjectReportService.Profitability),
+                StandardFields.DateRange(), new()
+                {
+                    Text("Str.Code", nameof(ProjectRow.Code), 90), Text("Str.Project", nameof(ProjectRow.Name), 200, star: true),
+                    Text("Str.Project.Customer", nameof(ProjectRow.Customer), 160),
+                    Money(LocalizationService.Get("Str.Project.ContractValue"), nameof(ProjectRow.Contract)),
+                    Money(LocalizationService.Get("Str.Project.Billed"), nameof(ProjectRow.Billed)),
+                    Money(LocalizationService.Get("Str.ProjectBill.Retention"), nameof(ProjectRow.Retention)),
+                    Money(LocalizationService.Get("Str.Project.Cost"), nameof(ProjectRow.Cost)),
+                    Money(LocalizationService.Get("Str.Project.Profit"), nameof(ProjectRow.Profit)),
+                    Money(LocalizationService.Get("Str.Project.Margin"), nameof(ProjectRow.Margin)),
+                    Money(LocalizationService.Get("Str.Project.Progress"), nameof(ProjectRow.Progress)),
+                    Money(LocalizationService.Get("Str.Project.BudgetUsed"), nameof(ProjectRow.BudgetUsed)),
+                    Money(LocalizationService.Get("Str.Project.Hours"), nameof(ProjectRow.Hours)),
+                });
+
             foreach (var (key, method, qtyKey) in new[]
             {
                 ("ConsumptionReport", nameof(IManufacturingReportService.Consumption), "Str.Qty"),

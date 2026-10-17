@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PrimeERP.Data.Repositories;
 using PrimeERP.Data.Repositories.Base;
 using PrimeERP.Domain.Entities;
+using PrimeERP.Domain.Enums;
 
 namespace PrimeERP.Application.Services.Entities
 {
@@ -24,9 +25,10 @@ namespace PrimeERP.Application.Services.Entities
 
         public static readonly EntitySpec Projects = new() { Key = "Projects", Strings = "Str.Project", NameLabel = "Str.Name", Sequence = "Project",
             Names = new[] { new NameJoin("CustomerId", "CustomerName", (s, ids) => s.GetRequiredService<IPartyRepository<Customer>>().NamesOf(ids)),
-                            new NameJoin("ManagerId", "ManagerName", (s, ids) => s.GetRequiredService<IEmployeeRepository>().NamesOf(ids)) } };
+                            new NameJoin("ManagerId", "ManagerName", (s, ids) => s.GetRequiredService<IEmployeeRepository>().NamesOf(ids)),
+                            NameJoin.Enum<ProjectStatus>("Status", "StatusText", "Str.Project.Status") } };
         public static readonly EntitySpec ProjectTasks = new() { Key = "ProjectTasks", Strings = "Str.ProjectTask", NameLabel = "Str.Name", Sequence = "ProjectTask",
-            Required = new Dictionary<string, string> { ["ProjectId"] = "Str.Project" }, Names = new[] { ProjectName, EmployeeName } };
+            Required = new Dictionary<string, string> { ["ProjectId"] = "Str.Project" }, Names = new[] { ProjectName, EmployeeName, NameJoin.Enum<ProjectTaskStatus>("Status", "StatusText", "Str.ProjectTask.Status") } };
         public static readonly EntitySpec ProjectTimesheets = new() { Key = "ProjectTimesheets", Strings = "Str.ProjectTimesheet", Sequence = "ProjectTimesheet",
             Required = new Dictionary<string, string> { ["ProjectId"] = "Str.Project", ["EmployeeId"] = "Str.Employee", ["Date"] = "Str.Date" }, Names = new[] { ProjectName, TaskName, EmployeeName } };
         public static readonly EntitySpec ProjectBills = new() { Key = "ProjectBills", Strings = "Str.ProjectBill", Sequence = "ProjectBill",

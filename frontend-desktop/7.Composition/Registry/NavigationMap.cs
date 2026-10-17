@@ -15,6 +15,7 @@ namespace PrimeERP.Composition.Registry
             ("Purchases", "IconPurchases", new[] { "PurchaseRequest", "PurchaseOrder", "PurchaseInvoices", "PurchaseReturns", "Suppliers", "SupplierBalances", "SupplierStatement", "PurchaseRequestFollowUp", "PurchaseOrderFollowUp", "PurchaseReturnsByInvoice", "PurchaseReturnsUnlinked", "SupplierAging", "SupplierInvoiceSettlement" }),
             ("Inventory", "IconWarehouse", new[] { "Products", "Categories", "Brands", "Units", "Warehouses", "StockIn", "StockOut", "StockTransfer", "StockBalances", "ItemCard", "StockReport", "BatchReport", "ExpiryReport", "SalesReturnsPending", "PurchaseReturnsPending" }),
             ("Manufacturing", "IconWarehouse", new[] { "BillsOfMaterials", "ProductionOrders", "Unbuild", "Scrap", "WorkCenters", "ProductionCostReport", "ConsumptionReport", "WorkCenterLoadReport", "ScrapReport" }),
+            ("Projects", "IconBuilding", new[] { "Projects", "ProjectTasks", "ProjectTimesheets", "ProjectBills", "ProjectProfitReport" }),
             ("Treasury", "IconAccounts", new[] { "Treasuries", "Receipts", "Payments", "ChequeReceipts", "ChequeIssues", "Cheques" }),
             ("Assets", "IconAssets", new[] { "Assets", "AssetCategories", "AssetRevaluations", "AssetDepreciations", "AssetDisposals", "AssetRegister", "AssetsByCategory" }),
             ("HR", "IconHR", new[] { "Employees", "HrLists", "Attendances", "EmployeeAllowances", "EmployeeDeductions", "EmployeeAdvances", "Payroll", "Payslip", "PayrollSummary", "AttendanceSummary", "AdvancesReport" }),

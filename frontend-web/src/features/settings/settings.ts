@@ -10,7 +10,7 @@ import { identities } from "@/lib/identities";
 export type Setting = { key: string; category: string; dataType: string; value: string; isSystem: boolean; options?: string[] | null; shownWhen?: string | null };
 
 const hidden = new Set(["Company.LogoData"]);
-const order = ["Company", "Financial", "Accounts", "Documents", "UI", "Print", "Backup", "Security", "HR", "System", "Integration"];
+const order = ["Company", "Financial", "Accounts", "Documents", "UI", "Print", "Backup", "Security", "HR", "Projects", "System", "Integration"];
 
 /** نوع حقل الإعداد */
 export type SettingInput = "switch" | "treasury" | "customer" | "choice" | "identity" | "account" | "number" | "secret" | "text";

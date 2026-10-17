@@ -636,6 +636,22 @@ namespace PrimeERP.Composition.Renderers
             {
                 combo.ItemsSource = LookupRows<PrimeERP.Domain.Entities.Warehouse>(services, withCode: true);
             }
+            else if (field.PickerType == "Project")
+            {
+                combo.ItemsSource = LookupRows<PrimeERP.Domain.Entities.Project>(services, withCode: true);
+            }
+            else if (field.PickerType == "ProjectTask")
+            {
+                combo.ItemsSource = LookupRows<PrimeERP.Domain.Entities.ProjectTask>(services, withCode: true);
+            }
+            else if (field.PickerType == "ProjectStatus")
+            {
+                combo.ItemsSource = EnumRows<PrimeERP.Domain.Enums.ProjectStatus>("Str.Project.Status");
+            }
+            else if (field.PickerType == "ProjectTaskStatus")
+            {
+                combo.ItemsSource = EnumRows<PrimeERP.Domain.Enums.ProjectTaskStatus>("Str.ProjectTask.Status");
+            }
             else if (field.PickerType == "WorkCenter")
             {
                 combo.ItemsSource = LookupRows<PrimeERP.Domain.Entities.WorkCenter>(services, withCode: true);

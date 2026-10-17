@@ -252,7 +252,7 @@ namespace PrimeERP.Application
             settingAccounts.Ensure(SettingKeys.Accounts.ScrapExpense, "56", LocalizationService.Get("Str.Account.ScrapExpense"));
             settingAccounts.Ensure(SettingKeys.Accounts.CashOverShort, "56", LocalizationService.Get("Str.Account.CashOverShort"));
             settingAccounts.Ensure(SettingKeys.Accounts.ProjectRevenue, "41", LocalizationService.Get("Str.Account.ProjectRevenue"));
-            settingAccounts.Ensure(SettingKeys.Accounts.ProjectCost, "5", LocalizationService.Get("Str.Account.ProjectCost"));
+            settingAccounts.Ensure(SettingKeys.Accounts.ProjectCost, "56", LocalizationService.Get("Str.Account.ProjectCost"));
             settingAccounts.Ensure(SettingKeys.Accounts.RetentionReceivable, "1206", LocalizationService.Get("Str.Account.RetentionReceivable"));
             services.GetRequiredService<PrimeERP.Application.Services.Ledger.Settlement>().RecalculateUnsettled(null);
             var treasuryService = services.GetRequiredService<PrimeERP.Application.PageServices.Treasury.ITreasuryService>();
